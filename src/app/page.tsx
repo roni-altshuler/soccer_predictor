@@ -1,16 +1,18 @@
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="content-box">
-      <h1 className="text-4xl font-bold mb-4">Welcome to Premier League Stats</h1>
-      <p className="text-lg">
-        This website provides a comprehensive database of English Premier League data,
-        spanning from the inaugural 1888/1889 season to the present day.
-      </p>
-      <p className="text-lg mt-4">
-        Use the "Seasons" menu to navigate to a specific season and view the
-        final league standings. You can also explore the "Prediction" and "Contact" pages.
-      </p>
-    </div>
+    <main className="flex flex-col items-center bg-gray-900 text-white">
+      <div className="flex flex-col items-center justify-center flex-grow p-8">
+        <div className="text-center max-w-2xl bg-gray-800 rounded-xl shadow-lg">
+          <h1 className="text-4xl font-bold mb-4">Welcome to Soccer Stats Predictor</h1>
+          <p className="text-lg leading-relaxed">
+            This platform provides data-driven insights into soccer match outcomes.<br /><br />
+            We aim to develop an advanced AI/ML algorithm, trained on historical data, to offer users guided decision-making when analyzing potential winner outcomes of two teams facing each other.<br /><br />
+            Our model considers factors like home versus away advantage, striving for transparency and reliability in its predictions.
+          </p>
+        </div>
+      </div>
+    </main>
   );
 }
