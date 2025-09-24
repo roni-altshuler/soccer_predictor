@@ -1,41 +1,52 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchAllSeasons, fetchRankedSeasonStats } from '@/app/actions';
+import { fetchAllSeasons, fetchRankedSeasonStats, fetchChartsData, SeasonStats } from '@/app/actions';
 import { useRouter } from 'next/navigation';
-import { SeasonStats } from '@/lib/data';
 import Image from 'next/image';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+interface ChartsData {
+  outcomeData: { name: string; value: number }[];
+  wdlData: { name: string; W: number; D: number; L: number }[];
+}
 
 export default function PremierLeaguePage() {
   const [seasons, setSeasons] = useState<string[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<string>('---');
   const [seasonStats, setSeasonStats] = useState<SeasonStats[] | null>(null);
+  const [chartsData, setChartsData] = useState<ChartsData | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const loadSeasons = async () => {
-      const allSeasons = await fetchAllSeasons();
+      const allSeasons = await fetchAllSeasons('PremierLeague');
       setSeasons(allSeasons);
     };
     loadSeasons();
   }, []);
 
   useEffect(() => {
-    const loadSeasonStats = async () => {
+    const loadSeasonData = async () => {
       if (selectedSeason && selectedSeason !== '---') {
-        const stats = await fetchRankedSeasonStats(selectedSeason);
+        const stats = await fetchRankedSeasonStats('PremierLeague', selectedSeason);
         setSeasonStats(stats);
+        const charts = await fetchChartsData('PremierLeague', selectedSeason);
+        setChartsData(charts);
       } else {
         setSeasonStats(null);
+        setChartsData(null);
       }
     };
-    loadSeasonStats();
+    loadSeasonData();
   }, [selectedSeason]);
 
   const handleSeasonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const season = e.target.value;
     setSelectedSeason(season);
   };
+
+  const COLORS = ['#4CAF50', '#FF5722', '#9E9E9E'];
 
   return (
     <div style={{ padding: '2rem', color: '#F5F5DC' }}>
@@ -112,6 +123,57 @@ export default function PremierLeaguePage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selectedSeason !== '---' && chartsData && (
+        <div style={{ marginTop: '2rem' }}>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Season Analysis</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Match Outcomes</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartsData.outcomeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {chartsData.outcomeData.map((entry: { name: string; value: number }, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Team Wins, Draws, Losses</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart
+                  data={chartsData.wdlData}
+                  margin={{
+                    top: 20, right: 30, left: 20, bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="W" stackId="a" fill="#4CAF50" name="Wins" />
+                  <Bar dataKey="D" stackId="a" fill="#9E9E9E" name="Draws" />
+                  <Bar dataKey="L" stackId="a" fill="#FF5722" name="Losses" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
     </div>

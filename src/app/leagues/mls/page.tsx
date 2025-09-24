@@ -37,7 +37,7 @@ export default function MLSPage() {
       </div>
 
       <p style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
-        Major League Soccer (MLS) is a professional men's soccer league sanctioned by U.S. Soccer, which represents the sport's highest tier in the United States and Canada. Founded in 1993, MLS began play in 1996. The league comprises 29 teams, 26 in the U.S. and 3 in Canada, and operates on a single-entity structure. Unlike most football leagues worldwide, MLS does not use a system of promotion and relegation. Known for its growing popularity, diverse fan base, and increasing quality of play, MLS continues to expand its footprint in the global football landscape. For more information, visit the <a href="https://www.mlssoccer.com/" target="_blank" rel="noopener noreferrer" className="league-link">official MLS website</a>.
+        Major League Soccer (MLS) is a professional men&apos;s soccer league sanctioned by U.S. Soccer, which represents the sport&apos;s highest tier in the United States and Canada. Founded in 1993, MLS began play in 1996. The league comprises 29 teams, 26 in the U.S. and 3 in Canada, and operates on a single-entity structure. Unlike most football leagues worldwide, MLS does not use a system of promotion and relegation. Known for its growing popularity, diverse fan base, and increasing quality of play, MLS continues to expand its footprint in the global football landscape. For more information, visit the <a href="https://www.mlssoccer.com/" target="_blank" rel="noopener noreferrer" className="league-link">official MLS website</a>.
       </p>
 
       <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Explore Seasons</h2>

@@ -37,7 +37,7 @@ export default function Ligue1Page() {
       </div>
 
       <p style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
-        Ligue 1, officially known as Ligue 1 Uber Eats for sponsorship reasons, is a French professional league for men's association football clubs. At the top of the French football league system, it is the country's primary football competition. Contested by 20 teams, it operates on a system of promotion and relegation with Ligue 2. Known for its technical flair, emerging talents, and the dominance of clubs like Paris Saint-Germain in recent years, Ligue 1 continues to be a significant league in European football. For more information, visit the <a href="https://www.ligue1.com/" target="_blank" rel="noopener noreferrer" className="league-link">official Ligue 1 website</a>.
+        Ligue 1, officially known as Ligue 1 Uber Eats for sponsorship reasons, is a French professional league for men&apos;s association football clubs. At the top of the French football league system, it is the country&apos;s primary football competition. Contested by 20 teams, it operates on a system of promotion and relegation with Ligue 2. Known for its technical flair, emerging talents, and the dominance of clubs like Paris Saint-Germain in recent years, Ligue 1 continues to be a significant league in European football. For more information, visit the <a href="https://www.ligue1.com/" target="_blank" rel="noopener noreferrer" className="league-link">official Ligue 1 website</a>.
       </p>
 
       <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Explore Seasons</h2>

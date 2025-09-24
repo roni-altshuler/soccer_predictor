@@ -37,7 +37,7 @@ export default function LaLigaPage() {
       </div>
 
       <p style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
-        La Liga, officially known as Primera División, is the top professional football division of the Spanish football league system. Established in 1929, it is contested by 20 teams, with the three lowest-placed teams at the end of each season relegated to the Segunda División and replaced by the top three teams in that division. La Liga is renowned for its technical prowess, attacking football, and has been home to some of the world's most iconic clubs and players, including Real Madrid and FC Barcelona, who share a fierce rivalry that defines much of the league's history. For more information, visit the <a href="https://www.laliga.com/en-GB" target="_blank" rel="noopener noreferrer" className="league-link">official LaLiga website</a>.
+        La Liga, officially known as Primera División, is the top professional football division of the Spanish football league system. Established in 1929, it is contested by 20 teams, with the three lowest-placed teams at the end of each season relegated to the Segunda División and replaced by the top three teams in that division. La Liga is renowned for its technical prowess, attacking football, and has been home to some of the world&apos;s most iconic clubs and players, including Real Madrid and FC Barcelona, who share a fierce rivalry that defines much of the league&apos;s history. For more information, visit the <a href="https://www.laliga.com/en-GB" target="_blank" rel="noopener noreferrer" className="league-link">official LaLiga website</a>.
       </p>
 
       <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Explore Seasons</h2>

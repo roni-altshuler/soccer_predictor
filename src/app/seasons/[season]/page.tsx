@@ -1,9 +1,8 @@
+import { fetchRankedSeasonStats, SeasonStats } from '@/app/actions';
 
-import { getRankedSeasonStats, SeasonStats } from '@/lib/data';
-
-export default function SeasonPage({ params }: { params: { season: string } }) {
+export default async function SeasonPage({ params }: { params: { season: string } }) {
   const season = params.season.replace('-', '/');
-  const rankedStats = getRankedSeasonStats(season);
+  const rankedStats = await fetchRankedSeasonStats(season);
 
   return (
     <div className="content-box">

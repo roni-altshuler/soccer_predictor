@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchAllSeasons } from '../actions';
+import { fetchAllSeasons } from '@/app/actions';
 
 const ITEM_HEIGHT = 24; // Approximate height of each season link (py-1 is 8px vertical padding, plus font size)
 const VISIBLE_ITEMS = 5;
@@ -12,15 +11,12 @@ export default function Navbar() {
   const [allSeasons, setAllSeasons] = useState<string[]>([]);
   const [visibleSeasons, setVisibleSeasons] = useState<string[]>([]);
   const [startIndex, setStartIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadAllSeasons = async () => {
-      setLoading(true);
       const seasons = await fetchAllSeasons();
       setAllSeasons(seasons);
-      setLoading(false);
     };
     loadAllSeasons();
   }, []);
@@ -55,10 +51,6 @@ export default function Navbar() {
       scrollContainer.removeEventListener('scroll', updateVisibleItems);
     };
   }, [updateVisibleItems]);
-
-  const totalHeight = allSeasons.length * ITEM_HEIGHT;
-  const paddingTop = startIndex * ITEM_HEIGHT;
-  const paddingBottom = (allSeasons.length - (startIndex + visibleSeasons.length)) * ITEM_HEIGHT;
 
   return (
     <header style={{ backgroundColor: '#121212', borderBottom: '1px solid rgba(245, 245, 220, 0.5)' }}>
