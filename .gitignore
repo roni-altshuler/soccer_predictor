@@ -44,5 +44,8 @@ next-env.d.ts
 .venv/
 venv/
 
+# models
+*.pkl
+
 # Gemini API Key
 gemini.md
