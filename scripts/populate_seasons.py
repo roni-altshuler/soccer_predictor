@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate season URLs for all leagues.
+Generate season URLs for all leagues - BOTH stats and fixtures pages.
 Run from root directory: python3 scripts/populate_seasons.py
 """
 import json
@@ -13,11 +13,11 @@ from datetime import datetime
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 DATA_DIR = os.path.join(ROOT_DIR, "fbref_data")
-os.makedirs(DATA_DIR, exist_ok=True)  # ensure fbref_data exists
+os.makedirs(DATA_DIR, exist_ok=True)
 OUTPUT_PATH = os.path.join(DATA_DIR, "season_links.json")
 
 # --------------------------
-# League info
+# League info - to be expanded with more leagues of interest
 # --------------------------
 LEAGUES = {
     "premier_league": {"id": 9, "start_season": "1888-1889"},
@@ -40,7 +40,7 @@ def get_current_season(single_year=False):
         return year
     else:
         month = datetime.now().month
-        if month >= 8:  # Assume season starts in August
+        if month >= 8:
             return f"{year}-{year+1}"
         else:
             return f"{year-1}-{year}"
@@ -72,7 +72,6 @@ def generate_season_links():
         single_year = isinstance(start_season, int)
         current_season = get_current_season(single_year=single_year)
 
-        # World Cup happens every 4 years
         if league == "world_cup":
             seasons = generate_seasons(start=start_season, end=current_season, single_year=True, step=4)
         else:
@@ -86,10 +85,14 @@ def generate_season_links():
             elif league_name_clean == "Uel":
                 league_name_clean = "Europa-League"
             league_name_clean = league_name_clean.replace(' ', '-')
-            # OLD (gets standings, not match results):
-            # links.append(f"https://fbref.com/en/comps/{league_id}/{s}/{s}-{league_name_clean}-Stats")
-            # NEW (gets match results):
-            links.append(f"https://fbref.com/en/comps/{league_id}/{s}/schedule/{s}-{league_name_clean}-Scores-and-Fixtures")
+            
+            # Store BOTH stats and fixtures URLs
+            links.append({
+                'season': s,
+                'stats_url': f"https://fbref.com/en/comps/{league_id}/{s}/{s}-{league_name_clean}-Stats",
+                'fixtures_url': f"https://fbref.com/en/comps/{league_id}/{s}/schedule/{s}-{league_name_clean}-Scores-and-Fixtures"
+            })
+        
         season_links[league] = links
 
     return season_links
@@ -99,19 +102,19 @@ def generate_season_links():
 # --------------------------
 if __name__ == "__main__":
     print("="*60)
-    print("Season Links Generator")
+    print("Season Links Generator (Enhanced)")
     print("="*60)
     print(f"\nGenerating season URLs for {len(LEAGUES)} leagues...")
+    print("Generating BOTH stats and fixtures URLs for rich data")
     
     season_links = generate_season_links()
     
     for league, links in season_links.items():
         print(f"  {league:20s}: {len(links)} seasons")
     
-    # Save to JSON inside fbref_data/
     with open(OUTPUT_PATH, "w") as f:
         json.dump(season_links, f, indent=2)
     
     print(f"\nSeason links saved to: {OUTPUT_PATH}")
-    print(f"  Total URLs generated: {sum(len(links) for links in season_links.values())}")
+    print(f"  Total seasons: {sum(len(links) for links in season_links.values())}")
     print("="*60)

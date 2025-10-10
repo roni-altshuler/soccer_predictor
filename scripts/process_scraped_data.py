@@ -1,103 +1,142 @@
 #!/usr/bin/env python3
 """
-Process raw scraped data into match-level format for model training.
-This script should run AFTER fbref_scraper.py and BEFORE train_league_models.py
+Enhanced data processor - handles rich stats + fixtures data.
+Run from root directory: python3 scripts/process_scraped_data.py
 """
 import os
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import warnings
+warnings.filterwarnings('ignore')
 
 # --------------------------
 # Paths
 # --------------------------
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "fbref_data")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+DATA_DIR = os.path.join(ROOT_DIR, "fbref_data")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 # --------------------------
-# Extract match results from scraped data
+# Extract match results
 # --------------------------
-def extract_matches_from_tables(df, league_name):
-    """
-    Extract individual matches from the scraped table data.
-    FBRef provides league tables and match results in different formats.
-    """
-    print(f"\nProcessing {league_name}...")
-    
-    # Standardize column names
+def extract_match_results(df):
+    """Extract match results from fixtures table."""
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
-    
-    # Try to find match results table
-    # FBRef has tables with match results that include columns like:
-    # 'wk', 'day', 'date', 'time', 'home', 'score', 'away', 'attendance', 'venue', 'referee'
     
     matches = []
     
-    # Check if this is a standings table or match results table
+    # Check for match results columns
     if 'home' in df.columns and 'away' in df.columns and 'score' in df.columns:
-        # This is match results data
         for _, row in df.iterrows():
             try:
-                home_team = row.get('home', np.nan)
-                away_team = row.get('away', np.nan)
+                home = row.get('home', np.nan)
+                away = row.get('away', np.nan)
                 score = row.get('score', np.nan)
                 
-                if pd.isna(home_team) or pd.isna(away_team) or pd.isna(score):
+                if pd.isna(home) or pd.isna(away) or pd.isna(score):
                     continue
                 
-                # Parse score (format: "2–1" or "2-1")
+                # Parse score
                 if isinstance(score, str):
-                    score = score.replace("-", "–")  # Normalize dash
+                    score = score.replace("-", "–").replace("—", "–")
                     parts = score.split("–")
                     if len(parts) == 2:
                         try:
                             home_goals = int(parts[0].strip())
                             away_goals = int(parts[1].strip())
                             
-                            match = {
-                                'home_team': home_team,
-                                'away_team': away_team,
+                            matches.append({
+                                'home_team': str(home).strip(),
+                                'away_team': str(away).strip(),
                                 'home_goals': home_goals,
                                 'away_goals': away_goals,
                                 'date': row.get('date', ''),
-                                'season': row.get('source', '').split()[0] if 'source' in row else '',
+                                'attendance': row.get('attendance', np.nan),
                                 'venue': row.get('venue', ''),
-                                'attendance': row.get('attendance', np.nan)
-                            }
-                            matches.append(match)
+                                'referee': row.get('referee', '')
+                            })
                         except (ValueError, AttributeError):
                             continue
-            except Exception as e:
+            except Exception:
                 continue
     
-    elif 'squad' in df.columns and 'mp' in df.columns:
-        # This is a standings table - we need match-by-match data instead
-        # For now, skip these tables as they don't contain individual match data
-        print(f"  Skipping standings table for {league_name}")
-        return pd.DataFrame()
-    
-    if not matches:
-        print(f"  No match data found in {league_name}")
-        return pd.DataFrame()
-    
-    matches_df = pd.DataFrame(matches)
-    print(f"  Extracted {len(matches_df)} matches")
-    return matches_df
+    return pd.DataFrame(matches)
 
 # --------------------------
-# Aggregate team statistics
+# Extract team statistics
 # --------------------------
-def calculate_team_stats(matches_df, league_name):
-    """
-    Calculate rolling team statistics from match data.
-    This creates features for ML model training.
-    """
-    if matches_df.empty:
+def extract_team_stats(df):
+    """Extract team-level statistics from stats tables."""
+    df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    
+    # Look for squad/team stats table - must have specific characteristics
+    if 'squad' in df.columns or 'team' in df.columns:
+        team_col = 'squad' if 'squad' in df.columns else 'team'
+        
+        # Filter: Only keep rows where team name looks valid (not NaN, not numbers)
+        valid_teams = df[team_col].notna() & df[team_col].astype(str).str.len() > 2
+        df_filtered = df[valid_teams].copy()
+        
+        # Must have reasonable number of teams (between 10 and 100)
+        if len(df_filtered) < 10 or len(df_filtered) > 100:
+            return pd.DataFrame()
+        
+        # Select numeric columns for stats (limit to reasonable number)
+        numeric_cols = df_filtered.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Limit columns to prevent memory explosion (take most relevant)
+        if len(numeric_cols) > 50:
+            # Keep only columns with meaningful names
+            important_keywords = ['gf', 'ga', 'xg', 'poss', 'sh', 'sot', 'pass', 'tkl', 'int', 'clr', 'pts', 'w', 'd', 'l']
+            numeric_cols = [c for c in numeric_cols if any(kw in c.lower() for kw in important_keywords)][:30]
+        
+        if numeric_cols and team_col in df_filtered.columns:
+            stats_df = df_filtered[[team_col] + numeric_cols].copy()
+            stats_df.rename(columns={team_col: 'team'}, inplace=True)
+            stats_df['team'] = stats_df['team'].str.strip()
+            
+            # Remove duplicates
+            stats_df = stats_df.drop_duplicates(subset=['team'], keep='first')
+            
+            return stats_df
+    
+    return pd.DataFrame()
+
+# --------------------------
+# Merge match results with team stats
+# --------------------------
+def enrich_matches_with_stats(matches_df, team_stats_df):
+    """Add team statistics to each match."""
+    if team_stats_df.empty or matches_df.empty:
         return matches_df
     
-    print(f"  Calculating team statistics for {league_name}...")
+    # Standardize team names
+    team_stats_df['team'] = team_stats_df['team'].str.strip()
+    matches_df['home_team'] = matches_df['home_team'].str.strip()
+    matches_df['away_team'] = matches_df['away_team'].str.strip()
+    
+    # Merge home team stats
+    home_stats = team_stats_df.add_prefix('home_')
+    home_stats.rename(columns={'home_team': 'home_team'}, inplace=True)
+    enriched = matches_df.merge(home_stats, on='home_team', how='left')
+    
+    # Merge away team stats
+    away_stats = team_stats_df.add_prefix('away_')
+    away_stats.rename(columns={'away_team': 'away_team'}, inplace=True)
+    enriched = enriched.merge(away_stats, on='away_team', how='left')
+    
+    return enriched
+
+# --------------------------
+# Calculate rolling statistics
+# --------------------------
+def calculate_rolling_stats(matches_df):
+    """Calculate rolling team statistics."""
+    if matches_df.empty:
+        return matches_df
     
     # Sort by date
     if 'date' in matches_df.columns:
@@ -110,10 +149,8 @@ def calculate_team_stats(matches_df, league_name):
         axis=1
     )
     
-    # Calculate rolling statistics for each team
     teams = pd.concat([matches_df['home_team'], matches_df['away_team']]).unique()
     
-    # Create team stats dictionaries
     team_stats = {team: {
         'goals_scored': [],
         'goals_conceded': [],
@@ -123,48 +160,39 @@ def calculate_team_stats(matches_df, league_name):
         'matches_played': 0
     } for team in teams}
     
-    # Enhanced match data with team statistics
     enhanced_matches = []
     
     for idx, match in matches_df.iterrows():
         home = match['home_team']
         away = match['away_team']
         
-        # Get current stats (before this match)
-        home_stats = team_stats[home].copy()
-        away_stats = team_stats[away].copy()
+        home_s = team_stats[home].copy()
+        away_s = team_stats[away].copy()
         
-        # Create feature row
-        match_features = {
-            'home_team': home,
-            'away_team': away,
-            'home_goals': match['home_goals'],
-            'away_goals': match['away_goals'],
-            'result': match['result'],
-            'season': match['season'],
+        match_features = match.to_dict()
+        
+        # Add rolling stats
+        match_features.update({
+            'home_form_goals_scored': np.mean(home_s['goals_scored'][-5:]) if home_s['goals_scored'] else 0,
+            'home_form_goals_conceded': np.mean(home_s['goals_conceded'][-5:]) if home_s['goals_conceded'] else 0,
+            'home_form_wins': home_s['wins'],
+            'home_form_draws': home_s['draws'],
+            'home_form_losses': home_s['losses'],
+            'home_form_matches': home_s['matches_played'],
+            'home_form_win_rate': home_s['wins'] / max(home_s['matches_played'], 1),
             
-            # Home team stats
-            'home_avg_goals_scored': np.mean(home_stats['goals_scored']) if home_stats['goals_scored'] else 0,
-            'home_avg_goals_conceded': np.mean(home_stats['goals_conceded']) if home_stats['goals_conceded'] else 0,
-            'home_wins': home_stats['wins'],
-            'home_draws': home_stats['draws'],
-            'home_losses': home_stats['losses'],
-            'home_matches_played': home_stats['matches_played'],
-            'home_win_rate': home_stats['wins'] / max(home_stats['matches_played'], 1),
-            
-            # Away team stats
-            'away_avg_goals_scored': np.mean(away_stats['goals_scored']) if away_stats['goals_scored'] else 0,
-            'away_avg_goals_conceded': np.mean(away_stats['goals_conceded']) if away_stats['goals_conceded'] else 0,
-            'away_wins': away_stats['wins'],
-            'away_draws': away_stats['draws'],
-            'away_losses': away_stats['losses'],
-            'away_matches_played': away_stats['matches_played'],
-            'away_win_rate': away_stats['wins'] / max(away_stats['matches_played'], 1),
-        }
+            'away_form_goals_scored': np.mean(away_s['goals_scored'][-5:]) if away_s['goals_scored'] else 0,
+            'away_form_goals_conceded': np.mean(away_s['goals_conceded'][-5:]) if away_s['goals_conceded'] else 0,
+            'away_form_wins': away_s['wins'],
+            'away_form_draws': away_s['draws'],
+            'away_form_losses': away_s['losses'],
+            'away_form_matches': away_s['matches_played'],
+            'away_form_win_rate': away_s['wins'] / max(away_s['matches_played'], 1),
+        })
         
         enhanced_matches.append(match_features)
         
-        # Update team stats with this match result
+        # Update stats
         team_stats[home]['goals_scored'].append(match['home_goals'])
         team_stats[home]['goals_conceded'].append(match['away_goals'])
         team_stats[away]['goals_scored'].append(match['away_goals'])
@@ -186,64 +214,86 @@ def calculate_team_stats(matches_df, league_name):
     return pd.DataFrame(enhanced_matches)
 
 # --------------------------
-# Process all leagues
+# Process league
+# --------------------------
+def process_league(league_name, csv_path):
+    """Process a single league with enhanced data."""
+    print(f"\n{'='*60}")
+    print(f"Processing {league_name}")
+    print(f"{'='*60}")
+    
+    try:
+        df = pd.read_csv(csv_path, low_memory=False)
+        print(f"Loaded {len(df)} rows from raw data")
+        
+        # Separate fixtures and stats tables
+        fixtures_df = df[df['_source'].str.contains('fixtures', na=False)] if '_source' in df.columns else df
+        stats_df = df[df['_source'].str.contains('stats', na=False)] if '_source' in df.columns else pd.DataFrame()
+        
+        # Extract match results
+        matches = extract_match_results(fixtures_df)
+        if matches.empty:
+            print("No match results found")
+            return None
+        
+        print(f"Extracted {len(matches)} matches")
+        
+        # Extract team stats
+        team_stats = extract_team_stats(stats_df) if not stats_df.empty else pd.DataFrame()
+        if not team_stats.empty:
+            print(f"Extracted stats for {len(team_stats)} teams")
+            matches = enrich_matches_with_stats(matches, team_stats)
+        
+        # Calculate rolling statistics
+        processed = calculate_rolling_stats(matches)
+        
+        # Add season info
+        if '_source' in df.columns:
+            # Extract season from source
+            processed['season'] = processed['_source'].str.extract(r'(\d{4}-\d{4}|\d{4})')[0] if '_source' in processed.columns else ''
+        
+        print(f"Processed {len(processed)} matches with {len(processed.columns)} features")
+        
+        return processed
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+# --------------------------
+# Main
 # --------------------------
 def process_all_leagues():
-    """
-    Process all scraped league data into match-level format.
-    """
+    """Process all leagues."""
     csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".csv")]
     
     if not csv_files:
-        print("No CSV files found in fbref_data directory.")
-        print("Please run fbref_scraper.py first!")
+        print("\nNo CSV files found!")
+        print("   Please run fbref_scraper.py first")
         return
     
-    print(f"Found {len(csv_files)} league files to process")
+    print(f"\n{'='*60}")
+    print("Enhanced Data Processor")
+    print(f"{'='*60}")
+    print(f"Found {len(csv_files)} league files")
     
     for csv_file in tqdm(csv_files, desc="Processing leagues"):
         league_name = csv_file.replace(".csv", "")
         csv_path = os.path.join(DATA_DIR, csv_file)
         
-        try:
-            # Read raw scraped data
-            df = pd.read_csv(csv_path, low_memory=False)
-            
-            # Extract match-level data
-            matches_df = extract_matches_from_tables(df, league_name)
-            
-            if matches_df.empty:
-                print(f"  Warning: No match data extracted for {league_name}")
-                continue
-            
-            # Calculate team statistics
-            processed_df = calculate_team_stats(matches_df, league_name)
-            
-            if processed_df.empty:
-                print(f"  Warning: No processed data for {league_name}")
-                continue
-            
-            # Save processed data
+        processed = process_league(league_name, csv_path)
+        
+        if processed is not None and not processed.empty:
             output_path = os.path.join(PROCESSED_DIR, f"{league_name}_processed.csv")
-            processed_df.to_csv(output_path, index=False)
-            print(f"  Saved {len(processed_df)} matches to {output_path}")
-            
-        except Exception as e:
-            print(f"  Error processing {league_name}: {e}")
-            continue
+            processed.to_csv(output_path, index=False)
+            print(f"Saved to: {output_path}")
     
-    print("\nProcessing complete!")
-    print(f"Processed data saved to: {PROCESSED_DIR}")
+    print(f"\n{'='*60}")
+    print("Processing complete!")
+    print(f"{'='*60}")
+    print(f"Processed data: {PROCESSED_DIR}")
 
-# --------------------------
-# Main
-# --------------------------
 if __name__ == "__main__":
-    print("="*60)
-    print("FB Ref Data Processor")
-    print("="*60)
-    print("\nThis script processes raw scraped data into match-level format.")
-    print("It should be run AFTER fbref_scraper.py and BEFORE train_league_models.py")
-    print("="*60)
-    
     process_all_leagues()
