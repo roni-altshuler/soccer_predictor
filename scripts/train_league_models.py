@@ -98,6 +98,7 @@ def prepare_features(
         "url",
         "source",
         "status",
+        "season_start_year", # Exclude season_start_year from features
     ]
     feature_cols = [c for c in df.columns if c not in exclude_cols]
     X = df[feature_cols].select_dtypes(include=[np.number]).fillna(0)
@@ -159,6 +160,17 @@ def train_league_model(df: pd.DataFrame, league_name: str) -> Optional[Dict[str,
     df["season_start_year"] = df["season"].apply(lambda x: int(str(x).split("-")[0]))
     df = df[(df["season_start_year"] >= 2015) & (df["season_start_year"] <= 2025)]
 
+    # Calculate sample weights based on season_start_year
+    min_year = df["season_start_year"].min()
+    max_year = df["season_start_year"].max()
+    if max_year == min_year:
+        # If all data is from the same year, assign equal weights
+        sample_weights = pd.Series(1.0, index=df.index)
+    else:
+        # Linear weighting: more recent years get higher weights
+        # Weights range from 0.5 (oldest year) to 1.0 (most recent year)
+        sample_weights = 0.5 + 0.5 * (df["season_start_year"] - min_year) / (max_year - min_year)
+
     X, y, feature_cols = prepare_features(df, league_name)
 
     if len(X) < 50 or len(y.value_counts()) < 3:
@@ -168,13 +180,13 @@ def train_league_model(df: pd.DataFrame, league_name: str) -> Optional[Dict[str,
         return None
 
     try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, stratify=y, random_state=42
+        X_train, X_test, y_train, y_test, sample_weights_train, _ = train_test_split(
+            X, y, sample_weights, test_size=0.2, stratify=y, random_state=42
         )
     except ValueError:
         tqdm.write(f"Cannot stratify split for {league_name}. Using random split.")
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+        X_train, X_test, y_train, y_test, sample_weights_train, _ = train_test_split(
+            X, y, sample_weights, test_size=0.2, random_state=42
         )
 
     model = RandomForestClassifier(
@@ -186,7 +198,7 @@ def train_league_model(df: pd.DataFrame, league_name: str) -> Optional[Dict[str,
         n_jobs=-1,
         class_weight="balanced",
     )
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights_train)
 
     train_acc = accuracy_score(y_train, model.predict(X_train))
     test_acc = accuracy_score(y_test, model.predict(X_test))

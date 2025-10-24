@@ -3,16 +3,12 @@
 import { useState } from 'react'
 import { leagues } from '@/data/leagues'
 import { LeagueStats } from '@/components/LeagueStats'
-import { ResultDistributionChart } from '@/components/ResultDistributionChart'
-import { GoalsDistributionChart } from '@/components/GoalsDistributionChart'
-import { ModelMetrics } from '@/components/ModelMetrics'
-import { ConfusionMatrix } from '@/components/ConfusionMatrix'
-import { FeatureImportance } from '@/components/FeatureImportance'
-import { TrainClassificationReport } from '@/components/TrainClassificationReport'
-import { TestClassificationReport } from '@/components/TestClassificationReport'
+import MLMetricsVisualizations from '@/components/MLMetricsVisualizations'
+import FeatureImportanceChart from '@/components/FeatureImportanceChart'
 
 export default function AnalyticsPage() {
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null)
+  const classes = ['win', 'draw', 'loss']; // Define classes here
 
   const leagueNameMap: Record<string, string> = {
     'Premier League': 'premier_league',
@@ -51,31 +47,14 @@ export default function AnalyticsPage() {
 
       {mappedLeague && (
         <div className="space-y-8">
-          <LeagueStats league={mappedLeague} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-secondary p-6 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-4">Result Distribution</h2>
-              <ResultDistributionChart league={mappedLeague} />
-            </div>
-            <div className="bg-secondary p-6 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-4">Goals per Match Distribution</h2>
-              <GoalsDistributionChart league={mappedLeague} />
-            </div>
+          <div className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
+            <LeagueStats league={mappedLeague} />
           </div>
 
+          <FeatureImportanceChart league={mappedLeague} />
 
-
-          <ModelMetrics league={mappedLeague} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <TrainClassificationReport league={mappedLeague} />
-            <TestClassificationReport league={mappedLeague} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <ConfusionMatrix league={mappedLeague} />
-            <FeatureImportance league={mappedLeague} />
+          <div className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
+            <MLMetricsVisualizations league={mappedLeague} />
           </div>
         </div>
       )}

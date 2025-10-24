@@ -41,7 +41,7 @@ export default function UpcomingPage() {
   const handlePredict = async (match: Match) => {
     setPredictingMatch(match)
     setPrediction(null)
-    const res = await fetch('/api/predict/head-to-head', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict/head-to-head`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ league: mappedLeague, home_team: match.home_team, away_team: match.away_team })

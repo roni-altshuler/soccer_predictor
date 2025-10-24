@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, validator
 from typing import Dict, List, Any
 import os
+import traceback
 
 import prediction_service as ps
 
@@ -118,6 +119,7 @@ class CrossLeagueRequest(BaseModel):
 # Routes with error handling
 @app.post("/api/predict/head-to-head")
 async def predict_head_to_head(request: HeadToHeadRequest) -> Dict[str, Any]:
+    print(f"Received head-to-head prediction request for league: {request.league}, home: {request.home_team}, away: {request.away_team}")
     """
     Predict the outcome of a head-to-head match within a league.
 
@@ -144,6 +146,7 @@ async def predict_head_to_head(request: HeadToHeadRequest) -> Dict[str, Any]:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"Unhandled exception in predict_head_to_head: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -177,6 +180,7 @@ async def predict_cross_league(request: CrossLeagueRequest) -> Dict[str, Any]:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"Unhandled exception in predict_cross_league: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -197,16 +201,17 @@ async def get_teams(league: str) -> Dict[str, Any]:
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        print(f"Unhandled exception in get_teams: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/api/analytics/image")
 async def get_analytics_image(league: str, image_name: str):
-    """
-    Get an analytics image for a league.
-    """
+    print(f"Attempting to get image: league={league}, image_name={image_name}")
     image_path = os.path.join(DATA_DIR, league, "visualizations", image_name)
+    print(f"Constructed image path: {image_path}")
     if not os.path.exists(image_path):
+        print(f"Image file not found at: {image_path}")
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(image_path)
 
@@ -225,6 +230,7 @@ async def get_analytics_model_metrics(league: str) -> Dict[str, Any]:
     try:
         return ps.get_model_metrics(league)
     except Exception as e:
+        print(f"Unhandled exception in get_model_metrics: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -242,7 +248,8 @@ async def get_analytics_overview(league: str) -> Dict[str, Any]:
     try:
         return ps.get_league_stats_overview(league)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unhandled exception in get_league_stats_overview: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/api/analytics/season_trends/{league}")
@@ -259,6 +266,7 @@ async def get_analytics_season_trends(league: str) -> List[Dict[str, Any]]:
     try:
         return ps.get_season_trends(league)
     except Exception as e:
+        print(f"Unhandled exception in get_season_trends: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -276,7 +284,8 @@ async def get_analytics_result_distribution(league: str) -> List[Dict[str, Any]]
     try:
         return ps.get_result_distribution(league)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unhandled exception in get_result_distribution: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/api/analytics/home_away_performance/{league}")
@@ -293,7 +302,8 @@ async def get_analytics_home_away_performance(league: str) -> List[Dict[str, Any
     try:
         return ps.get_home_away_performance(league)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unhandled exception in get_home_away_performance: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/api/analytics/goals_distribution/{league}")
@@ -310,7 +320,8 @@ async def get_analytics_goals_distribution(league: str) -> List[Dict[str, Any]]:
     try:
         return ps.get_goals_distribution(league)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unhandled exception in get_goals_distribution: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/api/upcoming_matches/{league}")
@@ -322,12 +333,13 @@ async def get_upcoming_matches(league: str) -> List[Dict[str, Any]]:
         league: The name of the league.
 
     Returns:
-        A list of upcoming matches.
+        A list of dictionaries with upcoming match data.
     """
     try:
         return ps.get_upcoming_matches(league)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Unhandled exception in get_upcoming_matches: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 if __name__ == "__main__":

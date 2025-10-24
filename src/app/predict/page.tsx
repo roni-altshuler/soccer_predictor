@@ -56,9 +56,10 @@ function PredictPageContent() {
     setLoading(true)
     setResult(null)
     try {
+      console.log("NEXT_PUBLIC_BACKEND_URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
       const endpoint = mode === 'head-to-head' 
-        ? '/api/predict/head-to-head'
-        : '/api/predict/cross-league'
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict/head-to-head`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict/cross-league`
 
       const payload = mode === 'head-to-head'
         ? {

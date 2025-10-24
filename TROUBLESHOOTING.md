@@ -1,15 +1,13 @@
 # To do list of improvements and new features for Soccer Predictor:
 
-- Analytics page:
+Analytics page:
 
-  - I want the traditional ML metrics to be displayed where the x-axis are different confidence thresholds (0.0 to 1.0) and the y-axis are the corresponding metric values (accuracy, precision, recall, F1-score). This will help visualize how the model's performance changes with different confidence levels. I also want the traditional ML metrics for both training and testing set to be saved as their own graphs and for the single graph for both training and testing set to be clear on the feature that it is predicting. What I mean is one training set graph should be the traditional ML metrics for how confident the model is at predicting a draw, another graph for prediction a win, and another for predicting a loss. Same goes for the testing set. Save these images in the respective fbref_data/league_name/visualizations/ folder.
-  - In order to have these traditional ML metrics displayed how I envision, if you need to modify the train_league_models.py script to save additional data and the graphs of the training set and testing set, do so.
+- ML metrics plots need to be larger and easier to interpret, and there should be explanations of what each metric means.
 
-- New features:
-  - I want a new tab that hosts predictions for all upcoming scheduled matches for the current 2025-2026 season across all leagues in the dataset. This should be updated according to the latest data available in my database and should be accurate per the scheduled fixtures. I am getting a 404 error that it is unable to load matches for the upcoming fixtures page.
-  - This new tab should be called "Upcoming Matches". Users should be able to navigate to it from the home page navbar, and should be able to see the models performance on previous matches, as well as predictions for upcoming matches.
-  - Users should be able to filter by league from a drop down menu and see the models predictions for upcoming matches in that league.
-  - Output should be reported as the same style as the head-to-head and cross-league predictions. Update the home landing page accordingly since I am adding new features.
-  - I also want to retrain/update all my models by putting more emphasis on the data from the last 10 seasons (2015-2025) rather than the entire historical dataset. Please update the training scripts accordingly to reflect this change.
-    - The upcoming fixtures can be obtained from the season_links.json file ('/home/roaltshu/code/soccer_predictor/fbref_data/season_links.json') which contains links to each league season page on FBRef. The upcoming fixtures are listed on these pages.
-    - It is also important to mention that the current 2025-2026 season is ongoing, so the models should be able to make predictions for matches that have not yet occurred. I also have a python script called auto_update.py ('/home/roaltshu/code/soccer_predictor/scripts/auto_update.py') that Auto-update system for soccer predictor, checks for new data, updates CSVs, and retrains models, and can be run manually or schedule with cron/Task Scheduler. I have not integrated this into my current data pipeline, so please integrate this script into the data pipeline to ensure that the models are always up to date with the latest data and runs on an automated schedule.
+Home page:
+
+- Needs to be updated to reflect the new features of the tool and should have feature so that when user hovers over a upcoming match, or head-to-head, or cross-league, the card glows and pops up from the background so it is more interactive and engaging.
+
+Models:
+
+- There is a bias towards predicting draws in the matches. This needs to be updated accordingly and fixed because this is not representative of real-world outcomes and with what I am seeing in the ML metrics data for both train and test sets.

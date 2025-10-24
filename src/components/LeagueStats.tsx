@@ -11,31 +11,40 @@ interface LeagueStatsProps {
 export const LeagueStats = ({ league }: LeagueStatsProps) => {
   const { data, error } = useSWR(`/api/analytics/overview/${league}`, fetcher)
 
-  if (error) return <div>Failed to load stats</div>
-  if (!data) return <div>Loading...</div>
+  if (error) return <div className="text-red-500">Failed to load stats</div>
+  if (!data) return <div className="text-gray-400">Loading...</div>
+
+  const stats = [
+    { label: "Total Matches", value: data.total_matches },
+    { label: "Avg Goals / Match", value: data.avg_goals_per_match },
+    { label: "Home Win %", value: `${data.home_win_percentage}%` },
+    { label: "Draw %", value: `${data.draw_percentage}%` },
+    { label: "Away Win %", value: `${data.away_win_percentage}%` },
+  ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">Total Matches</p>
-        <p className="text-2xl font-bold">{data.total_matches}</p>
-      </div>
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">Avg Goals / Match</p>
-        <p className="text-2xl font-bold">{data.avg_goals_per_match}</p>
-      </div>
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">Home Win %</p>
-        <p className="text-2xl font-bold">{data.home_win_percentage}%</p>
-      </div>
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">Draw %</p>
-        <p className="text-2xl font-bold">{data.draw_percentage}%</p>
-      </div>
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <p className="text-sm text-gray-400">Away Win %</p>
-        <p className="text-2xl font-bold">{data.away_win_percentage}%</p>
-      </div>
+    <div className="w-full overflow-x-auto">
+      <h2 className="text-2xl font-bold mb-4 text-center">League Overview</h2>
+      <table className="min-w-full bg-gray-900 rounded-lg shadow-lg border border-gray-700">
+        <thead>
+          <tr>
+            {stats.map((stat) => (
+              <th key={stat.label} className="py-3 px-4 text-lg font-medium text-gray-300 font-sans text-center border-b border-gray-700">
+                {stat.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {stats.map((stat) => (
+              <td key={stat.label} className="py-3 px-4 text-2xl font-bold text-blue-400 font-mono text-center">
+                {stat.value}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
     </div>
   )
 }
