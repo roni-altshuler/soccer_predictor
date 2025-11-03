@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
       const imageBuffer = await fs.readFile(imagePath);
       const contentType = `image/${imageName.split('.').pop()}`; // e.g., image/png
 
-      return new NextResponse(imageBuffer, {
+      return new NextResponse(new Uint8Array(imageBuffer), {
         headers: {
           'Content-Type': contentType,
         },
