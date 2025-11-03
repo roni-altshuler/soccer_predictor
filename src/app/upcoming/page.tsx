@@ -56,9 +56,12 @@ export default function UpcomingMatches() {
       if (!mappedLeague) return
       setLoading(true)
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upcoming_matches/${mappedLeague}`
-        )
+        // Use Next.js API route (relative path) in production, Python backend in development
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL 
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/upcoming_matches/${mappedLeague}`
+          : `/api/upcoming_matches/${mappedLeague}`
+        
+        const response = await fetch(apiUrl)
         if (!response.ok) throw new Error('Failed to fetch matches')
         const data = await response.json()
         setMatches(data)
