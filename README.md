@@ -234,7 +234,22 @@ python scripts/predict_and_analyze.py --mode season_simulation \
 
 ---
 
-## 📁 Project Structure
+## � Documentation
+
+Comprehensive guides are available in the [`docs/`](./docs/) directory:
+
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Deploy to Vercel and production environments
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Retraining Guide](./docs/RETRAINING_GUIDE.md)** - How to retrain ML models with new data
+- **[Auto-Update Scheduling](./docs/AUTO_UPDATE_SCHEDULING.md)** - Automated data updates
+- **[Pre-commit Setup](./docs/PRECOMMIT_SETUP.md)** - Development workflow setup
+- **[Frontend Setup](./docs/frontend-interface-setup.md)** - Frontend interface configuration
+
+See the [docs README](./docs/README.md) for the full documentation index.
+
+---
+
+## �📁 Project Structure
 
 ```
 soccer_predictor/
@@ -256,7 +271,7 @@ soccer_predictor/
 │   ├── app/                      # Route pages
 │   │   ├── page.tsx              # Home page
 │   │   ├── predict/              # Prediction interface
-│   │   ├── upcoming-matches/     # Match calendar
+│   │   ├── upcoming/             # Match calendar
 │   │   ├── analytics/            # Visualizations dashboard
 │   │   └── about/                # Information page
 │   └── components/               # React components
@@ -264,6 +279,13 @@ soccer_predictor/
 │       ├── PredictionResult.tsx  # Display predictions
 │       ├── MLMetricsVisualizations.tsx  # Analytics charts
 │       └── ...
+├── docs/                         # 📚 Project documentation
+│   ├── README.md                 # Documentation index
+│   ├── DEPLOYMENT.md             # Deployment guide
+│   ├── TROUBLESHOOTING.md        # Common issues & solutions
+│   ├── RETRAINING_GUIDE.md       # Model retraining procedures
+│   └── ...                       # Additional guides
+├── logs/                         # Application logs (gitignored)
 ├── public/                       # Static assets
 ├── .venv/                        # Python virtual environment
 ├── package.json                  # Node.js dependencies

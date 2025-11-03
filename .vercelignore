@@ -1,0 +1,37 @@
+# Python files
+backend/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Data files
+fbref_data/
+*.csv
+*.pkl
+*.joblib
+
+# Scripts
+scripts/
+
+# Documentation
+docs/
+
+# Logs
+logs/
+*.log
+
+# Local env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+
+# Other
+.DS_Store
