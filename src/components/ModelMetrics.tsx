@@ -47,15 +47,23 @@ export function ModelMetrics({ league }: { league: string }) {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(classes).map(([className, metrics]) => (
-              <tr key={className}>
-                <td className="border-b p-2">{className}</td>
-                <td className="border-b p-2">{metrics.precision.toFixed(2)}</td>
-                <td className="border-b p-2">{metrics.recall.toFixed(2)}</td>
-                <td className="border-b p-2">{metrics['f1-score'].toFixed(2)}</td>
-                <td className="border-b p-2">{metrics.support}</td>
-              </tr>
-            ))}
+            {Object.entries(classes).map(([className, metrics]) => {
+              const typedMetrics = metrics as {
+                precision: number;
+                recall: number;
+                'f1-score': number;
+                support: number;
+              };
+              return (
+                <tr key={className}>
+                  <td className="border-b p-2">{className}</td>
+                  <td className="border-b p-2">{typedMetrics.precision.toFixed(2)}</td>
+                  <td className="border-b p-2">{typedMetrics.recall.toFixed(2)}</td>
+                  <td className="border-b p-2">{typedMetrics['f1-score'].toFixed(2)}</td>
+                  <td className="border-b p-2">{typedMetrics.support}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <div className="mt-2 text-right">
