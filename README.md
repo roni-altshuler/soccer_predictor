@@ -16,7 +16,8 @@ An AI-powered soccer match prediction system that analyzes over 150,000 historic
 ### 📅 Upcoming Matches
 
 - **Automatic Predictions:** All scheduled matches pre-analyzed with predictions
-- **Week View Calendar:** Saturday-Friday weekly overview with match counts
+- **Week View Calendar:** Sunday-Saturday weekly overview showing current and next week's matches
+- **Historical View:** See past games from earlier in the week with their predictions
 - **Day View Details:** Detailed predictions for each day's matches
 - **Real-time Data:** Updated predictions for current season fixtures
 

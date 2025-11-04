@@ -457,7 +457,9 @@ def get_upcoming_matches(league: str) -> List[Dict[str, Any]]:
     """
     Get upcoming matches for a given league with predictions.
     
-    Only shows scheduled matches from the CURRENT season (2025-2026).
+    Shows scheduled matches from the CURRENT season (2025-2026).
+    Displays matches from the start of the current week (Sunday) through the end of next week (Saturday).
+    This includes past games that already occurred this week.
     Uses team stats from the last 10 seasons for more accurate predictions.
 
     Args:
@@ -471,29 +473,35 @@ def get_upcoming_matches(league: str) -> List[Dict[str, Any]]:
         
         df = load_league_data(league)
         
-        # CURRENT SEASON: Only show upcoming matches from 2025-2026 season
+        # CURRENT SEASON: Get both scheduled and completed matches from 2025-2026 season
         current_season = "2025-2026"
-        upcoming = df[(df["status"] == "scheduled") & (df["season"] == current_season)].copy()
         
-        if upcoming.empty:
-            print(f"No scheduled matches found for {league} in {current_season} season")
-            return []
-        
-        # Convert date column to datetime and filter for future matches only
-        upcoming["date"] = pd.to_datetime(upcoming["date"], errors='coerce')
+        # Convert date column to datetime first
+        df["date"] = pd.to_datetime(df["date"], errors='coerce')
         today = pd.Timestamp.now().normalize()
         
-        # Get matches from today onwards for the next 30 days
-        end_date = today + timedelta(days=30)
-        upcoming = upcoming[(upcoming["date"] >= today) & (upcoming["date"] <= end_date)]
+        # Calculate the start of the current week (Sunday)
+        days_since_sunday = (today.weekday() + 1) % 7  # Monday=0, Sunday=6 -> convert to Sunday=0
+        week_start = today - timedelta(days=days_since_sunday)
         
-        if upcoming.empty:
-            print(f"No upcoming matches in the next 30 days for {league}")
+        # Get matches from start of current week through end of next week (14 days from week start)
+        week_end = week_start + timedelta(days=13)  # Sunday to Saturday (2 weeks)
+        
+        # Include both scheduled AND completed matches within the time window
+        # This allows us to show past games from this week with predictions
+        current_week_matches = df[
+            (df["season"] == current_season) &
+            (df["date"] >= week_start) & 
+            (df["date"] <= week_end)
+        ].copy()
+        
+        if current_week_matches.empty:
+            print(f"No matches found for {league} in current/next week")
             return []
         
         # Sort by date
-        upcoming = upcoming.sort_values('date')
-        print(f"Found {len(upcoming)} upcoming matches for {league} in current season")
+        current_week_matches = current_week_matches.sort_values('date')
+        print(f"Found {len(current_week_matches)} matches for {league} in current/next week (status breakdown: {current_week_matches['status'].value_counts().to_dict()})")
 
         # For team stats, use ALL historical data EXCLUDING current season
         # This matches the training data approach
@@ -513,7 +521,7 @@ def get_upcoming_matches(league: str) -> List[Dict[str, Any]]:
         classes = model_data["classes"]
         
         # Pre-compute team stats for all unique teams
-        unique_teams = set(upcoming["home_team"].tolist() + upcoming["away_team"].tolist())
+        unique_teams = set(current_week_matches["home_team"].tolist() + current_week_matches["away_team"].tolist())
         team_stats_cache = {}
         
         print(f"Computing stats for {len(unique_teams)} unique teams...")
@@ -525,7 +533,7 @@ def get_upcoming_matches(league: str) -> List[Dict[str, Any]]:
                 continue
 
         predictions = []
-        for idx, match in upcoming.iterrows():
+        for idx, match in current_week_matches.iterrows():
             try:
                 home_team = match["home_team"]
                 away_team = match["away_team"]

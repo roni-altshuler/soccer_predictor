@@ -44,11 +44,11 @@ export default function UpcomingMatches() {
 
   const mappedLeague = selectedLeague ? leagueNameMap[selectedLeague] : null
 
-  // Always start week from today (Saturday to Friday)
+  // Week view starts on Sunday (0) and ends on Saturday (6)
   const today = new Date()
   const weekDays = eachDayOfInterval({
-    start: startOfWeek(today, { weekStartsOn: 6 }), // Start from Saturday
-    end: endOfWeek(today, { weekStartsOn: 6 }) 
+    start: startOfWeek(today, { weekStartsOn: 0 }), // Start from Sunday
+    end: endOfWeek(today, { weekStartsOn: 0 })      // End on Saturday
   })
 
   useEffect(() => {

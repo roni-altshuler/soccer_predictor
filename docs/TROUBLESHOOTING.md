@@ -14,7 +14,7 @@
 
 - ✅ Upcoming matches API endpoint working (`/api/upcoming_matches/{league}`)
 - ✅ Frontend fetches and displays matches correctly
-- ✅ Week view calendar implemented (Saturday to Friday starting from current day)
+- ✅ Week view calendar implemented (Sunday to Saturday showing current and next week, including past games from this week)
 - ✅ Day view shows individual matches when clicking a day
 - ⚠️ **DRAW BIAS ISSUE**: Models are predicting 42-44% draw probability for all matches (needs retraining)
 
