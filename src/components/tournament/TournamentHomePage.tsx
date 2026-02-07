@@ -650,130 +650,19 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
 
   const renderKnockoutBracket = () => (
     <div className="space-y-6">
-      {/* Show bracket or empty state */}
       {data.knockoutMatches.length > 0 || bracketRounds.length > 0 ? (
-        <>
-          {/* Main Bracket Visualization */}
-          <KnockoutBracket
-            tournament={config.knockoutType}
-            rounds={bracketRounds}
-            simulationData={simulationProbabilities || undefined}
-            showProbabilities={!!simulationProbabilities}
-            onMatchClick={(match) => {
-              router.push(`/matches/${match.id}`)
-            }}
-          />
-      
-          {/* Knockout Matches Table - FotMob-style tabular view */}
-          {data.knockoutMatches.length > 0 && (
-        <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-          <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Knockout Matches</h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[var(--muted-bg)]">
-                <tr className="text-xs text-[var(--text-tertiary)]">
-                  <th className="text-left py-3 px-4 font-medium">Round</th>
-                  <th className="text-left py-3 px-4 font-medium">Home</th>
-                  <th className="text-center py-3 px-2 font-medium">Score</th>
-                  <th className="text-left py-3 px-4 font-medium">Away</th>
-                  <th className="text-center py-3 px-4 font-medium">Date</th>
-                  <th className="text-center py-3 px-4 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Group knockout matches by round */}
-                {bracketRounds.map(round => {
-                  const roundName = round.name
-                  const isFinal = roundName.toLowerCase() === 'final'
-                  const isSemiFinal = roundName.toLowerCase().includes('semi')
-
-                  return round.matches.map((match, matchIdx) => (
-                    <tr
-                      key={match.id}
-                      className={`border-b hover:bg-[var(--muted-bg)] transition-colors cursor-pointer ${
-                        isFinal ? 'border-l-4 border-l-amber-400 bg-amber-500/10' :
-                        isSemiFinal ? 'border-l-4 border-l-blue-400 bg-blue-500/5' : ''
-                      }`}
-                      style={{ borderColor: 'var(--border-color)' }}
-                      onClick={() => router.push(`/matches/${match.id}`)}
-                    >
-                      <td className="py-3 px-4">
-                        {matchIdx === 0 ? (
-                          <span className={`text-sm font-medium ${
-                            isFinal ? 'text-amber-500' : 'text-[var(--text-secondary)]'
-                          }`}>
-                            {roundName}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`font-medium ${
-                          match.winner === 'home'
-                            ? 'text-green-500' : 'text-[var(--text-primary)]'
-                        }`}>
-                          {match.homeTeam}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        {match.homeScore !== undefined ? (
-                          <span className="font-bold text-[var(--text-primary)]">
-                            {match.homeScore} - {match.awayScore}
-                          </span>
-                        ) : (
-                          <span className="text-[var(--text-tertiary)]">vs</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`font-medium ${
-                          match.winner === 'away'
-                            ? 'text-green-500' : 'text-[var(--text-primary)]'
-                        }`}>
-                          {match.awayTeam}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center text-sm text-[var(--text-tertiary)]">
-                        {match.date}
-                        {match.leg && <span className="ml-1 text-xs">(Leg {match.leg})</span>}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {match.status === 'finished' ? (
-                          <span className="text-xs bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-0.5 rounded">FT</span>
-                        ) : match.status === 'live' ? (
-                          <span className="text-xs bg-red-500/20 text-red-500 px-2 py-0.5 rounded font-medium flex items-center justify-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                            LIVE
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[var(--text-tertiary)]">{match.time || 'TBD'}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                })}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Legend */}
-          <div className="p-4 border-t flex flex-wrap gap-4 text-xs" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-amber-400 rounded" />
-              <span className="text-[var(--text-tertiary)]">Final</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-400 rounded" />
-              <span className="text-[var(--text-tertiary)]">Semi-Finals</span>
-            </div>
-          </div>
-        </div>
-      )}
-        </>
+        <KnockoutBracket
+          tournament={config.knockoutType}
+          rounds={bracketRounds}
+          simulationData={simulationProbabilities || undefined}
+          showProbabilities={!!simulationProbabilities}
+          onMatchClick={(match) => {
+            router.push(`/matches/${match.id}`)
+          }}
+        />
       ) : (
         <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
-          <span className="text-6xl mb-4 block">🏆</span>
+          <span className="text-5xl mb-4 block">🏆</span>
           <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Knockout Stage</h3>
           <p className="text-[var(--text-secondary)] max-w-md mx-auto">
             The knockout stage has not started yet or no knockout matches are available for the selected season.
