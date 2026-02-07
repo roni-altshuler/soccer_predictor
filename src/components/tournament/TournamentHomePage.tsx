@@ -584,44 +584,54 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     </div>
   )
 
-  const renderMatchCard = (match: Match, showResult = false) => (
-    <Link
-      key={match.id}
-      href={`/matches/${match.id}`}
-      className="block p-4 hover:bg-[var(--muted-bg)] transition-colors"
-    >
-      <div className="flex justify-between items-center">
-        <div className="flex-1">
-          <p className={`font-medium ${showResult && match.homeScore !== undefined && match.homeScore > (match.awayScore || 0) ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-            {match.homeTeam}
-          </p>
-          <p className={`font-medium ${showResult && match.awayScore !== undefined && (match.awayScore || 0) > (match.homeScore || 0) ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-            {match.awayTeam}
-          </p>
+  // Helper to determine if a team won based on scores
+  const isWinningTeam = (teamScore?: number, opponentScore?: number): boolean => {
+    return teamScore !== undefined && opponentScore !== undefined && teamScore > opponentScore
+  }
+
+  const renderMatchCard = (match: Match, showResult = false) => {
+    const homeWon = showResult && isWinningTeam(match.homeScore, match.awayScore)
+    const awayWon = showResult && isWinningTeam(match.awayScore, match.homeScore)
+
+    return (
+      <Link
+        key={match.id}
+        href={`/matches/${match.id}`}
+        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex-1">
+            <p className={`font-medium ${homeWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+              {match.homeTeam}
+            </p>
+            <p className={`font-medium ${awayWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+              {match.awayTeam}
+            </p>
+          </div>
+          {showResult && match.homeScore !== undefined ? (
+            <div className="text-right">
+              <p className="text-lg font-bold text-[var(--text-primary)]">{match.homeScore}</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">{match.awayScore}</p>
+            </div>
+          ) : (
+            <div className="text-right text-sm">
+              <p className="text-[var(--text-secondary)]">{match.date}</p>
+              <p className="text-[var(--text-tertiary)]">{match.time}</p>
+            </div>
+          )}
         </div>
-        {showResult && match.homeScore !== undefined ? (
-          <div className="text-right">
-            <p className="text-lg font-bold text-[var(--text-primary)]">{match.homeScore}</p>
-            <p className="text-lg font-bold text-[var(--text-primary)]">{match.awayScore}</p>
-          </div>
-        ) : (
-          <div className="text-right text-sm">
-            <p className="text-[var(--text-secondary)]">{match.date}</p>
-            <p className="text-[var(--text-tertiary)]">{match.time}</p>
-          </div>
+        {match.round && (
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">{match.round}</p>
         )}
-      </div>
-      {match.round && (
-        <p className="text-xs text-[var(--text-tertiary)] mt-1">{match.round}</p>
-      )}
-      {match.status === 'live' && (
-        <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          LIVE
-        </span>
-      )}
-    </Link>
-  )
+        {match.status === 'live' && (
+          <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            LIVE
+          </span>
+        )}
+      </Link>
+    )
+  }
 
   const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -793,13 +803,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           }`}>
                             {round}
                           </span>
-                        ) : (
-                          <span className="text-sm text-[var(--text-tertiary)]"></span>
-                        )}
+                        ) : null}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`font-medium ${
-                          match.homeScore !== undefined && match.homeScore > (match.awayScore || 0) 
+                          isWinningTeam(match.homeScore, match.awayScore)
                             ? 'text-green-500' : 'text-[var(--text-primary)]'
                         }`}>
                           {match.homeTeam}
@@ -816,7 +824,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </td>
                       <td className="py-3 px-4">
                         <span className={`font-medium ${
-                          match.awayScore !== undefined && match.awayScore > (match.homeScore || 0) 
+                          isWinningTeam(match.awayScore, match.homeScore)
                             ? 'text-green-500' : 'text-[var(--text-primary)]'
                         }`}>
                           {match.awayTeam}
