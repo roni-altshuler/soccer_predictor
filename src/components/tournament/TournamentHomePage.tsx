@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
-import { KnockoutSimulator, KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
+import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import { getESPNDateRange } from '@/lib/api'
 
@@ -287,8 +287,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         // Fetch from ESPN APIs for real tournament data
         const espnLeagueId = config.espnId
         
-        // Get date range for fetching matches (next 14 days)
-        const { dateRange } = getESPNDateRange(14)
+        // Get date range for fetching matches (next 30 days for broader coverage)
+        const { dateRange } = getESPNDateRange(30)
         
         // Build season query parameter for ESPN API to fetch historical data
         const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
@@ -748,20 +748,22 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
 
   const renderKnockoutBracket = () => (
     <div className="space-y-6">
-      {/* Main Bracket Visualization - Always show */}
-      <KnockoutBracket
-        tournament={config.knockoutType}
-        rounds={bracketRounds}
-        simulationData={simulationProbabilities || undefined}
-        showProbabilities={!!simulationProbabilities}
-        onMatchClick={(match) => {
-          // Navigate to match page using Next.js router for client-side navigation
-          router.push(`/matches/${match.id}`)
-        }}
-      />
+      {/* Show bracket or empty state */}
+      {data.knockoutMatches.length > 0 || bracketRounds.length > 0 ? (
+        <>
+          {/* Main Bracket Visualization */}
+          <KnockoutBracket
+            tournament={config.knockoutType}
+            rounds={bracketRounds}
+            simulationData={simulationProbabilities || undefined}
+            showProbabilities={!!simulationProbabilities}
+            onMatchClick={(match) => {
+              router.push(`/matches/${match.id}`)
+            }}
+          />
       
-      {/* Knockout Matches Table - FotMob-style tabular view */}
-      {data.knockoutMatches.length > 0 && (
+          {/* Knockout Matches Table - FotMob-style tabular view */}
+          {data.knockoutMatches.length > 0 && (
         <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
           <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">Knockout Matches</h2>
@@ -865,6 +867,17 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           </div>
         </div>
       )}
+        </>
+      ) : (
+        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
+          <span className="text-6xl mb-4 block">🏆</span>
+          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Knockout Stage</h3>
+          <p className="text-[var(--text-secondary)] max-w-md mx-auto">
+            The knockout stage has not started yet or no knockout matches are available for the selected season.
+            Check back once the knockout rounds begin.
+          </p>
+        </div>
+      )}
     </div>
   )
 
@@ -903,7 +916,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               </div>
             </div>
           
-            {/* Season Selector & Simulation Button */}
+            {/* Season Selector */}
             <div className="flex items-center gap-3">
               <select
                 value={selectedSeason}
@@ -916,26 +929,6 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                   </option>
                 ))}
               </select>
-            
-              <button
-                onClick={runTournamentSimulation}
-                disabled={runningSimulation || data.groups.length === 0}
-                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                {runningSimulation ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Simulating...
-                  </>
-                ) : (
-                  <>
-                    🎲 Run Simulation
-                  </>
-                )}
-              </button>
             </div>
           </div>
         
@@ -1053,37 +1046,54 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           
           {activeTab === 'Simulator' && (
             <div className="space-y-6">
-              {/* Simulation Instructions/Status - without duplicate Run button */}
-              {!simulationResults && (
-                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
-                  <div className="text-center py-8">
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center justify-center gap-2 mb-4">
+              <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <span>🎲</span>
                       Tournament Simulation
                     </h3>
-                    {data.groups.length === 0 ? (
-                      <>
-                        <p className="text-[var(--text-tertiary)]">Tournament data is loading...</p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-1">Simulation will be available once team data is loaded</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[var(--text-secondary)]">Click "Run Simulation" in the header to predict the tournament winner</p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                          Based on {data.groups.flatMap(g => g.standings).length} teams from the group stage
-                        </p>
-                      </>
-                    )}
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Monte Carlo simulation using team standings and goal difference
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={numSimulations}
+                      onChange={(e) => setNumSimulations(parseInt(e.target.value))}
+                      className="px-4 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+                    >
+                      {SIMULATION_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={runTournamentSimulation}
+                      disabled={runningSimulation || data.groups.length === 0}
+                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+                    >
+                      {runningSimulation ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Simulating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🎲</span>
+                          <span>Run Simulation</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Simulation Results - Full probability table like LeagueHomePage */}
+              {/* Simulation Results - Full probability table */}
               {simulationResults && (
                 <div className="space-y-6 animate-fade-in">
                   {/* Summary Card */}
                   <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-                    <div className={`p-6 bg-gradient-to-r ${config.gradient}/20 border-b border-[var(--border-color)]`}>
+                    <div className={`p-6 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-[var(--border-color)]`}>
                       <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
                           <h3 className="text-2xl font-bold text-[var(--text-primary)]">{simulationResults.tournament_name}</h3>
@@ -1228,57 +1238,69 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </div>
                     </div>
                   </div>
+
+                  {/* Disclaimer */}
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
+                      <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
+                      Actual results may vary significantly due to injuries, transfers, and unpredictable events.
+                    </p>
+                  </div>
                 </div>
               )}
 
-              {/* Also show the advanced knockout simulator */}
-              <div className="border-t pt-6" style={{ borderColor: 'var(--border-color)' }}>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Advanced Knockout Simulator</h3>
-                <KnockoutSimulator tournament={config.knockoutType} />
-              </div>
+              {/* Initial state - no simulation run yet */}
+              {!simulationResults && !runningSimulation && (
+                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
+                  <span className="text-6xl mb-4 block">🔮</span>
+                  <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Tournament Simulation</h3>
+                  <p className="text-[var(--text-secondary)] max-w-md mx-auto">
+                    Run a Monte Carlo simulation to predict the tournament winner, 
+                    finalists, and semi-finalists based on current group standings.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           
           {activeTab === 'News' && (
-            <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Latest News</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.news.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data.news.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block group bg-[var(--muted-bg)] rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border hover:border-[var(--accent-primary)]"
-                    >
-                      {item.image && (
-                        <div className="overflow-hidden">
-                          <img
-                            src={item.image}
-                            alt={item.headline}
-                            className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <p className="font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] line-clamp-2">
-                          {item.headline}
-                        </p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                        {item.published && (
-                          <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
-                          </p>
-                        )}
+                data.news.map((item, idx) => (
+                  <a 
+                    key={idx} 
+                    href={item.link || '#'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    {item.image && (
+                      <div className="aspect-video w-full overflow-hidden">
+                        <img 
+                          src={item.image} 
+                          alt={item.headline} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
                       </div>
-                    </a>
-                  ))}
-                </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-[var(--text-primary)] mb-2 group-hover:text-[var(--accent-primary)] transition-colors line-clamp-2">
+                        {item.headline}
+                      </h3>
+                      <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{item.description}</p>
+                      {item.published && (
+                        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                          {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                ))
               ) : (
-                <p className="text-[var(--text-tertiary)]">No news available</p>
+                <div className="bg-[var(--card-bg)] border rounded-2xl p-8 text-center col-span-2" style={{ borderColor: 'var(--border-color)' }}>
+                  <p className="text-[var(--text-tertiary)]">No news available</p>
+                </div>
               )}
             </div>
           )}
