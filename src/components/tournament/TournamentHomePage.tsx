@@ -714,7 +714,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Latest News</h2>
             </div>
             <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-              {data.news.slice(0, 3).map((item, idx) => (
+              {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
                 <a
                   key={idx}
                   href={item.link}
@@ -1266,10 +1266,10 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           {activeTab === 'News' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.news.length > 0 ? (
-                data.news.map((item, idx) => (
+                data.news.filter(item => item.link).map((item, idx) => (
                   <a 
                     key={idx} 
-                    href={item.link || '#'} 
+                    href={item.link} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 

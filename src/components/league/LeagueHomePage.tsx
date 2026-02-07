@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import { getESPNDateRange } from '@/lib/api'
 
@@ -871,10 +872,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     <h2 className="text-lg font-semibold text-[var(--text-primary)]">Latest News</h2>
                   </div>
                   <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-                    {data.news.slice(0, 3).map((item, idx) => (
+                    {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
                       <a
                         key={idx}
-                        href={item.link || '#'}
+                        href={item.link}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block p-4 hover:bg-[var(--muted-bg)] transition-colors group"
@@ -891,7 +892,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         </p>
                         {item.published && (
                           <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                            {item.published}
+                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
                           </p>
                         )}
                       </a>
@@ -1336,10 +1337,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         {activeTab === 'news' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data?.news && data.news.length > 0 ? (
-              data.news.map((item, idx) => (
+              data.news.filter(item => item.link).map((item, idx) => (
                 <a 
                   key={idx} 
-                  href={item.link || '#'} 
+                  href={item.link} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 
@@ -1361,7 +1362,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </h3>
                     <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{item.description}</p>
                     {item.published && (
-                      <p className="text-xs text-[var(--text-tertiary)] mt-2">{item.published}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                        {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                      </p>
                     )}
                   </div>
                 </a>
