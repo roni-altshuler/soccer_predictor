@@ -358,10 +358,14 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Get date range for fetching matches (next 14 days)
         const { dateRange } = getESPNDateRange(14)
 
+        // Build season query parameter for ESPN API to fetch historical data
+        const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
+        const seasonAmpParam = selectedSeason ? `&season=${selectedSeason}` : ''
+
         const espnResults = await Promise.allSettled([
-          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders`),
+          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}${seasonAmpParam}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders${seasonParam}`),
         ])
 
         const leagueData: LeagueHomeData = {
@@ -545,7 +549,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         if (leagueData.topScorers.length === 0) {
           try {
             const altLeadersRes = await fetch(
-              `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/statistics`,
+              `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/statistics${seasonParam}`,
               { next: { revalidate: 3600 } }
             )
             if (altLeadersRes.ok) {
