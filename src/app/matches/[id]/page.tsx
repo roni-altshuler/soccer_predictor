@@ -356,10 +356,10 @@ export default function MatchDetailPage() {
     return { type: 'miss', message: `Actual: ${actualHome} - ${actualAway}` }
   }
 
-  // Navigate back to the league page
+  // Navigate back to the league page - go directly to full league page
   const handleBack = () => {
     if (leagueId) {
-      router.push(`/matches?league=${leagueId}`)
+      router.push(`/leagues/${leagueId}`)
     } else {
       router.back()
     }

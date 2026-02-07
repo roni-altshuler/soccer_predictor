@@ -290,3 +290,23 @@ export function getDateString(offset: number = 0): string {
   date.setDate(date.getDate() + offset);
   return date.toISOString().split('T')[0].replace(/-/g, '');
 }
+
+/**
+ * Get ESPN date range string for fetching matches over a period
+ * @param daysAhead - Number of days ahead to include (default 14)
+ * @returns Object with today and future date in ESPN format (YYYYMMDD-YYYYMMDD)
+ */
+export function getESPNDateRange(daysAhead: number = 14): { todayStr: string; futureDateStr: string; dateRange: string } {
+  const today = new Date()
+  const futureDate = new Date()
+  futureDate.setDate(futureDate.getDate() + daysAhead)
+  
+  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+  const futureDateStr = `${futureDate.getFullYear()}${String(futureDate.getMonth() + 1).padStart(2, '0')}${String(futureDate.getDate()).padStart(2, '0')}`
+  
+  return { 
+    todayStr, 
+    futureDateStr, 
+    dateRange: `${todayStr}-${futureDateStr}` 
+  }
+}

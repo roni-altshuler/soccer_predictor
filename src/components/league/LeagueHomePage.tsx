@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import MatchCalendar from '@/components/match/MatchCalendar'
+import { getESPNDateRange } from '@/lib/api'
 
 interface Standing {
   position: number
@@ -148,6 +149,9 @@ const LEAGUE_CONFIGS: Record<string, { color: string; gradient: string; flag: st
 // Simulation count options (like in Predict tab)
 const SIMULATION_OPTIONS = [1000, 5000, 10000, 25000, 50000]
 
+// Table column counts for colSpan calculations
+const MLS_CONFERENCE_TABLE_COLUMNS = 5  // #, Team, P, Pts, Form
+
 // League ID to numeric ID mapping (shared across component)
 const LEAGUE_NUMERIC_ID_MAP: Record<string, number> = {
   'eng.1': 47, 'premier_league': 47,
@@ -201,6 +205,7 @@ const MLS_CONFERENCES = {
     'Sporting Kansas City', 'Sporting KC', 'Kansas City',
     'FC Dallas', 'Dallas',
     'San Jose Earthquakes', 'San Jose',
+    'San Diego FC', 'San Diego', // 2025 expansion team
   ],
 }
 
@@ -349,10 +354,13 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         
         // Also fetch from ESPN for real-time data including top scorers
         const espnLeagueId = getEspnLeagueId()
+        
+        // Get date range for fetching matches (next 14 days)
+        const { dateRange } = getESPNDateRange(14)
 
         const espnResults = await Promise.allSettled([
           fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`),
           fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders`),
         ])
 
@@ -642,7 +650,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               </div>
             </div>
             
-            {/* Season Dropdown Only - Simulation moved to Simulator tab */}
+            {/* Season Dropdown & Simulation Button - Match Tournament styling */}
             <div className="flex items-center gap-3">
               <select
                 value={selectedSeason}
@@ -655,8 +663,49 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   </option>
                 ))}
               </select>
+              
+              <button
+                onClick={runSeasonSimulation}
+                disabled={runningSimulation || !data?.standings?.length}
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {runningSimulation ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Simulating...
+                  </>
+                ) : (
+                  <>
+                    🎲 Run Simulation
+                  </>
+                )}
+              </button>
             </div>
           </div>
+          
+          {/* Simulation Results - Match Tournament styling */}
+          {simulationResults && (
+            <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <p className="text-amber-300 text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-white font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
+                  <p className="text-white/70 text-sm mt-1">
+                    Top 4: {simulationResults.likely_top_4.join(', ')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-amber-400">
+                    {(simulationResults.champion_probability * 100).toFixed(1)}%
+                  </p>
+                  <p className="text-white/60 text-xs">title probability</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick Stats - Always show based on available data */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
@@ -702,29 +751,27 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         </div>
       </div>
 
-      {/* Navigation Tabs - Match tournament styling */}
-      <div className="border-b sticky top-16 z-10 bg-[var(--card-bg)]" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex gap-6 overflow-x-auto">
-            {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 font-medium capitalize whitespace-nowrap transition-colors border-b-2 ${
-                  activeTab === tab
-                    ? 'text-[var(--accent-primary)] border-[var(--accent-primary)]'
-                    : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {TAB_LABELS[tab] || tab}
-              </button>
-            ))}
-          </div>
+      {/* Navigation Tabs - Match tournament pill-button styling */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize whitespace-nowrap transition-colors ${
+                activeTab === tab
+                  ? `bg-gradient-to-r ${config.gradient} text-white`
+                  : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {TAB_LABELS[tab] || tab}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-2">
         {/* Overview Tab - Like Tournament pages */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -862,6 +909,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                               <th className="text-left py-3 px-3 font-medium">Team</th>
                               <th className="text-center py-3 px-2 font-medium">P</th>
                               <th className="text-center py-3 px-2 font-medium">Pts</th>
+                              <th className="text-center py-3 px-2 font-medium hidden sm:table-cell">Form</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -876,10 +924,30 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                   <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">{team.teamName}</td>
                                   <td className="py-2.5 px-2 text-center text-[var(--text-secondary)]">{team.played}</td>
                                   <td className="py-2.5 px-2 text-center font-bold text-[var(--text-primary)]">{team.points}</td>
+                                  <td className="py-2.5 px-2 text-center hidden sm:table-cell">
+                                    <div className="flex justify-center gap-0.5">
+                                      {team.form && team.form.length > 0 ? (
+                                        team.form.slice(-5).map((result, i) => (
+                                          <span
+                                            key={i}
+                                            className={`w-4 h-4 flex items-center justify-center text-[9px] font-bold rounded ${
+                                              result === 'W' ? 'bg-green-500 text-white' :
+                                              result === 'D' ? 'bg-gray-400 text-white' :
+                                              'bg-red-500 text-white'
+                                            }`}
+                                          >
+                                            {result}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span className="text-[var(--text-tertiary)] text-xs">-</span>
+                                      )}
+                                    </div>
+                                  </td>
                                 </tr>
                               )
                             }) : (
-                              <tr><td colSpan={4} className="py-4 text-center text-[var(--text-tertiary)]">No teams found</td></tr>
+                              <tr><td colSpan={MLS_CONFERENCE_TABLE_COLUMNS} className="py-4 text-center text-[var(--text-tertiary)]">No teams found</td></tr>
                             )}
                           </tbody>
                         </table>
@@ -912,6 +980,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         <th className="text-center py-3 px-2 font-medium">L</th>
                         <th className="text-center py-3 px-2 font-medium">GD</th>
                         <th className="text-center py-3 px-4 font-medium">Pts</th>
+                        <th className="text-center py-3 px-2 font-medium hidden sm:table-cell">Form</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -938,6 +1007,26 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                               {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
                             </td>
                             <td className="py-3 px-4 text-center font-bold text-[var(--text-primary)]">{team.points}</td>
+                            <td className="py-3 px-2 text-center hidden sm:table-cell">
+                              <div className="flex justify-center gap-0.5">
+                                {team.form && team.form.length > 0 ? (
+                                  team.form.slice(-5).map((result, i) => (
+                                    <span
+                                      key={i}
+                                      className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded ${
+                                        result === 'W' ? 'bg-green-500 text-white' :
+                                        result === 'D' ? 'bg-gray-400 text-white' :
+                                        'bg-red-500 text-white'
+                                      }`}
+                                    >
+                                      {result}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[var(--text-tertiary)] text-xs">-</span>
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         )
                       })}

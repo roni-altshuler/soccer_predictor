@@ -49,6 +49,15 @@ interface KnockoutBracketProps {
   onMatchClick?: (match: KnockoutMatch) => void
 }
 
+// SVG connector line position constants for bracket visualization
+const BRACKET_CONNECTOR = {
+  TOP_MATCH: '25%',    // Position of top match connector
+  CENTER: '50%',       // Center position for vertical line
+  BOTTOM_MATCH: '75%', // Position of bottom match connector
+  END: '100%',         // End position for horizontal lines
+  START: '0',          // Start position for horizontal lines
+}
+
 const TOURNAMENT_CONFIG = {
   champions_league: {
     name: 'UEFA Champions League',
@@ -320,69 +329,106 @@ export default function KnockoutBracket({
         )}
       </div>
       
-      {/* Bracket visualization */}
+      {/* Bracket visualization - FotMob style */}
       <div className="p-6 overflow-x-auto">
         <div className="min-w-max">
-          {/* Horizontal bracket layout */}
-          <div className="flex items-center justify-center gap-8">
+          {/* Horizontal bracket layout with connecting lines */}
+          <div className="flex items-start justify-center gap-4">
             {config.rounds.map((roundName, roundIdx) => {
               const roundMatches = matchesByRound[roundName] || []
-              // Calculate expected number of matches for this round:
-              // In a knockout tournament, each round halves the number of teams.
-              // Starting from the first round (R16 = 8 matches), we have:
-              // R16: 2^3=8, QF: 2^2=4, SF: 2^1=2, Final: 2^0=1
-              // Formula: 2^(totalRounds - 1 - currentRoundIndex)
+              // Calculate expected number of matches for this round
               const matchCount = roundMatches.length || Math.pow(2, config.rounds.length - 1 - roundIdx)
+              const isLastRound = roundIdx === config.rounds.length - 1
+              const isFirstRound = roundIdx === 0
               
               return (
-                <div key={roundName} className="flex flex-col items-center">
-                  {/* Round header */}
-                  <div className={`mb-4 px-4 py-2 rounded-full ${config.bgColor}/10`}>
-                    <h3 className={`text-sm font-semibold ${config.textColor}`}>
-                      {roundName}
-                    </h3>
+                <div key={roundName} className="flex items-center">
+                  {/* Round column */}
+                  <div className="flex flex-col items-center">
+                    {/* Round header */}
+                    <div className={`mb-4 px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient}`}>
+                      <h3 className="text-sm font-semibold text-white">
+                        {roundName}
+                      </h3>
+                    </div>
+                    
+                    {/* Matches with dynamic spacing */}
+                    <div 
+                      className="flex flex-col items-center"
+                      style={{
+                        gap: `${Math.max(32, Math.pow(2, roundIdx + 2) * 8)}px`
+                      }}
+                    >
+                      {roundMatches.length > 0 ? (
+                        roundMatches.map((match, matchIdx) => (
+                          <div key={match.id} className="flex items-center">
+                            <BracketMatchCard
+                              match={match}
+                              config={config}
+                              showProbability={showProbabilities}
+                              probability={{
+                                home: getTeamProbability(match.homeTeam, roundName),
+                                away: getTeamProbability(match.awayTeam, roundName),
+                              }}
+                              onMatchClick={onMatchClick}
+                              isCompact={isFirstRound}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        // Placeholder matches
+                        Array.from({ length: matchCount }).map((_, idx) => (
+                          <div
+                            key={idx}
+                            className="w-[180px] h-[84px] rounded-xl border-2 border-dashed flex items-center justify-center bg-[var(--muted-bg)]/50"
+                            style={{ borderColor: 'var(--border-color)' }}
+                          >
+                            <span className="text-sm text-[var(--text-tertiary)]">TBD</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                   
-                  {/* Matches */}
-                  <div 
-                    className="flex flex-col gap-4"
-                    style={{
-                      // Increase spacing between matches as we go deeper in bracket
-                      // to align with the bracket structure visually
-                      gap: `${Math.pow(2, roundIdx + 1) * 16}px`
-                    }}
-                  >
-                    {roundMatches.length > 0 ? (
-                      roundMatches.map((match, matchIdx) => (
-                        <BracketMatchCard
-                          key={match.id}
-                          match={match}
-                          config={config}
-                          showProbability={showProbabilities}
-                          probability={{
-                            home: getTeamProbability(match.homeTeam, roundName),
-                            away: getTeamProbability(match.awayTeam, roundName),
-                          }}
-                          onMatchClick={onMatchClick}
-                          isCompact={roundIdx < 2}
-                        />
-                      ))
-                    ) : (
-                      // Placeholder matches
-                      Array.from({ length: matchCount }).map((_, idx) => (
-                        <div
-                          key={idx}
-                          className="w-[180px] h-[84px] rounded-xl border-2 border-dashed flex items-center justify-center"
-                          style={{ borderColor: 'var(--border-color)' }}
-                        >
-                          <span className="text-sm text-[var(--text-tertiary)]">TBD</span>
+                  {/* Connector lines to next round */}
+                  {!isLastRound && (
+                    <div 
+                      className="flex flex-col justify-around mx-2"
+                      style={{ 
+                        height: `${Math.max(100, matchCount * 100 + (matchCount - 1) * Math.pow(2, roundIdx + 2) * 8)}px`
+                      }}
+                    >
+                      {Array.from({ length: Math.ceil(matchCount / 2) }).map((_, idx) => (
+                        <div key={idx} className="flex items-center h-full">
+                          <svg 
+                            width="32" 
+                            height={Math.max(60, Math.pow(2, roundIdx + 2) * 16)} 
+                            className="text-[var(--border-color)]"
+                          >
+                            {/* Horizontal line from top match */}
+                            <line x1={BRACKET_CONNECTOR.START} y1={BRACKET_CONNECTOR.TOP_MATCH} x2={BRACKET_CONNECTOR.CENTER} y2={BRACKET_CONNECTOR.TOP_MATCH} stroke="currentColor" strokeWidth="2" />
+                            {/* Horizontal line from bottom match */}
+                            <line x1={BRACKET_CONNECTOR.START} y1={BRACKET_CONNECTOR.BOTTOM_MATCH} x2={BRACKET_CONNECTOR.CENTER} y2={BRACKET_CONNECTOR.BOTTOM_MATCH} stroke="currentColor" strokeWidth="2" />
+                            {/* Vertical connector */}
+                            <line x1={BRACKET_CONNECTOR.CENTER} y1={BRACKET_CONNECTOR.TOP_MATCH} x2={BRACKET_CONNECTOR.CENTER} y2={BRACKET_CONNECTOR.BOTTOM_MATCH} stroke="currentColor" strokeWidth="2" />
+                            {/* Line to next round */}
+                            <line x1={BRACKET_CONNECTOR.CENTER} y1={BRACKET_CONNECTOR.CENTER} x2={BRACKET_CONNECTOR.END} y2={BRACKET_CONNECTOR.CENTER} stroke="currentColor" strokeWidth="2" />
+                          </svg>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })}
+            
+            {/* Trophy at the end */}
+            <div className="flex flex-col items-center justify-center ml-4">
+              <div className={`p-4 rounded-full bg-gradient-to-r ${config.gradient} shadow-lg`}>
+                <span className="text-4xl">🏆</span>
+              </div>
+              <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">Champion</p>
+            </div>
           </div>
         </div>
       </div>

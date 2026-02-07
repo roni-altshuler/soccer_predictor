@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { KnockoutSimulator, KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
 import MatchCalendar from '@/components/match/MatchCalendar'
+import { getESPNDateRange } from '@/lib/api'
 
 interface TournamentHomePageProps {
   tournamentId: 'champions_league' | 'europa_league' | 'world_cup'
@@ -286,10 +287,13 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         // Fetch from ESPN APIs for real tournament data
         const espnLeagueId = config.espnId
         
+        // Get date range for fetching matches (next 14 days)
+        const { dateRange } = getESPNDateRange(14)
+        
         // Fetch standings (groups), matches, and news in parallel from ESPN
         const espnResults = await Promise.allSettled([
           fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`),
           fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/news`),
         ])
 
@@ -886,23 +890,62 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             </div>
           </div>
         )}
+        
+        {/* Quick Stats - Match LeagueHomePage styling */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          {/* Group Leader */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <p className="text-white/70 text-sm">Group Leader</p>
+            <p className="text-white font-bold text-lg">
+              {data.groups[0]?.standings[0]?.team || 'TBD'}
+            </p>
+            <p className="text-white/80 text-sm">
+              {data.groups[0]?.standings[0]?.points || 0} points
+            </p>
+          </div>
+          
+          {/* Teams Qualified */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <p className="text-white/70 text-sm">Teams</p>
+            <p className="text-white font-bold text-lg">
+              {data.groups.flatMap(g => g.standings).length || 0}
+            </p>
+            <p className="text-white/80 text-sm">participating</p>
+          </div>
+          
+          {/* Recent Matches */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <p className="text-white/70 text-sm">Recent Results</p>
+            <p className="text-white font-bold text-lg">{data.recentResults.length || 0}</p>
+            <p className="text-white/80 text-sm">matches played</p>
+          </div>
+          
+          {/* Upcoming Matches */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <p className="text-white/70 text-sm">Coming Up</p>
+            <p className="text-white font-bold text-lg">{data.upcomingMatches.length || 0}</p>
+            <p className="text-white/80 text-sm">fixtures scheduled</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? `bg-gradient-to-r ${config.gradient} text-white`
-                : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === tab
+                  ? `bg-gradient-to-r ${config.gradient} text-white`
+                  : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Loading State */}
@@ -938,65 +981,30 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           
           {activeTab === 'Simulator' && (
             <div className="space-y-6">
-              {/* Tournament Simulator - Same style as LeagueHomePage */}
-              <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+              {/* Simulation Instructions/Status - without duplicate Run button */}
+              {!simulationResults && (
+                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
+                  <div className="text-center py-8">
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center justify-center gap-2 mb-4">
                       <span>🎲</span>
                       Tournament Simulation
                     </h3>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Monte Carlo simulation using team standings and knockout bracket predictions
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <select
-                      value={numSimulations}
-                      onChange={(e) => setNumSimulations(parseInt(e.target.value))}
-                      className="px-4 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
-                    >
-                      {SIMULATION_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={runTournamentSimulation}
-                      disabled={runningSimulation || data.groups.length === 0}
-                      className={`px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r ${config.gradient} hover:opacity-90 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg flex items-center gap-2`}
-                    >
-                      {runningSimulation ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Simulating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>🎲</span>
-                          <span>Run Simulation</span>
-                        </>
-                      )}
-                    </button>
+                    {data.groups.length === 0 ? (
+                      <>
+                        <p className="text-[var(--text-tertiary)]">Tournament data is loading...</p>
+                        <p className="text-sm text-[var(--text-tertiary)] mt-1">Simulation will be available once team data is loaded</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[var(--text-secondary)]">Click "Run Simulation" in the header to predict the tournament winner</p>
+                        <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                          Based on {data.groups.flatMap(g => g.standings).length} teams from the group stage
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Teams available info */}
-                {data.groups.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-[var(--text-tertiary)]">Tournament data is loading...</p>
-                    <p className="text-sm text-[var(--text-tertiary)] mt-1">Simulation will be available once team data is loaded</p>
-                  </div>
-                )}
-
-                {data.groups.length > 0 && !simulationResults && (
-                  <div className="text-center py-8">
-                    <p className="text-[var(--text-secondary)]">Click "Run Simulation" to predict the tournament winner</p>
-                    <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                      Based on {data.groups.flatMap(g => g.standings).length} teams from the group stage
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Simulation Results - Full probability table like LeagueHomePage */}
               {simulationResults && (
