@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
 import MatchCalendar from '@/components/match/MatchCalendar'
-import { getESPNDateRange } from '@/lib/api'
 
 interface TournamentHomePageProps {
   tournamentId: 'champions_league' | 'europa_league' | 'world_cup'
@@ -276,167 +275,70 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     const fetchData = async () => {
       setLoading(true)
       try {
-        const newData: TournamentData = {
-          groups: [],
-          knockoutMatches: [],
-          upcomingMatches: [],
-          recentResults: [],
-          news: [],
-        }
-
-        // Fetch from ESPN APIs for real tournament data
-        const espnLeagueId = config.espnId
-        
-        // Get date range for fetching matches (next 30 days for broader coverage)
-        const { dateRange } = getESPNDateRange(30)
-        
-        // Build season query parameter for ESPN API to fetch historical data
+        // Fetch all tournament data from server-side API route
+        // This ensures ESPN requests happen server-side (not blocked by browser)
         const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
-        const seasonAmpParam = selectedSeason ? `&season=${selectedSeason}` : ''
+        const res = await fetch(`/api/tournament/${tournamentId}${seasonParam}`)
         
-        // Fetch standings (groups), matches, and news in parallel from ESPN
-        const espnResults = await Promise.allSettled([
-          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}${seasonAmpParam}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/news`),
-        ])
-
-        // Process standings/groups from ESPN
-        if (espnResults[0].status === 'fulfilled') {
-          const standingsRes = espnResults[0] as PromiseFulfilledResult<Response>
-          if (standingsRes.value.ok) {
-            const standingsData = await standingsRes.value.json()
-            const children = standingsData.children || []
-            
-            // Process groups
-            for (const child of children) {
-              const groupName = child.name || child.abbreviation || 'Group'
-              const entries = child.standings?.entries || []
-              
-              if (entries.length > 0) {
-                const groupTeams: GroupStanding[] = entries.map((entry: any, idx: number) => {
-                  const getStatVal = (name: string) => {
-                    const stat = entry.stats?.find((s: any) => s.name === name)
-                    return parseInt(stat?.value || '0', 10)
-                  }
-                  return {
-                    position: idx + 1,
-                    team: entry.team?.displayName || 'Unknown',
-                    teamId: entry.team?.id,
-                    played: getStatVal('gamesPlayed'),
-                    won: getStatVal('wins'),
-                    drawn: getStatVal('ties'),
-                    lost: getStatVal('losses'),
-                    goalsFor: getStatVal('pointsFor'),
-                    goalsAgainst: getStatVal('pointsAgainst'),
-                    goalDifference: getStatVal('pointDifferential'),
-                    points: getStatVal('points'),
-                  }
-                })
-                newData.groups.push({ name: groupName, standings: groupTeams })
-              }
+        if (res.ok) {
+          const apiData = await res.json()
+          
+          setData({
+            groups: apiData.groups || [],
+            knockoutMatches: apiData.knockoutMatches || [],
+            upcomingMatches: apiData.upcomingMatches || [],
+            recentResults: apiData.recentResults || [],
+            news: apiData.news || [],
+          })
+          
+          // Build bracket rounds from knockout matches
+          const ROUND_ORDER = [
+            'Knockout Round Playoffs',
+            'Round of 16',
+            'Quarterfinals',
+            'Quarter-Finals',
+            'Semifinals',
+            'Semi-Finals',
+            'Third Place',
+            'Final',
+          ]
+          
+          const roundsMap: Record<string, BracketMatch[]> = {}
+          for (const match of apiData.knockoutMatches || []) {
+            const roundName = match.round || 'Knockout'
+            if (!roundsMap[roundName]) {
+              roundsMap[roundName] = []
             }
+            roundsMap[roundName].push({
+              id: match.id,
+              homeTeam: match.homeTeam,
+              awayTeam: match.awayTeam,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              date: match.date,
+              time: match.time,
+              status: match.status === 'finished' ? 'finished' : match.status === 'live' ? 'live' : 'scheduled',
+              round: roundName,
+              leg: match.leg as 1 | 2 | undefined,
+              winner: match.winner || null,
+            })
           }
+          
+          // Sort rounds in logical order
+          const sortedRounds = Object.keys(roundsMap).sort((a, b) => {
+            const aIdx = ROUND_ORDER.findIndex(r => a.toLowerCase().includes(r.toLowerCase()))
+            const bIdx = ROUND_ORDER.findIndex(r => b.toLowerCase().includes(r.toLowerCase()))
+            return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx)
+          })
+          
+          const bracketData: BracketRound[] = sortedRounds.map(name => ({
+            name,
+            matches: roundsMap[name],
+          }))
+          setBracketRounds(bracketData)
+        } else {
+          console.error('Tournament API error:', res.status)
         }
-
-        // Process matches from ESPN
-        if (espnResults[1].status === 'fulfilled') {
-          const matchesRes = espnResults[1] as PromiseFulfilledResult<Response>
-          if (matchesRes.value.ok) {
-            const matchesData = await matchesRes.value.json()
-            const events = matchesData.events || []
-            const now = new Date()
-            
-            for (const event of events) {
-              const competition = event.competitions?.[0]
-              if (!competition) continue
-              
-              const homeTeam = competition.competitors?.find((c: any) => c.homeAway === 'home')
-              const awayTeam = competition.competitors?.find((c: any) => c.homeAway === 'away')
-              const matchDate = new Date(event.date)
-              const statusType = competition.status?.type?.name || ''
-              
-              const isFinished = statusType.includes('FINAL') || statusType.includes('FULL_TIME')
-              const isLive = statusType.includes('IN_PROGRESS') || statusType.includes('HALFTIME')
-              const roundName = event.competitions?.[0]?.type?.text || event.shortName || ''
-              const isKnockout = roundName.toLowerCase().includes('final') || 
-                                roundName.toLowerCase().includes('round of') ||
-                                roundName.toLowerCase().includes('knockout')
-              
-              const matchObj: Match = {
-                id: String(event.id),
-                homeTeam: homeTeam?.team?.displayName || 'Home',
-                awayTeam: awayTeam?.team?.displayName || 'Away',
-                homeScore: isFinished || isLive ? parseInt(homeTeam?.score || '0') : undefined,
-                awayScore: isFinished || isLive ? parseInt(awayTeam?.score || '0') : undefined,
-                date: matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                time: matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-                round: roundName,
-                venue: competition.venue?.fullName,
-                status: isFinished ? 'finished' : isLive ? 'live' : 'upcoming',
-              }
-              
-              if (isKnockout && isFinished) {
-                newData.knockoutMatches.push(matchObj)
-                // Also add to recent results so they show on overview
-                newData.recentResults.push(matchObj)
-              } else if (isFinished) {
-                newData.recentResults.push(matchObj)
-              } else {
-                newData.upcomingMatches.push(matchObj)
-              }
-            }
-            
-            // Build bracket rounds from knockout matches
-            const roundsMap: Record<string, BracketMatch[]> = {}
-            for (const match of newData.knockoutMatches) {
-              const round = match.round || 'Unknown'
-              if (!roundsMap[round]) {
-                roundsMap[round] = []
-              }
-              roundsMap[round].push({
-                id: match.id,
-                homeTeam: match.homeTeam,
-                awayTeam: match.awayTeam,
-                homeScore: match.homeScore,
-                awayScore: match.awayScore,
-                date: match.date,
-                time: match.time,
-                status: match.status as 'scheduled' | 'live' | 'finished',
-                round: round,
-                winner: match.homeScore !== undefined && match.awayScore !== undefined
-                  ? match.homeScore > match.awayScore ? 'home' 
-                  : match.awayScore > match.homeScore ? 'away' 
-                  : null
-                  : null,
-              })
-            }
-            
-            // Convert to bracket rounds array
-            const bracketData: BracketRound[] = Object.entries(roundsMap).map(([name, matches]) => ({
-              name,
-              matches,
-            }))
-            setBracketRounds(bracketData)
-          }
-        }
-
-        // Process news from ESPN (tournament-specific)
-        if (espnResults[2].status === 'fulfilled') {
-          const newsRes = espnResults[2] as PromiseFulfilledResult<Response>
-          if (newsRes.value.ok) {
-            const newsData = await newsRes.value.json()
-            newData.news = (newsData.articles || []).slice(0, 8).map((n: any) => ({
-              headline: n.headline || '',
-              description: n.description || '',
-              link: n.links?.web?.href || '',
-              image: n.images?.[0]?.url || '',
-              published: n.published || '',
-            }))
-          }
-        }
-
-        setData(newData)
       } catch (error) {
         console.error('Error fetching tournament data:', error)
       } finally {
@@ -445,7 +347,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     }
 
     fetchData()
-  }, [config.espnId, selectedSeason])
+  }, [tournamentId, selectedSeason])
   
   // Fetch simulation probabilities for the tournament
   useEffect(() => {
@@ -782,18 +684,18 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                 </tr>
               </thead>
               <tbody>
-                {['Final', 'Semi-Final', 'Quarter-Final', 'Round of 16', 'Round of 32'].map(round => {
-                  const roundMatches = data.knockoutMatches.filter(m => 
-                    m.round?.toLowerCase().includes(round.toLowerCase())
-                  )
-                  if (roundMatches.length === 0) return null
+                {/* Group knockout matches by round */}
+                {bracketRounds.map(round => {
+                  const roundName = round.name
+                  const isFinal = roundName.toLowerCase() === 'final'
+                  const isSemiFinal = roundName.toLowerCase().includes('semi')
 
-                  return roundMatches.map((match, matchIdx) => (
+                  return round.matches.map((match, matchIdx) => (
                     <tr
                       key={match.id}
                       className={`border-b hover:bg-[var(--muted-bg)] transition-colors cursor-pointer ${
-                        round === 'Final' ? 'border-l-4 border-l-amber-400 bg-amber-500/10' :
-                        round.includes('Semi') ? 'border-l-4 border-l-blue-400 bg-blue-500/5' : ''
+                        isFinal ? 'border-l-4 border-l-amber-400 bg-amber-500/10' :
+                        isSemiFinal ? 'border-l-4 border-l-blue-400 bg-blue-500/5' : ''
                       }`}
                       style={{ borderColor: 'var(--border-color)' }}
                       onClick={() => router.push(`/matches/${match.id}`)}
@@ -801,15 +703,15 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       <td className="py-3 px-4">
                         {matchIdx === 0 ? (
                           <span className={`text-sm font-medium ${
-                            round === 'Final' ? 'text-amber-500' : 'text-[var(--text-secondary)]'
+                            isFinal ? 'text-amber-500' : 'text-[var(--text-secondary)]'
                           }`}>
-                            {round}
+                            {roundName}
                           </span>
                         ) : null}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`font-medium ${
-                          isWinningTeam(match.homeScore, match.awayScore)
+                          match.winner === 'home'
                             ? 'text-green-500' : 'text-[var(--text-primary)]'
                         }`}>
                           {match.homeTeam}
@@ -826,7 +728,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </td>
                       <td className="py-3 px-4">
                         <span className={`font-medium ${
-                          isWinningTeam(match.awayScore, match.homeScore)
+                          match.winner === 'away'
                             ? 'text-green-500' : 'text-[var(--text-primary)]'
                         }`}>
                           {match.awayTeam}
@@ -834,6 +736,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-[var(--text-tertiary)]">
                         {match.date}
+                        {match.leg && <span className="ml-1 text-xs">(Leg {match.leg})</span>}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {match.status === 'finished' ? (

@@ -314,6 +314,11 @@ export default function KnockoutBracket({
   }
   
   // Render the bracket
+  // Use the actual rounds data instead of hardcoded config.rounds
+  const displayRounds = rounds.length > 0 
+    ? rounds.map(r => r.name) 
+    : config.rounds
+  
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       {/* Header */}
@@ -334,11 +339,11 @@ export default function KnockoutBracket({
         <div className="min-w-max">
           {/* Horizontal bracket layout with connecting lines */}
           <div className="flex items-start justify-center gap-4">
-            {config.rounds.map((roundName, roundIdx) => {
+            {displayRounds.map((roundName, roundIdx) => {
               const roundMatches = matchesByRound[roundName] || []
               // Calculate expected number of matches for this round
-              const matchCount = roundMatches.length || Math.pow(2, config.rounds.length - 1 - roundIdx)
-              const isLastRound = roundIdx === config.rounds.length - 1
+              const matchCount = roundMatches.length || Math.pow(2, displayRounds.length - 1 - roundIdx)
+              const isLastRound = roundIdx === displayRounds.length - 1
               const isFirstRound = roundIdx === 0
               
               return (
@@ -347,7 +352,7 @@ export default function KnockoutBracket({
                   <div className="flex flex-col items-center">
                     {/* Round header */}
                     <div className={`mb-4 px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient}`}>
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-white whitespace-nowrap">
                         {roundName}
                       </h3>
                     </div>
