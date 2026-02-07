@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
-import { KnockoutSimulator, KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
+import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
 import MatchCalendar from '@/components/match/MatchCalendar'
-import { getESPNDateRange } from '@/lib/api'
 
 interface TournamentHomePageProps {
   tournamentId: 'champions_league' | 'europa_league' | 'world_cup'
@@ -276,163 +275,70 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     const fetchData = async () => {
       setLoading(true)
       try {
-        const newData: TournamentData = {
-          groups: [],
-          knockoutMatches: [],
-          upcomingMatches: [],
-          recentResults: [],
-          news: [],
-        }
-
-        // Fetch from ESPN APIs for real tournament data
-        const espnLeagueId = config.espnId
+        // Fetch all tournament data from server-side API route
+        // This ensures ESPN requests happen server-side (not blocked by browser)
+        const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
+        const res = await fetch(`/api/tournament/${tournamentId}${seasonParam}`)
         
-        // Get date range for fetching matches (next 14 days)
-        const { dateRange } = getESPNDateRange(14)
-        
-        // Fetch standings (groups), matches, and news in parallel from ESPN
-        const espnResults = await Promise.allSettled([
-          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/news`),
-        ])
-
-        // Process standings/groups from ESPN
-        if (espnResults[0].status === 'fulfilled') {
-          const standingsRes = espnResults[0] as PromiseFulfilledResult<Response>
-          if (standingsRes.value.ok) {
-            const standingsData = await standingsRes.value.json()
-            const children = standingsData.children || []
-            
-            // Process groups
-            for (const child of children) {
-              const groupName = child.name || child.abbreviation || 'Group'
-              const entries = child.standings?.entries || []
-              
-              if (entries.length > 0) {
-                const groupTeams: GroupStanding[] = entries.map((entry: any, idx: number) => {
-                  const getStatVal = (name: string) => {
-                    const stat = entry.stats?.find((s: any) => s.name === name)
-                    return parseInt(stat?.value || '0', 10)
-                  }
-                  return {
-                    position: idx + 1,
-                    team: entry.team?.displayName || 'Unknown',
-                    teamId: entry.team?.id,
-                    played: getStatVal('gamesPlayed'),
-                    won: getStatVal('wins'),
-                    drawn: getStatVal('ties'),
-                    lost: getStatVal('losses'),
-                    goalsFor: getStatVal('pointsFor'),
-                    goalsAgainst: getStatVal('pointsAgainst'),
-                    goalDifference: getStatVal('pointDifferential'),
-                    points: getStatVal('points'),
-                  }
-                })
-                newData.groups.push({ name: groupName, standings: groupTeams })
-              }
+        if (res.ok) {
+          const apiData = await res.json()
+          
+          setData({
+            groups: apiData.groups || [],
+            knockoutMatches: apiData.knockoutMatches || [],
+            upcomingMatches: apiData.upcomingMatches || [],
+            recentResults: apiData.recentResults || [],
+            news: apiData.news || [],
+          })
+          
+          // Build bracket rounds from knockout matches
+          const ROUND_ORDER = [
+            'Knockout Round Playoffs',
+            'Round of 16',
+            'Quarterfinals',
+            'Quarter-Finals',
+            'Semifinals',
+            'Semi-Finals',
+            'Third Place',
+            'Final',
+          ]
+          
+          const roundsMap: Record<string, BracketMatch[]> = {}
+          for (const match of apiData.knockoutMatches || []) {
+            const roundName = match.round || 'Knockout'
+            if (!roundsMap[roundName]) {
+              roundsMap[roundName] = []
             }
+            roundsMap[roundName].push({
+              id: match.id,
+              homeTeam: match.homeTeam,
+              awayTeam: match.awayTeam,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              date: match.date,
+              time: match.time,
+              status: match.status === 'finished' ? 'finished' : match.status === 'live' ? 'live' : 'scheduled',
+              round: roundName,
+              leg: match.leg as 1 | 2 | undefined,
+              winner: match.winner || null,
+            })
           }
+          
+          // Sort rounds in logical order
+          const sortedRounds = Object.keys(roundsMap).sort((a, b) => {
+            const aIdx = ROUND_ORDER.findIndex(r => a.toLowerCase().includes(r.toLowerCase()))
+            const bIdx = ROUND_ORDER.findIndex(r => b.toLowerCase().includes(r.toLowerCase()))
+            return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx)
+          })
+          
+          const bracketData: BracketRound[] = sortedRounds.map(name => ({
+            name,
+            matches: roundsMap[name],
+          }))
+          setBracketRounds(bracketData)
+        } else {
+          console.error('Tournament API error:', res.status)
         }
-
-        // Process matches from ESPN
-        if (espnResults[1].status === 'fulfilled') {
-          const matchesRes = espnResults[1] as PromiseFulfilledResult<Response>
-          if (matchesRes.value.ok) {
-            const matchesData = await matchesRes.value.json()
-            const events = matchesData.events || []
-            const now = new Date()
-            
-            for (const event of events) {
-              const competition = event.competitions?.[0]
-              if (!competition) continue
-              
-              const homeTeam = competition.competitors?.find((c: any) => c.homeAway === 'home')
-              const awayTeam = competition.competitors?.find((c: any) => c.homeAway === 'away')
-              const matchDate = new Date(event.date)
-              const statusType = competition.status?.type?.name || ''
-              
-              const isFinished = statusType.includes('FINAL') || statusType.includes('FULL_TIME')
-              const isLive = statusType.includes('IN_PROGRESS') || statusType.includes('HALFTIME')
-              const roundName = event.competitions?.[0]?.type?.text || event.shortName || ''
-              const isKnockout = roundName.toLowerCase().includes('final') || 
-                                roundName.toLowerCase().includes('round of') ||
-                                roundName.toLowerCase().includes('knockout')
-              
-              const matchObj: Match = {
-                id: String(event.id),
-                homeTeam: homeTeam?.team?.displayName || 'Home',
-                awayTeam: awayTeam?.team?.displayName || 'Away',
-                homeScore: isFinished || isLive ? parseInt(homeTeam?.score || '0') : undefined,
-                awayScore: isFinished || isLive ? parseInt(awayTeam?.score || '0') : undefined,
-                date: matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                time: matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-                round: roundName,
-                venue: competition.venue?.fullName,
-                status: isFinished ? 'finished' : isLive ? 'live' : 'upcoming',
-              }
-              
-              if (isKnockout && isFinished) {
-                newData.knockoutMatches.push(matchObj)
-                // Also add to recent results so they show on overview
-                newData.recentResults.push(matchObj)
-              } else if (isFinished) {
-                newData.recentResults.push(matchObj)
-              } else {
-                newData.upcomingMatches.push(matchObj)
-              }
-            }
-            
-            // Build bracket rounds from knockout matches
-            const roundsMap: Record<string, BracketMatch[]> = {}
-            for (const match of newData.knockoutMatches) {
-              const round = match.round || 'Unknown'
-              if (!roundsMap[round]) {
-                roundsMap[round] = []
-              }
-              roundsMap[round].push({
-                id: match.id,
-                homeTeam: match.homeTeam,
-                awayTeam: match.awayTeam,
-                homeScore: match.homeScore,
-                awayScore: match.awayScore,
-                date: match.date,
-                time: match.time,
-                status: match.status as 'scheduled' | 'live' | 'finished',
-                round: round,
-                winner: match.homeScore !== undefined && match.awayScore !== undefined
-                  ? match.homeScore > match.awayScore ? 'home' 
-                  : match.awayScore > match.homeScore ? 'away' 
-                  : null
-                  : null,
-              })
-            }
-            
-            // Convert to bracket rounds array
-            const bracketData: BracketRound[] = Object.entries(roundsMap).map(([name, matches]) => ({
-              name,
-              matches,
-            }))
-            setBracketRounds(bracketData)
-          }
-        }
-
-        // Process news from ESPN (tournament-specific)
-        if (espnResults[2].status === 'fulfilled') {
-          const newsRes = espnResults[2] as PromiseFulfilledResult<Response>
-          if (newsRes.value.ok) {
-            const newsData = await newsRes.value.json()
-            newData.news = (newsData.articles || []).slice(0, 8).map((n: any) => ({
-              headline: n.headline || '',
-              description: n.description || '',
-              link: n.links?.web?.href || '',
-              image: n.images?.[0]?.url || '',
-              published: n.published || '',
-            }))
-          }
-        }
-
-        setData(newData)
       } catch (error) {
         console.error('Error fetching tournament data:', error)
       } finally {
@@ -441,7 +347,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     }
 
     fetchData()
-  }, [config.espnId])
+  }, [tournamentId, selectedSeason])
   
   // Fetch simulation probabilities for the tournament
   useEffect(() => {
@@ -580,80 +486,104 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     </div>
   )
 
-  const renderMatchCard = (match: Match, showResult = false) => (
-    <Link
-      key={match.id}
-      href={`/matches/${match.id}`}
-      className="block p-4 rounded-xl bg-[var(--muted-bg)] hover:bg-[var(--muted-bg-hover)] transition-colors animate-fadeIn"
-    >
-      <div className="flex justify-between items-center">
-        <div className="flex-1">
-          <p className="font-medium text-[var(--text-primary)]">{match.homeTeam}</p>
-          <p className="font-medium text-[var(--text-primary)]">{match.awayTeam}</p>
+  // Helper to determine if a team won based on scores
+  const isWinningTeam = (teamScore?: number, opponentScore?: number): boolean => {
+    return teamScore !== undefined && opponentScore !== undefined && teamScore > opponentScore
+  }
+
+  const renderMatchCard = (match: Match, showResult = false) => {
+    const homeWon = showResult && isWinningTeam(match.homeScore, match.awayScore)
+    const awayWon = showResult && isWinningTeam(match.awayScore, match.homeScore)
+
+    return (
+      <Link
+        key={match.id}
+        href={`/matches/${match.id}`}
+        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex-1">
+            <p className={`font-medium ${homeWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+              {match.homeTeam}
+            </p>
+            <p className={`font-medium ${awayWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+              {match.awayTeam}
+            </p>
+          </div>
+          {showResult && match.homeScore !== undefined ? (
+            <div className="text-right">
+              <p className="text-lg font-bold text-[var(--text-primary)]">{match.homeScore}</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">{match.awayScore}</p>
+            </div>
+          ) : (
+            <div className="text-right text-sm">
+              <p className="text-[var(--text-secondary)]">{match.date}</p>
+              <p className="text-[var(--text-tertiary)]">{match.time}</p>
+            </div>
+          )}
         </div>
-        {showResult && match.homeScore !== undefined ? (
-          <div className="text-right">
-            <p className={`font-bold ${match.homeScore > (match.awayScore || 0) ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-              {match.homeScore}
-            </p>
-            <p className={`font-bold ${(match.awayScore || 0) > match.homeScore ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-              {match.awayScore}
-            </p>
-          </div>
-        ) : (
-          <div className="text-right">
-            <p className="text-sm text-[var(--text-tertiary)]">{match.date}</p>
-            <p className="text-sm text-[var(--text-secondary)]">{match.time}</p>
-          </div>
+        {match.round && (
+          <p className="text-xs text-[var(--text-tertiary)] mt-1">{match.round}</p>
         )}
-      </div>
-      {match.round && (
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">{match.round}</p>
-      )}
-      {match.status === 'live' && (
-        <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          LIVE
-        </span>
-      )}
-    </Link>
-  )
+        {match.status === 'live' && (
+          <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            LIVE
+          </span>
+        )}
+      </Link>
+    )
+  }
 
   const renderOverview = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Column - Upcoming Matches */}
       <div className="lg:col-span-2 space-y-6">
         {/* Upcoming Matches */}
-        <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-          <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Upcoming Matches</h2>
-          {data.upcomingMatches.length > 0 ? (
-            <div className="space-y-3">
-              {data.upcomingMatches.slice(0, 5).map(match => renderMatchCard(match))}
-            </div>
-          ) : (
-            <p className="text-[var(--text-tertiary)]">No upcoming matches</p>
-          )}
+        <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Upcoming Matches</h2>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+            {data.upcomingMatches.length > 0 ? (
+              data.upcomingMatches.slice(0, 5).map(match => renderMatchCard(match))
+            ) : (
+              <p className="p-4 text-[var(--text-tertiary)]">No upcoming matches</p>
+            )}
+          </div>
         </div>
 
         {/* Recent Results */}
-        <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-          <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Recent Results</h2>
-          {data.recentResults.length > 0 ? (
-            <div className="space-y-3">
-              {data.recentResults.slice(0, 5).map(match => renderMatchCard(match, true))}
-            </div>
-          ) : (
-            <p className="text-[var(--text-tertiary)]">No recent results</p>
-          )}
+        <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Results</h2>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+            {data.recentResults.length > 0 ? (
+              data.recentResults.slice(0, 5).map(match => renderMatchCard(match, true))
+            ) : (
+              <p className="p-4 text-[var(--text-tertiary)]">No recent results</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Right Column - Groups Preview & News */}
       <div className="space-y-6">
+        {/* Quick Simulator Link - Consistent with LeagueHomePage */}
+        <div
+          className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl p-6 cursor-pointer hover:from-indigo-600/30 hover:to-purple-600/30 transition-all border border-indigo-500/30 hover:scale-[1.02] hover:shadow-lg"
+          onClick={() => setActiveTab('Simulator')}
+        >
+          <div className="text-4xl mb-3">🎲</div>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Run Simulation</h3>
+          <p className="text-sm text-[var(--text-secondary)]">Predict the tournament winner</p>
+        </div>
+
         {/* Groups Preview */}
         {data.groups.length > 0 && (
-          <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'var(--border-color)' }}>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Group Standings</h2>
               <button
                 onClick={() => setActiveTab('Groups')}
@@ -662,9 +592,9 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                 View All
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
               {data.groups.slice(0, 4).map(group => (
-                <div key={group.name} className="p-3 rounded-lg bg-[var(--muted-bg)]">
+                <div key={group.name} className="p-3">
                   <p className="text-sm font-medium text-[var(--text-primary)] mb-1">{group.name}</p>
                   <div className="text-xs text-[var(--text-secondary)]">
                     {group.standings.slice(0, 2).map((t, i) => (
@@ -681,16 +611,18 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
 
         {/* Latest News */}
         {data.news.length > 0 && (
-          <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Latest News</h2>
-            <div className="space-y-4">
-              {data.news.slice(0, 3).map((item, idx) => (
+          <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Latest News</h2>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+              {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
                 <a
                   key={idx}
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block group"
+                  className="block p-4 hover:bg-[var(--muted-bg)] transition-colors group"
                 >
                   {item.image && (
                     <img
@@ -712,225 +644,148 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             </div>
           </div>
         )}
-
-        {/* Quick Simulator Link */}
-        <div
-          className={`bg-gradient-to-r ${config.gradient} rounded-xl p-6 text-white cursor-pointer hover:opacity-90 transition-opacity`}
-          onClick={() => setActiveTab('Simulator')}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🎲</span>
-            <div>
-              <h3 className="font-semibold">Run Simulation</h3>
-              <p className="text-sm text-white/80">Predict the tournament winner</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
 
   const renderKnockoutBracket = () => (
     <div className="space-y-6">
-      {/* Main Bracket Visualization - Always show */}
-      <KnockoutBracket
-        tournament={config.knockoutType}
-        rounds={bracketRounds}
-        simulationData={simulationProbabilities || undefined}
-        showProbabilities={!!simulationProbabilities}
-        onMatchClick={(match) => {
-          // Navigate to match page using Next.js router for client-side navigation
-          router.push(`/matches/${match.id}`)
-        }}
-      />
-      
-      {/* Detailed Match List */}
-      {data.knockoutMatches.length > 0 && (
-        <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Knockout Matches</h2>
-          
-          <div className="space-y-8">
-            {/* Group knockout matches by round */}
-            {['Final', 'Semi-Final', 'Quarter-Final', 'Round of 16'].map(round => {
-              const roundMatches = data.knockoutMatches.filter(m => 
-                m.round?.toLowerCase().includes(round.toLowerCase())
-              )
-              if (roundMatches.length === 0) return null
-
-              return (
-                <div key={round}>
-                  <h3 className={`text-lg font-semibold text-[var(--text-primary)] mb-4 pb-2 border-b`} style={{ borderColor: 'var(--border-color)' }}>
-                    {round}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {roundMatches.map(match => (
-                      <Link
-                        key={match.id}
-                        href={`/matches/${match.id}`}
-                        className="p-4 rounded-xl bg-[var(--muted-bg)] hover:bg-[var(--muted-bg-hover)] transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className={`flex items-center gap-2 ${match.homeScore !== undefined && match.homeScore > (match.awayScore || 0) ? 'font-bold' : ''}`}>
-                              <span className="text-[var(--text-primary)]">{match.homeTeam}</span>
-                              {match.homeScore !== undefined && (
-                                <span className="font-bold text-[var(--text-primary)]">{match.homeScore}</span>
-                              )}
-                            </div>
-                            <div className={`flex items-center gap-2 ${match.awayScore !== undefined && match.awayScore > (match.homeScore || 0) ? 'font-bold' : ''}`}>
-                              <span className="text-[var(--text-primary)]">{match.awayTeam}</span>
-                              {match.awayScore !== undefined && (
-                                <span className="font-bold text-[var(--text-primary)]">{match.awayScore}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right text-sm text-[var(--text-tertiary)]">
-                            {match.date}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      {data.knockoutMatches.length > 0 || bracketRounds.length > 0 ? (
+        <KnockoutBracket
+          tournament={config.knockoutType}
+          rounds={bracketRounds}
+          simulationData={simulationProbabilities || undefined}
+          showProbabilities={!!simulationProbabilities}
+          onMatchClick={(match) => {
+            router.push(`/matches/${match.id}`)
+          }}
+        />
+      ) : (
+        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
+          <span className="text-5xl mb-4 block">🏆</span>
+          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Knockout Stage</h3>
+          <p className="text-[var(--text-secondary)] max-w-md mx-auto">
+            The knockout stage has not started yet or no knockout matches are available for the selected season.
+            Check back once the knockout rounds begin.
+          </p>
         </div>
       )}
     </div>
   )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      {/* Back Button */}
-      <Link
-        href="/matches"
-        className="inline-flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Leagues
-      </Link>
+    <div className="flex-1" style={{ backgroundColor: 'var(--background)' }}>
+      {/* Hero Header - FotMob Style (consistent with LeagueHomePage) */}
+      <div className={`bg-gradient-to-r ${config.gradient} py-8 px-4`}>
+        <div className="max-w-6xl mx-auto">
+          {/* Back Button */}
+          <Link
+            href="/matches"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Leagues
+          </Link>
       
-      {/* Header */}
-      <div className={`bg-gradient-to-r ${config.gradient} rounded-2xl p-8 mb-6`}>
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            {config.logo ? (
-              <img 
-                src={config.logo} 
-                alt={tournamentName}
-                className="w-16 h-16 object-contain bg-white rounded-xl p-1"
-              />
-            ) : (
-              <span className="text-5xl">{config.emoji}</span>
-            )}
-            <div>
-              <h1 className="text-3xl font-bold text-white">{tournamentName}</h1>
-              <p className="text-white/80">
-                {tournamentId === 'world_cup' ? 'International Tournament' : 'European Club Competition'} • {availableSeasons.find(s => s.value === selectedSeason)?.label || '2025-26'}
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              {config.logo ? (
+                <img 
+                  src={config.logo} 
+                  alt={tournamentName}
+                  className="w-16 h-16 object-contain bg-white rounded-xl p-1"
+                />
+              ) : (
+                <span className="text-5xl">{config.emoji}</span>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold text-white">{tournamentName}</h1>
+                <p className="text-white/80">
+                  {tournamentId === 'world_cup' ? 'International Tournament' : 'European Club Competition'} • {availableSeasons.find(s => s.value === selectedSeason)?.label || '2025-26'}
+                </p>
+              </div>
+            </div>
+          
+            {/* Season Selector */}
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+              >
+                {availableSeasons.map(season => (
+                  <option key={season.value} value={season.value} className="text-gray-900">
+                    {season.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        
+          {/* Simulation Results */}
+          {simulationResults && (
+            <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <p className="text-amber-300 text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-white font-bold text-lg">{simulationResults.most_likely_winner} to win the tournament</p>
+                  <p className="text-white/70 text-sm mt-1">
+                    Top contenders: {simulationResults.teams.slice(0, 3).map(t => `${t.team_name} (${(t.win_probability * 100).toFixed(1)}%)`).join(', ')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-amber-400">
+                    {(simulationResults.winner_probability * 100).toFixed(1)}%
+                  </p>
+                  <p className="text-white/60 text-xs">win probability</p>
+                </div>
+              </div>
+            </div>
+          )}
+        
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            {/* Group Leader */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-white/70 text-sm">Group Leader</p>
+              <p className="text-white font-bold text-lg">
+                {data.groups[0]?.standings[0]?.team || 'TBD'}
+              </p>
+              <p className="text-white/80 text-sm">
+                {data.groups[0]?.standings[0]?.points || 0} points
               </p>
             </div>
-          </div>
           
-          {/* Season Selector & Simulation Button */}
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedSeason}
-              onChange={(e) => setSelectedSeason(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
-            >
-              {availableSeasons.map(season => (
-                <option key={season.value} value={season.value} className="text-gray-900">
-                  {season.label}
-                </option>
-              ))}
-            </select>
-            
-            <button
-              onClick={runTournamentSimulation}
-              disabled={runningSimulation || data.groups.length === 0}
-              className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              {runningSimulation ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Simulating...
-                </>
-              ) : (
-                <>
-                  🎲 Run Simulation
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-        
-        {/* Simulation Results - Updated to show probability-based output */}
-        {simulationResults && (
-          <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <p className="text-amber-300 text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
-                <p className="text-white font-bold text-lg">{simulationResults.most_likely_winner} to win the tournament</p>
-                <p className="text-white/70 text-sm mt-1">
-                  Top contenders: {simulationResults.teams.slice(0, 3).map(t => `${t.team_name} (${(t.win_probability * 100).toFixed(1)}%)`).join(', ')}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-amber-400">
-                  {(simulationResults.winner_probability * 100).toFixed(1)}%
-                </p>
-                <p className="text-white/60 text-xs">win probability</p>
-              </div>
+            {/* Teams */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-white/70 text-sm">Teams</p>
+              <p className="text-white font-bold text-lg">
+                {data.groups.flatMap(g => g.standings).length || 0}
+              </p>
+              <p className="text-white/80 text-sm">participating</p>
             </div>
-          </div>
-        )}
-        
-        {/* Quick Stats - Match LeagueHomePage styling */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {/* Group Leader */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <p className="text-white/70 text-sm">Group Leader</p>
-            <p className="text-white font-bold text-lg">
-              {data.groups[0]?.standings[0]?.team || 'TBD'}
-            </p>
-            <p className="text-white/80 text-sm">
-              {data.groups[0]?.standings[0]?.points || 0} points
-            </p>
-          </div>
           
-          {/* Teams Qualified */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <p className="text-white/70 text-sm">Teams</p>
-            <p className="text-white font-bold text-lg">
-              {data.groups.flatMap(g => g.standings).length || 0}
-            </p>
-            <p className="text-white/80 text-sm">participating</p>
-          </div>
+            {/* Recent Matches */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-white/70 text-sm">Recent Results</p>
+              <p className="text-white font-bold text-lg">{data.recentResults.length || 0}</p>
+              <p className="text-white/80 text-sm">matches played</p>
+            </div>
           
-          {/* Recent Matches */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <p className="text-white/70 text-sm">Recent Results</p>
-            <p className="text-white font-bold text-lg">{data.recentResults.length || 0}</p>
-            <p className="text-white/80 text-sm">matches played</p>
-          </div>
-          
-          {/* Upcoming Matches */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <p className="text-white/70 text-sm">Coming Up</p>
-            <p className="text-white font-bold text-lg">{data.upcomingMatches.length || 0}</p>
-            <p className="text-white/80 text-sm">fixtures scheduled</p>
+            {/* Upcoming Matches */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-white/70 text-sm">Coming Up</p>
+              <p className="text-white font-bold text-lg">{data.upcomingMatches.length || 0}</p>
+              <p className="text-white/80 text-sm">fixtures scheduled</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      {/* Navigation Tabs - Consistent with LeagueHomePage */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
         <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
           {TABS.map(tab => (
             <button
@@ -948,18 +803,20 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && activeTab !== 'Simulator' ? (
-        <div className="flex items-center justify-center py-20">
-          <svg className="animate-spin h-8 w-8 text-[var(--accent-primary)]" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-        </div>
-      ) : (
-        <>
-          {/* Tab Content */}
-          {activeTab === 'Overview' && renderOverview()}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 py-2">
+        {/* Loading State */}
+        {loading && activeTab !== 'Simulator' ? (
+          <div className="flex items-center justify-center py-20">
+            <svg className="animate-spin h-8 w-8 text-[var(--accent-primary)]" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          </div>
+        ) : (
+          <>
+            {/* Tab Content */}
+            {activeTab === 'Overview' && renderOverview()}
           
           {activeTab === 'Groups' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -981,37 +838,54 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           
           {activeTab === 'Simulator' && (
             <div className="space-y-6">
-              {/* Simulation Instructions/Status - without duplicate Run button */}
-              {!simulationResults && (
-                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
-                  <div className="text-center py-8">
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center justify-center gap-2 mb-4">
+              <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <span>🎲</span>
                       Tournament Simulation
                     </h3>
-                    {data.groups.length === 0 ? (
-                      <>
-                        <p className="text-[var(--text-tertiary)]">Tournament data is loading...</p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-1">Simulation will be available once team data is loaded</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[var(--text-secondary)]">Click "Run Simulation" in the header to predict the tournament winner</p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                          Based on {data.groups.flatMap(g => g.standings).length} teams from the group stage
-                        </p>
-                      </>
-                    )}
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Monte Carlo simulation using team standings and goal difference
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={numSimulations}
+                      onChange={(e) => setNumSimulations(parseInt(e.target.value))}
+                      className="px-4 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+                    >
+                      {SIMULATION_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={runTournamentSimulation}
+                      disabled={runningSimulation || data.groups.length === 0}
+                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+                    >
+                      {runningSimulation ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Simulating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🎲</span>
+                          <span>Run Simulation</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Simulation Results - Full probability table like LeagueHomePage */}
+              {/* Simulation Results - Full probability table */}
               {simulationResults && (
                 <div className="space-y-6 animate-fade-in">
                   {/* Summary Card */}
                   <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-                    <div className={`p-6 bg-gradient-to-r ${config.gradient}/20 border-b border-[var(--border-color)]`}>
+                    <div className={`p-6 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-[var(--border-color)]`}>
                       <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
                           <h3 className="text-2xl font-bold text-[var(--text-primary)]">{simulationResults.tournament_name}</h3>
@@ -1156,62 +1030,75 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </div>
                     </div>
                   </div>
+
+                  {/* Disclaimer */}
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
+                      <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
+                      Actual results may vary significantly due to injuries, transfers, and unpredictable events.
+                    </p>
+                  </div>
                 </div>
               )}
 
-              {/* Also show the advanced knockout simulator */}
-              <div className="border-t pt-6" style={{ borderColor: 'var(--border-color)' }}>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Advanced Knockout Simulator</h3>
-                <KnockoutSimulator tournament={config.knockoutType} />
-              </div>
+              {/* Initial state - no simulation run yet */}
+              {!simulationResults && !runningSimulation && (
+                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
+                  <span className="text-6xl mb-4 block">🔮</span>
+                  <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Tournament Simulation</h3>
+                  <p className="text-[var(--text-secondary)] max-w-md mx-auto">
+                    Run a Monte Carlo simulation to predict the tournament winner, 
+                    finalists, and semi-finalists based on current group standings.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           
           {activeTab === 'News' && (
-            <div className="bg-[var(--card-bg)] rounded-xl border p-6" style={{ borderColor: 'var(--border-color)' }}>
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Latest News</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.news.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {data.news.map((item, idx) => (
-                    <a
-                      key={idx}
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block group bg-[var(--muted-bg)] rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:border hover:border-[var(--accent-primary)]"
-                    >
-                      {item.image && (
-                        <div className="overflow-hidden">
-                          <img
-                            src={item.image}
-                            alt={item.headline}
-                            className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <p className="font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] line-clamp-2">
-                          {item.headline}
-                        </p>
-                        <p className="text-sm text-[var(--text-tertiary)] mt-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                        {item.published && (
-                          <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
-                          </p>
-                        )}
+                data.news.filter(item => item.link).map((item, idx) => (
+                  <a 
+                    key={idx} 
+                    href={item.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    {item.image && (
+                      <div className="aspect-video w-full overflow-hidden">
+                        <img 
+                          src={item.image} 
+                          alt={item.headline} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
                       </div>
-                    </a>
-                  ))}
-                </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold text-[var(--text-primary)] mb-2 group-hover:text-[var(--accent-primary)] transition-colors line-clamp-2">
+                        {item.headline}
+                      </h3>
+                      <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{item.description}</p>
+                      {item.published && (
+                        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                          {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                ))
               ) : (
-                <p className="text-[var(--text-tertiary)]">No news available</p>
+                <div className="bg-[var(--card-bg)] border rounded-2xl p-8 text-center col-span-2" style={{ borderColor: 'var(--border-color)' }}>
+                  <p className="text-[var(--text-tertiary)]">No news available</p>
+                </div>
               )}
             </div>
           )}
         </>
       )}
+      </div>
     </div>
   )
 }

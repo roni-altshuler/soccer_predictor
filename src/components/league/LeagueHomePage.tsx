@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import { getESPNDateRange } from '@/lib/api'
 
@@ -355,13 +356,17 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Also fetch from ESPN for real-time data including top scorers
         const espnLeagueId = getEspnLeagueId()
         
-        // Get date range for fetching matches (next 14 days)
-        const { dateRange } = getESPNDateRange(14)
+        // Get date range for fetching matches (next 30 days for broader coverage)
+        const { dateRange } = getESPNDateRange(30)
+
+        // Build season query parameter for ESPN API to fetch historical data
+        const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
+        const seasonAmpParam = selectedSeason ? `&season=${selectedSeason}` : ''
 
         const espnResults = await Promise.allSettled([
-          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders`),
+          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}${seasonAmpParam}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders${seasonParam}`),
         ])
 
         const leagueData: LeagueHomeData = {
@@ -545,7 +550,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         if (leagueData.topScorers.length === 0) {
           try {
             const altLeadersRes = await fetch(
-              `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/statistics`,
+              `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/statistics${seasonParam}`,
               { next: { revalidate: 3600 } }
             )
             if (altLeadersRes.ok) {
@@ -650,7 +655,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               </div>
             </div>
             
-            {/* Season Dropdown & Simulation Button - Match Tournament styling */}
+            {/* Season Dropdown */}
             <div className="flex items-center gap-3">
               <select
                 value={selectedSeason}
@@ -663,30 +668,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   </option>
                 ))}
               </select>
-              
-              <button
-                onClick={runSeasonSimulation}
-                disabled={runningSimulation || !data?.standings?.length}
-                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                {runningSimulation ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Simulating...
-                  </>
-                ) : (
-                  <>
-                    🎲 Run Simulation
-                  </>
-                )}
-              </button>
             </div>
           </div>
           
-          {/* Simulation Results - Match Tournament styling */}
+          {/* Simulation Results */}
           {simulationResults && (
             <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
               <div className="flex items-center justify-between flex-wrap gap-4">
@@ -879,6 +864,42 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   ))}
                 </div>
               </div>
+
+              {/* Latest News */}
+              {data?.news && data.news.length > 0 && (
+                <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <h2 className="text-lg font-semibold text-[var(--text-primary)]">Latest News</h2>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+                    {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors group"
+                      >
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.headline}
+                            className="w-full h-32 object-cover rounded-lg mb-2"
+                          />
+                        )}
+                        <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] line-clamp-2">
+                          {item.headline}
+                        </p>
+                        {item.published && (
+                          <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                          </p>
+                        )}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1316,10 +1337,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         {activeTab === 'news' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data?.news && data.news.length > 0 ? (
-              data.news.map((item, idx) => (
+              data.news.filter(item => item.link).map((item, idx) => (
                 <a 
                   key={idx} 
-                  href={item.link || '#'} 
+                  href={item.link} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 
@@ -1341,7 +1362,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </h3>
                     <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{item.description}</p>
                     {item.published && (
-                      <p className="text-xs text-[var(--text-tertiary)] mt-2">{item.published}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                        {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                      </p>
                     )}
                   </div>
                 </a>
