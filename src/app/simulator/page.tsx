@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import KnockoutSimulator from '@/components/knockout/KnockoutSimulator'
+import KnockoutBracket from '@/components/knockout/KnockoutBracket'
 
 type TournamentType = 'champions_league' | 'europa_league' | 'world_cup'
 
@@ -46,7 +46,7 @@ export default function SimulatorPage() {
         </div>
 
         {/* Simulator */}
-        <KnockoutSimulator tournament={selectedTournament} />
+        <KnockoutBracket tournament={selectedTournament} />
 
         {/* Methodology Note */}
         <div className="mt-8 p-4 bg-[var(--muted-bg)] rounded-xl">

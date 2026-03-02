@@ -18,6 +18,16 @@ from backend.services.prediction.probabilistic import (
     GoalDistribution,
     ScoreMatrix,
 )
+from backend.services.prediction.training import (
+    ModelTrainer,
+    FeatureBuilder,
+    get_model_trainer,
+    train_model_pipeline,
+)
+from backend.services.prediction.historical_data import (
+    HistoricalDataCollector,
+    get_historical_collector,
+)
 
 __all__ = [
     "PredictionService",
@@ -32,4 +42,10 @@ __all__ = [
     "monte_carlo_simulation",
     "GoalDistribution",
     "ScoreMatrix",
+    "ModelTrainer",
+    "FeatureBuilder",
+    "get_model_trainer",
+    "train_model_pipeline",
+    "HistoricalDataCollector",
+    "get_historical_collector",
 ]

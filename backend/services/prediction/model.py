@@ -1,5 +1,14 @@
 """
 Main prediction service combining all components.
+
+Integrates:
+- Trained ML ensemble model (XGBoost + LightGBM + GradientBoosting)
+- Poisson-based probabilistic goal model
+- ELO rating system
+- Weather impact adjustments
+- Referee tendency adjustments
+- News sentiment analysis
+- Team form and momentum tracking
 """
 
 from typing import Dict, List, Optional
@@ -33,17 +42,47 @@ from backend.services.prediction.probabilistic import (
 logger = logging.getLogger(__name__)
 
 
+def _safe_import_weather():
+    """Lazy import weather service to avoid circular imports."""
+    try:
+        from backend.services.weather.client import get_weather_service
+        return get_weather_service()
+    except Exception:
+        return None
+
+
+def _safe_import_referee():
+    """Lazy import referee service to avoid circular imports."""
+    try:
+        from backend.services.referee.client import get_referee_service
+        return get_referee_service()
+    except Exception:
+        return None
+
+
+def _safe_import_tracker():
+    """Lazy import prediction tracker to avoid circular imports."""
+    try:
+        from backend.services.prediction.tracker import get_prediction_tracker
+        return get_prediction_tracker()
+    except Exception:
+        return None
+
+
 class PredictionService:
     """
     Main service for generating match predictions.
     
     Combines:
-    - ELO-based team ratings
-    - Feature engineering from team stats
-    - Probabilistic Poisson model for goals
-    - ML model for outcome classification (optional)
-    - News sentiment analysis
-    - Player form analysis
+    - Trained ML ensemble (XGBoost + LightGBM + GradientBoosting) on historical data
+    - ELO-based team ratings with league-adjusted coefficients
+    - Probabilistic Poisson model for goal predictions
+    - Weather impact adjustments (temperature, wind, precipitation)
+    - Referee tendency adjustments (cards, penalties, home bias)
+    - News sentiment analysis from ESPN
+    - Team form and momentum tracking with recency weighting
+    - Head-to-head historical patterns
+    - Injury and squad availability analysis
     """
     
     def __init__(
@@ -51,20 +90,92 @@ class PredictionService:
         ml_model=None,
         league_avg_goals: float = 1.35,
         home_advantage: float = 0.25,
-        model_version: str = "3.0.0"
+        model_version: str = "3.1.0"
     ):
-        self.ml_model = ml_model
         self.league_avg_goals = league_avg_goals
         self.home_advantage = home_advantage
         self.model_version = model_version
         
+        # Try to load trained ensemble model
+        self.ml_model = ml_model
+        self._trained_model = None
+        self._load_trained_model()
+        
+        effective_model = self._trained_model or ml_model
+        
         self.poisson = PoissonModel()
         self.hybrid = HybridPredictionModel(
-            outcome_model=ml_model,
+            outcome_model=effective_model,
             poisson_model=self.poisson,
             league_avg_goals=league_avg_goals,
             home_advantage=home_advantage
         )
+        
+        # Lazy-loaded services
+        self._weather_service = None
+        self._referee_service = None
+        self._tracker = None
+    
+    def _load_trained_model(self):
+        """Attempt to load the pre-trained ML ensemble model."""
+        try:
+            from backend.services.prediction.training import get_model_trainer
+            trainer = get_model_trainer()
+            if trainer.model is not None:
+                self._trained_model = trainer.model
+                self.model_version = "3.1.0-ensemble"
+                logger.info("Loaded pre-trained ensemble model for predictions")
+        except Exception as e:
+            logger.debug(f"No pre-trained model available: {e}")
+    
+    async def _get_weather_adjustment(
+        self, home_team: str, kickoff_time: Optional[datetime] = None
+    ) -> Dict[str, float]:
+        """Fetch weather data and calculate prediction adjustments."""
+        try:
+            if self._weather_service is None:
+                self._weather_service = _safe_import_weather()
+            if self._weather_service is None:
+                return {"goal_factor": 1.0, "home_advantage_boost": 0.0}
+            
+            weather = await self._weather_service.get_weather_for_venue(
+                home_team, kickoff_time
+            )
+            return self._weather_service.calculate_weather_adjustment(weather)
+        except Exception as e:
+            logger.debug(f"Weather data unavailable: {e}")
+            return {"goal_factor": 1.0, "home_advantage_boost": 0.0}
+    
+    def _get_referee_adjustment(
+        self, referee_name: Optional[str], home_team: str, away_team: str
+    ) -> Dict[str, float]:
+        """Get referee-based prediction adjustments."""
+        try:
+            if not referee_name:
+                return {"card_factor": 1.0, "penalty_factor": 1.0, "home_advantage": 0.0}
+            
+            if self._referee_service is None:
+                self._referee_service = _safe_import_referee()
+            if self._referee_service is None:
+                return {"card_factor": 1.0, "penalty_factor": 1.0, "home_advantage": 0.0}
+            
+            return self._referee_service.calculate_referee_adjustment(
+                referee_name, home_team, away_team
+            )
+        except Exception as e:
+            logger.debug(f"Referee data unavailable: {e}")
+            return {"card_factor": 1.0, "penalty_factor": 1.0, "home_advantage": 0.0}
+    
+    def _get_tracker_adjustments(self) -> Dict[str, float]:
+        """Get model adjustments from prediction tracking feedback loop."""
+        try:
+            if self._tracker is None:
+                self._tracker = _safe_import_tracker()
+            if self._tracker is None:
+                return {}
+            return self._tracker.get_model_adjustments()
+        except Exception:
+            return {}
     
     async def predict_match(
         self,
@@ -75,9 +186,12 @@ class PredictionService:
         match_context: Optional[Dict] = None,
         kickoff_time: Optional[datetime] = None,
         news_factors: Optional[Dict] = None,
+        referee_name: Optional[str] = None,
     ) -> MatchPrediction:
         """
         Generate a complete prediction for a match.
+        
+        Integrates weather, referee, sentiment, form, and ML model predictions.
         
         Args:
             match_id: Unique match identifier
@@ -87,10 +201,26 @@ class PredictionService:
             match_context: Additional context (league positions, importance, etc.)
             kickoff_time: Match kickoff time
             news_factors: News sentiment analysis from ESPN
+            referee_name: Name of assigned referee
         
         Returns:
             Complete MatchPrediction
         """
+        home_name = home_team_data.get('name', 'Home')
+        away_name = away_team_data.get('name', 'Away')
+        
+        # Fetch weather and referee adjustments in parallel
+        weather_adj = await self._get_weather_adjustment(home_name, kickoff_time)
+        referee_adj = self._get_referee_adjustment(referee_name, home_name, away_name)
+        tracker_adj = self._get_tracker_adjustments()
+        
+        # Apply tracker feedback to model parameters
+        effective_home_adv = self.home_advantage * tracker_adj.get("home_advantage_factor", 1.0)
+        effective_home_adv += weather_adj.get("home_advantage_boost", 0.0)
+        effective_home_adv += referee_adj.get("home_advantage", 0.0)
+        
+        goal_scale = tracker_adj.get("goals_scale", 1.0) * weather_adj.get("goal_factor", 1.0)
+        
         # Build features with news factors
         features = build_features(
             home_team_data,
@@ -100,16 +230,28 @@ class PredictionService:
             news_factors,
         )
         
-        # Get core prediction from hybrid model
+        # Get core prediction from hybrid model with adjusted parameters
+        effective_model = self._trained_model or self.ml_model
         prediction = self.hybrid.predict(
             home_elo=features.home_elo,
             away_elo=features.away_elo,
-            home_goals_pg=features.home_goals_per_game,
+            home_goals_pg=features.home_goals_per_game * goal_scale,
             home_conceded_pg=features.home_conceded_per_game,
-            away_goals_pg=features.away_goals_per_game,
+            away_goals_pg=features.away_goals_per_game * goal_scale,
             away_conceded_pg=features.away_conceded_per_game,
-            features=features.to_array() if self.ml_model else None
+            features=features.to_array() if effective_model else None
         )
+        
+        # Apply draw bias from tracker
+        draw_bias = tracker_adj.get("draw_bias", 0.0)
+        if abs(draw_bias) > 0.001:
+            hw = prediction["outcome"]["home_win"]
+            dr = prediction["outcome"]["draw"] + draw_bias
+            aw = prediction["outcome"]["away_win"]
+            total = hw + dr + aw
+            prediction["outcome"]["home_win"] = round(hw / total, 4)
+            prediction["outcome"]["draw"] = round(dr / total, 4)
+            prediction["outcome"]["away_win"] = round(aw / total, 4)
         
         # Build outcome probabilities
         outcome = OutcomeProbabilities(

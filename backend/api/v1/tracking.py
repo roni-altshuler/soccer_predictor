@@ -199,3 +199,123 @@ async def get_model_adjustments():
             "brier_score": round(metrics.brier_score, 4),
         },
     }
+
+
+@router.post("/fetch-outcomes")
+async def fetch_outcomes():
+    """
+    Manually trigger outcome fetching for pending predictions.
+    
+    Checks ESPN for finished matches and updates stored predictions
+    with real results, then updates ELO ratings.
+    """
+    from backend.services.prediction.outcome_fetcher import get_outcome_fetcher
+    
+    fetcher = get_outcome_fetcher()
+    result = await fetcher.update_pending_predictions()
+    return result
+
+
+@router.get("/outcome-status")
+async def outcome_fetcher_status():
+    """Get the current status of the automatic outcome fetcher."""
+    from backend.services.prediction.outcome_fetcher import get_outcome_fetcher
+    
+    fetcher = get_outcome_fetcher()
+    return fetcher.get_status()
+
+
+@router.get("/accuracy/trend")
+async def get_accuracy_trend(
+    window: int = Query(10, ge=5, le=100, description="Rolling window size"),
+    league: Optional[str] = None,
+):
+    """
+    Get rolling accuracy trend over time.
+    
+    Returns accuracy calculated over a rolling window
+    so users can see how the model improves.
+    """
+    tracker = get_prediction_tracker()
+    completed = tracker.get_recent_predictions(limit=500, completed_only=True, league=league)
+    
+    # Sort chronologically
+    completed.sort(key=lambda p: p.match_date)
+    
+    trend = []
+    for i in range(window, len(completed) + 1):
+        batch = completed[i - window : i]
+        correct = sum(1 for p in batch if p.winner_correct)
+        accuracy = correct / len(batch)
+        trend.append({
+            "index": i,
+            "date": batch[-1].match_date,
+            "accuracy": round(accuracy, 4),
+            "correct": correct,
+            "total": len(batch),
+            "sample_match": f"{batch[-1].home_team} vs {batch[-1].away_team}",
+        })
+    
+    return {
+        "window": window,
+        "data_points": len(trend),
+        "trend": trend,
+        "latest_accuracy": trend[-1]["accuracy"] if trend else None,
+    }
+
+
+@router.get("/accuracy/summary")
+async def get_accuracy_summary():
+    """
+    Get comprehensive accuracy summary for the dashboard.
+    
+    Combines overall metrics, by-league breakdown, trend, and recent predictions.
+    """
+    tracker = get_prediction_tracker()
+    
+    overall = tracker.calculate_accuracy_metrics()
+    recent_30 = tracker.calculate_accuracy_metrics(days=30)
+    by_league = tracker.get_league_performance()
+    
+    recent_preds = tracker.get_recent_predictions(limit=20, completed_only=True)
+    recent_form = ["W" if p.winner_correct else "L" for p in recent_preds]
+    
+    # Streak calculation
+    current_streak = 0
+    streak_type = None
+    for r in recent_form:
+        if streak_type is None:
+            streak_type = r
+            current_streak = 1
+        elif r == streak_type:
+            current_streak += 1
+        else:
+            break
+    
+    return {
+        "overall": overall.to_dict(),
+        "last_30_days": recent_30.to_dict(),
+        "by_league": by_league,
+        "recent_form": recent_form[:10],
+        "current_streak": {"type": streak_type or "N/A", "count": current_streak},
+        "recent_predictions": [
+            {
+                "match_id": p.match_id,
+                "home_team": p.home_team,
+                "away_team": p.away_team,
+                "league": p.league,
+                "match_date": p.match_date,
+                "predicted_winner": p.predicted_winner,
+                "predicted_scoreline": p.predicted_scoreline,
+                "actual_scoreline": f"{p.actual_home_goals}-{p.actual_away_goals}" if p.actual_home_goals is not None else None,
+                "actual_winner": p.actual_winner,
+                "winner_correct": p.winner_correct,
+                "scoreline_correct": p.scoreline_correct,
+                "confidence": p.confidence,
+                "home_win_prob": p.predicted_home_win,
+                "draw_prob": p.predicted_draw,
+                "away_win_prob": p.predicted_away_win,
+            }
+            for p in recent_preds
+        ],
+    }

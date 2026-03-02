@@ -58,8 +58,10 @@ __pycache__/
 .coverage
 htmlcov/
 
-# models
+# models & training artifacts
 *.pkl
+backend/data/historical/
+backend/data/models/
 
 # Gemini API Key
 gemini.md

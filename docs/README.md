@@ -23,8 +23,14 @@ This directory contains all project documentation for the Soccer Match Predictor
 - **[RETRAINING_GUIDE.md](./RETRAINING_GUIDE.md)** - Machine learning model retraining procedures
 - **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
 
+### Architecture
+
+- **[ARCHITECTURE_V2.md](./ARCHITECTURE_V2.md)** - Full system architecture documentation
+
 ### Project History
 
+- **[BUILD_SUMMARY.md](./BUILD_SUMMARY.md)** - Initial project build process log
+- **[COMPLETION_REPORT.md](./COMPLETION_REPORT.md)** - Requirements completion checklist
 - **[UPDATE_SUMMARY.md](./UPDATE_SUMMARY.md)** - Summary of project updates and changes
 - **[UX_IMPROVEMENTS_SUMMARY.md](./UX_IMPROVEMENTS_SUMMARY.md)** - User experience improvements and design changes
 

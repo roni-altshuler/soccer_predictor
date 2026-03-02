@@ -11,6 +11,7 @@ from backend.api.v1.knockout import router as knockout_router
 from backend.api.v1.weather import router as weather_router
 from backend.api.v1.referee import router as referee_router
 from backend.api.v1.tracking import router as tracking_router
+from backend.api.v1.training import router as training_router
 
 router = APIRouter(prefix="/api/v1")
 
@@ -23,3 +24,4 @@ router.include_router(knockout_router)
 router.include_router(weather_router)
 router.include_router(referee_router)
 router.include_router(tracking_router)
+router.include_router(training_router)

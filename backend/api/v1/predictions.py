@@ -4,12 +4,15 @@ Prediction-related API endpoints.
 
 from typing import List, Optional
 from datetime import datetime
+import logging
 from fastapi import APIRouter, HTTPException, Query, Body
 
 from backend.services.prediction import get_prediction_service
 from backend.services.fotmob import get_fotmob_client
 from backend.services.ratings import get_elo_system
 from backend.models.prediction import MatchPrediction
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/predictions", tags=["predictions"])
 
@@ -136,7 +139,29 @@ async def predict_match(match_id: int):
         match_context=context,
         kickoff_time=kickoff_time
     )
-    
+
+    # Auto-store prediction for accuracy tracking
+    try:
+        from backend.services.prediction.tracker import get_prediction_tracker
+        tracker = get_prediction_tracker()
+        tracker.store_prediction(
+            match_id=str(match_id),
+            home_team=home_name,
+            away_team=away_name,
+            league=league,
+            match_date=kickoff_time.isoformat()[:10] if kickoff_time else datetime.utcnow().isoformat()[:10],
+            home_win_prob=prediction.outcome.home_win,
+            draw_prob=prediction.outcome.draw,
+            away_win_prob=prediction.outcome.away_win,
+            home_xG=prediction.goals.home_expected_goals,
+            away_xG=prediction.goals.away_expected_goals,
+            confidence=prediction.confidence.overall,
+            home_elo=elo.get_elo(home_name),
+            away_elo=elo.get_elo(away_name),
+        )
+    except Exception as e:
+        logger.warning(f"Auto-store prediction failed: {e}")
+
     return prediction
 
 

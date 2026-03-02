@@ -41,7 +41,17 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown."""
-    logger.info("Starting Soccer Predictor API v3.0")
+    import asyncio
+    logger.info("Starting Soccer Predictor API v4.0")
+
+    # Start background outcome update loop (checks for finished matches every 30 min)
+    try:
+        from backend.services.prediction.outcome_fetcher import outcome_update_loop
+        asyncio.create_task(outcome_update_loop(interval_minutes=30))
+        logger.info("Background outcome fetcher started")
+    except Exception as e:
+        logger.warning(f"Could not start outcome fetcher: {e}")
+
     yield
     logger.info("Shutting down Soccer Predictor API")
     await cleanup_fotmob_client()
