@@ -87,10 +87,12 @@ class ScoreMatrix:
 
 class PoissonModel:
     """
-    Poisson-based goal prediction model.
+    Dixon-Coles enhanced Poisson goal prediction model.
     
     Uses Poisson distribution to model the number of goals
-    scored by each team, assuming goals are independent events.
+    scored by each team, with a Dixon-Coles correction for
+    low-scoring outcomes (0-0, 1-0, 0-1, 1-1) to account
+    for the observed correlation in football scores.
     """
     
     def __init__(self, max_goals: int = 10):
@@ -136,12 +138,20 @@ class PoissonModel:
     def score_matrix(
         self,
         home_xG: float,
-        away_xG: float
+        away_xG: float,
+        rho: float = -0.13,
     ) -> ScoreMatrix:
         """
         Calculate probability matrix for all scorelines.
         
-        Assumes home and away goals are independent (bivariate Poisson).
+        Applies Dixon-Coles correction to low-scoring outcomes
+        to account for goal correlation in football.
+        
+        Args:
+            home_xG: Expected goals for home team
+            away_xG: Expected goals for away team
+            rho: Dixon-Coles correlation parameter (typically -0.13 to -0.08)
+                 Negative rho increases P(0-0) and P(1-1), decreases P(1-0) and P(0-1)
         """
         matrix = np.zeros((self.max_goals + 1, self.max_goals + 1))
         
@@ -150,7 +160,26 @@ class PoissonModel:
         
         for h in range(self.max_goals + 1):
             for a in range(self.max_goals + 1):
-                matrix[h, a] = home_dist.probabilities[h] * away_dist.probabilities[a]
+                base_prob = home_dist.probabilities[h] * away_dist.probabilities[a]
+                
+                # Dixon-Coles correction for low scores
+                if h == 0 and a == 0:
+                    tau = 1.0 - home_xG * away_xG * rho
+                elif h == 0 and a == 1:
+                    tau = 1.0 + home_xG * rho
+                elif h == 1 and a == 0:
+                    tau = 1.0 + away_xG * rho
+                elif h == 1 and a == 1:
+                    tau = 1.0 - rho
+                else:
+                    tau = 1.0
+                
+                matrix[h, a] = base_prob * max(0.0, tau)
+        
+        # Re-normalize to ensure probabilities sum to 1
+        total = matrix.sum()
+        if total > 0:
+            matrix = matrix / total
         
         return ScoreMatrix(
             matrix=matrix,
@@ -242,12 +271,13 @@ class PoissonModel:
 
 class HybridPredictionModel:
     """
-    Combines ML classifier with Poisson model for comprehensive predictions.
+    Enhanced prediction model combining ML, Poisson, and ELO.
     
     Uses:
     1. XGBoost/GradientBoosting for outcome classification
-    2. Poisson model for goal predictions and scorelines
-    3. ELO ratings for team strength estimation
+    2. Dixon-Coles corrected Poisson model for goal/scoreline predictions
+    3. ELO ratings with league-calibrated draw rates
+    4. Opponent-adjusted attack/defense strengths
     """
     
     def __init__(
@@ -255,38 +285,49 @@ class HybridPredictionModel:
         outcome_model=None,
         poisson_model: Optional[PoissonModel] = None,
         league_avg_goals: float = 1.35,
-        home_advantage: float = 0.25
+        home_advantage: float = 0.25,
+        rho: float = -0.13,
     ):
         self.outcome_model = outcome_model
         self.poisson = poisson_model or PoissonModel()
         self.league_avg_goals = league_avg_goals
         self.home_advantage = home_advantage
+        self.rho = rho  # Dixon-Coles correlation parameter
     
     def elo_to_attack_defense(
         self,
         elo: float,
         goals_per_game: float,
-        conceded_per_game: float
+        conceded_per_game: float,
+        opponent_avg_elo: float = 1500.0,
     ) -> Tuple[float, float]:
         """
-        Convert ELO and stats to attack/defense strength.
+        Convert ELO and stats to opponent-adjusted attack/defense strength.
         
         Attack strength: relative to league average (1.0 = average)
         Defense strength: relative to league average (>1 = better defense)
+        
+        Includes opponent quality adjustment to normalize for strength of schedule.
         """
         elo_factor = (elo - 1500) / 400  # -1 to 1 for typical ELO range
         
-        # Attack strength based on goals and ELO
-        attack = (goals_per_game / self.league_avg_goals) * (1 + elo_factor * 0.2)
-        attack = max(0.5, min(2.0, attack))
+        # Opponent quality factor: if a team scored a lot against weak opponents,
+        # adjust downward; if against strong opponents, adjust upward
+        opp_quality = (opponent_avg_elo - 1500) / 400
+        schedule_factor = 1.0 + opp_quality * 0.15  # ±15% based on schedule
+        
+        # Attack strength based on goals and ELO, adjusted for opponent quality
+        attack = (goals_per_game / self.league_avg_goals) * schedule_factor
+        attack = attack * (1 + elo_factor * 0.2)
+        attack = max(0.4, min(2.5, attack))
         
         # Defense strength (higher = better, concedes less)
         if conceded_per_game > 0:
             defense = self.league_avg_goals / conceded_per_game
         else:
             defense = 1.5
-        defense = defense * (1 + elo_factor * 0.1)
-        defense = max(0.5, min(2.0, defense))
+        defense = defense * (1 + elo_factor * 0.1) / schedule_factor
+        defense = max(0.4, min(2.5, defense))
         
         return attack, defense
     
@@ -311,13 +352,24 @@ class HybridPredictionModel:
             away_elo, away_goals_pg, away_conceded_pg
         )
         
-        # Poisson predictions for goals
+        # Poisson predictions for goals (with Dixon-Coles correction)
         poisson_pred = self.poisson.predict_match(
             home_attack, home_defense,
             away_attack, away_defense,
             self.league_avg_goals,
             self.home_advantage
         )
+        
+        # Re-compute score matrix with Dixon-Coles correction
+        home_xG = poisson_pred["goals"]["home_xG"]
+        away_xG = poisson_pred["goals"]["away_xG"]
+        corrected_matrix = self.poisson.score_matrix(home_xG, away_xG, rho=self.rho)
+        
+        # Use corrected probabilities
+        poisson_pred["outcome"]["home_win"] = round(corrected_matrix.home_win_prob(), 4)
+        poisson_pred["outcome"]["draw"] = round(corrected_matrix.draw_prob(), 4)
+        poisson_pred["outcome"]["away_win"] = round(corrected_matrix.away_win_prob(), 4)
+        poisson_pred["matrix"] = corrected_matrix
         
         # If we have an ML model and features, use it for outcome
         if self.outcome_model is not None and features is not None:

@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
         draw: (prediction.probabilities?.draw || 30) / 100,
         away_win: (prediction.probabilities?.away_win || 30) / 100,
       },
-      predicted_home_goals: Math.max(0, Math.round((prediction.home_elo ? (prediction.home_elo - 1500) / 150 + 1.5 : 1.5))),
-      predicted_away_goals: Math.max(0, Math.round((prediction.away_elo ? (prediction.away_elo - 1500) / 150 + 1.2 : 1.2))),
+      predicted_home_goals: prediction.predicted_home_goals ?? Math.max(0, Math.round(((prediction.home_elo || 1500) - 1350) / 180 + 0.3)),
+      predicted_away_goals: prediction.predicted_away_goals ?? Math.max(0, Math.round(((prediction.away_elo || 1500) - 1350) / 200)),
       confidence: prediction.confidence || 50,
     })
   } catch (error) {

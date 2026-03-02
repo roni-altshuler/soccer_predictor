@@ -7,6 +7,7 @@ const LEAGUE_MAPPING: Record<number, string> = {
   55: 'ita.1',  // Serie A
   54: 'ger.1',  // Bundesliga
   53: 'fra.1',  // Ligue 1
+  130: 'usa.1', // MLS
 }
 
 const LEAGUE_NAMES: Record<number, string> = {
@@ -15,6 +16,7 @@ const LEAGUE_NAMES: Record<number, string> = {
   55: 'Serie A',
   54: 'Bundesliga',
   53: 'Ligue 1',
+  130: 'MLS',
 }
 
 // Sample teams for each league when API is unavailable
@@ -124,6 +126,28 @@ const SAMPLE_TEAMS: Record<number, { name: string; points: number }[]> = {
     { name: 'Angers', points: 17 },
     { name: 'Le Havre', points: 14 },
     { name: 'Montpellier', points: 12 },
+  ],
+  130: [ // MLS
+    { name: 'Inter Miami', points: 40 },
+    { name: 'Columbus Crew', points: 38 },
+    { name: 'LA Galaxy', points: 36 },
+    { name: 'FC Cincinnati', points: 34 },
+    { name: 'LAFC', points: 33 },
+    { name: 'Real Salt Lake', points: 32 },
+    { name: 'New York Red Bulls', points: 30 },
+    { name: 'Charlotte FC', points: 28 },
+    { name: 'Portland Timbers', points: 27 },
+    { name: 'Orlando City', points: 26 },
+    { name: 'New York City FC', points: 25 },
+    { name: 'Seattle Sounders', points: 24 },
+    { name: 'Atlanta United', points: 23 },
+    { name: 'Nashville SC', points: 22 },
+    { name: 'Philadelphia Union', points: 20 },
+    { name: 'CF Montréal', points: 19 },
+    { name: 'Chicago Fire', points: 18 },
+    { name: 'Austin FC', points: 17 },
+    { name: 'San Jose Earthquakes', points: 15 },
+    { name: 'D.C. United', points: 14 },
   ],
 }
 

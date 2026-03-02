@@ -44,6 +44,33 @@ class EloRatingSystem:
         # Default for unknown leagues
         "default": 0.85,
     }
+
+    # League-specific draw rates (empirical averages from 5 seasons)
+    LEAGUE_DRAW_RATES = {
+        "Premier League": 0.23,
+        "La Liga": 0.24,
+        "Bundesliga": 0.22,
+        "Serie A": 0.27,
+        "Ligue 1": 0.24,
+        "Eredivisie": 0.21,
+        "Primeira Liga": 0.25,
+        "MLS": 0.22,
+        "Championship": 0.26,
+        "Champions League": 0.20,
+        "default": 0.24,
+    }
+
+    # League average goals per team per game
+    LEAGUE_AVG_GOALS = {
+        "Premier League": 1.42,
+        "La Liga": 1.30,
+        "Bundesliga": 1.55,
+        "Serie A": 1.32,
+        "Ligue 1": 1.30,
+        "MLS": 1.45,
+        "Champions League": 1.50,
+        "default": 1.35,
+    }
     
     def __init__(
         self,
@@ -231,11 +258,15 @@ class EloRatingSystem:
     def predict_outcome(
         self,
         home_team: str,
-        away_team: str
+        away_team: str,
+        league: Optional[str] = None,
+        use_venue_elo: bool = True,
     ) -> Dict[str, float]:
         """
         Predict match outcome probabilities based on ELO.
         
+        Uses league-specific draw rates and optionally home/away ELO.
+
         Returns:
             {
                 "home_win": probability,
@@ -243,21 +274,43 @@ class EloRatingSystem:
                 "away_win": probability
             }
         """
-        home_elo = self.get_elo(home_team) + self.home_advantage
-        away_elo = self.get_elo(away_team)
+        home_data = self.get_rating(home_team, league)
+        away_data = self.get_rating(away_team, league)
         
+        # Use blended venue-specific ELO when available
+        if use_venue_elo and home_data.get("matches", 0) >= 5:
+            base_home = 0.7 * home_data["elo"] + 0.3 * home_data.get("home_elo", home_data["elo"])
+        else:
+            base_home = home_data["elo"]
+        
+        if use_venue_elo and away_data.get("matches", 0) >= 5:
+            base_away = 0.7 * away_data["elo"] + 0.3 * away_data.get("away_elo", away_data["elo"])
+        else:
+            base_away = away_data["elo"]
+        
+        home_elo = base_home + self.home_advantage
+        away_elo = base_away
         elo_diff = home_elo - away_elo
         
-        # Convert ELO difference to win probability
-        # Using a modified logistic function that accounts for draws
-        home_win = 1.0 / (1.0 + math.pow(10, -(elo_diff - 40) / 400))
-        away_win = 1.0 / (1.0 + math.pow(10, (elo_diff + 40) / 400))
+        # League-specific base draw rate
+        draw_rate = self.LEAGUE_DRAW_RATES.get(
+            league, self.LEAGUE_DRAW_RATES["default"]
+        )
         
-        # Draw probability (higher when teams are closer in rating)
-        draw = 1.0 - home_win - away_win
-        draw = max(0.15, min(0.35, draw))  # Clamp draw probability
+        # Draw probability: base rate adjusted by ELO closeness
+        # Closer ELO -> higher draw prob; big gap -> lower draw prob
+        elo_closeness = math.exp(-(elo_diff ** 2) / (2 * 250 ** 2))
+        draw = draw_rate * (0.6 + 0.8 * elo_closeness)
+        draw = max(0.08, min(0.38, draw))
         
-        # Normalize
+        # Win probabilities from logistic model
+        win_pool = 1.0 - draw
+        home_win_raw = 1.0 / (1.0 + math.pow(10, -elo_diff / 400))
+        
+        home_win = win_pool * home_win_raw
+        away_win = win_pool * (1.0 - home_win_raw)
+        
+        # Normalize to ensure exact sum = 1.0
         total = home_win + draw + away_win
         
         return {

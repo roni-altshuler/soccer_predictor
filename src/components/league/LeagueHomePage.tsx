@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
-import { getESPNDateRange } from '@/lib/api'
 
 interface Standing {
   position: number
@@ -160,7 +159,7 @@ const LEAGUE_NUMERIC_ID_MAP: Record<string, number> = {
   'ger.1': 54, 'bundesliga': 54,
   'ita.1': 55, 'serie_a': 55,
   'fra.1': 53, 'ligue_1': 53,
-  'usa.1': 29, 'mls': 29,
+  'usa.1': 130, 'mls': 130,
 }
 
 // Tab label mapping for display
@@ -356,17 +355,22 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Also fetch from ESPN for real-time data including top scorers
         const espnLeagueId = getEspnLeagueId()
         
-        // Get date range for fetching matches (next 30 days for broader coverage)
-        const { dateRange } = getESPNDateRange(30)
+        // Get date range: 30 days back + 30 days forward for both recent results and upcoming
+        const now = new Date()
+        const pastDate = new Date(now)
+        pastDate.setDate(pastDate.getDate() - 30)
+        const futureDate = new Date(now)
+        futureDate.setDate(futureDate.getDate() + 30)
+        const fmtDate = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
+        const scoreboardDateRange = `${fmtDate(pastDate)}-${fmtDate(futureDate)}`
 
-        // Build season query parameter for ESPN API to fetch historical data
+        // Season param only for standings (historical); scoreboard and leaders use current
         const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
-        const seasonAmpParam = selectedSeason ? `&season=${selectedSeason}` : ''
 
         const espnResults = await Promise.allSettled([
           fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}${seasonAmpParam}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders${seasonParam}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${scoreboardDateRange}`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders`),
         ])
 
         const leagueData: LeagueHomeData = {

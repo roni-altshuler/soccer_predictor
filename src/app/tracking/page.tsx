@@ -29,27 +29,27 @@ export default function TrackingPage() {
           <h3 className="font-semibold text-[var(--text-primary)] mb-2">How It Works</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="font-medium text-[var(--text-primary)] mb-1">1. Predictions Made</p>
+              <p className="font-medium text-[var(--text-primary)] mb-1">1. Dixon-Coles Model</p>
               <p className="text-[var(--text-tertiary)]">
-                Every match prediction is automatically stored with probabilities and confidence
+                Predictions use a corrected Poisson model with league-specific draw rates and opponent-adjusted strengths
               </p>
             </div>
             <div>
-              <p className="font-medium text-[var(--text-primary)] mb-1">2. Auto-Tracked</p>
+              <p className="font-medium text-[var(--text-primary)] mb-1">2. ELO + ML Ensemble</p>
               <p className="text-[var(--text-tertiary)]">
-                Real match results are fetched from ESPN every 30 minutes and recorded
+                Dynamic ELO ratings blended with GradientBoosting classifier using 41 features per match
               </p>
             </div>
             <div>
-              <p className="font-medium text-[var(--text-primary)] mb-1">3. Model Learns</p>
+              <p className="font-medium text-[var(--text-primary)] mb-1">3. Auto-Tracked</p>
               <p className="text-[var(--text-tertiary)]">
-                ELO ratings and model weights are updated based on actual outcomes
+                Real results fetched from ESPN every 30 min — ELO and model weights auto-update from outcomes
               </p>
             </div>
             <div>
-              <p className="font-medium text-[var(--text-primary)] mb-1">4. Retrained</p>
+              <p className="font-medium text-[var(--text-primary)] mb-1">4. Self-Improving</p>
               <p className="text-[var(--text-tertiary)]">
-                After 50 new outcomes, the full model is incrementally retrained for better accuracy
+                After 50 outcomes the model retrains. Brier score and draw calibration continuously optimized
               </p>
             </div>
           </div>

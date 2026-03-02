@@ -216,7 +216,7 @@ class OutcomeFetcher:
             from backend.services.ratings.elo import get_elo_system
 
             elo = get_elo_system()
-            elo.update_ratings(home_team, away_team, home_score, away_score)
+            elo.calculate_new_ratings(home_team, away_team, home_score, away_score)
         except Exception as e:
             logger.debug(f"ELO update failed: {e}")
 

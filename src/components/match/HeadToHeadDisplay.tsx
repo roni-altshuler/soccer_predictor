@@ -146,71 +146,195 @@ export default function HeadToHeadDisplay({
           console.log('ESPN H2H not available, trying alternatives')
         }
 
-        // Try to fetch real team form from ESPN schedule API
+        // Try to fetch real team form from ESPN scoreboard API 
+        // Instead of guessing from aggregate records, fetch actual recent results
         if (showTeamForm) {
           try {
-            // Fetch recent team results from ESPN for both teams
-            // Using a constant for supported leagues improves maintainability
             const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions']
             
-            for (const league of SUPPORTED_LEAGUES) {
-              try {
-                // Single API call to get all teams, then find both home and away
-                const teamsRes = await fetch(
-                  `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams`,
-                  { next: { revalidate: 3600 } } // Cache for 1 hour
-                )
-                
-                if (teamsRes.ok) {
+            // Helper to find a team's ESPN ID and league
+            const findTeamId = async (teamName: string): Promise<{teamId: string, league: string} | null> => {
+              for (const league of SUPPORTED_LEAGUES) {
+                try {
+                  const teamsRes = await fetch(
+                    `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams?limit=100`
+                  )
+                  if (!teamsRes.ok) continue
                   const teamsData = await teamsRes.json()
                   const teams = teamsData.sports?.[0]?.leagues?.[0]?.teams || []
-                  
-                  // Find home team
-                  const homeTeamData = teams.find((t: any) => 
-                    t.team?.displayName?.toLowerCase().includes(homeTeam.toLowerCase()) ||
-                    homeTeam.toLowerCase().includes(t.team?.displayName?.toLowerCase() || '')
-                  )
-                  
-                  // Find away team  
-                  const awayTeamData = teams.find((t: any) => 
-                    t.team?.displayName?.toLowerCase().includes(awayTeam.toLowerCase()) ||
-                    awayTeam.toLowerCase().includes(t.team?.displayName?.toLowerCase() || '')
-                  )
-                  
-                  if (homeTeamData) {
-                    team1FormData = parseESPNTeamForm(homeTeamData, homeTeam)
-                  }
-                  if (awayTeamData) {
-                    team2FormData = parseESPNTeamForm(awayTeamData, awayTeam)
-                  }
-                  
-                  if (team1FormData && team2FormData) break
-                }
-              } catch (e) {
-                continue
+                  const found = teams.find((t: any) => {
+                    const name = t.team?.displayName?.toLowerCase() || ''
+                    const short = t.team?.shortDisplayName?.toLowerCase() || ''
+                    const tLower = teamName.toLowerCase()
+                    return name === tLower || short === tLower || 
+                           name.includes(tLower) || tLower.includes(name) ||
+                           short.includes(tLower) || tLower.includes(short)
+                  })
+                  if (found) return { teamId: found.team.id, league }
+                } catch { continue }
               }
+              return null
             }
+
+            // Helper to fetch real recent results for a team
+            const fetchTeamResults = async (teamName: string): Promise<TeamFormData | null> => {
+              const teamInfo = await findTeamId(teamName)
+              if (!teamInfo) return null
+              
+              try {
+                // Fetch team's schedule/results from ESPN
+                const schedRes = await fetch(
+                  `https://site.api.espn.com/apis/site/v2/sports/soccer/${teamInfo.league}/teams/${teamInfo.teamId}/schedule`
+                )
+                if (!schedRes.ok) return null
+                const schedData = await schedRes.json()
+                
+                // Get finished events
+                const events = (schedData.events || [])
+                  .filter((e: any) => {
+                    const status = e.competitions?.[0]?.status?.type?.name || ''
+                    return status.includes('FINAL') || status.includes('FULL_TIME')
+                  })
+                  .slice(-10) // Last 10 finished matches
+
+                if (events.length === 0) return null
+
+                const recentForm: string[] = []
+                const recentMatches: TeamRecentMatch[] = []
+                let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0, cs = 0
+
+                for (const event of events.reverse()) { // most recent first
+                  const comp = event.competitions?.[0]
+                  if (!comp) continue
+                  const home = comp.competitors?.find((c: any) => c.homeAway === 'home')
+                  const away = comp.competitors?.find((c: any) => c.homeAway === 'away')
+                  if (!home || !away) continue
+                  
+                  const isHome = home.team?.displayName?.toLowerCase().includes(teamName.toLowerCase()) ||
+                                 teamName.toLowerCase().includes(home.team?.displayName?.toLowerCase() || '')
+                  const teamScore = parseInt((isHome ? home : away).score || '0')
+                  const oppScore = parseInt((isHome ? away : home).score || '0')
+                  const oppName = (isHome ? away : home).team?.displayName || 'Unknown'
+                  
+                  let result: 'W' | 'D' | 'L'
+                  if (teamScore > oppScore) { result = 'W'; wins++ }
+                  else if (teamScore < oppScore) { result = 'L'; losses++ }
+                  else { result = 'D'; draws++ }
+                  
+                  gf += teamScore; ga += oppScore
+                  if (oppScore === 0) cs++
+                  if (recentForm.length < 5) recentForm.push(result)
+                  
+                  const matchDate = new Date(event.date)
+                  recentMatches.push({
+                    date: matchDate.toISOString().split('T')[0],
+                    opponent: oppName,
+                    homeAway: isHome ? 'home' : 'away',
+                    score: `${teamScore} - ${oppScore}`,
+                    result,
+                    competition: event.seasonType?.name || schedData.season?.displayName || 'League',
+                  })
+                }
+
+                const totalMatches = wins + draws + losses
+                return {
+                  team: teamName,
+                  recentForm,
+                  recentMatches: recentMatches.slice(0, 5),
+                  seasonStats: {
+                    matches: totalMatches,
+                    wins, draws, losses,
+                    goalsFor: gf,
+                    goalsAgainst: ga,
+                    cleanSheets: cs,
+                  },
+                }
+              } catch { return null }
+            }
+
+            // Fetch both teams' form in parallel
+            const [homeForm, awayForm] = await Promise.all([
+              fetchTeamResults(homeTeam),
+              fetchTeamResults(awayTeam),
+            ])
+            if (homeForm) team1FormData = homeForm
+            if (awayForm) team2FormData = awayForm
           } catch (e) {
             console.log('ESPN form data not available')
           }
         }
 
-        // Fallback to internal API
-        if (!h2hData) {
+        // Build real H2H from ESPN scoreboard data if we don't have it yet
+        // Search recent scoreboard for matches where both teams played each other
+        if (!h2hData || h2hData.totalMatches === 0) {
           try {
-            const response = await fetch(
-              `/api/v1/matches/${matchId}/h2h?home_team=${encodeURIComponent(homeTeam)}&away_team=${encodeURIComponent(awayTeam)}`
-            )
-            if (response.ok) {
-              const data = await response.json()
-              h2hData = parseH2HData(data, homeTeam, awayTeam)
+            const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa']
+            const now = new Date()
+            const past = new Date(now)
+            past.setFullYear(past.getFullYear() - 3)  // Look back 3 years
+            const fmtD = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
+
+            const h2hMatches: HeadToHeadMatch[] = []
+            for (const league of SUPPORTED_LEAGUES) {
+              try {
+                // Fetch 3 years of scoreboard in yearly chunks
+                for (let yearOffset = 0; yearOffset < 3; yearOffset++) {
+                  const chunkEnd = new Date(now)
+                  chunkEnd.setFullYear(chunkEnd.getFullYear() - yearOffset)
+                  const chunkStart = new Date(chunkEnd)
+                  chunkStart.setFullYear(chunkStart.getFullYear() - 1)
+                  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?dates=${fmtD(chunkStart)}-${fmtD(chunkEnd)}&limit=200`
+                  const res = await fetch(url)
+                  if (!res.ok) continue
+                  const data = await res.json()
+                  for (const event of (data.events || [])) {
+                    const comp = event.competitions?.[0]
+                    if (!comp) continue
+                    const status = comp.status?.type?.name || ''
+                    if (!status.includes('FINAL') && !status.includes('FULL_TIME')) continue
+                    const hTeam = comp.competitors?.find((c: any) => c.homeAway === 'home')
+                    const aTeam = comp.competitors?.find((c: any) => c.homeAway === 'away')
+                    if (!hTeam || !aTeam) continue
+                    const hName = hTeam.team?.displayName || ''
+                    const aName = aTeam.team?.displayName || ''
+                    const hLower = hName.toLowerCase()
+                    const aLower = aName.toLowerCase()
+                    const t1 = homeTeam.toLowerCase()
+                    const t2 = awayTeam.toLowerCase()
+                    // Check if this match involves both teams
+                    const team1involved = hLower.includes(t1) || t1.includes(hLower) || aLower.includes(t1) || t1.includes(aLower)
+                    const team2involved = hLower.includes(t2) || t2.includes(hLower) || aLower.includes(t2) || t2.includes(aLower)
+                    if (team1involved && team2involved) {
+                      const hs = parseInt(hTeam.score || '0')
+                      const as_ = parseInt(aTeam.score || '0')
+                      h2hMatches.push({
+                        id: String(event.id),
+                        date: event.date || '',
+                        competition: league,
+                        venue: comp.venue?.fullName,
+                        homeTeam: hName,
+                        awayTeam: aName,
+                        homeScore: hs,
+                        awayScore: as_,
+                        winner: hs > as_ ? 'home' : as_ > hs ? 'away' : 'draw',
+                      })
+                    }
+                  }
+                  if (h2hMatches.length >= 3) break  // Got enough H2H
+                }
+                if (h2hMatches.length >= 3) break
+              } catch { continue }
+            }
+
+            if (h2hMatches.length > 0) {
+              h2hData = parseH2HData({ matches: h2hMatches }, homeTeam, awayTeam)
             }
           } catch (e) {
-            console.log('Internal H2H not available')
+            console.log('ESPN H2H scoreboard search failed:', e)
           }
         }
-        
-        // Generate realistic H2H if no data found
+
+        // Last resort: generate mock H2H (clearly labeled)
         if (!h2hData || h2hData.totalMatches === 0) {
           h2hData = generateRealisticH2H(homeTeam, awayTeam)
         }

@@ -369,7 +369,7 @@ class PredictionTracker:
             within_1 = sum(1 for d in goals_diffs if d <= 1)
             metrics.within_1_goal_rate = within_1 / len(goals_diffs)
         
-        # Brier score (probability calibration)
+        # Brier score (probability calibration) — standard 3-class Brier score
         brier_sum = 0.0
         for pred in completed:
             if pred.actual_winner == "home":
@@ -380,7 +380,7 @@ class PredictionTracker:
                 actual = (0, 0, 1)
             
             predicted = (pred.predicted_home_win, pred.predicted_draw, pred.predicted_away_win)
-            brier_sum += sum((p - a) ** 2 for p, a in zip(predicted, actual))
+            brier_sum += sum((p - a) ** 2 for p, a in zip(predicted, actual)) / 3.0
         
         metrics.brier_score = brier_sum / len(completed)
         
@@ -405,9 +405,10 @@ class PredictionTracker:
     
     def get_model_adjustments(self) -> Dict[str, float]:
         """
-        Calculate suggested model adjustments based on prediction performance.
+        Calculate model adjustments based on prediction performance.
         
-        Returns adjustment factors to apply to the model.
+        Uses gradient-inspired adjustments proportional to the error magnitude,
+        not just threshold-based rules.
         """
         metrics = self.calculate_accuracy_metrics(days=90)
         
@@ -416,32 +417,52 @@ class PredictionTracker:
             "elo_weight": 1.0,
             "draw_bias": 0.0,
             "goals_scale": 1.0,
+            "dixon_coles_rho": -0.13,
         }
         
-        if metrics.completed_predictions < 30:
+        if metrics.completed_predictions < 20:
             return adjustments  # Not enough data
         
-        # Adjust home advantage if we're over/under predicting home wins
+        # ── Home advantage calibration ──
+        # Proportional adjustment based on how far home precision is from true rate
         if metrics.home_win_predicted > 0:
             home_precision = metrics.home_win_correct / metrics.home_win_predicted
-            if home_precision < 0.4:  # Over-predicting home wins
-                adjustments["home_advantage_factor"] = 0.9
-            elif home_precision > 0.6:  # Under-predicting
-                adjustments["home_advantage_factor"] = 1.1
+            # Actual home win rate in the dataset
+            completed = [p for p in self._predictions.values() if p.actual_winner is not None]
+            actual_home_rate = sum(1 for p in completed if p.actual_winner == "home") / max(1, len(completed))
+            predicted_home_rate = metrics.home_win_predicted / max(1, metrics.completed_predictions)
+            
+            # Adjust proportionally: if we predict 55% home but actual is 45%, reduce by ratio
+            if predicted_home_rate > 0:
+                ratio = actual_home_rate / predicted_home_rate
+                adjustments["home_advantage_factor"] = max(0.7, min(1.3, ratio))
         
-        # Adjust draw prediction
+        # ── Draw calibration ──
+        # If we're under-predicting draws, increase draw bias; if over-predicting, decrease
         if metrics.draw_predicted > 0:
             draw_precision = metrics.draw_correct / metrics.draw_predicted
-            if draw_precision < 0.25:  # Over-predicting draws
-                adjustments["draw_bias"] = -0.02
-            elif draw_precision > 0.35:  # Under-predicting
-                adjustments["draw_bias"] = 0.02
+            completed = [p for p in self._predictions.values() if p.actual_winner is not None]
+            actual_draw_rate = sum(1 for p in completed if p.actual_winner == "draw") / max(1, len(completed))
+            predicted_draw_rate = metrics.draw_predicted / max(1, metrics.completed_predictions)
+            
+            # Continuous adjustment: difference between actual and predicted draw rates
+            draw_gap = actual_draw_rate - predicted_draw_rate
+            adjustments["draw_bias"] = max(-0.08, min(0.08, draw_gap * 0.5))
         
-        # Adjust goal expectations
-        if metrics.avg_goals_difference > 1.5:  # Predictions too far off
-            adjustments["goals_scale"] = 0.95
-        elif metrics.avg_goals_difference < 0.8:  # Very accurate
-            adjustments["goals_scale"] = 1.0
+        # ── Goal calibration ──
+        if metrics.avg_goals_difference > 2.0:
+            adjustments["goals_scale"] = 0.88
+        elif metrics.avg_goals_difference > 1.5:
+            adjustments["goals_scale"] = 0.93
+        elif metrics.avg_goals_difference > 1.0:
+            adjustments["goals_scale"] = 0.97
+        
+        # ── Dixon-Coles rho tuning based on scoreline accuracy ──
+        # If we're getting draw scorelines wrong, adjust correlation
+        if metrics.exact_scoreline_rate < 0.05:
+            adjustments["dixon_coles_rho"] = -0.16  # Stronger correction
+        elif metrics.exact_scoreline_rate > 0.12:
+            adjustments["dixon_coles_rho"] = -0.08  # Lighter correction
         
         return adjustments
     

@@ -171,6 +171,9 @@ export default function AccuracyDashboard() {
       {/* ── Predicted vs Actual Table ── */}
       <PredictedVsActual predictions={summary.recent_predictions} />
 
+      {/* ── Model Methods Card ── */}
+      <ModelMethodsCard />
+
       {/* ── Outcome Fetcher Status ── */}
       <FetcherPanel
         status={fetcherStatus}
@@ -529,6 +532,79 @@ function PredictedVsActual({ predictions }: { predictions: PredSummary[] }) {
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ModelMethodsCard – explains prediction methodology
+   ────────────────────────────────────────────────────────────────────── */
+
+function ModelMethodsCard() {
+  const methods = [
+    {
+      icon: '📊',
+      name: 'Dixon-Coles Poisson',
+      desc: 'Corrected bivariate Poisson model with ρ parameter for low-score correlation (0-0, 1-0, 0-1, 1-1).',
+      tag: 'Goals & Scorelines',
+    },
+    {
+      icon: '⚡',
+      name: 'ELO Rating System',
+      desc: 'Dynamic ratings with league coefficients, home/away splits, goal-difference multiplier, and upset bonuses.',
+      tag: 'Team Strength',
+    },
+    {
+      icon: '🎯',
+      name: 'League-Calibrated Draw Rates',
+      desc: 'Empirical draw probabilities per league (Serie A ~27%, Bundesliga ~22%) using Gaussian closeness model.',
+      tag: 'Outcome Probabilities',
+    },
+    {
+      icon: '🔄',
+      name: 'Continuous Self-Learning',
+      desc: 'ELO auto-updates from real ESPN results every 30 minutes. Model adjustments calculated from Brier score optimization.',
+      tag: 'Auto-Improvement',
+    },
+    {
+      icon: '🧠',
+      name: 'Hybrid ML + Poisson Ensemble',
+      desc: 'GradientBoosting + Poisson blend (60/40) with 41 features including form, injuries, H2H, and news sentiment.',
+      tag: 'Outcome Classification',
+    },
+    {
+      icon: '📈',
+      name: 'Opponent-Adjusted Strengths',
+      desc: 'Attack/defense ratings normalised by strength-of-schedule to avoid inflating stats against weaker teams.',
+      tag: 'Goal Prediction',
+    },
+  ]
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
+        AI Model Methods
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {methods.map((m) => (
+          <div
+            key={m.name}
+            className="p-3 rounded-xl bg-[var(--muted-bg)] border"
+            style={{ borderColor: 'var(--border-color)' }}
+          >
+            <div className="flex items-start gap-2 mb-1">
+              <span className="text-lg">{m.icon}</span>
+              <div>
+                <p className="font-semibold text-sm text-[var(--text-primary)]">{m.name}</p>
+                <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-medium mt-0.5">
+                  {m.tag}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1 leading-relaxed">{m.desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
