@@ -37,11 +37,12 @@ export async function GET(
   const recentDateRange = `${fmt(pastDate)}-${fmt(futureDate)}`
 
   try {
-    const [standingsRes, matchesRes, newsRes, knockoutRes] = await Promise.allSettled([
+    const [standingsRes, matchesRes, newsRes, knockoutRes, leadersRes] = await Promise.allSettled([
       fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnId}/standings${seasonParam}`, { next: { revalidate: 300 } }),
       fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/scoreboard?dates=${recentDateRange}`, { next: { revalidate: 120 } }),
       fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/news`, { next: { revalidate: 600 } }),
       fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/scoreboard?dates=${knockoutDateRange}`, { next: { revalidate: 120 } }),
+      fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/leaders${seasonParam}`, { next: { revalidate: 3600 } }),
     ])
 
     const result: any = {
@@ -50,6 +51,7 @@ export async function GET(
       upcomingMatches: [],
       recentResults: [],
       news: [],
+      topScorers: [],
     }
 
     // Process standings
@@ -182,6 +184,59 @@ export async function GET(
         image: n.images?.[0]?.url || '',
         published: n.published || '',
       }))
+    }
+
+    // Process top scorers from ESPN leaders
+    if (leadersRes.status === 'fulfilled' && leadersRes.value.ok) {
+      const leadersData = await leadersRes.value.json()
+      let scorers: any[] = []
+
+      // Path 1: leaders array with categories
+      if (leadersData.leaders && Array.isArray(leadersData.leaders)) {
+        const goalsCategory = leadersData.leaders.find((cat: any) =>
+          cat.name?.toLowerCase().includes('goal') ||
+          cat.displayName?.toLowerCase().includes('goal') ||
+          cat.abbreviation?.toLowerCase() === 'g' ||
+          cat.name?.toLowerCase() === 'goals'
+        )
+        if (goalsCategory?.leaders) {
+          scorers = goalsCategory.leaders
+        }
+        if (scorers.length === 0 && leadersData.leaders[0]?.leaders) {
+          scorers = leadersData.leaders[0].leaders
+        }
+      }
+
+      // Path 2: categories within leaders
+      if (scorers.length === 0 && leadersData.categories) {
+        const goalsCategory = leadersData.categories.find((cat: any) =>
+          cat.name?.toLowerCase().includes('goal') ||
+          cat.displayName?.toLowerCase().includes('goal') ||
+          cat.abbreviation?.toLowerCase() === 'g'
+        )
+        if (goalsCategory?.leaders) {
+          scorers = goalsCategory.leaders
+        }
+        if (scorers.length === 0 && leadersData.categories[0]?.leaders) {
+          scorers = leadersData.categories[0].leaders
+        }
+      }
+
+      // Path 3: direct athletes array
+      if (scorers.length === 0 && leadersData.athletes) {
+        scorers = leadersData.athletes
+      }
+
+      if (scorers.length > 0) {
+        result.topScorers = scorers.slice(0, 10).map((leader: any, idx: number) => ({
+          rank: idx + 1,
+          name: leader.athlete?.displayName || leader.athlete?.fullName || leader.displayName || leader.name || 'Unknown',
+          team: leader.athlete?.team?.displayName || leader.team?.displayName || leader.team?.name || '',
+          goals: parseInt(leader.value || leader.stat || leader.goals || '0'),
+          assists: parseInt(leader.assists || leader.statistics?.assists || '0'),
+          matches: leader.athlete?.statistics?.gamesPlayed || leader.gamesPlayed || 0,
+        }))
+      }
     }
 
     return NextResponse.json(result)

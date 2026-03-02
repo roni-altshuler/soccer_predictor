@@ -841,6 +841,16 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <p className="text-sm text-[var(--text-secondary)]">Predict final standings with AI</p>
               </div>
 
+              {/* AI Model Accuracy Card */}
+              <Link
+                href="/tracking"
+                className="block bg-gradient-to-br from-emerald-600/20 to-teal-600/20 rounded-xl p-6 hover:from-emerald-600/30 hover:to-teal-600/30 transition-all border border-emerald-500/30 hover:scale-[1.02] hover:shadow-lg"
+              >
+                <div className="text-4xl mb-3">📊</div>
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">AI Model Accuracy</h3>
+                <p className="text-sm text-[var(--text-secondary)]">Track prediction performance vs real outcomes</p>
+              </Link>
+
               {/* Compact Standings Preview */}
               <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'var(--border-color)' }}>

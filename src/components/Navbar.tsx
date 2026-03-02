@@ -19,6 +19,7 @@ export const Navbar = () => {
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/matches', label: 'Leagues', icon: '🏆' },
     { href: '/predict', label: 'Predict', icon: '🎯' },
+    { href: '/tracking', label: 'AI Accuracy', icon: '📊' },
     { href: '/news', label: 'News', icon: '📰' },
     { href: '/about', label: 'About', icon: 'ℹ️' },
   ]

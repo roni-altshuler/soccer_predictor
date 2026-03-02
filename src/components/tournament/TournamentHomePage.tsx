@@ -52,12 +52,22 @@ interface NewsItem {
   published: string
 }
 
+interface TopScorer {
+  rank: number
+  name: string
+  team: string
+  goals: number
+  assists: number
+  matches: number
+}
+
 interface TournamentData {
   groups: Group[]
   knockoutMatches: Match[]
   upcomingMatches: Match[]
   recentResults: Match[]
   news: NewsItem[]
+  topScorers: TopScorer[]
 }
 
 const TOURNAMENT_CONFIG = {
@@ -96,7 +106,7 @@ const TOURNAMENT_CONFIG = {
   },
 }
 
-const TABS = ['Overview', 'Groups', 'Knockout', 'Fixtures', 'Simulator', 'News'] as const
+const TABS = ['Overview', 'Groups', 'Knockout', 'Scorers', 'Fixtures', 'Simulator', 'News'] as const
 type TabType = typeof TABS[number]
 
 // Available tournament seasons for dropdown
@@ -169,6 +179,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     upcomingMatches: [],
     recentResults: [],
     news: [],
+    topScorers: [],
   })
 
   // Get available seasons based on tournament type
@@ -289,6 +300,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             upcomingMatches: apiData.upcomingMatches || [],
             recentResults: apiData.recentResults || [],
             news: apiData.news || [],
+            topScorers: apiData.topScorers || [],
           })
           
           // Build bracket rounds from knockout matches
@@ -580,6 +592,16 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           <p className="text-sm text-[var(--text-secondary)]">Predict the tournament winner</p>
         </div>
 
+        {/* AI Model Accuracy Card */}
+        <Link
+          href="/tracking"
+          className="block bg-gradient-to-br from-emerald-600/20 to-teal-600/20 rounded-xl p-6 hover:from-emerald-600/30 hover:to-teal-600/30 transition-all border border-emerald-500/30 hover:scale-[1.02] hover:shadow-lg"
+        >
+          <div className="text-4xl mb-3">📊</div>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">AI Model Accuracy</h3>
+          <p className="text-sm text-[var(--text-secondary)]">Track prediction performance vs real outcomes</p>
+        </Link>
+
         {/* Groups Preview */}
         {data.groups.length > 0 && (
           <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
@@ -831,6 +853,43 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           )}
           
           {activeTab === 'Knockout' && renderKnockoutBracket()}
+
+          {activeTab === 'Scorers' && (
+            <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top Scorers</h2>
+              </div>
+              {data.topScorers && data.topScorers.length > 0 ? (
+                <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+                  {data.topScorers.map((scorer) => (
+                    <div key={scorer.name} className="flex items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
+                      <div className="flex items-center gap-4">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          scorer.rank <= 3 ? 'bg-amber-500 text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
+                        }`}>
+                          {scorer.rank}
+                        </span>
+                        <div>
+                          <p className="font-medium text-[var(--text-primary)]">{scorer.name}</p>
+                          <p className="text-sm text-[var(--text-tertiary)]">{scorer.team}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-[var(--accent-primary)]">{scorer.goals}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{scorer.assists} assists</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <span className="text-3xl mb-2 block">⚽</span>
+                  <p className="text-[var(--text-tertiary)]">Top scorers data is being loaded...</p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1">Check back later for the latest statistics</p>
+                </div>
+              )}
+            </div>
+          )}
           
           {activeTab === 'Fixtures' && (
             <MatchCalendar leagueId={config.espnId} leagueName={tournamentName} />
