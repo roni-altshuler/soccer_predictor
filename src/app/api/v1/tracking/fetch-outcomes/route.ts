@@ -34,8 +34,10 @@ const LEAGUE_TO_ESPN: Record<string, string> = {
   'MLS': 'usa.1',
   'Champions League': 'uefa.champions',
   'Europa League': 'uefa.europa',
+  'Conference League': 'uefa.europa.conf',
   'Eredivisie': 'ned.1',
   'Primeira Liga': 'por.1',
+  'FIFA World Cup': 'fifa.world',
 }
 
 export async function POST() {

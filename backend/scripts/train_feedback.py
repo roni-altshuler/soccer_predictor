@@ -222,8 +222,8 @@ def run_feedback():
     try:
         suggestions = suggested_params(adjustments)
         output["suggested_params"] = suggestions
-    except ImportError:
-        logger.warning("Could not import LEAGUE_PARAMS for suggestions")
+    except (ImportError, Exception) as e:
+        logger.warning(f"Could not generate param suggestions: {e}")
 
     with open(ADJUSTMENTS_FILE, "w") as f:
         json.dump(output, f, indent=2)

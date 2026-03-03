@@ -60,6 +60,18 @@ const SAMPLE_STANDINGS: Record<string, TeamStanding[]> = {
   ],
 }
 
+// Total matches per league (season length varies)
+const LEAGUE_TOTAL_MATCHES: Record<string, number> = {
+  premier_league: 38,
+  la_liga: 38,
+  bundesliga: 34,
+  serie_a: 38,
+  ligue_1: 34,
+  mls: 34,
+  eredivisie: 34,
+  primeira_liga: 34,
+}
+
 // Simulate remaining matches using Monte Carlo simulation
 function simulateSeason(standings: TeamStanding[], remainingMatches: number, simulations: number = 1000): TeamStanding[] {
   // Clone standings for simulation
@@ -136,13 +148,25 @@ export async function GET(request: NextRequest) {
   const simulations = parseInt(searchParams.get('simulations') || '1000')
   
   try {
-    // Get base standings
-    const baseStandings = SAMPLE_STANDINGS[league] || SAMPLE_STANDINGS['premier_league']
+    // Get base standings — never fall back to a different league's data
+    const baseStandings = SAMPLE_STANDINGS[league]
     
-    // Calculate remaining matches (assuming 38 match season)
-    const totalMatches = 38
+    if (!baseStandings || baseStandings.length === 0) {
+      // No cached standings for this league — return empty so the client
+      // relies on the primary ESPN fetch instead of stale data from another league
+      return NextResponse.json({
+        league: league.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        season: '2025-2026',
+        standings: [],
+        remainingMatches: 0,
+        simulationsRun: 0,
+      })
+    }
+    
+    // Use league-specific season length (default 38)
+    const totalMatches = LEAGUE_TOTAL_MATCHES[league] ?? 38
     const playedMatches = baseStandings[0]?.played || 0
-    const remainingMatches = totalMatches - playedMatches
+    const remainingMatches = Math.max(0, totalMatches - playedMatches)
     
     // Run simulation
     const simulatedStandings = simulateSeason(baseStandings, remainingMatches, simulations)

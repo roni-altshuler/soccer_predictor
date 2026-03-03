@@ -1,0 +1,69 @@
+name: Prediction Pipeline
+
+on:
+  schedule:
+    # Run 3x daily: 6 AM, 2 PM, 10 PM UTC
+    # 6 AM catches overnight results (Asia, late Americas)
+    # 2 PM catches afternoon matches (Europe), morning results
+    # 10 PM catches evening matches (Europe, Americas)
+    - cron: '0 6 * * *'
+    - cron: '0 14 * * *'
+    - cron: '0 22 * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+permissions:
+  contents: write
+
+jobs:
+  prediction-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install httpx scipy numpy
+
+      - name: Fetch match outcomes
+        run: python -m backend.scripts.fetch_outcomes
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
+
+      - name: Generate new predictions
+        run: python -m backend.scripts.predict_upcoming --days 7
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
+
+      - name: Run training feedback
+        run: python -m backend.scripts.train_feedback
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
+
+      - name: Commit updated predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/data/predictions/
+          
+          # Only commit if there are changes
+          if git diff --cached --quiet; then
+            echo "No prediction data changes to commit"
+          else
+            OUTCOMES=$(git diff --cached --stat -- 'backend/data/predictions/' | tail -1)
+            MSG="chore: update predictions [automated]"
+            MSG="$MSG"$'\n\n'"Fetch outcomes, generate predictions, train feedback loop."
+            MSG="$MSG"$'\n'"$OUTCOMES"
+            git commit -m "$MSG"
+            git push
+          fi

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const TOURNAMENT_ESPN_IDS: Record<string, string> = {
   champions_league: 'uefa.champions',
   europa_league: 'uefa.europa',
+  conference_league: 'uefa.europa.conf',
   world_cup: 'fifa.world',
 }
 
@@ -236,6 +237,31 @@ export async function GET(
           assists: parseInt(leader.assists || leader.statistics?.assists || '0'),
           matches: leader.athlete?.statistics?.gamesPlayed || leader.gamesPlayed || 0,
         }))
+      }
+    }
+
+    // Fallback: if ESPN leaders returned empty, try the curated top-scorers API
+    if (result.topScorers.length === 0) {
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        const scorersRes = await fetch(`${baseUrl}/api/top-scorers/${espnId}`, { next: { revalidate: 3600 } })
+        if (scorersRes.ok) {
+          const scorersData = await scorersRes.json()
+          if (scorersData.scorers?.length > 0) {
+            result.topScorers = scorersData.scorers.map((s: any) => ({
+              rank: s.rank,
+              name: s.name,
+              team: s.team,
+              goals: s.goals,
+              assists: s.assists || 0,
+              matches: s.matches || 0,
+            }))
+          }
+        }
+      } catch {
+        // Fallback also failed — scorers will remain empty
       }
     }
 
