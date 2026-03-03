@@ -1,94 +1,107 @@
-# ⚽ Soccer Predictor v3.0
+# ⚽ Soccer Predictor v4.0
 
-A modern soccer match prediction and live scores application powered by FotMob and ESPN data. Features real-time match updates, AI-powered predictions, comprehensive league standings, user authentication, and league standings simulation.
+A modern soccer match prediction and live scores application powered by ESPN data. Features real-time match updates, per-league AI/ML predictions with Dixon-Coles corrected Poisson models, comprehensive league standings, an AI accuracy dashboard, and league standings simulation.
 
-**📱 Now Available as a Progressive Web App (PWA)** - Install on Chrome for the best experience!
+**📱 Now Available as a Progressive Web App (PWA)** — Install on Chrome for the best experience!
 
 ---
 
 ## ✨ Key Features
 
-### 📱 Progressive Web App (PWA)
-- **Installable:** Add to your home screen on desktop and mobile
-- **Offline Support:** Access previously viewed content without internet
-- **Fast Performance:** Service worker caching for instant loads
-- **Native Feel:** Runs in standalone window without browser chrome
-- **Background Sync:** Stay updated with latest scores even offline
+### 🤖 Per-League AI/ML Prediction Engine
+- **Per-League Models:** Each league has its own calibrated model with league-specific parameters (draw rate, home advantage, average goals, Dixon-Coles ρ)
+- **Dixon-Coles Corrected Poisson:** Low-scoring outcomes (0-0, 0-1, 1-0, 1-1) adjusted via correlation parameter
+- **Adaptive ML/Poisson Blending:** 50–70% ML weight based on model confidence entropy
+- **Form Momentum:** ±7.5% xG adjustment from recent 5-game form streaks
+- **Enhanced Features:** Weather, injury, venue, and referee factors integrated into predictions
+- **Training Feedback Loop:** Automated accuracy analysis computes parameter adjustments per league
+- **ELO Ratings:** Dynamic team strength with goal-difference multiplier and upset bonuses
+
+### 📊 AI Accuracy Dashboard
+- **981+ Seeded Predictions:** Historical back-test across 10 leagues (46.8% winner accuracy)
+- **183 Upcoming Predictions:** Pre-match predictions for next 14 days, auto-resolved against real results
+- **Per-League Breakdown:** Accuracy, Brier score, scoreline rate for each league
+- **Rolling Accuracy Trend:** Visual chart of model improvement over time
+- **Confidence Calibration:** High/medium/low confidence bucket analysis
+- **Recent Form & Streaks:** Win/loss streak tracking
+- **Outcome Fetcher:** One-click ESPN result fetching to resolve pending predictions
 
 ### 📺 Live Scores & Matches
 - **Real-time Updates:** Live match scores from all major leagues
-- **Multi-source Data:** FotMob + ESPN API integration
+- **ESPN API Integration:** Reliable data source for scores, standings, and statistics
 - **Today's Matches:** Complete schedule with live and upcoming games
-- **Match Details:** Lineups, events, and statistics
+- **Match Details:** Events, statistics, and score breakdowns
 
 ### 🎯 Match Predictions
 - **Probabilistic Model:** Win/Draw/Loss probabilities with confidence scores
-- **Expected Goals (xG):** Poisson-based goal predictions
-- **Score Predictions:** Most likely scoreline with alternatives
-- **Over/Under & BTTS:** Betting market predictions
-- **News Sentiment:** Predictions influenced by recent news
+- **Expected Goals (xG):** Dixon-Coles corrected Poisson-based goal predictions
+- **Score Predictions:** Most likely scoreline with top 5 alternatives
+- **Over/Under & BTTS:** Goals market predictions (1.5, 2.5, 3.5)
+- **Head-to-Head:** Historical matchup data with ESPN multi-league search
+- **Cross-League Predictions:** Compare teams from different leagues
 
-### 🏆 League Coverage
+### 🏆 League Coverage (12 Leagues)
 - **Major European Leagues:**
   - Premier League (England)
   - La Liga (Spain)
   - Bundesliga (Germany)
   - Serie A (Italy)
   - Ligue 1 (France)
-- **Other Leagues:**
+- **Other Domestic Leagues:**
   - Eredivisie (Netherlands)
   - Primeira Liga (Portugal)
-  - MLS (USA)
-- **Competitions:**
+  - MLS (USA) — Eastern & Western Conference support
+- **European Competitions:**
   - UEFA Champions League
   - UEFA Europa League
+  - UEFA Conference League
+- **International:**
+  - FIFA World Cup
 
-### 📊 Analytics
-- **League Standings:** Live table with goal difference and form
-- **Team Form:** Recent results and performance trends
-- **Head-to-Head:** Historical matchup data
-- **ELO Ratings:** Dynamic team strength ratings
+### 📈 Top Scorers
+- **ESPN Live Data:** Real-time scorer data from ESPN leaders endpoint
+- **Curated Fallback:** Season-accurate scorer data for 11 leagues when ESPN API unavailable
+- **Tournament Coverage:** Champions League, Europa League, and Conference League scorers
+- **Dedicated API Route:** `/api/top-scorers/[league]` with intelligent fallback chain
+
+### 📊 Analytics & Simulation
+- **League Standings:** Live table with goal difference, form, and conference splits
+- **Team Form:** Recent results and performance trends from ESPN
 - **League Simulation:** Monte Carlo simulation for final standings prediction
+- **Title Race:** Title, Top 4, Europa, and relegation probabilities
+- **Season Trends:** Goals distribution, result patterns, and league analytics
 
-### 🔐 User Authentication
-- **Email/Password:** Traditional account creation
-- **Google OAuth:** Sign in with Google
-- **User Predictions:** Save and track your predictions
-- **Leaderboard:** Compete with other users
-- **Statistics:** Track your prediction accuracy
-
-### 📰 News Integration
-- **League News:** Latest articles from ESPN
-- **Team News:** Team-specific updates
-- **Sentiment Analysis:** News-based prediction factors
+### 📱 Progressive Web App (PWA)
+- **Installable:** Add to home screen on desktop and mobile
+- **Offline Support:** Access previously viewed content without internet
+- **Fast Performance:** Service worker caching for instant loads
+- **Native Feel:** Runs in standalone window without browser chrome
 
 ---
 
 ## 🛠 Technology Stack
 
-### Backend
-- **FastAPI** - High-performance async Python API
-- **FotMob API** - Real-time football data source
-- **ESPN API** - Additional data and news
-- **Pydantic** - Data validation and serialization
-- **httpx** - Async HTTP client with rate limiting
+### Backend (Python)
+- **FastAPI** — High-performance async API
+- **ESPN API** — Primary data source for scores, standings, news, and statistics
+- **Pydantic** — Data validation and serialization
+- **httpx** — Async HTTP client with rate limiting
+- **NumPy / SciPy** — Statistical modeling (Poisson, entropy)
 
-### Frontend
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **React Query** - Data fetching and caching
+### Frontend (TypeScript)
+- **Next.js 15** — React framework with App Router
+- **TypeScript** — Type-safe development
+- **Tailwind CSS** — Utility-first styling
+- **Progressive Web App** — Service worker with offline support
 
-### ML/Prediction
-- **Poisson Model** - Goal probability distribution
-- **ELO System** - Team strength ratings
-- **Monte Carlo** - Match and league simulation
-- **Sentiment Analysis** - News-based prediction factors
-
-### Authentication
-- **JWT Tokens** - Secure authentication
-- **Google OAuth** - Social login support
-- **In-memory Storage** - Development storage (replace with DB for production)
+### ML/Prediction Engine
+- **Dixon-Coles Corrected Poisson** — Score matrix with low-score correlation
+- **Per-League HybridPredictionModel** — League-specific calibrated parameters
+- **LeagueModelManager** — Singleton managing per-league model instances
+- **ELO System** — 15 league coefficients, goal-difference multiplier, upset bonus
+- **Gaussian Closeness Draw Model** — `draw = base_rate × (0.6 + 0.8 × exp(-diff²/(2×250²)))`
+- **Monte Carlo Simulation** — 10,000-iteration match and season simulation
+- **Training Feedback Loop** — Gradient-based parameter adjustment from outcomes
 
 ---
 
@@ -97,30 +110,47 @@ A modern soccer match prediction and live scores application powered by FotMob a
 ```
 soccer_predictor/
 ├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── config.py            # Settings and league IDs
-│   ├── api/
-│   │   └── v1/
-│   │       ├── auth.py        # Authentication endpoints
-│   │       ├── matches.py     # Match endpoints
-│   │       ├── predictions.py # Prediction endpoints
-│   │       ├── teams.py       # Team endpoints
-│   │       └── leagues.py     # League endpoints
+│   ├── main.py                          # FastAPI application entry point
+│   ├── config.py                        # Settings, league IDs, display names
+│   ├── api/v1/
+│   │   ├── tracking.py                  # Prediction tracking & accuracy API
+│   │   ├── matches.py                   # Match endpoints
+│   │   ├── predictions.py               # Prediction endpoints
+│   │   └── leagues.py                   # League endpoints
 │   ├── services/
-│   │   ├── auth/            # Authentication service
-│   │   ├── espn/            # ESPN API client
-│   │   ├── fotmob/          # FotMob API client
-│   │   ├── prediction/      # Prediction models
-│   │   ├── simulation/      # League simulation
-│   │   └── ratings/         # ELO rating system
-│   └── models/              # Pydantic models
+│   │   ├── espn/client.py               # ESPN API client (12 leagues)
+│   │   ├── prediction/
+│   │   │   ├── probabilistic.py         # Poisson + HybridModel + LeagueModelManager
+│   │   │   ├── tracker.py               # PredictionTracker + OutcomeFetcher
+│   │   │   └── outcome_fetcher.py       # ESPN result resolution
+│   │   ├── ratings/elo.py               # ELO system (15 league coefficients)
+│   │   └── simulation/                  # Monte Carlo league simulation
+│   ├── scripts/
+│   │   ├── seed_predictions.py          # Back-test: seed 981 historical predictions
+│   │   ├── predict_upcoming.py          # Forward: predict next 14 days of matches
+│   │   └── train_feedback.py            # Learn: adjust params from outcomes
+│   └── data/predictions/                # JSON prediction storage (monthly files)
 ├── src/
-│   ├── app/                 # Next.js pages
-│   ├── components/          # React components
-│   ├── contexts/            # React contexts (Auth)
-│   ├── lib/                 # Utilities and API client
-│   └── hooks/               # Custom React hooks
-└── public/                  # Static assets
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── top-scorers/[league]/    # Top scorers with ESPN + curated fallback
+│   │   │   └── v1/tracking/             # Accuracy dashboard API proxy routes
+│   │   │       ├── accuracy/summary/    # Comprehensive dashboard data
+│   │   │       ├── accuracy/trend/      # Rolling accuracy trend
+│   │   │       ├── predictions/         # Prediction list with filters
+│   │   │       ├── fetch-outcomes/      # Trigger ESPN outcome resolution
+│   │   │       └── outcome-status/      # Tracker status
+│   │   ├── leagues/[leagueId]/          # League home pages (SSG)
+│   │   ├── tracking/                    # Accuracy dashboard page
+│   │   └── predict/                     # Prediction interface
+│   ├── components/
+│   │   ├── league/LeagueHomePage.tsx     # Standings, results, scorers, fixtures
+│   │   ├── match/HeadToHeadDisplay.tsx  # H2H with 14-league ESPN search
+│   │   └── tracking/
+│   │       ├── AccuracyDashboard.tsx    # AI accuracy dashboard
+│   │       └── PredictionTracker.tsx    # Prediction list & filters
+│   └── types/api.ts                     # TypeScript types (12 league union)
+└── public/                              # Static assets & PWA manifest
 ```
 
 ---
@@ -130,243 +160,230 @@ soccer_predictor/
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- npm or yarn
+- npm
 
-### Backend Setup
+### Setup
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Start the API server
-uvicorn backend.main:app --reload --port 8000
+# Install Node dependencies
+npm install
 ```
 
-### Frontend Setup
+### Seed Historical Predictions (Required for Dashboard)
 
 ```bash
-# Install dependencies
-npm install
+# Back-test model on 90 days of historical matches (builds ELO + generates accuracy data)
+python -m backend.scripts.seed_predictions
 
-# Start development server
+# Generate predictions for upcoming matches (next 14 days)
+python -m backend.scripts.predict_upcoming --days 14
+
+# Analyze accuracy and compute parameter adjustments
+python -m backend.scripts.train_feedback
+```
+
+### Development
+
+```bash
+# Start Next.js dev server (serves both frontend and API routes)
 npm run dev
 ```
 
-The app will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+The app will be available at http://localhost:3000
 
 ### Production Build
 
 ```bash
-# Build for production
 npm run build
-
-# Start production server
 npm start
 ```
 
-### Testing
+---
 
-```bash
-# Run frontend tests
-npm test
+## 🔄 Prediction Workflow
 
-# Run frontend tests with coverage
-npm run test:coverage
+The system operates as a continuous learning cycle:
 
-# Run backend tests
-source .venv/bin/activate
-pytest backend/tests/
-
-# Run backend tests with coverage
-pytest backend/tests/ --cov=backend
 ```
-
-### PWA Installation
-
-Once deployed, the app can be installed as a Progressive Web App:
-
-**Desktop (Chrome/Edge):**
-1. Visit the website
-2. Click the install icon (⊕) in the address bar
-3. Click "Install" in the popup
-
-**Mobile (Chrome/Safari):**
-1. Visit the website
-2. Open browser menu
-3. Select "Add to Home Screen" or "Install App"
+┌─────────────────────┐
+│  1. seed_predictions │  ← Back-test on 90 days of ESPN historical data
+│     (981 matches)    │     Builds ELO ratings, measures baseline accuracy
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  2. predict_upcoming │  ← Fetch next 14 days of scheduled matches from ESPN
+│     (183 matches)    │     Generate pre-match predictions (pending outcomes)
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  3. fetch-outcomes   │  ← Dashboard button or automated: check ESPN for results
+│     (API route)      │     Resolve pending predictions → winner_correct/scoreline_correct
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  4. train_feedback   │  ← Analyze completed predictions per league
+│     (adjustments)    │     Compute draw_rate, home_adv, goals_scale adjustments
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│  5. predict_upcoming │  ← Next run loads learned adjustments automatically
+│     (improved)       │     Per-league parameters incrementally refined
+└─────────────────────┘
+```
 
 ---
 
-## 📡 API Endpoints
+## 📊 Prediction Model Architecture
 
-### Matches
-- `GET /api/v1/matches/today` - Today's matches
-- `GET /api/v1/matches/date/{date}` - Matches by date (YYYYMMDD)
-- `GET /api/v1/matches/live` - Currently live matches
-- `GET /api/v1/matches/{match_id}` - Match details
+### Per-League Calibrated Parameters
 
-### Predictions
-- `GET /api/v1/predictions/match/{match_id}` - Match prediction
-- `POST /api/v1/predictions/batch` - Batch predictions
+Each league has its own `HybridPredictionModel` instance (managed by `LeagueModelManager`) with specific calibrated parameters:
 
-### Teams
-- `GET /api/v1/teams/{team_id}` - Team details
-- `GET /api/v1/teams/{team_id}/form` - Team form
+| League | Avg Goals | Home Adv | Draw Rate | Dixon-Coles ρ |
+|--------|-----------|----------|-----------|---------------|
+| Premier League | 1.42 | 0.28 | 0.23 | -0.13 |
+| La Liga | 1.30 | 0.30 | 0.24 | -0.12 |
+| Bundesliga | 1.55 | 0.25 | 0.22 | -0.11 |
+| Serie A | 1.32 | 0.26 | 0.27 | -0.14 |
+| Ligue 1 | 1.30 | 0.27 | 0.24 | -0.12 |
+| MLS | 1.45 | 0.20 | 0.22 | -0.10 |
+| Champions League | 1.50 | 0.22 | 0.20 | -0.12 |
+| Europa League | 1.42 | 0.20 | 0.22 | -0.11 |
+| Eredivisie | 1.45 | 0.24 | 0.21 | -0.11 |
+| Primeira Liga | 1.28 | 0.27 | 0.25 | -0.13 |
 
-### Leagues
-- `GET /api/v1/leagues/` - List all leagues
-- `GET /api/v1/leagues/{league_id}` - League info
-- `GET /api/v1/leagues/{league_id}/standings` - League standings
-- `GET /api/v1/leagues/{league_id}/matches` - League matches
-- `GET /api/v1/leagues/{league_id}/news` - League news (ESPN)
-- `GET /api/v1/leagues/{league_id}/simulation` - Simulate final standings
-- `GET /api/v1/leagues/{league_id}/title-race` - Title probabilities
+### Prediction Pipeline
 
-### Authentication
-- `POST /api/v1/auth/register` - Create account
-- `POST /api/v1/auth/login` - Email login
-- `POST /api/v1/auth/google` - Google OAuth login
-- `POST /api/v1/auth/refresh` - Refresh tokens
-- `POST /api/v1/auth/logout` - Logout
-- `GET /api/v1/auth/me` - Get current user
-- `POST /api/v1/auth/predictions` - Save prediction
-- `GET /api/v1/auth/predictions` - Get user predictions
-- `GET /api/v1/auth/stats` - Get user stats
-- `GET /api/v1/auth/leaderboard` - Get leaderboard
-
-### Legacy Endpoints
-- `GET /api/live_scores` - Live match scores
-- `GET /api/todays_matches` - Today's matches
-- `POST /api/predict/unified` - Match prediction
-
----
-
-## 🔧 Configuration
-
-Environment variables (create `.env.local` file for frontend):
-
-```env
-# Frontend API URL
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Google OAuth (required for Google Sign-In)
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id-here
-```
-
-Backend environment variables (create `.env` file):
-
-```env
-# API Settings
-FOTMOB_RATE_LIMIT=60
-FOTMOB_CACHE_TTL=300
-
-# Authentication
-JWT_SECRET_KEY=your-secret-key-here
-GOOGLE_CLIENT_ID=your-google-client-id
-
-# Database (optional, for production)
-DATABASE_URL=postgresql://...
-```
-
-### Setting up Google OAuth
-
-To enable Google Sign-In:
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Navigate to "APIs & Services" > "Credentials"
-4. Click "Create Credentials" > "OAuth 2.0 Client ID"
-5. Select "Web application" as the application type
-6. Add your authorized JavaScript origins:
-   - `http://localhost:3000` (development)
-   - `https://your-domain.com` (production)
-7. Add authorized redirect URIs if needed
-8. Copy the Client ID and set it as `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
-
-**Note:** If `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is not set, the app will show an email/password login form instead. Google Sign-In will display an error message asking users to contact the administrator.
-
----
-
-## 📊 Prediction Model
-
-The prediction system uses a hybrid approach:
-
-1. **ELO Ratings** - Dynamic team strength based on results
-2. **Poisson Distribution** - Expected goals modeling
-3. **Form Analysis** - Recent performance weighting (with recency bias)
-4. **Head-to-Head** - Historical matchup data
-5. **Home Advantage** - Venue factor adjustment
-6. **News Sentiment** - ESPN news analysis for confidence factors
-7. **Player Availability** - Injury and suspension impacts
+1. **ELO Ratings** → Team strength with 15 league coefficients (0.75–1.25)
+2. **Attack/Defense Strength** → Opponent-adjusted, schedule-quality-normalized
+3. **Form Momentum** → ±7.5% xG from last 5 games (captures streaks ELO hasn't absorbed)
+4. **Injury Factor** → 85–100% effective strength based on squad availability
+5. **Weather Factor** → 80–120% total xG modifier (rain/wind suppress goals)
+6. **Venue Factor** → 90–110% home advantage modifier
+7. **Referee Factor** → Strict refs → fewer goals (defensive adjustment)
+8. **Dixon-Coles Poisson** → Score matrix with ρ correction on low scores
+9. **Adaptive ML Blending** → 50–70% ML weight based on confidence entropy
+10. **Gaussian Draw Model** → League-specific base rate × closeness factor
 
 ### Prediction Output
 ```json
 {
   "outcome": {
-    "home_win": 0.52,
-    "draw": 0.25,
-    "away_win": 0.23
+    "home_win": 0.5615,
+    "draw": 0.2544,
+    "away_win": 0.1841,
+    "confidence": 0.1045
   },
   "goals": {
-    "home_expected_goals": 1.58,
-    "away_expected_goals": 0.96,
-    "over_2_5": 0.47,
-    "btts_yes": 0.49
+    "home_xG": 1.84,
+    "away_xG": 0.98,
+    "total_xG": 2.82,
+    "over_1_5": 0.787,
+    "over_2_5": 0.536,
+    "over_3_5": 0.314,
+    "btts": 0.541
   },
-  "most_likely_score": {
-    "score": "1-0",
-    "probability": 0.12
-  }
+  "scorelines": [
+    {"score": "1-1", "probability": 0.1215},
+    {"score": "2-0", "probability": 0.1004},
+    {"score": "2-1", "probability": 0.0989}
+  ]
 }
 ```
 
 ---
 
-## 🏆 League Simulation
+## 📡 API Endpoints
 
-Monte Carlo simulation for predicting final standings:
+### Tracking & Accuracy (Next.js)
+- `GET /api/v1/tracking/accuracy/summary` — Dashboard data (overall, by-league, recent form)
+- `GET /api/v1/tracking/accuracy/trend?window=N` — Rolling accuracy trend
+- `GET /api/v1/tracking/accuracy` — Aggregate accuracy metrics
+- `GET /api/v1/tracking/predictions?time_range=week|month|season` — Prediction list
+- `GET /api/v1/tracking/outcome-status` — Tracker status (pending/completed counts)
+- `POST /api/v1/tracking/fetch-outcomes` — Trigger ESPN result resolution
 
-- Simulates all remaining matches using team ELO ratings
-- Uses Poisson distribution for goal outcomes
-- Returns title probabilities for each team
-- Predicts Top 4, Europa qualification, and relegation candidates
-- Position distributions showing range of possible finishes
+### Top Scorers (Next.js)
+- `GET /api/top-scorers/[league]` — Top scorers (ESPN live + curated fallback)
+
+### Matches (Next.js)
+- `GET /api/live_scores` — Live match scores
+- `GET /api/todays_matches` — Today's matches
+- `GET /api/standings` — League standings
+- `GET /api/recent_results/[league]` — Recent results (last 10 days, sorted newest)
+- `GET /api/upcoming_matches/[league]` — Upcoming fixtures (next 14 days)
+- `GET /api/team_form/[league]/[team]` — Team form data
+- `GET /api/team_stats/[league]/[team]` — Team statistics
+
+### Predictions (Next.js)
+- `POST /api/predict/head-to-head` — H2H match prediction
+- `POST /api/predict/cross-league` — Cross-league prediction
+- `POST /api/predict/any-teams` — Any teams prediction
+
+### Analytics (Next.js)
+- `GET /api/analytics/overview/[league]` — League analytics overview
+- `GET /api/analytics/goals_distribution/[league]` — Goals distribution
+- `GET /api/analytics/season_trends/[league]` — Season trend data
+- `GET /api/simulation/[leagueId]` — Monte Carlo league simulation
+
+### FastAPI Backend
+- `POST /api/v1/tracking/store` — Store a prediction
+- `POST /api/v1/tracking/outcome` — Record match result
+- `GET /api/v1/tracking/recent` — Recent predictions (with filters)
+- `GET /api/v1/tracking/model-adjustments` — Suggested parameter adjustments
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```env
+# Frontend (.env.local)
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+
+# Backend (.env)
+JWT_SECRET_KEY=your-secret-key
+GOOGLE_CLIENT_ID=your-google-client-id
+```
 
 ---
 
 ## 🔄 Data Sources
 
-All match data is fetched in real-time from:
-
-**FotMob** - Primary source providing:
+**ESPN API** — Primary data source providing:
 - Live scores and match events
-- Team statistics and form
-- League standings and fixtures
-- Player information and injuries
-
-**ESPN** - Secondary source providing:
-- Live scores and statistics
+- League standings (including MLS conference splits)
+- Top scorers and statistics
 - News articles and headlines
-- Team information
+- Team search across 14 leagues
+- Scheduled match fixtures
+
+---
+
+## 📝 Scripts Reference
+
+| Script | Purpose | Command |
+|--------|---------|---------|
+| `seed_predictions` | Back-test on 90 days of historical ESPN data | `python -m backend.scripts.seed_predictions` |
+| `predict_upcoming` | Predict next N days of scheduled matches | `python -m backend.scripts.predict_upcoming --days 14` |
+| `train_feedback` | Analyze accuracy, compute parameter adjustments | `python -m backend.scripts.train_feedback` |
 
 ---
 
 ## 📝 License
 
-MIT License - Feel free to use and modify for your projects.
+MIT License — Feel free to use and modify for your projects.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- [FotMob](https://www.fotmob.com) - Football data provider
-- [ESPN](https://www.espn.com) - Sports data and news
-- [FastAPI](https://fastapi.tiangolo.com) - Modern Python API framework
-- [Next.js](https://nextjs.org) - React framework
+- [ESPN](https://www.espn.com) — Sports data, scores, standings, and news
+- [FastAPI](https://fastapi.tiangolo.com) — Modern Python API framework
+- [Next.js](https://nextjs.org) — React framework with App Router
+- [SciPy](https://scipy.org) — Statistical computing (Poisson distribution)
