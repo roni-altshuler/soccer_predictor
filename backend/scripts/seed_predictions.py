@@ -31,6 +31,9 @@ LEAGUES = {
     "fra.1": "Ligue 1",
     "usa.1": "MLS",
     "uefa.champions": "Champions League",
+    "uefa.europa": "Europa League",
+    "ned.1": "Eredivisie",
+    "por.1": "Primeira Liga",
 }
 
 # League-specific draw rates (empirical 5-season averages)
@@ -42,6 +45,9 @@ LEAGUE_DRAW_RATES = {
     "Ligue 1": 0.24,
     "MLS": 0.22,
     "Champions League": 0.20,
+    "Europa League": 0.22,
+    "Eredivisie": 0.21,
+    "Primeira Liga": 0.25,
 }
 
 # League average goals per team per game
@@ -53,6 +59,9 @@ LEAGUE_AVG_GOALS = {
     "Ligue 1": 1.30,
     "MLS": 1.45,
     "Champions League": 1.50,
+    "Europa League": 1.42,
+    "Eredivisie": 1.45,
+    "Primeira Liga": 1.28,
 }
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"

@@ -41,6 +41,10 @@ class EloRatingSystem:
         "MLS": 0.80,
         "Championship": 0.85,
         "Bundesliga 2": 0.75,
+        "Champions League": 1.20,
+        "Europa League": 1.05,
+        "Conference League": 0.95,
+        "World Cup": 1.25,
         # Default for unknown leagues
         "default": 0.85,
     }
@@ -57,18 +61,26 @@ class EloRatingSystem:
         "MLS": 0.22,
         "Championship": 0.26,
         "Champions League": 0.20,
+        "Europa League": 0.22,
+        "Conference League": 0.23,
+        "World Cup": 0.18,
         "default": 0.24,
     }
 
-    # League average goals per team per game
+    # League average goals per team per match
     LEAGUE_AVG_GOALS = {
         "Premier League": 1.42,
         "La Liga": 1.30,
         "Bundesliga": 1.55,
         "Serie A": 1.32,
         "Ligue 1": 1.30,
+        "Eredivisie": 1.45,
+        "Primeira Liga": 1.28,
         "MLS": 1.45,
         "Champions League": 1.50,
+        "Europa League": 1.42,
+        "Conference League": 1.38,
+        "World Cup": 1.30,
         "default": 1.35,
     }
     

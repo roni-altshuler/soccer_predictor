@@ -68,6 +68,7 @@ interface HeadToHeadStats {
   // Team form data for both teams (merged from Team History)
   team1Form?: TeamFormData
   team2Form?: TeamFormData
+  isEstimated?: boolean
 }
 
 interface HeadToHeadDisplayProps {
@@ -150,7 +151,7 @@ export default function HeadToHeadDisplay({
         // Instead of guessing from aggregate records, fetch actual recent results
         if (showTeamForm) {
           try {
-            const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions']
+            const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'ned.1', 'por.1', 'sco.1', 'bra.1', 'mex.1', 'tur.1']
             
             // Helper to find a team's ESPN ID and league
             const findTeamId = async (teamName: string): Promise<{teamId: string, league: string} | null> => {
@@ -268,7 +269,7 @@ export default function HeadToHeadDisplay({
         // Search recent scoreboard for matches where both teams played each other
         if (!h2hData || h2hData.totalMatches === 0) {
           try {
-            const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa']
+            const SUPPORTED_LEAGUES = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'ned.1', 'por.1', 'sco.1', 'bra.1', 'mex.1']
             const now = new Date()
             const past = new Date(now)
             past.setFullYear(past.getFullYear() - 3)  // Look back 3 years
@@ -566,6 +567,7 @@ export default function HeadToHeadDisplay({
   }
 
   // Generate realistic H2H data based on team names (for when API doesn't return data)
+  // Returns data clearly marked as estimated
   const generateRealisticH2H = (team1: string, team2: string): HeadToHeadStats => {
     const isTeam1Top = TOP_TEAMS.some(t => team1.toLowerCase().includes(t.toLowerCase()))
     const isTeam2Top = TOP_TEAMS.some(t => team2.toLowerCase().includes(t.toLowerCase()))
@@ -618,7 +620,7 @@ export default function HeadToHeadDisplay({
       recentMatches.push({
         id: `h2h-${i}`,
         date: matchDate.toISOString(),
-        competition: 'Premier League',
+        competition: 'League',
         homeTeam: i % 2 === 0 ? team1 : team2,
         awayTeam: i % 2 === 0 ? team2 : team1,
         homeScore,
@@ -654,6 +656,7 @@ export default function HeadToHeadDisplay({
       streaks: {
         longestWinStreak: { team: team1Wins > team2Wins ? team1 : team2, count: Math.max(1, Math.floor(seededRandom(80) * 4)) },
       },
+      isEstimated: true,
     }
   }
 
@@ -727,7 +730,7 @@ export default function HeadToHeadDisplay({
         homeAway: idx % 2 === 0 ? 'home' as const : 'away' as const,
         score: `${goalsFor} - ${goalsAgainst}`,
         result,
-        competition: 'Premier League'
+        competition: 'League'
       }
     })
     
@@ -833,6 +836,11 @@ export default function HeadToHeadDisplay({
       <div className="space-y-6">
         {/* H2H Summary at the top (merged from H2H view) */}
         <div className="bg-[var(--muted-bg)] rounded-xl p-4">
+          {stats.isEstimated && (
+            <div className="mb-3 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-400 text-center">
+              ⚠️ Estimated data — real match history not available from ESPN for these teams
+            </div>
+          )}
           <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-center">Head-to-Head Record ({stats.totalMatches} matches)</h4>
           
           {/* H2H Bar */}

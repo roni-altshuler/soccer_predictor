@@ -339,10 +339,18 @@ class HybridPredictionModel:
         home_conceded_pg: float,
         away_goals_pg: float,
         away_conceded_pg: float,
-        features: Optional[np.ndarray] = None
+        features: Optional[np.ndarray] = None,
+        home_form: Optional[float] = None,
+        away_form: Optional[float] = None,
+        league: Optional[str] = None,
     ) -> Dict:
         """
         Make a complete match prediction.
+        
+        Args:
+            home_form: Form score 0-1 (from last 5 games). Used for momentum adjustment.
+            away_form: Form score 0-1 (from last 5 games). Used for momentum adjustment.
+            league: League name for league-specific parameters.
         """
         # Get attack/defense strengths
         home_attack, home_defense = self.elo_to_attack_defense(
@@ -351,6 +359,15 @@ class HybridPredictionModel:
         away_attack, away_defense = self.elo_to_attack_defense(
             away_elo, away_goals_pg, away_conceded_pg
         )
+        
+        # Form-based momentum adjustment: hot teams get slight xG boost
+        # This captures short-term streaks that ELO hasn't absorbed yet
+        if home_form is not None:
+            momentum_home = 1.0 + (home_form - 0.5) * 0.15  # ±7.5% from form
+            home_attack *= momentum_home
+        if away_form is not None:
+            momentum_away = 1.0 + (away_form - 0.5) * 0.15
+            away_attack *= momentum_away
         
         # Poisson predictions for goals (with Dixon-Coles correction)
         poisson_pred = self.poisson.predict_match(
@@ -376,7 +393,15 @@ class HybridPredictionModel:
             try:
                 ml_probs = self.outcome_model.predict_proba(features.reshape(1, -1))[0]
                 
-                # Blend ML and Poisson predictions (60% ML, 40% Poisson)
+                # Adaptive blending: use more ML weight when ML is confident
+                ml_entropy = -sum(p * np.log(p + 1e-10) for p in ml_probs)
+                max_ent = -3 * (1/3) * np.log(1/3)
+                ml_confidence = 1 - (ml_entropy / max_ent)
+                
+                # ML weight: 50-70% based on ML confidence
+                ml_weight = 0.50 + ml_confidence * 0.20
+                poisson_weight = 1.0 - ml_weight
+                
                 poisson_probs = [
                     poisson_pred["outcome"]["home_win"],
                     poisson_pred["outcome"]["draw"],
@@ -384,7 +409,7 @@ class HybridPredictionModel:
                 ]
                 
                 blended = [
-                    0.6 * ml_probs[i] + 0.4 * poisson_probs[i]
+                    ml_weight * ml_probs[i] + poisson_weight * poisson_probs[i]
                     for i in range(3)
                 ]
                 

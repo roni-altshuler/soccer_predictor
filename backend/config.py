@@ -62,6 +62,8 @@ LEAGUE_IDS = {
     "mls": 130,
     "champions_league": 42,
     "europa_league": 73,
+    "conference_league": 0,
+    "world_cup": 0,
 }
 
 # League display names
@@ -76,6 +78,7 @@ LEAGUE_NAMES = {
     130: "MLS",
     42: "Champions League",
     73: "Europa League",
+    0: "Conference League",
 }
 
 # Country codes for flag display
@@ -90,4 +93,5 @@ LEAGUE_COUNTRIES = {
     130: "us",
     42: "eu",
     73: "eu",
+    0: "eu",
 }

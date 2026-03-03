@@ -44,7 +44,11 @@ export type League =
   | 'ligue_1'
   | 'mls'
   | 'ucl'
-  | 'uel';
+  | 'uel'
+  | 'world_cup'
+  | 'eredivisie'
+  | 'primeira_liga'
+  | 'conference_league';
 
 // API utilities
 export async function fetchHeadToHead(league: League, homeTeam: string, awayTeam: string): Promise<HeadToHeadPrediction> {

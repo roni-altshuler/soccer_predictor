@@ -32,6 +32,8 @@ ESPN_LEAGUE_IDS = {
     "mls": "usa.1",
     "champions_league": "uefa.champions",
     "europa_league": "uefa.europa",
+    "conference_league": "uefa.europa.conf",
+    "world_cup": "fifa.world",
 }
 
 

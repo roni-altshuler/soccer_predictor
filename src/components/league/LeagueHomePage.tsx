@@ -160,6 +160,8 @@ const LEAGUE_NUMERIC_ID_MAP: Record<string, number> = {
   'ita.1': 55, 'serie_a': 55,
   'fra.1': 53, 'ligue_1': 53,
   'usa.1': 130, 'mls': 130,
+  'ned.1': 57, 'eredivisie': 57,
+  'por.1': 61, 'primeira_liga': 61,
 }
 
 // Tab label mapping for display
@@ -270,6 +272,14 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     'ita': 'serie_a',
     'fra': 'ligue_1',
     'usa': 'mls',
+    'ned': 'eredivisie',
+    'por': 'primeira_liga',
+    'sco': 'scottish_premiership',
+    'bel': 'belgian_pro_league',
+    'tur': 'super_lig',
+    'bra': 'brasileirao',
+    'arg': 'liga_profesional',
+    'mex': 'liga_mx',
   }
   
   const LEAGUE_TO_ESPN_ID: Record<string, string> = {
@@ -279,6 +289,18 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     'serie_a': 'ita.1',
     'ligue_1': 'fra.1',
     'mls': 'usa.1',
+    'eredivisie': 'ned.1',
+    'primeira_liga': 'por.1',
+    'scottish_premiership': 'sco.1',
+    'belgian_pro_league': 'bel.1',
+    'super_lig': 'tur.1',
+    'brasileirao': 'bra.1',
+    'liga_profesional': 'arg.1',
+    'liga_mx': 'mex.1',
+    'champions_league': 'uefa.champions',
+    'europa_league': 'uefa.europa',
+    'conference_league': 'uefa.europa.conf',
+    'world_cup': 'fifa.world',
   }
 
   const getEspnLeagueId = () => {
@@ -355,12 +377,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Also fetch from ESPN for real-time data including top scorers
         const espnLeagueId = getEspnLeagueId()
         
-        // Get date range: 30 days back + 30 days forward for both recent results and upcoming
+        // Get date range: 10 days back + 14 days forward for recent results and upcoming
         const now = new Date()
         const pastDate = new Date(now)
-        pastDate.setDate(pastDate.getDate() - 30)
+        pastDate.setDate(pastDate.getDate() - 10)
         const futureDate = new Date(now)
-        futureDate.setDate(futureDate.getDate() + 30)
+        futureDate.setDate(futureDate.getDate() + 14)
         const fmtDate = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
         const scoreboardDateRange = `${fmtDate(pastDate)}-${fmtDate(futureDate)}`
 
@@ -387,14 +409,20 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
         // PRIORITIZE ESPN data for accurate real-time standings
         // ESPN provides the most up-to-date standings data
+        // For MLS and other leagues with multiple groups/conferences, iterate all children
         let espnStandingsLoaded = false
         if (espnResults[0].status === 'fulfilled') {
           const espnStandings = espnResults[0] as PromiseFulfilledResult<Response>
           if (espnStandings.value.ok) {
             const espnData = await espnStandings.value.json()
-            const entries = espnData.children?.[0]?.standings?.entries || []
-            if (entries.length > 0) {
-              leagueData.standings = entries.map((entry: any, idx: number) => {
+            const children = espnData.children || []
+            const allEntries: any[] = []
+            for (const child of children) {
+              const entries = child?.standings?.entries || []
+              allEntries.push(...entries)
+            }
+            if (allEntries.length > 0) {
+              leagueData.standings = allEntries.map((entry: any, idx: number) => {
                 const getStatVal = (name: string) => {
                   const stat = entry.stats?.find((s: any) => s.name === name)
                   return parseInt(stat?.value || '0', 10)
@@ -465,7 +493,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   homeScore: parseInt(homeTeam?.score || '0'),
                   awayScore: parseInt(awayTeam?.score || '0'),
                   date: matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                })
+                  _rawDate: matchDate.getTime(),
+                } as RecentMatch & { _rawDate: number })
               } else if (matchDate >= now) {
                 leagueData.upcomingMatches.push({
                   id: String(event.id),
@@ -477,6 +506,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 })
               }
             }
+            // Sort recent results by date descending (newest first)
+            leagueData.recentResults.sort((a: any, b: any) => (b._rawDate || 0) - (a._rawDate || 0))
           }
         }
 
@@ -573,6 +604,31 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             }
           } catch (e) {
             // Silently fail on alternative endpoint
+          }
+        }
+
+        // Final fallback: Use dedicated top-scorers API route with curated data
+        if (leagueData.topScorers.length === 0) {
+          try {
+            const leagueParam = leagueId.includes('.') 
+              ? leagueId
+              : LEAGUE_TO_ESPN_ID[leagueId] || leagueId
+            const scorersRes = await fetch(`/api/top-scorers/${leagueParam}`)
+            if (scorersRes.ok) {
+              const scorersData = await scorersRes.json()
+              if (scorersData.scorers && scorersData.scorers.length > 0) {
+                leagueData.topScorers = scorersData.scorers.map((s: any) => ({
+                  rank: s.rank,
+                  name: s.name,
+                  team: s.team,
+                  goals: s.goals,
+                  assists: s.assists || 0,
+                  matches: s.matches || 0,
+                }))
+              }
+            }
+          } catch (e) {
+            // Top scorers fallback also failed
           }
         }
 
