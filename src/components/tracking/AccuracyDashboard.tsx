@@ -232,8 +232,8 @@ function HeadlineCard({
             {metrics.completed_predictions} correct
           </h2>
           <p className="text-[var(--text-secondary)] text-sm">
-            Exact scoreline: {metrics.exact_scoreline_count} ({pct(metrics.exact_scoreline_rate)})
-            &nbsp;·&nbsp; Brier Score: {metrics.brier_score.toFixed(3)}
+            Exact scoreline: {metrics.exact_scoreline_count ?? 0} ({pct(metrics.exact_scoreline_rate ?? 0)})
+            &nbsp;·&nbsp; Brier Score: {(metrics.brier_score ?? 0).toFixed(3)}
           </p>
 
           {/* Recent form badges */}
@@ -268,12 +268,12 @@ function HeadlineCard({
 
 function MetricCard({ title, metrics }: { title: string; metrics: OverallMetrics }) {
   const rows = [
-    { label: 'Winner Accuracy', value: pct(metrics.winner_accuracy) },
-    { label: 'High Confidence', value: pct(metrics.high_confidence_accuracy) },
-    { label: 'Med Confidence', value: pct(metrics.medium_confidence_accuracy) },
-    { label: 'Low Confidence', value: pct(metrics.low_confidence_accuracy) },
-    { label: 'Within 1 goal', value: pct(metrics.within_1_goal_rate) },
-    { label: 'Avg goals diff', value: metrics.avg_goals_difference.toFixed(2) },
+    { label: 'Winner Accuracy', value: pct(metrics.winner_accuracy ?? 0) },
+    { label: 'High Confidence', value: pct(metrics.high_confidence_accuracy ?? 0) },
+    { label: 'Med Confidence', value: pct(metrics.medium_confidence_accuracy ?? 0) },
+    { label: 'Low Confidence', value: pct(metrics.low_confidence_accuracy ?? 0) },
+    { label: 'Within 1 goal', value: pct(metrics.within_1_goal_rate ?? 0) },
+    { label: 'Avg goals diff', value: (metrics.avg_goals_difference ?? 0).toFixed(2) },
   ]
 
   return (

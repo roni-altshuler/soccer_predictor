@@ -2,7 +2,7 @@ import LeagueHomePage from '@/components/league/LeagueHomePage'
 import TournamentHomePage from '@/components/tournament/TournamentHomePage'
 
 // League configuration for known leagues (FotMob-style IDs and names)
-const LEAGUE_CONFIG: Record<string, { name: string; country: string; isTournament?: boolean; tournamentId?: 'champions_league' | 'europa_league' | 'world_cup' }> = {
+const LEAGUE_CONFIG: Record<string, { name: string; country: string; isTournament?: boolean; tournamentId?: 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup' }> = {
   // ESPN-style IDs
   'eng.1': { name: 'Premier League', country: 'England' },
   'esp.1': { name: 'La Liga', country: 'Spain' },
@@ -20,7 +20,7 @@ const LEAGUE_CONFIG: Record<string, { name: string; country: string; isTournamen
   'mex.1': { name: 'Liga MX', country: 'Mexico' },
   'uefa.champions': { name: 'UEFA Champions League', country: 'Europe', isTournament: true, tournamentId: 'champions_league' },
   'uefa.europa': { name: 'UEFA Europa League', country: 'Europe', isTournament: true, tournamentId: 'europa_league' },
-  'uefa.europa.conf': { name: 'Conference League', country: 'Europe' },
+  'uefa.europa.conf': { name: 'UEFA Conference League', country: 'Europe', isTournament: true, tournamentId: 'conference_league' },
   'fifa.world': { name: 'FIFA World Cup', country: 'International', isTournament: true, tournamentId: 'world_cup' },
   // Snake_case IDs
   'premier_league': { name: 'Premier League', country: 'England' },
@@ -30,7 +30,7 @@ const LEAGUE_CONFIG: Record<string, { name: string; country: string; isTournamen
   'ligue_1': { name: 'Ligue 1', country: 'France' },
   'champions_league': { name: 'UEFA Champions League', country: 'Europe', isTournament: true, tournamentId: 'champions_league' },
   'europa_league': { name: 'UEFA Europa League', country: 'Europe', isTournament: true, tournamentId: 'europa_league' },
-  'conference_league': { name: 'Conference League', country: 'Europe' },
+  'conference_league': { name: 'UEFA Conference League', country: 'Europe', isTournament: true, tournamentId: 'conference_league' },
   'world_cup': { name: 'FIFA World Cup', country: 'International', isTournament: true, tournamentId: 'world_cup' },
   'mls': { name: 'MLS', country: 'USA' },
   'eredivisie': { name: 'Eredivisie', country: 'Netherlands' },

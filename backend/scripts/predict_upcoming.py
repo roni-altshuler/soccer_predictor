@@ -33,22 +33,24 @@ LEAGUES = {
     "usa.1": "MLS",
     "uefa.champions": "Champions League",
     "uefa.europa": "Europa League",
+    "uefa.europa.conf": "Conference League",
     "ned.1": "Eredivisie",
     "por.1": "Primeira Liga",
+    "fifa.world": "FIFA World Cup",
 }
 
 LEAGUE_DRAW_RATES = {
     "Premier League": 0.23, "La Liga": 0.24, "Bundesliga": 0.22,
     "Serie A": 0.27, "Ligue 1": 0.24, "MLS": 0.22,
-    "Champions League": 0.20, "Europa League": 0.22,
-    "Eredivisie": 0.21, "Primeira Liga": 0.25,
+    "Champions League": 0.20, "Europa League": 0.22, "Conference League": 0.21,
+    "Eredivisie": 0.21, "Primeira Liga": 0.25, "FIFA World Cup": 0.22,
 }
 
 LEAGUE_AVG_GOALS = {
     "Premier League": 1.42, "La Liga": 1.30, "Bundesliga": 1.55,
     "Serie A": 1.32, "Ligue 1": 1.30, "MLS": 1.45,
-    "Champions League": 1.50, "Europa League": 1.42,
-    "Eredivisie": 1.45, "Primeira Liga": 1.28,
+    "Champions League": 1.50, "Europa League": 1.42, "Conference League": 1.38,
+    "Eredivisie": 1.45, "Primeira Liga": 1.28, "FIFA World Cup": 1.35,
 }
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"

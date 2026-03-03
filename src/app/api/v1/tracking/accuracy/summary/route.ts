@@ -142,6 +142,20 @@ export async function GET() {
   cutoff30.setDate(cutoff30.getDate() - 30)
   const last30 = completed.filter(p => new Date(p.match_date) >= cutoff30)
   const last30Correct = last30.filter(p => p.winner_correct).length
+  const last30ScoreCorrect = last30.filter(p => p.scoreline_correct).length
+  const last30GoalsDiffs = last30.filter(p => p.goals_diff !== null).map(p => Math.abs(p.goals_diff!))
+  const last30AvgGoalsDiff = last30GoalsDiffs.length > 0 ? last30GoalsDiffs.reduce((a, b) => a + b, 0) / last30GoalsDiffs.length : 0
+  const last30Within1Goal = last30GoalsDiffs.length > 0 ? last30GoalsDiffs.filter(d => d <= 1).length / last30GoalsDiffs.length : 0
+  let last30BrierSum = 0
+  for (const p of last30) {
+    const actual30 = p.actual_winner === 'home' ? [1, 0, 0] : p.actual_winner === 'draw' ? [0, 1, 0] : [0, 0, 1]
+    const pred30 = [p.predicted_home_win, p.predicted_draw, p.predicted_away_win]
+    last30BrierSum += pred30.reduce((sum, pr, i) => sum + Math.pow(pr - actual30[i], 2), 0)
+  }
+  const last30Brier = last30.length > 0 ? last30BrierSum / last30.length : 0
+  const last30High = last30.filter(p => p.confidence >= 0.7)
+  const last30Med = last30.filter(p => p.confidence >= 0.4 && p.confidence < 0.7)
+  const last30Low = last30.filter(p => p.confidence < 0.4)
 
   return NextResponse.json({
     overall: {
@@ -168,7 +182,16 @@ export async function GET() {
     last_30_days: {
       total_predictions: last30.length,
       completed_predictions: last30.length,
+      winner_correct_count: last30Correct,
       winner_accuracy: last30.length > 0 ? Math.round((last30Correct / last30.length) * 1000) / 1000 : 0,
+      exact_scoreline_count: last30ScoreCorrect,
+      exact_scoreline_rate: last30.length > 0 ? Math.round((last30ScoreCorrect / last30.length) * 1000) / 1000 : 0,
+      avg_goals_difference: Math.round(last30AvgGoalsDiff * 100) / 100,
+      within_1_goal_rate: Math.round(last30Within1Goal * 1000) / 1000,
+      brier_score: Math.round(last30Brier * 10000) / 10000,
+      high_confidence_accuracy: Math.round(confAcc(last30High) * 1000) / 1000,
+      medium_confidence_accuracy: Math.round(confAcc(last30Med) * 1000) / 1000,
+      low_confidence_accuracy: Math.round(confAcc(last30Low) * 1000) / 1000,
       recent_accuracy: last30.length > 0 ? Math.round((last30Correct / last30.length) * 1000) / 1000 : 0,
     },
     by_league: byLeague,

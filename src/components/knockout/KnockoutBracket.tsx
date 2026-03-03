@@ -41,7 +41,7 @@ interface SimulationData {
 }
 
 interface KnockoutBracketProps {
-  tournament: 'champions_league' | 'europa_league' | 'world_cup'
+  tournament: 'champions_league' | 'europa_league' | 'world_cup' | 'conference_league'
   rounds?: BracketRound[]
   simulationData?: SimulationData
   showProbabilities?: boolean
@@ -81,6 +81,17 @@ const TOURNAMENT_CONFIG = {
     borderColor: 'border-purple-500',
     rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Third Place', 'Final'],
     isTwoLegged: [false, false, false, false, false],
+  },
+  conference_league: {
+    name: 'UEFA Conference League',
+    emoji: '🏆',
+    gradient: 'from-green-600 to-emerald-500',
+    color: 'green',
+    textColor: 'text-green-500',
+    bgColor: 'bg-green-500',
+    borderColor: 'border-green-500',
+    rounds: ['Round of 32', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    isTwoLegged: [true, true, true, true, false],
   },
 }
 

@@ -13,9 +13,12 @@ const LEAGUES = [
   { id: 'ita.1', name: 'Serie A', country: 'Italy', flagCode: 'IT' },
   { id: 'ger.1', name: 'Bundesliga', country: 'Germany', flagCode: 'DE' },
   { id: 'fra.1', name: 'Ligue 1', country: 'France', flagCode: 'FR' },
+  { id: 'ned.1', name: 'Eredivisie', country: 'Netherlands', flagCode: 'NL' },
+  { id: 'por.1', name: 'Primeira Liga', country: 'Portugal', flagCode: 'PT' },
   { id: 'usa.1', name: 'MLS', country: 'USA', flagCode: 'US' },
   { id: 'uefa.champions', name: 'UEFA Champions League', country: 'Europe', flagCode: 'EU' },
   { id: 'uefa.europa', name: 'UEFA Europa League', country: 'Europe', flagCode: 'EU' },
+  { id: 'uefa.europa.conf', name: 'UEFA Conference League', country: 'Europe', flagCode: 'EU' },
   { id: 'fifa.world', name: 'FIFA World Cup 2026', country: 'USA/Mexico/Canada', flagCode: 'WORLD' },
 ];
 

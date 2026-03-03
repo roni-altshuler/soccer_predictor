@@ -428,7 +428,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <QuickStatsCard icon="📊" value="100K+" label="Matches Analyzed" color="from-indigo-600 to-indigo-700" />
             <QuickStatsCard icon="🎯" value="72%" label="Prediction Accuracy" color="from-emerald-600 to-emerald-700" />
-            <QuickStatsCard icon="⚽" value="9" label="Leagues Covered" color="from-amber-600 to-amber-700" />
+            <QuickStatsCard icon="⚽" value="12" label="Leagues Covered" color="from-amber-600 to-amber-700" />
             <QuickStatsCard icon="🔄" value="30s" label="Live Updates" color="from-rose-600 to-rose-700" />
           </div>
         </div>
@@ -494,9 +494,12 @@ export default function Home() {
                 'Serie A': 'ita.1',
                 'Bundesliga': 'ger.1',
                 'Ligue 1': 'fra.1',
+                'Eredivisie': 'ned.1',
+                'Primeira Liga': 'por.1',
                 'MLS': 'usa.1',
                 'UEFA Champions League': 'uefa.champions',
                 'UEFA Europa League': 'uefa.europa',
+                'UEFA Conference League': 'uefa.europa.conf',
                 'FIFA World Cup': 'fifa.world',
               }
               const leagueId = leagueIdMap[league.name] || ''

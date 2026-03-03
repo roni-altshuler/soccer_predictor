@@ -22,9 +22,12 @@ const ESPN_LEAGUES = [
   { id: 'ita.1', name: 'Serie A' },
   { id: 'ger.1', name: 'Bundesliga' },
   { id: 'fra.1', name: 'Ligue 1' },
+  { id: 'ned.1', name: 'Eredivisie' },
+  { id: 'por.1', name: 'Primeira Liga' },
   { id: 'usa.1', name: 'MLS' },
   { id: 'uefa.champions', name: 'UEFA Champions League' },
   { id: 'uefa.europa', name: 'UEFA Europa League' },
+  { id: 'uefa.europa.conf', name: 'UEFA Conference League' },
   { id: 'fifa.world', name: 'FIFA World Cup 2026' },
 ]
 

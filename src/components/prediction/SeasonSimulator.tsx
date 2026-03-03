@@ -11,6 +11,9 @@ const SIMULATION_LEAGUES = [
   { id: 55, name: 'Serie A', flagCode: 'IT' },
   { id: 54, name: 'Bundesliga', flagCode: 'DE' },
   { id: 53, name: 'Ligue 1', flagCode: 'FR' },
+  { id: 57, name: 'Eredivisie', flagCode: 'NL' },
+  { id: 61, name: 'Primeira Liga', flagCode: 'PT' },
+  { id: 130, name: 'MLS', flagCode: 'US' },
 ];
 
 export default function SeasonSimulator() {

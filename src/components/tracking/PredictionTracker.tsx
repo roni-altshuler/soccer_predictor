@@ -59,7 +59,32 @@ export default function PredictionTracker() {
 
         if (predictionsRes.ok) {
           const predData = await predictionsRes.json()
-          setPredictions(predData.predictions || [])
+          // Transform flat API response to PredictionResult shape
+          const mapped: PredictionResult[] = (predData.predictions || []).map((p: any) => ({
+            matchId: p.match_id || '',
+            homeTeam: p.home_team || '',
+            awayTeam: p.away_team || '',
+            date: p.match_date || '',
+            prediction: {
+              homeWinProb: p.home_win_prob ?? 0,
+              drawProb: p.draw_prob ?? 0,
+              awayWinProb: p.away_win_prob ?? 0,
+              predictedResult: p.predicted_winner || 'home',
+              confidence: p.confidence ?? 0,
+              predictedScore: p.predicted_scoreline ? {
+                home: parseInt(p.predicted_scoreline.split('-')[0]) || 0,
+                away: parseInt(p.predicted_scoreline.split('-')[1]) || 0,
+              } : undefined,
+            },
+            actual: p.actual_scoreline ? {
+              homeScore: parseInt(p.actual_scoreline.split('-')[0]) || 0,
+              awayScore: parseInt(p.actual_scoreline.split('-')[1]) || 0,
+              result: p.actual_winner || 'draw',
+            } : undefined,
+            isCorrect: p.winner_correct ?? undefined,
+            wasPlayed: p.status === 'completed',
+          }))
+          setPredictions(mapped)
         }
 
         if (metricsRes.ok) {

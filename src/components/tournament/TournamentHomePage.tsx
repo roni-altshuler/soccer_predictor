@@ -8,7 +8,7 @@ import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch 
 import MatchCalendar from '@/components/match/MatchCalendar'
 
 interface TournamentHomePageProps {
-  tournamentId: 'champions_league' | 'europa_league' | 'world_cup'
+  tournamentId: 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup'
   tournamentName: string
 }
 
@@ -103,6 +103,17 @@ const TOURNAMENT_CONFIG = {
     leagueId: 'fifa.world',
     espnId: 'fifa.world',
     logo: 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/4.png',
+  },
+  conference_league: {
+    name: 'UEFA Conference League',
+    emoji: '🏆',
+    gradient: 'from-green-600 to-emerald-500',
+    color: 'green',
+    knockoutType: 'conference_league' as const,
+    groupCount: 8,
+    leagueId: 'uefa.europa.conf',
+    espnId: 'uefa.europa.conf',
+    logo: 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/5765.png',
   },
 }
 
