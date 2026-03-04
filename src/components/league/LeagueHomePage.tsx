@@ -109,6 +109,18 @@ const AVAILABLE_SEASONS = [
   { value: '2021', label: '2021-22' },
 ]
 
+// MLS uses calendar-year seasons (2026 = Feb–Nov 2026)
+const MLS_SEASONS = [
+  { value: '2026', label: '2026' },
+  { value: '2025', label: '2025' },
+  { value: '2024', label: '2024' },
+  { value: '2023', label: '2023' },
+  { value: '2022', label: '2022' },
+]
+
+// Calendar-year league IDs
+const CALENDAR_YEAR_LEAGUE_IDS = new Set(['usa.1', 'mls'])
+
 const LEAGUE_CONFIGS: Record<string, { color: string; gradient: string; flag: string }> = {
   // Main leagues
   'premier_league': { color: '#3D195B', gradient: 'from-purple-900 to-purple-700', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
@@ -236,7 +248,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator' | 'news'>('overview')
-  const [selectedSeason, setSelectedSeason] = useState('2025')
+  const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
+  const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
+  const seasons = isCalendarYear ? MLS_SEASONS : AVAILABLE_SEASONS
+  const [selectedSeason, setSelectedSeason] = useState(isCalendarYear ? '2026' : '2025')
   const [runningSimulation, setRunningSimulation] = useState(false)
   const [numSimulations, setNumSimulations] = useState(10000)
   const [simulationResults, setSimulationResults] = useState<{
@@ -256,9 +271,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       relegation_probability: number
     }>
   } | null>(null)
-
-  // Check if this is MLS to show conferences
-  const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
 
   const config = LEAGUE_CONFIGS[leagueId] || LEAGUE_CONFIGS['premier_league']
   const leagueLogo = LEAGUE_LOGOS[leagueId]
@@ -399,7 +411,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           leagueId: parseInt(leagueId) || 0,
           leagueName,
           country,
-          season: AVAILABLE_SEASONS.find(s => s.value === selectedSeason)?.label || '2025-26',
+          season: seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26'),
           standings: [],
           topScorers: [],
           upcomingMatches: [],
@@ -711,7 +723,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               )}
               <div>
                 <h1 className="text-3xl font-bold text-white">{leagueName}</h1>
-                <p className="text-white/80">{AVAILABLE_SEASONS.find(s => s.value === selectedSeason)?.label || '2025-26'} Season • {country}</p>
+                <p className="text-white/80">{seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} Season • {country}</p>
               </div>
             </div>
             
@@ -722,7 +734,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 onChange={(e) => setSelectedSeason(e.target.value)}
                 className="px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
               >
-                {AVAILABLE_SEASONS.map(season => (
+                {seasons.map(season => (
                   <option key={season.value} value={season.value} className="text-gray-900">
                     {season.label}
                   </option>

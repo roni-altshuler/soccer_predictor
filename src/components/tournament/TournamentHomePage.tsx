@@ -117,7 +117,7 @@ const TOURNAMENT_CONFIG = {
   },
 }
 
-const TABS = ['Overview', 'Groups', 'Knockout', 'Scorers', 'Fixtures', 'Simulator', 'News'] as const
+const TABS = ['Overview', 'Groups', 'Knockout', 'Top Scorers', 'Fixtures', 'Simulator', 'News'] as const
 type TabType = typeof TABS[number]
 
 // Available tournament seasons for dropdown
@@ -865,7 +865,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           
           {activeTab === 'Knockout' && renderKnockoutBracket()}
 
-          {activeTab === 'Scorers' && (
+          {activeTab === 'Top Scorers' && (
             <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
               <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top Scorers</h2>

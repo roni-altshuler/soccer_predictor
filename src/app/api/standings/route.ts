@@ -39,6 +39,9 @@ const LEAGUE_ESPN_MAP: Record<string, string> = {
   primeira_liga: 'por.1',
 }
 
+// Leagues that use calendar-year seasons (e.g. 2026 = March–November 2026)
+const CALENDAR_YEAR_LEAGUES = new Set(['mls'])
+
 // Total matches per league (season length varies)
 const LEAGUE_TOTAL_MATCHES: Record<string, number> = {
   premier_league: 38,
@@ -54,10 +57,31 @@ const LEAGUE_TOTAL_MATCHES: Record<string, number> = {
 /**
  * Fetch live standings from ESPN API for any supported league.
  */
-async function fetchESPNStandings(espnId: string): Promise<TeamStanding[]> {
+function getCurrentSeason(league: string): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1 // 1-indexed
+  if (CALENDAR_YEAR_LEAGUES.has(league)) {
+    // MLS: if before March, may still be previous year's season; otherwise current year
+    return month >= 2 ? String(year) : String(year - 1)
+  }
+  // European leagues: season starts Aug/Sep, so Aug+ = current year, before Aug = previous year
+  return month >= 7 ? String(year) : String(year - 1)
+}
+
+function getSeasonLabel(league: string, seasonYear: string): string {
+  if (CALENDAR_YEAR_LEAGUES.has(league)) {
+    return seasonYear // e.g. "2026"
+  }
+  const y = parseInt(seasonYear)
+  return `${y}-${String(y + 1).slice(2)}` // e.g. "2025-26"
+}
+
+async function fetchESPNStandings(espnId: string, season?: string): Promise<TeamStanding[]> {
   try {
+    const seasonParam = season ? `?season=${season}` : ''
     const res = await fetch(
-      `https://site.api.espn.com/apis/v2/sports/soccer/${espnId}/standings`,
+      `https://site.api.espn.com/apis/v2/sports/soccer/${espnId}/standings${seasonParam}`,
       { next: { revalidate: 300 }, signal: AbortSignal.timeout(10000) }
     )
     if (!res.ok) return []
@@ -170,17 +194,23 @@ export async function GET(request: NextRequest) {
 
   try {
     const espnId = LEAGUE_ESPN_MAP[league]
+    const seasonYear = getCurrentSeason(league)
+    const seasonLabel = getSeasonLabel(league, seasonYear)
     let standings: TeamStanding[] = []
 
-    // Always fetch live from ESPN first
+    // Always fetch live from ESPN with correct season
     if (espnId) {
-      standings = await fetchESPNStandings(espnId)
+      standings = await fetchESPNStandings(espnId, seasonYear)
+      // If no data for current season (season hasn't started), try without season param
+      if (standings.length === 0) {
+        standings = await fetchESPNStandings(espnId)
+      }
     }
 
     if (standings.length === 0) {
       return NextResponse.json({
         league: league.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        season: '2025-2026',
+        season: seasonLabel,
         standings: [],
         remainingMatches: 0,
         simulationsRun: 0,
@@ -197,7 +227,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       league: league.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      season: '2025-2026',
+      season: seasonLabel,
       standings: simulatedStandings,
       remainingMatches,
       simulationsRun: simulations,

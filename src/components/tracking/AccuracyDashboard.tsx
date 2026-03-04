@@ -171,8 +171,8 @@ export default function AccuracyDashboard() {
         <LeagueBreakdown data={summary.by_league} />
       )}
 
-      {/* ── Predicted vs Actual Table ── */}
-      <PredictedVsActual predictions={summary.recent_predictions} />
+      {/* ── Prediction History (paginated, filterable) ── */}
+      <PredictedVsActual initialPredictions={summary.recent_predictions} />
 
       {/* ── Per-League Model Info ── */}
       <LeagueModelInfoPanel modelInfo={modelInfo} />
@@ -449,96 +449,230 @@ function LeagueBreakdown({ data }: { data: Record<string, any> }) {
    PredictedVsActual – table of recent predictions with outcomes
    ────────────────────────────────────────────────────────────────────── */
 
-function PredictedVsActual({ predictions }: { predictions: PredSummary[] }) {
-  if (predictions.length === 0) return null
+function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSummary[] }) {
+  const [predictions, setPredictions] = useState<PredSummary[]>(initialPredictions)
+  const [availableLeagues, setAvailableLeagues] = useState<string[]>([])
+  const [selectedLeague, setSelectedLeague] = useState<string>('')
+  const [timeRange, setTimeRange] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('completed')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [loadingPreds, setLoadingPreds] = useState(false)
+  const [hasLoaded, setHasLoaded] = useState(false)
+
+  const fetchPredictions = useCallback(async (p: number = 1) => {
+    setLoadingPreds(true)
+    try {
+      const params = new URLSearchParams({ page: String(p), limit: '25', status: statusFilter })
+      if (selectedLeague) params.set('league', selectedLeague)
+      if (timeRange !== 'all') params.set('time_range', timeRange)
+      const res = await fetch(`/api/v1/tracking/predictions?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setPredictions(data.predictions || [])
+        setTotalPages(data.total_pages || 1)
+        setTotalCount(data.count || 0)
+        if (data.available_leagues) setAvailableLeagues(data.available_leagues)
+        setPage(p)
+      }
+    } catch (e) {
+      console.error('Failed to fetch predictions:', e)
+    } finally {
+      setLoadingPreds(false)
+      setHasLoaded(true)
+    }
+  }, [selectedLeague, timeRange, statusFilter])
+
+  // Load on mount and when filters change
+  useEffect(() => {
+    fetchPredictions(1)
+  }, [fetchPredictions])
+
+  const correctCount = predictions.filter(p => p.winner_correct === true).length
+  const wrongCount = predictions.filter(p => p.winner_correct === false).length
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+      {/* Header with filters */}
       <div className="p-5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-          Predicted vs Actual
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
+              Prediction History
+            </h3>
+            {hasLoaded && (
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                {totalCount} predictions · {correctCount} correct · {wrongCount} wrong on this page
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status filter */}
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
+            >
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="">All</option>
+            </select>
+            {/* Time range filter */}
+            <select
+              value={timeRange}
+              onChange={e => setTimeRange(e.target.value)}
+              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
+            >
+              <option value="all">All Time</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+              <option value="season">This Season</option>
+            </select>
+            {/* League filter */}
+            <select
+              value={selectedLeague}
+              onChange={e => setSelectedLeague(e.target.value)}
+              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
+            >
+              <option value="">All Leagues</option>
+              {availableLeagues.map(l => (
+                <option key={l} value={l}>{l.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-[var(--muted-bg)]">
-              <th className="text-left px-4 py-2 text-[var(--text-tertiary)] font-medium">Match</th>
-              <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Predicted</th>
-              <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Actual</th>
-              <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Result</th>
-              <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Confidence</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-            {predictions.map((p) => {
-              const isCorrect = p.winner_correct
-              return (
-                <tr key={p.match_id} className="hover:bg-[var(--muted-bg)] transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="text-[var(--text-primary)] font-medium">
-                      {p.home_team} vs {p.away_team}
-                    </div>
-                    <div className="text-xs text-[var(--text-tertiary)]">
-                      {p.match_date} · {p.league?.replace(/_/g, ' ')}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="text-[var(--text-primary)] font-medium">{p.predicted_scoreline}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">
-                      {winnerLabel(p.predicted_winner)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {p.actual_scoreline ? (
-                      <>
-                        <div className="text-[var(--text-primary)] font-medium">{p.actual_scoreline}</div>
-                        <div className="text-xs text-[var(--text-tertiary)]">
-                          {p.actual_winner ? winnerLabel(p.actual_winner) : ''}
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-amber-500 text-xs">Pending</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {isCorrect === true && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 font-medium">
-                        ✓ Correct
-                      </span>
-                    )}
-                    {isCorrect === false && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">
-                        ✗ Wrong
-                      </span>
-                    )}
-                    {isCorrect === null && (
-                      <span className="text-xs text-[var(--text-tertiary)]">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-16 h-1.5 rounded-full bg-[var(--muted-bg)] overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${p.confidence * 100}%`,
-                            backgroundColor: accuracyColor(p.confidence),
-                          }}
-                        />
+        {loadingPreds ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin h-6 w-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full" />
+          </div>
+        ) : predictions.length === 0 ? (
+          <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
+            No predictions found for the selected filters
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[var(--muted-bg)]">
+                <th className="text-left px-4 py-2 text-[var(--text-tertiary)] font-medium">Match</th>
+                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Predicted</th>
+                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Actual</th>
+                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Result</th>
+                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Confidence</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+              {predictions.map((p) => {
+                const isCorrect = p.winner_correct
+                return (
+                  <tr key={p.match_id} className="hover:bg-[var(--muted-bg)] transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="text-[var(--text-primary)] font-medium">
+                        {p.home_team} vs {p.away_team}
                       </div>
-                      <span className="text-xs text-[var(--text-secondary)] w-10">
-                        {pct(p.confidence)}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                      <div className="text-xs text-[var(--text-tertiary)]">
+                        {p.match_date} · {p.league?.replace(/_/g, ' ')}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="text-[var(--text-primary)] font-medium">{p.predicted_scoreline}</div>
+                      <div className="text-xs text-[var(--text-tertiary)]">
+                        {winnerLabel(p.predicted_winner)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {p.actual_scoreline ? (
+                        <>
+                          <div className="text-[var(--text-primary)] font-medium">{p.actual_scoreline}</div>
+                          <div className="text-xs text-[var(--text-tertiary)]">
+                            {p.actual_winner ? winnerLabel(p.actual_winner) : ''}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-amber-500 text-xs">Pending</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {isCorrect === true && (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 font-medium">
+                          ✓ Correct
+                        </span>
+                      )}
+                      {isCorrect === false && (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">
+                          ✗ Wrong
+                        </span>
+                      )}
+                      {isCorrect === null && (
+                        <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-16 h-1.5 rounded-full bg-[var(--muted-bg)] overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${p.confidence * 100}%`,
+                              backgroundColor: accuracyColor(p.confidence),
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-[var(--text-secondary)] w-10">
+                          {pct(p.confidence)}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
+          <p className="text-xs text-[var(--text-tertiary)]">
+            Page {page} of {totalPages} ({totalCount} total)
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => fetchPredictions(1)}
+              disabled={page <= 1 || loadingPreds}
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ««
+            </button>
+            <button
+              onClick={() => fetchPredictions(page - 1)}
+              disabled={page <= 1 || loadingPreds}
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ‹ Prev
+            </button>
+            <button
+              onClick={() => fetchPredictions(page + 1)}
+              disabled={page >= totalPages || loadingPreds}
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next ›
+            </button>
+            <button
+              onClick={() => fetchPredictions(totalPages)}
+              disabled={page >= totalPages || loadingPreds}
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              »»
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

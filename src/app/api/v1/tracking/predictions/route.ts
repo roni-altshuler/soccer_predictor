@@ -40,39 +40,63 @@ function loadAllPredictions(): Prediction[] {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const timeRange = searchParams.get('time_range') || 'month'
+  const timeRange = searchParams.get('time_range') || 'all'
   const league = searchParams.get('league') || null
+  const status = searchParams.get('status') || null // 'completed' | 'pending' | null (all)
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
 
   let allPreds = loadAllPredictions()
 
   // Apply time filter
   const now = new Date()
-  let cutoff: Date
-  switch (timeRange) {
-    case 'week':
-      cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-    case 'season':
-      cutoff = new Date(now.getFullYear() - 1, 7, 1) // Aug 1 of previous year
-      break
-    default: // month
-      cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  if (timeRange !== 'all') {
+    let cutoff: Date
+    switch (timeRange) {
+      case 'week':
+        cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case 'season':
+        cutoff = new Date(now.getFullYear() - 1, 7, 1) // Aug 1 of previous year
+        break
+      default: // month
+        cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    }
+    allPreds = allPreds.filter(p => new Date(p.match_date) >= cutoff)
   }
-
-  allPreds = allPreds.filter(p => new Date(p.match_date) >= cutoff)
 
   // Apply league filter
   if (league) {
     allPreds = allPreds.filter(p => p.league === league)
   }
 
+  // Apply status filter
+  if (status === 'completed') {
+    allPreds = allPreds.filter(p => p.actual_winner !== null)
+  } else if (status === 'pending') {
+    allPreds = allPreds.filter(p => p.actual_winner === null)
+  }
+
   // Sort newest first
   allPreds.sort((a, b) => b.match_date.localeCompare(a.match_date))
 
+  // Collect unique leagues for filter dropdown
+  const allLeagues = Array.from(new Set(allPreds.map(p => p.league))).sort()
+
+  // Paginate
+  const totalCount = allPreds.length
+  const totalPages = Math.ceil(totalCount / limit)
+  const offset = (page - 1) * limit
+  const paginated = allPreds.slice(offset, offset + limit)
+
   return NextResponse.json({
-    count: allPreds.length,
+    count: totalCount,
+    page,
+    limit,
+    total_pages: totalPages,
     time_range: timeRange,
-    predictions: allPreds.slice(0, 200).map(p => ({
+    available_leagues: allLeagues,
+    predictions: paginated.map(p => ({
       match_id: p.match_id,
       home_team: p.home_team,
       away_team: p.away_team,
