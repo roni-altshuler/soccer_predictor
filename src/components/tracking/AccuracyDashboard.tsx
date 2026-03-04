@@ -92,6 +92,7 @@ function winnerLabel(w: string): string {
 export default function AccuracyDashboard() {
   const [summary, setSummary] = useState<AccuracySummary | null>(null)
   const [trend, setTrend] = useState<TrendData | null>(null)
+  const [modelInfo, setModelInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [trendWindow, setTrendWindow] = useState(10)
   const [fetcherStatus, setFetcherStatus] = useState<any>(null)
@@ -100,14 +101,16 @@ export default function AccuracyDashboard() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [summaryRes, trendRes, statusRes] = await Promise.all([
+      const [summaryRes, trendRes, statusRes, modelRes] = await Promise.all([
         fetch('/api/v1/tracking/accuracy/summary'),
         fetch(`/api/v1/tracking/accuracy/trend?window=${trendWindow}`),
         fetch('/api/v1/tracking/outcome-status'),
+        fetch('/api/v1/tracking/model-info'),
       ])
       if (summaryRes.ok) setSummary(await summaryRes.json())
       if (trendRes.ok) setTrend(await trendRes.json())
       if (statusRes.ok) setFetcherStatus(await statusRes.json())
+      if (modelRes.ok) setModelInfo(await modelRes.json())
     } catch (e) {
       console.error('Failed to fetch accuracy data:', e)
     } finally {
@@ -171,8 +174,11 @@ export default function AccuracyDashboard() {
       {/* ── Predicted vs Actual Table ── */}
       <PredictedVsActual predictions={summary.recent_predictions} />
 
-      {/* ── Model Methods Card ── */}
-      <ModelMethodsCard />
+      {/* ── Per-League Model Info ── */}
+      <LeagueModelInfoPanel modelInfo={modelInfo} />
+
+      {/* ── Model Architecture Card ── */}
+      <ModelMethodsCard modelInfo={modelInfo} />
 
       {/* ── Outcome Fetcher Status ── */}
       <FetcherPanel
@@ -541,8 +547,117 @@ function PredictedVsActual({ predictions }: { predictions: PredSummary[] }) {
    ModelMethodsCard – explains prediction methodology
    ────────────────────────────────────────────────────────────────────── */
 
-function ModelMethodsCard() {
+/* ──────────────────────────────────────────────────────────────────────
+   LeagueModelInfoPanel – per-league AI model status
+   ────────────────────────────────────────────────────────────────────── */
+
+function LeagueModelInfoPanel({ modelInfo }: { modelInfo: any }) {
+  if (!modelInfo?.leagues) return null
+
+  const leagues = Object.values(modelInfo.leagues) as any[]
+  const summary = modelInfo.summary || {}
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
+          Per-League AI Models
+        </h3>
+        <div className="flex gap-2 text-xs">
+          <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+            {summary.neural_ensemble_count || 0} Neural
+          </span>
+          <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 font-medium">
+            {summary.elo_poisson_count || 0} Baseline
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {leagues.map((league: any) => {
+          const isNeural = league.is_fitted
+          const acc = league.metrics?.ensemble_accuracy ?? league.metrics?.live_accuracy
+          const brier = league.metrics?.ensemble_log_loss ?? league.metrics?.live_brier
+          const liveAcc = league.metrics?.live_accuracy
+          const livePreds = league.metrics?.live_predictions
+
+          return (
+            <div
+              key={league.league_key}
+              className="p-3 rounded-xl border"
+              style={{
+                borderColor: isNeural ? 'rgba(34,197,94,0.3)' : 'var(--border-color)',
+                background: isNeural ? 'rgba(34,197,94,0.05)' : 'var(--muted-bg)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-sm text-[var(--text-primary)]">
+                  {league.display_name}
+                </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    isNeural
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-amber-500/15 text-amber-400'
+                  }`}
+                >
+                  {isNeural ? 'Neural Ensemble' : 'ELO + Poisson'}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-[var(--text-tertiary)]">
+                {isNeural && league.architecture && (
+                  <p>
+                    NN: {league.architecture.outcome_layers.join('→')} · Ensemble:{' '}
+                    {league.architecture.ensemble_models.length} models
+                  </p>
+                )}
+                {isNeural && league.samples > 0 && (
+                  <p>Trained on {league.samples.toLocaleString()} matches</p>
+                )}
+                {acc != null && (
+                  <p>
+                    Model accuracy:{' '}
+                    <span style={{ color: accuracyColor(acc) }}>{pct(acc)}</span>
+                  </p>
+                )}
+                {liveAcc != null && livePreds != null && (
+                  <p>
+                    Live accuracy:{' '}
+                    <span style={{ color: accuracyColor(liveAcc) }}>{pct(liveAcc)}</span>
+                    {' '}({livePreds} predictions)
+                  </p>
+                )}
+                {brier != null && (
+                  <p>Brier/Loss: {brier.toFixed(4)}</p>
+                )}
+                {isNeural && league.trained_at && (
+                  <p className="text-[10px] opacity-60">
+                    Last trained: {new Date(league.trained_at).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ModelMethodsCard – AI architecture overview
+   ────────────────────────────────────────────────────────────────────── */
+
+function ModelMethodsCard({ modelInfo }: { modelInfo: any }) {
+  const neuralCount = modelInfo?.summary?.neural_ensemble_count ?? 0
   const methods = [
+    {
+      icon: '🧠',
+      name: 'Neural Network Ensemble',
+      desc: `Per-league MLP (128→64→32) + XGBoost + LightGBM + GradientBoosting + RandomForest with adaptive blending. ${neuralCount} league models trained.`,
+      tag: 'Primary Model',
+    },
     {
       icon: '📊',
       name: 'Dixon-Coles Poisson',
@@ -557,34 +672,28 @@ function ModelMethodsCard() {
     },
     {
       icon: '🎯',
-      name: 'League-Calibrated Draw Rates',
-      desc: 'Empirical draw probabilities per league (Serie A ~27%, Bundesliga ~22%) using Gaussian closeness model.',
-      tag: 'Outcome Probabilities',
+      name: 'League-Calibrated Parameters',
+      desc: 'Per-league draw rates, home advantage, avg goals from league_params.json — auto-updated by feedback loop.',
+      tag: 'League Specificity',
     },
     {
       icon: '🔄',
-      name: 'Continuous Self-Learning',
-      desc: 'ELO auto-updates from real ESPN results every 30 minutes. Model adjustments calculated from Brier score optimization.',
+      name: 'Online Learning',
+      desc: 'Neural networks updated via partial_fit() after each matchday. ELO auto-updates from ESPN results. Brier score optimization.',
       tag: 'Auto-Improvement',
     },
     {
-      icon: '🧠',
-      name: 'Hybrid ML + Poisson Ensemble',
-      desc: 'GradientBoosting + Poisson blend (60/40) with 41 features including form, injuries, H2H, and news sentiment.',
-      tag: 'Outcome Classification',
-    },
-    {
       icon: '📈',
-      name: 'Opponent-Adjusted Strengths',
-      desc: 'Attack/defense ratings normalised by strength-of-schedule to avoid inflating stats against weaker teams.',
-      tag: 'Goal Prediction',
+      name: '38-Feature Pipeline',
+      desc: 'ELO, form (5/10-game), H2H, season stats, momentum, rest days, league context, clean sheets, goal differences.',
+      tag: 'Feature Engineering',
     },
   ]
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
       <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
-        AI Model Methods
+        AI Model Architecture
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {methods.map((m) => (

@@ -206,7 +206,8 @@ async def get_match_referee(match_id: int):
     """
     Get referee information for a specific match.
     
-    Returns referee name and available statistics.
+    First extracts referee name from FotMob, then enriches with
+    stats from the RefereeService database when available.
     """
     client = get_fotmob_client()
     data = await client.get_match_details(match_id)
@@ -220,44 +221,69 @@ async def get_match_referee(match_id: int):
     
     referee_info = info_box.get("Referee", info_box.get("referee", {}))
     
-    # If referee is a string, use it directly
+    # Get referee name
     if isinstance(referee_info, str):
-        return {
-            "match_id": match_id,
-            "name": referee_info,
-            "country": None,
-            "age": None,
-            "experience_years": 0,
-            "career_matches": 0,
-            "avg_yellow_cards": 3.2,  # Average estimates
-            "avg_red_cards": 0.1,
-            "home_win_rate": 0.45,
-            "away_win_rate": 0.30,
-            "draw_rate": 0.25,
-            "avg_goals": 2.6,
-            "total_penalties": 0,
-            "penalties_per_match": 0.15,
-            "competitions": [],
-        }
+        ref_name = referee_info
+        ref_country = None
+    elif isinstance(referee_info, dict):
+        ref_name = referee_info.get("text", referee_info.get("name", "TBD"))
+        ref_country = referee_info.get("country")
+    else:
+        ref_name = "TBD"
+        ref_country = None
     
-    # If it's an object with more details
+    # Try to enrich with RefereeService data
+    enriched_stats = _get_referee_stats(ref_name)
+    
     return {
         "match_id": match_id,
-        "name": referee_info.get("text", referee_info.get("name", "TBD")),
-        "country": referee_info.get("country"),
-        "age": None,
-        "experience_years": 0,
-        "career_matches": 0,
-        "avg_yellow_cards": 3.2,
-        "avg_red_cards": 0.1,
-        "home_win_rate": 0.45,
-        "away_win_rate": 0.30,
-        "draw_rate": 0.25,
-        "avg_goals": 2.6,
-        "total_penalties": 0,
-        "penalties_per_match": 0.15,
-        "competitions": [],
+        "name": ref_name,
+        "country": ref_country or enriched_stats.get("country"),
+        "age": enriched_stats.get("age"),
+        "experience_years": enriched_stats.get("experience_years", 0),
+        "career_matches": enriched_stats.get("career_matches", 0),
+        "avg_yellow_cards": enriched_stats.get("avg_yellow_cards", 3.2),
+        "avg_red_cards": enriched_stats.get("avg_red_cards", 0.1),
+        "home_win_rate": enriched_stats.get("home_win_rate", 0.45),
+        "away_win_rate": enriched_stats.get("away_win_rate", 0.30),
+        "draw_rate": enriched_stats.get("draw_rate", 0.25),
+        "avg_goals": enriched_stats.get("avg_goals", 2.6),
+        "total_penalties": enriched_stats.get("total_penalties", 0),
+        "penalties_per_match": enriched_stats.get("penalties_per_match", 0.15),
+        "competitions": enriched_stats.get("competitions", []),
+        "tendency": enriched_stats.get("tendency", "average"),
+        "data_source": enriched_stats.get("source", "default"),
     }
+
+
+def _get_referee_stats(name: str) -> dict:
+    """Look up referee stats from the RefereeService database."""
+    try:
+        from backend.services.referee.client import RefereeService
+        service = RefereeService()
+        ref_data = service.get_referee_by_name(name)
+        if ref_data:
+            stats = ref_data.get("stats", {})
+            return {
+                "country": ref_data.get("country"),
+                "age": ref_data.get("age"),
+                "experience_years": ref_data.get("experience_years", 0),
+                "career_matches": stats.get("matches_officiated", 0),
+                "avg_yellow_cards": stats.get("avg_yellow_cards_per_match", 3.2),
+                "avg_red_cards": stats.get("avg_red_cards_per_match", 0.1),
+                "home_win_rate": stats.get("home_win_percentage", 45) / 100,
+                "away_win_rate": stats.get("away_win_percentage", 30) / 100,
+                "draw_rate": stats.get("draw_percentage", 25) / 100,
+                "avg_goals": stats.get("avg_goals_per_match", 2.6),
+                "total_penalties": stats.get("penalties_awarded", 0),
+                "penalties_per_match": stats.get("penalties_per_match", 0.15),
+                "competitions": ref_data.get("competitions", []),
+                "tendency": ref_data.get("tendency", "average"),
+                "source": "database",
+            }
+    except Exception:
+        pass
+    return {"source": "default"}
 
 
 @router.get("/{match_id}/h2h")

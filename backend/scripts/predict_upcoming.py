@@ -16,12 +16,31 @@ import math
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 import httpx
 import argparse
 
+import numpy as np
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ── Neural model integration ──
+_NEURAL_REGISTRY = None
+
+
+def _get_registry():
+    """Lazily load the neural model registry."""
+    global _NEURAL_REGISTRY
+    if _NEURAL_REGISTRY is None:
+        try:
+            from backend.services.prediction.neural_model import get_league_model_registry
+            _NEURAL_REGISTRY = get_league_model_registry()
+            logger.info("Neural model registry loaded")
+        except Exception as e:
+            logger.warning(f"Neural models not available: {e}")
+            _NEURAL_REGISTRY = False  # sentinel: tried and failed
+    return _NEURAL_REGISTRY if _NEURAL_REGISTRY is not False else None
 
 # Same leagues as the seed script
 LEAGUES = {
@@ -55,6 +74,37 @@ LEAGUE_AVG_GOALS = {
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"
 ADJUSTMENTS_FILE = DATA_DIR / "model_adjustments.json"
+
+
+# ── Load league params from single source of truth ──
+def _load_league_params() -> Dict:
+    """Load per-league configuration from league_params.json."""
+    params_file = Path(__file__).parent.parent / "data" / "league_params.json"
+    if params_file.exists():
+        try:
+            with open(params_file) as f:
+                data = json.load(f)
+            return data.get("leagues", {}), data.get("default", {})
+        except Exception:
+            pass
+    return {}, {}
+
+
+_LP_CACHE = None
+
+
+def get_league_param(league_key: str, param: str, fallback=None):
+    """Get a single parameter for a league from the shared config."""
+    global _LP_CACHE
+    if _LP_CACHE is None:
+        _LP_CACHE = _load_league_params()
+    leagues, default = _LP_CACHE
+    lp = leagues.get(league_key, default)
+    return lp.get(param, default.get(param, fallback))
+
+
+# Reverse map: display name → ESPN key
+DISPLAY_TO_KEY = {v: k for k, v in LEAGUES.items()}
 
 
 def load_learned_adjustments() -> Dict:
@@ -295,6 +345,10 @@ async def predict_upcoming(days_ahead: int = 14):
     all_upcoming.sort(key=lambda m: m["date"])
     logger.info(f"Total new upcoming matches to predict: {len(all_upcoming)}")
 
+    # Try to load neural models
+    registry = _get_registry()
+    nn_leagues_used = set()
+
     # Generate predictions
     predictions_by_month: Dict[str, list] = {}
 
@@ -302,10 +356,55 @@ async def predict_upcoming(days_ahead: int = 14):
         match_date_str = m["date"][:10]
         month_key = match_date_str[:7]
         league = m["league"]
+        league_key = DISPLAY_TO_KEY.get(league, "")
 
-        probs = elo.predict(m["home_team"], m["away_team"], league)
+        # ── Baseline ELO prediction (always computed) ──
+        elo_probs = elo.predict(m["home_team"], m["away_team"], league)
         pred_home_xg, pred_away_xg = elo.predict_goals(m["home_team"], m["away_team"], league)
-        pred_scoreline = poisson_scoreline(pred_home_xg, pred_away_xg)
+
+        # ── Neural model prediction (when available) ──
+        nn_probs = None
+        nn_goals = None
+        model_used = "elo_poisson"
+
+        if registry and league_key:
+            try:
+                model = registry.get_model(league_key)
+                if model.is_fitted:
+                    features = _build_match_features(
+                        elo, m["home_team"], m["away_team"], league_key,
+                        elo_probs, pred_home_xg, pred_away_xg
+                    )
+                    nn_probs = model.predict_proba(features)
+                    nn_goals = model.predict_goals(features)
+                    model_used = "neural_ensemble"
+                    nn_leagues_used.add(league)
+            except Exception as e:
+                logger.debug(f"Neural model prediction failed for {league}: {e}")
+
+        # ── Blend predictions ──
+        if nn_probs is not None:
+            # Blend: 65% neural model, 35% ELO (neural model is more comprehensive)
+            probs = {
+                "home_win": round(0.65 * nn_probs["home_win"] + 0.35 * elo_probs["home_win"], 4),
+                "draw": round(0.65 * nn_probs["draw"] + 0.35 * elo_probs["draw"], 4),
+                "away_win": round(0.65 * nn_probs["away_win"] + 0.35 * elo_probs["away_win"], 4),
+            }
+            # Normalize
+            total_p = sum(probs.values())
+            probs = {k: round(v / total_p, 4) for k, v in probs.items()}
+        else:
+            probs = elo_probs
+
+        if nn_goals is not None:
+            # Blend goals too
+            final_home_xg = 0.65 * nn_goals[0] + 0.35 * pred_home_xg
+            final_away_xg = 0.65 * nn_goals[1] + 0.35 * pred_away_xg
+        else:
+            final_home_xg = pred_home_xg
+            final_away_xg = pred_away_xg
+
+        pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
 
         if probs["home_win"] > probs["draw"] and probs["home_win"] > probs["away_win"]:
             pred_winner = "home"
@@ -323,16 +422,21 @@ async def predict_upcoming(days_ahead: int = 14):
             "predicted_home_win": probs["home_win"],
             "predicted_draw": probs["draw"],
             "predicted_away_win": probs["away_win"],
-            "predicted_home_goals": round(pred_home_xg, 2),
-            "predicted_away_goals": round(pred_away_xg, 2),
+            "predicted_home_goals": round(final_home_xg, 2),
+            "predicted_away_goals": round(final_away_xg, 2),
             "predicted_scoreline": pred_scoreline,
             "predicted_winner": pred_winner,
             "confidence": round(max(probs.values()) * 100, 1),
             "home_elo": round(elo.get(m["home_team"]), 1),
             "away_elo": round(elo.get(m["away_team"]), 1),
+            "model_used": model_used,
             "weather_factor": 1.0,
             "referee_factor": 1.0,
             "venue": m.get("venue", ""),
+            # Neural model raw probs (if available)
+            "nn_home_win": round(nn_probs["home_win"], 4) if nn_probs else None,
+            "nn_draw": round(nn_probs["draw"], 4) if nn_probs else None,
+            "nn_away_win": round(nn_probs["away_win"], 4) if nn_probs else None,
             # Outcome fields — null until match is played
             "actual_home_goals": None,
             "actual_away_goals": None,
@@ -381,10 +485,92 @@ async def predict_upcoming(days_ahead: int = 14):
     logger.info(f"\n{'='*60}")
     logger.info("UPCOMING MATCH PREDICTIONS COMPLETE")
     logger.info(f"  New predictions stored: {new_count}")
+    if nn_leagues_used:
+        logger.info(f"  Neural model used for: {', '.join(sorted(nn_leagues_used))}")
+    else:
+        logger.info("  Neural models: not available (using ELO + Poisson baseline)")
     for lg, count in sorted(by_league.items()):
-        logger.info(f"    {lg}: {count} matches")
+        model_tag = " [NN]" if lg in nn_leagues_used else ""
+        logger.info(f"    {lg}: {count} matches{model_tag}")
     logger.info(f"  Stored in: {DATA_DIR}")
     logger.info(f"{'='*60}")
+
+
+def _build_match_features(
+    elo_predictor, home_team: str, away_team: str, league_key: str,
+    elo_probs: Dict, pred_home_xg: float, pred_away_xg: float
+) -> np.ndarray:
+    """
+    Build a 38-feature vector for neural model prediction.
+    
+    Uses ELO ratings + league context + computed proxies for form/H2H.
+    When the full FeatureBuilder is available (training mode), the pipeline
+    uses richer features. For real-time prediction, we construct a reasonable
+    approximation from available data.
+    """
+    features = np.zeros(38, dtype=np.float64)
+    
+    h_elo = elo_predictor.get(home_team)
+    a_elo = elo_predictor.get(away_team)
+    
+    # Core ELO features (0-2)
+    features[0] = h_elo
+    features[1] = a_elo
+    features[2] = h_elo - a_elo
+    
+    # Form proxies from ELO-derived probabilities (3-14)
+    home_strength = max(0.1, min(0.9, elo_probs["home_win"]))
+    away_strength = max(0.1, min(0.9, elo_probs["away_win"]))
+    features[3] = home_strength    # home_form_5
+    features[4] = away_strength    # away_form_5
+    features[5] = home_strength    # home_form_10
+    features[6] = away_strength    # away_form_10
+    features[7] = home_strength    # home_weighted_form
+    features[8] = away_strength    # away_weighted_form
+    features[9] = pred_home_xg     # home_goals_scored_avg5
+    features[10] = pred_away_xg    # away_goals_scored_avg5
+    features[11] = max(0.5, pred_away_xg * 0.9)   # home_goals_conceded_avg5
+    features[12] = max(0.5, pred_home_xg * 0.9)   # away_goals_conceded_avg5
+    features[13] = pred_home_xg    # home_goals_scored_avg10
+    features[14] = pred_away_xg    # away_goals_scored_avg10
+    
+    # Home/away splits (15-18)
+    features[15] = home_strength + 0.05  # home_home_win_pct (slight boost for home)
+    features[16] = away_strength - 0.05  # away_away_win_pct
+    features[17] = pred_home_xg          # home_home_goals_avg
+    features[18] = pred_away_xg * 0.85   # away_away_goals_avg
+    
+    # H2H features (19-21) — neutral defaults
+    features[19] = 0.0                   # h2h_home_advantage
+    features[20] = pred_home_xg + pred_away_xg  # h2h_avg_total_goals
+    features[21] = 0.0                   # h2h_matches (unknown)
+    
+    # Context features (22-27)
+    league_coeff = get_league_param(league_key, "league_coefficient", 1.0)
+    features[22] = 0.5                   # matchday_pct (mid-season default)
+    features[23] = 0.0                   # is_derby
+    features[24] = league_coeff          # league_coefficient
+    features[25] = 7.0                   # home_days_rest
+    features[26] = 7.0                   # away_days_rest
+    features[27] = 0.0                   # rest_diff
+    
+    # Season stats from ELO (28-33)
+    home_ppg = 1.0 + (h_elo - 1500) / 500
+    away_ppg = 1.0 + (a_elo - 1500) / 500
+    features[28] = max(0.5, min(3.0, home_ppg))   # home_ppg
+    features[29] = max(0.5, min(3.0, away_ppg))   # away_ppg
+    features[30] = max(0.05, min(0.6, 0.2 + (h_elo - 1500) / 2000))  # home_clean_sheet_pct
+    features[31] = max(0.05, min(0.6, 0.2 + (a_elo - 1500) / 2000))  # away_clean_sheet_pct
+    features[32] = (h_elo - 1500) / 500            # home_gd_per_game
+    features[33] = (a_elo - 1500) / 500            # away_gd_per_game
+    
+    # Momentum (34-37) — neutral defaults
+    features[34] = 0.0   # home_streak
+    features[35] = 0.0   # away_streak
+    features[36] = 3.0   # home_unbeaten_run
+    features[37] = 3.0   # away_unbeaten_run
+    
+    return features.reshape(1, -1)
 
 
 if __name__ == "__main__":

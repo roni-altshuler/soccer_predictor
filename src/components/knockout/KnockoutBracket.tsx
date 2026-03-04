@@ -2,7 +2,10 @@
 
 import { useState, useMemo } from 'react'
 
-// Types for knockout bracket
+/* ==================================================================
+   TYPES
+   ================================================================== */
+
 export interface KnockoutMatch {
   id: string
   homeTeam: string
@@ -48,52 +51,61 @@ interface KnockoutBracketProps {
   onMatchClick?: (match: KnockoutMatch) => void
 }
 
+/* ==================================================================
+   TOURNAMENT CONFIG
+   ================================================================== */
+
 const TOURNAMENT_CONFIG = {
   champions_league: {
     name: 'UEFA Champions League',
-    emoji: '🏆',
-    gradient: 'from-blue-800 to-indigo-600',
+    emoji: '\u{1F3C6}',
+    gradient: 'from-[#0D1B4A] to-[#1A3A8F]',
     accent: '#3B82F6',
-    color: 'blue',
-    textColor: 'text-blue-500',
-    rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
-    isTwoLegged: [true, true, true, false],
+    accentBg: 'rgba(59,130,246,0.12)',
+    textColor: 'text-blue-400',
+    rounds: ['KO Play-offs', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    isTwoLegged: [true, true, true, true, false],
+    roundShort: ['PO', 'R16', 'QF', 'SF', 'F'],
   },
   europa_league: {
     name: 'UEFA Europa League',
-    emoji: '🏆',
-    gradient: 'from-orange-500 to-amber-500',
+    emoji: '\u{1F3C6}',
+    gradient: 'from-[#3D1F00] to-[#C2590A]',
     accent: '#F97316',
-    color: 'orange',
-    textColor: 'text-orange-500',
-    rounds: ['Round of 32', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    accentBg: 'rgba(249,115,22,0.12)',
+    textColor: 'text-orange-400',
+    rounds: ['KO Play-offs', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
     isTwoLegged: [true, true, true, true, false],
+    roundShort: ['PO', 'R16', 'QF', 'SF', 'F'],
   },
   world_cup: {
     name: 'FIFA World Cup',
-    emoji: '🌍',
-    gradient: 'from-purple-900 to-red-800',
+    emoji: '\u{1F30D}',
+    gradient: 'from-[#2D0A3E] to-[#7C1940]',
     accent: '#A855F7',
-    color: 'purple',
-    textColor: 'text-purple-500',
-    rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Third Place', 'Final'],
-    isTwoLegged: [false, false, false, false, false],
+    accentBg: 'rgba(168,85,247,0.12)',
+    textColor: 'text-purple-400',
+    rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    isTwoLegged: [false, false, false, false],
+    roundShort: ['R16', 'QF', 'SF', 'F'],
   },
   conference_league: {
     name: 'UEFA Conference League',
-    emoji: '🏆',
-    gradient: 'from-green-600 to-emerald-500',
+    emoji: '\u{1F3C6}',
+    gradient: 'from-[#0A3D2A] to-[#10B981]',
     accent: '#10B981',
-    color: 'green',
-    textColor: 'text-green-500',
-    rounds: ['Round of 32', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    accentBg: 'rgba(16,185,129,0.12)',
+    textColor: 'text-emerald-400',
+    rounds: ['KO Play-offs', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
     isTwoLegged: [true, true, true, true, false],
+    roundShort: ['PO', 'R16', 'QF', 'SF', 'F'],
   },
 }
 
-/* ------------------------------------------------------------------ */
-/*  Group matches into two-legged ties                                 */
-/* ------------------------------------------------------------------ */
+/* ==================================================================
+   HELPERS
+   ================================================================== */
+
 interface Tie {
   teams: [string, string]
   legs: KnockoutMatch[]
@@ -124,113 +136,263 @@ function groupIntoTies(matches: KnockoutMatch[]): Tie[] {
   })
 }
 
-/* ------------------------------------------------------------------ */
-/*  Compact team row — FotMob-inspired                                 */
-/* ------------------------------------------------------------------ */
-function TeamRow({
-  name,
-  score,
-  penalties,
-  isWinner,
-  isLive,
-  position,
+/* ==================================================================
+   BRACKET MATCH CARD
+   ================================================================== */
+
+function BracketMatchCard({
+  tie,
   accent,
+  isTwoLegged,
+  mirrored = false,
+  onMatchClick,
 }: {
-  name: string
-  score?: number
-  penalties?: number
-  isWinner: boolean
-  isLive: boolean
-  position: 'top' | 'bottom'
+  tie: Tie
   accent: string
+  isTwoLegged: boolean
+  mirrored?: boolean
+  onMatchClick?: (m: KnockoutMatch) => void
 }) {
-  return (
+  const first = tie.legs[0]
+  const second = tie.legs[1]
+  const hasResult = tie.legs.some(l => l.status === 'finished')
+  const isLive = tie.legs.some(l => l.status === 'live')
+
+  let aggHome = 0, aggAway = 0
+  if (isTwoLegged && tie.legs.length >= 2) {
+    aggHome = (first.homeScore ?? 0) + (second?.awayScore ?? 0)
+    aggAway = (first.awayScore ?? 0) + (second?.homeScore ?? 0)
+  }
+
+  const displayMatch = tie.legs.find(l => l.status === 'live') || tie.legs.find(l => l.status === 'finished') || first
+  const team1 = mirrored ? tie.teams[1] : tie.teams[0]
+  const team2 = mirrored ? tie.teams[0] : tie.teams[1]
+  const isTeam1Winner = mirrored ? tie.winner === 'away' : tie.winner === 'home'
+  const isTeam2Winner = mirrored ? tie.winner === 'home' : tie.winner === 'away'
+
+  const score1 = isTwoLegged
+    ? (hasResult ? (mirrored ? aggAway : aggHome) : undefined)
+    : mirrored ? first.awayScore : first.homeScore
+  const score2 = isTwoLegged
+    ? (hasResult ? (mirrored ? aggHome : aggAway) : undefined)
+    : mirrored ? first.homeScore : first.awayScore
+
+  const TeamRow = ({ name, score, isWinner }: { name: string; score?: number; isWinner: boolean }) => (
     <div
-      className={`flex items-center justify-between gap-1 px-2 py-[5px] ${
-        position === 'top' ? 'border-b border-[var(--border-color)]/40' : ''
-      }`}
-      style={isWinner ? { background: `${accent}0A` } : undefined}
+      className="flex items-center gap-1.5 px-2 py-[6px] cursor-pointer hover:bg-white/[0.04] transition-colors"
+      style={isWinner ? { background: `${accent}15` } : undefined}
+      onClick={() => onMatchClick?.(displayMatch)}
     >
-      <span
-        className={`text-[11px] leading-tight truncate flex-1 ${
-          isWinner
-            ? 'font-semibold text-[var(--text-primary)]'
-            : name === 'TBD'
-              ? 'text-[var(--text-tertiary)] italic'
-              : 'text-[var(--text-secondary)]'
-        }`}
-      >
+      <span className={`text-[11px] flex-1 truncate leading-tight ${
+        isWinner ? 'font-bold text-[var(--text-primary)]'
+        : name === 'TBD' ? 'text-[var(--text-tertiary)] italic'
+        : 'text-[var(--text-secondary)]'
+      }`}>
         {name || 'TBD'}
       </span>
-      <div className="flex items-center gap-0.5 shrink-0">
-        <span
-          className={`text-[11px] tabular-nums min-w-[12px] text-right ${
-            isLive
-              ? 'font-bold text-red-500'
-              : isWinner
-                ? 'font-bold text-[var(--text-primary)]'
-                : score !== undefined ? 'text-[var(--text-secondary)]' : ''
-          }`}
-        >
-          {score !== undefined ? score : ''}
-        </span>
-        {penalties !== undefined && (
-          <span className="text-[8px] text-[var(--text-tertiary)]">({penalties})</span>
+      <span className={`text-[11px] tabular-nums min-w-[16px] text-right font-bold ${
+        isLive ? 'text-red-400'
+        : isWinner ? 'text-[var(--text-primary)]'
+        : 'text-[var(--text-tertiary)]'
+      }`}>
+        {score !== undefined ? score : '-'}
+      </span>
+    </div>
+  )
+
+  return (
+    <div className={`rounded-md border overflow-hidden transition-all w-full ${
+      isLive ? 'ring-1 ring-red-500/60 border-red-500/40' : 'border-[var(--border-color)]'
+    }`}
+    style={{ background: 'var(--muted-bg)' }}
+    >
+      <TeamRow name={team1} score={score1} isWinner={isTeam1Winner} />
+      <div className="h-px" style={{ background: 'var(--border-color)', opacity: 0.4 }} />
+      <TeamRow name={team2} score={score2} isWinner={isTeam2Winner} />
+    </div>
+  )
+}
+
+/* ==================================================================
+   BRACKET COLUMN
+   ================================================================== */
+
+function BracketColumn({
+  roundShort,
+  ties,
+  accent,
+  isTwoLegged,
+  mirrored = false,
+  onMatchClick,
+}: {
+  roundShort: string
+  ties: Tie[]
+  accent: string
+  isTwoLegged: boolean
+  mirrored?: boolean
+  onMatchClick?: (m: KnockoutMatch) => void
+}) {
+  return (
+    <div className="flex flex-col items-center" style={{ minWidth: 0, flex: '1 1 0' }}>
+      <div className="flex flex-col justify-around flex-1 w-full gap-2 px-1">
+        {ties.length > 0 ? (
+          ties.map((tie, i) => (
+            <BracketMatchCard
+              key={i}
+              tie={tie}
+              accent={accent}
+              isTwoLegged={isTwoLegged}
+              mirrored={mirrored}
+              onMatchClick={onMatchClick}
+            />
+          ))
+        ) : (
+          <div className="flex items-center justify-center py-4">
+            <span className="text-[10px] text-[var(--text-tertiary)] italic">TBD</span>
+          </div>
         )}
       </div>
     </div>
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Compact match card for bracket                                     */
-/* ------------------------------------------------------------------ */
-function BracketCard({
-  match,
+/* ==================================================================
+   TROPHY CENTER
+   ================================================================== */
+
+function TrophyCenter({
+  config,
+  champion,
+  finalTie,
   accent,
-  cardWidth,
   onMatchClick,
 }: {
-  match: KnockoutMatch
+  config: typeof TOURNAMENT_CONFIG.champions_league
+  champion?: TeamProbability
+  finalTie?: Tie
   accent: string
-  cardWidth: number
   onMatchClick?: (m: KnockoutMatch) => void
 }) {
-  const isLive = match.status === 'live'
-  const isFinished = match.status === 'finished'
-
   return (
-    <div
-      onClick={() => onMatchClick?.(match)}
-      className={`rounded border overflow-hidden cursor-pointer transition-all
-        hover:shadow-sm hover:border-[var(--accent-primary)]
-        ${isLive ? 'ring-1 ring-red-500/40 border-red-500/50' : 'border-[var(--border-color)]'}`}
-      style={{ width: cardWidth, background: 'var(--card-bg)' }}
-    >
-      <TeamRow name={match.homeTeam} score={match.homeScore} penalties={match.homePenalties} isWinner={match.winner === 'home'} isLive={isLive} position="top" accent={accent} />
-      <TeamRow name={match.awayTeam} score={match.awayScore} penalties={match.awayPenalties} isWinner={match.winner === 'away'} isLive={isLive} position="bottom" accent={accent} />
-      <div
-        className={`text-center text-[8px] leading-tight py-[2px] ${
-          isLive
-            ? 'bg-red-500/15 text-red-500 font-bold'
-            : 'bg-[var(--muted-bg)]/50 text-[var(--text-tertiary)]'
-        }`}
-      >
-        {isLive ? (
-          <span className="flex items-center justify-center gap-0.5">
-            <span className="w-[5px] h-[5px] rounded-full bg-red-500 animate-pulse" />
-            LIVE
-          </span>
-        ) : isFinished ? 'FT' : (match.date || 'TBD')}
-        {match.leg ? <span className="ml-0.5">· L{match.leg}</span> : null}
+    <div className="flex flex-col items-center justify-center px-2" style={{ minWidth: 100 }}>
+      <div className="relative mb-3">
+        <div className="text-4xl sm:text-5xl drop-shadow-lg">{config.emoji}</div>
+        <div
+          className="absolute -inset-3 rounded-full blur-xl opacity-25"
+          style={{ background: accent }}
+        />
       </div>
+
+      {finalTie && (
+        <div className="w-full max-w-[140px] mb-2">
+          <BracketMatchCard
+            tie={finalTie}
+            accent={accent}
+            isTwoLegged={false}
+            onMatchClick={onMatchClick}
+          />
+        </div>
+      )}
+
+      {champion && (
+        <div className="mt-1 text-center">
+          <span className="text-[9px] text-[var(--text-tertiary)] uppercase tracking-wide block">Predicted</span>
+          <span className="text-[11px] font-bold text-[var(--text-primary)]">{champion.team}</span>
+          <span className={`text-[10px] font-semibold ml-1 ${config.textColor}`}>
+            {(champion.probability * 100).toFixed(1)}%
+          </span>
+        </div>
+      )}
     </div>
   )
 }
 
-/* ================================================================== */
-/*  MAIN COMPONENT                                                     */
-/* ================================================================== */
+/* ==================================================================
+   MOBILE FALLBACK
+   ================================================================== */
+
+function MobileBracketView({
+  config,
+  roundTies,
+  onMatchClick,
+  simulationData,
+}: {
+  config: typeof TOURNAMENT_CONFIG.champions_league
+  roundTies: { name: string; ties: Tie[]; isTwoLegged: boolean; short: string }[]
+  onMatchClick?: (m: KnockoutMatch) => void
+  simulationData?: SimulationData
+}) {
+  const [activeIdx, setActiveIdx] = useState(0)
+  const current = roundTies[activeIdx] || roundTies[0]
+
+  return (
+    <div>
+      <div className="flex items-center border-b border-[var(--border-color)] overflow-x-auto">
+        {roundTies.map((r, idx) => (
+          <button
+            key={r.short}
+            onClick={() => setActiveIdx(idx)}
+            className={`relative px-4 py-2.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+              idx === activeIdx ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+            }`}
+          >
+            {r.short}
+            {idx === activeIdx && (
+              <div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+                style={{ width: '60%', background: config.accent }}
+              />
+            )}
+          </button>
+        ))}
+        <div className="ml-auto px-3 py-2 text-lg">{config.emoji}</div>
+      </div>
+
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">{current.name}</h3>
+          <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--muted-bg)] px-2 py-0.5 rounded-full">
+            {current.ties.length} {current.ties.length === 1 ? 'tie' : 'ties'}
+          </span>
+          {current.isTwoLegged && (
+            <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--muted-bg)] px-2 py-0.5 rounded-full">2 legs</span>
+          )}
+        </div>
+        <div className={`grid gap-2.5 ${
+          current.ties.length === 1 ? 'grid-cols-1 max-w-xs'
+          : current.ties.length <= 2 ? 'grid-cols-1 sm:grid-cols-2'
+          : 'grid-cols-1 sm:grid-cols-2'
+        }`}>
+          {current.ties.map((tie, i) => (
+            <BracketMatchCard
+              key={i}
+              tie={tie}
+              accent={config.accent}
+              isTwoLegged={current.isTwoLegged}
+              onMatchClick={onMatchClick}
+            />
+          ))}
+        </div>
+      </div>
+
+      {simulationData?.champion?.[0] && (
+        <div className="border-t border-[var(--border-color)] px-3 py-2 flex items-center justify-center gap-2">
+          <span className="text-xs">{config.emoji}</span>
+          <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide">Predicted:</span>
+          <span className="text-xs font-bold text-[var(--text-primary)]">{simulationData.champion[0].team}</span>
+          <span className={`text-[11px] font-semibold ${config.textColor}`}>
+            {(simulationData.champion[0].probability * 100).toFixed(1)}%
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ==================================================================
+   MAIN COMPONENT - Road to the Final
+   ================================================================== */
+
 export default function KnockoutBracket({
   tournament,
   rounds = [],
@@ -240,242 +402,130 @@ export default function KnockoutBracket({
 }: KnockoutBracketProps) {
   const config = TOURNAMENT_CONFIG[tournament]
   const displayRounds = rounds.length > 0 ? rounds : []
-  const [view, setView] = useState<'bracket' | 'list'>('bracket')
 
   const roundTies = useMemo(() =>
-    displayRounds.map(r => ({
+    displayRounds.map((r, idx) => ({
       name: r.name,
       ties: groupIntoTies(r.matches),
-      matchCount: r.matches.length,
+      isTwoLegged: config.isTwoLegged[idx] ?? false,
+      short: config.roundShort[idx] ?? r.name.slice(0, 3),
     })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [displayRounds.length, displayRounds.map(r => r.matches.length).join(',')]
   )
 
-  // Responsive sizing: more rounds → smaller cards
-  const numRounds = roundTies.length
-  const isCompact = numRounds >= 5
-  const CARD_W = isCompact ? 120 : numRounds >= 4 ? 136 : 148
-  const CARD_H = 46 // two 18px rows + 10px footer
-  const CONNECTOR_W = isCompact ? 12 : 16
-  const COL_W = CARD_W + CONNECTOR_W
-  const GAP_BASE = 6
-
-  // Empty state
   if (displayRounds.length === 0) {
     return (
-      <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl p-6 text-center">
-        <span className="text-3xl mb-2 block">🏆</span>
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-0.5">{config.name} Knockout Stage</h3>
+      <div
+        className="rounded-xl border border-[var(--border-color)] p-8 text-center"
+        style={{ background: 'var(--card-bg)' }}
+      >
+        <span className="text-4xl mb-3 block">{config.emoji}</span>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">{config.name} Knockout Stage</h3>
         <p className="text-xs text-[var(--text-tertiary)]">Bracket will appear once teams are confirmed</p>
       </div>
     )
   }
 
-  const expectedMatchCount = (roundIndex: number) =>
-    Math.max(1, Math.pow(2, numRounds - 1 - roundIndex))
+  /* Split rounds: everything except Final goes left+right, Final goes center */
+  const allButFinal = roundTies.slice(0, -1)
+  const finalRound = roundTies[roundTies.length - 1]
+  const finalTie = finalRound?.ties?.[0]
 
-  /* ---------------------------------------------------------------- */
-  /*  BRACKET VIEW — compact horizontal, fits viewport                 */
-  /* ---------------------------------------------------------------- */
-  const renderBracketView = () => (
-    <div className="overflow-x-auto">
-      <div className="flex items-start min-w-max px-2 py-2" style={{ minHeight: Math.min(520, 60 + expectedMatchCount(0) * (CARD_H + GAP_BASE * 2)) }}>
-        {roundTies.map((round, rIdx) => {
-          const gapMultiplier = Math.pow(2, rIdx)
-          const topPad = (gapMultiplier - 1) * (CARD_H / 2 + GAP_BASE / 2)
-          const gap = gapMultiplier * (CARD_H + GAP_BASE * 2) - CARD_H
-          const isLast = rIdx === roundTies.length - 1
-          const expected = expectedMatchCount(rIdx)
-          const items = round.ties.length > 0 ? round.ties : null
+  const leftRounds = allButFinal.map(r => ({
+    ...r,
+    ties: r.ties.slice(0, Math.ceil(r.ties.length / 2)),
+  }))
+  const rightRounds = allButFinal.map(r => ({
+    ...r,
+    ties: r.ties.slice(Math.ceil(r.ties.length / 2)),
+  }))
 
-          return (
-            <div key={round.name} className="flex items-start shrink-0">
-              <div className="flex flex-col items-center" style={{ width: COL_W - CONNECTOR_W }}>
-                {/* Round label pill */}
-                <div className="mb-1.5 text-center">
-                  <span
-                    className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-[1px] rounded-full inline-block"
-                    style={{ color: config.accent, background: `${config.accent}10` }}
-                  >
-                    {round.name.replace('Round of ', 'R').replace('Quarter-Finals', 'QF').replace('Semi-Finals', 'SF').replace('Third Place', '3rd')}
-                  </span>
-                </div>
-
-                <div className="flex flex-col" style={{ paddingTop: topPad, gap }}>
-                  {items
-                    ? items.map((tie, tIdx) => {
-                        const displayMatch =
-                          tie.legs.find(l => l.status === 'finished') ||
-                          tie.legs.find(l => l.status === 'live') ||
-                          tie.legs[0]
-                        return (
-                          <BracketCard
-                            key={tIdx}
-                            match={displayMatch}
-                            accent={config.accent}
-                            cardWidth={CARD_W}
-                            onMatchClick={onMatchClick}
-                          />
-                        )
-                      })
-                    : Array.from({ length: expected }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="rounded border border-dashed border-[var(--border-color)] flex items-center justify-center"
-                          style={{ width: CARD_W, height: CARD_H }}
-                        >
-                          <span className="text-[8px] text-[var(--text-tertiary)]">TBD</span>
-                        </div>
-                      ))
-                  }
-                </div>
-              </div>
-
-              {/* Connector lines */}
-              {!isLast && (
-                <div
-                  className="flex flex-col items-center justify-start shrink-0"
-                  style={{ width: CONNECTOR_W, paddingTop: topPad + CARD_H / 2 + 20 }}
-                >
-                  {Array.from({ length: Math.max(1, Math.ceil((items?.length || expected) / 2)) }).map((_, cIdx) => {
-                    const pairGap = gap + CARD_H
-                    return (
-                      <div key={cIdx} style={{ height: pairGap, marginBottom: gap > 0 ? gap : 6 }}>
-                        <svg width={CONNECTOR_W} height={pairGap} className="text-[var(--border-color)]">
-                          <line x1={0} y1={0} x2={CONNECTOR_W / 2} y2={0} stroke="currentColor" strokeWidth="1" />
-                          <line x1={0} y1={pairGap} x2={CONNECTOR_W / 2} y2={pairGap} stroke="currentColor" strokeWidth="1" />
-                          <line x1={CONNECTOR_W / 2} y1={0} x2={CONNECTOR_W / 2} y2={pairGap} stroke="currentColor" strokeWidth="1" />
-                          <line x1={CONNECTOR_W / 2} y1={pairGap / 2} x2={CONNECTOR_W} y2={pairGap / 2} stroke="currentColor" strokeWidth="1" />
-                        </svg>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        {/* Trophy */}
-        <div className="flex flex-col items-center justify-center ml-1 pt-4">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-            style={{ background: `linear-gradient(135deg, ${config.accent}, ${config.accent}AA)` }}
-          >
-            <span className="text-sm">🏆</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
-  /* ---------------------------------------------------------------- */
-  /*  LIST VIEW — compact grid grouped by round                        */
-  /* ---------------------------------------------------------------- */
-  const renderListView = () => (
-    <div className="p-3 space-y-3">
-      {displayRounds.map(round => {
-        const ties = groupIntoTies(round.matches)
-        const finishedCount = round.matches.filter(m => m.status === 'finished').length
-        return (
-          <div key={round.name}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <h3 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: config.accent }}>
-                {round.name}
-              </h3>
-              <span className="text-[9px] text-[var(--text-tertiary)] bg-[var(--muted-bg)] px-1.5 py-0.5 rounded-full">
-                {finishedCount}/{round.matches.length}
-              </span>
-            </div>
-            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-              {ties.map((tie, i) => (
-                <div key={i} className="border border-[var(--border-color)] rounded overflow-hidden bg-[var(--card-bg)]">
-                  {tie.legs.map((match, li) => {
-                    const isLive = match.status === 'live'
-                    const isFinished = match.status === 'finished'
-                    return (
-                      <div
-                        key={match.id}
-                        onClick={() => onMatchClick?.(match)}
-                        className={`flex items-center cursor-pointer hover:bg-[var(--muted-bg)] transition-colors text-[11px] ${
-                          li > 0 ? 'border-t border-[var(--border-color)]/50' : ''
-                        }`}
-                      >
-                        <div className="w-6 shrink-0 text-center text-[8px] text-[var(--text-tertiary)]">
-                          {match.leg ? `L${match.leg}` : ''}
-                        </div>
-                        <div className={`flex-1 text-right pr-1 py-1 truncate ${match.winner === 'home' ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
-                          {match.homeTeam}
-                        </div>
-                        <div className="w-9 text-center shrink-0 py-1">
-                          {isLive ? (
-                            <span className="font-bold text-red-500">{match.homeScore ?? 0}-{match.awayScore ?? 0}</span>
-                          ) : isFinished ? (
-                            <span className="font-bold text-[var(--text-primary)]">{match.homeScore}-{match.awayScore}</span>
-                          ) : (
-                            <span className="text-[8px] text-[var(--text-tertiary)]">vs</span>
-                          )}
-                        </div>
-                        <div className={`flex-1 pl-1 py-1 truncate ${match.winner === 'away' ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
-                          {match.awayTeam}
-                        </div>
-                        <div className="w-4 shrink-0 text-center">
-                          {isFinished && <span className="text-[7px] text-[var(--text-tertiary)]">FT</span>}
-                          {isLive && <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse inline-block" />}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-
-  /* ---------------------------------------------------------------- */
-  /*  RENDER                                                           */
-  /* ---------------------------------------------------------------- */
   return (
-    <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl overflow-hidden">
-      {/* Slim gradient header */}
-      <div className={`bg-gradient-to-r ${config.gradient} px-3 py-1.5 flex items-center justify-between`}>
-        <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
-          <span>{config.emoji}</span>
-          Knockout Stage
+    <div
+      className="rounded-xl border border-[var(--border-color)] overflow-hidden"
+      style={{ background: 'var(--card-bg)' }}
+    >
+      {/* Gradient header */}
+      <div className={`bg-gradient-to-r ${config.gradient} px-4 py-3 flex items-center justify-center gap-3`}>
+        <span className="text-base">{config.emoji}</span>
+        <h2 className="text-xs font-extrabold text-white uppercase tracking-[0.15em]">
+          Road to the Final
         </h2>
-        <div className="flex bg-white/15 rounded p-[2px] gap-0.5">
-          <button
-            onClick={() => setView('bracket')}
-            className={`px-2 py-[2px] rounded text-[9px] font-medium transition-colors ${
-              view === 'bracket' ? 'bg-white/25 text-white' : 'text-white/60 hover:text-white/80'
-            }`}
-          >
-            Bracket
-          </button>
-          <button
-            onClick={() => setView('list')}
-            className={`px-2 py-[2px] rounded text-[9px] font-medium transition-colors ${
-              view === 'list' ? 'bg-white/25 text-white' : 'text-white/60 hover:text-white/80'
-            }`}
-          >
-            List
-          </button>
-        </div>
+        <span className="text-base">{config.emoji}</span>
       </div>
 
-      {view === 'bracket' ? renderBracketView() : renderListView()}
+      {/* Round labels header - desktop */}
+      <div className="hidden md:flex items-center px-2 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+        {leftRounds.map((r) => (
+          <div key={`lh-${r.short}`} className="flex-1 text-center text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            {r.name}
+          </div>
+        ))}
+        <div className="text-center text-[9px] font-bold uppercase tracking-wider px-2" style={{ color: config.accent, minWidth: 100 }}>
+          Final
+        </div>
+        {[...rightRounds].reverse().map((r) => (
+          <div key={`rh-${r.short}`} className="flex-1 text-center text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            {r.name}
+          </div>
+        ))}
+      </div>
 
-      {/* Predicted champion — slim bar */}
-      {simulationData?.champion && simulationData.champion.length > 0 && (
-        <div className="border-t border-[var(--border-color)] px-3 py-1.5 flex items-center justify-center gap-2">
-          <span className="text-xs">🏆</span>
-          <span className="text-[9px] text-[var(--text-tertiary)] uppercase tracking-wide">Predicted:</span>
-          <span className="text-[11px] font-bold text-[var(--text-primary)]">{simulationData.champion[0].team}</span>
-          <span className={`text-[10px] font-semibold ${config.textColor}`}>
+      {/* Desktop: Full bracket layout */}
+      <div className="hidden md:flex items-stretch py-4 px-2 min-h-[360px]">
+        {/* LEFT SIDE */}
+        {leftRounds.map((r) => (
+          <BracketColumn
+            key={`left-${r.short}`}
+            roundShort={r.short}
+            ties={r.ties}
+            accent={config.accent}
+            isTwoLegged={r.isTwoLegged}
+            onMatchClick={onMatchClick}
+          />
+        ))}
+
+        {/* CENTER - Trophy + Final */}
+        <TrophyCenter
+          config={config}
+          champion={simulationData?.champion?.[0]}
+          finalTie={finalTie}
+          accent={config.accent}
+          onMatchClick={onMatchClick}
+        />
+
+        {/* RIGHT SIDE - mirrored, reversed order */}
+        {[...rightRounds].reverse().map((r) => (
+          <BracketColumn
+            key={`right-${r.short}`}
+            roundShort={r.short}
+            ties={r.ties}
+            accent={config.accent}
+            isTwoLegged={r.isTwoLegged}
+            mirrored={true}
+            onMatchClick={onMatchClick}
+          />
+        ))}
+      </div>
+
+      {/* Mobile: Tab-based fallback */}
+      <div className="md:hidden">
+        <MobileBracketView
+          config={config}
+          roundTies={roundTies}
+          onMatchClick={onMatchClick}
+          simulationData={simulationData}
+        />
+      </div>
+
+      {/* Predicted champion bar - desktop */}
+      {simulationData?.champion?.[0] && (
+        <div className="hidden md:flex border-t px-3 py-2 items-center justify-center gap-2" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-xs">{config.emoji}</span>
+          <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide">Predicted Champion:</span>
+          <span className="text-xs font-bold text-[var(--text-primary)]">{simulationData.champion[0].team}</span>
+          <span className={`text-[11px] font-semibold ${config.textColor}`}>
             {(simulationData.champion[0].probability * 100).toFixed(1)}%
           </span>
         </div>
@@ -484,5 +534,4 @@ export default function KnockoutBracket({
   )
 }
 
-// Export types
 export type { SimulationData, TeamProbability }

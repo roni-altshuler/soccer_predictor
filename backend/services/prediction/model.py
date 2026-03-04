@@ -221,6 +221,10 @@ class PredictionService:
         
         goal_scale = tracker_adj.get("goals_scale", 1.0) * weather_adj.get("goal_factor", 1.0)
         
+        # Apply referee goal factor (e.g. strict refs → fewer goals)
+        referee_goal_factor = referee_adj.get("goal_factor", 1.0)
+        goal_scale *= referee_goal_factor
+        
         # Build features with news factors
         features = build_features(
             home_team_data,
@@ -239,7 +243,8 @@ class PredictionService:
             home_conceded_pg=features.home_conceded_per_game,
             away_goals_pg=features.away_goals_per_game * goal_scale,
             away_conceded_pg=features.away_conceded_per_game,
-            features=features.to_array() if effective_model else None
+            features=features.to_array() if effective_model else None,
+            referee_factor=referee_goal_factor if referee_goal_factor != 1.0 else None,
         )
         
         # Apply draw bias from tracker

@@ -193,7 +193,7 @@ def suggested_params(adjustments: Dict[str, Dict]) -> Dict[str, Dict]:
 
 
 def run_feedback():
-    """Main feedback loop."""
+    """Main feedback loop with online learning for neural network models."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     predictions = load_completed_predictions()
@@ -224,6 +224,18 @@ def run_feedback():
         output["suggested_params"] = suggestions
     except (ImportError, Exception) as e:
         logger.warning(f"Could not generate param suggestions: {e}")
+
+    # ── Online learning: partial_fit neural network models ──
+    try:
+        _online_learn(predictions, adjustments)
+    except Exception as e:
+        logger.warning(f"Online learning step failed: {e}")
+
+    # ── Update single-source-of-truth league_params.json ──
+    try:
+        _update_league_params(adjustments)
+    except Exception as e:
+        logger.warning(f"Failed to update league_params.json: {e}")
 
     with open(ADJUSTMENTS_FILE, "w") as f:
         json.dump(output, f, indent=2)
@@ -260,6 +272,197 @@ def run_feedback():
     logger.info(f"")
     logger.info(f"  Adjustments saved to: {ADJUSTMENTS_FILE}")
     logger.info(f"{'='*60}")
+
+
+# ── Display name → ESPN league key mapping ──
+_DISPLAY_TO_KEY = {
+    "Premier League": "eng.1",
+    "La Liga": "esp.1",
+    "Bundesliga": "ger.1",
+    "Serie A": "ita.1",
+    "Ligue 1": "fra.1",
+    "MLS": "usa.1",
+    "Champions League": "uefa.champions",
+    "Europa League": "uefa.europa",
+    "Conference League": "uefa.europa.conf",
+    "Eredivisie": "ned.1",
+    "Primeira Liga": "por.1",
+    "FIFA World Cup": "fifa.world",
+}
+
+
+def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
+    """
+    Run online/incremental learning on per-league neural network models.
+    
+    For each league with new outcomes, calls partial_fit() on the NN
+    to update weights with the latest match data.
+    """
+    import numpy as np
+
+    try:
+        from backend.services.prediction.neural_model import get_league_model_registry
+    except ImportError:
+        logger.info("Neural model module not available — skipping online learning")
+        return
+
+    registry = get_league_model_registry()
+    
+    # Group recent predictions by league (last 50 per league for online update)
+    by_league: Dict[str, List[dict]] = defaultdict(list)
+    for p in predictions:
+        by_league[p["league"]].append(p)
+    
+    updated = 0
+    for league_display, preds in by_league.items():
+        league_key = _DISPLAY_TO_KEY.get(league_display)
+        if not league_key:
+            continue
+        
+        model = registry.get_model(league_key)
+        if not model.is_fitted:
+            continue
+        
+        # Sort by date, take most recent outcomes for online update
+        recent = sorted(preds, key=lambda p: p.get("match_date", ""))[-50:]
+        
+        # Build simple feature vectors from prediction data
+        # We use the ELO ratings stored in the predictions + basic features
+        X_list = []
+        y_outcome = []
+        y_goals = []
+        
+        for p in recent:
+            if p.get("actual_winner") is None:
+                continue
+            
+            home_elo = p.get("home_elo", 1500.0)
+            away_elo = p.get("away_elo", 1500.0)
+            
+            # Build 38-feature vector (matching training.py FeatureBuilder output)
+            features = np.zeros(38, dtype=np.float64)
+            features[0] = home_elo              # home_elo
+            features[1] = away_elo              # away_elo
+            features[2] = home_elo - away_elo   # elo_diff
+            # Form features (3-11): approximate from predicted probabilities
+            features[3] = p.get("predicted_home_win", 0.5)   # home_form_5 proxy
+            features[4] = p.get("predicted_away_win", 0.3)   # away_form_5 proxy
+            features[5] = features[3]           # home_form_10
+            features[6] = features[4]           # away_form_10
+            features[7] = features[3]           # home_weighted_form
+            features[8] = features[4]           # away_weighted_form
+            features[9] = p.get("predicted_home_goals", 1.5)  # home_goals_scored_avg5
+            features[10] = p.get("predicted_away_goals", 1.0) # away_goals_scored_avg5
+            features[11] = 1.0                  # home_goals_conceded_avg5
+            features[12] = 1.2                  # away_goals_conceded_avg5
+            features[13] = features[9]          # home_goals_scored_avg10
+            features[14] = features[10]         # away_goals_scored_avg10
+            # Home/away splits (15-18)
+            features[15] = 0.5                  # home_home_win_pct
+            features[16] = 0.3                  # away_away_win_pct
+            features[17] = 1.5                  # home_home_goals_avg
+            features[18] = 1.0                  # away_away_goals_avg
+            # H2H (19-21)
+            features[19] = 0.0                  # h2h_home_advantage
+            features[20] = 2.5                  # h2h_avg_total_goals
+            features[21] = 0.0                  # h2h_matches
+            # Context (22-27)
+            features[22] = 0.5                  # matchday_pct
+            features[23] = 0.0                  # is_derby
+            features[24] = 1.0                  # league_coefficient
+            features[25] = 7.0                  # home_days_rest
+            features[26] = 7.0                  # away_days_rest
+            features[27] = 0.0                  # rest_diff
+            # Season stats (28-33)
+            features[28] = 1.5                  # home_ppg
+            features[29] = 1.3                  # away_ppg
+            features[30] = 0.3                  # home_clean_sheet_pct
+            features[31] = 0.25                 # away_clean_sheet_pct
+            features[32] = 0.3                  # home_gd_per_game
+            features[33] = 0.0                  # away_gd_per_game
+            # Momentum (34-37)
+            features[34] = 0.0                  # home_streak
+            features[35] = 0.0                  # away_streak
+            features[36] = 3.0                  # home_unbeaten_run
+            features[37] = 2.0                  # away_unbeaten_run
+            
+            # Outcome label
+            actual = p["actual_winner"]
+            if actual == "home":
+                label = 0
+            elif actual == "draw":
+                label = 1
+            else:
+                label = 2
+            
+            X_list.append(features)
+            y_outcome.append(label)
+            y_goals.append([
+                p.get("actual_home_goals", 0) or 0,
+                p.get("actual_away_goals", 0) or 0
+            ])
+        
+        if len(X_list) < 5:
+            continue
+        
+        X = np.array(X_list, dtype=np.float64)
+        y_out = np.array(y_outcome, dtype=np.int32)
+        y_g = np.array(y_goals, dtype=np.float64)
+        
+        try:
+            model.partial_fit(X, y_out, y_g)
+            model.save()
+            updated += 1
+            logger.info(f"  Online update: {league_display} ({len(X_list)} samples)")
+        except Exception as e:
+            logger.warning(f"  Online update failed for {league_display}: {e}")
+    
+    if updated > 0:
+        logger.info(f"  Online learning: updated {updated} league models")
+
+
+def _update_league_params(adjustments: Dict[str, Dict]):
+    """
+    Update the single-source-of-truth league_params.json with learned adjustments.
+    """
+    params_file = Path(__file__).parent.parent / "data" / "league_params.json"
+    if not params_file.exists():
+        return
+    
+    with open(params_file) as f:
+        params_data = json.load(f)
+    
+    leagues = params_data.get("leagues", {})
+    updated = 0
+    
+    for league_display, adj in adjustments.items():
+        league_key = _DISPLAY_TO_KEY.get(league_display)
+        if not league_key or league_key not in leagues:
+            continue
+        
+        lp = leagues[league_key]
+        
+        # Apply conservative adjustments
+        if abs(adj.get("draw_rate_adjustment", 0)) > 0.005:
+            new_dr = round(max(0.12, min(0.35, lp["draw_rate"] + adj["draw_rate_adjustment"])), 4)
+            lp["draw_rate"] = new_dr
+            updated += 1
+        
+        if abs(adj.get("home_adv_adjustment", 0)) > 0.005:
+            new_ha = round(max(0.10, min(0.40, lp["home_adv"] + adj["home_adv_adjustment"])), 4)
+            lp["home_adv"] = new_ha
+            updated += 1
+        
+        if abs(adj.get("goals_scale_adjustment", 0)) > 0.003:
+            new_ag = round(lp["avg_goals"] + adj["goals_scale_adjustment"], 4)
+            lp["avg_goals"] = new_ag
+            updated += 1
+    
+    if updated > 0:
+        params_data["updated_at"] = datetime.now().isoformat()
+        with open(params_file, "w") as f:
+            json.dump(params_data, f, indent=2)
+        logger.info(f"  Updated league_params.json ({updated} parameter changes)")
 
 
 if __name__ == "__main__":

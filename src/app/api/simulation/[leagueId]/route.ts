@@ -8,6 +8,8 @@ const LEAGUE_MAPPING: Record<number, string> = {
   54: 'ger.1',  // Bundesliga
   53: 'fra.1',  // Ligue 1
   130: 'usa.1', // MLS
+  57: 'ned.1',  // Eredivisie
+  61: 'por.1',  // Primeira Liga
 }
 
 const LEAGUE_NAMES: Record<number, string> = {
@@ -17,6 +19,8 @@ const LEAGUE_NAMES: Record<number, string> = {
   54: 'Bundesliga',
   53: 'Ligue 1',
   130: 'MLS',
+  57: 'Eredivisie',
+  61: 'Primeira Liga',
 }
 
 // Sample teams for each league when API is unavailable
@@ -149,6 +153,46 @@ const SAMPLE_TEAMS: Record<number, { name: string; points: number }[]> = {
     { name: 'San Jose Earthquakes', points: 15 },
     { name: 'D.C. United', points: 14 },
   ],
+  57: [ // Eredivisie
+    { name: 'PSV Eindhoven', points: 45 },
+    { name: 'Ajax', points: 38 },
+    { name: 'Feyenoord', points: 35 },
+    { name: 'AZ Alkmaar', points: 32 },
+    { name: 'FC Twente', points: 30 },
+    { name: 'FC Utrecht', points: 28 },
+    { name: 'Go Ahead Eagles', points: 26 },
+    { name: 'Sparta Rotterdam', points: 24 },
+    { name: 'NEC Nijmegen', points: 23 },
+    { name: 'SC Heerenveen', points: 22 },
+    { name: 'Fortuna Sittard', points: 21 },
+    { name: 'PEC Zwolle', points: 20 },
+    { name: 'Heracles Almelo', points: 19 },
+    { name: 'Willem II', points: 18 },
+    { name: 'NAC Breda', points: 17 },
+    { name: 'RKC Waalwijk', points: 14 },
+    { name: 'Almere City', points: 12 },
+    { name: 'Excelsior', points: 10 },
+  ],
+  61: [ // Primeira Liga
+    { name: 'Sporting CP', points: 44 },
+    { name: 'Benfica', points: 40 },
+    { name: 'Porto', points: 38 },
+    { name: 'Sporting Braga', points: 32 },
+    { name: 'Vitória de Guimarães', points: 28 },
+    { name: 'Santa Clara', points: 26 },
+    { name: 'Casa Pia', points: 24 },
+    { name: 'Famalicão', points: 23 },
+    { name: 'Moreirense', points: 22 },
+    { name: 'Rio Ave', points: 21 },
+    { name: 'Gil Vicente', points: 20 },
+    { name: 'Arouca', points: 19 },
+    { name: 'Boavista', points: 18 },
+    { name: 'Estoril', points: 17 },
+    { name: 'Nacional', points: 16 },
+    { name: 'Estrela Amadora', points: 15 },
+    { name: 'AVS', points: 13 },
+    { name: 'Farense', points: 11 },
+  ],
 }
 
 interface Standing {
@@ -171,6 +215,9 @@ const LEAGUE_MATCH_CONFIG: Record<number, number> = {
   55: 38, // Serie A (20 teams)
   54: 34, // Bundesliga (18 teams)
   53: 34, // Ligue 1 (18 teams)
+  130: 34, // MLS (29 teams, 34 matches)
+  57: 34, // Eredivisie (18 teams)
+  61: 34, // Primeira Liga (18 teams)
 }
 
 // Points per win

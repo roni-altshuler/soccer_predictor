@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import fs from 'fs'
+import path from 'path'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
@@ -29,8 +31,11 @@ const leagueNameToKey: Record<string, string> = {
   'Ligue 1': 'ligue_1',
   'Champions League (UCL)': 'champions_league',
   'Europa League (UEL)': 'europa_league',
+  'Conference League (UECL)': 'conference_league',
   'MLS': 'mls',
-  'FIFA World Cup': 'world_cup'
+  'Eredivisie': 'eredivisie',
+  'Primeira Liga': 'primeira_liga',
+  'FIFA World Cup': 'world_cup',
 }
 
 // League strength coefficients (used for cross-league predictions)
@@ -42,9 +47,67 @@ const leagueStrength: Record<string, number> = {
   'ligue_1': 1.00,
   'champions_league': 1.20,
   'europa_league': 1.00,
+  'conference_league': 0.95,
   'mls': 0.85,
+  'eredivisie': 0.92,
+  'primeira_liga': 0.95,
   'world_cup': 1.10,
 }
+
+// Per-league Dixon-Coles calibrated parameters
+// Loaded from league_params.json (single source of truth) with hardcoded fallbacks
+const KEY_TO_LEAGUE: Record<string, string> = {
+  'eng.1': 'premier_league', 'esp.1': 'la_liga', 'ger.1': 'bundesliga',
+  'ita.1': 'serie_a', 'fra.1': 'ligue_1', 'usa.1': 'mls',
+  'ned.1': 'eredivisie', 'por.1': 'primeira_liga',
+  'uefa.champions': 'champions_league', 'uefa.europa': 'europa_league',
+  'uefa.europa.conf': 'conference_league', 'fifa.world': 'world_cup',
+}
+
+function loadLeagueParams(): Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> {
+  try {
+    const paramsFile = path.join(process.cwd(), 'backend', 'data', 'league_params.json')
+    if (fs.existsSync(paramsFile)) {
+      const data = JSON.parse(fs.readFileSync(paramsFile, 'utf-8'))
+      const result: Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> = {}
+      for (const [key, lp] of Object.entries(data.leagues || {}) as [string, any][]) {
+        const leagueName = KEY_TO_LEAGUE[key]
+        if (leagueName) {
+          result[leagueName] = {
+            avg_goals: lp.avg_goals ?? 1.35,
+            home_adv: lp.home_adv ?? 0.25,
+            rho: lp.rho ?? -0.12,
+            draw_rate: lp.draw_rate ?? 0.24,
+          }
+        }
+      }
+      if (Object.keys(result).length > 0) return result
+    }
+  } catch { /* fall through to hardcoded */ }
+
+  return {
+    'premier_league': { avg_goals: 1.42, home_adv: 0.28, rho: -0.13, draw_rate: 0.23 },
+    'la_liga':        { avg_goals: 1.30, home_adv: 0.30, rho: -0.12, draw_rate: 0.24 },
+    'bundesliga':     { avg_goals: 1.55, home_adv: 0.25, rho: -0.11, draw_rate: 0.22 },
+    'serie_a':        { avg_goals: 1.32, home_adv: 0.26, rho: -0.14, draw_rate: 0.27 },
+    'ligue_1':        { avg_goals: 1.30, home_adv: 0.27, rho: -0.12, draw_rate: 0.24 },
+    'mls':            { avg_goals: 1.45, home_adv: 0.20, rho: -0.10, draw_rate: 0.22 },
+    'eredivisie':     { avg_goals: 1.45, home_adv: 0.24, rho: -0.11, draw_rate: 0.21 },
+    'primeira_liga':  { avg_goals: 1.28, home_adv: 0.27, rho: -0.13, draw_rate: 0.25 },
+    'champions_league': { avg_goals: 1.50, home_adv: 0.22, rho: -0.12, draw_rate: 0.20 },
+    'europa_league':  { avg_goals: 1.42, home_adv: 0.20, rho: -0.11, draw_rate: 0.22 },
+    'conference_league': { avg_goals: 1.38, home_adv: 0.20, rho: -0.10, draw_rate: 0.23 },
+    'world_cup':      { avg_goals: 1.30, home_adv: 0.15, rho: -0.09, draw_rate: 0.18 },
+  }
+}
+
+let _leagueParamsCache: ReturnType<typeof loadLeagueParams> | null = null
+function getLeagueParams() {
+  if (!_leagueParamsCache) _leagueParamsCache = loadLeagueParams()
+  return _leagueParamsCache
+}
+
+const DEFAULT_PARAMS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
 
 /**
  * Team base ELO ratings - approximate values based on historical performance.
@@ -168,18 +231,55 @@ const teamBaseElo: Record<string, number> = {
 }
 
 /**
- * Team form modifiers based on recent ESPN results.
- * Uses a deterministic hash scaled to typical form variance (±12 ELO).
- * When the backend is unavailable, this provides a reasonable spread.
+ * Fetch recent form from ESPN for a team in a league.
+ * Returns a modifier in range [-15, +15] based on last 5 results.
  */
-function getTeamFormModifier(teamName: string): number {
-  // Deterministic hash gives consistent form per team name
-  const hash = teamName.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0)
-    return a & 0xFFFFFFFF
-  }, 0)
-  // Map to -12 to +12 range (conservative form influence)
-  return ((Math.abs(hash) % 25) - 12)
+async function fetchTeamForm(teamName: string, leagueKey?: string): Promise<number> {
+  if (!leagueKey) return 0
+  const espnLeagueMap: Record<string, string> = {
+    premier_league: 'eng.1', la_liga: 'esp.1', bundesliga: 'ger.1',
+    serie_a: 'ita.1', ligue_1: 'fra.1', mls: 'usa.1',
+    eredivisie: 'ned.1', primeira_liga: 'por.1',
+    champions_league: 'uefa.champions', europa_league: 'uefa.europa',
+    conference_league: 'uefa.europa.conf', world_cup: 'fifa.world',
+  }
+  const espnId = espnLeagueMap[leagueKey]
+  if (!espnId) return 0
+
+  try {
+    const now = new Date()
+    const past = new Date(now); past.setDate(past.getDate() - 30)
+    const fmt = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/scoreboard?dates=${fmt(past)}-${fmt(now)}&limit=100`
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000), next: { revalidate: 3600 } })
+    if (!res.ok) return 0
+    const data = await res.json()
+    const teamLower = teamName.toLowerCase()
+    const results: string[] = []
+    for (const event of (data.events || [])) {
+      const comp = event.competitions?.[0]
+      const status = comp?.status?.type?.name || ''
+      if (!status.includes('FINAL') && !status.includes('FULL_TIME')) continue
+      const home = comp.competitors?.find((c: any) => c.homeAway === 'home')
+      const away = comp.competitors?.find((c: any) => c.homeAway === 'away')
+      if (!home || !away) continue
+      const homeName = (home.team?.displayName || '').toLowerCase()
+      const awayName = (away.team?.displayName || '').toLowerCase()
+      const isHome = homeName.includes(teamLower) || teamLower.includes(homeName.split(' ').pop() || '___')
+      const isAway = awayName.includes(teamLower) || teamLower.includes(awayName.split(' ').pop() || '___')
+      if (!isHome && !isAway) continue
+      const hg = parseInt(home.score || '0')
+      const ag = parseInt(away.score || '0')
+      if (isHome) results.push(hg > ag ? 'W' : hg < ag ? 'L' : 'D')
+      else results.push(ag > hg ? 'W' : ag < hg ? 'L' : 'D')
+    }
+    // Compute form modifier from last 5: W=+3, D=0, L=-3
+    const last5 = results.slice(-5)
+    if (last5.length === 0) return 0
+    return last5.reduce((sum, r) => sum + (r === 'W' ? 3 : r === 'L' ? -3 : 0), 0)
+  } catch {
+    return 0
+  }
 }
 
 // Helper to convert league name to API key format
@@ -198,18 +298,17 @@ function getTeamElo(teamName: string, league?: string, includeForm = true): numb
     baseElo = baseElo * strengthMod
   }
   
-  // Apply form modifier if enabled
-  if (includeForm) {
-    const formMod = getTeamFormModifier(teamName)
-    baseElo = baseElo + formMod
-  }
-  
+  // Form is applied asynchronously via fetchTeamForm() in the main prediction path
   return baseElo
 }
 
-function calculateWinProbabilities(homeElo: number, awayElo: number, homeForm: number, awayForm: number): { home: number; draw: number; away: number } {
-  // Apply home advantage
-  const adjustedHomeElo = homeElo + HOME_ADVANTAGE_ELO
+function calculateWinProbabilities(homeElo: number, awayElo: number, homeForm: number, awayForm: number, leagueKey?: string): { home: number; draw: number; away: number } {
+  // Get league-specific parameters
+  const params = (leagueKey && getLeagueParams()[leagueKey]) || DEFAULT_PARAMS
+
+  // Apply home advantage from league-specific calibration
+  const homeAdvElo = params.home_adv * HOME_ADVANTAGE_ELO / 0.25  // scale relative to default
+  const adjustedHomeElo = homeElo + homeAdvElo
   
   // Apply form adjustments (form impacts probability slightly)
   const formAdjustment = (homeForm - awayForm) * 1.5
@@ -218,11 +317,9 @@ function calculateWinProbabilities(homeElo: number, awayElo: number, homeForm: n
   // Use logistic function for win probability
   const homeWinRaw = 1 / (1 + Math.pow(10, -eloDiff / 400))
   
-  // League-calibrated draw probability using Gaussian closeness model
-  // Draw rate is higher when teams are close in ELO
-  const drawBase = 0.24  // Average empirical draw rate
+  // League-calibrated draw probability using Dixon-Coles inspired model
   const eloCloseness = Math.exp(-(eloDiff * eloDiff) / (2 * 250 * 250))
-  const drawProb = Math.max(0.08, Math.min(0.38, drawBase * (0.6 + 0.8 * eloCloseness)))
+  const drawProb = Math.max(0.08, Math.min(0.38, params.draw_rate * (0.6 + 0.8 * eloCloseness)))
   
   // Distribute remaining probability to win/loss
   const winPool = 1 - drawProb
@@ -264,9 +361,11 @@ export async function POST(request: NextRequest) {
     const homeLeagueKey = home_league ? normalizeLeagueKey(home_league) : undefined
     const awayLeagueKey = away_league ? normalizeLeagueKey(away_league) : undefined
     
-    // Get form modifiers
-    const homeForm = getTeamFormModifier(home_team)
-    const awayForm = getTeamFormModifier(away_team)
+    // Fetch real form from ESPN (parallel)
+    const [homeForm, awayForm] = await Promise.all([
+      fetchTeamForm(home_team, homeLeagueKey),
+      fetchTeamForm(away_team, awayLeagueKey),
+    ])
     
     let homeElo: number
     let awayElo: number
@@ -302,23 +401,26 @@ export async function POST(request: NextRequest) {
       awayElo = getTeamElo(away_team, away_league, false)
     }
     
-    // Calculate probabilities with form adjustments
-    const probs = calculateWinProbabilities(homeElo, awayElo, homeForm, awayForm)
+    // Calculate probabilities with per-league model and form adjustments
+    const matchLeague = homeLeagueKey || awayLeagueKey
+    const probs = calculateWinProbabilities(homeElo, awayElo, homeForm, awayForm, matchLeague)
+    
+    // Get league-specific parameters for goal prediction
+    const params = (matchLeague && getLeagueParams()[matchLeague]) || DEFAULT_PARAMS
     
     // Calculate ELO difference with home advantage and form
+    const homeAdvElo = params.home_adv * HOME_ADVANTAGE_ELO / 0.25
     const formAdjustment = (homeForm - awayForm) * 1.5
-    const eloDiff = (homeElo + HOME_ADVANTAGE_ELO) - awayElo + formAdjustment
+    const eloDiff = (homeElo + homeAdvElo) - awayElo + formAdjustment
     
-    // Poisson-inspired goal calculation: xG derived from ELO-based attack/defense strength
+    // Dixon-Coles inspired goal prediction using league-specific avg_goals
     const homeAttack = Math.max(0.5, 1.0 + (homeElo - 1500) / 800)
     const awayAttack = Math.max(0.5, 1.0 + (awayElo - 1500) / 800)
-    const homeDefense = Math.max(0.5, 1.0 - (homeElo - 1500) / 1200)  // Higher ELO = lower conceded
+    const homeDefense = Math.max(0.5, 1.0 - (homeElo - 1500) / 1200)
     const awayDefense = Math.max(0.5, 1.0 - (awayElo - 1500) / 1200)
     
-    const leagueAvgGoals = 1.35
-    const homeAdvGoals = 0.25
-    const homeBaseGoals = homeAttack * awayDefense * leagueAvgGoals + homeAdvGoals
-    const awayBaseGoals = awayAttack * homeDefense * leagueAvgGoals
+    const homeBaseGoals = homeAttack * awayDefense * params.avg_goals + params.home_adv
+    const awayBaseGoals = awayAttack * homeDefense * params.avg_goals
     
     // Determine predicted winner
     let predictedWinner = 'Draw'
@@ -366,13 +468,14 @@ export async function POST(request: NextRequest) {
         predicted_winner: predictedWinner,
         home_advantage_applied: true,
         factors_considered: [
+          'Per-league Dixon-Coles model',
           'ELO rating difference',
-          `Home advantage (+${HOME_ADVANTAGE_ELO} ELO points)`,
-          'Historical performance',
-          'Current form',
+          `Home advantage (league-calibrated: ${params.home_adv.toFixed(2)})`,
+          `League draw rate: ${(params.draw_rate * 100).toFixed(0)}%`,
+          'ESPN recent form analysis',
           'Venue location',
           ...(isCrossLeague ? ['League strength coefficient'] : []),
-          ...(backendAvailable ? ['Machine learning model'] : ['Statistical estimation'])
+          ...(backendAvailable ? ['Backend ML ensemble'] : ['Statistical estimation'])
         ],
         note: isCrossLeague 
           ? 'Cross-league match: Results adjusted for league strength differences.'

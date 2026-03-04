@@ -1,6 +1,6 @@
-# ⚽ Soccer Predictor v4.0
+# ⚽ Soccer Predictor v5.0
 
-A modern soccer match prediction and live scores application powered by ESPN data. Features real-time match updates, per-league AI/ML predictions with Dixon-Coles corrected Poisson models, comprehensive league standings, an AI accuracy dashboard, and league standings simulation.
+A modern soccer match prediction and live scores application powered by ESPN data. Features real-time match updates, per-league AI/ML predictions with Dixon-Coles corrected Poisson models, live ESPN standings with Monte Carlo simulation, head-to-head analysis with real match history, an AI accuracy dashboard, and a FotMob-inspired knockout bracket.
 
 **📱 Now Available as a Progressive Web App (PWA)** — Install on Chrome for the best experience!
 
@@ -18,8 +18,9 @@ A modern soccer match prediction and live scores application powered by ESPN dat
 - **ELO Ratings:** Dynamic team strength with goal-difference multiplier and upset bonuses
 
 ### 📊 AI Accuracy Dashboard
-- **981+ Seeded Predictions:** Historical back-test across 10 leagues (46.8% winner accuracy)
-- **183 Upcoming Predictions:** Pre-match predictions for next 14 days, auto-resolved against real results
+- **985+ Seeded Predictions:** Historical back-test across 10 leagues (46.8% winner accuracy)
+- **Automated Pipeline:** GitHub Actions runs 3x daily (6AM/2PM/10PM UTC) — fetches outcomes, generates predictions, trains feedback
+- **Upcoming Predictions:** Pre-match predictions for next 7 days, auto-resolved against real results
 - **Per-League Breakdown:** Accuracy, Brier score, scoreline rate for each league
 - **Rolling Accuracy Trend:** Visual chart of model improvement over time
 - **Confidence Calibration:** High/medium/low confidence bucket analysis
@@ -61,14 +62,23 @@ A modern soccer match prediction and live scores application powered by ESPN dat
 ### 📈 Top Scorers
 - **ESPN Live Data:** Real-time scorer data from ESPN leaders endpoint
 - **Curated Fallback:** Season-accurate scorer data for 11 leagues when ESPN API unavailable
-- **Tournament Coverage:** Champions League, Europa League, and Conference League scorers
+- **Tournament Scorers:** Inline curated data for UCL, UEL, UECL (no self-fetch — reliable on Vercel serverless)
 - **Dedicated API Route:** `/api/top-scorers/[league]` with intelligent fallback chain
 
+### 🏆 FotMob-Style Knockout Bracket
+- **Round Tab Navigation:** Horizontal round tabs (R16 → QF → SF → F) — one round visible at a time
+- **No-Scroll Design:** All ties fit within viewport — no tree layout or SVG connectors
+- **Two-Legged Ties:** Shows individual leg scores + aggregate total
+- **Live Indicators:** Animated pulse dot on live matches, red ring on active ties
+- **Responsive Grid:** 1/2/4 column layout adapting to screen size
+
 ### 📊 Analytics & Simulation
-- **League Standings:** Live table with goal difference, form, and conference splits
-- **Team Form:** Recent results and performance trends from ESPN
-- **League Simulation:** Monte Carlo simulation for final standings prediction
+- **Live ESPN Standings:** All 8 domestic leagues fetch live from ESPN API (no stale data)
+- **Real Team Form:** Last 5 match results fetched from ESPN scoreboard API with W/D/L form modifier (±15 ELO)
+- **Head-to-Head History:** ESPN-sourced H2H match history (last 365 days) with self-contained Dixon-Coles predictions
+- **Monte Carlo Simulation:** Season simulation on live standings data with league-specific season lengths
 - **Title Race:** Title, Top 4, Europa, and relegation probabilities
+- **MLS Conference Support:** Eastern & Western Conference standings with 34-match season
 - **Season Trends:** Goals distribution, result patterns, and league analytics
 
 ### 📱 Progressive Web App (PWA)
@@ -100,8 +110,9 @@ A modern soccer match prediction and live scores application powered by ESPN dat
 - **LeagueModelManager** — Singleton managing per-league model instances
 - **ELO System** — 15 league coefficients, goal-difference multiplier, upset bonus
 - **Gaussian Closeness Draw Model** — `draw = base_rate × (0.6 + 0.8 × exp(-diff²/(2×250²)))`
-- **Monte Carlo Simulation** — 10,000-iteration match and season simulation
+- **Monte Carlo Simulation** — 1,000-iteration season simulation on live ESPN standings
 - **Training Feedback Loop** — Gradient-based parameter adjustment from outcomes
+- **GitHub Actions Pipeline** — 3x daily automated predict → fetch outcomes → train loop
 
 ---
 
@@ -127,12 +138,17 @@ soccer_predictor/
 │   │   └── simulation/                  # Monte Carlo league simulation
 │   ├── scripts/
 │   │   ├── seed_predictions.py          # Back-test: seed 981 historical predictions
-│   │   ├── predict_upcoming.py          # Forward: predict next 14 days of matches
+│   │   ├── predict_upcoming.py          # Forward: predict next 7 days of matches
+│   │   ├── fetch_outcomes.py            # Resolve pending predictions against ESPN
 │   │   └── train_feedback.py            # Learn: adjust params from outcomes
 │   └── data/predictions/                # JSON prediction storage (monthly files)
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   │   ├── standings/               # Live ESPN standings + Monte Carlo simulation
+│   │   │   ├── predict/any-teams/       # Per-league Dixon-Coles predictions
+│   │   │   ├── predict/head-to-head/    # Self-contained H2H with ESPN history
+│   │   │   ├── tournament/[id]/         # Tournament data with inline scorers
 │   │   │   ├── top-scorers/[league]/    # Top scorers with ESPN + curated fallback
 │   │   │   └── v1/tracking/             # Accuracy dashboard API proxy routes
 │   │   │       ├── accuracy/summary/    # Comprehensive dashboard data
@@ -145,6 +161,7 @@ soccer_predictor/
 │   │   └── predict/                     # Prediction interface
 │   ├── components/
 │   │   ├── league/LeagueHomePage.tsx     # Standings, results, scorers, fixtures
+│   │   ├── knockout/KnockoutBracket.tsx # FotMob-style round-tab bracket
 │   │   ├── match/HeadToHeadDisplay.tsx  # H2H with 14-league ESPN search
 │   │   └── tracking/
 │   │       ├── AccuracyDashboard.tsx    # AI accuracy dashboard
@@ -370,12 +387,31 @@ GOOGLE_CLIENT_ID=your-google-client-id
 | Script | Purpose | Command |
 |--------|---------|---------|
 | `seed_predictions` | Back-test on 90 days of historical ESPN data | `python -m backend.scripts.seed_predictions` |
-| `predict_upcoming` | Predict next N days of scheduled matches | `python -m backend.scripts.predict_upcoming --days 14` |
+| `predict_upcoming` | Predict next N days of scheduled matches | `python -m backend.scripts.predict_upcoming --days 7` |
+| `fetch_outcomes` | Resolve pending predictions against ESPN results | `python -m backend.scripts.fetch_outcomes` |
 | `train_feedback` | Analyze accuracy, compute parameter adjustments | `python -m backend.scripts.train_feedback` |
 
 ---
 
-## 📝 License
+## � Automated Pipeline (GitHub Actions)
+
+The prediction pipeline runs automatically three times daily via GitHub Actions (`.github/workflows/prediction_pipeline.yml`):
+
+| Time (UTC) | Actions |
+|------------|--------|
+| 06:00 | Fetch overnight outcomes → Predict upcoming → Train feedback |
+| 14:00 | Fetch morning outcomes → Predict upcoming → Train feedback |
+| 22:00 | Fetch evening outcomes → Predict upcoming → Train feedback |
+
+Each run:
+1. **`fetch_outcomes`** — Resolves pending predictions against ESPN match results
+2. **`predict_upcoming`** — Generates predictions for newly scheduled matches (next 7 days)
+3. **`train_feedback`** — Analyzes accuracy and computes per-league parameter adjustments
+4. **Auto-commits** updated prediction data back to the repository
+
+---
+
+## �📝 License
 
 MIT License — Feel free to use and modify for your projects.
 

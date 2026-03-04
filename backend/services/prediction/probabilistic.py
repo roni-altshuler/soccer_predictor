@@ -5,7 +5,9 @@ Supports per-league model instances with league-specific calibrated parameters
 for draw rates, average goals, home advantage, and Dixon-Coles correlation.
 """
 
+import json
 import numpy as np
+from pathlib import Path
 from scipy import stats
 from scipy.special import factorial
 from typing import Dict, List, Tuple, Optional
@@ -16,37 +18,65 @@ logger = logging.getLogger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Per-league calibrated parameters (empirical from 5+ seasons)
+# Per-league calibrated parameters — loaded from league_params.json
+# Falls back to hardcoded defaults if the JSON file is missing.
 # ══════════════════════════════════════════════════════════════════════
 
-LEAGUE_PARAMS: Dict[str, Dict[str, float]] = {
-    # league_key: { avg_goals, home_adv, rho, draw_rate }
-    "eng.1":            {"avg_goals": 1.42, "home_adv": 0.28, "rho": -0.13, "draw_rate": 0.23},
-    "esp.1":            {"avg_goals": 1.30, "home_adv": 0.30, "rho": -0.12, "draw_rate": 0.24},
-    "ger.1":            {"avg_goals": 1.55, "home_adv": 0.25, "rho": -0.11, "draw_rate": 0.22},
-    "ita.1":            {"avg_goals": 1.32, "home_adv": 0.26, "rho": -0.14, "draw_rate": 0.27},
-    "fra.1":            {"avg_goals": 1.30, "home_adv": 0.27, "rho": -0.12, "draw_rate": 0.24},
-    "ned.1":            {"avg_goals": 1.45, "home_adv": 0.24, "rho": -0.11, "draw_rate": 0.21},
-    "por.1":            {"avg_goals": 1.28, "home_adv": 0.27, "rho": -0.13, "draw_rate": 0.25},
-    "usa.1":            {"avg_goals": 1.45, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.22},
-    "uefa.champions":   {"avg_goals": 1.50, "home_adv": 0.22, "rho": -0.12, "draw_rate": 0.20},
-    "uefa.europa":      {"avg_goals": 1.42, "home_adv": 0.20, "rho": -0.11, "draw_rate": 0.22},
-    "uefa.europa.conf": {"avg_goals": 1.38, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.23},
-    "fifa.world":       {"avg_goals": 1.30, "home_adv": 0.15, "rho": -0.09, "draw_rate": 0.18},
-    # Friendly name aliases
-    "Premier League":   {"avg_goals": 1.42, "home_adv": 0.28, "rho": -0.13, "draw_rate": 0.23},
-    "La Liga":          {"avg_goals": 1.30, "home_adv": 0.30, "rho": -0.12, "draw_rate": 0.24},
-    "Bundesliga":       {"avg_goals": 1.55, "home_adv": 0.25, "rho": -0.11, "draw_rate": 0.22},
-    "Serie A":          {"avg_goals": 1.32, "home_adv": 0.26, "rho": -0.14, "draw_rate": 0.27},
-    "Ligue 1":          {"avg_goals": 1.30, "home_adv": 0.27, "rho": -0.12, "draw_rate": 0.24},
-    "MLS":              {"avg_goals": 1.45, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.22},
-    "Champions League": {"avg_goals": 1.50, "home_adv": 0.22, "rho": -0.12, "draw_rate": 0.20},
-    "Europa League":    {"avg_goals": 1.42, "home_adv": 0.20, "rho": -0.11, "draw_rate": 0.22},
-    "Eredivisie":       {"avg_goals": 1.45, "home_adv": 0.24, "rho": -0.11, "draw_rate": 0.21},
-    "Primeira Liga":    {"avg_goals": 1.28, "home_adv": 0.27, "rho": -0.13, "draw_rate": 0.25},
-}
-
 DEFAULT_PARAMS = {"avg_goals": 1.35, "home_adv": 0.25, "rho": -0.13, "draw_rate": 0.24}
+
+
+def _load_league_params() -> Dict[str, Dict[str, float]]:
+    """Load per-league params from single source of truth."""
+    params_file = Path(__file__).parent.parent.parent / "data" / "league_params.json"
+    try:
+        if params_file.exists():
+            with open(params_file) as f:
+                data = json.load(f)
+            leagues = data.get("leagues", {})
+            # Build lookup with both key-based and display-name-based entries
+            result = {}
+            display_map = {
+                "eng.1": "Premier League", "esp.1": "La Liga", "ger.1": "Bundesliga",
+                "ita.1": "Serie A", "fra.1": "Ligue 1", "ned.1": "Eredivisie",
+                "por.1": "Primeira Liga", "usa.1": "MLS",
+                "uefa.champions": "Champions League", "uefa.europa": "Europa League",
+                "uefa.europa.conf": "Conference League", "fifa.world": "FIFA World Cup",
+            }
+            for key, lp in leagues.items():
+                params = {
+                    "avg_goals": lp.get("avg_goals", DEFAULT_PARAMS["avg_goals"]),
+                    "home_adv": lp.get("home_adv", DEFAULT_PARAMS["home_adv"]),
+                    "rho": lp.get("rho", DEFAULT_PARAMS["rho"]),
+                    "draw_rate": lp.get("draw_rate", DEFAULT_PARAMS["draw_rate"]),
+                }
+                result[key] = params
+                # Also register friendly name alias
+                if key in display_map:
+                    result[display_map[key]] = params
+            logger.info(f"Loaded league params from {params_file} ({len(leagues)} leagues)")
+            return result
+    except Exception as e:
+        logger.warning(f"Could not load league_params.json: {e}")
+    
+    # Fallback to hardcoded defaults
+    return {
+        "eng.1":            {"avg_goals": 1.42, "home_adv": 0.28, "rho": -0.13, "draw_rate": 0.23},
+        "esp.1":            {"avg_goals": 1.30, "home_adv": 0.30, "rho": -0.12, "draw_rate": 0.24},
+        "ger.1":            {"avg_goals": 1.55, "home_adv": 0.25, "rho": -0.11, "draw_rate": 0.22},
+        "ita.1":            {"avg_goals": 1.32, "home_adv": 0.26, "rho": -0.14, "draw_rate": 0.27},
+        "fra.1":            {"avg_goals": 1.30, "home_adv": 0.27, "rho": -0.12, "draw_rate": 0.24},
+        "ned.1":            {"avg_goals": 1.45, "home_adv": 0.24, "rho": -0.11, "draw_rate": 0.21},
+        "por.1":            {"avg_goals": 1.28, "home_adv": 0.27, "rho": -0.13, "draw_rate": 0.25},
+        "usa.1":            {"avg_goals": 1.45, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.22},
+        "uefa.champions":   {"avg_goals": 1.50, "home_adv": 0.22, "rho": -0.12, "draw_rate": 0.20},
+        "uefa.europa":      {"avg_goals": 1.42, "home_adv": 0.20, "rho": -0.11, "draw_rate": 0.22},
+        "uefa.europa.conf": {"avg_goals": 1.38, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.23},
+        "fifa.world":       {"avg_goals": 1.30, "home_adv": 0.15, "rho": -0.09, "draw_rate": 0.18},
+    }
+
+
+# Load once at module import
+LEAGUE_PARAMS = _load_league_params()
 
 
 @dataclass
