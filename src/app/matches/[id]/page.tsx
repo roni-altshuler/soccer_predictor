@@ -6,7 +6,7 @@ import Link from 'next/link'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { HeadToHeadDisplay } from '@/components/match'
-import RefereeInfo from '@/components/referee/RefereeInfo'
+import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 
@@ -764,12 +764,12 @@ export default function MatchDetailPage() {
               </div>
             </div>
 
-            {/* ── Referee Full Analysis ── */}
-            <RefereeInfo 
-              matchId={matchId}
+            {/* ── Key Match Factors ── */}
+            <KeyMatchFactors 
               homeTeam={match.home_team}
               awayTeam={match.away_team}
-              refereeName={match.referee}
+              leagueId={match.leagueId}
+              matchDate={match.date}
             />
 
             {/* ── H2H & Team Form Summary ── */}

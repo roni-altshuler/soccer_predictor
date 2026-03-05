@@ -1,0 +1,40 @@
+{
+  "trained_at": "2026-03-05T16:03:58.045178",
+  "min_season": 1998,
+  "leagues": {
+    "fifa.world": {
+      "status": "success",
+      "matches": 447,
+      "features": 55,
+      "samples": 297,
+      "metrics": {
+        "nn_accuracy": 0.4444444444444444,
+        "nn_log_loss": 1.1247704905235465,
+        "gbt_accuracy": 0.37777777777777777,
+        "rf_accuracy": 0.2222222222222222,
+        "et_accuracy": 0.24444444444444444,
+        "xgb_accuracy": 0.24444444444444444,
+        "lgb_accuracy": 0.35555555555555557,
+        "ensemble_accuracy": 0.35555555555555557,
+        "ensemble_log_loss": 1.1487032278223321,
+        "brier_home_win": 0.27228787194867926,
+        "brier_draw": 0.2016593573014616,
+        "brier_away_win": 0.22176493701580513,
+        "class_distribution": {
+          "home_win": 22,
+          "draw": 11,
+          "away_win": 12
+        },
+        "predicted_distribution": {
+          "home_win": 14,
+          "draw": 5,
+          "away_win": 26
+        },
+        "goals_mae_home": 1.0006382174246382,
+        "goals_mae_away": 0.9158275056157378,
+        "cv_accuracy_mean": 0.5,
+        "cv_accuracy_std": 0.04044664378482196
+      }
+    }
+  }
+}

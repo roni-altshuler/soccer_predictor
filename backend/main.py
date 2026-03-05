@@ -282,44 +282,98 @@ async def get_matches_by_date(league: str, date: str):
 
 @app.get("/api/team_form/{league}/{team}")
 async def get_team_form(league: str, team: str):
-    """Get recent form and stats for a team (legacy endpoint)."""
+    """Get recent form and detailed stats for a team."""
     league_key = league.lower().replace(" ", "_").replace("-", "_")
     
     try:
-        form = fm.get_team_form(team, league_key, num_matches=10)
+        all_matches = fm.get_live_matches(league_key)
         
-        # Calculate stats from form
+        # Filter completed matches involving this team
+        team_lower = team.lower()
+        team_matches = []
+        
+        for match in all_matches:
+            if match["status"] != "played":
+                continue
+            
+            home_name = (match.get("home_team") or "").lower()
+            away_name = (match.get("away_team") or "").lower()
+            
+            is_home = team_lower in home_name or home_name in team_lower
+            is_away = team_lower in away_name or away_name in team_lower
+            
+            if not (is_home or is_away):
+                continue
+            
+            home_goals = match.get("home_goals") or 0
+            away_goals = match.get("away_goals") or 0
+            
+            if is_home:
+                goals_for = home_goals
+                goals_against = away_goals
+                venue = "home"
+                opponent = match.get("away_team", "Unknown")
+            else:
+                goals_for = away_goals
+                goals_against = home_goals
+                venue = "away"
+                opponent = match.get("home_team", "Unknown")
+            
+            if goals_for > goals_against:
+                result = "win"
+            elif goals_for < goals_against:
+                result = "loss"
+            else:
+                result = "draw"
+            
+            team_matches.append({
+                "date": match.get("date", ""),
+                "result": result,
+                "goals_for": goals_for,
+                "goals_against": goals_against,
+                "venue": venue,
+                "opponent": opponent,
+                "score_str": match.get("score_str", ""),
+            })
+        
+        # Sort by date descending (most recent first)
+        team_matches.sort(key=lambda x: x.get("date", ""), reverse=True)
+        team_matches = team_matches[:10]
+        
+        # Compute aggregate stats
+        form = [("W" if m["result"] == "win" else "D" if m["result"] == "draw" else "L") for m in team_matches]
+        n = len(team_matches)
         wins = form.count("W")
         draws = form.count("D")
         losses = form.count("L")
-        matches_played = len(form)
+        win_rate = wins / n if n > 0 else 0
         
-        # Calculate rates (avoid division by zero)
-        win_rate = wins / matches_played if matches_played > 0 else 0
+        goals_scored = sum(m["goals_for"] for m in team_matches)
+        goals_conceded = sum(m["goals_against"] for m in team_matches)
         
         return {
             "team": team,
             "form": form,
             "recent_form": form,
-            "points": sum(3 if r == "W" else (1 if r == "D" else 0) for r in form),
-            "matches_played": matches_played,
+            "matches": team_matches,
+            "matches_played": n,
             "wins": wins,
             "draws": draws,
             "losses": losses,
-            "goals_scored": 0,  # Not available from form data
-            "goals_conceded": 0,  # Not available from form data
+            "points": sum(3 if r == "W" else (1 if r == "D" else 0) for r in form),
+            "goals_scored": goals_scored,
+            "goals_conceded": goals_conceded,
             "win_rate": win_rate,
-            "avg_goals_scored": 0,  # Not available from form data
-            "avg_goals_conceded": 0,  # Not available from form data
-            "home_win_rate": 0,  # Not available from form data
-            "away_win_rate": 0,  # Not available from form data
+            "avg_goals_scored": goals_scored / n if n > 0 else 0,
+            "avg_goals_conceded": goals_conceded / n if n > 0 else 0,
         }
     except Exception as e:
         logger.error(f"Error fetching team form: {e}")
         return {
-            "team": team, 
-            "form": [], 
+            "team": team,
+            "form": [],
             "recent_form": [],
+            "matches": [],
             "matches_played": 0,
             "wins": 0,
             "draws": 0,
@@ -329,8 +383,6 @@ async def get_team_form(league: str, team: str):
             "win_rate": 0,
             "avg_goals_scored": 0,
             "avg_goals_conceded": 0,
-            "home_win_rate": 0,
-            "away_win_rate": 0,
             "message": f"Error: {str(e)}"
         }
 

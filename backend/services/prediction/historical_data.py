@@ -39,6 +39,7 @@ ESPN_LEAGUES = {
     "mls": "usa.1",
     "champions_league": "uefa.champions",
     "europa_league": "uefa.europa",
+    "world_cup": "fifa.world",
 }
 
 # Extended season ranges
@@ -53,6 +54,8 @@ AVAILABLE_SEASONS = {
     "mls": list(range(2005, 2026)),
     "champions_league": list(range(2005, 2026)),
     "europa_league": list(range(2009, 2026)),
+    # World Cup: all tournament years from 1998 onwards
+    "world_cup": [1998, 2002, 2006, 2010, 2014, 2018, 2022],
 }
 
 # football-data.co.uk CSV codes
@@ -307,30 +310,42 @@ class HistoricalDataCollector:
             if league == "mls":
                 start_date = datetime(season, 2, 1)
                 end_date = datetime(season, 12, 15)
+            elif league == "world_cup":
+                # World Cup tournaments: scan DAILY during tournament windows
+                # 2022 Qatar was Nov-Dec, all others are June-July
+                if season == 2022:
+                    windows = [(datetime(season, 11, 20), datetime(season, 12, 20))]
+                else:
+                    windows = [(datetime(season, 6, 1), datetime(season, 7, 20))]
             else:
                 start_date = datetime(season, 8, 1)
                 end_date = datetime(season + 1, 6, 30)
+                windows = [(start_date, end_date)]
 
-            current = start_date
-            while current <= end_date:
-                date_str = current.strftime("%Y%m%d")
-                url = (
-                    f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
-                    f"?dates={date_str}&limit=100"
-                )
-                try:
-                    resp = await client.get(url)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        for event in data.get("events", []):
-                            match = self._parse_espn_event(event, league, season)
-                            if match:
-                                all_matches.append(match)
-                except Exception as e:
-                    logger.debug(f"Error fetching {league} {date_str}: {e}")
+            for window_start, window_end in (windows if league == "world_cup" else [(start_date, end_date)]):
+                # Use daily scanning for World Cup (64 matches in ~30 days)
+                # Use weekly scanning for club leagues (~380 matches over 10 months)
+                step = timedelta(days=1) if league == "world_cup" else timedelta(days=7)
+                current = window_start
+                while current <= window_end:
+                    date_str = current.strftime("%Y%m%d")
+                    url = (
+                        f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
+                        f"?dates={date_str}&limit=100"
+                    )
+                    try:
+                        resp = await client.get(url)
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            for event in data.get("events", []):
+                                match = self._parse_espn_event(event, league, season)
+                                if match:
+                                    all_matches.append(match)
+                    except Exception as e:
+                        logger.debug(f"Error fetching {league} {date_str}: {e}")
 
-                current += timedelta(days=7)
-                await asyncio.sleep(0.15)
+                    current += step
+                    await asyncio.sleep(0.15 if league != "world_cup" else 0.1)
 
             seen = set()
             unique_matches = []
