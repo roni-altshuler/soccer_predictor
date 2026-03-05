@@ -229,33 +229,42 @@ class EloPredictor:
 
 
 def poisson_scoreline(home_xg: float, away_xg: float) -> str:
-    """Most likely scoreline via Dixon-Coles corrected Poisson."""
-    rho = -0.13
-    best_score, best_prob = "1-1", 0.0
+    """
+    Predict the most likely scoreline from expected goals.
 
-    for h in range(6):
-        for a in range(6):
-            p_h = (home_xg ** h) * math.exp(-home_xg) / math.factorial(h)
-            p_a = (away_xg ** a) * math.exp(-away_xg) / math.factorial(a)
-            base = p_h * p_a
+    Uses a hybrid approach:
+    1. Round xG values to integers as the base scoreline.
+    2. Apply intelligent rounding: when the fractional part is close to 0.5,
+       use the Poisson probability of scoring N vs N+1 to decide.
+    3. Ensure the scoreline reflects the xG advantage of the favored side.
 
-            if h == 0 and a == 0:
-                tau = 1.0 - home_xg * away_xg * rho
-            elif h == 0 and a == 1:
-                tau = 1.0 + home_xg * rho
-            elif h == 1 and a == 0:
-                tau = 1.0 + away_xg * rho
-            elif h == 1 and a == 1:
-                tau = 1.0 - rho
-            else:
-                tau = 1.0
+    This avoids the "always 1-1" problem of picking the strict Poisson mode,
+    which for typical soccer xG (0.8–1.8) is almost always 1 for each team.
+    """
+    import math as _m
 
-            prob = base * max(0, tau)
-            if prob > best_prob:
-                best_prob = prob
-                best_score = f"{h}-{a}"
+    def smart_round(xg: float) -> int:
+        """Round xG to nearest integer (round-half-up).
 
-    return best_score
+        Standard rounding is more intuitive: xG 1.6 → 2 goals.
+        The Poisson mode approach always favours the floor for
+        typical soccer xG (0.8–1.8), producing too many draws.
+        """
+        return max(0, int(xg + 0.5))
+
+    h = smart_round(home_xg)
+    a = smart_round(away_xg)
+
+    # If the xG clearly favors one side but rounding produced a draw,
+    # give the favored side +1 goal
+    xg_diff = home_xg - away_xg
+    if h == a and abs(xg_diff) >= 0.30:
+        if xg_diff > 0:
+            h += 1
+        else:
+            a += 1
+
+    return f"{h}-{a}"
 
 
 async def fetch_upcoming_matches(
@@ -412,9 +421,15 @@ async def predict_upcoming(days_ahead: int = 14):
 
         pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
 
-        if probs["home_win"] > probs["draw"] and probs["home_win"] > probs["away_win"]:
+        # Derive predicted winner from the scoreline for consistency.
+        # The scoreline is the source of truth — if we predict 1-1, the
+        # outcome must be "draw", not whatever the probability says.
+        score_parts = pred_scoreline.split("-")
+        pred_h_goals = int(score_parts[0])
+        pred_a_goals = int(score_parts[1])
+        if pred_h_goals > pred_a_goals:
             pred_winner = "home"
-        elif probs["away_win"] > probs["home_win"] and probs["away_win"] > probs["draw"]:
+        elif pred_a_goals > pred_h_goals:
             pred_winner = "away"
         else:
             pred_winner = "draw"

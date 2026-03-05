@@ -730,7 +730,7 @@ function ModelCard({ modelInfo }: { modelInfo: any }) {
       </div>
       {neuralCount > 0 && (
         <p className="text-[10px] text-[var(--text-tertiary)] mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
-          {neuralCount} league-specific neural models trained · 38-feature pipeline
+          {neuralCount} league-specific neural models trained · 55-feature pipeline
         </p>
       )}
     </div>

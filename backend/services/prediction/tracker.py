@@ -193,16 +193,18 @@ class PredictionTracker:
         
         Returns the created PredictionRecord.
         """
-        # Determine predicted winner
-        if home_win_prob > draw_prob and home_win_prob > away_win_prob:
+        # Most likely scoreline (rounded xG)
+        predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
+        
+        # Derive predicted winner from scoreline for consistency
+        pred_h = round(home_xG)
+        pred_a = round(away_xG)
+        if pred_h > pred_a:
             predicted_winner = "home"
-        elif away_win_prob > home_win_prob and away_win_prob > draw_prob:
+        elif pred_a > pred_h:
             predicted_winner = "away"
         else:
             predicted_winner = "draw"
-        
-        # Most likely scoreline (rounded xG)
-        predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
         
         record = PredictionRecord(
             match_id=match_id,
@@ -262,8 +264,20 @@ class PredictionTracker:
         record.actual_winner = actual_winner
         record.outcome_timestamp = datetime.utcnow().isoformat()
         
+        # Derive predicted outcome from the predicted scoreline (source of truth)
+        score_parts = (record.predicted_scoreline or "0-0").split("-")
+        pred_h = int(score_parts[0]) if len(score_parts) >= 1 else 0
+        pred_a = int(score_parts[1]) if len(score_parts) >= 2 else 0
+        derived_pred_winner = (
+            "home" if pred_h > pred_a
+            else "away" if pred_a > pred_h
+            else "draw"
+        )
+        # Ensure stored predicted_winner matches the scoreline
+        record.predicted_winner = derived_pred_winner
+        
         # Calculate accuracy flags
-        record.winner_correct = record.predicted_winner == actual_winner
+        record.winner_correct = derived_pred_winner == actual_winner
         record.scoreline_correct = record.predicted_scoreline == f"{home_goals}-{away_goals}"
         
         predicted_total = record.predicted_home_goals + record.predicted_away_goals

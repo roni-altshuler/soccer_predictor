@@ -19,6 +19,7 @@ interface RefereeStats {
   penaltiesAwarded: number
   penaltiesPerMatch: number
   competitions: string[]
+  isLeagueAverage?: boolean
 }
 
 interface TeamRefereeHistory {
@@ -61,12 +62,16 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
     const fetchRefereeData = async () => {
       setLoading(true)
       try {
-        // Try multiple endpoints for referee data
+        // Try multiple endpoints for referee data, passing team context
         let data = null
+        const qs = new URLSearchParams()
+        if (homeTeam) qs.set('home_team', homeTeam)
+        if (awayTeam) qs.set('away_team', awayTeam)
+        const suffix = qs.toString() ? '?' + qs.toString() : ''
         
         // First try the match-specific referee endpoint
         try {
-          const response = await fetch(`/api/v1/matches/${matchId}/referee`)
+          const response = await fetch(`/api/v1/matches/${matchId}/referee${suffix}`)
           if (response.ok) {
             data = await response.json()
           }
@@ -77,7 +82,7 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
         // If no data, try the referee service endpoint
         if (!data) {
           try {
-            const response = await fetch(`/api/v1/referee/match/${matchId}`)
+            const response = await fetch(`/api/v1/referee/match/${matchId}${suffix}`)
             if (response.ok) {
               data = await response.json()
             }
@@ -106,7 +111,8 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
           averageGoalsPerMatch: data.avg_goals || 2.6,
           penaltiesAwarded: data.total_penalties || 0,
           penaltiesPerMatch: data.penalties_per_match || 0,
-          competitions: data.competitions || []
+          competitions: data.competitions || [],
+          isLeagueAverage: data.is_league_average || false,
         })
 
         if (data.home_team_history) {
@@ -145,7 +151,7 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
       } catch (err) {
         // Use the referee name from match data if available, otherwise show "Not available"
         setReferee({
-          name: refereeName || 'Not available',
+          name: refereeName || 'TBD — Not yet assigned',
           country: 'Unknown',
           experience: 0,
           careerMatches: 0,
@@ -156,7 +162,8 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
           averageGoalsPerMatch: 2.78,
           penaltiesAwarded: 0,
           penaltiesPerMatch: 0.17,
-          competitions: []
+          competitions: [],
+          isLeagueAverage: !refereeName,
         })
       } finally {
         setLoading(false)
@@ -210,11 +217,18 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
           <div>
             <h4 className="text-xl font-bold text-[var(--text-primary)]">{referee.name}</h4>
             <p className="text-sm text-[var(--text-secondary)]">
-              {referee.country} • {referee.experience} years experience
+              {referee.country} {referee.experience > 0 ? `• ${referee.experience} years experience` : ''}
             </p>
-            <p className="text-xs text-[var(--text-tertiary)]">
-              {referee.careerMatches} career matches
-            </p>
+            {referee.careerMatches > 0 && (
+              <p className="text-xs text-[var(--text-tertiary)]">
+                {referee.careerMatches} career matches
+              </p>
+            )}
+            {referee.isLeagueAverage && (
+              <p className="text-xs text-amber-500 mt-1">
+                Showing league-average statistics
+              </p>
+            )}
           </div>
         </div>
       </div>
