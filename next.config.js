@@ -24,6 +24,10 @@ const nextConfig = {
       },
     ],
   },
+  // Include prediction data files in serverless function bundles
+  outputFileTracingIncludes: {
+    '/api/v1/tracking/*': ['./backend/data/predictions/**'],
+  },
 }
 
 module.exports = withPWA(nextConfig)

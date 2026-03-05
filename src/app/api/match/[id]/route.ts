@@ -49,10 +49,13 @@ interface MatchDetailsResponse {
   minute?: number
   addedTime?: number
   venue?: string
+  attendance?: number
+  capacity?: number
   date: string
   league: string
   leagueId?: string
   referee?: string
+  refereeCountry?: string
   events: MatchEvent[]
   lineups: {
     home: { name: string; position?: string; jersey?: number }[]
@@ -183,10 +186,13 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
         status,
         minute,
         venue: data.gameInfo?.venue?.fullName || competition.venue?.fullName,
+        attendance: data.gameInfo?.attendance || competition.attendance,
+        capacity: data.gameInfo?.venue?.capacity,
         date: competition.date || data.header?.competitions?.[0]?.date || '',
         league: data.header?.league?.name || league,
         leagueId: league,
         referee: data.gameInfo?.officials?.[0]?.fullName,
+        refereeCountry: data.gameInfo?.officials?.[0]?.nationality,
         events,
         lineups: {
           home: homeLineup.map((p: { athlete?: { displayName?: string }; position?: { abbreviation?: string }; jersey?: string }) => ({
@@ -323,6 +329,9 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
       league: general.leagueName || '',
       leagueId: general.leagueId?.toString(),
       referee: content.matchFacts?.infoBox?.Referee?.text,
+      refereeCountry: content.matchFacts?.infoBox?.Referee?.country,
+      attendance: content.matchFacts?.infoBox?.Attendance ? parseInt(String(content.matchFacts.infoBox.Attendance.text || '0').replace(/[^0-9]/g, '')) || undefined : undefined,
+      capacity: general.venue?.capacity,
       events,
       lineups: {
         home: (lineupData.homeTeam?.starters || []).map((p: { name?: string; positionStringShort?: string; shirt?: number }) => ({

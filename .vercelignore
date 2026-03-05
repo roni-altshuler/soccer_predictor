@@ -1,18 +1,24 @@
-# Python backend (not needed on Vercel - using Next.js API routes)
+# Python backend code (not needed on Vercel - using Next.js API routes)
+# NOTE: backend/data/predictions/ must remain deployed for the accuracy dashboard
 
-backend/
+backend/**/*.py
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/.Python
+backend/venv/
+backend/__pycache__/
+backend/data/historical/
+backend/data/models/
+backend/models/
+backend/scripts/
 .venv/
-**pycache**/
-_.pyc
-_.pyo
-\*.pyd
-.Python
 requirements.txt
 
-# Large model files (will implement lightweight prediction later)
+# Large model files
 
-_.pkl
-_.joblib
+**/*.pkl
+**/*.joblib
 
 # Scripts (not needed in production)
 
