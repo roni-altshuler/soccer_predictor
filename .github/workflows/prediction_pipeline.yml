@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install httpx scipy numpy
+          pip install httpx scipy numpy scikit-learn xgboost lightgbm
 
       - name: Fetch match outcomes
         run: python -m backend.scripts.fetch_outcomes
@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add backend/data/predictions/
+          git add backend/data/predictions/ backend/data/models/ backend/data/league_params.json backend/data/training_results.json
           
           # Only commit if there are changes
           if git diff --cached --quiet; then

@@ -399,7 +399,7 @@ export default function Home() {
               </h1>
               
               <p className="text-xl text-[var(--text-secondary)] max-w-xl mb-8 leading-relaxed">
-                Advanced machine learning predictions powered by a unified model trained on <span className="text-[var(--text-primary)] font-semibold">100,000+ matches</span> across all major leagues.
+                Advanced machine learning predictions powered by a <span className="text-[var(--text-primary)] font-semibold">neural ensemble + ELO + Poisson</span> model covering all major leagues.
               </p>
               
               <div className="flex flex-wrap gap-4">
@@ -435,10 +435,10 @@ export default function Home() {
       <section className="relative -mt-8 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <QuickStatsCard icon="📊" value="100K+" label="Matches Analyzed" color="from-indigo-600 to-indigo-700" />
-            <QuickStatsCard icon="🎯" value="72%" label="Prediction Accuracy" color="from-emerald-600 to-emerald-700" />
+            <QuickStatsCard icon="📊" value="1,100+" label="Predictions Made" color="from-indigo-600 to-indigo-700" />
+            <QuickStatsCard icon="🎯" value="55" label="Feature Dimensions" color="from-emerald-600 to-emerald-700" />
             <QuickStatsCard icon="⚽" value="12" label="Leagues Covered" color="from-amber-600 to-amber-700" />
-            <QuickStatsCard icon="🔄" value="30s" label="Live Updates" color="from-rose-600 to-rose-700" />
+            <QuickStatsCard icon="🔄" value="8hrs" label="Auto Retrain" color="from-rose-600 to-rose-700" />
           </div>
         </div>
       </section>
@@ -552,17 +552,17 @@ export default function Home() {
               <span>Unified AI Model</span>
             </div>
             <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-4">
-              One Model, All Leagues
+              Multi-Model Ensemble
             </h2>
             <p className="text-[var(--text-secondary)] mb-6 leading-relaxed">
-              Our unified prediction model is trained on historical data from all major leagues, enabling accurate cross-league comparisons and predictions that account for league-specific playing styles and competitive levels.
+              Our prediction engine combines a per-league neural ensemble (MLP + XGBoost + LightGBM + GradientBoosting + RandomForest) with ELO ratings and Dixon-Coles Poisson models for both outcome and scoreline predictions.
             </p>
             <ul className="space-y-3">
               {[
-                'ELO-style rating system with 1500 baseline',
-                'Dynamic form tracking over last 5 matches',
-                'League coefficient adjustments for cross-league accuracy',
-                'Real-time rating updates after each match'
+                'ELO ratings with league-specific coefficients',
+                'Per-league neural models with 55-feature pipeline',
+                'Market-implied probabilities + tactical stats + league characteristics',
+                'Iterative feedback loop with automatic retraining via GitHub Actions'
               ].map((item, idx) => (
                 <li key={idx} className="flex items-center gap-3 text-[var(--text-secondary)]">
                   <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center">

@@ -1,12 +1,19 @@
 """
 Historical Match Data Collection and Processing.
 
-Fetches and organizes historical match data from ESPN and FotMob
+Fetches and organizes historical match data from ESPN and football-data.co.uk
 for training the ML prediction model on past seasons.
 Supports scalable ingestion of multi-season data across all leagues.
+
+Data sources:
+  - ESPN API: match results, venues, attendance (2003+)
+  - football-data.co.uk: match results with betting odds (2005+)
+    Betting odds provide the strongest predictive signal available.
 """
 
 import asyncio
+import csv
+import io
 import json
 import os
 from typing import Dict, List, Optional, Any, Tuple
@@ -20,8 +27,6 @@ logger = logging.getLogger(__name__)
 # Directory for cached historical data
 HISTORICAL_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "historical"
 
-
-# ESPN season archive endpoints (publicly available)
 ESPN_BASE = "https://site.api.espn.com/apis"
 ESPN_LEAGUES = {
     "premier_league": "eng.1",
@@ -36,18 +41,39 @@ ESPN_LEAGUES = {
     "europa_league": "uefa.europa",
 }
 
-# Available seasons per league (ESPN archive depth varies)
+# Extended season ranges
 AVAILABLE_SEASONS = {
-    "premier_league": list(range(2015, 2026)),   # 2015-16 through 2025-26
-    "la_liga": list(range(2015, 2026)),
-    "bundesliga": list(range(2015, 2026)),
-    "serie_a": list(range(2015, 2026)),
-    "ligue_1": list(range(2015, 2026)),
-    "eredivisie": list(range(2017, 2026)),
-    "primeira_liga": list(range(2017, 2026)),
-    "mls": list(range(2018, 2026)),
-    "champions_league": list(range(2016, 2026)),
-    "europa_league": list(range(2016, 2026)),
+    "premier_league": list(range(2003, 2026)),
+    "la_liga": list(range(2003, 2026)),
+    "bundesliga": list(range(2003, 2026)),
+    "serie_a": list(range(2003, 2026)),
+    "ligue_1": list(range(2005, 2026)),
+    "eredivisie": list(range(2008, 2026)),
+    "primeira_liga": list(range(2008, 2026)),
+    "mls": list(range(2005, 2026)),
+    "champions_league": list(range(2005, 2026)),
+    "europa_league": list(range(2009, 2026)),
+}
+
+# football-data.co.uk CSV codes
+FOOTBALL_DATA_LEAGUES = {
+    "premier_league": "E0",
+    "la_liga": "SP1",
+    "bundesliga": "D1",
+    "serie_a": "I1",
+    "ligue_1": "F1",
+    "eredivisie": "N1",
+    "primeira_liga": "P1",
+}
+
+FOOTBALL_DATA_SEASONS = {
+    "premier_league": list(range(2005, 2026)),
+    "la_liga": list(range(2005, 2026)),
+    "bundesliga": list(range(2005, 2026)),
+    "serie_a": list(range(2005, 2026)),
+    "ligue_1": list(range(2005, 2026)),
+    "eredivisie": list(range(2008, 2026)),
+    "primeira_liga": list(range(2012, 2026)),
 }
 
 
@@ -67,6 +93,15 @@ class HistoricalMatch:
         "matchday", "total_matchdays",
         "home_position", "away_position",
         "is_derby",
+        "odds_home", "odds_draw", "odds_away",
+        "odds_over_2_5", "odds_under_2_5",
+        "home_shots", "away_shots",
+        "home_shots_on_target", "away_shots_on_target",
+        "home_corners", "away_corners",
+        "home_fouls", "away_fouls",
+        "home_yellows", "away_yellows",
+        "home_reds", "away_reds",
+        "referee",
     ]
 
     def __init__(self, **kwargs):
@@ -84,9 +119,7 @@ class HistoricalMatch:
 class HistoricalDataCollector:
     """
     Collects and caches historical match data across multiple seasons.
-    
-    Data is persisted to disk as JSON so it only needs to be fetched once.
-    Supports incremental updates for the current season.
+    Dual-source: ESPN API + football-data.co.uk (adds betting odds & stats).
     """
 
     def __init__(self, data_dir: Optional[Path] = None):
@@ -98,7 +131,7 @@ class HistoricalDataCollector:
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
                 timeout=30.0,
-                headers={"User-Agent": "SoccerPredictor/3.0"},
+                headers={"User-Agent": "SoccerPredictor/4.0"},
                 follow_redirects=True,
             )
         return self._client
@@ -114,7 +147,6 @@ class HistoricalDataCollector:
         path = self._cache_path(league, season)
         if not path.exists():
             return False
-        # For current season, re-fetch if older than 1 day
         current_year = datetime.now().year
         if season >= current_year - 1:
             mtime = datetime.fromtimestamp(path.stat().st_mtime)
@@ -122,34 +154,156 @@ class HistoricalDataCollector:
                 return False
         return True
 
+    # ── football-data.co.uk CSV fetcher ──
+
+    async def fetch_football_data_season(
+        self, league: str, season: int, force: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Fetch match data with betting odds from football-data.co.uk."""
+        fd_code = FOOTBALL_DATA_LEAGUES.get(league)
+        if not fd_code:
+            return []
+
+        available = FOOTBALL_DATA_SEASONS.get(league, [])
+        if season not in available:
+            return []
+
+        cache_path = self.data_dir / f"fd_{league}_{season}_{season + 1}.json"
+        if not force and cache_path.exists():
+            try:
+                with open(cache_path) as f:
+                    data = json.load(f)
+                return data.get("matches", [])
+            except Exception:
+                pass
+
+        season_str = f"{str(season)[-2:]}{str(season + 1)[-2:]}"
+        url = f"https://www.football-data.co.uk/mmz4281/{season_str}/{fd_code}.csv"
+
+        client = await self._get_client()
+        matches = []
+
+        try:
+            resp = await client.get(url, timeout=20)
+            if resp.status_code != 200:
+                logger.debug(f"football-data.co.uk {url} returned {resp.status_code}")
+                return []
+
+            text = resp.text
+            reader = csv.DictReader(io.StringIO(text))
+
+            for row in reader:
+                try:
+                    date_str = row.get("Date", "")
+                    try:
+                        match_date = datetime.strptime(date_str, "%d/%m/%Y")
+                    except ValueError:
+                        try:
+                            match_date = datetime.strptime(date_str, "%d/%m/%y")
+                        except ValueError:
+                            continue
+
+                    home = row.get("HomeTeam", "").strip()
+                    away = row.get("AwayTeam", "").strip()
+                    if not home or not away:
+                        continue
+
+                    fthg = row.get("FTHG", row.get("HG", ""))
+                    ftag = row.get("FTAG", row.get("AG", ""))
+                    if not fthg or not ftag:
+                        continue
+
+                    home_score = int(fthg)
+                    away_score = int(ftag)
+
+                    ftr = row.get("FTR", "")
+                    if not ftr:
+                        if home_score > away_score:
+                            ftr = "H"
+                        elif away_score > home_score:
+                            ftr = "A"
+                        else:
+                            ftr = "D"
+
+                    def _sf(val, default=None):
+                        try:
+                            return float(val) if val else default
+                        except (ValueError, TypeError):
+                            return default
+
+                    odds_h = _sf(row.get("PSH")) or _sf(row.get("B365H"))
+                    odds_d = _sf(row.get("PSD")) or _sf(row.get("B365D"))
+                    odds_a = _sf(row.get("PSA")) or _sf(row.get("B365A"))
+                    odds_o25 = _sf(row.get("BbAv>2.5")) or _sf(row.get("P>2.5"))
+                    odds_u25 = _sf(row.get("BbAv<2.5")) or _sf(row.get("P<2.5"))
+
+                    match = {
+                        "match_id": f"fd_{league}_{match_date.strftime('%Y%m%d')}_{home}_{away}",
+                        "league": league,
+                        "season": season,
+                        "date": match_date.isoformat(),
+                        "home_team": home,
+                        "away_team": away,
+                        "home_score": home_score,
+                        "away_score": away_score,
+                        "result": ftr,
+                        "referee": row.get("Referee", ""),
+                        "odds_home": odds_h,
+                        "odds_draw": odds_d,
+                        "odds_away": odds_a,
+                        "odds_over_2_5": odds_o25,
+                        "odds_under_2_5": odds_u25,
+                        "home_shots": _sf(row.get("HS")),
+                        "away_shots": _sf(row.get("AS")),
+                        "home_shots_on_target": _sf(row.get("HST")),
+                        "away_shots_on_target": _sf(row.get("AST")),
+                        "home_corners": _sf(row.get("HC")),
+                        "away_corners": _sf(row.get("AC")),
+                        "home_fouls": _sf(row.get("HF")),
+                        "away_fouls": _sf(row.get("AF")),
+                        "home_yellows": _sf(row.get("HY")),
+                        "away_yellows": _sf(row.get("AY")),
+                        "home_reds": _sf(row.get("HR")),
+                        "away_reds": _sf(row.get("AR")),
+                    }
+                    matches.append(match)
+                except Exception:
+                    continue
+
+            if matches:
+                with open(cache_path, "w") as f:
+                    json.dump({
+                        "league": league,
+                        "season": f"{season}/{season + 1}",
+                        "source": "football-data.co.uk",
+                        "fetched_at": datetime.utcnow().isoformat(),
+                        "match_count": len(matches),
+                        "matches": matches,
+                    }, f, indent=2)
+                logger.info(f"FD: {len(matches)} matches for {league} {season}/{season+1}")
+
+        except Exception as e:
+            logger.warning(f"Error fetching football-data {league} {season}: {e}")
+
+        return matches
+
+    # ── ESPN fetcher ──
+
     async def fetch_season_matches(
         self, league: str, season: int, force: bool = False
     ) -> List[Dict[str, Any]]:
-        """
-        Fetch all matches for a league season from ESPN.
-        
-        Args:
-            league: League key (e.g., 'premier_league')
-            season: Start year of season (e.g., 2023 for 2023-24)
-            force: Force re-fetch even if cached
-        
-        Returns:
-            List of match dictionaries
-        """
+        """Fetch all matches for a league season from ESPN."""
         if not force and self._is_cached(league, season):
             return self._load_cache(league, season)
 
         espn_id = ESPN_LEAGUES.get(league)
         if not espn_id:
-            logger.warning(f"Unknown league: {league}")
             return []
 
         client = await self._get_client()
         all_matches = []
 
         try:
-            # ESPN scoreboard with season filter — paginate by date range
-            # Each season roughly spans Aug-May (or Feb-Nov for MLS)
             if league == "mls":
                 start_date = datetime(season, 2, 1)
                 end_date = datetime(season, 12, 15)
@@ -164,25 +318,20 @@ class HistoricalDataCollector:
                     f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
                     f"?dates={date_str}&limit=100"
                 )
-
                 try:
                     resp = await client.get(url)
                     if resp.status_code == 200:
                         data = resp.json()
-                        events = data.get("events", [])
-                        for event in events:
+                        for event in data.get("events", []):
                             match = self._parse_espn_event(event, league, season)
                             if match:
                                 all_matches.append(match)
                 except Exception as e:
                     logger.debug(f"Error fetching {league} {date_str}: {e}")
 
-                # Move forward by 7 days to reduce API calls
                 current += timedelta(days=7)
-                # Small delay to respect rate limits
                 await asyncio.sleep(0.15)
 
-            # Deduplicate by match_id
             seen = set()
             unique_matches = []
             for m in all_matches:
@@ -191,27 +340,19 @@ class HistoricalDataCollector:
                     seen.add(mid)
                     unique_matches.append(m)
 
-            # Cache results
             self._save_cache(league, season, unique_matches)
-            logger.info(
-                f"Fetched {len(unique_matches)} matches for {league} {season}/{season+1}"
-            )
+            logger.info(f"Fetched {len(unique_matches)} matches for {league} {season}/{season+1}")
             return unique_matches
 
         except Exception as e:
             logger.error(f"Error fetching {league} season {season}: {e}")
-            # Return cached data if available
             return self._load_cache(league, season)
 
-    def _parse_espn_event(
-        self, event: Dict, league: str, season: int
-    ) -> Optional[Dict[str, Any]]:
+    def _parse_espn_event(self, event: Dict, league: str, season: int) -> Optional[Dict[str, Any]]:
         """Parse an ESPN event into a standardized match dict."""
         try:
             competition = event.get("competitions", [{}])[0]
             status = competition.get("status", {}).get("type", {})
-
-            # Only include completed matches
             if not status.get("completed", False):
                 return None
 
@@ -219,19 +360,14 @@ class HistoricalDataCollector:
             if len(competitors) < 2:
                 return None
 
-            home = next(
-                (c for c in competitors if c.get("homeAway") == "home"), None
-            )
-            away = next(
-                (c for c in competitors if c.get("homeAway") == "away"), None
-            )
+            home = next((c for c in competitors if c.get("homeAway") == "home"), None)
+            away = next((c for c in competitors if c.get("homeAway") == "away"), None)
             if not home or not away:
                 return None
 
             home_score = int(home.get("score", "0"))
             away_score = int(away.get("score", "0"))
 
-            # Determine result
             if home_score > away_score:
                 result = "H"
             elif away_score > home_score:
@@ -240,7 +376,6 @@ class HistoricalDataCollector:
                 result = "D"
 
             venue = competition.get("venue", {})
-
             return {
                 "match_id": str(event.get("id", "")),
                 "league": league,
@@ -257,33 +392,24 @@ class HistoricalDataCollector:
                 "attendance": venue.get("capacity"),
                 "matchday": event.get("week", {}).get("number"),
             }
-        except Exception as e:
-            logger.debug(f"Error parsing ESPN event: {e}")
+        except Exception:
             return None
 
-    def _save_cache(
-        self, league: str, season: int, matches: List[Dict]
-    ):
-        """Save matches to cache file."""
+    def _save_cache(self, league: str, season: int, matches: List[Dict]):
         path = self._cache_path(league, season)
         try:
             with open(path, "w") as f:
-                json.dump(
-                    {
-                        "league": league,
-                        "season": f"{season}/{season + 1}",
-                        "fetched_at": datetime.utcnow().isoformat(),
-                        "match_count": len(matches),
-                        "matches": matches,
-                    },
-                    f,
-                    indent=2,
-                )
+                json.dump({
+                    "league": league,
+                    "season": f"{season}/{season + 1}",
+                    "fetched_at": datetime.utcnow().isoformat(),
+                    "match_count": len(matches),
+                    "matches": matches,
+                }, f, indent=2)
         except Exception as e:
             logger.error(f"Error saving cache: {e}")
 
     def _load_cache(self, league: str, season: int) -> List[Dict]:
-        """Load matches from cache file."""
         path = self._cache_path(league, season)
         if not path.exists():
             return []
@@ -291,27 +417,16 @@ class HistoricalDataCollector:
             with open(path, "r") as f:
                 data = json.load(f)
                 return data.get("matches", [])
-        except Exception as e:
-            logger.error(f"Error loading cache: {e}")
+        except Exception:
             return []
 
     async def fetch_all_historical_data(
         self,
         leagues: Optional[List[str]] = None,
-        min_season: int = 2018,
+        min_season: int = 2010,
         force: bool = False,
     ) -> Dict[str, List[Dict]]:
-        """
-        Fetch historical data across all leagues and seasons.
-        
-        Args:
-            leagues: List of league keys (None = all)
-            min_season: Earliest season to fetch
-            force: Force re-fetch
-        
-        Returns:
-            Dict mapping league -> list of all matches
-        """
+        """Fetch and merge historical data from both ESPN and football-data.co.uk."""
         target_leagues = leagues or list(ESPN_LEAGUES.keys())
         all_data: Dict[str, List[Dict]] = {}
 
@@ -324,15 +439,98 @@ class HistoricalDataCollector:
                 matches = await self.fetch_season_matches(league, season, force)
                 league_matches.extend(matches)
 
+            # Add football-data.co.uk data (betting odds)
+            fd_seasons = FOOTBALL_DATA_SEASONS.get(league, [])
+            fd_all = []
+            for season in [s for s in fd_seasons if s >= min_season]:
+                fd_matches = await self.fetch_football_data_season(league, season, force)
+                fd_all.extend(fd_matches)
+
+            if fd_all:
+                league_matches = self._merge_data_sources(league_matches, fd_all)
+
             all_data[league] = league_matches
-            logger.info(
-                f"Collected {len(league_matches)} total matches for {league}"
-            )
+            logger.info(f"Collected {len(league_matches)} total matches for {league}")
 
         return all_data
 
+    def _merge_data_sources(self, espn_matches: List[Dict], fd_matches: List[Dict]) -> List[Dict]:
+        """Merge ESPN and football-data.co.uk data by date + team names."""
+        fd_lookup: Dict[tuple, Dict] = {}
+        for m in fd_matches:
+            try:
+                d = m.get("date", "")[:10]
+                h = self._normalize_team(m.get("home_team", ""))
+                a = self._normalize_team(m.get("away_team", ""))
+                fd_lookup[(d, h, a)] = m
+            except Exception:
+                continue
+
+        merged = []
+        matched_fd_keys = set()
+
+        for em in espn_matches:
+            try:
+                d = em.get("date", "")[:10]
+                h = self._normalize_team(em.get("home_team", ""))
+                a = self._normalize_team(em.get("away_team", ""))
+                key = (d, h, a)
+
+                if key in fd_lookup:
+                    fm = fd_lookup[key]
+                    matched_fd_keys.add(key)
+                    for field in [
+                        "odds_home", "odds_draw", "odds_away",
+                        "odds_over_2_5", "odds_under_2_5",
+                        "home_shots", "away_shots",
+                        "home_shots_on_target", "away_shots_on_target",
+                        "home_corners", "away_corners",
+                        "home_fouls", "away_fouls",
+                        "home_yellows", "away_yellows",
+                        "home_reds", "away_reds",
+                        "referee",
+                    ]:
+                        if fm.get(field) is not None:
+                            em[field] = fm[field]
+
+                merged.append(em)
+            except Exception:
+                merged.append(em)
+
+        for key, fm in fd_lookup.items():
+            if key not in matched_fd_keys:
+                merged.append(fm)
+
+        return merged
+
+    @staticmethod
+    def _normalize_team(name: str) -> str:
+        """Normalize team name for fuzzy matching."""
+        name = name.lower().strip()
+        replacements = {
+            "man united": "manchester united",
+            "man city": "manchester city",
+            "wolves": "wolverhampton",
+            "spurs": "tottenham",
+            "nott'm forest": "nottingham forest",
+            "sheffield utd": "sheffield united",
+            "atletico": "atletico madrid",
+            "ath madrid": "atletico madrid",
+            "ath bilbao": "athletic bilbao",
+            "betis": "real betis",
+            "sociedad": "real sociedad",
+            "hertha": "hertha berlin",
+            "gladbach": "m'gladbach",
+            "leverkusen": "bayer leverkusen",
+            "st etienne": "saint-etienne",
+            "paris sg": "paris saint-germain",
+        }
+        for short, full in replacements.items():
+            if name == short:
+                return full
+        return name
+
     def get_cached_match_count(self) -> Dict[str, int]:
-        """Get count of cached matches per league."""
         counts: Dict[str, int] = {}
         for path in self.data_dir.glob("*.json"):
             try:
@@ -345,13 +543,9 @@ class HistoricalDataCollector:
                 continue
         return counts
 
-    def load_all_cached_matches(
-        self, leagues: Optional[List[str]] = None
-    ) -> List[Dict]:
-        """Load all cached historical matches into a flat list."""
+    def load_all_cached_matches(self, leagues: Optional[List[str]] = None) -> List[Dict]:
         target = leagues or list(ESPN_LEAGUES.keys())
         all_matches = []
-
         for path in sorted(self.data_dir.glob("*.json")):
             try:
                 with open(path) as f:
@@ -361,16 +555,13 @@ class HistoricalDataCollector:
                         all_matches.extend(data.get("matches", []))
             except Exception:
                 continue
-
         return all_matches
 
 
-# Singleton
 _collector: Optional[HistoricalDataCollector] = None
 
 
 def get_historical_collector() -> HistoricalDataCollector:
-    """Get or create historical data collector singleton."""
     global _collector
     if _collector is None:
         _collector = HistoricalDataCollector()

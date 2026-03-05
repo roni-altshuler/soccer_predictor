@@ -80,15 +80,15 @@ function pct(n: number): string {
 }
 
 function accuracyColor(a: number): string {
-  if (a >= 0.65) return '#22c55e'
-  if (a >= 0.5) return '#f59e0b'
+  if (a >= 0.6) return '#22c55e'
+  if (a >= 0.45) return '#f59e0b'
   return '#ef4444'
 }
 
 function winnerLabel(w: string): string {
-  if (w === 'home') return 'Home'
-  if (w === 'away') return 'Away'
-  return 'Draw'
+  if (w === 'home') return 'H'
+  if (w === 'away') return 'A'
+  return 'D'
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export default function AccuracyDashboard() {
     try {
       const [summaryRes, trendRes, statusRes, modelRes] = await Promise.all([
         fetch('/api/v1/tracking/accuracy/summary'),
-        fetch(`/api/v1/tracking/accuracy/trend?window=${trendWindow}`),
+        fetch('/api/v1/tracking/accuracy/trend?window=' + trendWindow),
         fetch('/api/v1/tracking/outcome-status'),
         fetch('/api/v1/tracking/model-info'),
       ])
@@ -157,53 +157,43 @@ export default function AccuracyDashboard() {
   const m = summary.overall
 
   return (
-    <div className="space-y-6">
-      {/* ── Headline Metric ── */}
-      <HeadlineCard metrics={m} streak={summary.current_streak} form={summary.recent_form} />
+    <div className="space-y-5">
+      {/* Hero Metrics Row */}
+      <HeroMetrics metrics={m} streak={summary.current_streak} form={summary.recent_form} />
 
-      {/* ── 30-day vs All-time Comparison ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <MetricCard title="All-time" metrics={m} />
-        <MetricCard title="Last 30 Days" metrics={summary.last_30_days} />
-      </div>
+      {/* Key Performance Indicators */}
+      <KPIGrid metrics={m} last30={summary.last_30_days} />
 
-      {/* ── Outcome Distribution (Home/Draw/Away predicted vs actual accuracy) ── */}
-      <OutcomeDistribution metrics={m} />
+      {/* Outcome Accuracy */}
+      <OutcomeAccuracy metrics={m} />
 
-      {/* ── Accuracy Trend Chart ── */}
+      {/* Accuracy Over Time */}
       {trend && trend.data_points > 0 && (
         <TrendChart trend={trend} window={trendWindow} onWindowChange={setTrendWindow} />
       )}
 
-      {/* ── By-League Breakdown ── */}
+      {/* League Breakdown */}
       {Object.keys(summary.by_league).length > 0 && (
         <LeagueBreakdown data={summary.by_league} />
       )}
 
-      {/* ── Prediction History (paginated, filterable) ── */}
-      <PredictedVsActual initialPredictions={summary.recent_predictions} />
+      {/* Prediction History */}
+      <PredictionHistory initialPredictions={summary.recent_predictions} />
 
-      {/* ── Per-League Model Info ── */}
-      <LeagueModelInfoPanel modelInfo={modelInfo} />
-
-      {/* ── Model Architecture Card ── */}
-      <ModelMethodsCard modelInfo={modelInfo} />
-
-      {/* ── Outcome Fetcher Status ── */}
-      <FetcherPanel
-        status={fetcherStatus}
-        fetching={fetching}
-        onFetch={triggerFetch}
-      />
+      {/* Model Info + Fetch */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <ModelCard modelInfo={modelInfo} />
+        <FetcherPanel status={fetcherStatus} fetching={fetching} onFetch={triggerFetch} />
+      </div>
     </div>
   )
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   HeadlineCard – big "8/10 correct" display
+   HeroMetrics — Primary accuracy display
    ────────────────────────────────────────────────────────────────────── */
 
-function HeadlineCard({
+function HeroMetrics({
   metrics,
   streak,
   form,
@@ -212,65 +202,92 @@ function HeadlineCard({
   streak: { type: string; count: number }
   form: string[]
 }) {
-  const acc = metrics.winner_accuracy
-  const color = accuracyColor(acc)
+  const outcomeAcc = metrics.winner_accuracy
+  const scoreAcc = metrics.exact_scoreline_rate
+  const outcomeColor = accuracyColor(outcomeAcc)
+  const scoreColor = accuracyColor(scoreAcc)
 
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl p-6" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        {/* Big donut */}
-        <div className="relative w-40 h-40 flex-shrink-0">
-          <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
-            <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="10" fill="none" />
-            <circle
-              cx="64"
-              cy="64"
-              r="52"
-              stroke={color}
-              strokeWidth="10"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${acc * 326.7} 326.7`}
-              className="transition-all duration-700"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold" style={{ color }}>{pct(acc)}</span>
-            <span className="text-xs text-[var(--text-tertiary)]">Accuracy</span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex-1 text-center md:text-left space-y-3">
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">
-            <span style={{ color }}>{metrics.winner_correct_count}</span> /{' '}
-            {metrics.completed_predictions} correct
-          </h2>
-          <p className="text-[var(--text-secondary)] text-sm">
-            Exact scoreline: {metrics.exact_scoreline_count ?? 0} ({pct(metrics.exact_scoreline_rate ?? 0)})
-            &nbsp;·&nbsp; Brier Score: {(metrics.brier_score ?? 0).toFixed(3)}
-          </p>
-
-          {/* Recent form badges */}
-          <div className="flex gap-1 justify-center md:justify-start">
-            {form.slice(0, 15).map((r, i) => (
-              <span
-                key={i}
-                className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold text-white ${
-                  r === 'W' ? 'bg-green-500' : 'bg-red-400'
-                }`}
-              >
-                {r}
-              </span>
-            ))}
+    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          {/* Outcome Accuracy Ring */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative w-32 h-32">
+              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
+                <circle
+                  cx="64" cy="64" r="52"
+                  stroke={outcomeColor} strokeWidth="8" fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={outcomeAcc * 326.7 + ' 326.7'}
+                  className="transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold" style={{ color: outcomeColor }}>{pct(outcomeAcc)}</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Outcome Accuracy</p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                {metrics.winner_correct_count}/{metrics.completed_predictions} correct
+              </p>
+            </div>
           </div>
 
-          {streak.type !== 'N/A' && (
-            <p className="text-sm text-[var(--text-tertiary)]">
-              Current streak: {streak.count}{' '}
-              {streak.type === 'W' ? '✅ correct' : '❌ incorrect'}
-            </p>
-          )}
+          {/* Scoreline Accuracy Ring */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative w-32 h-32">
+              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
+                <circle
+                  cx="64" cy="64" r="52"
+                  stroke={scoreColor} strokeWidth="8" fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={scoreAcc * 326.7 + ' 326.7'}
+                  className="transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold" style={{ color: scoreColor }}>{pct(scoreAcc)}</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Scoreline Accuracy</p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                {metrics.exact_scoreline_count ?? 0}/{metrics.completed_predictions} exact
+              </p>
+            </div>
+          </div>
+
+          {/* Stats + Form */}
+          <div className="flex-1 space-y-4">
+            <div>
+              <p className="text-sm font-medium text-[var(--text-secondary)] mb-1">Recent Form (Last 15)</p>
+              <div className="flex gap-1 flex-wrap">
+                {form.slice(0, 15).map((r, i) => (
+                  <span
+                    key={i}
+                    className={'w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white ' + (r === 'W' ? 'bg-emerald-500' : 'bg-red-400')}
+                  >
+                    {r === 'W' ? '\u2713' : '\u2717'}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {streak.type !== 'N/A' && (
+              <p className="text-xs text-[var(--text-tertiary)]">
+                Current streak: <span className="font-semibold text-[var(--text-primary)]">{streak.count}</span>{' '}
+                {streak.type === 'W' ? 'correct' : 'incorrect'} in a row
+              </p>
+            )}
+            <div className="flex gap-4 text-xs text-[var(--text-tertiary)]">
+              <span>Brier: <span className="font-medium text-[var(--text-primary)]">{(metrics.brier_score ?? 0).toFixed(3)}</span></span>
+              <span>Avg Goal Diff: <span className="font-medium text-[var(--text-primary)]">{(metrics.avg_goals_difference ?? 0).toFixed(2)}</span></span>
+              <span>Within 1 Goal: <span className="font-medium text-[var(--text-primary)]">{pct(metrics.within_1_goal_rate ?? 0)}</span></span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -278,76 +295,78 @@ function HeadlineCard({
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   MetricCard – mini stat card (all-time or 30-day)
+   KPIGrid — 6 clean stat cards
    ────────────────────────────────────────────────────────────────────── */
 
-function MetricCard({ title, metrics }: { title: string; metrics: OverallMetrics }) {
-  const rows = [
-    { label: 'Winner Accuracy', value: pct(metrics.winner_accuracy ?? 0) },
-    { label: 'High Confidence', value: pct(metrics.high_confidence_accuracy ?? 0) },
-    { label: 'Med Confidence', value: pct(metrics.medium_confidence_accuracy ?? 0) },
-    { label: 'Low Confidence', value: pct(metrics.low_confidence_accuracy ?? 0) },
-    { label: 'Within 1 goal', value: pct(metrics.within_1_goal_rate ?? 0) },
-    { label: 'Avg goals diff', value: (metrics.avg_goals_difference ?? 0).toFixed(2) },
+function KPIGrid({ metrics, last30 }: { metrics: OverallMetrics; last30: OverallMetrics }) {
+  const kpis = [
+    {
+      label: 'All-Time Outcome',
+      value: pct(metrics.winner_accuracy),
+      sub: metrics.completed_predictions + ' matches',
+      color: accuracyColor(metrics.winner_accuracy),
+    },
+    {
+      label: 'Last 30 Days',
+      value: last30.completed_predictions > 0 ? pct(last30.winner_accuracy) : '\u2014',
+      sub: last30.completed_predictions + ' matches',
+      color: last30.completed_predictions > 0 ? accuracyColor(last30.winner_accuracy) : '#888',
+    },
+    {
+      label: 'High Confidence',
+      value: pct(metrics.high_confidence_accuracy),
+      sub: 'Confidence \u2265 55%',
+      color: accuracyColor(metrics.high_confidence_accuracy),
+    },
+    {
+      label: 'Medium Confidence',
+      value: pct(metrics.medium_confidence_accuracy),
+      sub: 'Confidence 42\u201355%',
+      color: accuracyColor(metrics.medium_confidence_accuracy),
+    },
+    {
+      label: 'Low Confidence',
+      value: pct(metrics.low_confidence_accuracy),
+      sub: 'Confidence < 42%',
+      color: accuracyColor(metrics.low_confidence_accuracy),
+    },
+    {
+      label: 'Exact Scoreline',
+      value: pct(metrics.exact_scoreline_rate),
+      sub: (metrics.exact_scoreline_count ?? 0) + ' of ' + metrics.completed_predictions,
+      color: accuracyColor(metrics.exact_scoreline_rate),
+    },
   ]
 
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3 uppercase tracking-wide">
-        {title}
-      </h3>
-      <div className="space-y-2">
-        {rows.map((r) => (
-          <div key={r.label} className="flex justify-between text-sm">
-            <span className="text-[var(--text-tertiary)]">{r.label}</span>
-            <span className="font-medium text-[var(--text-primary)]">{r.value}</span>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-[var(--text-tertiary)] mt-3">
-        Based on {metrics.completed_predictions} completed predictions
-      </p>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {kpis.map((k) => (
+        <div key={k.label} className="bg-[var(--card-bg)] border rounded-xl p-4 text-center" style={{ borderColor: 'var(--border-color)' }}>
+          <p className="text-2xl font-bold" style={{ color: k.color }}>{k.value}</p>
+          <p className="text-xs font-medium text-[var(--text-primary)] mt-1">{k.label}</p>
+          <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{k.sub}</p>
+        </div>
+      ))}
     </div>
   )
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   OutcomeDistribution – How accurate per predicted outcome (Home/Draw/Away)
+   OutcomeAccuracy — Home/Draw/Away accuracy bars
    ────────────────────────────────────────────────────────────────────── */
 
-function OutcomeDistribution({ metrics }: { metrics: OverallMetrics }) {
+function OutcomeAccuracy({ metrics }: { metrics: OverallMetrics }) {
   const outcomes = [
-    {
-      label: 'Home Win',
-      predicted: metrics.home_win_predicted ?? 0,
-      correct: metrics.home_win_correct ?? 0,
-      color: '#22c55e',
-      bgColor: 'rgba(34,197,94,0.1)',
-      icon: '🏠',
-    },
-    {
-      label: 'Draw',
-      predicted: metrics.draw_predicted ?? 0,
-      correct: metrics.draw_correct ?? 0,
-      color: '#f59e0b',
-      bgColor: 'rgba(245,158,11,0.1)',
-      icon: '🤝',
-    },
-    {
-      label: 'Away Win',
-      predicted: metrics.away_win_predicted ?? 0,
-      correct: metrics.away_win_correct ?? 0,
-      color: '#6366f1',
-      bgColor: 'rgba(99,102,241,0.1)',
-      icon: '✈️',
-    },
+    { label: 'Home Win', predicted: metrics.home_win_predicted ?? 0, correct: metrics.home_win_correct ?? 0, color: '#22c55e' },
+    { label: 'Draw', predicted: metrics.draw_predicted ?? 0, correct: metrics.draw_correct ?? 0, color: '#f59e0b' },
+    { label: 'Away Win', predicted: metrics.away_win_predicted ?? 0, correct: metrics.away_win_correct ?? 0, color: '#6366f1' },
   ]
 
   const totalPredicted = outcomes.reduce((s, o) => s + o.predicted, 0) || 1
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
+      <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-4">
         Accuracy by Predicted Outcome
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -355,31 +374,17 @@ function OutcomeDistribution({ metrics }: { metrics: OverallMetrics }) {
           const acc = o.predicted > 0 ? o.correct / o.predicted : 0
           const share = o.predicted / totalPredicted
           return (
-            <div
-              key={o.label}
-              className="rounded-xl border p-4"
-              style={{ borderColor: 'var(--border-color)', background: o.bgColor }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{o.icon}</span>
-                <span className="font-semibold text-sm text-[var(--text-primary)]">{o.label}</span>
-              </div>
-              <div className="flex items-end justify-between mb-2">
-                <div>
-                  <span className="text-2xl font-bold" style={{ color: o.color }}>{pct(acc)}</span>
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    {o.correct}/{o.predicted} correct
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-[var(--text-tertiary)]">{pct(share)} of picks</p>
-                </div>
+            <div key={o.label} className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm font-medium text-[var(--text-primary)]">{o.label}</span>
+                <span className="text-lg font-bold" style={{ color: o.color }}>{pct(acc)}</span>
               </div>
               <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${acc * 100}%`, backgroundColor: o.color }}
-                />
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: acc * 100 + '%', backgroundColor: o.color }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+                <span>{o.correct}/{o.predicted} correct</span>
+                <span>{pct(share)} of all picks</span>
               </div>
             </div>
           )
@@ -390,7 +395,7 @@ function OutcomeDistribution({ metrics }: { metrics: OverallMetrics }) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   TrendChart – SVG rolling accuracy line chart
+   TrendChart — SVG rolling accuracy line
    ────────────────────────────────────────────────────────────────────── */
 
 function TrendChart({
@@ -405,42 +410,30 @@ function TrendChart({
   const points = trend.trend
   if (points.length < 2) return null
 
-  const W = 600
-  const H = 200
-  const PAD = 40
-
-  const xs = points.map((_, i) => PAD + (i / (points.length - 1)) * (W - 2 * PAD))
-  const minA = Math.min(...points.map((p) => p.accuracy)) - 0.05
-  const maxA = Math.max(...points.map((p) => p.accuracy)) + 0.05
-  const ys = points.map((p) => PAD + (1 - (p.accuracy - minA) / (maxA - minA)) * (H - 2 * PAD))
-
-  const pathD = points.map((_, i) => `${i === 0 ? 'M' : 'L'}${xs[i].toFixed(1)},${ys[i].toFixed(1)}`).join(' ')
-
-  // Area fill
-  const areaD = pathD + ` L${xs[xs.length - 1].toFixed(1)},${H - PAD} L${xs[0].toFixed(1)},${H - PAD} Z`
-
-  // Y-axis labels
-  const yLabels = [minA, (minA + maxA) / 2, maxA].map((v) => ({
-    value: v,
-    y: PAD + (1 - (v - minA) / (maxA - minA)) * (H - 2 * PAD),
-  }))
+  const W = 600, H = 180, PAD = 40
+  const xs = points.map((_: TrendPoint, i: number) => PAD + (i / (points.length - 1)) * (W - 2 * PAD))
+  const minA = Math.min(...points.map((p: TrendPoint) => p.accuracy)) - 0.05
+  const maxA = Math.max(...points.map((p: TrendPoint) => p.accuracy)) + 0.05
+  const ys = points.map((p: TrendPoint) => PAD + (1 - (p.accuracy - minA) / (maxA - minA)) * (H - 2 * PAD))
+  const pathD = points.map((_: TrendPoint, i: number) => (i === 0 ? 'M' : 'L') + xs[i].toFixed(1) + ',' + ys[i].toFixed(1)).join(' ')
+  const areaD = pathD + ' L' + xs[xs.length - 1].toFixed(1) + ',' + (H - PAD) + ' L' + xs[0].toFixed(1) + ',' + (H - PAD) + ' Z'
+  const yLabels = [minA, (minA + maxA) / 2, maxA].map(v => ({ value: v, y: PAD + (1 - (v - minA) / (maxA - minA)) * (H - 2 * PAD) }))
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-          Accuracy Over Time (rolling {window})
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+          Rolling Accuracy (window: {window})
         </h3>
         <div className="flex gap-1">
-          {[10, 20, 50].map((w) => (
+          {[10, 20, 50].map(w => (
             <button
               key={w}
               onClick={() => onWindowChange(w)}
-              className={`px-2 py-0.5 rounded text-xs ${
-                window === w
-                  ? 'bg-[var(--accent-primary)] text-white'
-                  : 'bg-[var(--muted-bg)] text-[var(--text-tertiary)]'
-              }`}
+              className={'px-2.5 py-1 rounded-md text-xs font-medium transition-colors ' + (window === w
+                ? 'bg-[var(--accent-primary)] text-white'
+                : 'bg-[var(--muted-bg)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+              )}
             >
               {w}
             </button>
@@ -448,36 +441,24 @@ function TrendChart({
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-        {/* Grid lines */}
+      <svg viewBox={'0 0 ' + W + ' ' + H} className="w-full" preserveAspectRatio="xMidYMid meet">
         {yLabels.map((l, i) => (
           <g key={i}>
             <line x1={PAD} y1={l.y} x2={W - PAD} y2={l.y} stroke="var(--border-color)" strokeDasharray="4" />
-            <text x={PAD - 4} y={l.y + 4} textAnchor="end" fontSize="10" fill="var(--text-tertiary)">
-              {pct(l.value)}
-            </text>
+            <text x={PAD - 4} y={l.y + 4} textAnchor="end" fontSize="9" fill="var(--text-tertiary)">{pct(l.value)}</text>
           </g>
         ))}
-
-        {/* 50% reference line */}
         {(() => {
           const y50 = PAD + (1 - (0.5 - minA) / (maxA - minA)) * (H - 2 * PAD)
           return y50 >= PAD && y50 <= H - PAD ? (
-            <line x1={PAD} y1={y50} x2={W - PAD} y2={y50} stroke="#f59e0b" strokeDasharray="6 3" opacity={0.5} />
+            <line x1={PAD} y1={y50} x2={W - PAD} y2={y50} stroke="#f59e0b" strokeDasharray="6 3" opacity={0.4} />
           ) : null
         })()}
-
-        {/* Area fill */}
-        <path d={areaD} fill="url(#trendGrad)" opacity={0.2} />
-
-        {/* Line */}
-        <path d={pathD} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-        {/* Dots */}
-        {points.map((p, i) => (
-          <circle key={i} cx={xs[i]} cy={ys[i]} r="3" fill={accuracyColor(p.accuracy)} />
+        <path d={areaD} fill="url(#trendGrad)" opacity={0.15} />
+        <path d={pathD} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p: TrendPoint, i: number) => (
+          <circle key={i} cx={xs[i]} cy={ys[i]} r="2.5" fill={accuracyColor(p.accuracy)} />
         ))}
-
         <defs>
           <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#22c55e" />
@@ -486,7 +467,7 @@ function TrendChart({
         </defs>
       </svg>
 
-      <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
+      <p className="text-[10px] text-[var(--text-tertiary)] mt-1 text-center">
         {points.length} data points · Latest: {pct(points[points.length - 1].accuracy)}
       </p>
     </div>
@@ -494,54 +475,55 @@ function TrendChart({
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   LeagueBreakdown
+   LeagueBreakdown — horizontal bar chart
    ────────────────────────────────────────────────────────────────────── */
 
 function LeagueBreakdown({ data }: { data: Record<string, any> }) {
-  const leagues = Object.entries(data).sort(
-    (a: any, b: any) => (b[1].accuracy ?? 0) - (a[1].accuracy ?? 0),
-  )
+  const leagues = Object.entries(data).sort((a: any, b: any) => (b[1].total ?? 0) - (a[1].total ?? 0))
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
+      <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-4">
         Accuracy by League
       </h3>
       <div className="space-y-3">
-        {leagues.map(([league, stats]: any) => (
-          <div key={league}>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-[var(--text-primary)] capitalize">{league.replace(/_/g, ' ')}</span>
-              <span className="text-[var(--text-secondary)]">
-                {stats.correct ?? 0}/{stats.total ?? 0} ({pct(stats.accuracy ?? 0)})
+        {leagues.map(([league, stats]: any) => {
+          const acc = stats.accuracy ?? 0
+          return (
+            <div key={league} className="flex items-center gap-3">
+              <span className="text-xs text-[var(--text-primary)] font-medium w-32 truncate capitalize">
+                {league.replace(/_/g, ' ')}
+              </span>
+              <div className="flex-1 h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: acc * 100 + '%', backgroundColor: accuracyColor(acc) }}
+                />
+              </div>
+              <span className="text-xs font-medium w-20 text-right" style={{ color: accuracyColor(acc) }}>
+                {pct(acc)}
+              </span>
+              <span className="text-[10px] text-[var(--text-tertiary)] w-16 text-right">
+                {stats.correct ?? 0}/{stats.total ?? 0}
               </span>
             </div>
-            <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${(stats.accuracy ?? 0) * 100}%`,
-                  backgroundColor: accuracyColor(stats.accuracy ?? 0),
-                }}
-              />
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   PredictedVsActual – table of recent predictions with outcomes
+   PredictionHistory — table with SEPARATE outcome + scoreline columns
    ────────────────────────────────────────────────────────────────────── */
 
-function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSummary[] }) {
+function PredictionHistory({ initialPredictions }: { initialPredictions: PredSummary[] }) {
   const [predictions, setPredictions] = useState<PredSummary[]>(initialPredictions)
   const [availableLeagues, setAvailableLeagues] = useState<string[]>([])
-  const [selectedLeague, setSelectedLeague] = useState<string>('')
-  const [timeRange, setTimeRange] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<string>('completed')
+  const [selectedLeague, setSelectedLeague] = useState('')
+  const [timeRange, setTimeRange] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('completed')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
@@ -554,7 +536,7 @@ function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSum
       const params = new URLSearchParams({ page: String(p), limit: '25', status: statusFilter })
       if (selectedLeague) params.set('league', selectedLeague)
       if (timeRange !== 'all') params.set('time_range', timeRange)
-      const res = await fetch(`/api/v1/tracking/predictions?${params}`)
+      const res = await fetch('/api/v1/tracking/predictions?' + params)
       if (res.ok) {
         const data = await res.json()
         setPredictions(data.predictions || [])
@@ -571,63 +553,38 @@ function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSum
     }
   }, [selectedLeague, timeRange, statusFilter])
 
-  // Load on mount and when filters change
-  useEffect(() => {
-    fetchPredictions(1)
-  }, [fetchPredictions])
-
-  const correctCount = predictions.filter(p => p.winner_correct === true).length
-  const wrongCount = predictions.filter(p => p.winner_correct === false).length
+  useEffect(() => { fetchPredictions(1) }, [fetchPredictions])
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-      {/* Header with filters */}
-      <div className="p-5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-              Prediction History
-            </h3>
-            {hasLoaded && (
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                {totalCount} predictions · {correctCount} correct · {wrongCount} wrong on this page
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Status filter */}
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
-            >
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="">All</option>
-            </select>
-            {/* Time range filter */}
-            <select
-              value={timeRange}
-              onChange={e => setTimeRange(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
-            >
-              <option value="all">All Time</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-              <option value="season">This Season</option>
-            </select>
-            {/* League filter */}
-            <select
-              value={selectedLeague}
-              onChange={e => setSelectedLeague(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]"
-            >
-              <option value="">All Leagues</option>
-              {availableLeagues.map(l => (
-                <option key={l} value={l}>{l.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
-          </div>
+      {/* Header */}
+      <div className="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderColor: 'var(--border-color)' }}>
+        <div>
+          <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+            Prediction History
+          </h3>
+          {hasLoaded && (
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{totalCount} total predictions</p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]">
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="">All</option>
+          </select>
+          <select value={timeRange} onChange={e => setTimeRange(e.target.value)} className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]">
+            <option value="all">All Time</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="season">This Season</option>
+          </select>
+          <select value={selectedLeague} onChange={e => setSelectedLeague(e.target.value)} className="text-xs px-2.5 py-1.5 rounded-lg border bg-[var(--muted-bg)] border-[var(--border-color)] text-[var(--text-primary)]">
+            <option value="">All Leagues</option>
+            {availableLeagues.map(l => (
+              <option key={l} value={l}>{l.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -635,88 +592,91 @@ function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSum
       <div className="overflow-x-auto">
         {loadingPreds ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-6 w-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full" />
+            <div className="animate-spin h-5 w-5 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full" />
           </div>
         ) : predictions.length === 0 ? (
           <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
-            No predictions found for the selected filters
+            No predictions found
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="bg-[var(--muted-bg)]">
-                <th className="text-left px-4 py-2 text-[var(--text-tertiary)] font-medium">Match</th>
-                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Predicted</th>
-                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Actual</th>
-                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Result</th>
-                <th className="text-center px-4 py-2 text-[var(--text-tertiary)] font-medium">Confidence</th>
+              <tr className="bg-[var(--muted-bg)] text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider">
+                <th className="text-left px-4 py-2.5 font-medium">Match</th>
+                <th className="text-center px-3 py-2.5 font-medium">Predicted</th>
+                <th className="text-center px-3 py-2.5 font-medium">Actual</th>
+                <th className="text-center px-3 py-2.5 font-medium">Outcome</th>
+                <th className="text-center px-3 py-2.5 font-medium">Scoreline</th>
+                <th className="text-center px-3 py-2.5 font-medium">Confidence</th>
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-              {predictions.map((p) => {
-                const isCorrect = p.winner_correct
-                return (
-                  <tr key={p.match_id} className="hover:bg-[var(--muted-bg)] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="text-[var(--text-primary)] font-medium">
-                        {p.home_team} vs {p.away_team}
-                      </div>
-                      <div className="text-xs text-[var(--text-tertiary)]">
-                        {p.match_date} · {p.league?.replace(/_/g, ' ')}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="text-[var(--text-primary)] font-medium">{p.predicted_scoreline}</div>
-                      <div className="text-xs text-[var(--text-tertiary)]">
-                        {winnerLabel(p.predicted_winner)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {p.actual_scoreline ? (
-                        <>
-                          <div className="text-[var(--text-primary)] font-medium">{p.actual_scoreline}</div>
-                          <div className="text-xs text-[var(--text-tertiary)]">
-                            {p.actual_winner ? winnerLabel(p.actual_winner) : ''}
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-amber-500 text-xs">Pending</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {isCorrect === true && (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 font-medium">
-                          ✓ Correct
+              {predictions.map((p) => (
+                <tr key={p.match_id} className="hover:bg-[var(--muted-bg)]/50 transition-colors">
+                  {/* Match */}
+                  <td className="px-4 py-2.5">
+                    <div className="text-[var(--text-primary)] font-medium text-xs">{p.home_team} vs {p.away_team}</div>
+                    <div className="text-[10px] text-[var(--text-tertiary)]">{p.match_date} · {p.league?.replace(/_/g, ' ')}</div>
+                  </td>
+                  {/* Predicted */}
+                  <td className="px-3 py-2.5 text-center">
+                    <span className="text-[var(--text-primary)] font-semibold">{p.predicted_scoreline}</span>
+                    <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--muted-bg)] text-[var(--text-tertiary)]">
+                      {winnerLabel(p.predicted_winner)}
+                    </span>
+                  </td>
+                  {/* Actual */}
+                  <td className="px-3 py-2.5 text-center">
+                    {p.actual_scoreline ? (
+                      <>
+                        <span className="text-[var(--text-primary)] font-semibold">{p.actual_scoreline}</span>
+                        <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--muted-bg)] text-[var(--text-tertiary)]">
+                          {p.actual_winner ? winnerLabel(p.actual_winner) : ''}
                         </span>
-                      )}
-                      {isCorrect === false && (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">
-                          ✗ Wrong
-                        </span>
-                      )}
-                      {isCorrect === null && (
-                        <span className="text-xs text-[var(--text-tertiary)]">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <div className="w-16 h-1.5 rounded-full bg-[var(--muted-bg)] overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${p.confidence * 100}%`,
-                              backgroundColor: accuracyColor(p.confidence),
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs text-[var(--text-secondary)] w-10">
-                          {pct(p.confidence)}
-                        </span>
+                      </>
+                    ) : (
+                      <span className="text-amber-500 text-[10px]">Pending</span>
+                    )}
+                  </td>
+                  {/* Outcome (win/draw/loss correct?) */}
+                  <td className="px-3 py-2.5 text-center">
+                    {p.winner_correct === true && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold">
+                        {'\u2713'}
+                      </span>
+                    )}
+                    {p.winner_correct === false && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">
+                        {'\u2717'}
+                      </span>
+                    )}
+                    {p.winner_correct === null && <span className="text-[10px] text-[var(--text-tertiary)]">{'\u2014'}</span>}
+                  </td>
+                  {/* Scoreline (exact match?) */}
+                  <td className="px-3 py-2.5 text-center">
+                    {p.scoreline_correct === true && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold">
+                        {'\u2713'}
+                      </span>
+                    )}
+                    {p.scoreline_correct === false && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">
+                        {'\u2717'}
+                      </span>
+                    )}
+                    {p.scoreline_correct === null && <span className="text-[10px] text-[var(--text-tertiary)]">{'\u2014'}</span>}
+                  </td>
+                  {/* Confidence */}
+                  <td className="px-3 py-2.5 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <div className="w-12 h-1.5 rounded-full bg-[var(--muted-bg)] overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: p.confidence * 100 + '%', backgroundColor: accuracyColor(p.confidence) }} />
                       </div>
-                    </td>
-                  </tr>
-                )
-              })}
+                      <span className="text-[10px] text-[var(--text-secondary)] w-8">{pct(p.confidence)}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
@@ -724,39 +684,13 @@ function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSum
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            Page {page} of {totalPages} ({totalCount} total)
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => fetchPredictions(1)}
-              disabled={page <= 1 || loadingPreds}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              ««
-            </button>
-            <button
-              onClick={() => fetchPredictions(page - 1)}
-              disabled={page <= 1 || loadingPreds}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              ‹ Prev
-            </button>
-            <button
-              onClick={() => fetchPredictions(page + 1)}
-              disabled={page >= totalPages || loadingPreds}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next ›
-            </button>
-            <button
-              onClick={() => fetchPredictions(totalPages)}
-              disabled={page >= totalPages || loadingPreds}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              »»
-            </button>
+        <div className="flex items-center justify-between px-5 py-3 border-t text-xs" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-[var(--text-tertiary)]">Page {page}/{totalPages}</span>
+          <div className="flex gap-1">
+            <button onClick={() => fetchPredictions(1)} disabled={page <= 1 || loadingPreds} className="px-2 py-1 rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-30">{'\u00AB\u00AB'}</button>
+            <button onClick={() => fetchPredictions(page - 1)} disabled={page <= 1 || loadingPreds} className="px-2 py-1 rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-30">{'\u2039'}</button>
+            <button onClick={() => fetchPredictions(page + 1)} disabled={page >= totalPages || loadingPreds} className="px-2 py-1 rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-30">{'\u203A'}</button>
+            <button onClick={() => fetchPredictions(totalPages)} disabled={page >= totalPages || loadingPreds} className="px-2 py-1 rounded border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--muted-bg)] disabled:opacity-30">{'\u00BB\u00BB'}</button>
           </div>
         </div>
       )}
@@ -765,183 +699,46 @@ function PredictedVsActual({ initialPredictions }: { initialPredictions: PredSum
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   ModelMethodsCard – explains prediction methodology
+   ModelCard — compact model architecture summary
    ────────────────────────────────────────────────────────────────────── */
 
-/* ──────────────────────────────────────────────────────────────────────
-   LeagueModelInfoPanel – per-league AI model status
-   ────────────────────────────────────────────────────────────────────── */
-
-function LeagueModelInfoPanel({ modelInfo }: { modelInfo: any }) {
-  if (!modelInfo?.leagues) return null
-
-  const leagues = Object.values(modelInfo.leagues) as any[]
-  const summary = modelInfo.summary || {}
-
-  return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-          Per-League AI Models
-        </h3>
-        <div className="flex gap-2 text-xs">
-          <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
-            {summary.neural_ensemble_count || 0} Neural
-          </span>
-          <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 font-medium">
-            {summary.elo_poisson_count || 0} Baseline
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {leagues.map((league: any) => {
-          const isNeural = league.is_fitted
-          const acc = league.metrics?.ensemble_accuracy ?? league.metrics?.live_accuracy
-          const brier = league.metrics?.ensemble_log_loss ?? league.metrics?.live_brier
-          const liveAcc = league.metrics?.live_accuracy
-          const livePreds = league.metrics?.live_predictions
-
-          return (
-            <div
-              key={league.league_key}
-              className="p-3 rounded-xl border"
-              style={{
-                borderColor: isNeural ? 'rgba(34,197,94,0.3)' : 'var(--border-color)',
-                background: isNeural ? 'rgba(34,197,94,0.05)' : 'var(--muted-bg)',
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-sm text-[var(--text-primary)]">
-                  {league.display_name}
-                </span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    isNeural
-                      ? 'bg-emerald-500/15 text-emerald-400'
-                      : 'bg-amber-500/15 text-amber-400'
-                  }`}
-                >
-                  {isNeural ? 'Neural Ensemble' : 'ELO + Poisson'}
-                </span>
-              </div>
-
-              <div className="space-y-1 text-xs text-[var(--text-tertiary)]">
-                {isNeural && league.architecture && (
-                  <p>
-                    NN: {league.architecture.outcome_layers.join('→')} · Ensemble:{' '}
-                    {league.architecture.ensemble_models.length} models
-                  </p>
-                )}
-                {isNeural && league.samples > 0 && (
-                  <p>Trained on {league.samples.toLocaleString()} matches</p>
-                )}
-                {acc != null && (
-                  <p>
-                    Model accuracy:{' '}
-                    <span style={{ color: accuracyColor(acc) }}>{pct(acc)}</span>
-                  </p>
-                )}
-                {liveAcc != null && livePreds != null && (
-                  <p>
-                    Live accuracy:{' '}
-                    <span style={{ color: accuracyColor(liveAcc) }}>{pct(liveAcc)}</span>
-                    {' '}({livePreds} predictions)
-                  </p>
-                )}
-                {brier != null && (
-                  <p>Brier/Loss: {brier.toFixed(4)}</p>
-                )}
-                {isNeural && league.trained_at && (
-                  <p className="text-[10px] opacity-60">
-                    Last trained: {new Date(league.trained_at).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   ModelMethodsCard – AI architecture overview
-   ────────────────────────────────────────────────────────────────────── */
-
-function ModelMethodsCard({ modelInfo }: { modelInfo: any }) {
-  const neuralCount = modelInfo?.summary?.neural_ensemble_count ?? 0
+function ModelCard({ modelInfo }: { modelInfo: any }) {
   const methods = [
-    {
-      icon: '🧠',
-      name: 'Neural Network Ensemble',
-      desc: `Per-league MLP (128→64→32) + XGBoost + LightGBM + GradientBoosting + RandomForest with adaptive blending. ${neuralCount} league models trained.`,
-      tag: 'Primary Model',
-    },
-    {
-      icon: '📊',
-      name: 'Dixon-Coles Poisson',
-      desc: 'Corrected bivariate Poisson model with ρ parameter for low-score correlation (0-0, 1-0, 0-1, 1-1).',
-      tag: 'Goals & Scorelines',
-    },
-    {
-      icon: '⚡',
-      name: 'ELO Rating System',
-      desc: 'Dynamic ratings with league coefficients, home/away splits, goal-difference multiplier, and upset bonuses.',
-      tag: 'Team Strength',
-    },
-    {
-      icon: '🎯',
-      name: 'League-Calibrated Parameters',
-      desc: 'Per-league draw rates, home advantage, avg goals from league_params.json — auto-updated by feedback loop.',
-      tag: 'League Specificity',
-    },
-    {
-      icon: '🔄',
-      name: 'Online Learning',
-      desc: 'Neural networks updated via partial_fit() after each matchday. ELO auto-updates from ESPN results. Brier score optimization.',
-      tag: 'Auto-Improvement',
-    },
-    {
-      icon: '📈',
-      name: '38-Feature Pipeline',
-      desc: 'ELO, form (5/10-game), H2H, season stats, momentum, rest days, league context, clean sheets, goal differences.',
-      tag: 'Feature Engineering',
-    },
+    { icon: '\uD83E\uDDE0', name: 'Neural Ensemble', desc: 'Per-league MLP + XGBoost + LightGBM + GradientBoosting + RandomForest' },
+    { icon: '\uD83D\uDCCA', name: 'Dixon-Coles Poisson', desc: 'Corrected bivariate Poisson for scoreline prediction' },
+    { icon: '\u26A1', name: 'ELO Ratings', desc: 'Dynamic ratings with league coefficients and goal-difference weighting' },
+    { icon: '\uD83D\uDD04', name: 'Online Learning', desc: 'Auto-updating neural nets and ELO after each matchday' },
   ]
 
+  const neuralCount = modelInfo?.summary?.neural_ensemble_count ?? 0
+
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
-        AI Model Architecture
+      <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+        Model Architecture
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {methods.map((m) => (
-          <div
-            key={m.name}
-            className="p-3 rounded-xl bg-[var(--muted-bg)] border"
-            style={{ borderColor: 'var(--border-color)' }}
-          >
-            <div className="flex items-start gap-2 mb-1">
-              <span className="text-lg">{m.icon}</span>
-              <div>
-                <p className="font-semibold text-sm text-[var(--text-primary)]">{m.name}</p>
-                <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-medium mt-0.5">
-                  {m.tag}
-                </span>
-              </div>
+      <div className="space-y-3">
+        {methods.map(m => (
+          <div key={m.name} className="flex items-start gap-2.5">
+            <span className="text-base mt-0.5">{m.icon}</span>
+            <div>
+              <p className="text-xs font-semibold text-[var(--text-primary)]">{m.name}</p>
+              <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">{m.desc}</p>
             </div>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1 leading-relaxed">{m.desc}</p>
           </div>
         ))}
       </div>
+      {neuralCount > 0 && (
+        <p className="text-[10px] text-[var(--text-tertiary)] mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
+          {neuralCount} league-specific neural models trained · 38-feature pipeline
+        </p>
+      )}
     </div>
   )
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   FetcherPanel – status and manual trigger
+   FetcherPanel — outcome fetch status + trigger
    ────────────────────────────────────────────────────────────────────── */
 
 function FetcherPanel({
@@ -954,30 +751,28 @@ function FetcherPanel({
   onFetch: () => void
 }) {
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-1">
-            Auto-Outcome Fetcher
-          </h3>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            Automatically checks ESPN for finished matches every 30 minutes and updates predictions.
-          </p>
-          {status && (
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              Last run: {status.last_run ?? 'Never'} · Outcomes since retrain:{' '}
-              {status.outcomes_since_retrain}/{status.retrain_threshold}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={onFetch}
-          disabled={fetching}
-          className="px-4 py-2 bg-[var(--accent-primary)] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-        >
-          {fetching ? 'Fetching…' : 'Fetch Now'}
-        </button>
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5 flex flex-col justify-between" style={{ borderColor: 'var(--border-color)' }}>
+      <div>
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+          Outcome Fetcher
+        </h3>
+        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+          Automatically checks ESPN for finished matches and updates prediction outcomes. Runs every 30 minutes via GitHub Actions.
+        </p>
+        {status && (
+          <div className="mt-3 space-y-1 text-[10px] text-[var(--text-tertiary)]">
+            <p>Last run: <span className="text-[var(--text-primary)] font-medium">{status.last_run ?? 'Never'}</span></p>
+            <p>Outcomes since retrain: <span className="text-[var(--text-primary)] font-medium">{status.outcomes_since_retrain ?? 0}/{status.retrain_threshold ?? 50}</span></p>
+          </div>
+        )}
       </div>
+      <button
+        onClick={onFetch}
+        disabled={fetching}
+        className="mt-4 w-full px-4 py-2.5 bg-[var(--accent-primary)] text-white rounded-lg text-xs font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+      >
+        {fetching ? 'Fetching\u2026' : 'Fetch Outcomes Now'}
+      </button>
     </div>
   )
 }

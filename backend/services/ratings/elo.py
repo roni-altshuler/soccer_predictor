@@ -27,7 +27,7 @@ class EloRatingSystem:
     # Base configuration
     DEFAULT_ELO = 1500.0
     K_FACTOR = 32.0
-    HOME_ADVANTAGE = 65.0  # ELO points
+    HOME_ADVANTAGE = 40.0  # ELO points (reduced from 65 — modern home advantage is lower)
     
     # League strength coefficients (relative to average)
     LEAGUE_COEFFICIENTS = {
@@ -51,18 +51,18 @@ class EloRatingSystem:
 
     # League-specific draw rates (empirical averages from 5 seasons)
     LEAGUE_DRAW_RATES = {
-        "Premier League": 0.23,
+        "Premier League": 0.31,
         "La Liga": 0.24,
-        "Bundesliga": 0.22,
-        "Serie A": 0.27,
-        "Ligue 1": 0.24,
-        "Eredivisie": 0.21,
+        "Bundesliga": 0.26,
+        "Serie A": 0.24,
+        "Ligue 1": 0.21,
+        "Eredivisie": 0.29,
         "Primeira Liga": 0.25,
-        "MLS": 0.22,
+        "MLS": 0.16,
         "Championship": 0.26,
-        "Champions League": 0.20,
-        "Europa League": 0.22,
-        "Conference League": 0.23,
+        "Champions League": 0.14,
+        "Europa League": 0.19,
+        "Conference League": 0.21,
         "World Cup": 0.18,
         "default": 0.24,
     }
@@ -87,7 +87,7 @@ class EloRatingSystem:
     def __init__(
         self,
         k_factor: float = 32.0,
-        home_advantage: float = 65.0,
+        home_advantage: float = 40.0,
         ratings_file: Optional[str] = None
     ):
         self.k_factor = k_factor
@@ -312,8 +312,8 @@ class EloRatingSystem:
         # Draw probability: base rate adjusted by ELO closeness
         # Closer ELO -> higher draw prob; big gap -> lower draw prob
         elo_closeness = math.exp(-(elo_diff ** 2) / (2 * 250 ** 2))
-        draw = draw_rate * (0.6 + 0.8 * elo_closeness)
-        draw = max(0.08, min(0.38, draw))
+        draw = draw_rate * (0.7 + 0.9 * elo_closeness)
+        draw = max(0.12, min(0.42, draw))
         
         # Win probabilities from logistic model
         win_pool = 1.0 - draw

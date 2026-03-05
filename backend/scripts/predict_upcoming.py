@@ -59,10 +59,10 @@ LEAGUES = {
 }
 
 LEAGUE_DRAW_RATES = {
-    "Premier League": 0.23, "La Liga": 0.24, "Bundesliga": 0.22,
-    "Serie A": 0.27, "Ligue 1": 0.24, "MLS": 0.22,
-    "Champions League": 0.20, "Europa League": 0.22, "Conference League": 0.21,
-    "Eredivisie": 0.21, "Primeira Liga": 0.25, "FIFA World Cup": 0.22,
+    "Premier League": 0.31, "La Liga": 0.24, "Bundesliga": 0.26,
+    "Serie A": 0.24, "Ligue 1": 0.21, "MLS": 0.16,
+    "Champions League": 0.14, "Europa League": 0.19, "Conference League": 0.21,
+    "Eredivisie": 0.29, "Primeira Liga": 0.25, "FIFA World Cup": 0.22,
 }
 
 LEAGUE_AVG_GOALS = {
@@ -130,7 +130,7 @@ class EloPredictor:
     """ELO system initialized from historical seed data, with learned adjustments."""
 
     DEFAULT = 1500.0
-    HOME_ADV = 65.0
+    HOME_ADV = 40.0
     K = 32.0
 
     def __init__(self):
@@ -195,8 +195,8 @@ class EloPredictor:
         learned = self.learned.get(league, {})
         base_draw_rate = learned.get("draw_rate", LEAGUE_DRAW_RATES.get(league, 0.24))
         elo_closeness = math.exp(-(diff ** 2) / (2 * 250 ** 2))
-        draw = base_draw_rate * (0.6 + 0.8 * elo_closeness)
-        draw = max(0.08, min(0.38, draw))
+        draw = base_draw_rate * (0.7 + 0.9 * elo_closeness)
+        draw = max(0.12, min(0.42, draw))
 
         win_pool = 1.0 - draw
         home_win_raw = 1.0 / (1.0 + math.pow(10, -diff / 400))
@@ -375,20 +375,26 @@ async def predict_upcoming(days_ahead: int = 14):
                         elo, m["home_team"], m["away_team"], league_key,
                         elo_probs, pred_home_xg, pred_away_xg
                     )
-                    nn_probs = model.predict_proba(features)
-                    nn_goals = model.predict_goals(features)
-                    model_used = "neural_ensemble"
+                    raw_probs = model.predict_proba(features)
+                    nn_probs = {
+                        "home_win": float(raw_probs[0, 0]),
+                        "draw": float(raw_probs[0, 1]),
+                        "away_win": float(raw_probs[0, 2]),
+                    }
+                    raw_goals = model.predict_goals(features)
+                    nn_goals = (float(raw_goals[0, 0]), float(raw_goals[0, 1]))
+                    model_used = "neural_ensemble_v4"
                     nn_leagues_used.add(league)
             except Exception as e:
                 logger.debug(f"Neural model prediction failed for {league}: {e}")
 
         # ── Blend predictions ──
         if nn_probs is not None:
-            # Blend: 65% neural model, 35% ELO (neural model is more comprehensive)
+            # Blend: 70% neural model v4, 30% ELO baseline
             probs = {
-                "home_win": round(0.65 * nn_probs["home_win"] + 0.35 * elo_probs["home_win"], 4),
-                "draw": round(0.65 * nn_probs["draw"] + 0.35 * elo_probs["draw"], 4),
-                "away_win": round(0.65 * nn_probs["away_win"] + 0.35 * elo_probs["away_win"], 4),
+                "home_win": round(0.70 * nn_probs["home_win"] + 0.30 * elo_probs["home_win"], 4),
+                "draw": round(0.70 * nn_probs["draw"] + 0.30 * elo_probs["draw"], 4),
+                "away_win": round(0.70 * nn_probs["away_win"] + 0.30 * elo_probs["away_win"], 4),
             }
             # Normalize
             total_p = sum(probs.values())
@@ -501,14 +507,22 @@ def _build_match_features(
     elo_probs: Dict, pred_home_xg: float, pred_away_xg: float
 ) -> np.ndarray:
     """
-    Build a 38-feature vector for neural model prediction.
+    Build a 55-feature vector for neural model prediction.
     
-    Uses ELO ratings + league context + computed proxies for form/H2H.
+    Uses ELO ratings + league context + computed proxies for form/H2H
+    + market-implied probability proxies + tactical stat defaults
+    + league characteristics.
+    
     When the full FeatureBuilder is available (training mode), the pipeline
     uses richer features. For real-time prediction, we construct a reasonable
     approximation from available data.
     """
-    features = np.zeros(38, dtype=np.float64)
+    from backend.services.prediction.training import (
+        N_FEATURES, LEAGUE_DRAW_RATES as LD_DRAW,
+        LEAGUE_AVG_TOTAL_GOALS as LD_GOALS,
+        LEAGUE_HOME_WIN_RATE as LD_HOME, LEAGUE_COMPETITIVENESS as LD_COMP,
+    )
+    features = np.zeros(N_FEATURES, dtype=np.float64)
     
     h_elo = elo_predictor.get(home_team)
     a_elo = elo_predictor.get(away_team)
@@ -569,6 +583,29 @@ def _build_match_features(
     features[35] = 0.0   # away_streak
     features[36] = 3.0   # home_unbeaten_run
     features[37] = 3.0   # away_unbeaten_run
+    
+    # Market-implied probabilities (38-42) — use ELO probs as proxy
+    features[38] = elo_probs["home_win"]   # market_prob_home
+    features[39] = elo_probs["draw"]       # market_prob_draw
+    features[40] = elo_probs["away_win"]   # market_prob_away
+    features[41] = max(elo_probs["home_win"], elo_probs["draw"], elo_probs["away_win"])  # market_fav_prob
+    features[42] = 0.0                     # market_vs_model_diff
+    
+    # Tactical stats (43-50) — neutral defaults (no pre-match tactical data)
+    features[43] = 0.5   # home_shots_ratio
+    features[44] = 0.5   # away_shots_ratio
+    features[45] = 0.5   # home_sot_ratio
+    features[46] = 0.5   # away_sot_ratio
+    features[47] = 0.0   # home_discipline_score
+    features[48] = 0.0   # away_discipline_score
+    features[49] = 0.5   # home_corner_dominance
+    features[50] = 0.5   # away_corner_dominance
+    
+    # League characteristics (51-54) — from known league profiles
+    features[51] = LD_DRAW.get(league_key, 0.26)   # league_draw_rate
+    features[52] = LD_GOALS.get(league_key, 2.65)   # league_avg_total_goals
+    features[53] = LD_HOME.get(league_key, 0.45)    # league_home_win_rate
+    features[54] = LD_COMP.get(league_key, 0.5)     # league_competitiveness
     
     return features.reshape(1, -1)
 

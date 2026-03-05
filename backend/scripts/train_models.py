@@ -1,16 +1,18 @@
 """
 Train per-league neural network models on multi-season historical data.
 
-Fetches 5+ seasons of match data from ESPN, engineers 38-dimensional feature
-vectors, and trains per-league ensemble models (NN + XGBoost + LightGBM + GBT).
+Fetches 15+ seasons of match data from ESPN + football-data.co.uk, engineers
+55-dimensional feature vectors (including market-implied probabilities, tactical
+stats, and league characteristics), and trains per-league ensemble models
+(NN + XGBoost + LightGBM + GBT + RF).
 
-Season weighting: recent seasons get exponentially higher sample weights
-so the model emphasizes current trends while still learning from history.
+Season weighting: exponential decay with stronger emphasis on recent 5 seasons.
+Older seasons still contribute to model robustness.
 
 Usage:
     python -m backend.scripts.train_models
     python -m backend.scripts.train_models --leagues eng.1 esp.1
-    python -m backend.scripts.train_models --min-season 2020 --force
+    python -m backend.scripts.train_models --min-season 2010 --force
 """
 
 import asyncio
@@ -33,37 +35,28 @@ RESULTS_FILE = DATA_DIR / "training_results.json"
 
 def compute_season_weights(seasons: np.ndarray, current_season: int = 2025) -> np.ndarray:
     """
-    Compute sample weights with exponential recency bias.
-    
-    Most recent 5 seasons get emphasis:
-      season == current:     weight = 1.0
-      season == current - 1: weight = 0.85
-      season == current - 2: weight = 0.70
-      season == current - 3: weight = 0.55
-      season == current - 4: weight = 0.40
-      older:                 weight = 0.25
+    Compute sample weights with exponential decay for season recency.
+
+    Uses smooth exponential decay: w = max(0.15, exp(-0.12 * age))
+    This gives:
+      current season:  1.00
+      1 year ago:      0.89
+      2 years ago:     0.79
+      3 years ago:     0.70
+      5 years ago:     0.55
+      10 years ago:    0.30
+      15+ years ago:   0.15 (floor)
     """
     weights = np.ones(len(seasons), dtype=np.float64)
     for i, s in enumerate(seasons):
-        age = current_season - s
-        if age <= 0:
-            weights[i] = 1.0
-        elif age == 1:
-            weights[i] = 0.85
-        elif age == 2:
-            weights[i] = 0.70
-        elif age == 3:
-            weights[i] = 0.55
-        elif age == 4:
-            weights[i] = 0.40
-        else:
-            weights[i] = 0.25
+        age = max(0, current_season - s)
+        weights[i] = max(0.15, np.exp(-0.12 * age))
     return weights
 
 
 async def fetch_historical_data(
     leagues: Optional[List[str]] = None,
-    min_season: int = 2020,
+    min_season: int = 2010,
     force: bool = False,
 ) -> Dict[str, List[dict]]:
     """Fetch multi-season historical data using the HistoricalDataCollector."""
@@ -192,12 +185,12 @@ KEY_TO_ESPN = {v: k for k, v in ESPN_TO_KEY.items()}
 
 async def train_all_models(
     leagues: Optional[List[str]] = None,
-    min_season: int = 2020,
+    min_season: int = 2010,
     force_fetch: bool = False,
 ) -> Dict[str, dict]:
     """
     Full training pipeline:
-    1. Fetch multi-season historical data from ESPN
+    1. Fetch multi-season historical data from ESPN + football-data.co.uk
     2. Also incorporate existing prediction outcomes
     3. Build features per league
     4. Train per-league neural network ensemble models
@@ -326,8 +319,8 @@ async def main():
         help="League keys to train (e.g., eng.1 esp.1). Default: all leagues."
     )
     parser.add_argument(
-        "--min-season", type=int, default=2020,
-        help="Earliest season to fetch (default: 2020)"
+        "--min-season", type=int, default=2010,
+        help="Earliest season to fetch (default: 2010)"
     )
     parser.add_argument(
         "--force", action="store_true",

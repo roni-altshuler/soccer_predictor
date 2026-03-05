@@ -339,12 +339,13 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
             home_elo = p.get("home_elo", 1500.0)
             away_elo = p.get("away_elo", 1500.0)
             
-            # Build 38-feature vector (matching training.py FeatureBuilder output)
-            features = np.zeros(38, dtype=np.float64)
+            # Build 55-feature vector (matching training.py FeatureBuilder output v4)
+            from backend.services.prediction.training import N_FEATURES
+            features = np.zeros(N_FEATURES, dtype=np.float64)
             features[0] = home_elo              # home_elo
             features[1] = away_elo              # away_elo
             features[2] = home_elo - away_elo   # elo_diff
-            # Form features (3-11): approximate from predicted probabilities
+            # Form features (3-14): approximate from predicted probabilities
             features[3] = p.get("predicted_home_win", 0.5)   # home_form_5 proxy
             features[4] = p.get("predicted_away_win", 0.3)   # away_form_5 proxy
             features[5] = features[3]           # home_form_10
@@ -385,6 +386,31 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
             features[35] = 0.0                  # away_streak
             features[36] = 3.0                  # home_unbeaten_run
             features[37] = 2.0                  # away_unbeaten_run
+            # Market-implied probabilities (38-42) — use predicted probs as proxy
+            features[38] = p.get("predicted_home_win", 0.45)  # market_prob_home
+            features[39] = p.get("predicted_draw", 0.28)      # market_prob_draw
+            features[40] = p.get("predicted_away_win", 0.27)  # market_prob_away
+            features[41] = max(features[38], features[39], features[40])  # market_fav_prob
+            features[42] = 0.0                                 # market_vs_model_diff
+            # Tactical stats (43-50) — use defaults for online update
+            features[43] = 0.5                  # home_shots_ratio
+            features[44] = 0.5                  # away_shots_ratio
+            features[45] = 0.5                  # home_sot_ratio
+            features[46] = 0.5                  # away_sot_ratio
+            features[47] = 0.0                  # home_discipline_score
+            features[48] = 0.0                  # away_discipline_score
+            features[49] = 0.5                  # home_corner_dominance
+            features[50] = 0.5                  # away_corner_dominance
+            # League characteristics (51-54) — use league-specific defaults
+            from backend.services.prediction.training import (
+                LEAGUE_DRAW_RATES, LEAGUE_AVG_TOTAL_GOALS,
+                LEAGUE_HOME_WIN_RATE, LEAGUE_COMPETITIVENESS,
+            )
+            lk = _DISPLAY_TO_KEY.get(league_display, "")
+            features[51] = LEAGUE_DRAW_RATES.get(lk, 0.26)
+            features[52] = LEAGUE_AVG_TOTAL_GOALS.get(lk, 2.65)
+            features[53] = LEAGUE_HOME_WIN_RATE.get(lk, 0.45)
+            features[54] = LEAGUE_COMPETITIVENESS.get(lk, 0.5)
             
             # Outcome label
             actual = p["actual_winner"]
