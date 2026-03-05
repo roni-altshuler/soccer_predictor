@@ -95,10 +95,10 @@ export async function GET() {
   }
   const brierScore = brierSum / completedCount
 
-  // By confidence
-  const highConf = completed.filter(p => p.confidence >= 0.7)
-  const medConf = completed.filter(p => p.confidence >= 0.4 && p.confidence < 0.7)
-  const lowConf = completed.filter(p => p.confidence < 0.4)
+  // By confidence (confidence values stored as percentages, e.g. 37.8 = 37.8%)
+  const highConf = completed.filter(p => p.confidence >= 55)
+  const medConf = completed.filter(p => p.confidence >= 42 && p.confidence < 55)
+  const lowConf = completed.filter(p => p.confidence < 42)
   const confAcc = (arr: Prediction[]) => arr.length > 0 ? arr.filter(p => p.winner_correct).length / arr.length : 0
 
   // Recent accuracy (last 50)
@@ -115,6 +115,7 @@ export async function GET() {
     const lCorrect = lp.filter(p => p.winner_correct).length
     byLeague[league] = {
       league,
+      total: lp.length,
       predictions: lp.length,
       accuracy: lp.length > 0 ? Math.round((lCorrect / lp.length) * 1000) / 1000 : 0,
       correct: lCorrect,
@@ -153,9 +154,9 @@ export async function GET() {
     last30BrierSum += pred30.reduce((sum, pr, i) => sum + Math.pow(pr - actual30[i], 2), 0)
   }
   const last30Brier = last30.length > 0 ? last30BrierSum / last30.length : 0
-  const last30High = last30.filter(p => p.confidence >= 0.7)
-  const last30Med = last30.filter(p => p.confidence >= 0.4 && p.confidence < 0.7)
-  const last30Low = last30.filter(p => p.confidence < 0.4)
+  const last30High = last30.filter(p => p.confidence >= 55)
+  const last30Med = last30.filter(p => p.confidence >= 42 && p.confidence < 55)
+  const last30Low = last30.filter(p => p.confidence < 42)
 
   return NextResponse.json({
     overall: {
@@ -209,7 +210,7 @@ export async function GET() {
       actual_winner: p.actual_winner,
       winner_correct: p.winner_correct,
       scoreline_correct: p.scoreline_correct,
-      confidence: p.confidence,
+      confidence: p.confidence / 100,
       home_win_prob: p.predicted_home_win,
       draw_prob: p.predicted_draw,
       away_win_prob: p.predicted_away_win,

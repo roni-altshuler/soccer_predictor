@@ -59,9 +59,10 @@ export async function GET(request: NextRequest) {
   const scoreCorrect = completed.filter((p: any) => p.scoreline_correct).length
 
   // By confidence breakdown
-  const high = completed.filter((p: any) => p.confidence >= 0.7)
-  const med = completed.filter((p: any) => p.confidence >= 0.4 && p.confidence < 0.7)
-  const low = completed.filter((p: any) => p.confidence < 0.4)
+  // Confidence values stored as percentages (e.g. 37.8 = 37.8%)
+  const high = completed.filter((p: any) => p.confidence >= 55)
+  const med = completed.filter((p: any) => p.confidence >= 42 && p.confidence < 55)
+  const low = completed.filter((p: any) => p.confidence < 42)
   const acc = (arr: any[]) => arr.length > 0 ? arr.filter((p: any) => p.winner_correct).length / arr.length : 0
 
   // Recent form (last 20)

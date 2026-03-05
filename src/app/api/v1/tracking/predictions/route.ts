@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       home_win_prob: p.predicted_home_win,
       draw_prob: p.predicted_draw,
       away_win_prob: p.predicted_away_win,
-      confidence: p.confidence,
+      confidence: p.confidence / 100,
       actual_winner: p.actual_winner,
       actual_scoreline: p.actual_home_goals !== null ? `${p.actual_home_goals}-${p.actual_away_goals}` : null,
       winner_correct: p.winner_correct,

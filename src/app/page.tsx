@@ -26,6 +26,7 @@ type TodayMatch = {
   league: string
   leagueId?: string
   minute?: number | string
+  venue?: string
 }
 
 function LiveScoresTicker() {
@@ -245,8 +246,9 @@ function TodaysMatchesWidget() {
                     <Link 
                       key={`${league}-${idx}`} 
                       href={match.id ? `/matches/${match.id}${match.leagueId ? `?league=${match.leagueId}` : ''}` : '/matches'}
-                      className={`px-4 py-3 flex items-center cursor-pointer ${match.status === 'live' ? 'bg-[var(--live-bg)]' : 'bg-[var(--card-bg)] hover:bg-[var(--card-hover)]'} transition-colors`}
+                      className={`block px-4 py-3 cursor-pointer ${match.status === 'live' ? 'bg-[var(--live-bg)]' : 'bg-[var(--card-bg)] hover:bg-[var(--card-hover)]'} transition-colors`}
                     >
+                      <div className="flex items-center">
                       {/* Home Team */}
                       <div className="flex-1 text-right pr-3">
                         <span className="text-sm text-[var(--text-primary)] font-medium">{match.home_team}</span>
@@ -286,6 +288,13 @@ function TodaysMatchesWidget() {
                       <div className="flex-1 text-left pl-3">
                         <span className="text-sm text-[var(--text-primary)] font-medium">{match.away_team}</span>
                       </div>
+                      </div>
+                      {/* Venue info */}
+                      {match.venue && (
+                        <div className="mt-1">
+                          <span className="text-[10px] text-[var(--text-tertiary)]">📍 {match.venue}</span>
+                        </div>
+                      )}
                     </Link>
                   ))}
                 </div>

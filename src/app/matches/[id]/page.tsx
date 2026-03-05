@@ -6,6 +6,7 @@ import Link from 'next/link'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { HeadToHeadDisplay } from '@/components/match'
+import RefereeInfo from '@/components/referee/RefereeInfo'
 
 interface MatchEvent {
   type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'var' | 'penalty_missed' | 'own_goal'
@@ -529,8 +530,8 @@ export default function MatchDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {activeTab === 'summary' && (
           <div className="space-y-6">
-            {/* Match Info Card (Venue, Referee, Weather) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Match Info Card (Venue, Date) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Venue Info */}
               <div className="bg-[var(--card-bg)] border rounded-xl p-4" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center gap-3">
@@ -540,21 +541,6 @@ export default function MatchDetailPage() {
                   <div>
                     <p className="text-xs text-[var(--text-tertiary)]">Venue</p>
                     <p className="text-sm font-medium text-[var(--text-primary)]">{match.venue || 'Not announced'}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Referee Info */}
-              <div className="bg-[var(--card-bg)] border rounded-xl p-4" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                    <span className="text-xl">👨‍⚖️</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[var(--text-tertiary)]">Referee</p>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">
-                      {match.referee || (isScheduled ? 'Not yet assigned' : 'Not available')}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -572,6 +558,165 @@ export default function MatchDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Referee Info - Full Component */}
+            <RefereeInfo 
+              matchId={matchId}
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
+              refereeName={match.referee}
+            />
+
+            {/* Compact H2H & Team Form Summary */}
+            {(match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins > 0 || match.homeStanding || match.awayStanding) && (
+              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                    <span>⚔️</span> Head-to-Head &amp; Form
+                  </h3>
+                </div>
+                <div className="p-4 space-y-4">
+                  {/* H2H Record Bar */}
+                  {(match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins) > 0 && (() => {
+                    const totalH2H = match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins
+                    const homePct = (match.h2h.homeWins / totalH2H) * 100
+                    const drawPct = (match.h2h.draws / totalH2H) * 100
+                    const awayPct = (match.h2h.awayWins / totalH2H) * 100
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-[var(--text-primary)] font-medium">{match.home_team}</span>
+                          <span className="text-[var(--text-tertiary)] text-xs">{totalH2H} meetings</span>
+                          <span className="text-[var(--text-primary)] font-medium">{match.away_team}</span>
+                        </div>
+                        <div className="flex h-6 rounded-lg overflow-hidden text-xs font-bold text-white">
+                          {homePct > 0 && (
+                            <div className="bg-blue-500 flex items-center justify-center" style={{ width: `${homePct}%` }}>
+                              {match.h2h.homeWins}W
+                            </div>
+                          )}
+                          {drawPct > 0 && (
+                            <div className="bg-gray-400 flex items-center justify-center" style={{ width: `${drawPct}%` }}>
+                              {match.h2h.draws}D
+                            </div>
+                          )}
+                          {awayPct > 0 && (
+                            <div className="bg-orange-500 flex items-center justify-center" style={{ width: `${awayPct}%` }}>
+                              {match.h2h.awayWins}W
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Recent H2H Matches */}
+                  {match.h2h.recentMatches.length > 0 && (
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2 font-medium uppercase tracking-wide">Recent Meetings</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {match.h2h.recentMatches.slice(0, 4).map((m, idx) => {
+                          const homeWon = m.home_score > m.away_score
+                          const awayWon = m.away_score > m.home_score
+                          return (
+                            <div key={idx} className="flex items-center justify-between px-3 py-2 bg-[var(--muted-bg)] rounded-lg text-sm">
+                              <span className={`flex-1 text-right pr-2 ${homeWon ? 'font-semibold text-blue-500' : 'text-[var(--text-secondary)]'}`}>
+                                {m.homeTeam || match.home_team}
+                              </span>
+                              <span className="font-bold text-[var(--text-primary)] px-2">
+                                {m.home_score} - {m.away_score}
+                              </span>
+                              <span className={`flex-1 text-left pl-2 ${awayWon ? 'font-semibold text-orange-500' : 'text-[var(--text-secondary)]'}`}>
+                                {m.awayTeam || match.away_team}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Team Form (Standing-based) */}
+                  {(match.homeStanding || match.awayStanding) && (
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2 font-medium uppercase tracking-wide">Season Form</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {match.homeStanding && (
+                          <div className="bg-[var(--muted-bg)] rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-2 h-2 rounded-full bg-blue-500" />
+                              <span className="text-sm font-medium text-[var(--text-primary)]">{match.home_team}</span>
+                              <span className="text-xs text-[var(--text-tertiary)] ml-auto">#{match.homeStanding.position}</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 text-center text-xs">
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">P</p>
+                                <p className="font-medium text-[var(--text-primary)]">{match.homeStanding.played}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">W</p>
+                                <p className="font-medium text-green-500">{match.homeStanding.won}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">D</p>
+                                <p className="font-medium text-amber-500">{match.homeStanding.drawn}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">L</p>
+                                <p className="font-medium text-red-400">{match.homeStanding.lost}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">Pts</p>
+                                <p className="font-bold text-[var(--text-primary)]">{match.homeStanding.points}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {match.awayStanding && (
+                          <div className="bg-[var(--muted-bg)] rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-2 h-2 rounded-full bg-orange-500" />
+                              <span className="text-sm font-medium text-[var(--text-primary)]">{match.away_team}</span>
+                              <span className="text-xs text-[var(--text-tertiary)] ml-auto">#{match.awayStanding.position}</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 text-center text-xs">
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">P</p>
+                                <p className="font-medium text-[var(--text-primary)]">{match.awayStanding.played}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">W</p>
+                                <p className="font-medium text-green-500">{match.awayStanding.won}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">D</p>
+                                <p className="font-medium text-amber-500">{match.awayStanding.drawn}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">L</p>
+                                <p className="font-medium text-red-400">{match.awayStanding.lost}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--text-tertiary)]">Pts</p>
+                                <p className="font-bold text-[var(--text-primary)]">{match.awayStanding.points}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Link to full H2H tab */}
+                  <button
+                    onClick={() => setActiveTab('h2h')}
+                    className="w-full text-center text-sm text-[var(--accent-primary)] hover:opacity-80 transition-opacity font-medium py-1"
+                  >
+                    View full H2H &amp; form details →
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Weather - spans full width */}
             <MatchWeather 

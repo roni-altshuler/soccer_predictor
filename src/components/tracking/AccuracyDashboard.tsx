@@ -47,6 +47,12 @@ interface OverallMetrics {
   recent_accuracy: number
   avg_goals_difference: number
   within_1_goal_rate: number
+  home_win_predicted?: number
+  home_win_correct?: number
+  draw_predicted?: number
+  draw_correct?: number
+  away_win_predicted?: number
+  away_win_correct?: number
 }
 
 interface AccuracySummary {
@@ -160,6 +166,9 @@ export default function AccuracyDashboard() {
         <MetricCard title="All-time" metrics={m} />
         <MetricCard title="Last 30 Days" metrics={summary.last_30_days} />
       </div>
+
+      {/* ── Outcome Distribution (Home/Draw/Away predicted vs actual accuracy) ── */}
+      <OutcomeDistribution metrics={m} />
 
       {/* ── Accuracy Trend Chart ── */}
       {trend && trend.data_points > 0 && (
@@ -298,6 +307,84 @@ function MetricCard({ title, metrics }: { title: string; metrics: OverallMetrics
       <p className="text-xs text-[var(--text-tertiary)] mt-3">
         Based on {metrics.completed_predictions} completed predictions
       </p>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   OutcomeDistribution – How accurate per predicted outcome (Home/Draw/Away)
+   ────────────────────────────────────────────────────────────────────── */
+
+function OutcomeDistribution({ metrics }: { metrics: OverallMetrics }) {
+  const outcomes = [
+    {
+      label: 'Home Win',
+      predicted: metrics.home_win_predicted ?? 0,
+      correct: metrics.home_win_correct ?? 0,
+      color: '#22c55e',
+      bgColor: 'rgba(34,197,94,0.1)',
+      icon: '🏠',
+    },
+    {
+      label: 'Draw',
+      predicted: metrics.draw_predicted ?? 0,
+      correct: metrics.draw_correct ?? 0,
+      color: '#f59e0b',
+      bgColor: 'rgba(245,158,11,0.1)',
+      icon: '🤝',
+    },
+    {
+      label: 'Away Win',
+      predicted: metrics.away_win_predicted ?? 0,
+      correct: metrics.away_win_correct ?? 0,
+      color: '#6366f1',
+      bgColor: 'rgba(99,102,241,0.1)',
+      icon: '✈️',
+    },
+  ]
+
+  const totalPredicted = outcomes.reduce((s, o) => s + o.predicted, 0) || 1
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 uppercase tracking-wide">
+        Accuracy by Predicted Outcome
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {outcomes.map((o) => {
+          const acc = o.predicted > 0 ? o.correct / o.predicted : 0
+          const share = o.predicted / totalPredicted
+          return (
+            <div
+              key={o.label}
+              className="rounded-xl border p-4"
+              style={{ borderColor: 'var(--border-color)', background: o.bgColor }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">{o.icon}</span>
+                <span className="font-semibold text-sm text-[var(--text-primary)]">{o.label}</span>
+              </div>
+              <div className="flex items-end justify-between mb-2">
+                <div>
+                  <span className="text-2xl font-bold" style={{ color: o.color }}>{pct(acc)}</span>
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    {o.correct}/{o.predicted} correct
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-[var(--text-tertiary)]">{pct(share)} of picks</p>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${acc * 100}%`, backgroundColor: o.color }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
