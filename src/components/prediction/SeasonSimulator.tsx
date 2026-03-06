@@ -21,7 +21,8 @@ export default function SeasonSimulator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LeagueSimulationResult | null>(null);
-  const [nSimulations, setNSimulations] = useState(1000);
+  const [nSimulations, setNSimulations] = useState(10000);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   const runSimulation = async () => {
     if (!selectedLeague) return;
@@ -93,10 +94,10 @@ export default function SeasonSimulator() {
               onChange={(e) => setNSimulations(Number(e.target.value))}
               className="w-full px-4 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
             >
-              <option value={500}>500 (Fast)</option>
-              <option value={1000}>1,000 (Balanced)</option>
-              <option value={5000}>5,000 (Accurate)</option>
-              <option value={10000}>10,000 (Most Accurate)</option>
+              <option value={1000}>1,000 (Fast)</option>
+              <option value={5000}>5,000 (Balanced)</option>
+              <option value={10000}>10,000 (Accurate)</option>
+              <option value={25000}>25,000 (High Precision)</option>
             </select>
           </div>
 
@@ -120,7 +121,7 @@ export default function SeasonSimulator() {
         </div>
 
         <p className="text-xs text-[var(--text-tertiary)] mt-3">
-          Monte Carlo simulation using team ELO ratings and Poisson goal distributions
+          Monte Carlo simulation using Bradley-Terry model with team strength derived from current performance
         </p>
       </div>
 
@@ -211,29 +212,37 @@ export default function SeasonSimulator() {
                   <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
                     <th className="text-left py-3 px-4">Pos</th>
                     <th className="text-left py-3 px-4">Team</th>
-                    <th className="text-center py-3 px-4">Current Pts</th>
-                    <th className="text-center py-3 px-4">Predicted Pts</th>
+                    <th className="text-center py-3 px-4">Pts</th>
+                    <th className="text-center py-3 px-4">Pred Pts</th>
+                    <th className="text-center py-3 px-4">Avg Pos</th>
                     <th className="text-center py-3 px-4">Title %</th>
                     <th className="text-center py-3 px-4">Top 4 %</th>
-                    <th className="text-center py-3 px-4">Relegation %</th>
+                    <th className="text-center py-3 px-4">Releg %</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.standings
-                    .sort((a, b) => b.avg_final_points - a.avg_final_points)
+                    .sort((a, b) => a.avg_final_position - b.avg_final_position)
                     .map((team, idx) => (
+                      <React.Fragment key={team.team_name}>
                       <tr
-                        key={team.team_name}
-                        className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors ${
+                        onClick={() => setExpandedTeam(expandedTeam === team.team_name ? null : team.team_name)}
+                        className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${
                           idx < 4 ? 'border-l-2 border-l-emerald-500' : 
                           idx >= result.standings.length - 3 ? 'border-l-2 border-l-red-500' : ''
                         }`}
                       >
                         <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
-                        <td className="py-3 px-4 text-[var(--text-primary)] font-medium">{team.team_name}</td>
+                        <td className="py-3 px-4 text-[var(--text-primary)] font-medium">
+                          {team.team_name}
+                          <span className="text-xs text-[var(--text-tertiary)] ml-1">▾</span>
+                        </td>
                         <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{team.current_points}</td>
                         <td className="py-3 px-4 text-center text-[var(--text-primary)] font-semibold">
                           {team.avg_final_points.toFixed(0)}
+                        </td>
+                        <td className="py-3 px-4 text-center text-[var(--text-secondary)]">
+                          {team.avg_final_position.toFixed(1)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {team.title_probability > 0.01 ? (
@@ -257,6 +266,36 @@ export default function SeasonSimulator() {
                           )}
                         </td>
                       </tr>
+                      {expandedTeam === team.team_name && team.position_distribution && (
+                        <tr className="bg-[var(--background-secondary)]">
+                          <td colSpan={8} className="px-4 py-3">
+                            <div className="text-xs text-[var(--text-secondary)] mb-2 font-medium">
+                              Position probability distribution
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(team.position_distribution)
+                                .sort(([a], [b]) => Number(a) - Number(b))
+                                .map(([pos, prob]) => {
+                                  const pct = (prob as number) * 100;
+                                  const bg = Number(pos) <= 4 ? 'bg-emerald-500' :
+                                             Number(pos) > result.standings.length - 3 ? 'bg-red-500' :
+                                             'bg-indigo-500';
+                                  return (
+                                    <div key={pos} className="text-center min-w-[36px]">
+                                      <div
+                                        className={`${bg} rounded-t`}
+                                        style={{ height: `${Math.max(4, pct * 1.5)}px`, opacity: Math.max(0.3, pct / 50) }}
+                                      />
+                                      <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{pos}</div>
+                                      <div className="text-[10px] text-[var(--text-secondary)]">{pct.toFixed(1)}%</div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     ))}
                 </tbody>
               </table>

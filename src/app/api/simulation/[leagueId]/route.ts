@@ -23,176 +23,26 @@ const LEAGUE_NAMES: Record<number, string> = {
   61: 'Primeira Liga',
 }
 
-// Sample teams for each league when API is unavailable
-const SAMPLE_TEAMS: Record<number, { name: string; points: number }[]> = {
-  47: [ // Premier League
-    { name: 'Liverpool', points: 50 },
-    { name: 'Arsenal', points: 44 },
-    { name: 'Nottingham Forest', points: 41 },
-    { name: 'Chelsea', points: 40 },
-    { name: 'Newcastle United', points: 38 },
-    { name: 'Manchester City', points: 38 },
-    { name: 'Bournemouth', points: 37 },
-    { name: 'Brighton', points: 34 },
-    { name: 'Aston Villa', points: 34 },
-    { name: 'Fulham', points: 33 },
-    { name: 'Brentford', points: 28 },
-    { name: 'Manchester United', points: 26 },
-    { name: 'West Ham United', points: 26 },
-    { name: 'Tottenham Hotspur', points: 24 },
-    { name: 'Everton', points: 23 },
-    { name: 'Crystal Palace', points: 20 },
-    { name: 'Wolverhampton', points: 20 },
-    { name: 'Leicester City', points: 17 },
-    { name: 'Ipswich Town', points: 16 },
-    { name: 'Southampton', points: 6 },
-  ],
-  87: [ // La Liga
-    { name: 'Barcelona', points: 42 },
-    { name: 'Real Madrid', points: 40 },
-    { name: 'Atlético Madrid', points: 38 },
-    { name: 'Athletic Club', points: 36 },
-    { name: 'Villarreal', points: 32 },
-    { name: 'Mallorca', points: 30 },
-    { name: 'Real Betis', points: 29 },
-    { name: 'Osasuna', points: 28 },
-    { name: 'Girona', points: 27 },
-    { name: 'Rayo Vallecano', points: 26 },
-    { name: 'Real Sociedad', points: 25 },
-    { name: 'Celta Vigo', points: 24 },
-    { name: 'Sevilla', points: 23 },
-    { name: 'Getafe', points: 22 },
-    { name: 'Alavés', points: 21 },
-    { name: 'Espanyol', points: 20 },
-    { name: 'Las Palmas', points: 19 },
-    { name: 'Leganés', points: 18 },
-    { name: 'Real Valladolid', points: 15 },
-    { name: 'Valencia', points: 13 },
-  ],
-  55: [ // Serie A
-    { name: 'Napoli', points: 47 },
-    { name: 'Inter Milan', points: 44 },
-    { name: 'Atalanta', points: 42 },
-    { name: 'Lazio', points: 39 },
-    { name: 'Juventus', points: 34 },
-    { name: 'Fiorentina', points: 33 },
-    { name: 'Bologna', points: 30 },
-    { name: 'AC Milan', points: 28 },
-    { name: 'Udinese', points: 26 },
-    { name: 'Roma', points: 24 },
-    { name: 'Torino', points: 23 },
-    { name: 'Genoa', points: 22 },
-    { name: 'Empoli', points: 21 },
-    { name: 'Como', points: 19 },
-    { name: 'Parma', points: 19 },
-    { name: 'Lecce', points: 17 },
-    { name: 'Cagliari', points: 17 },
-    { name: 'Verona', points: 16 },
-    { name: 'Venezia', points: 14 },
-    { name: 'Monza', points: 10 },
-  ],
-  54: [ // Bundesliga
-    { name: 'Bayern Munich', points: 42 },
-    { name: 'Bayer Leverkusen', points: 38 },
-    { name: 'Eintracht Frankfurt', points: 33 },
-    { name: 'RB Leipzig', points: 30 },
-    { name: 'Mainz 05', points: 28 },
-    { name: 'SC Freiburg', points: 27 },
-    { name: 'Borussia Dortmund', points: 26 },
-    { name: 'Werder Bremen', points: 25 },
-    { name: 'VfB Stuttgart', points: 24 },
-    { name: 'Wolfsburg', points: 24 },
-    { name: 'Augsburg', points: 23 },
-    { name: 'Borussia Mönchengladbach', points: 22 },
-    { name: 'Union Berlin', points: 20 },
-    { name: 'St. Pauli', points: 18 },
-    { name: 'Hoffenheim', points: 15 },
-    { name: 'Holstein Kiel', points: 11 },
-    { name: 'Heidenheim', points: 11 },
-    { name: 'Bochum', points: 9 },
-  ],
-  53: [ // Ligue 1
-    { name: 'Paris Saint-Germain', points: 43 },
-    { name: 'Marseille', points: 37 },
-    { name: 'Monaco', points: 34 },
-    { name: 'Lille', points: 32 },
-    { name: 'Lyon', points: 31 },
-    { name: 'Nice', points: 29 },
-    { name: 'Lens', points: 27 },
-    { name: 'Auxerre', points: 25 },
-    { name: 'Reims', points: 24 },
-    { name: 'Strasbourg', points: 23 },
-    { name: 'Brest', points: 23 },
-    { name: 'Toulouse', points: 22 },
-    { name: 'Nantes', points: 21 },
-    { name: 'Rennes', points: 20 },
-    { name: 'Saint-Étienne', points: 18 },
-    { name: 'Angers', points: 17 },
-    { name: 'Le Havre', points: 14 },
-    { name: 'Montpellier', points: 12 },
-  ],
-  130: [ // MLS
-    { name: 'Inter Miami', points: 40 },
-    { name: 'Columbus Crew', points: 38 },
-    { name: 'LA Galaxy', points: 36 },
-    { name: 'FC Cincinnati', points: 34 },
-    { name: 'LAFC', points: 33 },
-    { name: 'Real Salt Lake', points: 32 },
-    { name: 'New York Red Bulls', points: 30 },
-    { name: 'Charlotte FC', points: 28 },
-    { name: 'Portland Timbers', points: 27 },
-    { name: 'Orlando City', points: 26 },
-    { name: 'New York City FC', points: 25 },
-    { name: 'Seattle Sounders', points: 24 },
-    { name: 'Atlanta United', points: 23 },
-    { name: 'Nashville SC', points: 22 },
-    { name: 'Philadelphia Union', points: 20 },
-    { name: 'CF Montréal', points: 19 },
-    { name: 'Chicago Fire', points: 18 },
-    { name: 'Austin FC', points: 17 },
-    { name: 'San Jose Earthquakes', points: 15 },
-    { name: 'D.C. United', points: 14 },
-  ],
-  57: [ // Eredivisie
-    { name: 'PSV Eindhoven', points: 45 },
-    { name: 'Ajax', points: 38 },
-    { name: 'Feyenoord', points: 35 },
-    { name: 'AZ Alkmaar', points: 32 },
-    { name: 'FC Twente', points: 30 },
-    { name: 'FC Utrecht', points: 28 },
-    { name: 'Go Ahead Eagles', points: 26 },
-    { name: 'Sparta Rotterdam', points: 24 },
-    { name: 'NEC Nijmegen', points: 23 },
-    { name: 'SC Heerenveen', points: 22 },
-    { name: 'Fortuna Sittard', points: 21 },
-    { name: 'PEC Zwolle', points: 20 },
-    { name: 'Heracles Almelo', points: 19 },
-    { name: 'Willem II', points: 18 },
-    { name: 'NAC Breda', points: 17 },
-    { name: 'RKC Waalwijk', points: 14 },
-    { name: 'Almere City', points: 12 },
-    { name: 'Excelsior', points: 10 },
-  ],
-  61: [ // Primeira Liga
-    { name: 'Sporting CP', points: 44 },
-    { name: 'Benfica', points: 40 },
-    { name: 'Porto', points: 38 },
-    { name: 'Sporting Braga', points: 32 },
-    { name: 'Vitória de Guimarães', points: 28 },
-    { name: 'Santa Clara', points: 26 },
-    { name: 'Casa Pia', points: 24 },
-    { name: 'Famalicão', points: 23 },
-    { name: 'Moreirense', points: 22 },
-    { name: 'Rio Ave', points: 21 },
-    { name: 'Gil Vicente', points: 20 },
-    { name: 'Arouca', points: 19 },
-    { name: 'Boavista', points: 18 },
-    { name: 'Estoril', points: 17 },
-    { name: 'Nacional', points: 16 },
-    { name: 'Estrela Amadora', points: 15 },
-    { name: 'AVS', points: 13 },
-    { name: 'Farense', points: 11 },
-  ],
+// League configuration - total matches per season
+const LEAGUE_MATCH_CONFIG: Record<number, number> = {
+  47: 38, 87: 38, 55: 38, 54: 34, 53: 34, 130: 34, 57: 34, 61: 34,
+}
+
+// League size (number of teams)
+const LEAGUE_SIZE: Record<number, number> = {
+  47: 20, 87: 20, 55: 20, 54: 18, 53: 18, 130: 29, 57: 18, 61: 18,
+}
+
+interface TeamData {
+  name: string
+  points: number
+  wins: number
+  draws: number
+  losses: number
+  gf: number
+  ga: number
+  gd: number
+  matchesPlayed: number
 }
 
 interface Standing {
@@ -200,33 +50,216 @@ interface Standing {
   team_id: number | null
   current_position: number
   current_points: number
+  matches_played: number
   avg_final_position: number
   avg_final_points: number
   title_probability: number
   top_4_probability: number
   europa_probability: number
   relegation_probability: number
+  position_distribution: Record<number, number>  // position → probability
 }
 
-// League configuration - total matches per season for different league sizes
-const LEAGUE_MATCH_CONFIG: Record<number, number> = {
-  47: 38, // Premier League (20 teams)
-  87: 38, // La Liga (20 teams)
-  55: 38, // Serie A (20 teams)
-  54: 34, // Bundesliga (18 teams)
-  53: 34, // Ligue 1 (18 teams)
-  130: 34, // MLS (29 teams, 34 matches)
-  57: 34, // Eredivisie (18 teams)
-  61: 34, // Primeira Liga (18 teams)
+/**
+ * Monte Carlo Season Simulation
+ *
+ * For each remaining match:
+ *   1. Compute match probabilities from team strength (PPG-derived)
+ *   2. Use Bradley-Terry model: P(home) = str_h / (str_h + str_a) * home_factor
+ *   3. Sample outcome from (home_win, draw, away_win) distribution
+ *   4. Award points accordingly
+ *
+ * After all remaining matches are simulated:
+ *   - Sort teams by points (then GD tiebreaker)
+ *   - Record each team's final position
+ *   - Repeat N times and aggregate position frequencies
+ */
+function runMonteCarloSimulation(
+  teams: TeamData[],
+  totalMatchesPerSeason: number,
+  nSimulations: number,
+  leagueId: number,
+): Standing[] {
+  const numTeams = teams.length
+  if (numTeams === 0) return []
+
+  // Track position counts for each team across simulations
+  // positionCounts[teamIdx][position] = count
+  const positionCounts: number[][] = teams.map(() => new Array(numTeams).fill(0))
+  const totalPointsSum: number[] = new Array(numTeams).fill(0)
+
+  // Compute team strength from current PPG (points per game)
+  // Convert to Bradley-Terry strength: strength = 10^(ppg / scale)
+  const strengths = teams.map(t => {
+    const ppg = t.matchesPlayed > 0 ? t.points / t.matchesPlayed : 1.3
+    return Math.pow(10, ppg / 2.0) // Scale factor
+  })
+
+  // Remaining matches per team
+  const remainingPerTeam = teams.map(t => Math.max(0, totalMatchesPerSeason - t.matchesPlayed))
+
+  // Build fixture list: for a round-robin league, each team plays every other team
+  // twice (home and away). We generate "abstract" remaining fixtures.
+  // For simplicity, distribute remaining matches as matchups against league opponents
+  // weighted by how many games each needs to play.
+  interface Fixture { homeIdx: number; awayIdx: number }
+
+  // Generate remaining fixtures: sample proportionally
+  function generateRemainingFixtures(): Fixture[] {
+    const fixtures: Fixture[] = []
+    const remaining = [...remainingPerTeam]
+
+    // Create a pool of possible matchups
+    for (let i = 0; i < numTeams; i++) {
+      for (let j = 0; j < numTeams; j++) {
+        if (i !== j && remaining[i] > 0 && remaining[j] > 0) {
+          fixtures.push({ homeIdx: i, awayIdx: j })
+          remaining[i]--
+          remaining[j]--
+          if (remaining[i] <= 0) break
+        }
+      }
+    }
+    return fixtures
+  }
+
+  const fixtures = generateRemainingFixtures()
+  const totalRemainingMatches = fixtures.length
+
+  // Home advantage factor (empirically ~1.3-1.5 for most leagues)
+  const homeFactor = 1.35
+
+  // League-specific draw rate (used to calibrate draw probability)
+  const leagueDrawRates: Record<number, number> = {
+    47: 0.25, 87: 0.24, 55: 0.27, 54: 0.23, 53: 0.24,
+    130: 0.20, 57: 0.22, 61: 0.25,
+  }
+  const baseDrawRate = leagueDrawRates[leagueId] || 0.24
+
+  // Seeded PRNG for reproducibility (xorshift32)
+  let seed = 42
+  function rand(): number {
+    seed ^= seed << 13
+    seed ^= seed >> 17
+    seed ^= seed << 5
+    return ((seed >>> 0) / 4294967296)
+  }
+
+  for (let sim = 0; sim < nSimulations; sim++) {
+    // Start each sim with current points
+    const simPoints = teams.map(t => t.points)
+    const simGD = teams.map(t => t.gd)
+
+    for (const fixture of fixtures) {
+      const { homeIdx, awayIdx } = fixture
+      const homeStr = strengths[homeIdx] * homeFactor
+      const awayStr = strengths[awayIdx]
+      const total = homeStr + awayStr
+
+      // Bradley-Terry probabilities
+      let pHome = homeStr / total
+      let pAway = awayStr / total
+
+      // Inject draw probability: scale down H/A, add draw
+      // Draw is more likely when teams are close in strength
+      const strengthRatio = Math.min(homeStr, awayStr) / Math.max(homeStr, awayStr)
+      const drawProb = baseDrawRate * (0.7 + 0.6 * strengthRatio) // Higher when teams are closer
+      const clampedDraw = Math.min(0.40, Math.max(0.10, drawProb))
+
+      pHome = pHome * (1 - clampedDraw)
+      pAway = pAway * (1 - clampedDraw)
+
+      // Sample outcome
+      const r = rand()
+      if (r < pHome) {
+        // Home win
+        simPoints[homeIdx] += 3
+        simGD[homeIdx] += 1
+        simGD[awayIdx] -= 1
+      } else if (r < pHome + clampedDraw) {
+        // Draw
+        simPoints[homeIdx] += 1
+        simPoints[awayIdx] += 1
+      } else {
+        // Away win
+        simPoints[awayIdx] += 3
+        simGD[awayIdx] += 1
+        simGD[homeIdx] -= 1
+      }
+    }
+
+    // Sort teams by points (then GD) to determine final positions
+    const indices = teams.map((_, i) => i)
+    indices.sort((a, b) => {
+      if (simPoints[b] !== simPoints[a]) return simPoints[b] - simPoints[a]
+      return simGD[b] - simGD[a]
+    })
+
+    for (let pos = 0; pos < indices.length; pos++) {
+      const teamIdx = indices[pos]
+      positionCounts[teamIdx][pos]++
+      totalPointsSum[teamIdx] += simPoints[teamIdx]
+    }
+  }
+
+  // Build standings from simulation results
+  const standings: Standing[] = teams.map((team, idx) => {
+    const counts = positionCounts[idx]
+    const avgPoints = totalPointsSum[idx] / nSimulations
+
+    // Position distribution as probabilities
+    const positionDist: Record<number, number> = {}
+    for (let p = 0; p < numTeams; p++) {
+      if (counts[p] > 0) {
+        positionDist[p + 1] = parseFloat((counts[p] / nSimulations).toFixed(4))
+      }
+    }
+
+    // Calculate average final position
+    let avgPosition = 0
+    for (let p = 0; p < numTeams; p++) {
+      avgPosition += (p + 1) * counts[p]
+    }
+    avgPosition /= nSimulations
+
+    // Title = finished 1st
+    const titleProb = (counts[0] || 0) / nSimulations
+
+    // Top 4 = finished in positions 1-4
+    const top4Prob = ((counts[0] || 0) + (counts[1] || 0) + (counts[2] || 0) + (counts[3] || 0)) / nSimulations
+
+    // Europa = positions 5-7
+    const europaProb = ((counts[4] || 0) + (counts[5] || 0) + (counts[6] || 0)) / nSimulations
+
+    // Relegation = bottom 3
+    const relegationZone = numTeams <= 18 ? 3 : 3
+    let relegationProb = 0
+    for (let p = numTeams - relegationZone; p < numTeams; p++) {
+      relegationProb += (counts[p] || 0)
+    }
+    relegationProb /= nSimulations
+
+    return {
+      team_name: team.name,
+      team_id: null,
+      current_position: idx + 1,
+      current_points: team.points,
+      matches_played: team.matchesPlayed,
+      avg_final_position: parseFloat(avgPosition.toFixed(2)),
+      avg_final_points: parseFloat(avgPoints.toFixed(1)),
+      title_probability: parseFloat(titleProb.toFixed(4)),
+      top_4_probability: parseFloat(top4Prob.toFixed(4)),
+      europa_probability: parseFloat(europaProb.toFixed(4)),
+      relegation_probability: parseFloat(relegationProb.toFixed(4)),
+      position_distribution: positionDist,
+    }
+  })
+
+  // Sort by avg_final_position (predicted finish)
+  standings.sort((a, b) => a.avg_final_position - b.avg_final_position)
+
+  return standings
 }
-
-// Points per win
-const POINTS_PER_WIN = 3
-
-// Probability factors
-const TITLE_RANDOM_FACTOR = 0.1
-const TOP4_RANDOM_FACTOR = 0.05
-const RELEGATION_RANDOM_FACTOR = 0.05
 
 export async function GET(
   request: NextRequest,
@@ -236,133 +269,18 @@ export async function GET(
   const leagueId = parseInt(leagueIdStr, 10)
   const espnLeagueId = LEAGUE_MAPPING[leagueId]
   const leagueName = LEAGUE_NAMES[leagueId] || 'Unknown League'
-  
+
   const searchParams = request.nextUrl.searchParams
-  const nSimulations = parseInt(searchParams.get('n_simulations') || '1000', 10)
-  
+  const nSimulations = Math.min(50000, Math.max(100, parseInt(searchParams.get('n_simulations') || '10000', 10)))
+
   if (!espnLeagueId) {
     return NextResponse.json({ error: 'Invalid league ID' }, { status: 400 })
   }
-  
-  // Helper function to generate simulation results from team data
-  const generateSimulationResults = (teams: { name: string; points: number }[]) => {
-    const totalTeams = teams.length
-    const totalMatchesPerSeason = LEAGUE_MATCH_CONFIG[leagueId] || 38
-    const maxPoints = totalMatchesPerSeason * POINTS_PER_WIN // e.g., 114 for 38 games
-    
-    // Estimate matches played from leader's points (approximate 2 pts/match average)
-    const leaderPoints = teams[0]?.points || 0
-    const estimatedMatchesPlayed = Math.min(totalMatchesPerSeason, Math.round(leaderPoints / 2))
-    const remainingMatches = totalMatchesPerSeason - estimatedMatchesPlayed
-    
-    // Calculate projected points for all teams based on current performance
-    const teamsWithProjections = teams.map((team, idx) => {
-      const currentPosition = idx + 1
-      const points = team.points
-      
-      // Calculate avg points per game based on estimated matches played
-      const avgPointsPerGame = estimatedMatchesPlayed > 0 ? points / estimatedMatchesPlayed : 1.5
-      
-      // Project final points: current points + expected from remaining matches
-      // Leaders (lower positions) get slight boost as they're more likely to maintain form
-      const leaderBonus = 1 - (0.05 * (currentPosition - 1) / totalTeams)
-      const projectedPoints = Math.min(maxPoints, points + (remainingMatches * avgPointsPerGame * leaderBonus))
-      
-      return {
-        name: team.name,
-        currentPosition,
-        currentPoints: points,
-        projectedPoints: Math.round(projectedPoints),
-      }
-    })
-    
-    // Sort by projected points to get predicted final positions
-    // This ensures the team with most expected points is #1
-    const sortedByProjected = [...teamsWithProjections].sort((a, b) => b.projectedPoints - a.projectedPoints)
-    
-    // Create standings with probabilities based on PROJECTED position
-    const standings: Standing[] = sortedByProjected.map((team, projectedIdx) => {
-      const projectedPosition = projectedIdx + 1
-      
-      // Calculate probabilities based on projected position
-      // Position 1 gets highest title probability, decreases for others
-      let titleProb = 0
-      if (projectedPosition === 1) {
-        titleProb = 0.45 + Math.random() * TITLE_RANDOM_FACTOR
-      } else if (projectedPosition === 2) {
-        titleProb = 0.25 + Math.random() * TITLE_RANDOM_FACTOR
-      } else if (projectedPosition === 3) {
-        titleProb = 0.12 + Math.random() * TITLE_RANDOM_FACTOR
-      } else if (projectedPosition === 4) {
-        titleProb = 0.05 + Math.random() * TITLE_RANDOM_FACTOR
-      }
-      
-      // Top 4 probability
-      let top4Prob = 0
-      if (projectedPosition <= 4) {
-        top4Prob = 0.7 + (4 - projectedPosition) * 0.08 + Math.random() * TOP4_RANDOM_FACTOR
-      } else if (projectedPosition <= 6) {
-        top4Prob = 0.3 - (projectedPosition - 4) * 0.1 + Math.random() * TOP4_RANDOM_FACTOR
-      } else if (projectedPosition <= 8) {
-        top4Prob = 0.05 + Math.random() * 0.05
-      }
-      
-      // Europa probability (5th-7th typically)
-      let europaProb = 0
-      if (projectedPosition >= 5 && projectedPosition <= 7) {
-        europaProb = 0.4 + Math.random() * 0.1
-      } else if (projectedPosition === 4 || projectedPosition === 8) {
-        europaProb = 0.15 + Math.random() * 0.1
-      }
-      
-      // Relegation probability (bottom 3-4 teams)
-      const relegationZone = totalTeams <= 18 ? 3 : 3 // Bottom 3 usually
-      let relegationProb = 0
-      if (projectedPosition > totalTeams - relegationZone) {
-        relegationProb = 0.5 + (projectedPosition - (totalTeams - relegationZone)) * 0.15 + Math.random() * RELEGATION_RANDOM_FACTOR
-      } else if (projectedPosition > totalTeams - 5) {
-        relegationProb = 0.15 + Math.random() * RELEGATION_RANDOM_FACTOR
-      }
-      
-      return {
-        team_name: team.name,
-        team_id: null,
-        current_position: team.currentPosition,
-        current_points: team.currentPoints,
-        avg_final_position: projectedPosition + (Math.random() * 0.5 - 0.25),
-        avg_final_points: team.projectedPoints,
-        title_probability: Math.min(1, titleProb),
-        top_4_probability: Math.min(1, top4Prob),
-        europa_probability: Math.min(1, europaProb),
-        relegation_probability: Math.min(1, relegationProb),
-      }
-    })
-    
-    // The team with highest expected points is the most likely champion (first in sorted list)
-    const mostLikelyChampion = standings[0]?.team_name || 'Unknown'
-    const championProbability = standings[0]?.title_probability || 0
-    
-    const sortedByTop4 = [...standings].sort((a, b) => b.top_4_probability - a.top_4_probability)
-    const likelyTop4 = sortedByTop4.slice(0, 4).map(t => t.team_name)
-    
-    const sortedByRelegation = [...standings].sort((a, b) => b.relegation_probability - a.relegation_probability)
-    const relegationCandidates = sortedByRelegation.slice(0, 3).map(t => t.team_name)
-    
-    return {
-      league_id: leagueId,
-      league_name: leagueName,
-      n_simulations: nSimulations,
-      remaining_matches: remainingMatches,
-      most_likely_champion: mostLikelyChampion,
-      champion_probability: championProbability,
-      likely_top_4: likelyTop4,
-      relegation_candidates: relegationCandidates,
-      standings,
-    }
-  }
-  
+
+  const totalMatchesPerSeason = LEAGUE_MATCH_CONFIG[leagueId] || 38
+
   try {
-    // Try to fetch current standings from ESPN
+    // Fetch current standings from ESPN
     const standingsRes = await fetch(
       `https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`,
       {
@@ -373,36 +291,69 @@ export async function GET(
         next: { revalidate: 300 },
       }
     )
-    
+
     if (!standingsRes.ok) {
       throw new Error('Failed to fetch standings from ESPN')
     }
-    
+
     const standingsData = await standingsRes.json()
     const entries = standingsData.children?.[0]?.standings?.entries || []
-    
+
     if (entries.length === 0) {
       throw new Error('No standings data available')
     }
-    
-    // Parse ESPN standings
-    const teams = entries.map((entry: any) => ({
-      name: entry.team?.displayName || 'Unknown',
-      points: entry.stats?.find((s: any) => s.name === 'points')?.value || 0,
-    }))
-    
-    return NextResponse.json(generateSimulationResults(teams))
+
+    // Parse ESPN standings with full stats
+    const teams: TeamData[] = entries.map((entry: any) => {
+      const stats = entry.stats || []
+      const getStat = (name: string) => stats.find((s: any) => s.name === name)?.value || 0
+      return {
+        name: entry.team?.displayName || 'Unknown',
+        points: getStat('points'),
+        wins: getStat('wins'),
+        draws: getStat('ties'),
+        losses: getStat('losses'),
+        gf: getStat('pointsFor'),
+        ga: getStat('pointsAgainst'),
+        gd: getStat('pointDifferential'),
+        matchesPlayed: getStat('gamesPlayed'),
+      }
+    })
+
+    // Sort by current points (ESPN should already do this, but ensure)
+    teams.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points
+      return b.gd - a.gd
+    })
+
+    const standings = runMonteCarloSimulation(teams, totalMatchesPerSeason, nSimulations, leagueId)
+
+    const remainingMatches = Math.max(0, totalMatchesPerSeason - (teams[0]?.matchesPlayed || 0))
+    const mostLikelyChampion = standings[0]?.team_name || 'Unknown'
+    const championProbability = standings[0]?.title_probability || 0
+
+    const sortedByTop4 = [...standings].sort((a, b) => b.top_4_probability - a.top_4_probability)
+    const likelyTop4 = sortedByTop4.slice(0, 4).map(t => t.team_name)
+
+    const sortedByRelegation = [...standings].sort((a, b) => b.relegation_probability - a.relegation_probability)
+    const relegationCandidates = sortedByRelegation.slice(0, 3).map(t => t.team_name)
+
+    return NextResponse.json({
+      league_id: leagueId,
+      league_name: leagueName,
+      n_simulations: nSimulations,
+      remaining_matches: remainingMatches,
+      matches_per_season: totalMatchesPerSeason,
+      most_likely_champion: mostLikelyChampion,
+      champion_probability: championProbability,
+      likely_top_4: likelyTop4,
+      relegation_candidates: relegationCandidates,
+      standings,
+    })
   } catch {
-    // Fallback to sample data when ESPN API is unavailable
-    const sampleTeams = SAMPLE_TEAMS[leagueId]
-    
-    if (!sampleTeams) {
-      return NextResponse.json(
-        { error: 'League data not available' },
-        { status: 500 }
-      )
-    }
-    
-    return NextResponse.json(generateSimulationResults(sampleTeams))
+    return NextResponse.json(
+      { error: 'Failed to fetch league standings. Please try again later.' },
+      { status: 500 }
+    )
   }
 }

@@ -59,14 +59,14 @@ except ImportError:
 
 
 # Total feature count for the enhanced model
-N_FEATURES = 55
+N_FEATURES = 66
 
 
 class FeatureBuilder:
     """
-    Builds 55-dimensional feature vectors from historical match data.
+    Builds 66-dimensional feature vectors from historical match data.
 
-    Feature groups:
+    Research-enhanced features (Szita 2024, Riad 2024):
     [0-2]   ELO features (3): home_elo, away_elo, elo_diff
     [3-14]  Form features (12): 5/10 match rolling + weighted + goals
     [15-18] Home/away splits (4): venue win%, venue goals avg
@@ -77,6 +77,10 @@ class FeatureBuilder:
     [38-42] Market-implied probabilities (5): from betting odds
     [43-50] Tactical stats (8): shots ratio, discipline, corners
     [51-54] League characteristics (4): league draw rate, goals/game, etc.
+    [55-56] Poisson xG (2): expected goals from scoring/conceding rates
+    [57-61] Key interactions (5): elo*form, elo*h2h, implied*form, etc.
+    [62-63] Goal consistency (2): scoring variance (lower = more predictable)
+    [64-65] Strength of schedule (2): avg opponent ELO in recent matches
     """
 
     LEAGUE_COEFFICIENTS = {
@@ -178,6 +182,15 @@ class FeatureBuilder:
         # League characteristics (4)
         "league_draw_rate", "league_avg_goals",
         "league_home_win_rate", "league_competitiveness",
+        # Poisson xG (2) — Szita 2024: Poisson regression xG as input feature
+        "poisson_xg_home", "poisson_xg_away",
+        # Key interactions (5) — captures nonlinear feature relationships
+        "elo_x_form_diff", "elo_x_h2h", "implied_home_x_form",
+        "rest_x_form_home", "rest_x_form_away",
+        # Goal consistency (2) — lower variance = more predictable
+        "home_goals_consistency", "away_goals_consistency",
+        # Strength of schedule (2) — avg opponent ELO in recent matches
+        "home_sos", "away_sos",
     ]
 
     def __init__(self):
@@ -361,6 +374,42 @@ class FeatureBuilder:
         total = total_for + total_against
         return total_for / total if total > 0 else 0.5
 
+    def _get_poisson_xg(self, team: str, is_home: bool, league: str, n: int = 10) -> float:
+        """Compute Poisson-based expected goals (Szita 2024).
+
+        Uses team's scoring rate and opponent-adjusted league average
+        to generate an expected goals figure.
+        """
+        history = self.team_history.get(team, [])[-n:]
+        if len(history) < 3:
+            return 1.3 if is_home else 1.0
+        # Team's scoring rate
+        scored = sum(m["goals_scored"] for m in history) / len(history)
+        # League average goals per game (per team)
+        league_avg = self.LEAGUE_AVG_TOTAL_GOALS.get(league, 2.7) / 2.0
+        # Home advantage factor
+        home_factor = 1.15 if is_home else 0.87
+        # Poisson lambda = team_rate * home_factor, bounded to [0.3, 4.0]
+        xg = scored * home_factor * (league_avg / max(league_avg, 0.5))
+        return max(0.3, min(4.0, xg))
+
+    def _get_goals_consistency(self, team: str, n: int = 10) -> float:
+        """Goal scoring consistency: 1/(1+std). Higher = more consistent."""
+        history = self.team_history.get(team, [])[-n:]
+        if len(history) < 3:
+            return 0.5
+        goals = [m["goals_scored"] for m in history]
+        std = float(np.std(goals))
+        return 1.0 / (1.0 + std)
+
+    def _get_strength_of_schedule(self, team: str, n: int = 10) -> float:
+        """Average ELO of recent opponents (strength of schedule)."""
+        history = self.team_history.get(team, [])[-n:]
+        if not history:
+            return 1500.0
+        opp_elos = [self._get_elo(m["opponent"]) for m in history]
+        return sum(opp_elos) / len(opp_elos)
+
     @staticmethod
     def _odds_to_implied_probs(odds_h: Optional[float], odds_d: Optional[float],
                                 odds_a: Optional[float]) -> Tuple[float, float, float, float]:
@@ -461,6 +510,21 @@ class FeatureBuilder:
             self._get_corner_dominance(home), self._get_corner_dominance(away),
             # League characteristics (4) [51-54]
             league_draw_rate, league_avg_goals, league_home_rate, league_comp,
+            # Poisson xG (2) [55-56]
+            self._get_poisson_xg(home, True, league),
+            self._get_poisson_xg(away, False, league),
+            # Key interactions (5) [57-61]
+            (home_elo - away_elo) * (self._get_weighted_form(home) - self._get_weighted_form(away)),  # elo × form_diff
+            (home_elo - away_elo) * h2h_adv,  # elo × h2h advantage
+            impl_h * self._get_weighted_form(home) if impl_h > 0 else 0.0,  # market × form
+            (home_rest / 7.0) * self._get_weighted_form(home),  # rest × form home
+            (away_rest / 7.0) * self._get_weighted_form(away),  # rest × form away
+            # Goal consistency (2) [62-63]
+            self._get_goals_consistency(home),
+            self._get_goals_consistency(away),
+            # Strength of schedule (2) [64-65]
+            self._get_strength_of_schedule(home),
+            self._get_strength_of_schedule(away),
         ], dtype=np.float64)
 
         return features

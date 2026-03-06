@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install httpx scipy numpy scikit-learn xgboost lightgbm
+          pip install httpx scipy numpy scikit-learn xgboost lightgbm pydantic pydantic-settings email-validator
 
       - name: Fetch match outcomes
         run: python -m backend.scripts.fetch_outcomes

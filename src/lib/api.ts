@@ -182,6 +182,7 @@ export interface LeagueSimulationResult {
   league_name: string;
   n_simulations: number;
   remaining_matches: number;
+  matches_per_season: number;
   most_likely_champion: string;
   champion_probability: number;
   likely_top_4: string[];
@@ -191,12 +192,14 @@ export interface LeagueSimulationResult {
     team_id: number | null;
     current_position: number;
     current_points: number;
+    matches_played: number;
     avg_final_position: number;
     avg_final_points: number;
     title_probability: number;
     top_4_probability: number;
     europa_probability: number;
     relegation_probability: number;
+    position_distribution: Record<number, number>;
   }>;
 }
 

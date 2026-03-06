@@ -1,27 +1,30 @@
 """
-Per-League Neural Network Prediction Model (v5.0).
+Per-League Neural Network Prediction Model (v5.1).
 
-Research-backed architecture for 55-feature input with:
+Research-backed architecture for 66-feature input with:
   - Deeper neural network with batch normalization
   - Separate outcome (3-class) and scoreline (regression) heads
-  - XGBoost, LightGBM, GBT, Random Forest ensemble
+  - XGBoost, LightGBM, GBT, Random Forest, ExtraTrees, AdaBoost ensemble
   - Isotonic regression probability calibration (Settembre et al. 2024)
   - Class-balanced training with draw boost (Atta Mills et al. 2024)
   - Optimized draw threshold from Poisson draw probability
   - Stacking meta-learner for ensemble combination
   - Per-league characteristic tuning
   - Temperature scaling for probability sharpness
+  - Poisson xG features, interaction terms, SoS (Szita 2024, Riad 2024)
 
 Research basis:
   - Geurkink et al. (2021): Feature importance via SHAP, XGBoost as best
   - Yeung et al. (2024): ~53% state-of-the-art for 3-class prediction
   - Atta Mills et al. (2024): Ensemble ML with class balancing
   - Settembre et al. (2024): Calibration improves by 2-5pp
+  - Szita (2024): Poisson xG as feature, 7-model stacking, AdaBoost diversity
+  - Riad (2024): xG-based features, PPDA, interaction terms
 
 Architecture:
-  Outcome NN: Input(55) → Dense(256, ReLU) → BN → Drop(0.3) →
+  Outcome NN: Input(66) → Dense(256, ReLU) → BN → Drop(0.3) →
               Dense(128, ReLU) → Drop(0.2) → Dense(64, ReLU) → Softmax(3)
-  Goals NN:   Input(55) → Dense(128, ReLU) → Drop(0.2) →
+  Goals NN:   Input(66) → Dense(128, ReLU) → Drop(0.2) →
               Dense(64, ReLU) → Dense(32, ReLU) → Linear(2)
   Meta:       Stacked probabilities from all models → LogisticRegression → final
 """
@@ -107,8 +110,9 @@ class PerLeagueNeuralModel:
     def _build_ensemble(self):
         from sklearn.ensemble import (
             GradientBoostingClassifier, RandomForestClassifier,
-            ExtraTreesClassifier,
+            ExtraTreesClassifier, AdaBoostClassifier,
         )
+        from sklearn.tree import DecisionTreeClassifier
 
         # GBT: proven strong for soccer prediction (Geurkink et al. 2021)
         self.ensemble_models['gbt'] = GradientBoostingClassifier(
@@ -126,6 +130,13 @@ class PerLeagueNeuralModel:
         self.ensemble_models['et'] = ExtraTreesClassifier(
             n_estimators=400, max_depth=12, min_samples_leaf=8,
             class_weight='balanced', random_state=42, n_jobs=-1,
+        )
+
+        # AdaBoost: Szita 2024 — adds diversity via boosting weak learners
+        self.ensemble_models['ada'] = AdaBoostClassifier(
+            estimator=DecisionTreeClassifier(max_depth=4),
+            n_estimators=300, learning_rate=0.05,
+            algorithm='SAMME', random_state=42,
         )
 
         try:
@@ -287,7 +298,7 @@ class PerLeagueNeuralModel:
         self.training_metadata = {
             'league': self.league_key,
             'trained_at': datetime.utcnow().isoformat(),
-            'model_version': '5.0.0',
+            'model_version': '5.1.0',
             'samples': len(X),
             'train_samples': len(X_train),
             'cal_samples': len(X_cal),
@@ -414,11 +425,13 @@ class PerLeagueNeuralModel:
     def _blend_probas(self, X_scaled: np.ndarray) -> np.ndarray:
         """Blend all model probabilities with optimized weights."""
         weights = {
-            'nn': 0.30,
-            'xgb': 0.25,
-            'lgb': 0.20,
-            'gbt': 0.15,
-            'rf': 0.10,
+            'nn': 0.25,
+            'xgb': 0.20,
+            'lgb': 0.18,
+            'gbt': 0.12,
+            'rf': 0.08,
+            'et': 0.08,
+            'ada': 0.09,
         }
 
         total_weight = 0.0
@@ -514,7 +527,7 @@ class PerLeagueNeuralModel:
             json.dump({
                 "draw_threshold": self.draw_threshold,
                 "temperature": self.temperature,
-                "model_version": "5.0.0",
+                "model_version": "5.1.0",
             }, f, indent=2)
         with open(save_dir / "metadata.json", "w") as f:
             json.dump(self.training_metadata, f, indent=2)
