@@ -3,15 +3,8 @@
 import { useState, useEffect } from 'react'
 
 interface NewsArticle {
-  id: string
-  title: string
-  description: string
-  published: string
-  image: string | null
-  imageCaption?: string | null
-  url: string
-  type: string
-  category?: string
+  id: string; title: string; description: string; published: string
+  image: string | null; imageCaption?: string | null; url: string; type: string; category?: string
 }
 
 export default function NewsPage() {
@@ -26,45 +19,34 @@ export default function NewsPage() {
         if (!res.ok) throw new Error('Failed to fetch news')
         const data = await res.json()
         setArticles(data.articles || [])
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load news')
-      } finally {
-        setLoading(false)
-      }
+      } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load news') }
+      finally { setLoading(false) }
     }
-
     fetchNews()
   }, [])
 
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-      })
-    } catch {
-      return dateStr
-    }
+      const now = new Date()
+      const diffMs = now.getTime() - date.getTime()
+      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
+      if (diffHrs < 1) return 'Just now'
+      if (diffHrs < 24) return `${diffHrs}h ago`
+      if (diffHrs < 48) return 'Yesterday'
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } catch { return dateStr }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-primary)' }}>Soccer News</h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="animate-pulse rounded-2xl overflow-hidden fm-card">
-                <div className="h-48" style={{ backgroundColor: 'var(--border-color)' }} />
-                <div className="p-5">
-                  <div className="h-4 rounded w-3/4 mb-3" style={{ backgroundColor: 'var(--border-color)' }} />
-                  <div className="h-3 rounded w-full mb-2" style={{ backgroundColor: 'var(--border-color)' }} />
-                  <div className="h-3 rounded w-2/3" style={{ backgroundColor: 'var(--border-color)' }} />
-                </div>
+      <div className="min-h-screen bg-[var(--background)]">
+        <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="animate-pulse bg-[var(--card-bg)] rounded-lg border border-[var(--border-color)] p-3 flex gap-3">
+                <div className="w-20 h-14 rounded bg-[var(--muted-bg)] flex-shrink-0" />
+                <div className="flex-1 space-y-2"><div className="h-3 bg-[var(--muted-bg)] rounded w-3/4" /><div className="h-2 bg-[var(--muted-bg)] rounded w-1/2" /></div>
               </div>
             ))}
           </div>
@@ -75,123 +57,57 @@ export default function NewsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="text-center">
-          <p className="mb-4" style={{ color: 'var(--danger)' }}>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Try Again
-          </button>
+          <p className="text-sm text-red-400 mb-3">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-3 py-1.5 bg-[var(--accent-primary)] text-black text-xs font-semibold rounded-lg">Retry</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Soccer News</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Latest updates from around the football world</p>
-        </div>
-
-        {/* Featured Article */}
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
+        {/* Featured */}
         {articles.length > 0 && (
-          <div className="mb-10">
-            <a
-              href={articles[0].url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block rounded-3xl overflow-hidden border transition-all duration-300 hover:border-indigo-500/50 hover:scale-[1.01] hover:shadow-xl fm-card"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2">
-                <div className="aspect-video lg:aspect-auto relative overflow-hidden">
-                  {articles[0].image ? (
-                    <img
-                      src={articles[0].image}
-                      alt={articles[0].title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--border-color)' }}>
-                      <span className="text-6xl">⚽</span>
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full">
-                      Featured
-                    </span>
-                  </div>
-                </div>
-                <div className="p-8 flex flex-col justify-center">
-                  <h2 className="text-2xl font-bold mb-4 group-hover:text-indigo-400 transition-colors" style={{ color: 'var(--text-primary)' }}>
-                    {articles[0].title}
-                  </h2>
-                  <p className="mb-4 line-clamp-3" style={{ color: 'var(--text-secondary)' }}>
-                    {articles[0].description}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                      {formatDate(articles[0].published)}
-                    </p>
-                    <span className="text-indigo-400 text-sm">→ Read full article</span>
-                  </div>
-                </div>
+          <a href={articles[0].url || '#'} target="_blank" rel="noopener noreferrer"
+            className="block mb-4 rounded-xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group">
+            <div className="aspect-video relative overflow-hidden">
+              {articles[0].image ? (
+                <img src={articles[0].image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[var(--muted-bg)]"><span className="text-4xl">⚽</span></div>
+              )}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent-primary)]">Featured</span>
+                <h2 className="text-base font-bold text-white mt-0.5 line-clamp-2">{articles[0].title}</h2>
+                <p className="text-xs text-white/60 mt-1">{formatDate(articles[0].published)}</p>
               </div>
-            </a>
-          </div>
+            </div>
+          </a>
         )}
 
-        {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Article List */}
+        <div className="space-y-0.5">
           {articles.slice(1).map((article) => (
-            <a
-              key={article.id}
-              href={article.url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:scale-[1.02] hover:border-indigo-500/50 fm-card"
-            >
-              <div className="aspect-video relative overflow-hidden">
-                {article.image ? (
-                  <img
-                    src={article.image}
-                    alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--border-color)' }}>
-                    <span className="text-4xl">⚽</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-5">
-                <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-indigo-400 transition-colors" style={{ color: 'var(--text-primary)' }}>
-                  {article.title}
-                </h3>
-                <p className="text-sm mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                  {article.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    {formatDate(article.published)}
-                  </p>
-                  <span className="text-indigo-400 text-xs">Read more →</span>
-                </div>
+            <a key={article.id} href={article.url || '#'} target="_blank" rel="noopener noreferrer"
+              className="flex gap-3 p-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group">
+              {article.image ? (
+                <img src={article.image} alt="" className="w-20 h-14 rounded object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-20 h-14 rounded bg-[var(--muted-bg)] flex items-center justify-center flex-shrink-0"><span className="text-xl">⚽</span></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors">{article.title}</h3>
+                <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{formatDate(article.published)}</p>
               </div>
             </a>
           ))}
         </div>
 
         {articles.length === 0 && (
-          <div className="text-center py-20">
-            <span className="text-6xl mb-4 block">📰</span>
-            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>No news articles available</p>
-            <p className="text-sm mt-2" style={{ color: 'var(--text-tertiary)' }}>Check back later for updates</p>
-          </div>
+          <div className="text-center py-16"><span className="text-3xl block mb-2">📰</span><p className="text-sm text-[var(--text-tertiary)]">No news available</p></div>
         )}
       </div>
     </div>

@@ -8,13 +8,13 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Soccer Stats Predictor',
-  description: 'AI-powered soccer match prediction and analysis with real-time data from ESPN and FotMob',
+  title: 'FotPredict AI — Live Scores & AI Match Predictions',
+  description: 'AI-powered soccer predictions with live scores, league tracking, and match analysis across 11 top leagues.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Soccer Predictor',
+    title: 'FotPredict AI',
   },
   icons: {
     icon: '/soccer-ball.png',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
   },
-  themeColor: '#4F46E5',
+  themeColor: '#00c853',
 }
 
 // Script to prevent flash of wrong theme - default to dark like Fotmob
@@ -58,10 +58,12 @@ export default function RootLayout({
             </Suspense>
             <div className="flex flex-col min-h-screen">
               <Navbar />
-              <main className="flex-grow">
+              <main className="flex-grow pb-20 md:pb-0">
                 {children}
               </main>
-              <Footer />
+              <div className="hidden md:block">
+                <Footer />
+              </div>
             </div>
           </AuthProvider>
         </ThemeProvider>

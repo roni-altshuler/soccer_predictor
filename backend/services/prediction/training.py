@@ -61,6 +61,32 @@ except ImportError:
 # Total feature count for the enhanced model
 N_FEATURES = 66
 
+# Module-level league characteristics (also available as FeatureBuilder class attrs)
+LEAGUE_DRAW_RATES = {
+    "premier_league": 0.25, "la_liga": 0.24, "bundesliga": 0.23,
+    "serie_a": 0.27, "ligue_1": 0.24, "eredivisie": 0.22,
+    "primeira_liga": 0.25, "mls": 0.20,
+    "champions_league": 0.22, "europa_league": 0.23,
+}
+LEAGUE_AVG_TOTAL_GOALS = {
+    "premier_league": 2.77, "la_liga": 2.56, "bundesliga": 3.02,
+    "serie_a": 2.58, "ligue_1": 2.55, "eredivisie": 2.95,
+    "primeira_liga": 2.50, "mls": 2.85,
+    "champions_league": 2.95, "europa_league": 2.78,
+}
+LEAGUE_HOME_WIN_RATE = {
+    "premier_league": 0.44, "la_liga": 0.47, "bundesliga": 0.44,
+    "serie_a": 0.44, "ligue_1": 0.44, "eredivisie": 0.46,
+    "primeira_liga": 0.48, "mls": 0.47,
+    "champions_league": 0.45, "europa_league": 0.44,
+}
+LEAGUE_COMPETITIVENESS = {
+    "premier_league": 0.72, "la_liga": 0.65, "bundesliga": 0.60,
+    "serie_a": 0.68, "ligue_1": 0.55, "eredivisie": 0.62,
+    "primeira_liga": 0.60, "mls": 0.82,
+    "champions_league": 0.70, "europa_league": 0.70,
+}
+
 
 class FeatureBuilder:
     """

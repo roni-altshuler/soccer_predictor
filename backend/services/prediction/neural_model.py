@@ -497,14 +497,21 @@ class PerLeagueNeuralModel:
             return
         X_scaled = self.scaler.transform(X.reshape(1, -1) if X.ndim == 1 else X)
         try:
+            # Temporarily disable early_stopping for partial_fit compatibility
+            es = getattr(self.outcome_nn, 'early_stopping', False)
+            self.outcome_nn.early_stopping = False
             self.outcome_nn.partial_fit(X_scaled, y_outcome, classes=[0, 1, 2])
+            self.outcome_nn.early_stopping = es
         except Exception as e:
             logger.warning(f"[{self.league_key}] partial_fit outcome failed: {e}")
         if y_goals is not None:
             try:
                 if y_goals.ndim == 1:
                     y_goals = y_goals.reshape(1, -1)
+                es_g = getattr(self.goals_nn, 'early_stopping', False)
+                self.goals_nn.early_stopping = False
                 self.goals_nn.partial_fit(X_scaled, y_goals)
+                self.goals_nn.early_stopping = es_g
             except Exception as e:
                 logger.warning(f"[{self.league_key}] partial_fit goals failed: {e}")
 

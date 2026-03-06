@@ -1490,14 +1490,14 @@
       "weather_factor": 1.0,
       "referee_factor": 1.0,
       "venue": "Tottenham Hotspur Stadium",
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "goals_diff": null,
+      "actual_home_goals": 1,
+      "actual_away_goals": 3,
+      "actual_winner": "away",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-03-03T12:18:08.088585",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-03-06T18:30:36.108353"
     },
     {
       "match_id": "741209",

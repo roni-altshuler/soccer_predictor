@@ -5,73 +5,37 @@ import Link from 'next/link'
 export const Footer = () => {
   return (
     <footer className="bg-[var(--card-bg)] border-t border-[var(--border-color)] mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           {/* Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center">
-                <span className="text-xl">⚽</span>
-              </div>
-              <span className="text-lg font-bold text-[var(--text-primary)]">
-                Soccer Predictor
-              </span>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-[var(--accent-primary)] flex items-center justify-center">
+              <span className="text-sm font-bold text-black">⚽</span>
             </div>
-            <p className="text-sm text-[var(--text-secondary)]">
-              AI-powered soccer match prediction and analysis
-            </p>
-          </div>
-
-          {/* Quick Links */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-              Quick Links
-            </h3>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Link href="/upcoming" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
-                Leagues
-              </Link>
-              <Link href="/predict" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
-                Predict
-              </Link>
-              <Link href="/analytics" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
-                Analytics
-              </Link>
-              <Link href="/about" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
-                About
-              </Link>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
+              <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)] text-white">AI</span>
             </div>
           </div>
 
-          {/* Data Source */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-              Data Source
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Powered by{' '}
-              <a 
-                href="https://fbref.com/en/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[var(--accent-primary)] hover:underline font-medium"
-              >
-                FBRef
-              </a>
-            </p>
+          {/* Links */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <Link href="/matches" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">Leagues</Link>
+            <Link href="/predict" className="text-[var(--text-tertiary)] hover:text-[var(--accent-ai)] transition-colors">AI Predict</Link>
+            <Link href="/tracking" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">Accuracy</Link>
+            <Link href="/news" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">News</Link>
+            <Link href="/about" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">About</Link>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-8 pt-6 border-t border-[var(--border-color)]">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-[var(--text-tertiary)]">
-              &copy; {new Date().getFullYear()} Ron Oshri Altshuler. All Rights Reserved.
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] text-center">
-              ⚠️ For educational and entertainment purposes only. Soccer outcomes are inherently unpredictable.
-            </p>
-          </div>
+        {/* Bottom */}
+        <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col md:flex-row justify-between items-center gap-2">
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            &copy; {new Date().getFullYear()} Ron Oshri Altshuler. All Rights Reserved.
+          </p>
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            ⚠️ For educational &amp; entertainment purposes only.
+          </p>
         </div>
       </div>
     </footer>
