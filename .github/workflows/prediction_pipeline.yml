@@ -54,7 +54,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add backend/data/predictions/ backend/data/models/ backend/data/league_params.json backend/data/training_results.json
+          
+          # Only add files that exist and are tracked (models/ is gitignored)
+          git add backend/data/predictions/ backend/data/league_params.json || true
+          if [ -f backend/data/training_results.json ]; then
+            git add backend/data/training_results.json || true
+          fi
           
           # Only commit if there are changes
           if git diff --cached --quiet; then
