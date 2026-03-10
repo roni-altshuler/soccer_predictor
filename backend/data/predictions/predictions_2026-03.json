@@ -3506,14 +3506,14 @@
       "weather_factor": 1.0,
       "referee_factor": 1.0,
       "venue": "RAMS Park",
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "goals_diff": null,
+      "actual_home_goals": 1,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-03-03T12:18:08.098140",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-03-10T22:27:41.749501"
     },
     {
       "match_id": "401862641",
