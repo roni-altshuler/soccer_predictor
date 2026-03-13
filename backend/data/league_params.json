@@ -1,12 +1,12 @@
 {
   "version": "5.0.0",
-  "updated_at": "2026-03-13T07:06:38.308067",
+  "updated_at": "2026-03-13T14:43:29.911976",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
       "display_name": "Premier League",
       "country": "England",
-      "avg_goals": 0.9808,
+      "avg_goals": 0.9625,
       "home_adv": 0.1,
       "rho": -0.13,
       "draw_rate": 0.23,
@@ -18,7 +18,7 @@
     "esp.1": {
       "display_name": "La Liga",
       "country": "Spain",
-      "avg_goals": 1.1689,
+      "avg_goals": 1.1636,
       "home_adv": 0.4,
       "rho": -0.12,
       "draw_rate": 0.12,
@@ -30,7 +30,7 @@
     "ger.1": {
       "display_name": "Bundesliga",
       "country": "Germany",
-      "avg_goals": 1.324,
+      "avg_goals": 1.3153,
       "home_adv": 0.4,
       "rho": -0.11,
       "draw_rate": 0.12,
@@ -42,8 +42,8 @@
     "ita.1": {
       "display_name": "Serie A",
       "country": "Italy",
-      "avg_goals": 0.8955,
-      "home_adv": 0.3161,
+      "avg_goals": 0.8779,
+      "home_adv": 0.3212,
       "rho": -0.14,
       "draw_rate": 0.12,
       "league_coefficient": 1.05,
@@ -54,7 +54,7 @@
     "fra.1": {
       "display_name": "Ligue 1",
       "country": "France",
-      "avg_goals": 1.0222,
+      "avg_goals": 1.0098,
       "home_adv": 0.4,
       "rho": -0.12,
       "draw_rate": 0.12,
@@ -66,10 +66,10 @@
     "ned.1": {
       "display_name": "Eredivisie",
       "country": "Netherlands",
-      "avg_goals": 1.3501,
+      "avg_goals": 1.3467,
       "home_adv": 0.1,
       "rho": -0.11,
-      "draw_rate": 0.2912,
+      "draw_rate": 0.297,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -90,7 +90,7 @@
     "usa.1": {
       "display_name": "MLS",
       "country": "USA",
-      "avg_goals": 1.0879,
+      "avg_goals": 1.0749,
       "home_adv": 0.4,
       "rho": -0.1,
       "draw_rate": 0.12,
@@ -102,7 +102,7 @@
     "uefa.champions": {
       "display_name": "Champions League",
       "country": "Europe",
-      "avg_goals": 1.6931,
+      "avg_goals": 1.7031,
       "home_adv": 0.4,
       "rho": -0.12,
       "draw_rate": 0.12,
@@ -114,7 +114,7 @@
     "uefa.europa": {
       "display_name": "Europa League",
       "country": "Europe",
-      "avg_goals": 0.9529,
+      "avg_goals": 0.9279,
       "home_adv": 0.4,
       "rho": -0.11,
       "draw_rate": 0.12,
