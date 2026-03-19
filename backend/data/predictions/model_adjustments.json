@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-19T14:51:53.047391",
-  "total_predictions_analyzed": 1193,
-  "overall_accuracy": 0.4426,
+  "generated_at": "2026-03-19T22:28:17.576430",
+  "total_predictions_analyzed": 1207,
+  "overall_accuracy": 0.4383,
   "by_league": {
     "La Liga": {
       "predictions": 140,
@@ -256,30 +256,58 @@
       }
     },
     "Europa League": {
-      "predictions": 79,
-      "accuracy": 0.481,
-      "brier_score": 0.6255,
-      "scoreline_rate": 0.0886,
-      "actual_draw_rate": 0.1899,
-      "predicted_draw_rate": 0.2975,
-      "draw_rate_adjustment": -0.03228,
-      "actual_home_win_rate": 0.481,
-      "predicted_home_win_rate": 0.4126,
-      "home_adv_adjustment": 0.01368,
-      "avg_goals_diff": -0.473,
-      "goals_scale_adjustment": -0.02364,
+      "predictions": 85,
+      "accuracy": 0.4471,
+      "brier_score": 0.6198,
+      "scoreline_rate": 0.0824,
+      "actual_draw_rate": 0.1765,
+      "predicted_draw_rate": 0.2898,
+      "draw_rate_adjustment": -0.034,
+      "actual_home_win_rate": 0.4941,
+      "predicted_home_win_rate": 0.4157,
+      "home_adv_adjustment": 0.01569,
+      "avg_goals_diff": -0.372,
+      "goals_scale_adjustment": -0.01859,
       "confidence_calibration": {
         "high": {
-          "count": 7,
-          "accuracy": 0.5714
+          "count": 8,
+          "accuracy": 0.5
         },
         "medium": {
-          "count": 71,
-          "accuracy": 0.4789
+          "count": 76,
+          "accuracy": 0.4474
         },
         "low": {
           "count": 1,
           "accuracy": 0.0
+        }
+      }
+    },
+    "Conference League": {
+      "predictions": 16,
+      "accuracy": 0.25,
+      "brier_score": 0.7141,
+      "scoreline_rate": 0.125,
+      "actual_draw_rate": 0.1875,
+      "predicted_draw_rate": 0.3192,
+      "draw_rate_adjustment": -0.03952,
+      "actual_home_win_rate": 0.1875,
+      "predicted_home_win_rate": 0.3859,
+      "home_adv_adjustment": -0.03968,
+      "avg_goals_diff": -0.366,
+      "goals_scale_adjustment": -0.01828,
+      "confidence_calibration": {
+        "high": {
+          "count": 0,
+          "accuracy": 0
+        },
+        "medium": {
+          "count": 16,
+          "accuracy": 0.25
+        },
+        "low": {
+          "count": 0,
+          "accuracy": 0
         }
       }
     }
@@ -287,13 +315,13 @@
   "suggested_params": {
     "La Liga": {
       "current": {
-        "avg_goals": 1.0787,
+        "avg_goals": 1.0745,
         "home_adv": 0.4,
         "rho": -0.12,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.075,
+        "avg_goals": 1.07,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.12
@@ -302,28 +330,28 @@
     },
     "Premier League": {
       "current": {
-        "avg_goals": 0.6041,
+        "avg_goals": 0.5823,
         "home_adv": 0.1,
         "rho": -0.13,
-        "draw_rate": 0.272
+        "draw_rate": 0.278
       },
       "suggested": {
-        "avg_goals": 0.582,
+        "avg_goals": 0.561,
         "home_adv": 0.1,
-        "draw_rate": 0.278,
+        "draw_rate": 0.284,
         "rho": -0.13
       },
       "changed": true
     },
     "Ligue 1": {
       "current": {
-        "avg_goals": 0.7864,
+        "avg_goals": 0.7733,
         "home_adv": 0.4,
         "rho": -0.12,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 0.773,
+        "avg_goals": 0.76,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.12
@@ -347,13 +375,13 @@
     },
     "Bundesliga": {
       "current": {
-        "avg_goals": 1.0985,
+        "avg_goals": 1.0845,
         "home_adv": 0.4,
         "rho": -0.11,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.084,
+        "avg_goals": 1.07,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.11
@@ -362,13 +390,13 @@
     },
     "Primeira Liga": {
       "current": {
-        "avg_goals": 1.2459,
+        "avg_goals": 1.2428,
         "home_adv": 0.4,
         "rho": -0.13,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.243,
+        "avg_goals": 1.24,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.13
@@ -377,13 +405,13 @@
     },
     "Serie A": {
       "current": {
-        "avg_goals": 0.587,
+        "avg_goals": 0.5701,
         "home_adv": 0.4,
         "rho": -0.14,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 0.57,
+        "avg_goals": 0.553,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.14
@@ -392,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.1321,
+        "avg_goals": 1.1415,
         "home_adv": 0.4,
         "rho": -0.1,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.141,
+        "avg_goals": 1.151,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.1
@@ -407,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 1.8789,
+        "avg_goals": 1.893,
         "home_adv": 0.4,
         "rho": -0.12,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.893,
+        "avg_goals": 1.907,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.12
@@ -422,16 +450,31 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": 0.5057,
+        "avg_goals": 0.4821,
         "home_adv": 0.4,
         "rho": -0.11,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 0.482,
+        "avg_goals": 0.464,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.11
+      },
+      "changed": true
+    },
+    "Conference League": {
+      "current": {
+        "avg_goals": 1.38,
+        "home_adv": 0.2,
+        "rho": -0.1,
+        "draw_rate": 0.23
+      },
+      "suggested": {
+        "avg_goals": 1.362,
+        "home_adv": 0.16,
+        "draw_rate": 0.19,
+        "rho": -0.1
       },
       "changed": true
     }
