@@ -36,10 +36,12 @@ interface PredSummary {
 interface OverallMetrics {
   total_predictions: number
   completed_predictions: number
+  pending_predictions?: number
   winner_correct_count: number
   winner_accuracy: number
   exact_scoreline_count: number
   exact_scoreline_rate: number
+  weighted_accuracy_score?: number
   brier_score: number
   high_confidence_accuracy: number
   medium_confidence_accuracy: number
@@ -204,13 +206,15 @@ function HeroMetrics({
 }) {
   const outcomeAcc = metrics.winner_accuracy
   const scoreAcc = metrics.exact_scoreline_rate
+  const weightedAcc = metrics.weighted_accuracy_score ?? ((metrics.winner_accuracy * 0.65) + (metrics.exact_scoreline_rate * 0.35))
   const outcomeColor = accuracyColor(outcomeAcc)
   const scoreColor = accuracyColor(scoreAcc)
+  const weightedColor = accuracyColor(weightedAcc)
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="p-6">
-        <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="flex flex-col lg:flex-row items-center gap-8">
           {/* Outcome Accuracy Ring */}
           <div className="flex flex-col items-center gap-2">
             <div className="relative w-32 h-32">
@@ -261,10 +265,35 @@ function HeroMetrics({
             </div>
           </div>
 
+          {/* Weighted Audit Ring */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative w-32 h-32">
+              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
+                <circle
+                  cx="64" cy="64" r="52"
+                  stroke={weightedColor} strokeWidth="8" fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={weightedAcc * 326.7 + ' 326.7'}
+                  className="transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold" style={{ color: weightedColor }}>{pct(weightedAcc)}</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Weighted Audit Score</p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                65% outcome pick + 35% exact scoreline
+              </p>
+            </div>
+          </div>
+
           {/* Stats + Form */}
           <div className="flex-1 space-y-4">
             <div>
-              <p className="text-sm font-medium text-[var(--text-secondary)] mb-1">Recent Form (Last 15)</p>
+              <p className="text-sm font-medium text-[var(--text-secondary)] mb-1">Evaluated Picks (Last 15 finished matches)</p>
               <div className="flex gap-1 flex-wrap">
                 {form.slice(0, 15).map((r, i) => (
                   <span
@@ -283,6 +312,7 @@ function HeroMetrics({
               </p>
             )}
             <div className="flex gap-4 text-xs text-[var(--text-tertiary)]">
+              <span>Pending: <span className="font-medium text-[var(--text-primary)]">{metrics.pending_predictions ?? Math.max(metrics.total_predictions - metrics.completed_predictions, 0)}</span></span>
               <span>Brier: <span className="font-medium text-[var(--text-primary)]">{(metrics.brier_score ?? 0).toFixed(3)}</span></span>
               <span>Avg Goal Diff: <span className="font-medium text-[var(--text-primary)]">{(metrics.avg_goals_difference ?? 0).toFixed(2)}</span></span>
               <span>Within 1 Goal: <span className="font-medium text-[var(--text-primary)]">{pct(metrics.within_1_goal_rate ?? 0)}</span></span>
@@ -301,15 +331,21 @@ function HeroMetrics({
 function KPIGrid({ metrics, last30 }: { metrics: OverallMetrics; last30: OverallMetrics }) {
   const kpis = [
     {
-      label: 'All-Time Outcome',
+      label: 'Evaluated Outcome',
       value: pct(metrics.winner_accuracy),
-      sub: metrics.completed_predictions + ' matches',
+      sub: metrics.completed_predictions + ' finished matches',
       color: accuracyColor(metrics.winner_accuracy),
+    },
+    {
+      label: 'Weighted Audit',
+      value: pct(metrics.weighted_accuracy_score ?? 0),
+      sub: 'Outcome + exact scoreline',
+      color: accuracyColor(metrics.weighted_accuracy_score ?? 0),
     },
     {
       label: 'Last 30 Days',
       value: last30.completed_predictions > 0 ? pct(last30.winner_accuracy) : '\u2014',
-      sub: last30.completed_predictions + ' matches',
+      sub: last30.completed_predictions + ' finished matches',
       color: last30.completed_predictions > 0 ? accuracyColor(last30.winner_accuracy) : '#888',
     },
     {
@@ -339,7 +375,7 @@ function KPIGrid({ metrics, last30 }: { metrics: OverallMetrics; last30: Overall
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
       {kpis.map((k) => (
         <div key={k.label} className="bg-[var(--card-bg)] border rounded-xl p-4 text-center" style={{ borderColor: 'var(--border-color)' }}>
           <p className="text-2xl font-bold" style={{ color: k.color }}>{k.value}</p>
@@ -484,11 +520,12 @@ function LeagueBreakdown({ data }: { data: Record<string, any> }) {
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
       <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-4">
-        Accuracy by League
+        League Evaluation Table
       </h3>
       <div className="space-y-3">
         {leagues.map(([league, stats]: any) => {
           const acc = stats.accuracy ?? 0
+          const weighted = stats.weighted_accuracy ?? stats.weightedAccuracy ?? acc
           return (
             <div key={league} className="flex items-center gap-3">
               <span className="text-xs text-[var(--text-primary)] font-medium w-32 truncate capitalize">
@@ -503,8 +540,11 @@ function LeagueBreakdown({ data }: { data: Record<string, any> }) {
               <span className="text-xs font-medium w-20 text-right" style={{ color: accuracyColor(acc) }}>
                 {pct(acc)}
               </span>
-              <span className="text-[10px] text-[var(--text-tertiary)] w-16 text-right">
-                {stats.correct ?? 0}/{stats.total ?? 0}
+              <span className="text-[10px] text-[var(--text-tertiary)] w-24 text-right">
+                Wtd {pct(weighted)}
+              </span>
+              <span className="text-[10px] text-[var(--text-tertiary)] w-20 text-right">
+                {(stats.correct ?? 0)}/{(stats.total ?? 0)} done
               </span>
             </div>
           )
@@ -564,7 +604,7 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
             Prediction History
           </h3>
           {hasLoaded && (
-            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{totalCount} total predictions</p>
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{totalCount} records · pending picks are not scored until the match finishes</p>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">

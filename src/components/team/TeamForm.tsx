@@ -6,23 +6,30 @@ interface TeamFormProps {
   form: string[];
   showLabels?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  matchDetails?: Array<{
+    date?: string;
+    opponent?: string;
+    venue?: string;
+    goals_for?: number;
+    goals_against?: number;
+  }>;
 }
 
-export default function TeamForm({ form, showLabels = false, size = 'md' }: TeamFormProps) {
+export default function TeamForm({ form, showLabels = false, size = 'md', matchDetails = [] }: TeamFormProps) {
   const sizeClasses = {
-    sm: 'w-5 h-5 text-xs',
-    md: 'w-7 h-7 text-sm',
-    lg: 'w-9 h-9 text-base',
+    sm: 'min-w-8 h-8 text-[11px]',
+    md: 'min-w-10 h-10 text-xs',
+    lg: 'min-w-12 h-12 text-sm',
   };
   
   const getResultColor = (result: string) => {
     switch (result.toUpperCase()) {
       case 'W':
-        return 'bg-green-500 text-white';
+        return 'bg-emerald-500 text-white';
       case 'D':
-        return 'bg-gray-400 text-white';
+        return 'bg-amber-400 text-slate-950';
       case 'L':
-        return 'bg-red-500 text-white';
+        return 'bg-rose-500 text-white';
       default:
         return 'bg-gray-200 text-gray-600';
     }
@@ -49,22 +56,56 @@ export default function TeamForm({ form, showLabels = false, size = 'md' }: Team
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-1">
+      <div className="flex gap-1.5 flex-wrap">
         {form.map((result, index) => (
           <div
             key={index}
             className={`
               ${sizeClasses[size]} 
               ${getResultColor(result)}
-              rounded-full flex items-center justify-center font-bold
-              transition-transform hover:scale-110
+              rounded-xl flex items-center justify-center font-bold
+              transition-transform hover:scale-105 shadow-sm
             `}
-            title={getResultLabel(result)}
+            title={
+              matchDetails[index]
+                ? `${getResultLabel(result)} vs ${matchDetails[index].opponent || 'Opponent'}${matchDetails[index].venue ? ` (${matchDetails[index].venue})` : ''}${Number.isFinite(matchDetails[index].goals_for) && Number.isFinite(matchDetails[index].goals_against) ? ` · ${matchDetails[index].goals_for}-${matchDetails[index].goals_against}` : ''}`
+                : getResultLabel(result)
+            }
           >
             {result.toUpperCase()}
           </div>
         ))}
       </div>
+      {matchDetails.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {matchDetails.slice(0, form.length).map((match, index) => (
+            <div
+              key={`${match.opponent || 'opponent'}-${index}`}
+              className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/70"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${getResultColor(form[index] || '')}`}>
+                  {(form[index] || '-').toUpperCase()}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  {match.venue === 'home' ? 'Home' : match.venue === 'away' ? 'Away' : 'Match'}
+                </span>
+              </div>
+              <div className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {match.opponent || 'Opponent'}
+              </div>
+              <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>
+                  {Number.isFinite(match.goals_for) && Number.isFinite(match.goals_against)
+                    ? `${match.goals_for}-${match.goals_against}`
+                    : 'Score N/A'}
+                </span>
+                <span>{match.date || ''}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showLabels && (
         <div className="text-xs text-gray-500 dark:text-gray-400">
           {formPoints} pts from last {form.length}
@@ -84,9 +125,16 @@ interface TeamFormDetailedProps {
     goalsScored: number;
     goalsConceded: number;
   };
+  recentMatches?: Array<{
+    date?: string;
+    opponent?: string;
+    venue?: string;
+    goals_for?: number;
+    goals_against?: number;
+  }>;
 }
 
-export function TeamFormDetailed({ teamName, form, stats }: TeamFormDetailedProps) {
+export function TeamFormDetailed({ teamName, form, stats, recentMatches = [] }: TeamFormDetailedProps) {
   const formPoints = form.reduce((acc, r) => {
     if (r.toUpperCase() === 'W') return acc + 3;
     if (r.toUpperCase() === 'D') return acc + 1;
@@ -107,7 +155,7 @@ export function TeamFormDetailed({ teamName, form, stats }: TeamFormDetailedProp
       </div>
       
       <div className="flex justify-center mb-4">
-        <TeamForm form={form} size="lg" />
+        <TeamForm form={form} size="lg" matchDetails={recentMatches} />
       </div>
       
       <div className="grid grid-cols-4 gap-2 text-center">

@@ -75,6 +75,7 @@ class ModelAccuracyMetrics:
     """Accuracy metrics for the prediction model."""
     total_predictions: int = 0
     completed_predictions: int = 0
+    pending_predictions: int = 0
     
     # Winner prediction accuracy
     winner_correct_count: int = 0
@@ -91,6 +92,7 @@ class ModelAccuracyMetrics:
     # Scoreline accuracy
     exact_scoreline_count: int = 0
     exact_scoreline_rate: float = 0.0
+    weighted_accuracy_score: float = 0.0
     
     # Goals accuracy
     avg_goals_difference: float = 0.0
@@ -196,12 +198,11 @@ class PredictionTracker:
         # Most likely scoreline (rounded xG)
         predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
         
-        # Derive predicted winner from scoreline for consistency
-        pred_h = round(home_xG)
-        pred_a = round(away_xG)
-        if pred_h > pred_a:
+        # Use the highest outcome probability as the audited match result pick.
+        # The scoreline remains a separate, stricter prediction target.
+        if home_win_prob >= draw_prob and home_win_prob >= away_win_prob:
             predicted_winner = "home"
-        elif pred_a > pred_h:
+        elif away_win_prob >= home_win_prob and away_win_prob >= draw_prob:
             predicted_winner = "away"
         else:
             predicted_winner = "draw"
@@ -347,6 +348,7 @@ class PredictionTracker:
         # Filter to completed predictions
         completed = [p for p in predictions if p.actual_winner is not None]
         metrics.completed_predictions = len(completed)
+        metrics.pending_predictions = metrics.total_predictions - metrics.completed_predictions
         
         if not completed:
             return metrics
@@ -375,6 +377,9 @@ class PredictionTracker:
         exact_count = sum(1 for p in completed if p.scoreline_correct)
         metrics.exact_scoreline_count = exact_count
         metrics.exact_scoreline_rate = exact_count / len(completed)
+        metrics.weighted_accuracy_score = (
+            (0.65 * correct_count) + (0.35 * exact_count)
+        ) / len(completed)
         
         # Goals accuracy
         goals_diffs = [p.goals_diff for p in completed if p.goals_diff is not None]
@@ -399,9 +404,12 @@ class PredictionTracker:
         metrics.brier_score = brier_sum / len(completed)
         
         # Accuracy by confidence level
-        high_conf = [p for p in completed if p.confidence >= 0.7]
-        med_conf = [p for p in completed if 0.4 <= p.confidence < 0.7]
-        low_conf = [p for p in completed if p.confidence < 0.4]
+        def normalized_confidence(value: float) -> float:
+            return value / 100 if value > 1 else value
+
+        high_conf = [p for p in completed if normalized_confidence(p.confidence) >= 0.55]
+        med_conf = [p for p in completed if 0.42 <= normalized_confidence(p.confidence) < 0.55]
+        low_conf = [p for p in completed if normalized_confidence(p.confidence) < 0.42]
         
         if high_conf:
             metrics.high_confidence_accuracy = sum(1 for p in high_conf if p.winner_correct) / len(high_conf)
@@ -470,6 +478,11 @@ class PredictionTracker:
             adjustments["goals_scale"] = 0.93
         elif metrics.avg_goals_difference > 1.0:
             adjustments["goals_scale"] = 0.97
+
+        if metrics.weighted_accuracy_score < 0.45:
+            adjustments["goals_scale"] *= 0.96
+        elif metrics.weighted_accuracy_score > 0.62:
+            adjustments["goals_scale"] *= 1.01
         
         # ── Dixon-Coles rho tuning based on scoreline accuracy ──
         # If we're getting draw scorelines wrong, adjust correlation
@@ -490,7 +503,9 @@ class PredictionTracker:
             results[league] = {
                 "total": metrics.total_predictions,
                 "completed": metrics.completed_predictions,
+                "pending": metrics.pending_predictions,
                 "accuracy": round(metrics.winner_accuracy, 3),
+                "weightedAccuracy": round(metrics.weighted_accuracy_score, 3),
                 "exactScoreline": round(metrics.exact_scoreline_rate, 3),
                 "brierScore": round(metrics.brier_score, 4),
             }

@@ -6,9 +6,9 @@ export default function TrackingPage() {
       <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-lg font-bold text-[var(--text-primary)]">Prediction Accuracy</h1>
+          <h1 className="text-lg font-bold text-[var(--text-primary)]">Prediction Evaluation</h1>
           <p className="text-xs text-[var(--text-tertiary)]">
-            Track model performance across leagues — outcomes &amp; exact scorelines
+            Audit finished matches by league, outcome calls, and scoreline precision. Future fixtures stay pending until real results arrive.
           </p>
         </div>
 

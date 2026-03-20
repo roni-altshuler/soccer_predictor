@@ -179,10 +179,14 @@ function BracketMatchCard({
 
   const TeamRow = ({ name, score, isWinner }: { name: string; score?: number; isWinner: boolean }) => (
     <div
-      className="flex items-center gap-1.5 px-2 py-[6px] cursor-pointer hover:bg-white/[0.04] transition-colors"
-      style={isWinner ? { background: `${accent}15` } : undefined}
+      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/[0.04] transition-colors"
+      style={isWinner ? { background: `${accent}18` } : undefined}
       onClick={() => onMatchClick?.(displayMatch)}
     >
+      <span
+        className="w-1.5 self-stretch rounded-full"
+        style={{ background: isWinner ? accent : 'transparent' }}
+      />
       <span className={`text-[11px] flex-1 truncate leading-tight ${
         isWinner ? 'font-bold text-[var(--text-primary)]'
         : name === 'TBD' ? 'text-[var(--text-tertiary)] italic'
@@ -201,10 +205,10 @@ function BracketMatchCard({
   )
 
   return (
-    <div className={`rounded-md border overflow-hidden transition-all w-full ${
+    <div className={`rounded-xl border overflow-hidden transition-all w-full shadow-sm ${
       isLive ? 'ring-1 ring-red-500/60 border-red-500/40' : 'border-[var(--border-color)]'
     }`}
-    style={{ background: 'var(--muted-bg)' }}
+    style={{ background: 'linear-gradient(180deg, var(--muted-bg), color-mix(in srgb, var(--muted-bg) 82%, black 18%))' }}
     >
       <TeamRow name={team1} score={score1} isWinner={isTeam1Winner} />
       <div className="h-px" style={{ background: 'var(--border-color)', opacity: 0.4 }} />

@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import TeamForm from '@/components/team/TeamForm'
 
 interface TeamFactors {
   form_5: string           // e.g. "W W D L W"
+  form_results: string[]
   form_pts: number         // points from last 5 (0-15)
   goals_scored_avg: number
   goals_conceded_avg: number
@@ -11,6 +13,14 @@ interface TeamFactors {
   home_away_record: string // e.g. "3W 1D 1L" last 5 home/away
   streak: string           // e.g. "3W" or "2L"
   days_rest: number | null
+  recent_matches: Array<{
+    date: string
+    result: string
+    goals_for: number
+    goals_against: number
+    venue: string
+    opponent: string
+  }>
 }
 
 interface Factors {
@@ -28,23 +38,6 @@ interface Props {
   awayTeam: string
   leagueId?: string
   matchDate?: string
-}
-
-function FormBadge({ result }: { result: string }) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    W: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e' },
-    D: { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308' },
-    L: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444' },
-  }
-  const c = colors[result] || colors['D']
-  return (
-    <span
-      className="inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-bold"
-      style={{ background: c.bg, color: c.text }}
-    >
-      {result}
-    </span>
-  )
 }
 
 function StatBar({ label, homeVal, awayVal, unit, higherIsBetter = true }: {
@@ -111,6 +104,7 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
           if (!data?.matches?.length) {
             return {
               form_5: '- - - - -',
+              form_results: [],
               form_pts: 0,
               goals_scored_avg: 0,
               goals_conceded_avg: 0,
@@ -118,6 +112,7 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
               home_away_record: 'N/A',
               streak: '-',
               days_rest: null,
+              recent_matches: [],
             }
           }
 
@@ -171,7 +166,18 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
             if (days_rest < 0 || days_rest > 30) days_rest = null
           }
 
-          return { form_5, form_pts, goals_scored_avg, goals_conceded_avg, clean_sheet_pct, home_away_record, streak, days_rest }
+          return {
+            form_5,
+            form_results: formResults,
+            form_pts,
+            goals_scored_avg,
+            goals_conceded_avg,
+            clean_sheet_pct,
+            home_away_record,
+            streak,
+            days_rest,
+            recent_matches: last5,
+          }
         }
 
         const home = buildTeamFactors(homeRes, true)
@@ -257,15 +263,40 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
           <p className="text-[10px] uppercase tracking-wider text-center mb-2" style={{ color: 'var(--text-tertiary)' }}>
             Recent Form (Last 5)
           </p>
-          <div className="flex justify-between items-center">
-            <div className="flex gap-1">
-              {factors.home.form_5.split(' ').map((r, i) => <FormBadge key={`h${i}`} result={r} />)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-2xl border p-3" style={{ borderColor: 'var(--border-color)', background: 'var(--muted-bg)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{homeTeam}</span>
+                <span className="text-[11px] text-[var(--text-tertiary)]">{factors.home.form_pts}/15 pts</span>
+              </div>
+              <TeamForm
+                form={factors.home.form_results}
+                size="sm"
+                matchDetails={factors.home.recent_matches.map((match) => ({
+                  date: match.date,
+                  opponent: match.opponent,
+                  venue: match.venue,
+                  goals_for: match.goals_for,
+                  goals_against: match.goals_against,
+                }))}
+              />
             </div>
-            <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
-              {factors.home.form_pts} pts | {factors.away.form_pts} pts
-            </div>
-            <div className="flex gap-1">
-              {factors.away.form_5.split(' ').map((r, i) => <FormBadge key={`a${i}`} result={r} />)}
+            <div className="rounded-2xl border p-3" style={{ borderColor: 'var(--border-color)', background: 'var(--muted-bg)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{awayTeam}</span>
+                <span className="text-[11px] text-[var(--text-tertiary)]">{factors.away.form_pts}/15 pts</span>
+              </div>
+              <TeamForm
+                form={factors.away.form_results}
+                size="sm"
+                matchDetails={factors.away.recent_matches.map((match) => ({
+                  date: match.date,
+                  opponent: match.opponent,
+                  venue: match.venue,
+                  goals_for: match.goals_for,
+                  goals_against: match.goals_against,
+                }))}
+              />
             </div>
           </div>
         </div>

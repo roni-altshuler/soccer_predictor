@@ -944,11 +944,33 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
                   {data?.standings.slice(0, 5).map((team, idx) => (
                     <div key={team.teamName} className="flex justify-between items-center p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 text-center text-sm text-[var(--text-tertiary)]">{idx + 1}</span>
-                        <span className="font-medium text-[var(--text-primary)]">{team.teamName}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`w-1.5 h-10 rounded-full ${idx < 4 ? 'bg-emerald-400' : idx < 6 ? 'bg-sky-400' : 'bg-transparent'}`} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 text-center text-sm text-[var(--text-tertiary)]">{idx + 1}</span>
+                            <span className="font-medium text-[var(--text-primary)] truncate">{team.teamName}</span>
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            {(team.form || []).slice(-5).map((result, formIndex) => (
+                              <span
+                                key={`${team.teamName}-preview-${formIndex}`}
+                                className={`w-4 h-4 rounded-md text-[9px] font-bold flex items-center justify-center ${
+                                  result === 'W' ? 'bg-emerald-500 text-white' :
+                                  result === 'D' ? 'bg-amber-400 text-slate-950' :
+                                  'bg-rose-500 text-white'
+                                }`}
+                              >
+                                {result}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <span className="font-bold text-[var(--text-primary)]">{team.points}</span>
+                      <div className="text-right">
+                        <span className="font-bold text-[var(--text-primary)]">{team.points}</span>
+                        <div className="text-[10px] text-[var(--text-tertiary)]">pts</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1074,9 +1096,19 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               // Regular league standings
               <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                    League Standings
-                  </h2>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+                      League Standings
+                    </h2>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                      FotMob-inspired table with qualification zones and last-five form
+                    </p>
+                  </div>
+                  <div className="hidden md:flex items-center gap-2 text-[10px]">
+                    <span className="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400">UCL</span>
+                    <span className="px-2 py-1 rounded-full bg-sky-500/15 text-sky-400">Europe</span>
+                    <span className="px-2 py-1 rounded-full bg-rose-500/15 text-rose-400">Relegation</span>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -1108,7 +1140,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                             style={{ borderColor: 'var(--border-color)' }}
                           >
                             <td className="py-3 px-4 text-[var(--text-secondary)]">{team.position}</td>
-                            <td className="py-3 px-4 font-medium text-[var(--text-primary)]">{team.teamName}</td>
+                            <td className="py-3 px-4">
+                              <div className="font-medium text-[var(--text-primary)]">{team.teamName}</div>
+                              <div className="text-[10px] text-[var(--text-tertiary)] mt-1">
+                                {team.won}-{team.drawn}-{team.lost} record
+                              </div>
+                            </td>
                             <td className="py-3 px-2 text-center text-[var(--text-secondary)]">{team.played}</td>
                             <td className="py-3 px-2 text-center text-green-500">{team.won}</td>
                             <td className="py-3 px-2 text-center text-[var(--text-tertiary)]">{team.drawn}</td>
@@ -1123,10 +1160,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                   team.form.slice(-5).map((result, i) => (
                                     <span
                                       key={i}
-                                      className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded ${
-                                        result === 'W' ? 'bg-green-500 text-white' :
-                                        result === 'D' ? 'bg-gray-400 text-white' :
-                                        'bg-red-500 text-white'
+                                      className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-md ${
+                                        result === 'W' ? 'bg-emerald-500 text-white' :
+                                        result === 'D' ? 'bg-amber-400 text-slate-950' :
+                                        'bg-rose-500 text-white'
                                       }`}
                                     >
                                       {result}

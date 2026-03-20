@@ -28,6 +28,11 @@ interface Prediction {
   outcome_timestamp: string | null
 }
 
+function normalizeConfidence(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return value > 1 ? value / 100 : value
+}
+
 function loadAllPredictions(): Prediction[] {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return []
@@ -56,10 +61,12 @@ export async function GET() {
       overall: {
         total_predictions: total,
         completed_predictions: 0,
+        pending_predictions: total,
         winner_accuracy: 0,
         winner_correct_count: 0,
         exact_scoreline_rate: 0,
         exact_scoreline_count: 0,
+        weighted_accuracy_score: 0,
         avg_goals_difference: 0,
         within_1_goal_rate: 0,
         brier_score: 0,
@@ -80,6 +87,7 @@ export async function GET() {
   const winnerCorrect = completed.filter(p => p.winner_correct).length
   const scoreCorrect = completed.filter(p => p.scoreline_correct).length
   const winnerAccuracy = winnerCorrect / completedCount
+  const weightedAccuracy = ((winnerCorrect * 0.65) + (scoreCorrect * 0.35)) / completedCount
 
   // Goals difference
   const goalsDiffs = completed.filter(p => p.goals_diff !== null).map(p => Math.abs(p.goals_diff!))
@@ -96,9 +104,9 @@ export async function GET() {
   const brierScore = brierSum / completedCount
 
   // By confidence (confidence values stored as percentages, e.g. 37.8 = 37.8%)
-  const highConf = completed.filter(p => p.confidence >= 55)
-  const medConf = completed.filter(p => p.confidence >= 42 && p.confidence < 55)
-  const lowConf = completed.filter(p => p.confidence < 42)
+  const highConf = completed.filter(p => normalizeConfidence(p.confidence) >= 0.55)
+  const medConf = completed.filter(p => normalizeConfidence(p.confidence) >= 0.42 && normalizeConfidence(p.confidence) < 0.55)
+  const lowConf = completed.filter(p => normalizeConfidence(p.confidence) < 0.42)
   const confAcc = (arr: Prediction[]) => arr.length > 0 ? arr.filter(p => p.winner_correct).length / arr.length : 0
 
   // Recent accuracy (last 50)
@@ -117,7 +125,11 @@ export async function GET() {
       league,
       total: lp.length,
       predictions: lp.length,
+      pending: predictions.filter(p => p.league === league && p.actual_winner === null).length,
       accuracy: lp.length > 0 ? Math.round((lCorrect / lp.length) * 1000) / 1000 : 0,
+      weighted_accuracy: lp.length > 0
+        ? Math.round((((lCorrect * 0.65) + (lp.filter(p => p.scoreline_correct).length * 0.35)) / lp.length) * 1000) / 1000
+        : 0,
       correct: lCorrect,
       scoreline_accuracy: lp.length > 0
         ? Math.round((lp.filter(p => p.scoreline_correct).length / lp.length) * 1000) / 1000
@@ -154,18 +166,20 @@ export async function GET() {
     last30BrierSum += pred30.reduce((sum, pr, i) => sum + Math.pow(pr - actual30[i], 2), 0)
   }
   const last30Brier = last30.length > 0 ? last30BrierSum / last30.length : 0
-  const last30High = last30.filter(p => p.confidence >= 55)
-  const last30Med = last30.filter(p => p.confidence >= 42 && p.confidence < 55)
-  const last30Low = last30.filter(p => p.confidence < 42)
+  const last30High = last30.filter(p => normalizeConfidence(p.confidence) >= 0.55)
+  const last30Med = last30.filter(p => normalizeConfidence(p.confidence) >= 0.42 && normalizeConfidence(p.confidence) < 0.55)
+  const last30Low = last30.filter(p => normalizeConfidence(p.confidence) < 0.42)
 
   return NextResponse.json({
     overall: {
       total_predictions: total,
       completed_predictions: completedCount,
+      pending_predictions: total - completedCount,
       winner_correct_count: winnerCorrect,
       winner_accuracy: Math.round(winnerAccuracy * 1000) / 1000,
       exact_scoreline_count: scoreCorrect,
       exact_scoreline_rate: Math.round((scoreCorrect / completedCount) * 1000) / 1000,
+      weighted_accuracy_score: Math.round(weightedAccuracy * 1000) / 1000,
       avg_goals_difference: Math.round(avgGoalsDiff * 100) / 100,
       within_1_goal_rate: Math.round(within1Goal * 1000) / 1000,
       brier_score: Math.round(brierScore * 10000) / 10000,
@@ -183,10 +197,14 @@ export async function GET() {
     last_30_days: {
       total_predictions: last30.length,
       completed_predictions: last30.length,
+      pending_predictions: 0,
       winner_correct_count: last30Correct,
       winner_accuracy: last30.length > 0 ? Math.round((last30Correct / last30.length) * 1000) / 1000 : 0,
       exact_scoreline_count: last30ScoreCorrect,
       exact_scoreline_rate: last30.length > 0 ? Math.round((last30ScoreCorrect / last30.length) * 1000) / 1000 : 0,
+      weighted_accuracy_score: last30.length > 0
+        ? Math.round((((last30Correct * 0.65) + (last30ScoreCorrect * 0.35)) / last30.length) * 1000) / 1000
+        : 0,
       avg_goals_difference: Math.round(last30AvgGoalsDiff * 100) / 100,
       within_1_goal_rate: Math.round(last30Within1Goal * 1000) / 1000,
       brier_score: Math.round(last30Brier * 10000) / 10000,
@@ -210,7 +228,7 @@ export async function GET() {
       actual_winner: p.actual_winner,
       winner_correct: p.winner_correct,
       scoreline_correct: p.scoreline_correct,
-      confidence: p.confidence / 100,
+      confidence: normalizeConfidence(p.confidence),
       home_win_prob: p.predicted_home_win,
       draw_prob: p.predicted_draw,
       away_win_prob: p.predicted_away_win,

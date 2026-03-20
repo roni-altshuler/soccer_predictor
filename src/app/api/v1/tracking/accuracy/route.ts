@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+function normalizeConfidence(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return value > 1 ? value / 100 : value
+}
+
 function loadCompleted() {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return []
@@ -46,6 +51,7 @@ export async function GET(request: NextRequest) {
       accuracy: 0,
       result_accuracy: 0,
       score_accuracy: 0,
+      weighted_accuracy: 0,
       by_confidence: {
         high: { total: 0, correct: 0, accuracy: 0 },
         medium: { total: 0, correct: 0, accuracy: 0 },
@@ -57,12 +63,12 @@ export async function GET(request: NextRequest) {
 
   const correct = completed.filter((p: any) => p.winner_correct).length
   const scoreCorrect = completed.filter((p: any) => p.scoreline_correct).length
+  const weightedAccuracy = total > 0 ? ((correct * 0.65) + (scoreCorrect * 0.35)) / total : 0
 
   // By confidence breakdown
-  // Confidence values stored as percentages (e.g. 37.8 = 37.8%)
-  const high = completed.filter((p: any) => p.confidence >= 55)
-  const med = completed.filter((p: any) => p.confidence >= 42 && p.confidence < 55)
-  const low = completed.filter((p: any) => p.confidence < 42)
+  const high = completed.filter((p: any) => normalizeConfidence(p.confidence) >= 0.55)
+  const med = completed.filter((p: any) => normalizeConfidence(p.confidence) >= 0.42 && normalizeConfidence(p.confidence) < 0.55)
+  const low = completed.filter((p: any) => normalizeConfidence(p.confidence) < 0.42)
   const acc = (arr: any[]) => arr.length > 0 ? arr.filter((p: any) => p.winner_correct).length / arr.length : 0
 
   // Recent form (last 20)
@@ -75,6 +81,7 @@ export async function GET(request: NextRequest) {
     accuracy: Math.round((correct / total) * 1000) / 1000,
     result_accuracy: Math.round((correct / total) * 1000) / 1000,
     score_accuracy: Math.round((scoreCorrect / total) * 1000) / 1000,
+    weighted_accuracy: Math.round(weightedAccuracy * 1000) / 1000,
     by_confidence: {
       high: { total: high.length, correct: high.filter((p: any) => p.winner_correct).length, accuracy: Math.round(acc(high) * 1000) / 1000 },
       medium: { total: med.length, correct: med.filter((p: any) => p.winner_correct).length, accuracy: Math.round(acc(med) * 1000) / 1000 },
