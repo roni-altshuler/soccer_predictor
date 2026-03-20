@@ -6,10 +6,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
 // Prediction calculation constants
 const DEFAULT_ELO = 1500
-const ELO_SCALING_FACTOR = 300
 const HOME_ADVANTAGE_ELO = 65
-const BASE_HOME_GOALS = 1.5
-const BASE_AWAY_GOALS = 1.3
 const MIN_CONFIDENCE = 30
 const MAX_CONFIDENCE = 85
 const MAX_PREDICTED_GOALS = 5
@@ -108,6 +105,55 @@ function getLeagueParams() {
 }
 
 const DEFAULT_PARAMS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
+
+function factorial(n: number): number {
+  if (n <= 1) return 1
+  let result = 1
+  for (let i = 2; i <= n; i++) result *= i
+  return result
+}
+
+function poissonProbability(lambda: number, goals: number): number {
+  return Math.exp(-lambda) * Math.pow(lambda, goals) / factorial(goals)
+}
+
+function buildScoreMatrix(homeXg: number, awayXg: number, rho: number, maxGoals = MAX_PREDICTED_GOALS + 1) {
+  const scores: Array<{ score: string; probability: number; home: number; away: number }> = []
+  let total = 0
+
+  for (let home = 0; home <= maxGoals; home++) {
+    for (let away = 0; away <= maxGoals; away++) {
+      let prob = poissonProbability(homeXg, home) * poissonProbability(awayXg, away)
+
+      if (home === 0 && away === 0) prob *= Math.max(0, 1 - homeXg * awayXg * rho)
+      else if (home === 0 && away === 1) prob *= Math.max(0, 1 + homeXg * rho)
+      else if (home === 1 && away === 0) prob *= Math.max(0, 1 + awayXg * rho)
+      else if (home === 1 && away === 1) prob *= Math.max(0, 1 - rho)
+
+      scores.push({ score: `${home}-${away}`, probability: prob, home, away })
+      total += prob
+    }
+  }
+
+  const normalized = scores.map((entry) => ({
+    ...entry,
+    probability: total > 0 ? entry.probability / total : 0,
+  }))
+
+  const over25 = normalized
+    .filter((entry) => entry.home + entry.away >= 3)
+    .reduce((sum, entry) => sum + entry.probability, 0)
+
+  const btts = normalized
+    .filter((entry) => entry.home > 0 && entry.away > 0)
+    .reduce((sum, entry) => sum + entry.probability, 0)
+
+  return {
+    scores: normalized.sort((a, b) => b.probability - a.probability),
+    over25,
+    btts,
+  }
+}
 
 /**
  * Team base ELO ratings - approximate values based on historical performance.
@@ -287,7 +333,7 @@ function normalizeLeagueKey(league: string): string {
   return leagueNameToKey[league] || league.toLowerCase().replace(/\s+/g, '_')
 }
 
-function getTeamElo(teamName: string, league?: string, includeForm = true): number {
+function getTeamElo(teamName: string, league?: string): number {
   const normalized = teamName.toLowerCase()
   let baseElo = teamBaseElo[normalized] || DEFAULT_ELO
   
@@ -388,17 +434,17 @@ export async function POST(request: NextRequest) {
       
       if (response.ok) {
         const backendPrediction = await response.json()
-        homeElo = backendPrediction.home_elo || getTeamElo(home_team, home_league, false)
-        awayElo = backendPrediction.away_elo || getTeamElo(away_team, away_league, false)
+        homeElo = backendPrediction.home_elo || getTeamElo(home_team, home_league)
+        awayElo = backendPrediction.away_elo || getTeamElo(away_team, away_league)
         backendAvailable = true
       } else {
-        homeElo = getTeamElo(home_team, home_league, false)
-        awayElo = getTeamElo(away_team, away_league, false)
+        homeElo = getTeamElo(home_team, home_league)
+        awayElo = getTeamElo(away_team, away_league)
       }
     } catch {
       // Backend not available, use local calculation
-      homeElo = getTeamElo(home_team, home_league, false)
-      awayElo = getTeamElo(away_team, away_league, false)
+      homeElo = getTeamElo(home_team, home_league)
+      awayElo = getTeamElo(away_team, away_league)
     }
     
     // Calculate probabilities with per-league model and form adjustments
@@ -419,8 +465,10 @@ export async function POST(request: NextRequest) {
     const homeDefense = Math.max(0.5, 1.0 - (homeElo - 1500) / 1200)
     const awayDefense = Math.max(0.5, 1.0 - (awayElo - 1500) / 1200)
     
-    const homeBaseGoals = homeAttack * awayDefense * params.avg_goals + params.home_adv
-    const awayBaseGoals = awayAttack * homeDefense * params.avg_goals
+    const homeBaseGoals = Math.max(0.2, homeAttack * awayDefense * params.avg_goals + params.home_adv + Math.max(homeForm, -6) / 40)
+    const awayBaseGoals = Math.max(0.2, awayAttack * homeDefense * params.avg_goals + Math.max(awayForm, -6) / 40)
+    const scoreMatrix = buildScoreMatrix(homeBaseGoals, awayBaseGoals, params.rho)
+    const topScore = scoreMatrix.scores[0]
     
     // Determine predicted winner
     let predictedWinner = 'Draw'
@@ -436,6 +484,8 @@ export async function POST(request: NextRequest) {
     // Calculate confidence based on ELO difference and form clarity
     const formClarity = Math.abs(homeForm - awayForm) / 2
     const confidence = Math.min(MAX_CONFIDENCE, Math.max(MIN_CONFIDENCE, 50 + Math.abs(eloDiff) / 10 + formClarity))
+    const edge = Math.max(probs.home, probs.draw, probs.away)
+    const risk = edge >= 52 ? 'Low' : edge >= 42 ? 'Medium' : 'High'
     
     // Build enhanced prediction response
     const prediction = {
@@ -450,9 +500,23 @@ export async function POST(request: NextRequest) {
         draw: probs.draw / 100,
         away_win: probs.away / 100,
       },
-      predicted_home_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, Math.round(homeBaseGoals * 10) / 10)),
-      predicted_away_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, Math.round(awayBaseGoals * 10) / 10)),
+      predicted_home_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, topScore ? topScore.home : Math.round(homeBaseGoals * 10) / 10)),
+      predicted_away_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, topScore ? topScore.away : Math.round(awayBaseGoals * 10) / 10)),
+      total_goals: Math.round((homeBaseGoals + awayBaseGoals) * 10) / 10,
+      markets: {
+        over_2_5: Math.round(scoreMatrix.over25 * 1000) / 1000,
+        btts_yes: Math.round(scoreMatrix.btts * 1000) / 1000,
+      },
+      scoreline_probabilities: scoreMatrix.scores.slice(0, 5).map((entry) => ({
+        score: entry.score,
+        probability: Math.round(entry.probability * 1000) / 1000,
+      })),
       confidence: Math.round(confidence),
+      verdict: {
+        edge: edge >= 52 ? 'Strong edge' : edge >= 42 ? 'Playable edge' : 'Thin edge',
+        risk,
+        summary: `${predictedWinner === 'Draw' ? 'The draw is live because the teams rate closely.' : `${predictedWinner} projects as the likelier winner.`} Expected goals sit at ${(homeBaseGoals + awayBaseGoals).toFixed(1)}, with ${Math.round(scoreMatrix.over25 * 100)}% for over 2.5 and ${Math.round(scoreMatrix.btts * 100)}% for both teams to score.`,
+      },
       ratings: {
         home_elo: Math.round(homeElo),
         away_elo: Math.round(awayElo),
@@ -473,6 +537,7 @@ export async function POST(request: NextRequest) {
           `Home advantage (league-calibrated: ${params.home_adv.toFixed(2)})`,
           `League draw rate: ${(params.draw_rate * 100).toFixed(0)}%`,
           'ESPN recent form analysis',
+          'Poisson scoreline matrix',
           'Venue location',
           ...(isCrossLeague ? ['League strength coefficient'] : []),
           ...(backendAvailable ? ['Backend ML ensemble'] : ['Statistical estimation'])

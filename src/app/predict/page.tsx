@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
-import SeasonSimulator from '@/components/prediction/SeasonSimulator'
 
 interface TeamSearchResult { name: string; league: string }
 
@@ -13,6 +12,11 @@ interface PredictionResult {
   is_cross_league?: boolean
   predicted_home_goals?: number; predicted_away_goals?: number
   confidence?: number
+  total_goals?: number
+  markets?: { over_2_5?: number; btts_yes?: number }
+  scoreline_probabilities?: Array<{ score: string; probability: number }>
+  verdict?: { edge: string; risk: string; summary: string }
+  form?: { home_form?: number; away_form?: number; home_form_label?: string; away_form_label?: string }
   ratings?: { home_elo: number; away_elo: number; elo_difference: number }
   analysis?: { predicted_winner: string; home_advantage_applied: boolean; factors_considered: string[]; note: string }
   error?: string
@@ -103,7 +107,6 @@ function TeamSearchInput({
 }
 
 function PredictPageContent() {
-  const [activeTab, setActiveTab] = useState<'match' | 'season'>('match')
   const [homeTeam, setHomeTeam] = useState<{ name: string; league: string } | null>(null)
   const [awayTeam, setAwayTeam] = useState<{ name: string; league: string } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -130,25 +133,15 @@ function PredictPageContent() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      {/* Tab Switcher */}
-      <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">
-        <div className="max-w-2xl mx-auto flex">
-          {(['match', 'season'] as const).map((t) => (
-            <button key={t} onClick={() => setActiveTab(t)}
-              className={`flex-1 py-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${
-                activeTab === t
-                  ? 'border-[var(--accent-ai)] text-[var(--accent-ai)]'
-                  : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-              }`}>
-              {t === 'match' ? '🎯 Match Predictor' : '🏆 Season Simulator'}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="max-w-2xl mx-auto px-4 py-4">
-        {activeTab === 'season' ? <SeasonSimulator /> : (
-          <>
+        <>
+            <div className="mb-4 bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Match Predictor</p>
+              <h1 className="text-xl font-bold text-[var(--text-primary)]">Realistic match outcome forecasts</h1>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Predictions blend team strength, recent form, league calibration, and scoreline realism. Season simulation has been removed from the main workflow to keep the product focused on match forecasting.
+              </p>
+            </div>
             {/* Team Selection Card */}
             <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4 mb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,6 +220,41 @@ function PredictPageContent() {
                     ))}
                   </div>
 
+                  {/* Market & realism layer */}
+                  <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Model Signals</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
+                        <p className="text-[10px] text-[var(--text-tertiary)]">Total Goals</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{(result.total_goals ?? ((result.predicted_home_goals || 0) + (result.predicted_away_goals || 0))).toFixed(1)}</p>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
+                        <p className="text-[10px] text-[var(--text-tertiary)]">Over 2.5</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{Math.round((result.markets?.over_2_5 ?? 0) * 100)}%</p>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
+                        <p className="text-[10px] text-[var(--text-tertiary)]">BTTS</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{Math.round((result.markets?.btts_yes ?? 0) * 100)}%</p>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
+                        <p className="text-[10px] text-[var(--text-tertiary)]">Risk Band</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{result.verdict?.risk || 'Balanced'}</p>
+                      </div>
+                    </div>
+                    {result.verdict?.summary && (
+                      <p className="mt-3 text-xs text-[var(--text-secondary)]">{result.verdict.summary}</p>
+                    )}
+                    {result.scoreline_probabilities && result.scoreline_probabilities.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {result.scoreline_probabilities.slice(0, 4).map((scoreline) => (
+                          <span key={scoreline.score} className="px-2 py-1 rounded-full bg-[var(--muted-bg)] text-[10px] text-[var(--text-secondary)]">
+                            {scoreline.score} · {(scoreline.probability * 100).toFixed(0)}%
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* ELO & Analysis */}
                   {result.ratings && (
                     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
@@ -265,6 +293,18 @@ function PredictPageContent() {
                           ))}
                         </div>
                       )}
+                      {result.form && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div className="rounded-lg bg-[var(--muted-bg)] p-2.5 text-center">
+                            <p className="text-[10px] text-[var(--text-tertiary)]">{result.home_team} form</p>
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">{result.form.home_form_label}</p>
+                          </div>
+                          <div className="rounded-lg bg-[var(--muted-bg)] p-2.5 text-center">
+                            <p className="text-[10px] text-[var(--text-tertiary)]">{result.away_team} form</p>
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">{result.form.away_form_label}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -288,9 +328,9 @@ function PredictPageContent() {
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 px-1">How It Works</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { icon: '📈', title: 'ELO Ratings', desc: 'Dynamic ratings updated after every match' },
-                    { icon: '🧠', title: 'Neural Ensemble', desc: '7-model stack with 66 features per match' },
-                    { icon: '🌍', title: 'Cross-League', desc: 'League strength coefficients for comparisons' },
+                    { icon: '📈', title: 'ELO Ratings', desc: 'Dynamic ratings adjusted with league strength and home edge' },
+                    { icon: '⚽', title: 'Poisson Goals', desc: 'Realistic scoreline and goal-market probabilities' },
+                    { icon: '🌍', title: 'Cross-League', desc: 'League strength coefficients plus recent-form calibration' },
                   ].map((item) => (
                     <div key={item.title} className="bg-[var(--card-bg)] rounded-lg border border-[var(--border-color)] p-3 text-center">
                       <span className="text-xl block mb-1">{item.icon}</span>
@@ -301,8 +341,7 @@ function PredictPageContent() {
                 </div>
               </div>
             )}
-          </>
-        )}
+        </>
       </div>
     </div>
   )

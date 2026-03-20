@@ -176,6 +176,22 @@ class PredictionService:
             return self._tracker.get_model_adjustments()
         except Exception:
             return {}
+
+    def _get_historical_accuracy(self) -> float:
+        """Use live tracked outcome accuracy instead of a hardcoded placeholder."""
+        try:
+            if self._tracker is None:
+                self._tracker = _safe_import_tracker()
+            if self._tracker is None:
+                return 0.65
+
+            metrics = self._tracker.calculate_accuracy_metrics(days=180)
+            if metrics.completed_predictions >= 20:
+                weighted = getattr(metrics, "weighted_accuracy_score", 0.0) or 0.0
+                return max(0.45, min(0.85, (metrics.winner_accuracy * 0.7) + (weighted * 0.3)))
+        except Exception:
+            pass
+        return 0.65
     
     async def predict_match(
         self,
@@ -320,11 +336,17 @@ class PredictionService:
         
         # Build confidence breakdown
         data_quality = self._calculate_data_quality(home_team_data, away_team_data, h2h_data)
+        historical_accuracy = self._get_historical_accuracy()
+        overall_confidence = (
+            prediction["outcome"]["confidence"] * 0.5
+            + data_quality * 0.25
+            + historical_accuracy * 0.25
+        )
         confidence = ConfidenceBreakdown(
             data_quality=data_quality,
             model_certainty=prediction["outcome"]["confidence"],
-            historical_accuracy=0.65,  # Would come from accuracy tracking
-            overall=(data_quality + prediction["outcome"]["confidence"] + 0.65) / 3
+            historical_accuracy=historical_accuracy,
+            overall=min(0.95, max(0.1, overall_confidence))
         )
         
         # Build team contexts

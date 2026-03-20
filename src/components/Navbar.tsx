@@ -107,16 +107,6 @@ export const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/simulator"
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname.startsWith('/simulator')
-                    ? 'bg-[var(--tab-active-bg)] text-[var(--accent-primary)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]'
-                }`}
-              >
-                Simulator
-              </Link>
             </div>
 
             <div className="flex items-center gap-2">

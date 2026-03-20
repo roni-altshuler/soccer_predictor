@@ -83,6 +83,12 @@ interface MatchDetails {
     away_win: number
     predicted_score: { home: number; away: number }
     confidence: number
+    total_goals?: number
+    over_2_5?: number
+    btts_yes?: number
+    most_likely_score?: string
+    model_version?: string
+    confidence_band?: 'Low' | 'Medium' | 'High'
   }
   commentary?: { minute: number; text: string }[]
 }
@@ -591,6 +597,38 @@ export default function MatchDetailPage() {
                       </div>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Total Goals</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{(match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)).toFixed(1)}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Over 2.5</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.over_2_5 !== undefined ? `${Math.round(match.prediction.over_2_5 * 100)}%` : 'N/A'}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                      <p className="text-[10px] text-[var(--text-tertiary)]">BTTS</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.btts_yes !== undefined ? `${Math.round(match.prediction.btts_yes * 100)}%` : 'N/A'}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Risk</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.confidence_band || 'Medium'}</p>
+                    </div>
+                  </div>
+                  {(match.prediction.model_version || match.prediction.most_likely_score) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {match.prediction.most_likely_score && (
+                        <span className="text-[10px] bg-white/5 text-[var(--text-secondary)] px-2 py-1 rounded-full">
+                          Likeliest scoreline: {match.prediction.most_likely_score}
+                        </span>
+                      )}
+                      {match.prediction.model_version && (
+                        <span className="text-[10px] bg-white/5 text-[var(--text-secondary)] px-2 py-1 rounded-full">
+                          {match.prediction.model_version}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {isFinished && match.home_score !== null && match.away_score !== null && (() => {
                     const accuracy = getPredictionAccuracy()
                     return accuracy.message ? (

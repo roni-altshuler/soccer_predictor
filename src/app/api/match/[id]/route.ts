@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+
 // Map league IDs for ESPN API
 const LEAGUE_ENDPOINTS = [
   'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'fifa.world'
@@ -37,6 +39,12 @@ interface PredictionData {
   away_win: number
   predicted_score: { home: number; away: number }
   confidence: number
+  total_goals?: number
+  over_2_5?: number
+  btts_yes?: number
+  most_likely_score?: string
+  model_version?: string
+  confidence_band?: 'Low' | 'Medium' | 'High'
 }
 
 interface MatchDetailsResponse {
@@ -359,6 +367,42 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
   }
 }
 
+async function fetchBackendPrediction(matchId: string): Promise<PredictionData | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/predictions/match/${matchId}`, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 300 },
+    })
+
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const confidencePct = Math.round((data.confidence?.overall ?? data.outcome?.confidence ?? 0) * 100)
+
+    return {
+      home_win: data.outcome?.home_win ?? 0,
+      draw: data.outcome?.draw ?? 0,
+      away_win: data.outcome?.away_win ?? 0,
+      predicted_score: {
+        home: data.most_likely_score?.home_goals ?? 0,
+        away: data.most_likely_score?.away_goals ?? 0,
+      },
+      confidence: confidencePct,
+      total_goals: data.goals?.total_expected_goals ?? undefined,
+      over_2_5: data.goals?.over_2_5 ?? undefined,
+      btts_yes: data.goals?.btts_yes ?? undefined,
+      most_likely_score: data.most_likely_score?.score ?? undefined,
+      model_version: data.model_version ?? undefined,
+      confidence_band: confidencePct >= 70 ? 'Low' : confidencePct >= 55 ? 'Medium' : 'High',
+    }
+  } catch (error) {
+    console.error('Backend prediction fetch failed:', error)
+    return null
+  }
+}
+
 // Constants for H2H score simulation
 const H2H_SCORE_CONSTANTS = {
   MAX_GOALS_PER_MATCH: 3,        // Maximum expected goals per team
@@ -626,9 +670,9 @@ export async function GET(
   }
   
   // Fetch additional data: H2H and predictions
-  const [h2h, prediction] = await Promise.all([
+  const [h2h, backendPrediction] = await Promise.all([
     fetchH2H(matchData.home_team, matchData.away_team, matchData.leagueId),
-    Promise.resolve(generatePrediction(matchData.home_team, matchData.away_team, matchData.leagueId))
+    fetchBackendPrediction(matchId)
   ])
   
   // Add H2H and prediction to response
@@ -638,7 +682,7 @@ export async function GET(
     awayWins: 0,
     recentMatches: []
   }
-  matchData.prediction = prediction
+  matchData.prediction = backendPrediction || generatePrediction(matchData.home_team, matchData.away_team, matchData.leagueId)
   
   return NextResponse.json(matchData)
 }

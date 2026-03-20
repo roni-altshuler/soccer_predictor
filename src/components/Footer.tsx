@@ -30,11 +30,24 @@ export const Footer = () => {
 
         {/* Bottom */}
         <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col md:flex-row justify-between items-center gap-2">
-          <p className="text-[10px] text-[var(--text-tertiary)]">
+          <div className="flex flex-col gap-1">
+            <p className="text-[10px] text-[var(--text-tertiary)]">
+              Powered by{' '}
+              <a href="https://www.fotmob.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--accent-primary)] underline underline-offset-2">
+                FotMob
+              </a>
+              {' '}and{' '}
+              <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--accent-primary)] underline underline-offset-2">
+                ESPN
+              </a>
+              {' '}match data.
+            </p>
+            <p className="text-[10px] text-[var(--text-tertiary)]">
             &copy; {new Date().getFullYear()} Ron Oshri Altshuler. All Rights Reserved.
-          </p>
+            </p>
+          </div>
           <p className="text-[10px] text-[var(--text-tertiary)]">
-            ⚠️ For educational &amp; entertainment purposes only.
+            ⚠️ For educational and entertainment purposes only.
           </p>
         </div>
       </div>

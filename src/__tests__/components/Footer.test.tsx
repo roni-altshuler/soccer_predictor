@@ -4,14 +4,16 @@ import { Footer } from '@/components/Footer'
 describe('Footer', () => {
   it('renders the soccer predictor branding', () => {
     render(<Footer />)
-    expect(screen.getByText('Soccer Predictor')).toBeInTheDocument()
+    expect(screen.getByText('FotPredict')).toBeInTheDocument()
+    expect(screen.getByText('AI')).toBeInTheDocument()
   })
 
   it('renders all navigation links', () => {
     render(<Footer />)
     expect(screen.getByText('Leagues')).toBeInTheDocument()
-    expect(screen.getByText('Predict')).toBeInTheDocument()
-    expect(screen.getByText('Analytics')).toBeInTheDocument()
+    expect(screen.getByText('AI Predict')).toBeInTheDocument()
+    expect(screen.getByText('Accuracy')).toBeInTheDocument()
+    expect(screen.getByText('News')).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
   })
 
@@ -23,10 +25,11 @@ describe('Footer', () => {
 
   it('shows data source attribution', () => {
     render(<Footer />)
-    expect(screen.getByText('Powered by')).toBeInTheDocument()
-    const fbrefLink = screen.getByRole('link', { name: /FBRef/i })
-    expect(fbrefLink).toHaveAttribute('href', 'https://fbref.com/en/')
-    expect(fbrefLink).toHaveAttribute('target', '_blank')
+    expect(screen.getByText(/Powered by/i)).toBeInTheDocument()
+    const fotmobLink = screen.getByRole('link', { name: /FotMob/i })
+    const espnLink = screen.getByRole('link', { name: /ESPN/i })
+    expect(fotmobLink).toHaveAttribute('href', 'https://www.fotmob.com')
+    expect(espnLink).toHaveAttribute('href', 'https://www.espn.com/soccer/')
   })
 
   it('displays educational disclaimer', () => {
