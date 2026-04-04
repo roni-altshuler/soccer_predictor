@@ -171,7 +171,9 @@ export default function DiagnosticsDashboard() {
         const payload = (await response.json()) as DiagnosticsResponse
         setData(payload)
         const leagues = Object.keys(payload.leagues)
-        if (!selectedLeague && leagues.length > 0) setSelectedLeague(leagues[0])
+        if (leagues.length > 0) {
+          setSelectedLeague((prev) => (prev && payload.leagues[prev]) ? prev : leagues[0])
+        }
       } catch (error) {
         console.error('Failed to load diagnostics:', error)
       } finally {
@@ -180,7 +182,7 @@ export default function DiagnosticsDashboard() {
     }
 
     loadDiagnostics()
-  }, [selectedLeague])
+  }, [])
 
   const leagueNames = useMemo(() => Object.keys(data?.leagues || {}), [data])
   const activeLeague = selectedLeague && data?.leagues[selectedLeague]
