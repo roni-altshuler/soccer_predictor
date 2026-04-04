@@ -146,21 +146,21 @@ def fetch_outcomes() -> int:
                     pred["actual_away_goals"] = away_goals
                     pred["actual_winner"] = actual_winner
 
-                    # Derive predicted outcome from predicted scoreline for consistency.
-                    # The scoreline is the source of truth — not the stored predicted_winner
-                    # which may have been set from probabilities in older predictions.
-                    score_parts = (pred.get("predicted_scoreline") or "0-0").split("-")
-                    pred_h = int(score_parts[0]) if len(score_parts) >= 1 else 0
-                    pred_a = int(score_parts[1]) if len(score_parts) >= 2 else 0
-                    derived_pred_winner = (
-                        "home" if pred_h > pred_a
-                        else "away" if pred_a > pred_h
-                        else "draw"
-                    )
+                    predicted_winner = pred.get("predicted_winner")
+                    if predicted_winner not in {"home", "away", "draw"}:
+                        # Backfill very old records if predicted_winner is missing.
+                        hw = float(pred.get("predicted_home_win") or 0.0)
+                        dr = float(pred.get("predicted_draw") or 0.0)
+                        aw = float(pred.get("predicted_away_win") or 0.0)
+                        if hw >= dr and hw >= aw:
+                            predicted_winner = "home"
+                        elif aw >= dr and aw >= hw:
+                            predicted_winner = "away"
+                        else:
+                            predicted_winner = "draw"
+                        pred["predicted_winner"] = predicted_winner
 
-                    # Fix the stored predicted_winner to match the scoreline
-                    pred["predicted_winner"] = derived_pred_winner
-                    pred["winner_correct"] = derived_pred_winner == actual_winner
+                    pred["winner_correct"] = predicted_winner == actual_winner
                     pred["scoreline_correct"] = (
                         pred["predicted_scoreline"] == f"{home_goals}-{away_goals}"
                     )

@@ -1,0 +1,125 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-04T11:28:52.208049",
+  "description": "Auto-tuned blend and draw-threshold parameters from completed prediction diagnostics.",
+  "default": {
+    "blend_nn_base": 0.66,
+    "blend_nn_min": 0.55,
+    "blend_nn_max": 0.82,
+    "entropy_sensitivity": 0.18,
+    "draw_min_prob": 0.24,
+    "draw_margin": 0.02
+  },
+  "leagues": {
+    "ger.1": {
+      "display_name": "Bundesliga",
+      "blend_nn_base": 0.6938,
+      "blend_nn_min": 0.5838,
+      "blend_nn_max": 0.8238,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.2162,
+      "draw_margin": 0.01,
+      "source_sample_size": 126
+    },
+    "uefa.champions": {
+      "display_name": "Champions League",
+      "blend_nn_base": 0.6445,
+      "blend_nn_min": 0.5345,
+      "blend_nn_max": 0.7745,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.161,
+      "draw_margin": 0.0,
+      "source_sample_size": 86
+    },
+    "uefa.europa.conf": {
+      "display_name": "Conference League",
+      "blend_nn_base": 0.6247,
+      "blend_nn_min": 0.5147,
+      "blend_nn_max": 0.7547,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.16,
+      "draw_margin": 0.0,
+      "source_sample_size": 16
+    },
+    "ned.1": {
+      "display_name": "Eredivisie",
+      "blend_nn_base": 0.6966,
+      "blend_nn_min": 0.5866,
+      "blend_nn_max": 0.8266,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.2323,
+      "draw_margin": 0.0217,
+      "source_sample_size": 118
+    },
+    "uefa.europa": {
+      "display_name": "Europa League",
+      "blend_nn_base": 0.6958,
+      "blend_nn_min": 0.5858,
+      "blend_nn_max": 0.8258,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.1672,
+      "draw_margin": 0.0,
+      "source_sample_size": 86
+    },
+    "esp.1": {
+      "display_name": "La Liga",
+      "blend_nn_base": 0.7186,
+      "blend_nn_min": 0.6086,
+      "blend_nn_max": 0.8486,
+      "entropy_sensitivity": 0.1614,
+      "draw_min_prob": 0.1944,
+      "draw_margin": 0.0,
+      "source_sample_size": 140
+    },
+    "fra.1": {
+      "display_name": "Ligue 1",
+      "blend_nn_base": 0.7022,
+      "blend_nn_min": 0.5922,
+      "blend_nn_max": 0.8322,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.1757,
+      "draw_margin": 0.0,
+      "source_sample_size": 108
+    },
+    "usa.1": {
+      "display_name": "MLS",
+      "blend_nn_base": 0.6849,
+      "blend_nn_min": 0.5749,
+      "blend_nn_max": 0.8149,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.16,
+      "draw_margin": 0.0,
+      "source_sample_size": 75
+    },
+    "eng.1": {
+      "display_name": "Premier League",
+      "blend_nn_base": 0.6731,
+      "blend_nn_min": 0.5631,
+      "blend_nn_max": 0.8031,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.241,
+      "draw_margin": 0.028,
+      "source_sample_size": 168
+    },
+    "por.1": {
+      "display_name": "Primeira Liga",
+      "blend_nn_base": 0.689,
+      "blend_nn_min": 0.579,
+      "blend_nn_max": 0.819,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.1964,
+      "draw_margin": 0.0,
+      "source_sample_size": 124
+    },
+    "ita.1": {
+      "display_name": "Serie A",
+      "blend_nn_base": 0.7036,
+      "blend_nn_min": 0.5936,
+      "blend_nn_max": 0.8336,
+      "entropy_sensitivity": 0.16,
+      "draw_min_prob": 0.16,
+      "draw_margin": 0.0,
+      "source_sample_size": 161
+    }
+  }
+}

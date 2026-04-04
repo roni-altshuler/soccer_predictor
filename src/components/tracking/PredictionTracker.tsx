@@ -40,6 +40,27 @@ interface AccuracyMetrics {
   recentForm: ('W' | 'L')[]  // Last 10 predictions
 }
 
+interface PredictionApiRow {
+  match_id?: string
+  home_team?: string
+  away_team?: string
+  match_date?: string
+  home_win_prob?: number
+  draw_prob?: number
+  away_win_prob?: number
+  predicted_winner?: string
+  confidence?: number
+  predicted_scoreline?: string
+  actual_scoreline?: string | null
+  actual_winner?: string | null
+  winner_correct?: boolean | null
+  status?: string
+}
+
+interface PredictionApiResponse {
+  predictions?: PredictionApiRow[]
+}
+
 export default function PredictionTracker() {
   const [predictions, setPredictions] = useState<PredictionResult[]>([])
   const [metrics, setMetrics] = useState<AccuracyMetrics | null>(null)
@@ -58,32 +79,41 @@ export default function PredictionTracker() {
         ])
 
         if (predictionsRes.ok) {
-          const predData = await predictionsRes.json()
+          const predData = await predictionsRes.json() as PredictionApiResponse
           // Transform flat API response to PredictionResult shape
-          const mapped: PredictionResult[] = (predData.predictions || []).map((p: any) => ({
-            matchId: p.match_id || '',
-            homeTeam: p.home_team || '',
-            awayTeam: p.away_team || '',
-            date: p.match_date || '',
-            prediction: {
-              homeWinProb: p.home_win_prob ?? 0,
-              drawProb: p.draw_prob ?? 0,
-              awayWinProb: p.away_win_prob ?? 0,
-              predictedResult: p.predicted_winner || 'home',
-              confidence: p.confidence ?? 0,
-              predictedScore: p.predicted_scoreline ? {
-                home: parseInt(p.predicted_scoreline.split('-')[0]) || 0,
-                away: parseInt(p.predicted_scoreline.split('-')[1]) || 0,
+          const mapped: PredictionResult[] = (predData.predictions || []).map((p) => {
+            const predictedResult: 'home' | 'draw' | 'away' =
+              p.predicted_winner === 'away' ? 'away' : p.predicted_winner === 'draw' ? 'draw' : 'home'
+            const actualResult: 'home' | 'draw' | 'away' =
+              p.actual_winner === 'home' || p.actual_winner === 'away' || p.actual_winner === 'draw'
+                ? p.actual_winner
+                : 'draw'
+
+            return {
+              matchId: p.match_id || '',
+              homeTeam: p.home_team || '',
+              awayTeam: p.away_team || '',
+              date: p.match_date || '',
+              prediction: {
+                homeWinProb: p.home_win_prob ?? 0,
+                drawProb: p.draw_prob ?? 0,
+                awayWinProb: p.away_win_prob ?? 0,
+                predictedResult,
+                confidence: p.confidence ?? 0,
+                predictedScore: p.predicted_scoreline ? {
+                  home: parseInt(p.predicted_scoreline.split('-')[0]) || 0,
+                  away: parseInt(p.predicted_scoreline.split('-')[1]) || 0,
+                } : undefined,
+              },
+              actual: p.actual_scoreline ? {
+                homeScore: parseInt(p.actual_scoreline.split('-')[0]) || 0,
+                awayScore: parseInt(p.actual_scoreline.split('-')[1]) || 0,
+                result: actualResult,
               } : undefined,
-            },
-            actual: p.actual_scoreline ? {
-              homeScore: parseInt(p.actual_scoreline.split('-')[0]) || 0,
-              awayScore: parseInt(p.actual_scoreline.split('-')[1]) || 0,
-              result: p.actual_winner || 'draw',
-            } : undefined,
-            isCorrect: p.winner_correct ?? undefined,
-            wasPlayed: p.status === 'completed',
-          }))
+              isCorrect: p.winner_correct ?? undefined,
+              wasPlayed: p.status === 'completed',
+            }
+          })
           setPredictions(mapped)
         }
 
@@ -133,12 +163,6 @@ export default function PredictionTracker() {
     if (accuracy >= 0.6) return 'text-green-500'
     if (accuracy >= 0.45) return 'text-amber-500'
     return 'text-red-400'
-  }
-
-  const getAccuracyGradient = (accuracy: number): string => {
-    if (accuracy >= 0.6) return 'from-green-500 to-emerald-400'
-    if (accuracy >= 0.45) return 'from-amber-500 to-yellow-400'
-    return 'from-red-500 to-orange-400'
   }
 
   const filteredPredictions = predictions.filter(p => {

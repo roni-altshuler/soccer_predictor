@@ -10,6 +10,19 @@ interface Prediction {
   actual_winner: string | null
 }
 
+interface PredictionFile {
+  predictions?: Prediction[]
+}
+
+interface TrendPoint {
+  index: number
+  date: string
+  accuracy: number
+  correct: number
+  total: number
+  sample_match: string
+}
+
 function loadCompleted(): Prediction[] {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return []
@@ -19,9 +32,9 @@ function loadCompleted(): Prediction[] {
 
   for (const file of files.sort()) {
     try {
-      const data = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8'))
-      if (data.predictions) {
-        all.push(...data.predictions.filter((p: any) => p.actual_winner !== null))
+      const data = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8')) as PredictionFile
+      if (Array.isArray(data.predictions)) {
+        all.push(...data.predictions.filter((p) => p.actual_winner !== null))
       }
     } catch { /* skip */ }
   }
@@ -44,7 +57,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const trend: any[] = []
+  const trend: TrendPoint[] = []
   for (let i = window; i <= completed.length; i++) {
     const batch = completed.slice(i - window, i)
     const correct = batch.filter(p => p.winner_correct).length

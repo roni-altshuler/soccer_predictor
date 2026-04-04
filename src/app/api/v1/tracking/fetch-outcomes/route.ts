@@ -22,7 +22,37 @@ interface Prediction {
   scoreline_correct: boolean | null
   goals_diff: number | null
   outcome_timestamp: string | null
-  [key: string]: any
+  [key: string]: unknown
+}
+
+interface PredictionFile {
+  predictions?: Prediction[]
+  [key: string]: unknown
+}
+
+interface ESPNCompetitor {
+  homeAway?: string
+  score?: string
+  team?: {
+    shortDisplayName?: string
+    displayName?: string
+  }
+}
+
+interface ESPNEvent {
+  id?: string
+  status?: {
+    type?: {
+      name?: string
+    }
+  }
+  competitions?: Array<{
+    competitors?: ESPNCompetitor[]
+  }>
+}
+
+interface ESPNScoreboardResponse {
+  events?: ESPNEvent[]
 }
 
 const LEAGUE_TO_ESPN: Record<string, string> = {
@@ -51,9 +81,9 @@ export async function POST() {
 
   for (const file of files) {
     const filePath = path.join(dataDir, file)
-    let fileData: any
+    let fileData: PredictionFile
     try {
-      fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+      fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as PredictionFile
     } catch { continue }
 
     const predictions: Prediction[] = fileData.predictions || []
@@ -81,7 +111,7 @@ export async function POST() {
         const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/scoreboard?dates=${startDate}-${endDate}&limit=100`
         const resp = await fetch(url, { signal: AbortSignal.timeout(10000) })
         if (!resp.ok) continue
-        const data = await resp.json()
+        const data = (await resp.json()) as ESPNScoreboardResponse
 
         for (const event of data.events || []) {
           const status = event.status?.type?.name || ''
@@ -91,8 +121,8 @@ export async function POST() {
           const comps = event.competitions?.[0]
           if (!comps) continue
 
-          const homeComp = comps.competitors?.find((c: any) => c.homeAway === 'home')
-          const awayComp = comps.competitors?.find((c: any) => c.homeAway === 'away')
+          const homeComp = comps.competitors?.find((c) => c.homeAway === 'home')
+          const awayComp = comps.competitors?.find((c) => c.homeAway === 'away')
           if (!homeComp || !awayComp) continue
 
           const homeGoals = parseInt(homeComp.score || '0', 10)
@@ -111,17 +141,18 @@ export async function POST() {
             pred.actual_away_goals = awayGoals
             pred.actual_winner = actualWinner
 
-            // Derive predicted outcome from predicted scoreline for consistency
-            // (the scoreline is the source of truth, not the stored predicted_winner
-            //  which may have been set from probabilities in older predictions)
-            const scoreParts = (pred.predicted_scoreline || '0-0').split('-')
-            const predH = parseInt(scoreParts[0] || '0', 10)
-            const predA = parseInt(scoreParts[1] || '0', 10)
-            const derivedPredWinner = predH > predA ? 'home' : predA > predH ? 'away' : 'draw'
+            let predictedWinner = pred.predicted_winner
+            if (!['home', 'away', 'draw'].includes(predictedWinner)) {
+              const homeProb = Number(pred.predicted_home_win || 0)
+              const drawProb = Number(pred.predicted_draw || 0)
+              const awayProb = Number(pred.predicted_away_win || 0)
+              if (homeProb >= drawProb && homeProb >= awayProb) predictedWinner = 'home'
+              else if (awayProb >= drawProb && awayProb >= homeProb) predictedWinner = 'away'
+              else predictedWinner = 'draw'
+              pred.predicted_winner = predictedWinner
+            }
 
-            // Fix the stored predicted_winner to match the scoreline
-            pred.predicted_winner = derivedPredWinner
-            pred.winner_correct = derivedPredWinner === actualWinner
+            pred.winner_correct = predictedWinner === actualWinner
             pred.scoreline_correct = pred.predicted_scoreline === `${homeGoals}-${awayGoals}`
             const predictedTotal = pred.predicted_home_goals + pred.predicted_away_goals
             pred.goals_diff = Math.round(Math.abs((homeGoals + awayGoals) - predictedTotal))

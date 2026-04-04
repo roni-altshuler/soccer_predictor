@@ -1,11 +1,24 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { Sora, Source_Sans_3 } from 'next/font/google'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
+
+const headingFont = Sora({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  weight: ['600', '700', '800'],
+})
+
+const bodyFont = Source_Sans_3({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600', '700'],
+})
 
 export const metadata: Metadata = {
   title: 'FotPredict AI — Live Scores & AI Match Predictions',
@@ -50,7 +63,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] font-sans antialiased">
+      <body className={`${bodyFont.variable} ${headingFont.variable} min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased`}>
         <ThemeProvider>
           <AuthProvider>
             <Suspense fallback={null}>

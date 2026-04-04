@@ -74,10 +74,12 @@ LEAGUE_AVG_GOALS = {
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"
 ADJUSTMENTS_FILE = DATA_DIR / "model_adjustments.json"
+TUNING_FILE = Path(__file__).parent.parent / "data" / "model_tuning.json"
 
 # ── League results cache (populated once per run) ──
 _league_results_cache: Dict[str, List[dict]] = {}
 _team_stats_cache: Dict[str, Dict] = {}
+_TUNING_CACHE: Optional[Dict] = None
 
 
 # ── Load league params from single source of truth ──
@@ -128,6 +130,43 @@ def load_learned_adjustments() -> Dict:
         return applied
     except Exception:
         return {}
+
+
+def _load_model_tuning() -> Dict:
+    """Load league-specific blend/threshold tuning produced by model_audit."""
+    global _TUNING_CACHE
+    if _TUNING_CACHE is not None:
+        return _TUNING_CACHE
+
+    if not TUNING_FILE.exists():
+        _TUNING_CACHE = {}
+        return _TUNING_CACHE
+
+    try:
+        with open(TUNING_FILE) as f:
+            _TUNING_CACHE = json.load(f)
+        leagues = _TUNING_CACHE.get("leagues", {})
+        logger.info(f"Loaded model tuning for {len(leagues)} leagues")
+    except Exception as e:
+        logger.warning(f"Failed to load model tuning: {e}")
+        _TUNING_CACHE = {}
+    return _TUNING_CACHE
+
+
+def _get_league_tuning(league_key: str, league_name: str) -> Dict:
+    tuning = _load_model_tuning()
+    leagues = tuning.get("leagues", {})
+
+    # Prefer ESPN league key
+    if league_key and league_key in leagues:
+        return leagues[league_key]
+
+    # Fallback to display-name matching if key is missing
+    for key, vals in leagues.items():
+        if vals.get("display_name") == league_name:
+            return vals
+
+    return tuning.get("default", {})
 
 
 class EloPredictor:
@@ -756,6 +795,7 @@ async def predict_upcoming(days_ahead: int = 14):
         league = m["league"]
         league_key = DISPLAY_TO_KEY.get(league, "")
         espn_id = m.get("espn_id", "")
+        league_tuning = _get_league_tuning(league_key, league)
 
         # Get league results for real features
         league_results = league_results_map.get(espn_id, [])
@@ -764,21 +804,26 @@ async def predict_upcoming(days_ahead: int = 14):
         elo_probs = elo.predict(m["home_team"], m["away_team"], league)
         pred_home_xg, pred_away_xg = elo.predict_goals(m["home_team"], m["away_team"], league)
 
+        # Build feature vector once so we can persist it for post-match learning.
+        features = _build_match_features(
+            elo, m["home_team"], m["away_team"], league_key,
+            elo_probs, pred_home_xg, pred_away_xg,
+            league_results=league_results,
+            match_date=m.get("date", ""),
+        )
+
         # ── Neural model prediction (when available) ──
         nn_probs = None
         nn_goals = None
+        blend_entropy = None
+        blend_nn_weight = None
+        blend_elo_weight = None
         model_used = "elo_poisson"
 
         if registry and league_key:
             try:
                 model = registry.get_model(league_key)
                 if model.is_fitted:
-                    features = _build_match_features(
-                        elo, m["home_team"], m["away_team"], league_key,
-                        elo_probs, pred_home_xg, pred_away_xg,
-                        league_results=league_results,
-                        match_date=m.get("date", ""),
-                    )
                     raw_probs = model.predict_proba(features)
                     nn_probs = {
                         "home_win": float(raw_probs[0, 0]),
@@ -794,12 +839,25 @@ async def predict_upcoming(days_ahead: int = 14):
 
         # ── Blend predictions ──
         if nn_probs is not None:
-            # Blend: 80% calibrated neural ensemble, 20% ELO baseline
-            # (v5 neural model has isotonic calibration + temperature scaling)
+            # Confidence-aware blend: trust NN more when entropy is low.
+            entropy = -sum(max(p, 1e-12) * math.log(max(p, 1e-12)) for p in nn_probs.values())
+            entropy_norm = min(1.0, entropy / math.log(3.0))
+
+            # Tuned weighting from walk-forward diagnostics.
+            nn_base = float(league_tuning.get("blend_nn_base", 0.66))
+            entropy_sensitivity = float(league_tuning.get("entropy_sensitivity", 0.18))
+            nn_min = float(league_tuning.get("blend_nn_min", 0.55))
+            nn_max = float(league_tuning.get("blend_nn_max", 0.82))
+
+            blend_nn_weight = nn_base + (1.0 - entropy_norm) * entropy_sensitivity
+            blend_nn_weight = max(nn_min, min(nn_max, blend_nn_weight))
+            blend_elo_weight = 1.0 - blend_nn_weight
+            blend_entropy = entropy_norm
+
             probs = {
-                "home_win": round(0.80 * nn_probs["home_win"] + 0.20 * elo_probs["home_win"], 4),
-                "draw": round(0.80 * nn_probs["draw"] + 0.20 * elo_probs["draw"], 4),
-                "away_win": round(0.80 * nn_probs["away_win"] + 0.20 * elo_probs["away_win"], 4),
+                "home_win": round(blend_nn_weight * nn_probs["home_win"] + blend_elo_weight * elo_probs["home_win"], 4),
+                "draw": round(blend_nn_weight * nn_probs["draw"] + blend_elo_weight * elo_probs["draw"], 4),
+                "away_win": round(blend_nn_weight * nn_probs["away_win"] + blend_elo_weight * elo_probs["away_win"], 4),
             }
             # Normalize
             total_p = sum(probs.values())
@@ -817,13 +875,17 @@ async def predict_upcoming(days_ahead: int = 14):
 
         pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
 
-        # Derive predicted winner from PROBABILITY DISTRIBUTION (not scoreline).
-        # Research shows probability-based predictions outperform scoreline-based
-        # ones because scorelines are discretized approximations.
-        # The scoreline is still stored for display purposes.
-        if probs["home_win"] >= probs["draw"] and probs["home_win"] >= probs["away_win"]:
+        # Tuned draw decision: predict draw when draw probability is both
+        # materially high and close to the strongest win probability.
+        draw_min_prob = float(league_tuning.get("draw_min_prob", 0.24))
+        draw_margin = float(league_tuning.get("draw_margin", 0.02))
+        max_non_draw = max(probs["home_win"], probs["away_win"])
+
+        if probs["draw"] >= draw_min_prob and probs["draw"] + draw_margin >= max_non_draw:
+            pred_winner = "draw"
+        elif probs["home_win"] >= probs["away_win"]:
             pred_winner = "home"
-        elif probs["away_win"] >= probs["draw"] and probs["away_win"] >= probs["home_win"]:
+        elif probs["away_win"] > probs["home_win"]:
             pred_winner = "away"
         else:
             pred_winner = "draw"
@@ -845,9 +907,15 @@ async def predict_upcoming(days_ahead: int = 14):
             "home_elo": round(elo.get(m["home_team"]), 1),
             "away_elo": round(elo.get(m["away_team"]), 1),
             "model_used": model_used,
+            "blend_nn_weight": round(blend_nn_weight, 4) if blend_nn_weight is not None else None,
+            "blend_elo_weight": round(blend_elo_weight, 4) if blend_elo_weight is not None else None,
+            "blend_entropy": round(blend_entropy, 4) if blend_entropy is not None else None,
+            "draw_min_prob": round(draw_min_prob, 4),
+            "draw_margin": round(draw_margin, 4),
             "weather_factor": 1.0,
             "referee_factor": 1.0,
             "venue": m.get("venue", ""),
+            "feature_vector": [round(float(v), 6) for v in features.tolist()],
             # Neural model raw probs (if available)
             "nn_home_win": round(nn_probs["home_win"], 4) if nn_probs else None,
             "nn_draw": round(nn_probs["draw"], 4) if nn_probs else None,

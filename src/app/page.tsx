@@ -231,6 +231,46 @@ function LiveBar({ liveCount }: { liveCount: number }) {
   )
 }
 
+function AtAGlance({
+  liveCount,
+  upcomingCount,
+  finishedCount,
+  selectedDateLabel,
+}: {
+  liveCount: number
+  upcomingCount: number
+  finishedCount: number
+  selectedDateLabel: string
+}) {
+  return (
+    <div className="max-w-3xl mx-auto px-4 pt-4 pb-2 animate-slideUp">
+      <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]/95 backdrop-blur p-4 md:p-5">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] font-semibold mb-1">Match Center</p>
+            <h1 className="text-xl md:text-2xl font-black text-[var(--text-primary)]">{selectedDateLabel} Fixtures & Results</h1>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Follow live games, check completed scorelines, and jump into AI picks with one tap.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 w-full md:w-auto">
+            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-center min-w-[82px]">
+              <p className="text-lg font-bold text-red-400">{liveCount}</p>
+              <p className="text-[10px] uppercase tracking-wider text-red-300/90">Live</p>
+            </div>
+            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 text-center min-w-[82px]">
+              <p className="text-lg font-bold text-cyan-400">{upcomingCount}</p>
+              <p className="text-[10px] uppercase tracking-wider text-cyan-300/90">Upcoming</p>
+            </div>
+            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center min-w-[82px]">
+              <p className="text-lg font-bold text-emerald-400">{finishedCount}</p>
+              <p className="text-[10px] uppercase tracking-wider text-emerald-300/90">Finished</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ════════════════════════════════════════
  *  HOME PAGE
  * ════════════════════════════════════════ */
@@ -276,11 +316,20 @@ export default function Home() {
   const matchesByLeague = groupMatchesByLeague(filteredMatches)
   const leagueNames = Object.keys(matchesByLeague)
   const totalCount = live.length + upcoming.length + completed.length
+  const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       {/* Live indicator */}
       <LiveBar liveCount={live.length} />
+
+      {/* At-a-glance summary */}
+      <AtAGlance
+        liveCount={live.length}
+        upcomingCount={upcoming.length}
+        finishedCount={completed.length}
+        selectedDateLabel={selectedDateLabel}
+      />
 
       {/* Date Selector — FotMob horizontal scroll */}
       <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">

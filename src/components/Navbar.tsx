@@ -12,6 +12,7 @@ const navLinks = [
   { href: '/matches', label: 'Leagues', mobileLabel: 'Leagues', icon: LeaguesIcon },
   { href: '/predict', label: 'AI Predict', mobileLabel: 'Predict', icon: PredictIcon },
   { href: '/tracking', label: 'Accuracy', mobileLabel: 'Accuracy', icon: AccuracyIcon },
+  { href: '/diagnostics', label: 'Diagnostics', mobileLabel: 'Diag', icon: DiagnosticsIcon },
   { href: '/news', label: 'News', mobileLabel: 'News', icon: NewsIcon },
 ]
 
@@ -53,6 +54,16 @@ function AccuracyIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--accent-primary)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
+    </svg>
+  )
+}
+
+function DiagnosticsIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--accent-primary)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h4l2-5 4 10 2-5h6" />
+      <path d="M3 20h18" />
+      <path d="M3 4h18" opacity="0.4" />
     </svg>
   )
 }

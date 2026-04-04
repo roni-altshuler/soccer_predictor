@@ -9,9 +9,8 @@ Tracks prediction outcomes and continuously improves the model:
 """
 
 import json
-import os
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict, fields as dataclass_fields
 from datetime import datetime, timedelta
 from pathlib import Path
 import logging
@@ -47,6 +46,15 @@ class PredictionRecord:
     away_elo: float = 0.0
     weather_factor: float = 1.0
     referee_factor: float = 1.0
+    model_used: Optional[str] = None
+    nn_home_win: Optional[float] = None
+    nn_draw: Optional[float] = None
+    nn_away_win: Optional[float] = None
+    blend_nn_weight: Optional[float] = None
+    blend_elo_weight: Optional[float] = None
+    blend_entropy: Optional[float] = None
+    feature_vector: Optional[List[float]] = None
+    venue: Optional[str] = None
     
     # Post-match actual outcome
     actual_home_goals: Optional[int] = None
@@ -67,7 +75,32 @@ class PredictionRecord:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PredictionRecord":
-        return cls(**data)
+        # Ignore unknown keys so older/newer prediction schemas still load safely.
+        valid_keys = {f.name for f in dataclass_fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in valid_keys}
+
+        # Normalize confidence for internal consistency (0..1).
+        conf = filtered.get("confidence")
+        if isinstance(conf, (int, float)) and conf > 1:
+            filtered["confidence"] = conf / 100.0
+
+        # Backfill missing/invalid predicted winner from probabilities.
+        if filtered.get("predicted_winner") not in {"home", "draw", "away"}:
+            filtered["predicted_winner"] = cls._winner_from_probabilities(
+                float(filtered.get("predicted_home_win", 0.0)),
+                float(filtered.get("predicted_draw", 0.0)),
+                float(filtered.get("predicted_away_win", 0.0)),
+            )
+
+        return cls(**filtered)
+
+    @staticmethod
+    def _winner_from_probabilities(home_win: float, draw: float, away_win: float) -> str:
+        if home_win >= draw and home_win >= away_win:
+            return "home"
+        if away_win >= home_win and away_win >= draw:
+            return "away"
+        return "draw"
 
 
 @dataclass
@@ -100,6 +133,8 @@ class ModelAccuracyMetrics:
     
     # Probability calibration (Brier score)
     brier_score: float = 0.0
+    log_loss: float = 0.0
+    expected_calibration_error: float = 0.0
     
     # By confidence level
     high_confidence_accuracy: float = 0.0  # >70% confidence
@@ -137,16 +172,33 @@ class PredictionTracker:
     def _load_predictions(self):
         """Load existing predictions from storage."""
         self._predictions = {}
-        
-        try:
-            for file_path in self.storage_dir.glob("predictions_*.json"):
+
+        for file_path in self.storage_dir.glob("predictions_*.json"):
+            try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
-                    for record in data.get("predictions", []):
-                        pred = PredictionRecord.from_dict(record)
-                        self._predictions[pred.match_id] = pred
-        except Exception as e:
-            logger.error(f"Error loading predictions: {e}")
+            except Exception as e:
+                logger.error(f"Error reading predictions file {file_path.name}: {e}")
+                continue
+
+            for record in data.get("predictions", []):
+                try:
+                    pred = PredictionRecord.from_dict(record)
+                    self._predictions[pred.match_id] = pred
+                except Exception as e:
+                    logger.debug(f"Skipping malformed prediction record in {file_path.name}: {e}")
+
+    @staticmethod
+    def _normalize_confidence(value: float) -> float:
+        return value / 100.0 if value > 1 else value
+
+    @staticmethod
+    def _winner_from_probabilities(home_win: float, draw: float, away_win: float) -> str:
+        if home_win >= draw and home_win >= away_win:
+            return "home"
+        if away_win >= home_win and away_win >= draw:
+            return "away"
+        return "draw"
     
     def _save_predictions(self):
         """Save predictions to storage."""
@@ -200,12 +252,7 @@ class PredictionTracker:
         
         # Use the highest outcome probability as the audited match result pick.
         # The scoreline remains a separate, stricter prediction target.
-        if home_win_prob >= draw_prob and home_win_prob >= away_win_prob:
-            predicted_winner = "home"
-        elif away_win_prob >= home_win_prob and away_win_prob >= draw_prob:
-            predicted_winner = "away"
-        else:
-            predicted_winner = "draw"
+        predicted_winner = self._winner_from_probabilities(home_win_prob, draw_prob, away_win_prob)
         
         record = PredictionRecord(
             match_id=match_id,
@@ -220,7 +267,7 @@ class PredictionTracker:
             predicted_away_goals=away_xG,
             predicted_scoreline=predicted_scoreline,
             predicted_winner=predicted_winner,
-            confidence=confidence,
+            confidence=self._normalize_confidence(confidence),
             home_elo=home_elo,
             away_elo=away_elo,
             weather_factor=weather_factor,
@@ -264,21 +311,18 @@ class PredictionTracker:
         record.actual_away_goals = away_goals
         record.actual_winner = actual_winner
         record.outcome_timestamp = datetime.utcnow().isoformat()
-        
-        # Derive predicted outcome from the predicted scoreline (source of truth)
-        score_parts = (record.predicted_scoreline or "0-0").split("-")
-        pred_h = int(score_parts[0]) if len(score_parts) >= 1 else 0
-        pred_a = int(score_parts[1]) if len(score_parts) >= 2 else 0
-        derived_pred_winner = (
-            "home" if pred_h > pred_a
-            else "away" if pred_a > pred_h
-            else "draw"
-        )
-        # Ensure stored predicted_winner matches the scoreline
-        record.predicted_winner = derived_pred_winner
+
+        # Keep predicted_winner tied to pre-match outcome probabilities.
+        # For legacy records with missing/invalid values, backfill from probs.
+        if record.predicted_winner not in {"home", "draw", "away"}:
+            record.predicted_winner = self._winner_from_probabilities(
+                record.predicted_home_win,
+                record.predicted_draw,
+                record.predicted_away_win,
+            )
         
         # Calculate accuracy flags
-        record.winner_correct = derived_pred_winner == actual_winner
+        record.winner_correct = record.predicted_winner == actual_winner
         record.scoreline_correct = record.predicted_scoreline == f"{home_goals}-{away_goals}"
         
         predicted_total = record.predicted_home_goals + record.predicted_away_goals
@@ -390,26 +434,64 @@ class PredictionTracker:
         
         # Brier score (probability calibration) — standard 3-class Brier score
         brier_sum = 0.0
+        log_loss_sum = 0.0
+        n_bins = 10
+        bin_counts = [0] * n_bins
+        bin_conf = [0.0] * n_bins
+        bin_acc = [0.0] * n_bins
         for pred in completed:
             if pred.actual_winner == "home":
                 actual = (1, 0, 0)
+                actual_idx = 0
             elif pred.actual_winner == "draw":
                 actual = (0, 1, 0)
+                actual_idx = 1
             else:
                 actual = (0, 0, 1)
+                actual_idx = 2
             
-            predicted = (pred.predicted_home_win, pred.predicted_draw, pred.predicted_away_win)
+            probs = [
+                max(0.0, float(pred.predicted_home_win)),
+                max(0.0, float(pred.predicted_draw)),
+                max(0.0, float(pred.predicted_away_win)),
+            ]
+            p_sum = sum(probs)
+            if p_sum <= 0:
+                probs = [1 / 3, 1 / 3, 1 / 3]
+            else:
+                probs = [p / p_sum for p in probs]
+
+            predicted = (probs[0], probs[1], probs[2])
             brier_sum += sum((p - a) ** 2 for p, a in zip(predicted, actual)) / 3.0
+
+            p_true = max(1e-12, probs[actual_idx])
+            log_loss_sum += -math.log(p_true)
+
+            conf = max(probs)
+            pred_idx = probs.index(conf)
+            correct = 1.0 if pred_idx == actual_idx else 0.0
+            bin_idx = min(n_bins - 1, int(conf * n_bins))
+            bin_counts[bin_idx] += 1
+            bin_conf[bin_idx] += conf
+            bin_acc[bin_idx] += correct
         
         metrics.brier_score = brier_sum / len(completed)
+        metrics.log_loss = log_loss_sum / len(completed)
+
+        ece = 0.0
+        total_completed = float(len(completed))
+        for i in range(n_bins):
+            if bin_counts[i] == 0:
+                continue
+            avg_conf = bin_conf[i] / bin_counts[i]
+            avg_acc = bin_acc[i] / bin_counts[i]
+            ece += abs(avg_acc - avg_conf) * (bin_counts[i] / total_completed)
+        metrics.expected_calibration_error = ece
         
         # Accuracy by confidence level
-        def normalized_confidence(value: float) -> float:
-            return value / 100 if value > 1 else value
-
-        high_conf = [p for p in completed if normalized_confidence(p.confidence) >= 0.55]
-        med_conf = [p for p in completed if 0.42 <= normalized_confidence(p.confidence) < 0.55]
-        low_conf = [p for p in completed if normalized_confidence(p.confidence) < 0.42]
+        high_conf = [p for p in completed if self._normalize_confidence(p.confidence) >= 0.55]
+        med_conf = [p for p in completed if 0.42 <= self._normalize_confidence(p.confidence) < 0.55]
+        low_conf = [p for p in completed if self._normalize_confidence(p.confidence) < 0.42]
         
         if high_conf:
             metrics.high_confidence_accuracy = sum(1 for p in high_conf if p.winner_correct) / len(high_conf)
@@ -448,7 +530,6 @@ class PredictionTracker:
         # ── Home advantage calibration ──
         # Proportional adjustment based on how far home precision is from true rate
         if metrics.home_win_predicted > 0:
-            home_precision = metrics.home_win_correct / metrics.home_win_predicted
             # Actual home win rate in the dataset
             completed = [p for p in self._predictions.values() if p.actual_winner is not None]
             actual_home_rate = sum(1 for p in completed if p.actual_winner == "home") / max(1, len(completed))
@@ -462,7 +543,6 @@ class PredictionTracker:
         # ── Draw calibration ──
         # If we're under-predicting draws, increase draw bias; if over-predicting, decrease
         if metrics.draw_predicted > 0:
-            draw_precision = metrics.draw_correct / metrics.draw_predicted
             completed = [p for p in self._predictions.values() if p.actual_winner is not None]
             actual_draw_rate = sum(1 for p in completed if p.actual_winner == "draw") / max(1, len(completed))
             predicted_draw_rate = metrics.draw_predicted / max(1, metrics.completed_predictions)

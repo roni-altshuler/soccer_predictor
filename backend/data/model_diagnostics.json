@@ -1,0 +1,2272 @@
+{
+  "generated_at": "2026-04-04T11:28:52.208049",
+  "total_completed_predictions": 1208,
+  "league_count": 11,
+  "leagues": {
+    "Bundesliga": {
+      "sample_size": 126,
+      "accuracy": 0.4444,
+      "avg_confidence": 0.4334,
+      "brier_score": 0.204,
+      "log_loss": 1.0203,
+      "expected_calibration_error": 0.0519,
+      "draw_actual_rate": 0.2698,
+      "draw_predicted_rate": 0.295,
+      "draw_probability_gap": -0.0251,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 42,
+          "avg_confidence": 0.3708,
+          "accuracy": 0.3095,
+          "calibration_gap": -0.0612
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 67,
+          "avg_confidence": 0.4427,
+          "accuracy": 0.4627,
+          "calibration_gap": 0.02
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 14,
+          "avg_confidence": 0.5277,
+          "accuracy": 0.7143,
+          "calibration_gap": 0.1866
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 3,
+          "avg_confidence": 0.6611,
+          "accuracy": 0.6667,
+          "calibration_gap": 0.0055
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            34,
+            14,
+            6
+          ],
+          [
+            24,
+            16,
+            22
+          ],
+          [
+            0,
+            4,
+            6
+          ]
+        ],
+        "normalized": [
+          [
+            0.6296,
+            0.2593,
+            0.1111
+          ],
+          [
+            0.3871,
+            0.2581,
+            0.3548
+          ],
+          [
+            0.0,
+            0.4,
+            0.6
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 21,
+        "step_size": 21,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 63,
+            "test_size": 21,
+            "end_date": "2026-02-14",
+            "accuracy": 0.5714,
+            "brier_score": 0.1901,
+            "log_loss": 0.9607,
+            "expected_calibration_error": 0.2296
+          },
+          {
+            "fold": 2,
+            "train_size": 84,
+            "test_size": 21,
+            "end_date": "2026-03-01",
+            "accuracy": 0.5714,
+            "brier_score": 0.1878,
+            "log_loss": 0.952,
+            "expected_calibration_error": 0.1259
+          },
+          {
+            "fold": 3,
+            "train_size": 105,
+            "test_size": 21,
+            "end_date": "2026-03-15",
+            "accuracy": 0.4286,
+            "brier_score": 0.2091,
+            "log_loss": 1.0384,
+            "expected_calibration_error": 0.0512
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "accuracy",
+          "change": -0.2,
+          "message": "Accuracy dropped sharply in the most recent window."
+        },
+        {
+          "severity": "medium",
+          "metric": "brier_score",
+          "change": 0.0231,
+          "message": "Brier score trending upward."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6938,
+        "blend_nn_min": 0.5838,
+        "blend_nn_max": 0.8238,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.2162,
+        "draw_margin": 0.01,
+        "source_sample_size": 126
+      }
+    },
+    "Champions League": {
+      "sample_size": 86,
+      "accuracy": 0.3721,
+      "avg_confidence": 0.4521,
+      "brier_score": 0.2009,
+      "log_loss": 1.0073,
+      "expected_calibration_error": 0.1384,
+      "draw_actual_rate": 0.1395,
+      "draw_predicted_rate": 0.2651,
+      "draw_probability_gap": -0.1255,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 17,
+          "avg_confidence": 0.3808,
+          "accuracy": 0.1765,
+          "calibration_gap": -0.2043
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 52,
+          "avg_confidence": 0.4408,
+          "accuracy": 0.3269,
+          "calibration_gap": -0.1138
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 14,
+          "avg_confidence": 0.5446,
+          "accuracy": 0.6429,
+          "calibration_gap": 0.0983
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 3,
+          "avg_confidence": 0.621,
+          "accuracy": 1.0,
+          "calibration_gap": 0.379
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            26,
+            5,
+            11
+          ],
+          [
+            16,
+            5,
+            17
+          ],
+          [
+            3,
+            2,
+            1
+          ]
+        ],
+        "normalized": [
+          [
+            0.619,
+            0.119,
+            0.2619
+          ],
+          [
+            0.4211,
+            0.1316,
+            0.4474
+          ],
+          [
+            0.5,
+            0.3333,
+            0.1667
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 14,
+        "step_size": 14,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 43,
+            "test_size": 14,
+            "end_date": "2026-02-17",
+            "accuracy": 0.5,
+            "brier_score": 0.1797,
+            "log_loss": 0.918,
+            "expected_calibration_error": 0.1523
+          },
+          {
+            "fold": 2,
+            "train_size": 57,
+            "test_size": 14,
+            "end_date": "2026-03-10",
+            "accuracy": 0.2143,
+            "brier_score": 0.2163,
+            "log_loss": 1.0695,
+            "expected_calibration_error": 0.2372
+          },
+          {
+            "fold": 3,
+            "train_size": 71,
+            "test_size": 14,
+            "end_date": "2026-03-18",
+            "accuracy": 0.5714,
+            "brier_score": 0.163,
+            "log_loss": 0.851,
+            "expected_calibration_error": 0.2846
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.1996,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6445,
+        "blend_nn_min": 0.5345,
+        "blend_nn_max": 0.7745,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.161,
+        "draw_margin": 0.0,
+        "source_sample_size": 86
+      }
+    },
+    "Conference League": {
+      "sample_size": 16,
+      "accuracy": 0.25,
+      "avg_confidence": 0.3874,
+      "brier_score": 0.238,
+      "log_loss": 1.171,
+      "expected_calibration_error": 0.1374,
+      "draw_actual_rate": 0.1875,
+      "draw_predicted_rate": 0.3192,
+      "draw_probability_gap": -0.1317,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 12,
+          "avg_confidence": 0.3755,
+          "accuracy": 0.25,
+          "calibration_gap": -0.1255
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 4,
+          "avg_confidence": 0.4232,
+          "accuracy": 0.25,
+          "calibration_gap": -0.1732
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            3,
+            2,
+            7
+          ],
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "normalized": [
+          [
+            0.25,
+            0.1667,
+            0.5833
+          ],
+          [
+            0.0,
+            0.25,
+            0.75
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 0,
+        "step_size": 0,
+        "folds": []
+      },
+      "drift_alerts": [],
+      "tuning": {
+        "blend_nn_base": 0.6247,
+        "blend_nn_min": 0.5147,
+        "blend_nn_max": 0.7547,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.16,
+        "draw_margin": 0.0,
+        "source_sample_size": 16
+      }
+    },
+    "Eredivisie": {
+      "sample_size": 118,
+      "accuracy": 0.4576,
+      "avg_confidence": 0.4388,
+      "brier_score": 0.2168,
+      "log_loss": 1.0763,
+      "expected_calibration_error": 0.0566,
+      "draw_actual_rate": 0.2881,
+      "draw_predicted_rate": 0.2839,
+      "draw_probability_gap": 0.0042,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 31,
+          "avg_confidence": 0.3786,
+          "accuracy": 0.4516,
+          "calibration_gap": 0.073
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 70,
+          "avg_confidence": 0.4402,
+          "accuracy": 0.4714,
+          "calibration_gap": 0.0312
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 16,
+          "avg_confidence": 0.5365,
+          "accuracy": 0.4375,
+          "calibration_gap": -0.099
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 1,
+          "avg_confidence": 0.6396,
+          "accuracy": 0.0,
+          "calibration_gap": -0.6396
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            40,
+            22,
+            24
+          ],
+          [
+            5,
+            10,
+            9
+          ],
+          [
+            2,
+            2,
+            4
+          ]
+        ],
+        "normalized": [
+          [
+            0.4651,
+            0.2558,
+            0.2791
+          ],
+          [
+            0.2083,
+            0.4167,
+            0.375
+          ],
+          [
+            0.25,
+            0.25,
+            0.5
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 19,
+        "step_size": 19,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 59,
+            "test_size": 19,
+            "end_date": "2026-02-15",
+            "accuracy": 0.4737,
+            "brier_score": 0.2337,
+            "log_loss": 1.158,
+            "expected_calibration_error": 0.1045
+          },
+          {
+            "fold": 2,
+            "train_size": 78,
+            "test_size": 19,
+            "end_date": "2026-03-01",
+            "accuracy": 0.5789,
+            "brier_score": 0.1956,
+            "log_loss": 0.9857,
+            "expected_calibration_error": 0.1395
+          },
+          {
+            "fold": 3,
+            "train_size": 97,
+            "test_size": 19,
+            "end_date": "2026-03-15",
+            "accuracy": 0.4211,
+            "brier_score": 0.2114,
+            "log_loss": 1.0553,
+            "expected_calibration_error": 0.0685
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "accuracy",
+          "change": -0.1334,
+          "message": "Accuracy dropped sharply in the most recent window."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6966,
+        "blend_nn_min": 0.5866,
+        "blend_nn_max": 0.8266,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.2323,
+        "draw_margin": 0.0217,
+        "source_sample_size": 118
+      }
+    },
+    "Europa League": {
+      "sample_size": 86,
+      "accuracy": 0.4419,
+      "avg_confidence": 0.4253,
+      "brier_score": 0.2075,
+      "log_loss": 1.0347,
+      "expected_calibration_error": 0.0366,
+      "draw_actual_rate": 0.1744,
+      "draw_predicted_rate": 0.2885,
+      "draw_probability_gap": -0.1141,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 32,
+          "avg_confidence": 0.3767,
+          "accuracy": 0.4062,
+          "calibration_gap": 0.0296
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 45,
+          "avg_confidence": 0.4369,
+          "accuracy": 0.4667,
+          "calibration_gap": 0.0297
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 9,
+          "avg_confidence": 0.5403,
+          "accuracy": 0.4444,
+          "calibration_gap": -0.0959
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            34,
+            9,
+            17
+          ],
+          [
+            6,
+            4,
+            12
+          ],
+          [
+            2,
+            2,
+            0
+          ]
+        ],
+        "normalized": [
+          [
+            0.5667,
+            0.15,
+            0.2833
+          ],
+          [
+            0.2727,
+            0.1818,
+            0.5455
+          ],
+          [
+            0.5,
+            0.5,
+            0.0
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 14,
+        "step_size": 14,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 43,
+            "test_size": 14,
+            "end_date": "2026-02-19",
+            "accuracy": 0.7143,
+            "brier_score": 0.1698,
+            "log_loss": 0.8765,
+            "expected_calibration_error": 0.4052
+          },
+          {
+            "fold": 2,
+            "train_size": 57,
+            "test_size": 14,
+            "end_date": "2026-03-12",
+            "accuracy": 0.2857,
+            "brier_score": 0.2428,
+            "log_loss": 1.1929,
+            "expected_calibration_error": 0.173
+          },
+          {
+            "fold": 3,
+            "train_size": 71,
+            "test_size": 14,
+            "end_date": "2026-03-19",
+            "accuracy": 0.1429,
+            "brier_score": 0.1993,
+            "log_loss": 0.9837,
+            "expected_calibration_error": 0.3021
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "accuracy",
+          "change": -0.4667,
+          "message": "Accuracy dropped sharply in the most recent window."
+        },
+        {
+          "severity": "medium",
+          "metric": "brier_score",
+          "change": 0.0251,
+          "message": "Brier score trending upward."
+        },
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.2418,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6958,
+        "blend_nn_min": 0.5858,
+        "blend_nn_max": 0.8258,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.1672,
+        "draw_margin": 0.0,
+        "source_sample_size": 86
+      }
+    },
+    "La Liga": {
+      "sample_size": 140,
+      "accuracy": 0.5071,
+      "avg_confidence": 0.414,
+      "brier_score": 0.2085,
+      "log_loss": 1.0402,
+      "expected_calibration_error": 0.0932,
+      "draw_actual_rate": 0.2571,
+      "draw_predicted_rate": 0.3219,
+      "draw_probability_gap": -0.0647,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 70,
+          "avg_confidence": 0.3674,
+          "accuracy": 0.4429,
+          "calibration_gap": 0.0755
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 58,
+          "avg_confidence": 0.4376,
+          "accuracy": 0.5345,
+          "calibration_gap": 0.0969
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 8,
+          "avg_confidence": 0.5498,
+          "accuracy": 0.75,
+          "calibration_gap": 0.2002
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 4,
+          "avg_confidence": 0.6148,
+          "accuracy": 0.75,
+          "calibration_gap": 0.1352
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            52,
+            19,
+            21
+          ],
+          [
+            13,
+            15,
+            11
+          ],
+          [
+            3,
+            2,
+            4
+          ]
+        ],
+        "normalized": [
+          [
+            0.5652,
+            0.2065,
+            0.2283
+          ],
+          [
+            0.3333,
+            0.3846,
+            0.2821
+          ],
+          [
+            0.3333,
+            0.2222,
+            0.4444
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 23,
+        "step_size": 23,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 70,
+            "test_size": 23,
+            "end_date": "2026-02-15",
+            "accuracy": 0.5217,
+            "brier_score": 0.2091,
+            "log_loss": 1.0431,
+            "expected_calibration_error": 0.1423
+          },
+          {
+            "fold": 2,
+            "train_size": 93,
+            "test_size": 23,
+            "end_date": "2026-03-01",
+            "accuracy": 0.3478,
+            "brier_score": 0.2147,
+            "log_loss": 1.0645,
+            "expected_calibration_error": 0.1462
+          },
+          {
+            "fold": 3,
+            "train_size": 116,
+            "test_size": 23,
+            "end_date": "2026-03-16",
+            "accuracy": 0.6522,
+            "brier_score": 0.198,
+            "log_loss": 0.9982,
+            "expected_calibration_error": 0.2514
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.166,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.7186,
+        "blend_nn_min": 0.6086,
+        "blend_nn_max": 0.8486,
+        "entropy_sensitivity": 0.1614,
+        "draw_min_prob": 0.1944,
+        "draw_margin": 0.0,
+        "source_sample_size": 140
+      }
+    },
+    "Ligue 1": {
+      "sample_size": 108,
+      "accuracy": 0.4537,
+      "avg_confidence": 0.4187,
+      "brier_score": 0.2136,
+      "log_loss": 1.0626,
+      "expected_calibration_error": 0.0397,
+      "draw_actual_rate": 0.2222,
+      "draw_predicted_rate": 0.3209,
+      "draw_probability_gap": -0.0987,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 52,
+          "avg_confidence": 0.3715,
+          "accuracy": 0.3846,
+          "calibration_gap": 0.0131
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 45,
+          "avg_confidence": 0.4393,
+          "accuracy": 0.5111,
+          "calibration_gap": 0.0719
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 8,
+          "avg_confidence": 0.5322,
+          "accuracy": 0.5,
+          "calibration_gap": -0.0322
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 3,
+          "avg_confidence": 0.6273,
+          "accuracy": 0.6667,
+          "calibration_gap": 0.0394
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            39,
+            17,
+            22
+          ],
+          [
+            7,
+            6,
+            9
+          ],
+          [
+            3,
+            1,
+            4
+          ]
+        ],
+        "normalized": [
+          [
+            0.5,
+            0.2179,
+            0.2821
+          ],
+          [
+            0.3182,
+            0.2727,
+            0.4091
+          ],
+          [
+            0.375,
+            0.125,
+            0.5
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 18,
+        "step_size": 18,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 54,
+            "test_size": 18,
+            "end_date": "2026-02-15",
+            "accuracy": 0.5556,
+            "brier_score": 0.1956,
+            "log_loss": 0.985,
+            "expected_calibration_error": 0.1468
+          },
+          {
+            "fold": 2,
+            "train_size": 72,
+            "test_size": 18,
+            "end_date": "2026-03-01",
+            "accuracy": 0.5,
+            "brier_score": 0.2201,
+            "log_loss": 1.0943,
+            "expected_calibration_error": 0.1834
+          },
+          {
+            "fold": 3,
+            "train_size": 90,
+            "test_size": 18,
+            "end_date": "2026-03-22",
+            "accuracy": 0.3889,
+            "brier_score": 0.2297,
+            "log_loss": 1.1284,
+            "expected_calibration_error": 0.1664
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "medium",
+          "metric": "brier_score",
+          "change": 0.0215,
+          "message": "Brier score trending upward."
+        },
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.131,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.7022,
+        "blend_nn_min": 0.5922,
+        "blend_nn_max": 0.8322,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.1757,
+        "draw_margin": 0.0,
+        "source_sample_size": 108
+      }
+    },
+    "MLS": {
+      "sample_size": 75,
+      "accuracy": 0.4533,
+      "avg_confidence": 0.4178,
+      "brier_score": 0.1978,
+      "log_loss": 0.991,
+      "expected_calibration_error": 0.1383,
+      "draw_actual_rate": 0.12,
+      "draw_predicted_rate": 0.2807,
+      "draw_probability_gap": -0.1607,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 23,
+          "avg_confidence": 0.3812,
+          "accuracy": 0.2609,
+          "calibration_gap": -0.1203
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 50,
+          "avg_confidence": 0.4297,
+          "accuracy": 0.56,
+          "calibration_gap": 0.1303
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 2,
+          "avg_confidence": 0.5432,
+          "accuracy": 0.0,
+          "calibration_gap": -0.5432
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            31,
+            6,
+            8
+          ],
+          [
+            13,
+            3,
+            14
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "normalized": [
+          [
+            0.6889,
+            0.1333,
+            0.1778
+          ],
+          [
+            0.4333,
+            0.1,
+            0.4667
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 12,
+        "step_size": 12,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 37,
+            "test_size": 12,
+            "end_date": "2026-03-14",
+            "accuracy": 0.4167,
+            "brier_score": 0.2035,
+            "log_loss": 1.0204,
+            "expected_calibration_error": 0.2787
+          },
+          {
+            "fold": 2,
+            "train_size": 49,
+            "test_size": 12,
+            "end_date": "2026-03-15",
+            "accuracy": 0.5833,
+            "brier_score": 0.2051,
+            "log_loss": 1.029,
+            "expected_calibration_error": 0.1845
+          },
+          {
+            "fold": 3,
+            "train_size": 61,
+            "test_size": 12,
+            "end_date": "2026-03-22",
+            "accuracy": 0.0833,
+            "brier_score": 0.1966,
+            "log_loss": 0.9684,
+            "expected_calibration_error": 0.369
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "accuracy",
+          "change": -0.1,
+          "message": "Accuracy dropped sharply in the most recent window."
+        },
+        {
+          "severity": "medium",
+          "metric": "expected_calibration_error",
+          "change": 0.1082,
+          "message": "Calibration drift emerging; confidence exceeds hit rate."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6849,
+        "blend_nn_min": 0.5749,
+        "blend_nn_max": 0.8149,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.16,
+        "draw_margin": 0.0,
+        "source_sample_size": 75
+      }
+    },
+    "Premier League": {
+      "sample_size": 168,
+      "accuracy": 0.381,
+      "avg_confidence": 0.4293,
+      "brier_score": 0.2201,
+      "log_loss": 1.087,
+      "expected_calibration_error": 0.0483,
+      "draw_actual_rate": 0.3274,
+      "draw_predicted_rate": 0.3074,
+      "draw_probability_gap": 0.02,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 63,
+          "avg_confidence": 0.3683,
+          "accuracy": 0.3492,
+          "calibration_gap": -0.0191
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 76,
+          "avg_confidence": 0.4371,
+          "accuracy": 0.3816,
+          "calibration_gap": -0.0556
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 27,
+          "avg_confidence": 0.5368,
+          "accuracy": 0.4444,
+          "calibration_gap": -0.0924
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 2,
+          "avg_confidence": 0.6007,
+          "accuracy": 0.5,
+          "calibration_gap": -0.1007
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            48,
+            34,
+            37
+          ],
+          [
+            8,
+            10,
+            11
+          ],
+          [
+            3,
+            11,
+            6
+          ]
+        ],
+        "normalized": [
+          [
+            0.4034,
+            0.2857,
+            0.3109
+          ],
+          [
+            0.2759,
+            0.3448,
+            0.3793
+          ],
+          [
+            0.15,
+            0.55,
+            0.3
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 24,
+        "step_size": 24,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 84,
+            "test_size": 24,
+            "end_date": "2026-02-06",
+            "accuracy": 0.375,
+            "brier_score": 0.2228,
+            "log_loss": 1.107,
+            "expected_calibration_error": 0.0827
+          },
+          {
+            "fold": 2,
+            "train_size": 108,
+            "test_size": 24,
+            "end_date": "2026-02-21",
+            "accuracy": 0.375,
+            "brier_score": 0.2346,
+            "log_loss": 1.1478,
+            "expected_calibration_error": 0.2273
+          },
+          {
+            "fold": 3,
+            "train_size": 132,
+            "test_size": 24,
+            "end_date": "2026-03-04",
+            "accuracy": 0.4583,
+            "brier_score": 0.2108,
+            "log_loss": 1.0525,
+            "expected_calibration_error": 0.0555
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.1533,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.6731,
+        "blend_nn_min": 0.5631,
+        "blend_nn_max": 0.8031,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.241,
+        "draw_margin": 0.028,
+        "source_sample_size": 168
+      }
+    },
+    "Primeira Liga": {
+      "sample_size": 124,
+      "accuracy": 0.4435,
+      "avg_confidence": 0.4105,
+      "brier_score": 0.2031,
+      "log_loss": 1.0141,
+      "expected_calibration_error": 0.1219,
+      "draw_actual_rate": 0.2742,
+      "draw_predicted_rate": 0.3353,
+      "draw_probability_gap": -0.0611,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 69,
+          "avg_confidence": 0.3696,
+          "accuracy": 0.2899,
+          "calibration_gap": -0.0798
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 42,
+          "avg_confidence": 0.4343,
+          "accuracy": 0.5476,
+          "calibration_gap": 0.1133
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 12,
+          "avg_confidence": 0.5428,
+          "accuracy": 0.9167,
+          "calibration_gap": 0.3739
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 1,
+          "avg_confidence": 0.6416,
+          "accuracy": 1.0,
+          "calibration_gap": 0.3584
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            40,
+            26,
+            11
+          ],
+          [
+            14,
+            7,
+            15
+          ],
+          [
+            2,
+            1,
+            8
+          ]
+        ],
+        "normalized": [
+          [
+            0.5195,
+            0.3377,
+            0.1429
+          ],
+          [
+            0.3889,
+            0.1944,
+            0.4167
+          ],
+          [
+            0.1818,
+            0.0909,
+            0.7273
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 20,
+        "step_size": 20,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 62,
+            "test_size": 20,
+            "end_date": "2026-02-13",
+            "accuracy": 0.5,
+            "brier_score": 0.1944,
+            "log_loss": 0.9734,
+            "expected_calibration_error": 0.1992
+          },
+          {
+            "fold": 2,
+            "train_size": 82,
+            "test_size": 20,
+            "end_date": "2026-02-28",
+            "accuracy": 0.6,
+            "brier_score": 0.1805,
+            "log_loss": 0.9222,
+            "expected_calibration_error": 0.1577
+          },
+          {
+            "fold": 3,
+            "train_size": 102,
+            "test_size": 20,
+            "end_date": "2026-03-15",
+            "accuracy": 0.3,
+            "brier_score": 0.2254,
+            "log_loss": 1.1036,
+            "expected_calibration_error": 0.1974
+          }
+        ]
+      },
+      "drift_alerts": [
+        {
+          "severity": "medium",
+          "metric": "accuracy",
+          "change": -0.0667,
+          "message": "Accuracy drift detected versus previous matches."
+        },
+        {
+          "severity": "high",
+          "metric": "expected_calibration_error",
+          "change": 0.1688,
+          "message": "Model confidence is materially miscalibrated."
+        }
+      ],
+      "tuning": {
+        "blend_nn_base": 0.689,
+        "blend_nn_min": 0.579,
+        "blend_nn_max": 0.819,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.1964,
+        "draw_margin": 0.0,
+        "source_sample_size": 124
+      }
+    },
+    "Serie A": {
+      "sample_size": 161,
+      "accuracy": 0.4472,
+      "avg_confidence": 0.4083,
+      "brier_score": 0.2185,
+      "log_loss": 1.0842,
+      "expected_calibration_error": 0.0541,
+      "draw_actual_rate": 0.2298,
+      "draw_predicted_rate": 0.3605,
+      "draw_probability_gap": -0.1307,
+      "reliability_bins": [
+        {
+          "bucket": "0.0-0.1",
+          "range_min": 0.0,
+          "range_max": 0.1,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.1-0.2",
+          "range_min": 0.1,
+          "range_max": 0.2,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.2-0.3",
+          "range_min": 0.2,
+          "range_max": 0.3,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.3-0.4",
+          "range_min": 0.3,
+          "range_max": 0.4,
+          "sample_size": 102,
+          "avg_confidence": 0.3785,
+          "accuracy": 0.3725,
+          "calibration_gap": -0.0059
+        },
+        {
+          "bucket": "0.4-0.5",
+          "range_min": 0.4,
+          "range_max": 0.5,
+          "sample_size": 46,
+          "avg_confidence": 0.4374,
+          "accuracy": 0.5435,
+          "calibration_gap": 0.1061
+        },
+        {
+          "bucket": "0.5-0.6",
+          "range_min": 0.5,
+          "range_max": 0.6,
+          "sample_size": 12,
+          "avg_confidence": 0.5333,
+          "accuracy": 0.75,
+          "calibration_gap": 0.2167
+        },
+        {
+          "bucket": "0.6-0.7",
+          "range_min": 0.6,
+          "range_max": 0.7,
+          "sample_size": 1,
+          "avg_confidence": 0.6194,
+          "accuracy": 0.0,
+          "calibration_gap": -0.6194
+        },
+        {
+          "bucket": "0.7-0.8",
+          "range_min": 0.7,
+          "range_max": 0.8,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.8-0.9",
+          "range_min": 0.8,
+          "range_max": 0.9,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        },
+        {
+          "bucket": "0.9-1.0",
+          "range_min": 0.9,
+          "range_max": 1.0,
+          "sample_size": 0,
+          "avg_confidence": 0.0,
+          "accuracy": 0.0,
+          "calibration_gap": 0.0
+        }
+      ],
+      "confusion_matrix": {
+        "labels": [
+          "home",
+          "draw",
+          "away"
+        ],
+        "matrix": [
+          [
+            54,
+            30,
+            36
+          ],
+          [
+            6,
+            6,
+            10
+          ],
+          [
+            6,
+            1,
+            12
+          ]
+        ],
+        "normalized": [
+          [
+            0.45,
+            0.25,
+            0.3
+          ],
+          [
+            0.2727,
+            0.2727,
+            0.4545
+          ],
+          [
+            0.3158,
+            0.0526,
+            0.6316
+          ]
+        ]
+      },
+      "walk_forward": {
+        "window_size": 24,
+        "step_size": 24,
+        "folds": [
+          {
+            "fold": 1,
+            "train_size": 80,
+            "test_size": 24,
+            "end_date": "2026-02-08",
+            "accuracy": 0.625,
+            "brier_score": 0.2014,
+            "log_loss": 1.0045,
+            "expected_calibration_error": 0.2231
+          },
+          {
+            "fold": 2,
+            "train_size": 104,
+            "test_size": 24,
+            "end_date": "2026-02-22",
+            "accuracy": 0.4583,
+            "brier_score": 0.2213,
+            "log_loss": 1.1047,
+            "expected_calibration_error": 0.1048
+          },
+          {
+            "fold": 3,
+            "train_size": 128,
+            "test_size": 24,
+            "end_date": "2026-03-14",
+            "accuracy": 0.5,
+            "brier_score": 0.2028,
+            "log_loss": 1.0124,
+            "expected_calibration_error": 0.0715
+          }
+        ]
+      },
+      "drift_alerts": [],
+      "tuning": {
+        "blend_nn_base": 0.7036,
+        "blend_nn_min": 0.5936,
+        "blend_nn_max": 0.8336,
+        "entropy_sensitivity": 0.16,
+        "draw_min_prob": 0.16,
+        "draw_margin": 0.0,
+        "source_sample_size": 161
+      }
+    }
+  },
+  "top_alerts": [
+    {
+      "league": "Europa League",
+      "severity": "high",
+      "metric": "accuracy",
+      "change": -0.4667,
+      "message": "Accuracy dropped sharply in the most recent window."
+    },
+    {
+      "league": "Europa League",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.2418,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "Bundesliga",
+      "severity": "high",
+      "metric": "accuracy",
+      "change": -0.2,
+      "message": "Accuracy dropped sharply in the most recent window."
+    },
+    {
+      "league": "Champions League",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.1996,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "Primeira Liga",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.1688,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "La Liga",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.166,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "Premier League",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.1533,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "Eredivisie",
+      "severity": "high",
+      "metric": "accuracy",
+      "change": -0.1334,
+      "message": "Accuracy dropped sharply in the most recent window."
+    },
+    {
+      "league": "Ligue 1",
+      "severity": "high",
+      "metric": "expected_calibration_error",
+      "change": 0.131,
+      "message": "Model confidence is materially miscalibrated."
+    },
+    {
+      "league": "MLS",
+      "severity": "high",
+      "metric": "accuracy",
+      "change": -0.1,
+      "message": "Accuracy dropped sharply in the most recent window."
+    },
+    {
+      "league": "MLS",
+      "severity": "medium",
+      "metric": "expected_calibration_error",
+      "change": 0.1082,
+      "message": "Calibration drift emerging; confidence exceeds hit rate."
+    },
+    {
+      "league": "Primeira Liga",
+      "severity": "medium",
+      "metric": "accuracy",
+      "change": -0.0667,
+      "message": "Accuracy drift detected versus previous matches."
+    },
+    {
+      "league": "Europa League",
+      "severity": "medium",
+      "metric": "brier_score",
+      "change": 0.0251,
+      "message": "Brier score trending upward."
+    },
+    {
+      "league": "Bundesliga",
+      "severity": "medium",
+      "metric": "brier_score",
+      "change": 0.0231,
+      "message": "Brier score trending upward."
+    },
+    {
+      "league": "Ligue 1",
+      "severity": "medium",
+      "metric": "brier_score",
+      "change": 0.0215,
+      "message": "Brier score trending upward."
+    }
+  ]
+}

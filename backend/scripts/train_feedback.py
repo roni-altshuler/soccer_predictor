@@ -16,11 +16,10 @@ Usage:
 
 import json
 import logging
-import math
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -308,110 +307,49 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
 
     registry = get_league_model_registry()
     
-    # Group recent predictions by league (last 50 per league for online update)
+    # Group recent predictions by league (latest outcomes per league).
     by_league: Dict[str, List[dict]] = defaultdict(list)
     for p in predictions:
         by_league[p["league"]].append(p)
-    
+
+    from backend.services.prediction.training import N_FEATURES
+
     updated = 0
+    skipped_no_features = 0
     for league_display, preds in by_league.items():
         league_key = _DISPLAY_TO_KEY.get(league_display)
         if not league_key:
             continue
-        
+
         model = registry.get_model(league_key)
         if not model.is_fitted:
             continue
-        
-        # Sort by date, take most recent outcomes for online update
-        recent = sorted(preds, key=lambda p: p.get("match_date", ""))[-50:]
-        
-        # Build simple feature vectors from prediction data
-        # We use the ELO ratings stored in the predictions + basic features
+
+        # Sort by date and use the latest finished matches.
+        recent = sorted(preds, key=lambda p: p.get("match_date", ""))[-80:]
+
+        # Use stored real feature vectors from predict_upcoming.py.
+        # This prevents noisy updates from synthetic proxy features.
         X_list = []
         y_outcome = []
         y_goals = []
-        
+
         for p in recent:
             if p.get("actual_winner") is None:
                 continue
-            
-            home_elo = p.get("home_elo", 1500.0)
-            away_elo = p.get("away_elo", 1500.0)
-            
-            # Build 55-feature vector (matching training.py FeatureBuilder output v4)
-            from backend.services.prediction.training import N_FEATURES
-            features = np.zeros(N_FEATURES, dtype=np.float64)
-            features[0] = home_elo              # home_elo
-            features[1] = away_elo              # away_elo
-            features[2] = home_elo - away_elo   # elo_diff
-            # Form features (3-14): approximate from predicted probabilities
-            features[3] = p.get("predicted_home_win", 0.5)   # home_form_5 proxy
-            features[4] = p.get("predicted_away_win", 0.3)   # away_form_5 proxy
-            features[5] = features[3]           # home_form_10
-            features[6] = features[4]           # away_form_10
-            features[7] = features[3]           # home_weighted_form
-            features[8] = features[4]           # away_weighted_form
-            features[9] = p.get("predicted_home_goals", 1.5)  # home_goals_scored_avg5
-            features[10] = p.get("predicted_away_goals", 1.0) # away_goals_scored_avg5
-            features[11] = 1.0                  # home_goals_conceded_avg5
-            features[12] = 1.2                  # away_goals_conceded_avg5
-            features[13] = features[9]          # home_goals_scored_avg10
-            features[14] = features[10]         # away_goals_scored_avg10
-            # Home/away splits (15-18)
-            features[15] = 0.5                  # home_home_win_pct
-            features[16] = 0.3                  # away_away_win_pct
-            features[17] = 1.5                  # home_home_goals_avg
-            features[18] = 1.0                  # away_away_goals_avg
-            # H2H (19-21)
-            features[19] = 0.0                  # h2h_home_advantage
-            features[20] = 2.5                  # h2h_avg_total_goals
-            features[21] = 0.0                  # h2h_matches
-            # Context (22-27)
-            features[22] = 0.5                  # matchday_pct
-            features[23] = 0.0                  # is_derby
-            features[24] = 1.0                  # league_coefficient
-            features[25] = 7.0                  # home_days_rest
-            features[26] = 7.0                  # away_days_rest
-            features[27] = 0.0                  # rest_diff
-            # Season stats (28-33)
-            features[28] = 1.5                  # home_ppg
-            features[29] = 1.3                  # away_ppg
-            features[30] = 0.3                  # home_clean_sheet_pct
-            features[31] = 0.25                 # away_clean_sheet_pct
-            features[32] = 0.3                  # home_gd_per_game
-            features[33] = 0.0                  # away_gd_per_game
-            # Momentum (34-37)
-            features[34] = 0.0                  # home_streak
-            features[35] = 0.0                  # away_streak
-            features[36] = 3.0                  # home_unbeaten_run
-            features[37] = 2.0                  # away_unbeaten_run
-            # Market-implied probabilities (38-42) — use predicted probs as proxy
-            features[38] = p.get("predicted_home_win", 0.45)  # market_prob_home
-            features[39] = p.get("predicted_draw", 0.28)      # market_prob_draw
-            features[40] = p.get("predicted_away_win", 0.27)  # market_prob_away
-            features[41] = max(features[38], features[39], features[40])  # market_fav_prob
-            features[42] = 0.0                                 # market_vs_model_diff
-            # Tactical stats (43-50) — use defaults for online update
-            features[43] = 0.5                  # home_shots_ratio
-            features[44] = 0.5                  # away_shots_ratio
-            features[45] = 0.5                  # home_sot_ratio
-            features[46] = 0.5                  # away_sot_ratio
-            features[47] = 0.0                  # home_discipline_score
-            features[48] = 0.0                  # away_discipline_score
-            features[49] = 0.5                  # home_corner_dominance
-            features[50] = 0.5                  # away_corner_dominance
-            # League characteristics (51-54) — use league-specific defaults
-            from backend.services.prediction.training import (
-                LEAGUE_DRAW_RATES, LEAGUE_AVG_TOTAL_GOALS,
-                LEAGUE_HOME_WIN_RATE, LEAGUE_COMPETITIVENESS,
-            )
-            lk = _DISPLAY_TO_KEY.get(league_display, "")
-            features[51] = LEAGUE_DRAW_RATES.get(lk, 0.26)
-            features[52] = LEAGUE_AVG_TOTAL_GOALS.get(lk, 2.65)
-            features[53] = LEAGUE_HOME_WIN_RATE.get(lk, 0.45)
-            features[54] = LEAGUE_COMPETITIVENESS.get(lk, 0.5)
-            
+
+            fv = p.get("feature_vector")
+            if not isinstance(fv, list) or len(fv) != N_FEATURES:
+                continue
+
+            try:
+                features = np.array(fv, dtype=np.float64)
+            except Exception:
+                continue
+
+            if not np.isfinite(features).all():
+                continue
+
             # Outcome label
             actual = p["actual_winner"]
             if actual == "home":
@@ -420,31 +358,34 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
                 label = 1
             else:
                 label = 2
-            
+
             X_list.append(features)
             y_outcome.append(label)
             y_goals.append([
                 p.get("actual_home_goals", 0) or 0,
                 p.get("actual_away_goals", 0) or 0
             ])
-        
-        if len(X_list) < 5:
+
+        if len(X_list) < 8:
+            skipped_no_features += 1
             continue
-        
+
         X = np.array(X_list, dtype=np.float64)
         y_out = np.array(y_outcome, dtype=np.int32)
         y_g = np.array(y_goals, dtype=np.float64)
-        
+
         try:
             model.partial_fit(X, y_out, y_g)
             model.save()
             updated += 1
-            logger.info(f"  Online update: {league_display} ({len(X_list)} samples)")
+            logger.info(f"  Online update: {league_display} ({len(X_list)} real-feature samples)")
         except Exception as e:
             logger.warning(f"  Online update failed for {league_display}: {e}")
-    
+
     if updated > 0:
         logger.info(f"  Online learning: updated {updated} league models")
+    elif skipped_no_features > 0:
+        logger.info("  Online learning skipped: insufficient completed predictions with stored feature vectors")
 
 
 def _update_league_params(adjustments: Dict[str, Dict]):

@@ -33,6 +33,13 @@ interface PredSummary {
   away_win_prob: number
 }
 
+interface CalibrationBin {
+  bucket: string
+  count: number
+  avg_confidence: number
+  accuracy: number
+}
+
 interface OverallMetrics {
   total_predictions: number
   completed_predictions: number
@@ -43,6 +50,8 @@ interface OverallMetrics {
   exact_scoreline_rate: number
   weighted_accuracy_score?: number
   brier_score: number
+  log_loss?: number
+  expected_calibration_error?: number
   high_confidence_accuracy: number
   medium_confidence_accuracy: number
   low_confidence_accuracy: number
@@ -55,12 +64,40 @@ interface OverallMetrics {
   draw_correct?: number
   away_win_predicted?: number
   away_win_correct?: number
+  calibration_bins?: CalibrationBin[]
+}
+
+interface LeagueSummaryItem {
+  league: string
+  total: number
+  predictions: number
+  pending: number
+  accuracy: number
+  weighted_accuracy: number
+  weightedAccuracy?: number
+  correct: number
+  scoreline_accuracy: number
+  brier_score: number
+  log_loss: number
+  expected_calibration_error: number
+}
+
+interface ModelInfoResponse {
+  summary?: {
+    neural_ensemble_count?: number
+  }
+}
+
+interface FetcherStatusResponse {
+  last_run?: string
+  outcomes_since_retrain?: number
+  retrain_threshold?: number
 }
 
 interface AccuracySummary {
   overall: OverallMetrics
   last_30_days: OverallMetrics
-  by_league: Record<string, any>
+  by_league: Record<string, LeagueSummaryItem>
   recent_form: string[]
   current_streak: { type: string; count: number }
   recent_predictions: PredSummary[]
@@ -100,10 +137,10 @@ function winnerLabel(w: string): string {
 export default function AccuracyDashboard() {
   const [summary, setSummary] = useState<AccuracySummary | null>(null)
   const [trend, setTrend] = useState<TrendData | null>(null)
-  const [modelInfo, setModelInfo] = useState<any>(null)
+  const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [trendWindow, setTrendWindow] = useState(10)
-  const [fetcherStatus, setFetcherStatus] = useState<any>(null)
+  const [fetcherStatus, setFetcherStatus] = useState<FetcherStatusResponse | null>(null)
   const [fetching, setFetching] = useState(false)
 
   const load = useCallback(async () => {
@@ -168,6 +205,9 @@ export default function AccuracyDashboard() {
 
       {/* Outcome Accuracy */}
       <OutcomeAccuracy metrics={m} />
+
+      {/* Probability Calibration */}
+      <CalibrationPanel metrics={m} />
 
       {/* Accuracy Over Time */}
       {trend && trend.data_points > 0 && (
@@ -314,12 +354,65 @@ function HeroMetrics({
             <div className="flex gap-4 text-xs text-[var(--text-tertiary)]">
               <span>Pending: <span className="font-medium text-[var(--text-primary)]">{metrics.pending_predictions ?? Math.max(metrics.total_predictions - metrics.completed_predictions, 0)}</span></span>
               <span>Brier: <span className="font-medium text-[var(--text-primary)]">{(metrics.brier_score ?? 0).toFixed(3)}</span></span>
+              <span>Log Loss: <span className="font-medium text-[var(--text-primary)]">{(metrics.log_loss ?? 0).toFixed(3)}</span></span>
+              <span>ECE: <span className="font-medium text-[var(--text-primary)]">{(metrics.expected_calibration_error ?? 0).toFixed(3)}</span></span>
               <span>Avg Goal Diff: <span className="font-medium text-[var(--text-primary)]">{(metrics.avg_goals_difference ?? 0).toFixed(2)}</span></span>
               <span>Within 1 Goal: <span className="font-medium text-[var(--text-primary)]">{pct(metrics.within_1_goal_rate ?? 0)}</span></span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   CalibrationPanel — probability reliability checks
+   ────────────────────────────────────────────────────────────────────── */
+
+function CalibrationPanel({ metrics }: { metrics: OverallMetrics }) {
+  const bins = (metrics.calibration_bins || []).filter((b) => b.count > 0)
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+          Probability Calibration
+        </h3>
+        <div className="flex flex-wrap gap-2 text-[10px] text-[var(--text-tertiary)]">
+          <span className="px-2 py-1 rounded bg-[var(--muted-bg)]">Brier {(metrics.brier_score ?? 0).toFixed(3)}</span>
+          <span className="px-2 py-1 rounded bg-[var(--muted-bg)]">LogLoss {(metrics.log_loss ?? 0).toFixed(3)}</span>
+          <span className="px-2 py-1 rounded bg-[var(--muted-bg)]">ECE {(metrics.expected_calibration_error ?? 0).toFixed(3)}</span>
+        </div>
+      </div>
+
+      {bins.length === 0 ? (
+        <p className="text-xs text-[var(--text-tertiary)]">Not enough completed predictions to build reliability bins yet.</p>
+      ) : (
+        <div className="space-y-2.5">
+          {bins.map((bin) => {
+            const confidenceWidth = Math.max(2, bin.avg_confidence * 100)
+            const accuracyWidth = Math.max(2, bin.accuracy * 100)
+            const gap = Math.abs(bin.accuracy - bin.avg_confidence)
+            return (
+              <div key={bin.bucket} className="grid grid-cols-[72px_1fr_72px] items-center gap-3">
+                <span className="text-[10px] text-[var(--text-tertiary)]">{bin.bucket}</span>
+                <div className="space-y-1">
+                  <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden relative">
+                    <div className="h-full bg-cyan-500/70" style={{ width: `${confidenceWidth}%` }} />
+                    <div className="h-full bg-emerald-500 absolute left-0 top-0" style={{ width: `${accuracyWidth}%`, opacity: 0.8 }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+                    <span>n={bin.count}</span>
+                    <span>gap {pct(gap)}</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-right text-[var(--text-secondary)]">{pct(bin.accuracy)}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -514,8 +607,8 @@ function TrendChart({
    LeagueBreakdown — horizontal bar chart
    ────────────────────────────────────────────────────────────────────── */
 
-function LeagueBreakdown({ data }: { data: Record<string, any> }) {
-  const leagues = Object.entries(data).sort((a: any, b: any) => (b[1].total ?? 0) - (a[1].total ?? 0))
+function LeagueBreakdown({ data }: { data: Record<string, LeagueSummaryItem> }) {
+  const leagues = Object.entries(data).sort((a, b) => (b[1].total ?? 0) - (a[1].total ?? 0))
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
@@ -523,7 +616,7 @@ function LeagueBreakdown({ data }: { data: Record<string, any> }) {
         League Evaluation Table
       </h3>
       <div className="space-y-3">
-        {leagues.map(([league, stats]: any) => {
+        {leagues.map(([league, stats]) => {
           const acc = stats.accuracy ?? 0
           const weighted = stats.weighted_accuracy ?? stats.weightedAccuracy ?? acc
           return (
@@ -742,7 +835,7 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
    ModelCard — compact model architecture summary
    ────────────────────────────────────────────────────────────────────── */
 
-function ModelCard({ modelInfo }: { modelInfo: any }) {
+function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
   const methods = [
     { icon: '\uD83E\uDDE0', name: 'Neural Ensemble', desc: 'Per-league MLP + XGBoost + LightGBM + GradientBoosting + RandomForest' },
     { icon: '\uD83D\uDCCA', name: 'Dixon-Coles Poisson', desc: 'Corrected bivariate Poisson for scoreline prediction' },
@@ -786,7 +879,7 @@ function FetcherPanel({
   fetching,
   onFetch,
 }: {
-  status: any
+  status: FetcherStatusResponse | null
   fetching: boolean
   onFetch: () => void
 }) {
