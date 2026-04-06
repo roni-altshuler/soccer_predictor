@@ -15,7 +15,19 @@ interface PredictionResult {
   total_goals?: number
   markets?: { over_2_5?: number; btts_yes?: number }
   scoreline_probabilities?: Array<{ score: string; probability: number }>
-  verdict?: { edge: string; risk: string; summary: string }
+  verdict?: {
+    edge?: string
+    risk?: string
+    edge_pct?: number
+    threshold_qualified?: boolean
+    recommended_action?: 'play' | 'pass'
+    recommended_pick?: string | null
+    policy?: {
+      min_confidence?: number
+      min_edge?: number
+    }
+    summary?: string
+  }
   form?: { home_form?: number; away_form?: number; home_form_label?: string; away_form_label?: string }
   ratings?: { home_elo: number; away_elo: number; elo_difference: number }
   analysis?: { predicted_winner: string; home_advantage_applied: boolean; factors_considered: string[]; note: string }
@@ -241,6 +253,30 @@ function PredictPageContent() {
                         <p className="text-sm font-semibold text-[var(--text-primary)]">{result.verdict?.risk || 'Balanced'}</p>
                       </div>
                     </div>
+                    {result.verdict && (
+                      <div className={`mt-3 rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-amber-500/35 bg-amber-500/10'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Policy Decision</p>
+                            <p className={`text-sm font-semibold ${result.verdict.recommended_action === 'play' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {result.verdict.recommended_action === 'play' ? 'Play' : 'Pass'}
+                              {result.verdict.recommended_pick ? ` · ${result.verdict.recommended_pick}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 text-[10px] text-[var(--text-secondary)]">
+                            {typeof result.verdict.edge_pct === 'number' && (
+                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Edge: {result.verdict.edge_pct.toFixed(1)}pp</span>
+                            )}
+                            {result.verdict.policy?.min_confidence !== undefined && (
+                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Min Conf: {result.verdict.policy.min_confidence}%</span>
+                            )}
+                            {result.verdict.policy?.min_edge !== undefined && (
+                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Min Edge: {result.verdict.policy.min_edge}pp</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {result.verdict?.summary && (
                       <p className="mt-3 text-xs text-[var(--text-secondary)]">{result.verdict.summary}</p>
                     )}

@@ -618,15 +618,13 @@ export default function MatchDetailPage() {
               <FotmobStatsCard stats={match.stats} homeTeam={match.home_team} awayTeam={match.away_team} compact />
             )}
 
-            {/* ── Event Heatmap (proxy until coordinate-level data is wired) ── */}
-            {(match.events.length > 0 || (match.shotmap?.length ?? 0) > 0) && (
-              <MatchEventHeatmap
-                events={match.events}
-                homeTeam={match.home_team}
-                awayTeam={match.away_team}
-                shotmap={match.shotmap || []}
-              />
-            )}
+            {/* ── Event Heatmap (always render; component handles empty-data fallback) ── */}
+            <MatchEventHeatmap
+              events={match.events}
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
+              shotmap={match.shotmap || []}
+            />
 
             {/* ── AI Prediction Card ── */}
             {match.prediction && (
