@@ -47,6 +47,16 @@ interface PredictionData {
   confidence_band?: 'Low' | 'Medium' | 'High'
 }
 
+interface ShotMapPoint {
+  x: number
+  y: number
+  team: 'home' | 'away'
+  expectedGoals?: number
+  isGoal?: boolean
+  minute?: number
+  player?: string
+}
+
 interface MatchDetailsResponse {
   id: string
   home_team: string
@@ -81,6 +91,19 @@ interface MatchDetailsResponse {
   commentary?: { minute: number; text: string }[]
   prediction?: PredictionData
   h2h?: H2HData
+  shotmap?: ShotMapPoint[]
+}
+
+function normalizeShotCoordinate(value: unknown, axis: 'x' | 'y'): number | null {
+  const num = typeof value === 'string' ? parseFloat(value) : Number(value)
+  if (!Number.isFinite(num)) return null
+
+  if (num >= 0 && num <= 1) return num
+  if (num >= 0 && num <= 100) return num / 100
+  if (axis === 'x' && num >= 0 && num <= 105) return num / 105
+  if (axis === 'y' && num >= 0 && num <= 68) return num / 68
+
+  return null
 }
 
 async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchDetailsResponse | null> {
@@ -321,6 +344,43 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
     
     // Extract lineups
     const lineupData = content.lineup || {}
+    const homeTeamId = Number(general.homeTeam?.id || header.teams?.[0]?.id)
+    const awayTeamId = Number(general.awayTeam?.id || header.teams?.[1]?.id)
+
+    const rawShots = content.shotmap?.shots || content.shotmap?.shotsData || content.shotMap?.shots || []
+    const shotmap: ShotMapPoint[] = Array.isArray(rawShots)
+      ? rawShots
+          .map((shot: any) => {
+            const x = normalizeShotCoordinate(shot?.x ?? shot?.X ?? shot?.position?.x, 'x')
+            const y = normalizeShotCoordinate(shot?.y ?? shot?.Y ?? shot?.position?.y, 'y')
+            if (x === null || y === null) return null
+
+            const isHomeShot = typeof shot?.isHome === 'boolean'
+              ? shot.isHome
+              : Number(shot?.teamId) === homeTeamId
+                ? true
+                : Number(shot?.teamId) === awayTeamId
+                  ? false
+                  : true
+
+            const isGoal = Boolean(
+              shot?.isGoal ||
+              shot?.eventType === 'Goal' ||
+              shot?.eventType === 'goal'
+            )
+
+            return {
+              x,
+              y,
+              team: isHomeShot ? 'home' : 'away',
+              expectedGoals: Number(shot?.expectedGoals ?? shot?.xG ?? shot?.expectedGoal) || undefined,
+              isGoal,
+              minute: Number(shot?.min ?? shot?.minute ?? shot?.time) || undefined,
+              player: shot?.playerName || shot?.player?.name || undefined,
+            } as ShotMapPoint
+          })
+          .filter(Boolean)
+      : []
     
     return {
       id: matchId,
@@ -356,6 +416,7 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
         awayFormation: lineupData.awayTeam?.formation,
       },
       stats,
+      shotmap,
       commentary: (content.matchFacts?.highlights?.text || []).map((item: { text?: string; time?: number }) => ({
         minute: item.time || 0,
         text: item.text || '',
@@ -395,7 +456,7 @@ async function fetchBackendPrediction(matchId: string): Promise<PredictionData |
       btts_yes: data.goals?.btts_yes ?? undefined,
       most_likely_score: data.most_likely_score?.score ?? undefined,
       model_version: data.model_version ?? undefined,
-      confidence_band: confidencePct >= 70 ? 'Low' : confidencePct >= 55 ? 'Medium' : 'High',
+      confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
     }
   } catch (error) {
     console.error('Backend prediction fetch failed:', error)
@@ -634,6 +695,7 @@ function generatePrediction(homeTeam: string, awayTeam: string, _leagueId?: stri
   const baseConfidence = Math.round((maxProb - MIN_PROB_BASELINE) * PROB_SCALE)
   const tierBonus = tierDiff * TIER_BONUS_PER_LEVEL
   const confidence = Math.min(MAX_CONFIDENCE, Math.max(MIN_CONFIDENCE, baseConfidence + tierBonus + BASE_CONFIDENCE))
+  const confidenceBand: 'Low' | 'Medium' | 'High' = confidence >= 70 ? 'High' : confidence >= 55 ? 'Medium' : 'Low'
   
   return {
     home_win: Math.round(homeWin * 100) / 100,
@@ -643,7 +705,8 @@ function generatePrediction(homeTeam: string, awayTeam: string, _leagueId?: stri
       home: Math.round(homeXG),
       away: Math.round(awayXG)
     },
-    confidence
+    confidence,
+    confidence_band: confidenceBand,
   }
 }
 

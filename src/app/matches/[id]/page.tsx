@@ -9,6 +9,7 @@ import { HeadToHeadDisplay } from '@/components/match'
 import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
+import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 
 interface MatchEvent {
   type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'var' | 'penalty_missed' | 'own_goal'
@@ -67,6 +68,15 @@ interface MatchDetails {
     corners: [number, number]
     fouls: [number, number]
   }
+  shotmap?: Array<{
+    x: number
+    y: number
+    team: 'home' | 'away'
+    expectedGoals?: number
+    isGoal?: boolean
+    minute?: number
+    player?: string
+  }>
   h2h: {
     homeWins: number
     draws: number
@@ -91,6 +101,96 @@ interface MatchDetails {
     confidence_band?: 'Low' | 'Medium' | 'High'
   }
   commentary?: { minute: number; text: string }[]
+}
+
+type MatchStats = MatchDetails['stats']
+
+function formatStatValue(value: number, suffix?: string, decimals = 0): string {
+  const printed = decimals > 0 ? value.toFixed(decimals) : String(value)
+  return `${printed}${suffix || ''}`
+}
+
+function DuelStatRow({
+  label,
+  home,
+  away,
+  suffix,
+  inverse = false,
+  decimals = 0,
+  fixedTotal,
+}: {
+  label: string
+  home: number
+  away: number
+  suffix?: string
+  inverse?: boolean
+  decimals?: number
+  fixedTotal?: number
+}) {
+  const total = fixedTotal ?? (home + away)
+  const safeTotal = total > 0 ? total : 1
+  const homeWidth = (home / safeTotal) * 100
+  const awayWidth = (away / safeTotal) * 100
+  const homeLeading = inverse ? home < away : home > away
+  const awayLeading = inverse ? away < home : away > home
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className={`font-semibold ${homeLeading ? 'text-blue-500' : 'text-[var(--text-secondary)]'}`}>
+          {formatStatValue(home, suffix, decimals)}
+        </span>
+        <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
+        <span className={`font-semibold ${awayLeading ? 'text-orange-500' : 'text-[var(--text-secondary)]'}`}>
+          {formatStatValue(away, suffix, decimals)}
+        </span>
+      </div>
+      <div className="flex h-2 rounded-full overflow-hidden bg-[var(--muted-bg)]">
+        <div
+          className={`transition-all ${homeLeading ? 'bg-blue-500' : 'bg-blue-500/40'}`}
+          style={{ width: `${homeWidth}%` }}
+        />
+        <div
+          className={`transition-all ${awayLeading ? 'bg-orange-500' : 'bg-orange-500/40'}`}
+          style={{ width: `${awayWidth}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function FotmobStatsCard({
+  stats,
+  homeTeam,
+  awayTeam,
+  compact = false,
+}: {
+  stats: MatchStats
+  homeTeam: string
+  awayTeam: string
+  compact?: boolean
+}) {
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Top Stats</h3>
+        <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Fotmob-style side-by-side match comparison</p>
+      </div>
+
+      <div className={compact ? 'p-4 space-y-3' : 'p-5 space-y-3.5'}>
+        <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-primary)]">
+          <span className="truncate pr-3">{homeTeam}</span>
+          <span className="truncate pl-3 text-right">{awayTeam}</span>
+        </div>
+
+        <DuelStatRow label="Possession" home={stats.possession[0]} away={stats.possession[1]} suffix="%" fixedTotal={100} />
+        <DuelStatRow label="Total Shots" home={stats.shots[0]} away={stats.shots[1]} />
+        <DuelStatRow label="Shots On Target" home={stats.shotsOnTarget[0]} away={stats.shotsOnTarget[1]} />
+        <DuelStatRow label="Corners" home={stats.corners[0]} away={stats.corners[1]} />
+        <DuelStatRow label="Fouls" home={stats.fouls[0]} away={stats.fouls[1]} inverse />
+      </div>
+    </div>
+  )
 }
 
 export default function MatchDetailPage() {
@@ -195,6 +295,7 @@ export default function MatchDetailPage() {
             corners: [0, 0],
             fouls: [0, 0],
           },
+          shotmap: data.shotmap || [],
           h2h: data.h2h || {
             homeWins: 0,
             draws: 0,
@@ -514,47 +615,17 @@ export default function MatchDetailPage() {
 
             {/* ── Top Stats (compact, FotMob-style) ── */}
             {!isScheduled && (
-              <div className="rounded-2xl p-4" style={{ background: 'var(--muted-bg)' }}>
-                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Top Stats</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {/* Possession */}
-                  <div className="text-center">
-                    <div className="flex items-center justify-between text-lg font-bold">
-                      <span className={match.stats.possession[0] > match.stats.possession[1] ? 'text-blue-500' : 'text-[var(--text-secondary)]'}>{match.stats.possession[0]}%</span>
-                      <span className={match.stats.possession[1] > match.stats.possession[0] ? 'text-orange-500' : 'text-[var(--text-secondary)]'}>{match.stats.possession[1]}%</span>
-                    </div>
-                    <div className="flex h-1.5 rounded-full overflow-hidden mt-1.5">
-                      <div className="bg-blue-500" style={{ width: `${match.stats.possession[0]}%` }} />
-                      <div className="bg-orange-500" style={{ width: `${match.stats.possession[1]}%` }} />
-                    </div>
-                    <p className="text-[10px] mt-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>Possession</p>
-                  </div>
-                  {/* Total Shots */}
-                  <div className="text-center">
-                    <div className="flex items-center justify-between text-lg font-bold">
-                      <span className={match.stats.shots[0] > match.stats.shots[1] ? 'text-blue-500' : 'text-[var(--text-secondary)]'}>{match.stats.shots[0]}</span>
-                      <span className={match.stats.shots[1] > match.stats.shots[0] ? 'text-orange-500' : 'text-[var(--text-secondary)]'}>{match.stats.shots[1]}</span>
-                    </div>
-                    <div className="flex h-1.5 rounded-full overflow-hidden mt-1.5">
-                      <div className="bg-blue-500" style={{ width: `${(match.stats.shots[0] / Math.max(1, match.stats.shots[0] + match.stats.shots[1])) * 100}%` }} />
-                      <div className="bg-orange-500" style={{ width: `${(match.stats.shots[1] / Math.max(1, match.stats.shots[0] + match.stats.shots[1])) * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] mt-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>Total Shots</p>
-                  </div>
-                  {/* Shots on Target */}
-                  <div className="text-center">
-                    <div className="flex items-center justify-between text-lg font-bold">
-                      <span className={match.stats.shotsOnTarget[0] > match.stats.shotsOnTarget[1] ? 'text-blue-500' : 'text-[var(--text-secondary)]'}>{match.stats.shotsOnTarget[0]}</span>
-                      <span className={match.stats.shotsOnTarget[1] > match.stats.shotsOnTarget[0] ? 'text-orange-500' : 'text-[var(--text-secondary)]'}>{match.stats.shotsOnTarget[1]}</span>
-                    </div>
-                    <div className="flex h-1.5 rounded-full overflow-hidden mt-1.5">
-                      <div className="bg-blue-500" style={{ width: `${(match.stats.shotsOnTarget[0] / Math.max(1, match.stats.shotsOnTarget[0] + match.stats.shotsOnTarget[1])) * 100}%` }} />
-                      <div className="bg-orange-500" style={{ width: `${(match.stats.shotsOnTarget[1] / Math.max(1, match.stats.shotsOnTarget[0] + match.stats.shotsOnTarget[1])) * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] mt-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>On Target</p>
-                  </div>
-                </div>
-              </div>
+              <FotmobStatsCard stats={match.stats} homeTeam={match.home_team} awayTeam={match.away_team} compact />
+            )}
+
+            {/* ── Event Heatmap (proxy until coordinate-level data is wired) ── */}
+            {(match.events.length > 0 || (match.shotmap?.length ?? 0) > 0) && (
+              <MatchEventHeatmap
+                events={match.events}
+                homeTeam={match.home_team}
+                awayTeam={match.away_team}
+                shotmap={match.shotmap || []}
+              />
             )}
 
             {/* ── AI Prediction Card ── */}
@@ -611,7 +682,7 @@ export default function MatchDetailPage() {
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.btts_yes !== undefined ? `${Math.round(match.prediction.btts_yes * 100)}%` : 'N/A'}</p>
                     </div>
                     <div className="rounded-xl bg-white/5 p-2.5 text-center">
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Risk</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Confidence Band</p>
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.confidence_band || 'Medium'}</p>
                     </div>
                   </div>
@@ -1060,47 +1131,9 @@ export default function MatchDetailPage() {
 
         {activeTab === 'stats' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Match Statistics</h3>
-            
-            {[
-              { label: 'Possession', values: match.stats.possession, suffix: '%', inverse: false },
-              { label: 'Total Shots', values: match.stats.shots, inverse: false },
-              { label: 'Shots on Target', values: match.stats.shotsOnTarget, inverse: false },
-              { label: 'Corners', values: match.stats.corners, inverse: false },
-              { label: 'Fouls', values: match.stats.fouls, inverse: true }, // Lower is better
-            ].map((stat) => {
-              const total = stat.values[0] + stat.values[1] || 1
-              const homePercent = (stat.values[0] / total) * 100
-              const awayPercent = (stat.values[1] / total) * 100
-              // Determine which team is "winning" this stat (for fouls, less is better)
-              const homeWinning = stat.inverse ? stat.values[0] < stat.values[1] : stat.values[0] > stat.values[1]
-              const awayWinning = stat.inverse ? stat.values[1] < stat.values[0] : stat.values[1] > stat.values[0]
-              const isTied = stat.values[0] === stat.values[1]
-              
-              return (
-                <div key={stat.label}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className={`font-medium ${homeWinning ? 'text-blue-500' : 'text-[var(--text-secondary)]'}`}>
-                      {stat.values[0]}{stat.suffix || ''}
-                    </span>
-                    <span className="text-[var(--text-secondary)]">{stat.label}</span>
-                    <span className={`font-medium ${awayWinning ? 'text-orange-500' : 'text-[var(--text-secondary)]'}`}>
-                      {stat.values[1]}{stat.suffix || ''}
-                    </span>
-                  </div>
-                  <div className="flex h-3 bg-[var(--muted-bg)] rounded-full overflow-hidden">
-                    <div
-                      className={`${isTied ? 'bg-gray-400' : homeWinning ? 'bg-blue-500' : 'bg-blue-500/30'} transition-all`}
-                      style={{ width: `${homePercent}%` }}
-                    />
-                    <div
-                      className={`${isTied ? 'bg-gray-400' : awayWinning ? 'bg-orange-500' : 'bg-orange-500/30'} transition-all`}
-                      style={{ width: `${awayPercent}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Match Statistics</h3>
+
+            <FotmobStatsCard stats={match.stats} homeTeam={match.home_team} awayTeam={match.away_team} />
             
             {/* Full League Standings Table */}
             <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--border-color)' }}>
