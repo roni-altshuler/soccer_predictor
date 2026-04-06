@@ -4,11 +4,15 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   register: true,
   skipWaiting: true,
   sw: 'sw.js',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  // Reduce stale client bundles after deploy by avoiding aggressive nav caching.
+  cacheOnFrontEndNav: false,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
   workboxOptions: {
     disableDevLogs: true,
+    cleanupOutdatedCaches: true,
+    clientsClaim: true,
+    skipWaiting: true,
   },
 })
 
