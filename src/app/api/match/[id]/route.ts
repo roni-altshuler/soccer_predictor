@@ -7,6 +7,88 @@ const LEAGUE_ENDPOINTS = [
   'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'fifa.world'
 ]
 
+const ESPN_LEAGUE_ABBREVIATION_MAP: Record<string, string> = {
+  premierleague: 'eng.1',
+  laliga: 'esp.1',
+  seriea: 'ita.1',
+  bundesliga: 'ger.1',
+  ligue1: 'fra.1',
+  mls: 'usa.1',
+}
+
+function normalizeTeamName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function teamNamesMatch(a: string, b: string): boolean {
+  const na = normalizeTeamName(a)
+  const nb = normalizeTeamName(b)
+  if (!na || !nb) return false
+  return na === nb || na.includes(nb) || nb.includes(na)
+}
+
+function resolveLeagueIdFromESPN(leagueData: { slug?: string; abbreviation?: string; name?: string } | undefined, fallback: string): string {
+  const slug = String(leagueData?.slug || '').toLowerCase()
+  if (LEAGUE_ENDPOINTS.includes(slug)) return slug
+
+  const abbr = String(leagueData?.abbreviation || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (abbr && ESPN_LEAGUE_ABBREVIATION_MAP[abbr]) {
+    return ESPN_LEAGUE_ABBREVIATION_MAP[abbr]
+  }
+
+  const name = String(leagueData?.name || '').toLowerCase()
+  if (name.includes('laliga') || name.includes('spanish')) return 'esp.1'
+  if (name.includes('premier league') || name.includes('english')) return 'eng.1'
+  if (name.includes('serie a') || name.includes('italian')) return 'ita.1'
+  if (name.includes('bundesliga') || name.includes('german')) return 'ger.1'
+  if (name.includes('ligue 1') || name.includes('french')) return 'fra.1'
+  if (name.includes('mls') || name.includes('major league soccer')) return 'usa.1'
+  if (name.includes('champions league')) return 'uefa.champions'
+  if (name.includes('europa league')) return 'uefa.europa'
+  if (name.includes('world cup')) return 'fifa.world'
+
+  return fallback
+}
+
+function parseClock(clockDisplayValue: string | undefined, clockValue: number | undefined): { minute: number; addedTime?: number } {
+  const display = (clockDisplayValue || '').replace(/\s/g, '')
+  const match = display.match(/^(\d+)(?:\+(\d+))?/) 
+  if (match) {
+    return {
+      minute: parseInt(match[1], 10),
+      addedTime: match[2] ? parseInt(match[2], 10) : undefined,
+    }
+  }
+
+  if (typeof clockValue === 'number' && Number.isFinite(clockValue) && clockValue > 0) {
+    return { minute: Math.floor(clockValue / 60) }
+  }
+
+  return { minute: 0 }
+}
+
+function extractPrimaryPlayerFromText(text: string): string {
+  const playerInParens = text.match(/\.\s*([^()]+?)\s*\(([^)]+)\)/)
+  if (playerInParens?.[1]) return playerInParens[1].trim()
+
+  const leadingPlayer = text.match(/^([^()]+?)\s*\(([^)]+)\)\s+is\s+/)
+  if (leadingPlayer?.[1]) return leadingPlayer[1].trim()
+
+  const substitution = text.match(/Substitution,\s*[^.]+\.\s*([^.]*)\s+replaces/i)
+  if (substitution?.[1]) return substitution[1].trim()
+
+  return 'Unknown'
+}
+
+function extractAssistFromText(text: string): string | undefined {
+  const assist = text.match(/Assisted by\s+([^.,]+)/i)
+  return assist?.[1]?.trim()
+}
+
 interface MatchEvent {
   type: string
   minute: number
@@ -149,20 +231,114 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
           minute = 45
         }
       }
+
+      const homeTeamName = homeTeam.team?.displayName || homeTeam.team?.name || ''
+      const awayTeamName = awayTeam.team?.displayName || awayTeam.team?.name || ''
+      const homeTeamId = String(homeTeam.team?.id || '')
+      const awayTeamId = String(awayTeam.team?.id || '')
+      const resolvedLeagueId = resolveLeagueIdFromESPN(data.header?.league, league)
+
+      const inferEventTeam = (rawEvent: any, text?: string): 'home' | 'away' | null => {
+        const eventTeamId = String(
+          rawEvent?.team?.id ||
+          rawEvent?.competitor?.id ||
+          rawEvent?.competitorId ||
+          rawEvent?.teamId ||
+          ''
+        )
+        if (eventTeamId && homeTeamId && eventTeamId === homeTeamId) return 'home'
+        if (eventTeamId && awayTeamId && eventTeamId === awayTeamId) return 'away'
+
+        if (rawEvent?.homeAway === 'home' || rawEvent?.homeAway === 'away') {
+          return rawEvent.homeAway
+        }
+
+        const sourceTeamName = String(
+          rawEvent?.team?.displayName ||
+          rawEvent?.team?.shortDisplayName ||
+          ''
+        )
+
+        if (sourceTeamName) {
+          if (teamNamesMatch(sourceTeamName, homeTeamName)) return 'home'
+          if (teamNamesMatch(sourceTeamName, awayTeamName)) return 'away'
+        }
+
+        const extractedTeam = text?.match(/\(([^)]+)\)/)?.[1]
+        if (extractedTeam) {
+          if (teamNamesMatch(extractedTeam, homeTeamName)) return 'home'
+          if (teamNamesMatch(extractedTeam, awayTeamName)) return 'away'
+        }
+
+        return null
+      }
       
       // Extract events
       const events: MatchEvent[] = []
+      const eventKeys = new Set<string>()
+
+      const pushEvent = (event: MatchEvent) => {
+        const key = `${event.type}-${event.minute}-${event.team}-${event.player.toLowerCase()}`
+        if (eventKeys.has(key)) return
+        eventKeys.add(key)
+        events.push(event)
+      }
       
       // Scoring plays (goals)
       const scoringPlays = data.scoringPlays || []
       for (const play of scoringPlays) {
+        const parsedClock = parseClock(play.clock?.displayValue, play.clock?.value)
+        const text = String(play.text || '')
+        const team = inferEventTeam(play, text)
+        if (!team) continue
+
         const isOwnGoal = play.text?.toLowerCase().includes('own goal')
-        events.push({
+        pushEvent({
           type: isOwnGoal ? 'own_goal' : 'goal',
-          minute: parseInt(play.clock?.displayValue) || 0,
-          player: play.scoringPlay?.scorer?.athlete?.displayName || play.text?.trim() || 'Unknown',
-          team: play.homeAway === 'home' ? 'home' : 'away',
-          relatedPlayer: play.scoringPlay?.assists?.[0]?.athlete?.displayName,
+          minute: parsedClock.minute,
+          addedTime: parsedClock.addedTime,
+          player: play.scoringPlay?.scorer?.athlete?.displayName || extractPrimaryPlayerFromText(text),
+          team,
+          relatedPlayer: play.scoringPlay?.assists?.[0]?.athlete?.displayName || extractAssistFromText(text),
+        })
+      }
+
+      // Fallback event extraction from key events when scoringPlays are missing.
+      const keyEvents = Array.isArray(data.keyEvents) ? data.keyEvents : []
+      for (const evt of keyEvents) {
+        const rawType = String(evt?.type?.type || evt?.type?.text || '').toLowerCase()
+        let eventType: MatchEvent['type'] | null = null
+
+        if (rawType.includes('goal')) {
+          eventType = rawType.includes('own') ? 'own_goal' : 'goal'
+        } else if (rawType.includes('yellow')) {
+          eventType = 'yellow_card'
+        } else if (rawType.includes('red')) {
+          eventType = 'red_card'
+        } else if (rawType.includes('substitution')) {
+          eventType = 'substitution'
+        }
+
+        if (!eventType) continue
+
+        const text = String(evt?.text || '')
+        const team = inferEventTeam(evt, text)
+        if (!team) continue
+
+        const parsedClock = parseClock(evt?.clock?.displayValue, evt?.clock?.value)
+        const player =
+          evt?.athlete?.displayName ||
+          evt?.player?.displayName ||
+          evt?.participants?.[0]?.athlete?.displayName ||
+          extractPrimaryPlayerFromText(text)
+
+        pushEvent({
+          type: eventType,
+          minute: parsedClock.minute,
+          addedTime: parsedClock.addedTime,
+          player,
+          team,
+          relatedPlayer: eventType === 'goal' || eventType === 'own_goal' ? extractAssistFromText(text) : undefined,
         })
       }
       
@@ -198,11 +374,16 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
       
       // Extract commentary
       const commentary: { minute: number; text: string }[] = []
-      const plays = data.plays || data.keyEvents || []
-      for (const play of plays) {
+      const playFeed = Array.isArray(data.plays) && data.plays.length > 0
+        ? data.plays
+        : Array.isArray(data.keyEvents)
+          ? data.keyEvents
+          : []
+      for (const play of playFeed) {
         if (play.text) {
+          const parsedClock = parseClock(play.clock?.displayValue, play.clock?.value)
           commentary.push({
-            minute: parseInt(play.clock?.displayValue) || 0,
+            minute: parsedClock.minute,
             text: play.text,
           })
         }
@@ -221,7 +402,7 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
         capacity: data.gameInfo?.venue?.capacity,
         date: competition.date || data.header?.competitions?.[0]?.date || '',
         league: data.header?.league?.name || league,
-        leagueId: league,
+        leagueId: resolvedLeagueId,
         referee: data.gameInfo?.officials?.[0]?.fullName,
         refereeCountry: data.gameInfo?.officials?.[0]?.nationality,
         events,
@@ -464,128 +645,114 @@ async function fetchBackendPrediction(matchId: string): Promise<PredictionData |
   }
 }
 
-// Constants for H2H score simulation
-const H2H_SCORE_CONSTANTS = {
-  MAX_GOALS_PER_MATCH: 3,        // Maximum expected goals per team
-  MIN_HOME_GOALS: 1,             // Minimum goals for home team in fallback
-  MAX_AWAY_GOALS_OFFSET: 3,      // Max goals range for away team in fallback
-  HISTORICAL_MATCH_COUNT: 5,     // Number of simulated historical matches
-  MONTHS_BETWEEN_MATCHES: 4,     // Spacing between simulated matches
-}
-
-// Fetch H2H data from ESPN - enhanced to provide meaningful data
+// Fetch only real H2H data from ESPN scoreboards.
 async function fetchH2H(homeTeam: string, awayTeam: string, leagueId?: string): Promise<H2HData | null> {
   try {
-    // Try to get H2H from ESPN team stats
-    const leagues = leagueId ? [leagueId, ...LEAGUE_ENDPOINTS.filter(l => l !== leagueId)] : LEAGUE_ENDPOINTS
-    
+    const extraLeagues = ['uefa.champions', 'uefa.europa']
+    const leagues = Array.from(
+      new Set(
+        leagueId
+          ? [leagueId, ...extraLeagues]
+          : LEAGUE_ENDPOINTS
+      )
+    )
+
+    const now = new Date()
+    const formatDate = (date: Date) =>
+      `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`
+
+    const seenIds = new Set<string>()
+    const matches: H2HMatch[] = []
+
     for (const league of leagues) {
       try {
-        const res = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams`,
-          {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            },
-            next: { revalidate: 3600 }, // Cache for 1 hour
-          }
-        )
-        
-        if (!res.ok) continue
-        
-        const data = await res.json()
-        const teams = data.sports?.[0]?.leagues?.[0]?.teams || []
-        
-        // Find both teams
-        const homeTeamData = teams.find((t: { team?: { displayName?: string; name?: string } }) => 
-          t.team?.displayName?.toLowerCase().includes(homeTeam.toLowerCase()) ||
-          homeTeam.toLowerCase().includes(t.team?.displayName?.toLowerCase() || '')
-        )
-        const awayTeamData = teams.find((t: { team?: { displayName?: string; name?: string } }) => 
-          t.team?.displayName?.toLowerCase().includes(awayTeam.toLowerCase()) ||
-          awayTeam.toLowerCase().includes(t.team?.displayName?.toLowerCase() || '')
-        )
-        
-        if (homeTeamData && awayTeamData) {
-          // Generate realistic H2H data based on team strength
-          const homeWinsRecord = homeTeamData.team?.record?.items?.[0]?.stats?.find((s: { name: string }) => s.name === 'wins')?.value || 5
-          const awayWinsRecord = awayTeamData.team?.record?.items?.[0]?.stats?.find((s: { name: string }) => s.name === 'wins')?.value || 5
-          
-          // Estimate H2H based on relative strength - typically 8-12 historical matches
-          const totalH2HMatches = 10
-          const homeStrength = homeWinsRecord / (homeWinsRecord + awayWinsRecord + 0.01)
-          const awayStrength = awayWinsRecord / (homeWinsRecord + awayWinsRecord + 0.01)
-          
-          // Home team gets slight advantage in H2H due to historical home advantage
-          const homeWins = Math.round(totalH2HMatches * (homeStrength * 0.5 + 0.15))
-          const awayWins = Math.round(totalH2HMatches * (awayStrength * 0.5 + 0.05))
-          const draws = totalH2HMatches - homeWins - awayWins
-          
-          // Generate sample recent matches (simulated historical data)
-          const recentMatches: H2HMatch[] = []
-          const now = new Date()
-          
-          for (let i = 0; i < Math.min(H2H_SCORE_CONSTANTS.HISTORICAL_MATCH_COUNT, totalH2HMatches); i++) {
-            const matchDate = new Date(now)
-            matchDate.setMonth(matchDate.getMonth() - (3 + i * H2H_SCORE_CONSTANTS.MONTHS_BETWEEN_MATCHES)) // Spread over past 2 years
-            
-            // Simulate scores based on strength
-            const isHomeMatch = i % 2 === 0
-            const strongerAtHome = isHomeMatch ? homeStrength : awayStrength
-            const homeScore = Math.round(strongerAtHome * H2H_SCORE_CONSTANTS.MAX_GOALS_PER_MATCH + Math.random())
-            const awayScore = Math.round((1 - strongerAtHome) * H2H_SCORE_CONSTANTS.MAX_GOALS_PER_MATCH + Math.random())
-            
-            recentMatches.push({
-              date: matchDate.toISOString(),
-              homeTeam: isHomeMatch ? homeTeam : awayTeam,
-              awayTeam: isHomeMatch ? awayTeam : homeTeam,
-              homeScore,
-              awayScore,
-              competition: league.includes('uefa') ? 'UEFA Competition' : 'League Match'
+        for (let yearOffset = 0; yearOffset < 3; yearOffset++) {
+          const chunkEnd = new Date(now)
+          chunkEnd.setFullYear(chunkEnd.getFullYear() - yearOffset)
+          const chunkStart = new Date(chunkEnd)
+          chunkStart.setFullYear(chunkStart.getFullYear() - 1)
+
+          const res = await fetch(
+            `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?dates=${formatDate(chunkStart)}-${formatDate(chunkEnd)}&limit=300`,
+            {
+              headers: {
+                Accept: 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              },
+              next: { revalidate: 3600 },
+            }
+          )
+          if (!res.ok) continue
+
+          const data = await res.json()
+          for (const event of data.events || []) {
+            const competition = event.competitions?.[0]
+            if (!competition) continue
+
+            const statusType = competition.status?.type?.name || ''
+            if (!statusType.includes('FINAL') && !statusType.includes('FULL_TIME')) continue
+
+            const home = competition.competitors?.find((c: { homeAway?: string }) => c.homeAway === 'home')
+            const away = competition.competitors?.find((c: { homeAway?: string }) => c.homeAway === 'away')
+            if (!home || !away) continue
+
+            const hName = home.team?.displayName || home.team?.name || ''
+            const aName = away.team?.displayName || away.team?.name || ''
+
+            const isDirectMatch =
+              (teamNamesMatch(hName, homeTeam) && teamNamesMatch(aName, awayTeam)) ||
+              (teamNamesMatch(hName, awayTeam) && teamNamesMatch(aName, homeTeam))
+
+            if (!isDirectMatch) continue
+
+            const eventId = String(event.id || `${event.date}-${hName}-${aName}`)
+            if (seenIds.has(eventId)) continue
+            seenIds.add(eventId)
+
+            matches.push({
+              date: event.date || '',
+              homeTeam: hName,
+              awayTeam: aName,
+              homeScore: parseInt(home.score || '0', 10),
+              awayScore: parseInt(away.score || '0', 10),
+              competition: league,
             })
-          }
-          
-          return {
-            homeWins: Math.max(0, homeWins),
-            draws: Math.max(0, draws),
-            awayWins: Math.max(0, awayWins),
-            recentMatches
           }
         }
       } catch {
         continue
       }
     }
-    
-    // If no API data available, generate reasonable default H2H data
-    // This ensures users always see some H2H information
-    const recentMatches: H2HMatch[] = []
-    const now = new Date()
-    
-    for (let i = 0; i < H2H_SCORE_CONSTANTS.HISTORICAL_MATCH_COUNT; i++) {
-      const matchDate = new Date(now)
-      matchDate.setMonth(matchDate.getMonth() - (3 + i * H2H_SCORE_CONSTANTS.MONTHS_BETWEEN_MATCHES))
-      
-      const isHomeMatch = i % 2 === 0
-      const homeScore = Math.floor(Math.random() * H2H_SCORE_CONSTANTS.MAX_AWAY_GOALS_OFFSET) + H2H_SCORE_CONSTANTS.MIN_HOME_GOALS
-      const awayScore = Math.floor(Math.random() * H2H_SCORE_CONSTANTS.MAX_AWAY_GOALS_OFFSET)
-      
-      recentMatches.push({
-        date: matchDate.toISOString(),
-        homeTeam: isHomeMatch ? homeTeam : awayTeam,
-        awayTeam: isHomeMatch ? awayTeam : homeTeam,
-        homeScore,
-        awayScore,
-        competition: 'Historical Match'
-      })
+
+    if (matches.length === 0) {
+      return null
     }
-    
+
+    const sortedMatches = matches.sort((a, b) => b.date.localeCompare(a.date))
+    let homeWins = 0
+    let awayWins = 0
+    let draws = 0
+
+    for (const m of sortedMatches) {
+      const homeIsReferenceHome = teamNamesMatch(m.homeTeam, homeTeam)
+      if (m.homeScore === m.awayScore) {
+        draws += 1
+        continue
+      }
+      if (homeIsReferenceHome) {
+        if (m.homeScore > m.awayScore) homeWins += 1
+        else awayWins += 1
+      } else {
+        if (m.homeScore > m.awayScore) awayWins += 1
+        else homeWins += 1
+      }
+    }
+
     return {
-      homeWins: 4,
-      draws: 2,
-      awayWins: 4,
-      recentMatches
+      homeWins,
+      draws,
+      awayWins,
+      recentMatches: sortedMatches.slice(0, 8),
     }
   } catch (e) {
     console.error('H2H fetch failed:', e)

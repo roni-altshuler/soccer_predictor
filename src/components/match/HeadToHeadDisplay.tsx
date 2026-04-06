@@ -107,20 +107,11 @@ export default function HeadToHeadDisplay({
   const [stats, setStats] = useState<HeadToHeadStats | null>(initialData || null)
   const [loading, setLoading] = useState(!initialData)
   const [showAllMatches, setShowAllMatches] = useState(false)
-  // Default to 'form' view which now includes H2H summary at the top
-  const [activeView, setActiveView] = useState<'h2h' | 'form'>('form')
+  const [activeView, setActiveView] = useState<'h2h' | 'form'>('h2h')
 
   useEffect(() => {
     if (initialData) {
-      // If we have initial data but no team form, generate it
-      if (showTeamForm && !initialData.team1Form) {
-        const withForm = {
-          ...initialData,
-          team1Form: generateTeamForm(homeTeam, true),
-          team2Form: generateTeamForm(awayTeam, false),
-        }
-        setStats(withForm)
-      }
+      setStats(initialData)
       return
     }
 
@@ -335,27 +326,21 @@ export default function HeadToHeadDisplay({
           }
         }
 
-        // Last resort: generate mock H2H (clearly labeled)
+        // Keep H2H conservative: do not fabricate match history.
         if (!h2hData || h2hData.totalMatches === 0) {
-          h2hData = generateRealisticH2H(homeTeam, awayTeam)
+          h2hData = generateMockH2H(homeTeam, awayTeam)
         }
 
-        // Add team form data - use ESPN data if available, otherwise generate
+        // Add team form only when we have real fetched data.
         if (showTeamForm) {
-          h2hData.team1Form = team1FormData || generateTeamForm(homeTeam, true, awayTeam)
-          h2hData.team2Form = team2FormData || generateTeamForm(awayTeam, false, homeTeam)
+          if (team1FormData) h2hData.team1Form = team1FormData
+          if (team2FormData) h2hData.team2Form = team2FormData
         }
 
         setStats(h2hData)
       } catch (error) {
         console.error('Error fetching H2H data:', error)
-        // Set realistic mock data as fallback
-        const mockData = generateRealisticH2H(homeTeam, awayTeam)
-        if (showTeamForm) {
-          mockData.team1Form = generateTeamForm(homeTeam, true, awayTeam)
-          mockData.team2Form = generateTeamForm(awayTeam, false, homeTeam)
-        }
-        setStats(mockData)
+        setStats(generateMockH2H(homeTeam, awayTeam))
       } finally {
         setLoading(false)
       }

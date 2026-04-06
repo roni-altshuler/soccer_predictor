@@ -316,15 +316,23 @@ export default function MatchDetailPage() {
               const standingsData = await standingsRes.json()
               const entries = standingsData.children?.[0]?.standings?.entries || []
               
-              const homeTeamName = matchDetails.home_team.toLowerCase()
-              const awayTeamName = matchDetails.away_team.toLowerCase()
+              const normalizeName = (name: string) =>
+                name
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .toLowerCase()
+
+              const homeTeamName = normalizeName(matchDetails.home_team)
+              const awayTeamName = normalizeName(matchDetails.away_team)
               
               const fullStandings: TeamStanding[] = []
+              let matchedHomeStanding: TeamStanding | undefined
+              let matchedAwayStanding: TeamStanding | undefined
               
               for (let i = 0; i < entries.length; i++) {
                 const entry = entries[i]
                 const teamDisplayName = entry.team?.displayName || 'Unknown'
-                const teamName = teamDisplayName.toLowerCase()
+                const teamName = normalizeName(teamDisplayName)
                 
                 const getStatVal = (name: string) => {
                   const stat = entry.stats?.find((s: { name: string }) => s.name === name)
@@ -344,14 +352,23 @@ export default function MatchDetailPage() {
                 fullStandings.push(standing)
                 
                 if (teamName.includes(homeTeamName) || homeTeamName.includes(teamName)) {
-                  matchDetails.homeStanding = standing
+                  matchedHomeStanding = standing
                 }
                 if (teamName.includes(awayTeamName) || awayTeamName.includes(teamName)) {
-                  matchDetails.awayStanding = standing
+                  matchedAwayStanding = standing
                 }
               }
-              
-              matchDetails.fullStandings = fullStandings
+
+              // Only show table context when both teams can be located in the same standings set.
+              if (matchedHomeStanding && matchedAwayStanding) {
+                matchDetails.homeStanding = matchedHomeStanding
+                matchDetails.awayStanding = matchedAwayStanding
+                matchDetails.fullStandings = fullStandings
+              } else {
+                matchDetails.homeStanding = undefined
+                matchDetails.awayStanding = undefined
+                matchDetails.fullStandings = undefined
+              }
             }
           } catch {
             // Standings not available, continue without them
