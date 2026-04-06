@@ -16,6 +16,8 @@ interface Prediction {
   predicted_scoreline: string
   predicted_winner: string
   confidence: number
+  edge_score?: number
+  threshold_qualified?: boolean
   home_elo: number
   away_elo: number
   actual_home_goals: number | null
@@ -41,6 +43,7 @@ interface MetricBlock {
   pending_predictions: number
   winner_correct_count: number
   winner_accuracy: number
+  avg_confidence: number
   exact_scoreline_count: number
   exact_scoreline_rate: number
   weighted_accuracy_score: number
@@ -52,6 +55,10 @@ interface MetricBlock {
   high_confidence_accuracy: number
   medium_confidence_accuracy: number
   low_confidence_accuracy: number
+  threshold_qualified_predictions: number
+  threshold_qualified_accuracy: number
+  threshold_qualification_rate: number
+  threshold_lift: number
   recent_accuracy: number
   home_win_predicted: number
   home_win_correct: number
@@ -76,6 +83,17 @@ interface LeagueSummary {
   expected_calibration_error: number
 }
 
+function readPolicyThreshold(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const parsed = Number.parseFloat(raw)
+  if (!Number.isFinite(parsed)) return fallback
+  return parsed
+}
+
+const POLICY_MIN_CONFIDENCE = Math.min(1, Math.max(0, readPolicyThreshold('PREDICTION_POLICY_MIN_CONFIDENCE', 0.55)))
+const POLICY_MIN_EDGE = Math.min(1, Math.max(0, readPolicyThreshold('PREDICTION_POLICY_MIN_EDGE', 0.12)))
+
 function normalizeConfidence(value: number): number {
   if (!Number.isFinite(value)) return 0
   return value > 1 ? value / 100 : value
@@ -90,6 +108,11 @@ function normalizeProbabilities(home: number, draw: number, away: number): [numb
   const s = raw[0] + raw[1] + raw[2]
   if (s <= 0) return [1 / 3, 1 / 3, 1 / 3]
   return [raw[0] / s, raw[1] / s, raw[2] / s]
+}
+
+function edgeFromProbabilities(home: number, draw: number, away: number): number {
+  const [ph, pd, pa] = normalizeProbabilities(home, draw, away)
+  return Math.max(ph, pd, pa) - (1 / 3)
 }
 
 function winnerIndex(winner: string | null): number {
@@ -117,6 +140,7 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
       pending_predictions: Math.max(0, totalPredictions),
       winner_correct_count: 0,
       winner_accuracy: 0,
+      avg_confidence: 0,
       exact_scoreline_count: 0,
       exact_scoreline_rate: 0,
       weighted_accuracy_score: 0,
@@ -128,6 +152,10 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
       high_confidence_accuracy: 0,
       medium_confidence_accuracy: 0,
       low_confidence_accuracy: 0,
+      threshold_qualified_predictions: 0,
+      threshold_qualified_accuracy: 0,
+      threshold_qualification_rate: 0,
+      threshold_lift: 0,
       recent_accuracy: 0,
       home_win_predicted: 0,
       home_win_correct: 0,
@@ -141,6 +169,7 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
 
   const winnerCorrect = completed.filter(p => p.winner_correct).length
   const scoreCorrect = completed.filter(p => p.scoreline_correct).length
+  const avgConfidence = completed.reduce((sum, p) => sum + normalizeConfidence(p.confidence), 0) / count
   const weightedAccuracy = ((winnerCorrect * 0.65) + (scoreCorrect * 0.35)) / count
 
   const goalsDiffs = completed.filter(p => p.goals_diff !== null).map(p => Math.abs(p.goals_diff!))
@@ -199,6 +228,16 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
   const lowConf = completed.filter(p => normalizeConfidence(p.confidence) < 0.42)
   const confAcc = (arr: Prediction[]) => arr.length > 0 ? arr.filter(p => p.winner_correct).length / arr.length : 0
 
+  const qualified = completed.filter((p) => {
+    if (typeof p.threshold_qualified === 'boolean') return p.threshold_qualified
+    const edge = Number.isFinite(p.edge_score ?? NaN)
+      ? Number(p.edge_score)
+      : edgeFromProbabilities(p.predicted_home_win, p.predicted_draw, p.predicted_away_win)
+    return normalizeConfidence(p.confidence) >= POLICY_MIN_CONFIDENCE && edge >= POLICY_MIN_EDGE
+  })
+  const qualifiedAccuracy = confAcc(qualified)
+  const thresholdLift = qualified.length > 0 ? qualifiedAccuracy - (winnerCorrect / count) : 0
+
   const recentCompleted = [...completed].sort((a, b) => b.match_date.localeCompare(a.match_date)).slice(0, 50)
   const recentAccuracy = recentCompleted.length > 0
     ? recentCompleted.filter(p => p.winner_correct).length / recentCompleted.length
@@ -210,6 +249,7 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
     pending_predictions: Math.max(0, totalPredictions - count),
     winner_correct_count: winnerCorrect,
     winner_accuracy: Math.round((winnerCorrect / count) * 1000) / 1000,
+    avg_confidence: Math.round(avgConfidence * 1000) / 1000,
     exact_scoreline_count: scoreCorrect,
     exact_scoreline_rate: Math.round((scoreCorrect / count) * 1000) / 1000,
     weighted_accuracy_score: Math.round(weightedAccuracy * 1000) / 1000,
@@ -221,6 +261,10 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
     high_confidence_accuracy: Math.round(confAcc(highConf) * 1000) / 1000,
     medium_confidence_accuracy: Math.round(confAcc(medConf) * 1000) / 1000,
     low_confidence_accuracy: Math.round(confAcc(lowConf) * 1000) / 1000,
+    threshold_qualified_predictions: qualified.length,
+    threshold_qualified_accuracy: Math.round(qualifiedAccuracy * 1000) / 1000,
+    threshold_qualification_rate: Math.round((qualified.length / count) * 1000) / 1000,
+    threshold_lift: Math.round(thresholdLift * 1000) / 1000,
     recent_accuracy: Math.round(recentAccuracy * 1000) / 1000,
     home_win_predicted: completed.filter(p => p.predicted_winner === 'home').length,
     home_win_correct: completed.filter(p => p.predicted_winner === 'home' && p.winner_correct).length,
@@ -303,6 +347,10 @@ export async function GET() {
     overall,
     last_30_days: last30Metrics,
     by_league: byLeague,
+    policy: {
+      min_confidence: POLICY_MIN_CONFIDENCE,
+      min_edge: POLICY_MIN_EDGE,
+    },
     recent_form: recentForm.slice(0, 10),
     current_streak: { type: streakType || 'N/A', count: streakCount },
     recent_predictions: recentPreds.slice(0, 20).map(p => ({

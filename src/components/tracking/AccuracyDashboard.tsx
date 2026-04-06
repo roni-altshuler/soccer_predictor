@@ -46,6 +46,7 @@ interface OverallMetrics {
   pending_predictions?: number
   winner_correct_count: number
   winner_accuracy: number
+  avg_confidence?: number
   exact_scoreline_count: number
   exact_scoreline_rate: number
   weighted_accuracy_score?: number
@@ -55,6 +56,10 @@ interface OverallMetrics {
   high_confidence_accuracy: number
   medium_confidence_accuracy: number
   low_confidence_accuracy: number
+  threshold_qualified_predictions?: number
+  threshold_qualified_accuracy?: number
+  threshold_qualification_rate?: number
+  threshold_lift?: number
   recent_accuracy: number
   avg_goals_difference: number
   within_1_goal_rate: number
@@ -65,6 +70,11 @@ interface OverallMetrics {
   away_win_predicted?: number
   away_win_correct?: number
   calibration_bins?: CalibrationBin[]
+}
+
+interface TrackingPolicy {
+  min_confidence: number
+  min_edge: number
 }
 
 interface LeagueSummaryItem {
@@ -98,6 +108,7 @@ interface AccuracySummary {
   overall: OverallMetrics
   last_30_days: OverallMetrics
   by_league: Record<string, LeagueSummaryItem>
+  policy?: TrackingPolicy
   recent_form: string[]
   current_streak: { type: string; count: number }
   recent_predictions: PredSummary[]
@@ -116,6 +127,11 @@ interface TrendData {
 
 function pct(n: number): string {
   return (n * 100).toFixed(1) + '%'
+}
+
+function pp(n: number): string {
+  const sign = n > 0 ? '+' : ''
+  return sign + (n * 100).toFixed(1) + 'pp'
 }
 
 function accuracyColor(a: number): string {
@@ -200,6 +216,9 @@ export default function AccuracyDashboard() {
       {/* Hero Metrics Row */}
       <HeroMetrics metrics={m} streak={summary.current_streak} form={summary.recent_form} />
 
+      {/* Interpretation helper */}
+      <InterpretationPanel metrics={m} last30={summary.last_30_days} policy={summary.policy} />
+
       {/* Key Performance Indicators */}
       <KPIGrid metrics={m} last30={summary.last_30_days} />
 
@@ -226,6 +245,93 @@ export default function AccuracyDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <ModelCard modelInfo={modelInfo} />
         <FetcherPanel status={fetcherStatus} fetching={fetching} onFetch={triggerFetch} />
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   InterpretationPanel — plain-language reading aid
+   ────────────────────────────────────────────────────────────────────── */
+
+function InterpretationPanel({ metrics, last30, policy }: { metrics: OverallMetrics; last30: OverallMetrics; policy?: TrackingPolicy }) {
+  const randomBaseline = 1 / 3
+  const edgeVsBaseline = metrics.winner_accuracy - randomBaseline
+  const confidenceGap = Math.abs((metrics.avg_confidence ?? metrics.winner_accuracy) - metrics.winner_accuracy)
+  const highConfLift = metrics.high_confidence_accuracy - metrics.winner_accuracy
+  const thresholdLift = metrics.threshold_lift ?? 0
+  const thresholdQualified = metrics.threshold_qualified_predictions ?? 0
+  const thresholdRate = metrics.threshold_qualification_rate ?? 0
+  const last30Delta = last30.completed_predictions > 0 ? last30.winner_accuracy - metrics.winner_accuracy : 0
+  const policyConfidence = Math.round((policy?.min_confidence ?? 0.55) * 100)
+  const policyEdge = Math.round((policy?.min_edge ?? 0.12) * 100)
+
+  const cards = [
+    {
+      label: 'Edge vs random baseline',
+      value: pp(edgeVsBaseline),
+      note: 'Compares to 33.3% baseline for 1X2 picks.',
+      color: edgeVsBaseline >= 0.08 ? '#22c55e' : edgeVsBaseline >= 0.03 ? '#f59e0b' : '#ef4444',
+    },
+    {
+      label: 'Calibration gap',
+      value: pct(confidenceGap),
+      note: 'Absolute gap between confidence and real hit rate.',
+      color: confidenceGap <= 0.04 ? '#22c55e' : confidenceGap <= 0.08 ? '#f59e0b' : '#ef4444',
+    },
+    {
+      label: 'High-confidence lift',
+      value: pp(highConfLift),
+      note: 'How much >=55% confidence picks beat overall picks.',
+      color: highConfLift >= 0.06 ? '#22c55e' : highConfLift >= 0.02 ? '#f59e0b' : '#ef4444',
+    },
+    {
+      label: 'Last 30 days trend',
+      value: last30.completed_predictions > 0 ? pp(last30Delta) : 'N/A',
+      note: last30.completed_predictions > 0 ? 'Recent form minus long-run hit rate.' : 'Need more recent completed matches.',
+      color: last30.completed_predictions === 0 ? '#94a3b8' : last30Delta >= 0.03 ? '#22c55e' : last30Delta >= -0.03 ? '#f59e0b' : '#ef4444',
+    },
+    {
+      label: 'Policy-filtered lift',
+      value: thresholdQualified > 0 ? pp(thresholdLift) : 'N/A',
+      note: thresholdQualified > 0
+        ? `Picks above ${policyConfidence}% confidence and ${policyEdge}pp edge. n=${thresholdQualified} (${pct(thresholdRate)} qualified).`
+        : 'No completed picks met the current confidence/edge policy yet.',
+      color: thresholdQualified === 0 ? '#94a3b8' : thresholdLift >= 0.03 ? '#22c55e' : thresholdLift >= 0 ? '#f59e0b' : '#ef4444',
+    },
+  ]
+
+  const takeaway = edgeVsBaseline >= 0.08 && confidenceGap <= 0.06 && (thresholdQualified === 0 || thresholdLift >= 0)
+    ? 'Model is outperforming baseline with controlled confidence drift.'
+    : edgeVsBaseline >= 0.03
+      ? 'Model has positive signal, but calibration or confidence lift needs tighter tuning.'
+      : 'Model edge is currently thin; prioritize league-level feature updates and probability calibration.'
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+          How To Read Accuracy + Outcomes
+        </h3>
+        <span className="text-[10px] text-[var(--text-tertiary)]">
+          Focus on edge, calibration, and confidence lift before raw scoreline hit rate.
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {cards.map((card) => (
+          <div key={card.label} className="rounded-xl border p-3 bg-[var(--muted-bg)]" style={{ borderColor: 'var(--border-color)' }}>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{card.label}</p>
+            <p className="text-xl font-bold mt-1" style={{ color: card.color }}>{card.value}</p>
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-1 leading-relaxed">{card.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border px-3 py-2.5 bg-[var(--muted-bg)]" style={{ borderColor: 'var(--border-color)' }}>
+        <p className="text-[11px] text-[var(--text-secondary)]">
+          <span className="font-semibold text-[var(--text-primary)]">Analyst takeaway:</span> {takeaway}
+        </p>
       </div>
     </div>
   )
@@ -424,46 +530,46 @@ function CalibrationPanel({ metrics }: { metrics: OverallMetrics }) {
 function KPIGrid({ metrics, last30 }: { metrics: OverallMetrics; last30: OverallMetrics }) {
   const kpis = [
     {
-      label: 'Evaluated Outcome',
+      label: '1X2 Hit Rate',
       value: pct(metrics.winner_accuracy),
       sub: metrics.completed_predictions + ' finished matches',
       color: accuracyColor(metrics.winner_accuracy),
-    },
-    {
-      label: 'Weighted Audit',
-      value: pct(metrics.weighted_accuracy_score ?? 0),
-      sub: 'Outcome + exact scoreline',
-      color: accuracyColor(metrics.weighted_accuracy_score ?? 0),
-    },
-    {
-      label: 'Last 30 Days',
-      value: last30.completed_predictions > 0 ? pct(last30.winner_accuracy) : '\u2014',
-      sub: last30.completed_predictions + ' finished matches',
-      color: last30.completed_predictions > 0 ? accuracyColor(last30.winner_accuracy) : '#888',
-    },
-    {
-      label: 'High Confidence',
-      value: pct(metrics.high_confidence_accuracy),
-      sub: 'Confidence \u2265 55%',
-      color: accuracyColor(metrics.high_confidence_accuracy),
-    },
-    {
-      label: 'Medium Confidence',
-      value: pct(metrics.medium_confidence_accuracy),
-      sub: 'Confidence 42\u201355%',
-      color: accuracyColor(metrics.medium_confidence_accuracy),
-    },
-    {
-      label: 'Low Confidence',
-      value: pct(metrics.low_confidence_accuracy),
-      sub: 'Confidence < 42%',
-      color: accuracyColor(metrics.low_confidence_accuracy),
     },
     {
       label: 'Exact Scoreline',
       value: pct(metrics.exact_scoreline_rate),
       sub: (metrics.exact_scoreline_count ?? 0) + ' of ' + metrics.completed_predictions,
       color: accuracyColor(metrics.exact_scoreline_rate),
+    },
+    {
+      label: 'Weighted Audit',
+      value: pct(metrics.weighted_accuracy_score ?? 0),
+      sub: '65% outcome + 35% scoreline',
+      color: accuracyColor(metrics.weighted_accuracy_score ?? 0),
+    },
+    {
+      label: 'Last 30D 1X2',
+      value: last30.completed_predictions > 0 ? pct(last30.winner_accuracy) : '\u2014',
+      sub: last30.completed_predictions + ' finished matches',
+      color: last30.completed_predictions > 0 ? accuracyColor(last30.winner_accuracy) : '#888',
+    },
+    {
+      label: 'High-Conf Hit',
+      value: pct(metrics.high_confidence_accuracy),
+      sub: 'Confidence \u2265 55%',
+      color: accuracyColor(metrics.high_confidence_accuracy),
+    },
+    {
+      label: 'Calibration ECE',
+      value: (metrics.expected_calibration_error ?? 0).toFixed(3),
+      sub: 'Lower is better',
+      color: (metrics.expected_calibration_error ?? 0) <= 0.05 ? '#22c55e' : (metrics.expected_calibration_error ?? 0) <= 0.1 ? '#f59e0b' : '#ef4444',
+    },
+    {
+      label: 'Within 1 Goal',
+      value: pct(metrics.within_1_goal_rate ?? 0),
+      sub: 'Prediction closeness',
+      color: accuracyColor(metrics.within_1_goal_rate ?? 0),
     },
   ]
 

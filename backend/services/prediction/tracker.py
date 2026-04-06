@@ -9,6 +9,7 @@ Tracks prediction outcomes and continuously improves the model:
 """
 
 import json
+import os
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict, fields as dataclass_fields
 from datetime import datetime, timedelta
@@ -20,6 +21,20 @@ logger = logging.getLogger(__name__)
 
 # Storage path for prediction history
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "predictions"
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+POLICY_MIN_CONFIDENCE = max(0.0, min(1.0, _env_float("PREDICTION_POLICY_MIN_CONFIDENCE", 0.55)))
+POLICY_MIN_EDGE = max(0.0, min(1.0, _env_float("PREDICTION_POLICY_MIN_EDGE", 0.12)))
 
 
 @dataclass
@@ -40,6 +55,8 @@ class PredictionRecord:
     predicted_scoreline: str  # Most likely scoreline
     predicted_winner: str  # "home", "draw", "away"
     confidence: float
+    edge_score: Optional[float] = None
+    threshold_qualified: Optional[bool] = None
     
     # Model factors used
     home_elo: float = 0.0
@@ -92,7 +109,39 @@ class PredictionRecord:
                 float(filtered.get("predicted_away_win", 0.0)),
             )
 
+        home = float(filtered.get("predicted_home_win", 0.0))
+        draw = float(filtered.get("predicted_draw", 0.0))
+        away = float(filtered.get("predicted_away_win", 0.0))
+
+        if filtered.get("edge_score") is None:
+            filtered["edge_score"] = cls._edge_from_probabilities(home, draw, away)
+
+        if filtered.get("threshold_qualified") is None:
+            conf_val = float(filtered.get("confidence", 0.0) or 0.0)
+            edge_val = float(filtered.get("edge_score", 0.0) or 0.0)
+            filtered["threshold_qualified"] = cls._is_threshold_qualified(conf_val, edge_val)
+
         return cls(**filtered)
+
+    @staticmethod
+    def _normalize_probabilities(home_win: float, draw: float, away_win: float) -> Tuple[float, float, float]:
+        home = max(0.0, float(home_win))
+        dr = max(0.0, float(draw))
+        away = max(0.0, float(away_win))
+        total = home + dr + away
+        if total <= 0:
+            return (1 / 3, 1 / 3, 1 / 3)
+        return (home / total, dr / total, away / total)
+
+    @classmethod
+    def _edge_from_probabilities(cls, home_win: float, draw: float, away_win: float) -> float:
+        normalized = cls._normalize_probabilities(home_win, draw, away_win)
+        return float(max(normalized) - (1.0 / 3.0))
+
+    @staticmethod
+    def _is_threshold_qualified(confidence: float, edge_score: float) -> bool:
+        conf_norm = confidence / 100.0 if confidence > 1 else confidence
+        return conf_norm >= POLICY_MIN_CONFIDENCE and edge_score >= POLICY_MIN_EDGE
 
     @staticmethod
     def _winner_from_probabilities(home_win: float, draw: float, away_win: float) -> str:
@@ -140,6 +189,12 @@ class ModelAccuracyMetrics:
     high_confidence_accuracy: float = 0.0  # >70% confidence
     medium_confidence_accuracy: float = 0.0  # 40-70% confidence
     low_confidence_accuracy: float = 0.0  # <40% confidence
+
+    # Policy-filtered picks (confidence + edge)
+    threshold_qualified_predictions: int = 0
+    threshold_qualified_accuracy: float = 0.0
+    threshold_qualification_rate: float = 0.0
+    threshold_lift: float = 0.0
     
     # Trend
     recent_accuracy: float = 0.0  # Last 50 predictions
@@ -199,6 +254,18 @@ class PredictionTracker:
         if away_win >= home_win and away_win >= draw:
             return "away"
         return "draw"
+
+    @staticmethod
+    def _normalize_probabilities(home_win: float, draw: float, away_win: float) -> Tuple[float, float, float]:
+        return PredictionRecord._normalize_probabilities(home_win, draw, away_win)
+
+    @staticmethod
+    def _edge_from_probabilities(home_win: float, draw: float, away_win: float) -> float:
+        return PredictionRecord._edge_from_probabilities(home_win, draw, away_win)
+
+    @staticmethod
+    def _is_threshold_qualified(confidence: float, edge_score: float) -> bool:
+        return PredictionRecord._is_threshold_qualified(confidence, edge_score)
     
     def _save_predictions(self):
         """Save predictions to storage."""
@@ -247,12 +314,21 @@ class PredictionTracker:
         
         Returns the created PredictionRecord.
         """
+        home_win_prob, draw_prob, away_win_prob = self._normalize_probabilities(
+            home_win_prob,
+            draw_prob,
+            away_win_prob,
+        )
+
         # Most likely scoreline (rounded xG)
         predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
         
         # Use the highest outcome probability as the audited match result pick.
         # The scoreline remains a separate, stricter prediction target.
         predicted_winner = self._winner_from_probabilities(home_win_prob, draw_prob, away_win_prob)
+        normalized_confidence = self._normalize_confidence(confidence)
+        edge_score = self._edge_from_probabilities(home_win_prob, draw_prob, away_win_prob)
+        threshold_qualified = self._is_threshold_qualified(normalized_confidence, edge_score)
         
         record = PredictionRecord(
             match_id=match_id,
@@ -267,7 +343,9 @@ class PredictionTracker:
             predicted_away_goals=away_xG,
             predicted_scoreline=predicted_scoreline,
             predicted_winner=predicted_winner,
-            confidence=self._normalize_confidence(confidence),
+            confidence=normalized_confidence,
+            edge_score=edge_score,
+            threshold_qualified=threshold_qualified,
             home_elo=home_elo,
             away_elo=away_elo,
             weather_factor=weather_factor,
@@ -278,7 +356,14 @@ class PredictionTracker:
         self._predictions[match_id] = record
         self._save_predictions()
         
-        logger.info(f"Stored prediction for match {match_id}: {home_team} vs {away_team}")
+        logger.info(
+            "Stored prediction for match %s: %s vs %s (edge=%.3f, qualified=%s)",
+            match_id,
+            home_team,
+            away_team,
+            edge_score,
+            threshold_qualified,
+        )
         return record
     
     def update_outcome(
@@ -499,6 +584,32 @@ class PredictionTracker:
             metrics.medium_confidence_accuracy = sum(1 for p in med_conf if p.winner_correct) / len(med_conf)
         if low_conf:
             metrics.low_confidence_accuracy = sum(1 for p in low_conf if p.winner_correct) / len(low_conf)
+
+        qualified = []
+        for pred in completed:
+            edge = pred.edge_score
+            if edge is None:
+                edge = self._edge_from_probabilities(
+                    pred.predicted_home_win,
+                    pred.predicted_draw,
+                    pred.predicted_away_win,
+                )
+            is_qualified = pred.threshold_qualified
+            if is_qualified is None:
+                is_qualified = self._is_threshold_qualified(
+                    self._normalize_confidence(pred.confidence),
+                    edge,
+                )
+            if is_qualified:
+                qualified.append(pred)
+
+        metrics.threshold_qualified_predictions = len(qualified)
+        metrics.threshold_qualification_rate = len(qualified) / len(completed)
+        if qualified:
+            metrics.threshold_qualified_accuracy = (
+                sum(1 for p in qualified if p.winner_correct) / len(qualified)
+            )
+            metrics.threshold_lift = metrics.threshold_qualified_accuracy - metrics.winner_accuracy
         
         # Recent accuracy (last 50 completed)
         recent = sorted(completed, key=lambda p: p.match_date, reverse=True)[:50]

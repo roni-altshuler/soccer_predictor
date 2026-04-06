@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
+import os
 
 # Import v1 API router
 from backend.api.v1 import router as v1_router
@@ -394,6 +395,30 @@ class PredictionRequest(BaseModel):
     league: Optional[str] = None
 
 
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+PREDICTION_POLICY_MIN_CONFIDENCE_PCT = _env_float("PREDICTION_POLICY_MIN_CONFIDENCE_PCT", 55.0)
+PREDICTION_POLICY_MIN_EDGE_PCT = _env_float("PREDICTION_POLICY_MIN_EDGE_PCT", 12.0)
+
+
+def _edge_from_probabilities(home_win: float, draw: float, away_win: float) -> float:
+    probs = [max(0.0, home_win), max(0.0, draw), max(0.0, away_win)]
+    total = sum(probs)
+    if total <= 0:
+        probs = [1 / 3, 1 / 3, 1 / 3]
+    else:
+        probs = [p / total for p in probs]
+    return max(probs) - (1.0 / 3.0)
+
+
 @app.post("/api/predict/unified")
 async def predict_match(request: PredictionRequest):
     """Generate prediction for a match (legacy endpoint)."""
@@ -414,6 +439,14 @@ async def predict_match(request: PredictionRequest):
     else:
         prediction = "Draw"
         confidence = outcome["draw"]
+
+    confidence_pct = min(99.9, max(0.1, round(confidence * 100, 1)))
+    edge = _edge_from_probabilities(outcome["home_win"], outcome["draw"], outcome["away_win"])
+    edge_pct = round(edge * 100, 2)
+    threshold_qualified = (
+        confidence_pct >= PREDICTION_POLICY_MIN_CONFIDENCE_PCT
+        and edge_pct >= PREDICTION_POLICY_MIN_EDGE_PCT
+    )
     
     return {
         "home_team": request.home_team,
@@ -421,7 +454,15 @@ async def predict_match(request: PredictionRequest):
         "home_elo": round(home_elo, 0),
         "away_elo": round(away_elo, 0),
         "prediction": prediction,
-        "confidence": min(99.9, max(0.1, round(confidence * 100, 1))),  # Clamp between 0.1-99.9%
+        "confidence": confidence_pct,  # Clamp between 0.1-99.9%
+        "edge_pct": edge_pct,
+        "threshold_qualified": threshold_qualified,
+        "recommended_action": "play" if threshold_qualified else "pass",
+        "recommended_pick": prediction if threshold_qualified else None,
+        "policy": {
+            "min_confidence_pct": PREDICTION_POLICY_MIN_CONFIDENCE_PCT,
+            "min_edge_pct": PREDICTION_POLICY_MIN_EDGE_PCT,
+        },
         "probabilities": {
             "home_win": round(outcome["home_win"] * 100, 1),
             "draw": round(outcome["draw"] * 100, 1),

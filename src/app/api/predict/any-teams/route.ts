@@ -11,6 +11,8 @@ const MIN_CONFIDENCE = 30
 const MAX_CONFIDENCE = 85
 const MAX_PREDICTED_GOALS = 5
 const BACKEND_TIMEOUT_MS = 3000
+const POLICY_MIN_CONFIDENCE = 55
+const POLICY_MIN_EDGE = 12
 
 interface AnyTeamsPredictionRequest {
   home_team: string
@@ -485,6 +487,8 @@ export async function POST(request: NextRequest) {
     const formClarity = Math.abs(homeForm - awayForm) / 2
     const confidence = Math.min(MAX_CONFIDENCE, Math.max(MIN_CONFIDENCE, 50 + Math.abs(eloDiff) / 10 + formClarity))
     const edge = Math.max(probs.home, probs.draw, probs.away)
+    const edgePct = edge - 33.33
+    const thresholdQualified = confidence >= POLICY_MIN_CONFIDENCE && edgePct >= POLICY_MIN_EDGE
     const risk = edge >= 52 ? 'Low' : edge >= 42 ? 'Medium' : 'High'
     
     // Build enhanced prediction response
@@ -515,7 +519,17 @@ export async function POST(request: NextRequest) {
       verdict: {
         edge: edge >= 52 ? 'Strong edge' : edge >= 42 ? 'Playable edge' : 'Thin edge',
         risk,
-        summary: `${predictedWinner === 'Draw' ? 'The draw is live because the teams rate closely.' : `${predictedWinner} projects as the likelier winner.`} Expected goals sit at ${(homeBaseGoals + awayBaseGoals).toFixed(1)}, with ${Math.round(scoreMatrix.over25 * 100)}% for over 2.5 and ${Math.round(scoreMatrix.btts * 100)}% for both teams to score.`,
+        edge_pct: Math.round(edgePct * 10) / 10,
+        threshold_qualified: thresholdQualified,
+        recommended_action: thresholdQualified ? 'play' : 'pass',
+        recommended_pick: thresholdQualified ? predictedWinner : null,
+        policy: {
+          min_confidence: POLICY_MIN_CONFIDENCE,
+          min_edge: POLICY_MIN_EDGE,
+        },
+        summary: thresholdQualified
+          ? `${predictedWinner === 'Draw' ? 'The draw is live because the teams rate closely.' : `${predictedWinner} projects as the likelier winner.`} Expected goals sit at ${(homeBaseGoals + awayBaseGoals).toFixed(1)}, with ${Math.round(scoreMatrix.over25 * 100)}% for over 2.5 and ${Math.round(scoreMatrix.btts * 100)}% for both teams to score.`
+          : `${predictedWinner === 'Draw' ? 'The draw is live because the teams rate closely.' : `${predictedWinner} projects as the likelier winner.`} Forecast edge is below the policy threshold, so this is tagged as a pass despite the directional lean.`,
       },
       ratings: {
         home_elo: Math.round(homeElo),

@@ -10,6 +10,9 @@ interface HeadToHeadRequest {
   away_team: string
 }
 
+const POLICY_MIN_CONFIDENCE = 55
+const POLICY_MIN_EDGE = 12
+
 // Per-league Dixon-Coles calibrated parameters — loaded from shared JSON
 const KEY_TO_H2H_LEAGUE: Record<string, string> = {
   'eng.1': 'premier_league', 'esp.1': 'la_liga', 'ger.1': 'bundesliga',
@@ -197,6 +200,10 @@ export async function POST(request: NextRequest) {
     const awayDefWeak = Math.max(0.4, 1.0 - (awayElo - 1500) / 900)
     const homeXG = homeAttack * awayDefWeak * params.avg_goals + params.home_adv
     const awayXG = awayAttack * homeDefWeak * params.avg_goals
+    const confidence = Math.min(85, Math.max(30, 50 + Math.abs(eloDiff) / 10))
+    const maxProb = Math.max(homeWin, drawProb, awayWin)
+    const edgePct = (maxProb - (1 / 3)) * 100
+    const thresholdQualified = confidence >= POLICY_MIN_CONFIDENCE && edgePct >= POLICY_MIN_EDGE
 
     return NextResponse.json({
       success: true,
@@ -211,7 +218,19 @@ export async function POST(request: NextRequest) {
       },
       predicted_home_goals: Math.round(Math.max(0.3, Math.min(5, homeXG)) * 10) / 10,
       predicted_away_goals: Math.round(Math.max(0.3, Math.min(5, awayXG)) * 10) / 10,
-      confidence: Math.min(85, Math.max(30, 50 + Math.abs(eloDiff) / 10)),
+      confidence,
+      verdict: {
+        edge_pct: Math.round(edgePct * 10) / 10,
+        threshold_qualified: thresholdQualified,
+        recommended_action: thresholdQualified ? 'play' : 'pass',
+        recommended_pick: thresholdQualified
+          ? (homeWin >= drawProb && homeWin >= awayWin ? home_team : awayWin >= homeWin && awayWin >= drawProb ? away_team : 'Draw')
+          : null,
+        policy: {
+          min_confidence: POLICY_MIN_CONFIDENCE,
+          min_edge: POLICY_MIN_EDGE,
+        },
+      },
       ratings: {
         home_elo: Math.round(homeElo),
         away_elo: Math.round(awayElo),

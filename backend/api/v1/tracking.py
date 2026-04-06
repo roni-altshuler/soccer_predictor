@@ -8,7 +8,11 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, List
 from pydantic import BaseModel
 
-from backend.services.prediction.tracker import get_prediction_tracker
+from backend.services.prediction.tracker import (
+    get_prediction_tracker,
+    POLICY_MIN_CONFIDENCE,
+    POLICY_MIN_EDGE,
+)
 
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
@@ -71,6 +75,8 @@ async def store_prediction(request: StorePredictionRequest):
         "match_id": record.match_id,
         "predicted_winner": record.predicted_winner,
         "predicted_scoreline": record.predicted_scoreline,
+        "edge_score": record.edge_score,
+        "threshold_qualified": record.threshold_qualified,
     }
 
 
@@ -296,6 +302,10 @@ async def get_accuracy_summary():
         "overall": overall.to_dict(),
         "last_30_days": recent_30.to_dict(),
         "by_league": by_league,
+        "policy": {
+            "min_confidence": POLICY_MIN_CONFIDENCE,
+            "min_edge": POLICY_MIN_EDGE,
+        },
         "recent_form": recent_form[:10],
         "current_streak": {"type": streak_type or "N/A", "count": current_streak},
         "recent_predictions": [

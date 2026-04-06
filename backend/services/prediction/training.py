@@ -29,6 +29,7 @@ import logging
 import numpy as np
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     accuracy_score,
     log_loss,
@@ -637,8 +638,10 @@ class ModelTrainer:
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.scaler = StandardScaler()
         self.model = None
+        self.calibrator = None
         self.feature_names = FeatureBuilder.FEATURE_NAMES
         self.training_metadata: Dict[str, Any] = {}
+        self.objective_weights = {"log_loss": 0.65, "brier": 0.35}
 
     def prepare_training_data(self, matches: List[Dict]) -> Tuple[np.ndarray, np.ndarray]:
         """Process raw matches into feature matrix and labels."""
@@ -698,6 +701,104 @@ class ModelTrainer:
         weights[1] = weights[1] * 1.15
         return weights
 
+    @staticmethod
+    def _normalize_probabilities(probabilities: np.ndarray) -> np.ndarray:
+        probs = np.asarray(probabilities, dtype=np.float64)
+        probs = np.clip(probs, 1e-12, 1.0)
+        row_sums = probs.sum(axis=1, keepdims=True)
+        row_sums[row_sums <= 0] = 1.0
+        return probs / row_sums
+
+    @classmethod
+    def _multiclass_brier(cls, y_true: np.ndarray, y_proba: np.ndarray) -> float:
+        proba = cls._normalize_probabilities(y_proba)
+        one_hot = np.zeros_like(proba)
+        one_hot[np.arange(len(y_true)), y_true.astype(int)] = 1.0
+        # Standard multiclass Brier score: mean squared error over classes.
+        return float(np.mean(np.sum((proba - one_hot) ** 2, axis=1)))
+
+    def _objective_from_metrics(self, logloss_value: float, brier_value: float) -> float:
+        return float(
+            (self.objective_weights["log_loss"] * logloss_value)
+            + (self.objective_weights["brier"] * brier_value)
+        )
+
+    def _walk_forward_metrics(self, X: np.ndarray, y: np.ndarray, class_weights: Dict[int, float]) -> Dict[str, Any]:
+        if len(X) < 180:
+            return {
+                "n_folds": 0,
+                "accuracy_mean": None,
+                "log_loss_mean": None,
+                "brier_mean": None,
+                "objective_mean": None,
+                "folds": [],
+            }
+
+        n_splits = min(5, max(2, len(X) // 180))
+        splitter = TimeSeriesSplit(n_splits=n_splits)
+        folds: List[Dict[str, Any]] = []
+
+        for fold_idx, (train_idx, val_idx) in enumerate(splitter.split(X), start=1):
+            y_train_fold = y[train_idx]
+            y_val_fold = y[val_idx]
+
+            if len(np.unique(y_train_fold)) < 3 or len(np.unique(y_val_fold)) < 2:
+                continue
+
+            scaler_fold = StandardScaler()
+            X_train_fold = scaler_fold.fit_transform(X[train_idx])
+            X_val_fold = scaler_fold.transform(X[val_idx])
+
+            fold_model = self._build_ensemble(class_weights)
+            fold_weights = np.array([class_weights[int(label)] for label in y_train_fold], dtype=np.float64)
+
+            try:
+                fold_model.fit(X_train_fold, y_train_fold, sample_weight=fold_weights)
+            except TypeError:
+                fold_model.fit(X_train_fold, y_train_fold)
+
+            fold_proba = self._normalize_probabilities(fold_model.predict_proba(X_val_fold))
+            fold_pred = np.argmax(fold_proba, axis=1)
+
+            fold_accuracy = float(accuracy_score(y_val_fold, fold_pred))
+            fold_logloss = float(log_loss(y_val_fold, fold_proba, labels=[0, 1, 2]))
+            fold_brier = self._multiclass_brier(y_val_fold, fold_proba)
+            fold_objective = self._objective_from_metrics(fold_logloss, fold_brier)
+
+            folds.append({
+                "fold": fold_idx,
+                "train_samples": int(len(train_idx)),
+                "validation_samples": int(len(val_idx)),
+                "accuracy": round(fold_accuracy, 4),
+                "log_loss": round(fold_logloss, 4),
+                "brier_score": round(fold_brier, 4),
+                "objective": round(fold_objective, 4),
+            })
+
+        if not folds:
+            return {
+                "n_folds": 0,
+                "accuracy_mean": None,
+                "log_loss_mean": None,
+                "brier_mean": None,
+                "objective_mean": None,
+                "folds": [],
+            }
+
+        accuracy_values = [f["accuracy"] for f in folds]
+        logloss_values = [f["log_loss"] for f in folds]
+        brier_values = [f["brier_score"] for f in folds]
+        objective_values = [f["objective"] for f in folds]
+
+        return {
+            "n_folds": len(folds),
+            "accuracy_mean": float(np.mean(accuracy_values)),
+            "log_loss_mean": float(np.mean(logloss_values)),
+            "brier_mean": float(np.mean(brier_values)),
+            "objective_mean": float(np.mean(objective_values)),
+            "folds": folds,
+        }
+
     def _build_ensemble(self, class_weights: Optional[Dict] = None) -> Any:
         estimators = []
 
@@ -748,7 +849,7 @@ class ModelTrainer:
         return ensemble
 
     def train(self, X: np.ndarray, y: np.ndarray, test_size: float = 0.15) -> Dict[str, Any]:
-        """Train with class-balanced weights."""
+        """Train with class-balanced weights, walk-forward audit, and probability calibration."""
         n_samples = len(X)
         split_idx = int(n_samples * (1 - test_size))
 
@@ -758,20 +859,58 @@ class ModelTrainer:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # Compute class weights
         class_weights = self.compute_class_weights(y_train)
-        sample_weights = np.array([class_weights[yi] for yi in y_train])
+        sample_weights = np.array([class_weights[int(label)] for label in y_train], dtype=np.float64)
 
         logger.info(f"Training on {len(X_train)} samples (test={len(X_test)}), class_weights={class_weights}")
 
+        cal_size = 0
+        if len(X_train_scaled) >= 160:
+            proposed = max(40, int(len(X_train_scaled) * 0.2))
+            cal_size = min(proposed, max(0, len(X_train_scaled) - 80))
+
+        if cal_size > 0:
+            X_fit = X_train_scaled[:-cal_size]
+            y_fit = y_train[:-cal_size]
+            fit_weights = sample_weights[:-cal_size]
+            X_cal = X_train_scaled[-cal_size:]
+            y_cal = y_train[-cal_size:]
+        else:
+            X_fit = X_train_scaled
+            y_fit = y_train
+            fit_weights = sample_weights
+            X_cal = None
+            y_cal = None
+
         self.model = self._build_ensemble(class_weights)
-        self.model.fit(X_train_scaled, y_train, sample_weight=sample_weights)
+        self.model.fit(X_fit, y_fit, sample_weight=fit_weights)
 
-        y_pred = self.model.predict(X_test_scaled)
-        y_proba = self.model.predict_proba(X_test_scaled)
+        self.calibrator = None
+        calibration_status = "disabled"
+        if X_cal is not None and y_cal is not None and len(np.unique(y_cal)) == 3:
+            try:
+                self.calibrator = CalibratedClassifierCV(
+                    estimator=self.model,
+                    method="isotonic",
+                    cv="prefit",
+                )
+                self.calibrator.fit(X_cal, y_cal)
+                calibration_status = "isotonic_prefit"
+            except Exception as cal_error:
+                self.calibrator = None
+                calibration_status = f"failed: {cal_error.__class__.__name__}"
 
+        y_proba_raw = self._normalize_probabilities(self.model.predict_proba(X_test_scaled))
+        if self.calibrator is not None:
+            y_proba = self._normalize_probabilities(self.calibrator.predict_proba(X_test_scaled))
+        else:
+            y_proba = y_proba_raw
+
+        y_pred = np.argmax(y_proba, axis=1)
         accuracy = accuracy_score(y_test, y_pred)
-        logloss = log_loss(y_test, y_proba)
+        logloss = log_loss(y_test, y_proba, labels=[0, 1, 2])
+        brier_overall = self._multiclass_brier(y_test, y_proba)
+        objective = self._objective_from_metrics(logloss, brier_overall)
 
         brier_scores = {}
         for cls, name in enumerate(["home_win", "draw", "away_win"]):
@@ -779,18 +918,30 @@ class ModelTrainer:
             if mask.any():
                 brier_scores[name] = float(brier_score_loss(mask.astype(int), y_proba[:, cls]))
 
+        walk_forward = self._walk_forward_metrics(X_train, y_train, class_weights)
+
         tscv = TimeSeriesSplit(n_splits=5)
         cv_scores = cross_val_score(
             self._build_ensemble(class_weights),
-            X_train_scaled, y_train, cv=tscv, scoring="accuracy",
+            X_train_scaled,
+            y_train,
+            cv=tscv,
+            scoring="accuracy",
         )
 
         metrics = {
             "accuracy": float(accuracy),
             "log_loss": float(logloss),
+            "brier_score": float(brier_overall),
+            "objective_score": float(objective),
             "brier_scores": brier_scores,
             "cv_accuracy_mean": float(cv_scores.mean()),
             "cv_accuracy_std": float(cv_scores.std()),
+            "walk_forward": walk_forward,
+            "calibration": {
+                "status": calibration_status,
+                "calibration_samples": int(cal_size),
+            },
             "train_samples": len(X_train),
             "test_samples": len(X_test),
             "class_distribution": {
@@ -800,6 +951,7 @@ class ModelTrainer:
             },
             "class_weights": {str(k): round(v, 3) for k, v in class_weights.items()},
             "feature_count": X.shape[1],
+            "objective_weights": self.objective_weights,
         }
 
         try:
@@ -818,11 +970,17 @@ class ModelTrainer:
 
         self.training_metadata = {
             "trained_at": datetime.utcnow().isoformat(),
-            "model_version": "4.0.0",
+            "model_version": "4.1.0",
             "metrics": metrics,
         }
 
-        logger.info(f"Training complete — Accuracy: {accuracy:.3f}, CV: {cv_scores.mean():.3f}±{cv_scores.std():.3f}")
+        logger.info(
+            "Training complete — Accuracy: %.3f, LogLoss: %.4f, Brier: %.4f, Objective: %.4f",
+            accuracy,
+            logloss,
+            brier_overall,
+            objective,
+        )
         return metrics
 
     def save_model(self, name: str = "match_predictor"):
@@ -830,12 +988,18 @@ class ModelTrainer:
             raise ValueError("No trained model to save")
         model_path = self.model_dir / f"{name}.pkl"
         scaler_path = self.model_dir / f"{name}_scaler.pkl"
+        calibrator_path = self.model_dir / f"{name}_calibrator.pkl"
         meta_path = self.model_dir / f"{name}_metadata.json"
 
         with open(model_path, "wb") as f:
             pickle.dump(self.model, f)
         with open(scaler_path, "wb") as f:
             pickle.dump(self.scaler, f)
+        if self.calibrator is not None:
+            with open(calibrator_path, "wb") as f:
+                pickle.dump(self.calibrator, f)
+        elif calibrator_path.exists():
+            calibrator_path.unlink()
         with open(meta_path, "w") as f:
             json.dump(self.training_metadata, f, indent=2)
         logger.info(f"Model saved to {model_path}")
@@ -843,6 +1007,7 @@ class ModelTrainer:
     def load_model(self, name: str = "match_predictor") -> bool:
         model_path = self.model_dir / f"{name}.pkl"
         scaler_path = self.model_dir / f"{name}_scaler.pkl"
+        calibrator_path = self.model_dir / f"{name}_calibrator.pkl"
         meta_path = self.model_dir / f"{name}_metadata.json"
         if not model_path.exists():
             return False
@@ -851,6 +1016,10 @@ class ModelTrainer:
                 self.model = pickle.load(f)
             with open(scaler_path, "rb") as f:
                 self.scaler = pickle.load(f)
+            self.calibrator = None
+            if calibrator_path.exists():
+                with open(calibrator_path, "rb") as f:
+                    self.calibrator = pickle.load(f)
             if meta_path.exists():
                 with open(meta_path, "r") as f:
                     self.training_metadata = json.load(f)
@@ -859,11 +1028,19 @@ class ModelTrainer:
             logger.error(f"Error loading model: {e}")
             return False
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict_proba(self, features: np.ndarray) -> np.ndarray:
         if self.model is None:
             raise ValueError("No model loaded")
         scaled = self.scaler.transform(features.reshape(1, -1) if features.ndim == 1 else features)
-        return self.model.predict_proba(scaled)
+        if self.calibrator is not None:
+            try:
+                return self._normalize_probabilities(self.calibrator.predict_proba(scaled))
+            except Exception:
+                pass
+        return self._normalize_probabilities(self.model.predict_proba(scaled))
+
+    def predict(self, features: np.ndarray) -> np.ndarray:
+        return self.predict_proba(features)
 
 
 async def train_model_pipeline(

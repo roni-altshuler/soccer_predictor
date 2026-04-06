@@ -122,8 +122,13 @@ class PredictionService:
             from backend.services.prediction.training import get_model_trainer
             trainer = get_model_trainer()
             if trainer.model is not None:
-                self._trained_model = trainer.model
-                self.model_version = "3.1.0-ensemble"
+                # Use the trainer wrapper so serving calls include feature scaling
+                # and optional probability calibration.
+                self._trained_model = trainer
+                if getattr(trainer, "calibrator", None) is not None:
+                    self.model_version = "3.2.0-ensemble-calibrated"
+                else:
+                    self.model_version = "3.2.0-ensemble"
                 logger.info("Loaded pre-trained ensemble model for predictions")
         except Exception as e:
             logger.debug(f"No pre-trained model available: {e}")

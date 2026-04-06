@@ -9,6 +9,9 @@ interface CrossLeagueRequest {
   team_b: string
 }
 
+const POLICY_MIN_CONFIDENCE = 55
+const POLICY_MIN_EDGE = 12
+
 export async function POST(request: NextRequest) {
   try {
     const body: CrossLeagueRequest = await request.json()
@@ -43,18 +46,40 @@ export async function POST(request: NextRequest) {
     }
     
     const backendPrediction = await response.json()
+
+    const teamAWin = (backendPrediction.probabilities?.home_win || 40) / 100
+    const draw = (backendPrediction.probabilities?.draw || 30) / 100
+    const teamBWin = (backendPrediction.probabilities?.away_win || 30) / 100
+    const confidence = backendPrediction.confidence || 50
+    const edgePct = (Math.max(teamAWin, draw, teamBWin) - (1 / 3)) * 100
+    const thresholdQualified = confidence >= POLICY_MIN_CONFIDENCE && edgePct >= POLICY_MIN_EDGE
+    const recommendedPick = teamAWin >= draw && teamAWin >= teamBWin
+      ? team_a
+      : teamBWin >= teamAWin && teamBWin >= draw
+        ? team_b
+        : 'Draw'
     
     const prediction = {
       team_a,
       team_b,
       league_a,
       league_b,
-      predicted_team_a_win: (backendPrediction.probabilities?.home_win || 40) / 100,
-      predicted_draw: (backendPrediction.probabilities?.draw || 30) / 100,
-      predicted_team_b_win: (backendPrediction.probabilities?.away_win || 30) / 100,
+      predicted_team_a_win: teamAWin,
+      predicted_draw: draw,
+      predicted_team_b_win: teamBWin,
       predicted_team_a_goals: backendPrediction.predicted_home_goals ?? Math.max(0.5, ((backendPrediction.home_elo || 1500) - 1350) / 180 + 0.3),
       predicted_team_b_goals: backendPrediction.predicted_away_goals ?? Math.max(0.5, ((backendPrediction.away_elo || 1500) - 1350) / 200),
-      confidence: backendPrediction.confidence || 50,
+      confidence,
+      verdict: {
+        edge_pct: Math.round(edgePct * 10) / 10,
+        threshold_qualified: thresholdQualified,
+        recommended_action: thresholdQualified ? 'play' : 'pass',
+        recommended_pick: thresholdQualified ? recommendedPick : null,
+        policy: {
+          min_confidence: POLICY_MIN_CONFIDENCE,
+          min_edge: POLICY_MIN_EDGE,
+        },
+      },
       team_a_elo: backendPrediction.home_elo || 1500,
       team_b_elo: backendPrediction.away_elo || 1500,
     }
