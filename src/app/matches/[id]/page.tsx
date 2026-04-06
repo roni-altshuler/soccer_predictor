@@ -245,7 +245,7 @@ export default function MatchDetailPage() {
         // Use our server-side API proxy to fetch match details
         // This avoids CORS issues and handles fallbacks between ESPN and FotMob
         const url = `/api/match/${matchId}${leagueId ? `?league=${leagueId}` : ''}`
-        const res = await fetch(url)
+        const res = await fetch(url, { cache: 'no-store' })
         
         if (!res.ok) {
           console.error('Match not found:', res.status)

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
 // Map league IDs for ESPN API
@@ -895,7 +898,12 @@ export async function GET(
   if (!matchData) {
     return NextResponse.json(
       { error: 'Match not found', matchId, leagueId },
-      { status: 404 }
+      {
+        status: 404,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
     )
   }
   
@@ -914,5 +922,9 @@ export async function GET(
   }
   matchData.prediction = backendPrediction || generatePrediction(matchData.home_team, matchData.away_team, matchData.leagueId)
   
-  return NextResponse.json(matchData)
+  return NextResponse.json(matchData, {
+    headers: {
+      'Cache-Control': 'no-store, max-age=0',
+    },
+  })
 }
