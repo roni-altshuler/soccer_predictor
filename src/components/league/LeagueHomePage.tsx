@@ -695,7 +695,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center py-20" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-ai)]" />
       </div>
     )
   }
@@ -913,7 +913,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             <div className="space-y-6">
               <div
                 onClick={() => setActiveTab('simulator')}
-                className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl p-6 cursor-pointer hover:from-indigo-600/30 hover:to-purple-600/30 transition-all border border-indigo-500/30 hover:scale-[1.02] hover:shadow-lg"
+                className="bg-gradient-to-br from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 rounded-xl p-6 cursor-pointer hover:from-[var(--accent-ai)]/24 hover:to-[var(--accent-primary)]/22 transition-all border border-[var(--accent-ai)]/30 hover:scale-[1.02] hover:shadow-lg"
               >
                 <div className="text-4xl mb-3">🎲</div>
                 <h3 className="text-lg font-semibold text-[var(--text-primary)]">Run Simulation</h3>
@@ -1030,7 +1030,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   
                   return (
                     <div key={conference} className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                      <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-blue-600/20 to-indigo-600/20' : 'from-orange-600/20 to-red-600/20'}`} style={{ borderColor: 'var(--border-color)' }}>
+                      <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-blue-600/20 to-cyan-600/20' : 'from-orange-600/20 to-red-600/20'}`} style={{ borderColor: 'var(--border-color)' }}>
                         <h2 className="text-lg font-semibold text-[var(--text-primary)]">{conference}</h2>
                       </div>
                       <div className="overflow-x-auto">
@@ -1274,11 +1274,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   <button
                     onClick={runSeasonSimulation}
                     disabled={runningSimulation}
-                    className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2"
                   >
                     {runningSimulation ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-[#041320] border-t-transparent rounded-full animate-spin" />
                         <span>Simulating...</span>
                       </>
                     ) : (
@@ -1297,7 +1297,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               <div className="space-y-6 animate-fade-in">
                 {/* Summary Card */}
                 <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-                  <div className="p-6 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-[var(--border-color)]">
+                  <div className="p-6 bg-gradient-to-r from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 border-b border-[var(--border-color)]">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div>
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{simulationResults.league_name}</h3>
@@ -1439,7 +1439,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                         const pct = (prob as number) * 100;
                                         const bg = Number(pos) <= 4 ? 'bg-emerald-500' :
                                                    Number(pos) > simulationResults.standings.length - 3 ? 'bg-red-500' :
-                                                   'bg-indigo-500';
+                                                   'bg-[var(--accent-ai)]';
                                         return (
                                           <div key={pos} className="text-center min-w-[36px]">
                                             <div

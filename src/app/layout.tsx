@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
   },
-  themeColor: '#00c853',
+  themeColor: '#1bd66c',
 }
 
 // Script to prevent flash of wrong theme - default to dark like Fotmob

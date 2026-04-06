@@ -408,7 +408,7 @@ export default function MatchDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-ai)]" />
       </div>
     )
   }
@@ -439,7 +439,7 @@ export default function MatchDetailPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link 
               href="/matches" 
-              className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--accent-ai)] to-[var(--accent-primary)] text-[#04120a] font-semibold hover:opacity-95 transition-colors"
             >
               ← Browse Leagues
             </Link>
@@ -645,23 +645,23 @@ export default function MatchDetailPage() {
 
             {/* ── AI Prediction Card ── */}
             {match.prediction && (
-              <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))', border: '1px solid rgba(99,102,241,0.2)' }}>
+              <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-ai) 16%, transparent), color-mix(in srgb, var(--accent-primary) 16%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-ai) 36%, transparent)' }}>
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">🤖</span>
-                    <span className="text-sm font-semibold text-indigo-400">AI Prediction</span>
-                    <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full ml-auto">
+                    <span className="text-sm font-semibold text-[var(--accent-ai)]">AI Prediction</span>
+                    <span className="text-xs bg-[var(--accent-ai)]/20 text-[var(--accent-ai)] px-2 py-0.5 rounded-full ml-auto">
                       {match.prediction.confidence}% confidence
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-6">
                     <div className="text-center">
                       <p className="text-xs text-[var(--text-tertiary)] mb-1">Predicted Score</p>
-                      <p className="text-2xl font-bold text-indigo-400">
+                      <p className="text-2xl font-bold text-[var(--accent-ai)]">
                         {match.prediction.predicted_score.home} - {match.prediction.predicted_score.away}
                       </p>
                     </div>
-                    <div className="h-10 w-px bg-indigo-500/20" />
+                    <div className="h-10 w-px bg-[var(--accent-ai)]/20" />
                     <div className="flex gap-3">
                       <div className="text-center">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Home</p>
@@ -704,12 +704,12 @@ export default function MatchDetailPage() {
                   {(match.prediction.model_version || match.prediction.most_likely_score) && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {match.prediction.most_likely_score && (
-                        <span className="text-[10px] bg-white/5 text-[var(--text-secondary)] px-2 py-1 rounded-full">
+                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
                           Likeliest scoreline: {match.prediction.most_likely_score}
                         </span>
                       )}
                       {match.prediction.model_version && (
-                        <span className="text-[10px] bg-white/5 text-[var(--text-secondary)] px-2 py-1 rounded-full">
+                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
                           {match.prediction.model_version}
                         </span>
                       )}
@@ -718,7 +718,7 @@ export default function MatchDetailPage() {
                   {isFinished && match.home_score !== null && match.away_score !== null && (() => {
                     const accuracy = getPredictionAccuracy()
                     return accuracy.message ? (
-                      <div className="mt-3 pt-3 border-t border-indigo-500/20">
+                      <div className="mt-3 pt-3 border-t border-[var(--accent-ai)]/20">
                         <p className={`text-center text-xs font-semibold ${
                           accuracy.type === 'exact' ? 'text-green-500' : 
                           accuracy.type === 'close' ? 'text-amber-500' : 
@@ -1250,6 +1250,7 @@ export default function MatchDetailPage() {
               homeTeam={match.home_team}
               awayTeam={match.away_team}
               matchId={matchId}
+              leagueId={match.leagueId}
               initialData={match.h2h.recentMatches.length > 0 ? {
                 totalMatches: match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins,
                 team1: {

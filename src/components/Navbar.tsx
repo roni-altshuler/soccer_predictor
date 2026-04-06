@@ -82,26 +82,28 @@ export const Navbar = () => {
       {/* Desktop Top Nav */}
       <nav className="sticky top-0 z-50 bg-[var(--nav-bg)] border-b border-[var(--nav-border)] backdrop-blur-md hidden md:block" role="navigation">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] flex items-center justify-center">
-                <span className="text-base font-bold text-black">⚽</span>
+          <div className="flex items-center justify-between h-[62px]">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-[1.04] transition-transform">
+                <span className="text-base font-black text-[#04120a]">⚽</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-base font-bold text-[var(--text-primary)]">FotPredict</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-ai)] text-white">AI</span>
+                <span className="text-base font-bold text-[var(--text-primary)] tracking-tight">FotPredict</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">AI</span>
               </div>
             </Link>
 
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1 rounded-xl border border-[var(--border-color)]/70 bg-[var(--card-bg)]/65 p-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                     isActive(link.href)
-                      ? link.href === '/predict' ? 'bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]' : 'bg-[var(--tab-active-bg)] text-[var(--accent-primary)]'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]'
+                      ? link.href === '/predict'
+                        ? 'bg-[var(--accent-ai)]/14 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30'
+                        : 'bg-[var(--tab-active-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30'
+                      : 'text-[var(--text-secondary)] border border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]/85'
                   }`}
                 >
                   {link.label}
@@ -115,7 +117,7 @@ export const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="w-8 h-8 rounded-full bg-[var(--accent-primary)] flex items-center justify-center text-black font-bold text-sm"
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-sm shadow-lg shadow-emerald-500/20"
                   >
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
@@ -124,7 +126,7 @@ export const Navbar = () => {
                     )}
                   </button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 z-50">
+                    <div className="absolute right-0 mt-2 w-48 bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl shadow-xl py-1 z-50">
                       <div className="px-4 py-2 border-b border-[var(--border-color)]">
                         <p className="text-sm font-medium text-[var(--text-primary)]">{user.display_name || 'User'}</p>
                         <p className="text-xs text-[var(--text-secondary)]">{user.email}</p>
@@ -136,7 +138,7 @@ export const Navbar = () => {
                   )}
                 </div>
               ) : (
-                <button onClick={() => setAuthModalOpen(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent-primary)] text-black">
+                <button onClick={() => setAuthModalOpen(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[#04120a] shadow-lg shadow-emerald-500/20">
                   Sign In
                 </button>
               )}
@@ -149,20 +151,20 @@ export const Navbar = () => {
       <div className="md:hidden sticky top-0 z-50 bg-[var(--nav-bg)] border-b border-[var(--nav-border)] backdrop-blur-md">
         <div className="flex items-center justify-between h-12 px-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-[var(--accent-primary)] flex items-center justify-center">
-              <span className="text-sm font-bold text-black">⚽</span>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <span className="text-sm font-black text-[#04120a]">⚽</span>
             </div>
             <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
-            <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)] text-white">AI</span>
+            <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/16 text-[var(--accent-ai)] border border-[var(--accent-ai)]/25">AI</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {isAuthenticated && user ? (
-              <div className="w-7 h-7 rounded-full bg-[var(--accent-primary)] flex items-center justify-center text-black font-bold text-xs">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-xs shadow-md shadow-emerald-500/20">
                 {(user.display_name || user.email)[0].toUpperCase()}
               </div>
             ) : (
-              <button onClick={() => setAuthModalOpen(true)} className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--accent-primary)] text-black">
+              <button onClick={() => setAuthModalOpen(true)} className="px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[#04120a] shadow-md shadow-emerald-500/20">
                 Sign In
               </button>
             )}
@@ -179,12 +181,15 @@ export const Navbar = () => {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex flex-col items-center gap-0.5 py-1 px-2 min-w-[56px] transition-colors ${
-                active ? (link.href === '/predict' ? 'text-[var(--accent-ai)]' : 'text-[var(--accent-primary)]') : 'text-[var(--text-tertiary)]'
+              className={`relative flex flex-col items-center gap-0.5 py-1 px-2 min-w-[56px] rounded-xl transition-colors ${
+                active
+                  ? (link.href === '/predict' ? 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/10' : 'text-[var(--accent-primary)] bg-[var(--tab-active-bg)]')
+                  : 'text-[var(--text-tertiary)]'
               }`}
             >
               <IconComponent active={active} />
-              <span className="text-[10px] font-medium">{link.mobileLabel}</span>
+              <span className="text-[10px] font-semibold">{link.mobileLabel}</span>
+              {active && <span className="absolute -bottom-1 w-6 h-[2px] rounded-full bg-current" />}
             </Link>
           )
         })}

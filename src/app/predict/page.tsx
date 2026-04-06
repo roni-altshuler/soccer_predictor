@@ -147,7 +147,7 @@ function PredictPageContent() {
     <div className="min-h-screen bg-[var(--background)]">
       <div className="max-w-2xl mx-auto px-4 py-4">
         <>
-            <div className="mb-4 bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+            <div className="mb-4 fm-surface p-4 md:p-5">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Match Predictor</p>
               <h1 className="text-xl font-bold text-[var(--text-primary)]">Realistic match outcome forecasts</h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -155,22 +155,22 @@ function PredictPageContent() {
               </p>
             </div>
             {/* Team Selection Card */}
-            <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4 mb-4">
+            <div className="fm-surface p-4 mb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TeamSearchInput label="Home Team" value={homeTeam} onSelect={setHomeTeam} placeholder="Search home team..." icon="🏠" />
                 <TeamSearchInput label="Away Team" value={awayTeam} onSelect={setAwayTeam} placeholder="Search away team..." icon="✈️" />
               </div>
 
               {homeTeam && awayTeam && homeTeam.league !== awayTeam.league && (
-                <div className="mt-3 text-center text-[10px] text-amber-500 font-medium">🌍 Cross-league: {homeTeam.league} vs {awayTeam.league}</div>
+                <div className="mt-3 text-center text-[10px] text-amber-500 font-semibold rounded-lg border border-amber-500/35 bg-amber-500/10 py-2">🌍 Cross-league: {homeTeam.league} vs {awayTeam.league}</div>
               )}
 
               <button onClick={handlePredict} disabled={loading || !canPredict}
-                className="w-full mt-4 py-3 rounded-lg font-semibold text-sm text-white bg-[var(--accent-ai)] hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2">
+                className="w-full mt-4 py-3 rounded-xl font-semibold text-sm text-[#021320] bg-gradient-to-br from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-35 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20">
                 {loading ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+                  <><div className="w-4 h-4 border-2 border-[#021320] border-t-transparent rounded-full animate-spin" /> Analyzing...</>
                 ) : (
-                  <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v4" /><path d="M20 12h-4" /><path d="M12 18v4" /><path d="M4 12h4" /></svg> Get AI Prediction</>
+                  <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#021320" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v4" /><path d="M20 12h-4" /><path d="M12 18v4" /><path d="M4 12h4" /></svg> Get AI Prediction</>
                 )}
               </button>
             </div>
@@ -185,10 +185,10 @@ function PredictPageContent() {
               else if (aWin > d && aWin > hWin) winner = { team: result.away_team || '', prob: aWin }
 
               return (
-                <div className="space-y-3 animate-fade-in">
+                <div className="space-y-4 animate-fade-in">
                   {/* Scoreline Card */}
-                  <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] overflow-hidden">
-                    <div className="px-4 py-3 bg-[var(--accent-ai)]/10 border-b border-[var(--accent-ai)]/20 text-center">
+                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden shadow-[var(--shadow-sm)]">
+                    <div className="px-4 py-3 bg-gradient-to-r from-[var(--accent-ai)]/15 to-[var(--accent-primary)]/15 border-b border-[var(--border-color)] text-center">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-ai)]">AI Prediction</span>
                     </div>
                     <div className="p-6">
@@ -213,7 +213,7 @@ function PredictPageContent() {
                   </div>
 
                   {/* Probability Bars */}
-                  <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Win Probability</p>
                     {[
                       { label: result.home_team || 'Home', pct: hWin, color: 'bg-green-500' },
@@ -233,7 +233,7 @@ function PredictPageContent() {
                   </div>
 
                   {/* Market & realism layer */}
-                  <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Model Signals</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
@@ -293,7 +293,7 @@ function PredictPageContent() {
 
                   {/* ELO & Analysis */}
                   {result.ratings && (
-                    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4">
+                    <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">ELO Ratings</p>
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div className="p-2.5 rounded-lg bg-[var(--muted-bg)]">
@@ -368,7 +368,7 @@ function PredictPageContent() {
                     { icon: '⚽', title: 'Poisson Goals', desc: 'Realistic scoreline and goal-market probabilities' },
                     { icon: '🌍', title: 'Cross-League', desc: 'League strength coefficients plus recent-form calibration' },
                   ].map((item) => (
-                    <div key={item.title} className="bg-[var(--card-bg)] rounded-lg border border-[var(--border-color)] p-3 text-center">
+                    <div key={item.title} className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-3 text-center shadow-[var(--shadow-sm)]">
                       <span className="text-xl block mb-1">{item.icon}</span>
                       <p className="text-xs font-semibold text-[var(--text-primary)] mb-0.5">{item.title}</p>
                       <p className="text-[10px] text-[var(--text-tertiary)]">{item.desc}</p>

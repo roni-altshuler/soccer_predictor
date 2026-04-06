@@ -28,9 +28,19 @@ interface Factors {
   away: TeamFactors
   h2h_summary: string       // e.g. "Home leads 5-2 (3 draws)"
   h2h_avg_goals: number
+  h2h_breakdown: {
+    homeWins: number
+    draws: number
+    awayWins: number
+  }
   venue_factor: string       // e.g. "Strong home fortress" or "Neutral"
   league_draw_rate: number
   league_avg_goals: number
+  key_edges: Array<{
+    title: string
+    lean: 'home' | 'away' | 'neutral'
+    detail: string
+  }>
 }
 
 interface Props {
@@ -94,11 +104,15 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
       try {
         setLoading(true)
         // Fetch recent results for both teams from backend
-        const leagueParam = leagueId || ''
-        const [homeRes, awayRes] = await Promise.all([
-          fetch(`/api/team_form/${leagueParam}/${encodeURIComponent(homeTeam)}`).then(r => r.ok ? r.json() : null),
-          fetch(`/api/team_form/${leagueParam}/${encodeURIComponent(awayTeam)}`).then(r => r.ok ? r.json() : null),
+        setError(false)
+        const leagueParam = leagueId || 'all'
+        const [homeResponse, awayResponse] = await Promise.all([
+          fetch(`/api/team_form/${encodeURIComponent(leagueParam)}/${encodeURIComponent(homeTeam)}?opponent=${encodeURIComponent(awayTeam)}`, { cache: 'no-store' }),
+          fetch(`/api/team_form/${encodeURIComponent(leagueParam)}/${encodeURIComponent(awayTeam)}?opponent=${encodeURIComponent(homeTeam)}`, { cache: 'no-store' }),
         ])
+
+        const homeRes = homeResponse.ok ? await homeResponse.json() : null
+        const awayRes = awayResponse.ok ? await awayResponse.json() : null
 
         const buildTeamFactors = (data: any, isHome: boolean): TeamFactors => {
           if (!data?.matches?.length) {
@@ -121,8 +135,9 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
 
           // Form string (last 5) — API returns result as "win"/"loss"/"draw"
           const formResults = last5.map((m: any) => {
-            if (m.result === 'win') return 'W'
-            if (m.result === 'loss') return 'L'
+            const rawResult = String(m.result || '').toLowerCase()
+            if (rawResult === 'win' || rawResult === 'w') return 'W'
+            if (rawResult === 'loss' || rawResult === 'l') return 'L'
             return 'D'
           })
           const form_5 = formResults.join(' ') || '- - - - -'
@@ -183,26 +198,82 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
         const home = buildTeamFactors(homeRes, true)
         const away = buildTeamFactors(awayRes, false)
 
-        // H2H summary (from the team_form data if available, else neutral)
-        const h2hSummary = homeRes?.h2h
-          ? `${homeRes.h2h.homeWins || 0}W ${homeRes.h2h.draws || 0}D ${homeRes.h2h.awayWins || 0}L`
+        const h2hHomeWins = Number(homeRes?.h2h?.teamWins ?? homeRes?.h2h?.homeWins ?? 0)
+        const h2hDraws = Number(homeRes?.h2h?.draws ?? 0)
+        const h2hAwayWins = Number(homeRes?.h2h?.opponentWins ?? homeRes?.h2h?.awayWins ?? 0)
+        const h2hTotal = h2hHomeWins + h2hDraws + h2hAwayWins
+        const h2hSummary = h2hTotal > 0
+          ? `${h2hHomeWins}W ${h2hDraws}D ${h2hAwayWins}L`
           : 'No recent H2H data'
-        const h2hAvgGoals = homeRes?.h2h?.avgGoals || (home.goals_scored_avg + away.goals_scored_avg)
+        const h2hAvgGoals = Number(homeRes?.h2h?.avgGoals ?? 0) || (home.goals_scored_avg + away.goals_scored_avg)
+
+        const parseVenueRecord = (record: string) => {
+          const match = record.match(/(\d+)W\s+(\d+)D\s+(\d+)L/)
+          if (!match) return null
+          return {
+            wins: Number(match[1]),
+            draws: Number(match[2]),
+            losses: Number(match[3]),
+          }
+        }
 
         // Venue factor
         let venueFactor = 'Neutral venue'
-        if (home.form_pts >= 12) venueFactor = 'Strong home fortress'
-        else if (home.form_pts >= 9) venueFactor = 'Solid home form'
-        else if (home.form_pts <= 4) venueFactor = 'Struggling at home'
+        const homeVenue = parseVenueRecord(home.home_away_record)
+        const awayVenue = parseVenueRecord(away.home_away_record)
+        if (homeVenue && awayVenue) {
+          const homeVenuePoints = (homeVenue.wins * 3) + homeVenue.draws
+          const awayVenuePoints = (awayVenue.wins * 3) + awayVenue.draws
+          const venueSample = Math.max(homeVenue.wins + homeVenue.draws + homeVenue.losses, awayVenue.wins + awayVenue.draws + awayVenue.losses, 1)
+          const homeRate = homeVenuePoints / (venueSample * 3)
+          const awayRate = awayVenuePoints / (venueSample * 3)
+          if (homeRate - awayRate >= 0.2) venueFactor = 'Home venue trend favors the host'
+          else if (awayRate - homeRate >= 0.2) venueFactor = 'Away side travels well in recent sample'
+          else venueFactor = 'Venue split is balanced'
+        }
+
+        const formDiff = home.form_pts - away.form_pts
+        const attackDiff = home.goals_scored_avg - away.goals_scored_avg
+        const defenseDiff = away.goals_conceded_avg - home.goals_conceded_avg
+        const h2hDiff = h2hHomeWins - h2hAwayWins
+
+        const keyEdges: Factors['key_edges'] = [
+          {
+            title: 'Recent form edge',
+            lean: formDiff > 1 ? 'home' : formDiff < -1 ? 'away' : 'neutral',
+            detail: `${home.form_pts}/15 vs ${away.form_pts}/15 points (last 5)`,
+          },
+          {
+            title: 'Attacking output',
+            lean: attackDiff > 0.2 ? 'home' : attackDiff < -0.2 ? 'away' : 'neutral',
+            detail: `${home.goals_scored_avg.toFixed(2)} vs ${away.goals_scored_avg.toFixed(2)} goals scored per game`,
+          },
+          {
+            title: 'Defensive resistance',
+            lean: defenseDiff > 0.2 ? 'home' : defenseDiff < -0.2 ? 'away' : 'neutral',
+            detail: `${home.goals_conceded_avg.toFixed(2)} vs ${away.goals_conceded_avg.toFixed(2)} goals conceded per game`,
+          },
+          {
+            title: 'H2H trend',
+            lean: h2hDiff > 0 ? 'home' : h2hDiff < 0 ? 'away' : 'neutral',
+            detail: h2hTotal > 0 ? `${h2hSummary} in recent direct meetings` : 'Insufficient direct-meeting sample',
+          },
+        ]
 
         setFactors({
           home,
           away,
           h2h_summary: h2hSummary,
           h2h_avg_goals: h2hAvgGoals,
+          h2h_breakdown: {
+            homeWins: h2hHomeWins,
+            draws: h2hDraws,
+            awayWins: h2hAwayWins,
+          },
           venue_factor: venueFactor,
           league_draw_rate: 0.26,
           league_avg_goals: 2.65,
+          key_edges: keyEdges,
         })
       } catch {
         setError(true)
@@ -357,6 +428,41 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
             awayVal={factors.away.clean_sheet_pct * 100}
             unit="%"
           />
+        </div>
+
+        {/* Matchup context and key edges */}
+        <div className="rounded-2xl border p-3.5" style={{ borderColor: 'var(--border-color)', background: 'var(--muted-bg)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>H2H Snapshot</p>
+            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Avg goals {factors.h2h_avg_goals.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="font-semibold text-blue-500">{factors.h2h_breakdown.homeWins}W</span>
+            <span style={{ color: 'var(--text-tertiary)' }}>{factors.h2h_breakdown.draws}D</span>
+            <span className="font-semibold text-orange-500">{factors.h2h_breakdown.awayWins}W</span>
+          </div>
+          <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{factors.venue_factor}</p>
+        </div>
+
+        <div className="space-y-2.5">
+          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Key model factors</p>
+          {factors.key_edges.map((edge) => (
+            <div key={edge.title} className="rounded-xl border px-3 py-2.5 flex items-start justify-between gap-3" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-secondary)' }}>
+              <div>
+                <p className="text-xs font-semibold text-[var(--text-primary)]">{edge.title}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{edge.detail}</p>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
+                edge.lean === 'home'
+                  ? 'bg-blue-500/20 text-blue-500'
+                  : edge.lean === 'away'
+                    ? 'bg-orange-500/20 text-orange-500'
+                    : 'bg-slate-500/20 text-slate-300'
+              }`}>
+                {edge.lean === 'home' ? 'Home lean' : edge.lean === 'away' ? 'Away lean' : 'Even'}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Research citation */}

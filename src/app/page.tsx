@@ -20,13 +20,17 @@ type TodayMatch = {
 
 type DateOption = { label: string; date: string; isToday: boolean }
 
+function formatLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 function getDateOptions(): DateOption[] {
   const options: DateOption[] = []
   const now = new Date()
   for (let i = -3; i <= 3; i++) {
     const d = new Date(now)
     d.setDate(d.getDate() + i)
-    const iso = d.toISOString().split('T')[0]
+    const iso = formatLocalDateKey(d)
     let label: string
     if (i === -1) label = 'Yesterday'
     else if (i === 0) label = 'Today'
@@ -158,21 +162,21 @@ function LeagueSection({ league, matches }: { league: string; matches: TodayMatc
 function AIPredictionBanner() {
   return (
     <Link href="/predict" className="block mx-4 my-4">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[var(--accent-ai)] to-purple-600 p-4">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--accent-ai)]/30 bg-gradient-to-r from-[var(--accent-ai)]/22 via-[var(--surface-highlight)] to-[var(--accent-primary)]/24 p-4">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/8 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <div className="w-10 h-10 rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/18 flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai)" strokeWidth="2">
               <path d="M12 2v4" /><path d="m15.5 7.5 2.8-2.8" /><path d="M20 12h-4" />
               <path d="m15.5 16.5 2.8 2.8" /><path d="M12 18v4" /><path d="m4.2 19.8 2.8-2.8" />
               <path d="M4 12h4" /><path d="m4.2 4.2 2.8 2.8" /><circle cx="12" cy="12" r="4" />
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-white font-bold text-sm">AI Match Predictions</p>
-            <p className="text-white/70 text-xs">66-feature neural ensemble — predict any matchup</p>
+            <p className="text-[var(--text-primary)] font-bold text-sm">AI Match Predictions</p>
+            <p className="text-[var(--text-secondary)] text-xs">66-feature neural ensemble, calibrated for real match context</p>
           </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="flex-shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" className="flex-shrink-0">
             <path d="M9 18l6-6-6-6" />
           </svg>
         </div>
@@ -244,7 +248,7 @@ function AtAGlance({
 }) {
   return (
     <div className="max-w-3xl mx-auto px-4 pt-4 pb-2 animate-slideUp">
-      <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]/95 backdrop-blur p-4 md:p-5">
+      <div className="fm-surface p-4 md:p-5">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] font-semibold mb-1">Match Center</p>
@@ -288,7 +292,7 @@ export default function Home() {
     const fetchMatches = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/todays_matches?date=${selectedDate}`)
+        const res = await fetch(`/api/todays_matches?date=${selectedDate}`, { cache: 'no-store' })
         if (res.ok && !cancelled) {
           const data = await res.json()
           setMatches(data)
@@ -333,15 +337,15 @@ export default function Home() {
 
       {/* Date Selector — FotMob horizontal scroll */}
       <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">
-        <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-0.5 max-w-3xl mx-auto" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1 max-w-3xl mx-auto" style={{ scrollbarWidth: 'none' }}>
           {dateOptions.map((opt) => (
             <button
               key={opt.date}
               onClick={() => setSelectedDate(opt.date)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                 selectedDate === opt.date
-                  ? 'bg-[var(--accent-primary)] text-black'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]'
+                  ? 'bg-[var(--accent-primary)] text-[#04120a] border-[var(--accent-primary)]'
+                  : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]'
               }`}
             >
               {opt.label}
@@ -352,17 +356,17 @@ export default function Home() {
 
       {/* Tab Filter: All / Live / Finished */}
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-0 px-4 pt-3 pb-1">
+        <div className="flex items-center gap-1 px-4 pt-3 pb-1">
           {(['all', 'live', 'finished'] as const).map((t) => {
             const count = t === 'all' ? totalCount : t === 'live' ? live.length : completed.length
             return (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${
+                className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg border transition-colors ${
                   tab === t
-                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                    : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--tab-active-bg)]'
+                    : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
                 }`}
               >
                 {t === 'all' ? 'All' : t === 'live' ? 'Live' : 'Finished'}
@@ -401,7 +405,7 @@ export default function Home() {
         <QuickLeagues />
 
         {/* Model info stripe */}
-        <div className="mx-4 mt-2 p-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)]">
+        <div className="mx-4 mt-2 p-3 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-[var(--shadow-sm)]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[var(--accent-ai)]/20 flex items-center justify-center flex-shrink-0">
               <span className="text-base">🧠</span>

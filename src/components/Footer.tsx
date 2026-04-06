@@ -4,27 +4,27 @@ import Link from 'next/link'
 
 export const Footer = () => {
   return (
-    <footer className="bg-[var(--card-bg)] border-t border-[var(--border-color)] mt-auto">
+    <footer className="mt-auto border-t border-[var(--border-color)] bg-[var(--nav-bg)] backdrop-blur">
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-[var(--accent-primary)] flex items-center justify-center">
-              <span className="text-sm font-bold text-black">⚽</span>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <span className="text-sm font-black text-[#04120a]">⚽</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
-              <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)] text-white">AI</span>
+              <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">AI</span>
             </div>
           </div>
 
           {/* Links */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-            <Link href="/matches" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">Leagues</Link>
-            <Link href="/predict" className="text-[var(--text-tertiary)] hover:text-[var(--accent-ai)] transition-colors">AI Predict</Link>
-            <Link href="/tracking" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">Accuracy</Link>
-            <Link href="/news" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">News</Link>
-            <Link href="/about" className="text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">About</Link>
+          <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
+            <Link href="/matches" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Leagues</Link>
+            <Link href="/predict" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-ai)] hover:border-[var(--accent-ai)]/40 transition-colors">AI Predict</Link>
+            <Link href="/tracking" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Accuracy</Link>
+            <Link href="/news" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">News</Link>
+            <Link href="/about" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">About</Link>
           </div>
         </div>
 

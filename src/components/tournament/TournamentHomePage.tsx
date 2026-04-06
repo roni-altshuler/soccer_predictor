@@ -595,7 +595,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       <div className="space-y-6">
         {/* Quick Simulator Link - Consistent with LeagueHomePage */}
         <div
-          className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl p-6 cursor-pointer hover:from-indigo-600/30 hover:to-purple-600/30 transition-all border border-indigo-500/30 hover:scale-[1.02] hover:shadow-lg"
+          className="bg-gradient-to-br from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 rounded-xl p-6 cursor-pointer hover:from-[var(--accent-ai)]/24 hover:to-[var(--accent-primary)]/22 transition-all border border-[var(--accent-ai)]/30 hover:scale-[1.02] hover:shadow-lg"
           onClick={() => setActiveTab('Simulator')}
         >
           <div className="text-4xl mb-3">🎲</div>
@@ -932,11 +932,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     <button
                       onClick={runTournamentSimulation}
                       disabled={runningSimulation || data.groups.length === 0}
-                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+                      className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2"
                     >
                       {runningSimulation ? (
                         <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-[#041320] border-t-transparent rounded-full animate-spin" />
                           <span>Simulating...</span>
                         </>
                       ) : (
@@ -955,7 +955,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                 <div className="space-y-6 animate-fade-in">
                   {/* Summary Card */}
                   <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-                    <div className={`p-6 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-[var(--border-color)]`}>
+                    <div className="p-6 bg-gradient-to-r from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 border-b border-[var(--border-color)]">
                       <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
                           <h3 className="text-2xl font-bold text-[var(--text-primary)]">{simulationResults.tournament_name}</h3>
@@ -1077,7 +1077,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.quarter_final_probability > 0.01 ? (
-                                  <span className="text-purple-400">{(team.quarter_final_probability * 100).toFixed(0)}%</span>
+                                  <span className="text-[var(--accent-ai)]">{(team.quarter_final_probability * 100).toFixed(0)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}

@@ -1,4 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface Match {
   id: string
@@ -31,18 +34,32 @@ const ESPN_LEAGUES = [
   { id: 'fifa.world', name: 'FIFA World Cup 2026' },
 ]
 
-async function fetchESPNMatches(): Promise<Match[]> {
+function resolveRequestedDate(rawDate: string | null): Date {
+  if (!rawDate) return new Date()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    return new Date()
+  }
+
+  const parsed = new Date(`${rawDate}T12:00:00Z`)
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date()
+  }
+
+  return parsed
+}
+
+async function fetchESPNMatches(targetDate: Date): Promise<Match[]> {
   const allMatches: Match[] = []
   
-  // Get today's date in YYYYMMDD format for ESPN API
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+  // Convert target date to YYYYMMDD format for ESPN API
+  const targetDateStr = `${targetDate.getUTCFullYear()}${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}${String(targetDate.getUTCDate()).padStart(2, '0')}`
   
   for (const league of ESPN_LEAGUES) {
     try {
       // Use dates parameter to explicitly request today's matches
       const response = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.id}/scoreboard?dates=${todayStr}`,
+          `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.id}/scoreboard?dates=${targetDateStr}`,
         {
           headers: {
             'Accept': 'application/json',
@@ -107,9 +124,9 @@ async function fetchESPNMatches(): Promise<Match[]> {
   return allMatches
 }
 
-async function fetchFotMobMatches(): Promise<Match[]> {
+async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
   const matches: Match[] = []
-  const today = new Date().toISOString().split('T')[0].replace(/-/g, '')
+  const targetDateStr = `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}-${String(targetDate.getUTCDate()).padStart(2, '0')}`.replace(/-/g, '')
   
   // Map FotMob league names to ESPN league IDs
   const FOTMOB_LEAGUE_MAPPING: Record<string, string> = {
@@ -126,7 +143,7 @@ async function fetchFotMobMatches(): Promise<Match[]> {
   }
   
   try {
-    const response = await fetch(`https://www.fotmob.com/api/matches?date=${today}`, {
+    const response = await fetch(`https://www.fotmob.com/api/matches?date=${targetDateStr}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json',
@@ -191,13 +208,15 @@ async function fetchFotMobMatches(): Promise<Match[]> {
 // Sample data for when APIs are unavailable - no longer used to avoid showing inaccurate data
 // Users will see "No matches" when APIs are blocked
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const requestedDate = resolveRequestedDate(request.nextUrl.searchParams.get('date'))
+
     // Try ESPN first, then FotMob
-    let matches = await fetchESPNMatches()
+    let matches = await fetchESPNMatches(requestedDate)
     
     if (matches.length === 0) {
-      matches = await fetchFotMobMatches()
+      matches = await fetchFotMobMatches(requestedDate)
     }
     
     // Categorize matches
@@ -222,7 +241,11 @@ export async function GET() {
       matches,
     }))
     
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    })
   } catch (error) {
     console.error('Error fetching today\'s matches:', error)
     // Return empty data instead of fake data when APIs fail
@@ -232,6 +255,10 @@ export async function GET() {
       completed: [],
       leagues: [],
       source: 'error'
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
     })
   }
 }

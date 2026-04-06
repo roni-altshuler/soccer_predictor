@@ -216,6 +216,9 @@ export default function AccuracyDashboard() {
       {/* Hero Metrics Row */}
       <HeroMetrics metrics={m} streak={summary.current_streak} form={summary.recent_form} />
 
+      {/* Bettor-focused edge desk */}
+      <BettingEdgeDesk metrics={m} last30={summary.last_30_days} policy={summary.policy} />
+
       {/* Interpretation helper */}
       <InterpretationPanel metrics={m} last30={summary.last_30_days} policy={summary.policy} />
 
@@ -245,6 +248,84 @@ export default function AccuracyDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <ModelCard modelInfo={modelInfo} />
         <FetcherPanel status={fetcherStatus} fetching={fetching} onFetch={triggerFetch} />
+      </div>
+    </div>
+  )
+}
+
+function BettingEdgeDesk({
+  metrics,
+  last30,
+  policy,
+}: {
+  metrics: OverallMetrics
+  last30: OverallMetrics
+  policy?: TrackingPolicy
+}) {
+  const baseline = 1 / 3
+  const qualified = metrics.threshold_qualified_predictions ?? 0
+  const qualifiedAcc = metrics.threshold_qualified_accuracy ?? 0
+  const qualificationRate = metrics.threshold_qualification_rate ?? 0
+  const thresholdLift = metrics.threshold_lift ?? 0
+  const recentDelta = last30.completed_predictions > 0 ? last30.winner_accuracy - metrics.winner_accuracy : 0
+  const confidenceGap = metrics.high_confidence_accuracy - metrics.low_confidence_accuracy
+  const policyConf = Math.round((policy?.min_confidence ?? 0.55) * 100)
+  const policyEdge = Math.round((policy?.min_edge ?? 0.12) * 100)
+
+  const cards = [
+    {
+      label: 'Model Edge vs Random',
+      value: pp(metrics.winner_accuracy - baseline),
+      tone: metrics.winner_accuracy - baseline >= 0.08 ? '#22c55e' : metrics.winner_accuracy - baseline >= 0.03 ? '#f59e0b' : '#ef4444',
+      note: '1X2 hit rate over 33.3% random baseline',
+    },
+    {
+      label: 'Policy Pick Accuracy',
+      value: qualified > 0 ? pct(qualifiedAcc) : 'N/A',
+      tone: qualified === 0 ? '#94a3b8' : accuracyColor(qualifiedAcc),
+      note: qualified > 0
+        ? `${qualified} picks (${pct(qualificationRate)} of settled picks)`
+        : `Need picks above ${policyConf}% confidence and ${policyEdge}pp edge`,
+    },
+    {
+      label: 'Policy Lift',
+      value: qualified > 0 ? pp(thresholdLift) : 'N/A',
+      tone: qualified === 0 ? '#94a3b8' : thresholdLift >= 0.03 ? '#22c55e' : thresholdLift >= 0 ? '#f59e0b' : '#ef4444',
+      note: 'Difference between filtered picks and all settled picks',
+    },
+    {
+      label: 'High vs Low Conf Gap',
+      value: pp(confidenceGap),
+      tone: confidenceGap >= 0.1 ? '#22c55e' : confidenceGap >= 0.04 ? '#f59e0b' : '#ef4444',
+      note: `${pct(metrics.high_confidence_accuracy)} (high) vs ${pct(metrics.low_confidence_accuracy)} (low)`,
+    },
+    {
+      label: 'Recent Momentum',
+      value: last30.completed_predictions > 0 ? pp(recentDelta) : 'N/A',
+      tone: last30.completed_predictions === 0 ? '#94a3b8' : recentDelta >= 0.03 ? '#22c55e' : recentDelta >= -0.03 ? '#f59e0b' : '#ef4444',
+      note: last30.completed_predictions > 0
+        ? `Last 30 days (${last30.completed_predictions} settled picks)`
+        : 'Need more recent settled picks for momentum',
+    },
+  ]
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Edge Desk</h3>
+        <span className="text-[10px] text-[var(--text-tertiary)]">
+          Betting-focused lens: edge, selectivity, and confidence separation.
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {cards.map((card) => (
+          <div key={card.label} className="rounded-xl border p-3 bg-[var(--muted-bg)]" style={{ borderColor: 'var(--border-color)' }}>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{card.label}</p>
+            <p className="text-xl font-bold mt-1" style={{ color: card.tone }}>{card.value}</p>
+            <p className="text-[10px] mt-1 text-[var(--text-tertiary)] leading-relaxed">{card.note}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -846,6 +927,7 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
                 <th className="text-center px-3 py-2.5 font-medium">Actual</th>
                 <th className="text-center px-3 py-2.5 font-medium">Outcome</th>
                 <th className="text-center px-3 py-2.5 font-medium">Scoreline</th>
+                <th className="text-center px-3 py-2.5 font-medium">Edge</th>
                 <th className="text-center px-3 py-2.5 font-medium">Confidence</th>
               </tr>
             </thead>
@@ -904,6 +986,20 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
                       </span>
                     )}
                     {p.scoreline_correct === null && <span className="text-[10px] text-[var(--text-tertiary)]">{'\u2014'}</span>}
+                  </td>
+                  {/* Model edge vs baseline */}
+                  <td className="px-3 py-2.5 text-center">
+                    {(() => {
+                      const maxProb = Math.max(p.home_win_prob ?? 0, p.draw_prob ?? 0, p.away_win_prob ?? 0)
+                      const edge = maxProb - (1 / 3)
+                      const tone = edge >= 0.12 ? 'text-emerald-400' : edge >= 0.06 ? 'text-amber-400' : 'text-slate-400'
+                      const sign = edge > 0 ? '+' : ''
+                      return (
+                        <span className={`text-[10px] font-semibold ${tone}`}>
+                          {sign}{(edge * 100).toFixed(1)}pp
+                        </span>
+                      )
+                    })()}
                   </td>
                   {/* Confidence */}
                   <td className="px-3 py-2.5 text-center">

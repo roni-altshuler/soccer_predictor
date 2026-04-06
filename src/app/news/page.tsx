@@ -44,7 +44,7 @@ export default function NewsPage() {
         <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse bg-[var(--card-bg)] rounded-lg border border-[var(--border-color)] p-3 flex gap-3">
+              <div key={i} className="animate-pulse bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-3 flex gap-3 shadow-[var(--shadow-sm)]">
                 <div className="w-20 h-14 rounded bg-[var(--muted-bg)] flex-shrink-0" />
                 <div className="flex-1 space-y-2"><div className="h-3 bg-[var(--muted-bg)] rounded w-3/4" /><div className="h-2 bg-[var(--muted-bg)] rounded w-1/2" /></div>
               </div>
@@ -69,10 +69,16 @@ export default function NewsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
+        <div className="fm-surface p-4 mb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--text-tertiary)] mb-1">Newsroom</p>
+          <h1 className="text-xl md:text-2xl font-black text-[var(--text-primary)]">Latest Football Headlines</h1>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">Curated breaking stories, transfer chatter, and tactical updates in one feed.</p>
+        </div>
+
         {/* Featured */}
         {articles.length > 0 && (
           <a href={articles[0].url || '#'} target="_blank" rel="noopener noreferrer"
-            className="block mb-4 rounded-xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group">
+            className="block mb-4 rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group shadow-[var(--shadow-sm)]">
             <div className="aspect-video relative overflow-hidden">
               {articles[0].image ? (
                 <img src={articles[0].image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -92,7 +98,7 @@ export default function NewsPage() {
         <div className="space-y-0.5">
           {articles.slice(1).map((article) => (
             <a key={article.id} href={article.url || '#'} target="_blank" rel="noopener noreferrer"
-              className="flex gap-3 p-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group">
+              className="flex gap-3 p-3 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group shadow-[var(--shadow-sm)]">
               {article.image ? (
                 <img src={article.image} alt="" className="w-20 h-14 rounded object-cover flex-shrink-0" />
               ) : (

@@ -23,7 +23,7 @@ export default function TrackingPage({
       </div>
 
       <div className="relative max-w-5xl mx-auto px-4 pt-5 pb-10">
-        <div className="mb-5 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]/90 backdrop-blur p-5 md:p-6 animate-fadeIn">
+        <div className="mb-5 fm-surface p-5 md:p-6 animate-fadeIn">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[var(--text-tertiary)] mb-2">Model Reality Check</p>
@@ -35,15 +35,15 @@ export default function TrackingPage({
               </p>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">Outcome + Scoreline Audits</span>
-              <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-400 font-semibold">Diagnostics + League Learning</span>
+              <span className="px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-semibold">Outcome + Scoreline Audits</span>
+              <span className="px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 text-cyan-400 font-semibold">Diagnostics + League Learning</span>
             </div>
           </div>
         </div>
 
         <TrackingCenter initialView={initialView} />
 
-        <div className="mt-5 bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-4 md:p-5">
+        <div className="mt-5 bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 md:p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Continuous Learning Pipeline</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             {[
@@ -52,7 +52,7 @@ export default function TrackingPage({
               { step: 'Retune League Bias', desc: 'Blend weights and draw thresholds auto-tuned' },
               { step: 'Predict Better', desc: 'Next fixtures use updated league characteristics' },
             ].map((item) => (
-              <div key={item.step} className="p-2.5 rounded-lg bg-[var(--muted-bg)] border border-[var(--border-color)]/50">
+              <div key={item.step} className="p-2.5 rounded-xl bg-[var(--muted-bg)] border border-[var(--border-color)]">
                 <p className="font-semibold text-[var(--text-primary)] mb-0.5">{item.step}</p>
                 <p className="text-[10px] text-[var(--text-tertiary)]">{item.desc}</p>
               </div>
