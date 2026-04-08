@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-08T15:13:07.962193",
-  "total_predictions_analyzed": 1342,
-  "overall_accuracy": 0.4337,
+  "generated_at": "2026-04-08T22:38:02.878857",
+  "total_predictions_analyzed": 1345,
+  "overall_accuracy": 0.4335,
   "by_league": {
     "La Liga": {
       "predictions": 160,
@@ -228,22 +228,22 @@
       }
     },
     "Champions League": {
-      "predictions": 88,
-      "accuracy": 0.375,
-      "brier_score": 0.6015,
-      "scoreline_rate": 0.0341,
-      "actual_draw_rate": 0.1364,
-      "predicted_draw_rate": 0.2634,
-      "draw_rate_adjustment": -0.03812,
-      "actual_home_win_rate": 0.5114,
-      "predicted_home_win_rate": 0.4293,
-      "home_adv_adjustment": 0.01641,
-      "avg_goals_diff": 0.206,
-      "goals_scale_adjustment": 0.01031,
+      "predictions": 90,
+      "accuracy": 0.3778,
+      "brier_score": 0.6035,
+      "scoreline_rate": 0.0333,
+      "actual_draw_rate": 0.1333,
+      "predicted_draw_rate": 0.2615,
+      "draw_rate_adjustment": -0.03844,
+      "actual_home_win_rate": 0.5111,
+      "predicted_home_win_rate": 0.4323,
+      "home_adv_adjustment": 0.01576,
+      "avg_goals_diff": 0.131,
+      "goals_scale_adjustment": 0.00657,
       "confidence_calibration": {
         "high": {
-          "count": 17,
-          "accuracy": 0.7059
+          "count": 19,
+          "accuracy": 0.6842
         },
         "medium": {
           "count": 71,
@@ -256,22 +256,22 @@
       }
     },
     "Europa League": {
-      "predictions": 86,
-      "accuracy": 0.4419,
-      "brier_score": 0.6226,
-      "scoreline_rate": 0.0814,
-      "actual_draw_rate": 0.1744,
-      "predicted_draw_rate": 0.2885,
-      "draw_rate_adjustment": -0.03423,
-      "actual_home_win_rate": 0.4884,
-      "predicted_home_win_rate": 0.4172,
-      "home_adv_adjustment": 0.01423,
-      "avg_goals_diff": -0.312,
-      "goals_scale_adjustment": -0.0156,
+      "predictions": 87,
+      "accuracy": 0.4368,
+      "brier_score": 0.6273,
+      "scoreline_rate": 0.0805,
+      "actual_draw_rate": 0.1839,
+      "predicted_draw_rate": 0.2873,
+      "draw_rate_adjustment": -0.03102,
+      "actual_home_win_rate": 0.4828,
+      "predicted_home_win_rate": 0.4186,
+      "home_adv_adjustment": 0.01284,
+      "avg_goals_diff": -0.291,
+      "goals_scale_adjustment": -0.01456,
       "confidence_calibration": {
         "high": {
-          "count": 9,
-          "accuracy": 0.4444
+          "count": 10,
+          "accuracy": 0.4
         },
         "medium": {
           "count": 76,
@@ -330,13 +330,13 @@
     },
     "Premier League": {
       "current": {
-        "avg_goals": -0.5974,
+        "avg_goals": -0.6172,
         "home_adv": 0.1,
         "rho": -0.13,
         "draw_rate": 0.35
       },
       "suggested": {
-        "avg_goals": -0.617,
+        "avg_goals": -0.637,
         "home_adv": 0.1,
         "draw_rate": 0.35,
         "rho": -0.13
@@ -405,13 +405,13 @@
     },
     "Serie A": {
       "current": {
-        "avg_goals": -0.3091,
+        "avg_goals": -0.3187,
         "home_adv": 0.4,
         "rho": -0.14,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": -0.319,
+        "avg_goals": -0.328,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.14
@@ -420,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.7374,
+        "avg_goals": 1.7508,
         "home_adv": 0.4,
         "rho": -0.1,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 1.751,
+        "avg_goals": 1.764,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.1
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 2.7173,
+        "avg_goals": 2.7276,
         "home_adv": 0.4,
         "rho": -0.12,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 2.728,
+        "avg_goals": 2.734,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.12
@@ -450,13 +450,13 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": -0.4413,
+        "avg_goals": -0.4569,
         "home_adv": 0.4,
         "rho": -0.11,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": -0.457,
+        "avg_goals": -0.471,
         "home_adv": 0.4,
         "draw_rate": 0.12,
         "rho": -0.11
@@ -465,13 +465,13 @@
     },
     "Conference League": {
       "current": {
-        "avg_goals": 0.3003,
+        "avg_goals": 0.282,
         "home_adv": 0.1,
         "rho": -0.1,
         "draw_rate": 0.12
       },
       "suggested": {
-        "avg_goals": 0.282,
+        "avg_goals": 0.264,
         "home_adv": 0.1,
         "draw_rate": 0.12,
         "rho": -0.1
