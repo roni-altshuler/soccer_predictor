@@ -1,10 +1,10 @@
 import TrackingCenter from '@/components/tracking/TrackingCenter'
 
-type TrackingView = 'overview' | 'diagnostics' | 'learning'
+type TrackingView = 'overview' | 'diagnostics' | 'learning' | 'fan'
 
 function resolveInitialView(value: string | string[] | undefined): TrackingView {
   const raw = Array.isArray(value) ? value[0] : value
-  if (raw === 'diagnostics' || raw === 'learning') return raw
+  if (raw === 'diagnostics' || raw === 'learning' || raw === 'fan') return raw
   return 'overview'
 }
 
@@ -31,12 +31,13 @@ export default function TrackingPage({
                 Prediction Intelligence Center
               </h1>
               <p className="text-xs md:text-sm text-[var(--text-tertiary)] mt-2 max-w-2xl">
-                Accuracy and diagnostics now live in one workspace so outcome audits, drift signals, and league-level adaptation stay connected.
+                Accuracy diagnostics, league learning loops, and personal team watchlists now share one workspace.
               </p>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
               <span className="px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-semibold">Outcome + Scoreline Audits</span>
               <span className="px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 text-cyan-400 font-semibold">Diagnostics + League Learning</span>
+              <span className="px-2.5 py-1 rounded-full border border-violet-500/30 bg-violet-500/15 text-violet-300 font-semibold">Personal Team Tracking</span>
             </div>
           </div>
         </div>
@@ -66,5 +67,5 @@ export default function TrackingPage({
 
 export const metadata = {
   title: 'Tracking | FotPredict AI',
-  description: 'Unified accuracy, diagnostics, and learning loop center for model evaluation.',
+  description: 'Unified accuracy, diagnostics, learning loop, and personal team watchlist center.',
 }

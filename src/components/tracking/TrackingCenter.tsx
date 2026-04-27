@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import AccuracyDashboard from './AccuracyDashboard'
 import DiagnosticsDashboard from './DiagnosticsDashboard'
+import FanTrackingPanel from './FanTrackingPanel'
 
-type TrackingView = 'overview' | 'diagnostics' | 'learning'
+type TrackingView = 'overview' | 'diagnostics' | 'learning' | 'fan'
 
 type AlertSeverity = 'high' | 'medium' | 'low'
 
@@ -130,6 +131,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
     { key: 'overview', label: 'Accuracy + Outcomes', hint: 'What happened' },
     { key: 'diagnostics', label: 'Diagnostics + Drift', hint: 'Why it happened' },
     { key: 'learning', label: 'League Learning Loop', hint: 'How it adapts next' },
+    { key: 'fan', label: 'Fan Team Tracker', hint: 'Who you follow' },
   ]
 
   return (
@@ -171,7 +173,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {viewTabs.map((tab) => (
             <button
               key={tab.key}
@@ -259,6 +261,8 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
           </div>
         </section>
       )}
+
+      {activeView === 'fan' && <FanTrackingPanel />}
     </div>
   )
 }

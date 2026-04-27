@@ -15,6 +15,7 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **League Standings & Fixtures** — ESPN-sourced standings, recent results, upcoming fixtures, and top scorers for all supported leagues
 - **Season Simulator** — Monte Carlo simulation (1,000 iterations) on live standings to project title, top-4, Europa, and relegation probabilities
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
+- **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 

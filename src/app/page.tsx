@@ -3,6 +3,12 @@
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
 import { leagues, leagueFlagUrls } from '@/data/leagues'
+import {
+  WATCHLIST_STORAGE_KEY,
+  normalizeTeamName,
+  teamMatchesWatchlist,
+  type WatchTeam,
+} from '@/lib/watchlist'
 
 type TodayMatch = {
   id?: string
@@ -286,6 +292,54 @@ export default function Home() {
   })
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'all' | 'live' | 'finished'>('all')
+  const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
+  const [watchlistOnly, setWatchlistOnly] = useState(false)
+
+  useEffect(() => {
+    const loadWatchlist = () => {
+      try {
+        const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
+        if (!raw) {
+          setTrackedTeams([])
+          return
+        }
+        const parsed = JSON.parse(raw) as unknown
+        if (!Array.isArray(parsed)) {
+          setTrackedTeams([])
+          return
+        }
+        const restored = parsed
+          .filter((item): item is WatchTeam => {
+            if (!item || typeof item !== 'object') return false
+            const entry = item as Partial<WatchTeam>
+            return typeof entry.name === 'string' && typeof entry.league === 'string'
+          })
+          .map((item) => ({ name: item.name.trim(), league: item.league.trim() }))
+          .filter((item) => item.name.length > 0 && item.league.length > 0)
+        setTrackedTeams(restored)
+      } catch (error) {
+        console.error('Failed to load home watchlist:', error)
+        setTrackedTeams([])
+      }
+    }
+
+    loadWatchlist()
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === WATCHLIST_STORAGE_KEY) loadWatchlist()
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', loadWatchlist)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', loadWatchlist)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (trackedTeams.length === 0 && watchlistOnly) {
+      setWatchlistOnly(false)
+    }
+  }, [trackedTeams.length, watchlistOnly])
 
   useEffect(() => {
     let cancelled = false
@@ -311,15 +365,25 @@ export default function Home() {
   const live = matches?.live || []
   const upcoming = matches?.upcoming || []
   const completed = matches?.completed || []
+  const trackedNameSet = useMemo(
+    () => new Set(trackedTeams.map((team) => normalizeTeamName(team.name))),
+    [trackedTeams]
+  )
 
-  let filteredMatches: TodayMatch[]
-  if (tab === 'live') filteredMatches = live
-  else if (tab === 'finished') filteredMatches = completed
-  else filteredMatches = [...live, ...upcoming, ...completed]
+  let tabMatches: TodayMatch[]
+  if (tab === 'live') tabMatches = live
+  else if (tab === 'finished') tabMatches = completed
+  else tabMatches = [...live, ...upcoming, ...completed]
+
+  const trackedMatchesByTab = tabMatches.filter(
+    (match) => teamMatchesWatchlist(match.home_team, trackedNameSet) || teamMatchesWatchlist(match.away_team, trackedNameSet)
+  )
+  const filteredMatches = watchlistOnly ? trackedMatchesByTab : tabMatches
 
   const matchesByLeague = groupMatchesByLeague(filteredMatches)
   const leagueNames = Object.keys(matchesByLeague)
   const totalCount = live.length + upcoming.length + completed.length
+  const trackedCount = trackedMatchesByTab.length
   const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
 
   return (
@@ -356,7 +420,7 @@ export default function Home() {
 
       {/* Tab Filter: All / Live / Finished */}
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-1 px-4 pt-3 pb-1">
+        <div className="flex flex-wrap items-center gap-1 px-4 pt-3 pb-1">
           {(['all', 'live', 'finished'] as const).map((t) => {
             const count = t === 'all' ? totalCount : t === 'live' ? live.length : completed.length
             return (
@@ -374,7 +438,33 @@ export default function Home() {
               </button>
             )
           })}
+          {trackedTeams.length > 0 && (
+            <button
+              onClick={() => setWatchlistOnly((value) => !value)}
+              className={`ml-auto px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg border transition-colors ${
+                watchlistOnly
+                  ? 'border-violet-400/60 text-violet-300 bg-violet-500/15'
+                  : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
+              }`}
+            >
+              Tracked Teams {watchlistOnly ? 'On' : 'Off'}
+              <span className="ml-1 text-[10px]">({trackedCount})</span>
+            </button>
+          )}
         </div>
+        {trackedTeams.length === 0 && (
+          <div className="px-4 pb-1">
+            <Link href="/tracking?view=fan" className="text-[11px] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]">
+              Add a team watchlist in Tracking → Fan Team Tracker
+            </Link>
+          </div>
+        )}
+        {trackedTeams.length > 0 && (
+          <div className="px-4 pb-1 text-[10px] text-[var(--text-tertiary)]">
+            Tracking: {trackedTeams.map((team) => team.name).slice(0, 4).join(', ')}
+            {trackedTeams.length > 4 ? ` +${trackedTeams.length - 4} more` : ''}
+          </div>
+        )}
       </div>
 
       {/* Matches List — grouped by league */}
@@ -393,7 +483,9 @@ export default function Home() {
         ) : (
           <div className="py-16 text-center">
             <span className="text-3xl block mb-2">⚽</span>
-            <p className="text-sm text-[var(--text-secondary)]">No matches {tab === 'live' ? 'live right now' : tab === 'finished' ? 'finished yet' : 'scheduled'}</p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              No matches {watchlistOnly ? 'for tracked teams ' : ''}{tab === 'live' ? 'live right now' : tab === 'finished' ? 'finished yet' : 'scheduled'}
+            </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-1">Try selecting a different date</p>
           </div>
         )}
