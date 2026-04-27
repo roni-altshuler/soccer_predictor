@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  loadCompletedPredictions,
+  summarizeResultDistribution,
+} from '../../_lib/predictionAnalytics'
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ league: string }> }
 ) {
   const { league } = await params
 
-  // Return placeholder distribution since historical CSV data was removed
-  const distribution = [
-    { result: 'Home Win', count: 170, percentage: 45 },
-    { result: 'Draw', count: 95, percentage: 25 },
-    { result: 'Away Win', count: 115, percentage: 30 },
-  ]
+  const completed = loadCompletedPredictions(league)
+  const summary = summarizeResultDistribution(completed)
 
   return NextResponse.json({
     league,
-    distribution,
-    total_matches: 380,
-    message: 'Analytics data is now sourced from live FotMob API.',
+    total_matches: summary.total_matches,
+    distribution: summary.distribution,
+    chart_data: summary.chart_data,
+    source: 'prediction_history',
   })
 }

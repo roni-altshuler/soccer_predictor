@@ -14,6 +14,8 @@ import asyncio
 import json
 import math
 import logging
+import re
+import unicodedata
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -111,6 +113,102 @@ def get_league_param(league_key: str, param: str, fallback=None):
 
 # Reverse map: display name → ESPN key
 DISPLAY_TO_KEY = {v: k for k, v in LEAGUES.items()}
+
+
+_DERBY_GRAPH_CACHE: Optional[Dict[str, set[str]]] = None
+
+
+def _normalize_team_name(team_name: str) -> str:
+    """Normalize team names for robust derby matching."""
+    normalized = unicodedata.normalize("NFKD", team_name or "")
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = normalized.casefold()
+    normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
+    normalized = re.sub(r"\b(fc|cf|sc|ac|afc|cfc)\b", " ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _get_derby_aliases() -> Dict[str, str]:
+    """Common aliases that appear in feed data but map to canonical derby names."""
+    return {
+        "man utd": "manchester united",
+        "man united": "manchester united",
+        "man city": "manchester city",
+        "atleti": "atletico madrid",
+        "athletico madrid": "atletico madrid",
+        "inter milan": "inter",
+        "psg": "paris saint germain",
+        "paris sg": "paris saint germain",
+        "spurs": "tottenham",
+    }
+
+
+def _get_derby_graph() -> Dict[str, set[str]]:
+    """Build and cache a symmetric derby graph from the training feature config."""
+    global _DERBY_GRAPH_CACHE
+    if _DERBY_GRAPH_CACHE is not None:
+        return _DERBY_GRAPH_CACHE
+
+    graph: Dict[str, set[str]] = {}
+    try:
+        from backend.services.prediction.training import FeatureBuilder
+
+        derby_pairs = FeatureBuilder.DERBY_PAIRS
+        for home_team, rivals in derby_pairs.items():
+            home = _normalize_team_name(home_team)
+            if not home:
+                continue
+            graph.setdefault(home, set())
+            for rival_team in rivals:
+                rival = _normalize_team_name(rival_team)
+                if not rival:
+                    continue
+                graph.setdefault(rival, set())
+                graph[home].add(rival)
+                graph[rival].add(home)
+    except Exception as e:
+        logger.warning(f"Failed to load derby pairs from training config: {e}")
+
+    _DERBY_GRAPH_CACHE = graph
+    return graph
+
+
+def _resolve_derby_name(team_name: str, known_names: set[str], alias_map: Dict[str, str]) -> str:
+    """
+    Resolve a runtime team string to a canonical derby name.
+    Falls back to containment matching for minor feed variations.
+    """
+    normalized = _normalize_team_name(team_name)
+    if not normalized:
+        return ""
+
+    normalized = alias_map.get(normalized, normalized)
+    if normalized in known_names:
+        return normalized
+
+    for candidate in known_names:
+        if len(normalized) < 4 or len(candidate) < 4:
+            continue
+        if normalized in candidate or candidate in normalized:
+            return candidate
+    return normalized
+
+
+def is_derby_fixture(home_team: str, away_team: str) -> float:
+    """Return 1.0 for derby fixtures, else 0.0."""
+    derby_graph = _get_derby_graph()
+    if not derby_graph:
+        return 0.0
+
+    known_names = set(derby_graph.keys())
+    alias_map = _get_derby_aliases()
+    home = _resolve_derby_name(home_team, known_names, alias_map)
+    away = _resolve_derby_name(away_team, known_names, alias_map)
+    if not home or not away or home == away:
+        return 0.0
+
+    return 1.0 if away in derby_graph.get(home, set()) else 0.0
 
 
 def load_learned_adjustments() -> Dict:
@@ -1046,7 +1144,7 @@ def _build_match_features(
         # Context (6) [22-27] — REAL rest days
         league_coeff = get_league_param(league_key, "league_coefficient", 1.0)
         features[22] = 0.5  # matchday_pct (mid-season default)
-        features[23] = 0.0  # is_derby (TODO: use derby lookup)
+        features[23] = is_derby_fixture(home_team, away_team)
         features[24] = league_coeff
         features[25] = home_f["days_rest"]
         features[26] = away_f["days_rest"]
@@ -1101,7 +1199,7 @@ def _build_match_features(
         features[21] = 0.0
         league_coeff = get_league_param(league_key, "league_coefficient", 1.0)
         features[22] = 0.5
-        features[23] = 0.0
+        features[23] = is_derby_fixture(home_team, away_team)
         features[24] = league_coeff
         features[25] = 7.0
         features[26] = 7.0

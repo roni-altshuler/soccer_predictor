@@ -9,15 +9,33 @@ interface GoalsDistributionChartProps {
   league: string
 }
 
+interface GoalChartDatum {
+  name: string
+  value: number
+  percentage?: number
+}
+
 export const GoalsDistributionChart = ({ league }: GoalsDistributionChartProps) => {
   const { data, error } = useSWR(`/api/analytics/goals_distribution/${league}`, fetcher)
 
   if (error) return <div>Failed to load chart</div>
   if (!data) return <div>Loading...</div>
 
+  const chartData: GoalChartDatum[] = Array.isArray(data)
+    ? data
+    : Array.isArray(data.chart_data)
+      ? data.chart_data
+      : Array.isArray(data.distribution)
+        ? data.distribution.map((item: { goals: number; count: number; percentage?: number }) => ({
+            name: String(item.goals),
+            value: item.count,
+            percentage: item.percentage,
+          }))
+        : []
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+      <BarChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
           dataKey="name" 

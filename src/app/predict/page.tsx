@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
 
 interface TeamSearchResult { name: string; league: string }
 
@@ -32,6 +32,31 @@ interface PredictionResult {
   ratings?: { home_elo: number; away_elo: number; elo_difference: number }
   analysis?: { predicted_winner: string; home_advantage_applied: boolean; factors_considered: string[]; note: string }
   error?: string
+}
+
+interface LeagueOverview {
+  total_matches: number
+  avg_goals_per_match: number
+  avg_home_goals: number
+  avg_away_goals: number
+  home_win_rate: number
+  draw_rate: number
+  away_win_rate: number
+}
+
+interface SeasonTrendEntry {
+  season: string
+  avg_goals: number
+  home_wins: number
+  draws: number
+  away_wins: number
+  total_matches: number
+}
+
+interface LeagueInsight {
+  overview: LeagueOverview | null
+  latestTrend: SeasonTrendEntry | null
+  previousTrend: SeasonTrendEntry | null
 }
 
 function TeamSearchInput({
@@ -123,8 +148,63 @@ function PredictPageContent() {
   const [awayTeam, setAwayTeam] = useState<{ name: string; league: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PredictionResult | null>(null)
+  const [leagueInsights, setLeagueInsights] = useState<Record<string, LeagueInsight | null>>({})
+  const [loadingLeagueInsights, setLoadingLeagueInsights] = useState(false)
 
   useEffect(() => { setResult(null) }, [homeTeam, awayTeam])
+
+  const selectedLeagues = useMemo(() => {
+    const leagues = [homeTeam?.league, awayTeam?.league].filter((league): league is string => Boolean(league))
+    return Array.from(new Set(leagues))
+  }, [homeTeam?.league, awayTeam?.league])
+
+  useEffect(() => {
+    if (selectedLeagues.length === 0) {
+      setLeagueInsights({})
+      return
+    }
+
+    let cancelled = false
+    setLoadingLeagueInsights(true)
+
+    Promise.all(
+      selectedLeagues.map(async (league) => {
+        try {
+          const [overviewResponse, trendsResponse] = await Promise.all([
+            fetch(`/api/analytics/overview/${encodeURIComponent(league)}`),
+            fetch(`/api/analytics/season_trends/${encodeURIComponent(league)}`),
+          ])
+
+          const overview = overviewResponse.ok ? ((await overviewResponse.json()) as LeagueOverview) : null
+          const trendPayload = trendsResponse.ok
+            ? ((await trendsResponse.json()) as { trends?: SeasonTrendEntry[] })
+            : null
+          const trends = trendPayload?.trends || []
+          const latestTrend = trends.length > 0 ? trends[trends.length - 1] : null
+          const previousTrend = trends.length > 1 ? trends[trends.length - 2] : null
+
+          return [league, { overview, latestTrend, previousTrend }] as const
+        } catch {
+          return [league, null] as const
+        }
+      }),
+    )
+      .then((entries) => {
+        if (cancelled) return
+        const next: Record<string, LeagueInsight | null> = {}
+        for (const [league, data] of entries) {
+          next[league] = data
+        }
+        setLeagueInsights(next)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLeagueInsights(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedLeagues])
 
   const handlePredict = async () => {
     if (!homeTeam || !awayTeam) return
@@ -142,6 +222,7 @@ function PredictPageContent() {
   }
 
   const canPredict = homeTeam && awayTeam && homeTeam.name !== awayTeam.name
+  const formatPct = (value: number) => `${(value * 100).toFixed(1)}%`
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -163,6 +244,51 @@ function PredictPageContent() {
 
               {homeTeam && awayTeam && homeTeam.league !== awayTeam.league && (
                 <div className="mt-3 text-center text-[10px] text-amber-500 font-semibold rounded-lg border border-amber-500/35 bg-amber-500/10 py-2">🌍 Cross-league: {homeTeam.league} vs {awayTeam.league}</div>
+              )}
+
+              {selectedLeagues.length > 0 && (
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {selectedLeagues.map((league) => {
+                    const insight = leagueInsights[league]
+                    const trendDelta = insight?.latestTrend && insight.previousTrend
+                      ? insight.latestTrend.avg_goals - insight.previousTrend.avg_goals
+                      : null
+
+                    return (
+                      <div key={league} className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-2.5">
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">League context</p>
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">{league}</p>
+
+                        {loadingLeagueInsights && (!insight || !insight.overview) && (
+                          <p className="text-[11px] text-[var(--text-tertiary)] mt-1">Loading analytics…</p>
+                        )}
+
+                        {!loadingLeagueInsights && (!insight || !insight.overview) && (
+                          <p className="text-[11px] text-[var(--text-tertiary)] mt-1">No settled analytics available yet.</p>
+                        )}
+
+                        {insight?.overview && (
+                          <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-[10px] text-[var(--text-secondary)]">
+                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Matches: {insight.overview.total_matches}</span>
+                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Avg goals: {insight.overview.avg_goals_per_match.toFixed(2)}</span>
+                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Home: {formatPct(insight.overview.home_win_rate)}</span>
+                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Draw: {formatPct(insight.overview.draw_rate)}</span>
+                            {insight.latestTrend && (
+                              <span className="px-2 py-1 rounded bg-[var(--card-bg)] col-span-2">
+                                Season {insight.latestTrend.season}: {insight.latestTrend.avg_goals.toFixed(2)} goals/match
+                                {trendDelta !== null && (
+                                  <span className={trendDelta >= 0 ? 'text-emerald-400' : 'text-amber-400'}>
+                                    {' '}({trendDelta >= 0 ? '+' : ''}{trendDelta.toFixed(2)} vs prior season)
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
 
               <button onClick={handlePredict} disabled={loading || !canPredict}
