@@ -20,6 +20,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 import os
+import json
+import math
+from pathlib import Path
 
 # Import v1 API router
 from backend.api.v1 import router as v1_router
@@ -245,7 +248,9 @@ async def get_matches_by_date(league: str, date: str):
             if match_time and match_time.startswith(date):
                 home = match.get("home", {})
                 away = match.get("away", {})
-                
+                home_team = home.get("name", "")
+                away_team = away.get("name", "")
+
                 status = "upcoming"
                 if status_info.get("finished"):
                     status = "finished"
@@ -264,16 +269,21 @@ async def get_matches_by_date(league: str, date: str):
                     except ValueError:
                         pass
                 
-                date_matches.append({
+                card = {
                     "match_id": match.get("id"),
-                    "home_team": home.get("name", ""),
-                    "away_team": away.get("name", ""),
+                    "home_team": home_team,
+                    "away_team": away_team,
                     "date": match_time,
                     "time": match_time,
+                    "actual_home_goals": home_score,
+                    "actual_away_goals": away_score,
                     "home_score": home_score,
                     "away_score": away_score,
                     "status": status,
-                })
+                    "round": match.get("round", ""),
+                }
+                card.update(await _prediction_card_fields(home_team, away_team, league_key))
+                date_matches.append(card)
         
         return date_matches
     except Exception as e:
@@ -408,6 +418,52 @@ def _env_float(name: str, default: float) -> float:
 PREDICTION_POLICY_MIN_CONFIDENCE_PCT = _env_float("PREDICTION_POLICY_MIN_CONFIDENCE_PCT", 55.0)
 PREDICTION_POLICY_MIN_EDGE_PCT = _env_float("PREDICTION_POLICY_MIN_EDGE_PCT", 12.0)
 
+LEAGUE_KEY_TO_DISPLAY = {
+    "eng.1": "Premier League",
+    "esp.1": "La Liga",
+    "ger.1": "Bundesliga",
+    "ita.1": "Serie A",
+    "fra.1": "Ligue 1",
+    "ned.1": "Eredivisie",
+    "por.1": "Primeira Liga",
+    "usa.1": "MLS",
+    "uefa.champions": "Champions League",
+    "uefa.europa": "Europa League",
+    "uefa.europa.conf": "Conference League",
+    "fifa.world": "FIFA World Cup",
+}
+
+LEAGUE_ALIASES = {
+    "premier_league": "eng.1",
+    "premier league": "eng.1",
+    "la_liga": "esp.1",
+    "la liga": "esp.1",
+    "bundesliga": "ger.1",
+    "serie_a": "ita.1",
+    "serie a": "ita.1",
+    "ligue_1": "fra.1",
+    "ligue 1": "fra.1",
+    "eredivisie": "ned.1",
+    "primeira_liga": "por.1",
+    "primeira liga": "por.1",
+    "mls": "usa.1",
+    "champions_league": "uefa.champions",
+    "champions league": "uefa.champions",
+    "uefa champions league": "uefa.champions",
+    "europa_league": "uefa.europa",
+    "europa league": "uefa.europa",
+    "uefa europa league": "uefa.europa",
+    "conference_league": "uefa.europa.conf",
+    "conference league": "uefa.europa.conf",
+    "uefa conference league": "uefa.europa.conf",
+    "world_cup": "fifa.world",
+    "world cup": "fifa.world",
+    "fifa world cup": "fifa.world",
+}
+
+_RUNTIME_ELO_PREDICTOR = None
+_MODEL_TUNING_CACHE: Optional[Dict[str, Any]] = None
+
 
 def _edge_from_probabilities(home_win: float, draw: float, away_win: float) -> float:
     probs = [max(0.0, home_win), max(0.0, draw), max(0.0, away_win)]
@@ -419,15 +475,139 @@ def _edge_from_probabilities(home_win: float, draw: float, away_win: float) -> f
     return max(probs) - (1.0 / 3.0)
 
 
+def _normalize_league_key(league: Optional[str]) -> tuple[str, str]:
+    if not league:
+        return "eng.1", LEAGUE_KEY_TO_DISPLAY["eng.1"]
+    raw = league.strip()
+    if raw in LEAGUE_KEY_TO_DISPLAY:
+        key = raw
+    else:
+        normalized = raw.lower().replace("-", "_")
+        key = LEAGUE_ALIASES.get(normalized, LEAGUE_ALIASES.get(normalized.replace("_", " "), raw))
+    return key, LEAGUE_KEY_TO_DISPLAY.get(key, raw)
+
+
+def _get_runtime_elo_predictor():
+    """Use the production predictor ELO seed built from completed outcomes."""
+    global _RUNTIME_ELO_PREDICTOR
+    if _RUNTIME_ELO_PREDICTOR is None:
+        from backend.scripts.predict_upcoming import EloPredictor
+        _RUNTIME_ELO_PREDICTOR = EloPredictor()
+    return _RUNTIME_ELO_PREDICTOR
+
+
+def _get_model_tuning(league_key: str) -> Dict[str, float]:
+    global _MODEL_TUNING_CACHE
+    if _MODEL_TUNING_CACHE is None:
+        tuning_file = Path(__file__).parent / "data" / "model_tuning.json"
+        try:
+            with open(tuning_file) as f:
+                _MODEL_TUNING_CACHE = json.load(f)
+        except Exception:
+            _MODEL_TUNING_CACHE = {}
+
+    default = {
+        "blend_nn_base": 0.66,
+        "blend_nn_min": 0.55,
+        "blend_nn_max": 0.82,
+        "entropy_sensitivity": 0.18,
+    }
+    league_tuning = (_MODEL_TUNING_CACHE.get("leagues", {}) if _MODEL_TUNING_CACHE else {}).get(league_key, {})
+    return {**default, **league_tuning}
+
+
+def _select_neural_model(league_key: str):
+    """Prefer a trained global model when present, otherwise use the league model."""
+    try:
+        from backend.services.prediction.neural_model import get_league_model_registry
+        registry = get_league_model_registry()
+        global_model = registry.get_model("global")
+        if global_model.is_fitted:
+            return global_model, "neural_global_v5"
+        league_model = registry.get_model(league_key)
+        if league_model.is_fitted:
+            return league_model, "neural_ensemble_v5"
+    except Exception as exc:
+        logger.debug(f"Neural model unavailable for {league_key}: {exc}")
+    return None, "elo_poisson"
+
+
+def _blend_neural_with_elo(
+    nn_probs: Dict[str, float],
+    elo_probs: Dict[str, float],
+    league_key: str,
+) -> tuple[Dict[str, float], float, float]:
+    tuning = _get_model_tuning(league_key)
+    entropy = -sum(max(p, 1e-12) * math.log(max(p, 1e-12)) for p in nn_probs.values())
+    entropy_norm = min(1.0, entropy / math.log(3.0))
+    nn_weight = float(tuning["blend_nn_base"]) + (1.0 - entropy_norm) * float(tuning["entropy_sensitivity"])
+    nn_weight = max(float(tuning["blend_nn_min"]), min(float(tuning["blend_nn_max"]), nn_weight))
+    elo_weight = 1.0 - nn_weight
+    probs = {
+        "home_win": nn_weight * nn_probs["home_win"] + elo_weight * elo_probs["home_win"],
+        "draw": nn_weight * nn_probs["draw"] + elo_weight * elo_probs["draw"],
+        "away_win": nn_weight * nn_probs["away_win"] + elo_weight * elo_probs["away_win"],
+    }
+    total = sum(probs.values()) or 1.0
+    return {k: v / total for k, v in probs.items()}, nn_weight, entropy_norm
+
+
 @app.post("/api/predict/unified")
 async def predict_match(request: PredictionRequest):
-    """Generate prediction for a match (legacy endpoint)."""
-    elo = get_elo_system()
-    
-    home_elo = elo.get_elo(request.home_team)
-    away_elo = elo.get_elo(request.away_team)
-    
-    outcome = elo.predict_outcome(request.home_team, request.away_team)
+    """Generate a calibrated match prediction using neural models when available."""
+    league_key, league_display = _normalize_league_key(request.league)
+    model_used = "elo_poisson"
+    blend_nn_weight = None
+    blend_entropy = None
+    runtime_elo = None
+
+    try:
+        runtime_elo = _get_runtime_elo_predictor()
+        home_elo = runtime_elo.get(request.home_team)
+        away_elo = runtime_elo.get(request.away_team)
+        elo_probs = runtime_elo.predict(request.home_team, request.away_team, league_display)
+        elo_home_xg, elo_away_xg = runtime_elo.predict_goals(request.home_team, request.away_team, league_display)
+    except Exception as exc:
+        logger.debug(f"Runtime ELO unavailable, falling back to service ELO: {exc}")
+        elo = get_elo_system()
+        home_elo = elo.get_elo(request.home_team)
+        away_elo = elo.get_elo(request.away_team)
+        elo_probs = elo.predict_outcome(request.home_team, request.away_team, league_display)
+        elo_home_xg = max(0.3, 1.35 + (home_elo - away_elo) / 700)
+        elo_away_xg = max(0.2, 1.15 + (away_elo - home_elo) / 800)
+
+    outcome = elo_probs
+    predicted_home_goals = elo_home_xg
+    predicted_away_goals = elo_away_xg
+
+    neural_model, neural_tag = _select_neural_model(league_key)
+    if neural_model is not None and runtime_elo is not None:
+        try:
+            from backend.scripts.predict_upcoming import _build_match_features
+            features = _build_match_features(
+                runtime_elo,
+                request.home_team,
+                request.away_team,
+                league_key,
+                elo_probs,
+                elo_home_xg,
+                elo_away_xg,
+                league_results=None,
+                match_date=datetime.utcnow().isoformat(),
+            )
+            raw_probs = neural_model.predict_proba(features)[0]
+            nn_probs = {
+                "home_win": float(raw_probs[0]),
+                "draw": float(raw_probs[1]),
+                "away_win": float(raw_probs[2]),
+            }
+            outcome, blend_nn_weight, blend_entropy = _blend_neural_with_elo(nn_probs, elo_probs, league_key)
+            raw_goals = neural_model.predict_goals(features)
+            predicted_home_goals = 0.75 * float(raw_goals[0, 0]) + 0.25 * elo_home_xg
+            predicted_away_goals = 0.75 * float(raw_goals[0, 1]) + 0.25 * elo_away_xg
+            model_used = neural_tag
+        except Exception as exc:
+            logger.debug(f"Neural prediction failed for {league_key}: {exc}")
     
     # Determine prediction
     if outcome["home_win"] > outcome["draw"] and outcome["home_win"] > outcome["away_win"]:
@@ -451,9 +631,15 @@ async def predict_match(request: PredictionRequest):
     return {
         "home_team": request.home_team,
         "away_team": request.away_team,
+        "league": league_key,
         "home_elo": round(home_elo, 0),
         "away_elo": round(away_elo, 0),
         "prediction": prediction,
+        "model_used": model_used,
+        "blend_nn_weight": round(blend_nn_weight, 4) if blend_nn_weight is not None else None,
+        "blend_entropy": round(blend_entropy, 4) if blend_entropy is not None else None,
+        "predicted_home_goals": round(max(0.1, min(5.0, predicted_home_goals)), 2),
+        "predicted_away_goals": round(max(0.1, min(5.0, predicted_away_goals)), 2),
         "confidence": confidence_pct,  # Clamp between 0.1-99.9%
         "edge_pct": edge_pct,
         "threshold_qualified": threshold_qualified,
@@ -469,6 +655,44 @@ async def predict_match(request: PredictionRequest):
             "away_win": round(outcome["away_win"] * 100, 1),
         }
     }
+
+
+async def _prediction_card_fields(home_team: str, away_team: str, league_key: str) -> Dict[str, Any]:
+    """Return optional card-ready model fields without inventing unavailable data."""
+    if not home_team or not away_team:
+        return {}
+
+    try:
+        prediction = await predict_match(
+            PredictionRequest(home_team=home_team, away_team=away_team, league=league_key)
+        )
+    except Exception as exc:
+        logger.debug(f"Skipping card prediction for {home_team} vs {away_team}: {exc}")
+        return {}
+
+    probabilities = prediction.get("probabilities") or {}
+    required = ("home_win", "draw", "away_win")
+    if not all(isinstance(probabilities.get(key), (int, float)) for key in required):
+        return {}
+
+    fields: Dict[str, Any] = {
+        "predicted_home_win": round(float(probabilities["home_win"]) / 100.0, 4),
+        "predicted_draw": round(float(probabilities["draw"]) / 100.0, 4),
+        "predicted_away_win": round(float(probabilities["away_win"]) / 100.0, 4),
+    }
+
+    if isinstance(prediction.get("predicted_home_goals"), (int, float)):
+        fields["predicted_home_goals"] = round(float(prediction["predicted_home_goals"]), 2)
+    if isinstance(prediction.get("predicted_away_goals"), (int, float)):
+        fields["predicted_away_goals"] = round(float(prediction["predicted_away_goals"]), 2)
+    if isinstance(prediction.get("confidence"), (int, float)):
+        fields["confidence"] = round(float(prediction["confidence"]) / 100.0, 4)
+    if prediction.get("model_used"):
+        fields["prediction_model"] = prediction["model_used"]
+    if prediction.get("recommended_action"):
+        fields["recommended_action"] = prediction["recommended_action"]
+
+    return fields
 
 
 @app.get("/api/team_rating/{league}/{team}")
@@ -498,9 +722,6 @@ async def get_league_calendar(league: str, year: Optional[int] = None, month: Op
         client = get_fotmob_client()
         matches = await client.get_league_matches(league_id)
         
-        # Get ELO system for predictions
-        elo = get_elo_system()
-        
         calendar = []
         if matches:
             for match in matches:  # Get all matches
@@ -529,10 +750,7 @@ async def get_league_calendar(league: str, year: Optional[int] = None, month: Op
                     except ValueError:
                         pass
                 
-                # Generate predictions for each match
-                prediction = elo.predict_outcome(home_team, away_team) if home_team and away_team else None
-                
-                calendar.append({
+                card = {
                     "match_id": match.get("id"),
                     "home_team": home_team,
                     "away_team": away_team,
@@ -542,10 +760,9 @@ async def get_league_calendar(league: str, year: Optional[int] = None, month: Op
                     "actual_away_goals": away_score,
                     "status": status,
                     "round": match.get("round", ""),
-                    "predicted_home_win": prediction["home_win"] if prediction else 0.33,
-                    "predicted_draw": prediction["draw"] if prediction else 0.33,
-                    "predicted_away_win": prediction["away_win"] if prediction else 0.33,
-                })
+                }
+                card.update(await _prediction_card_fields(home_team, away_team, league_key))
+                calendar.append(card)
         
         # Build calendar weeks for the requested month
         now = datetime.now()

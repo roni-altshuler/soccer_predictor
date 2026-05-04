@@ -63,21 +63,31 @@ const KEY_TO_LEAGUE: Record<string, string> = {
   'uefa.europa.conf': 'conference_league', 'fifa.world': 'world_cup',
 }
 
+const PARAM_DEFAULTS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function sanitizeLeagueParams(lp: Record<string, unknown> | null | undefined): { avg_goals: number; home_adv: number; rho: number; draw_rate: number } {
+  return {
+    avg_goals: clamp(Number(lp?.avg_goals ?? PARAM_DEFAULTS.avg_goals), 0.75, 2.25),
+    home_adv: clamp(Number(lp?.home_adv ?? PARAM_DEFAULTS.home_adv), 0.05, 0.45),
+    rho: clamp(Number(lp?.rho ?? PARAM_DEFAULTS.rho), -0.35, 0.15),
+    draw_rate: clamp(Number(lp?.draw_rate ?? PARAM_DEFAULTS.draw_rate), 0.08, 0.38),
+  }
+}
+
 function loadLeagueParams(): Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> {
   try {
     const paramsFile = path.join(process.cwd(), 'backend', 'data', 'league_params.json')
     if (fs.existsSync(paramsFile)) {
       const data = JSON.parse(fs.readFileSync(paramsFile, 'utf-8'))
       const result: Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> = {}
-      for (const [key, lp] of Object.entries(data.leagues || {}) as [string, any][]) {
+      for (const [key, lp] of Object.entries(data.leagues || {}) as [string, Record<string, unknown>][]) {
         const leagueName = KEY_TO_LEAGUE[key]
         if (leagueName) {
-          result[leagueName] = {
-            avg_goals: lp.avg_goals ?? 1.35,
-            home_adv: lp.home_adv ?? 0.25,
-            rho: lp.rho ?? -0.12,
-            draw_rate: lp.draw_rate ?? 0.24,
-          }
+          result[leagueName] = sanitizeLeagueParams(lp)
         }
       }
       if (Object.keys(result).length > 0) return result
@@ -106,7 +116,7 @@ function getLeagueParams() {
   return _leagueParamsCache
 }
 
-const DEFAULT_PARAMS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
+const DEFAULT_PARAMS = PARAM_DEFAULTS
 
 function factorial(n: number): number {
   if (n <= 1) return 1
@@ -372,7 +382,6 @@ function calculateWinProbabilities(homeElo: number, awayElo: number, homeForm: n
   // Distribute remaining probability to win/loss
   const winPool = 1 - drawProb
   const normalizedHome = winPool * homeWinRaw
-  const normalizedAway = winPool * (1 - homeWinRaw)
   
   // Round and ensure they sum to 100
   const homeRounded = Math.round(normalizedHome * 100)
@@ -418,6 +427,9 @@ export async function POST(request: NextRequest) {
     let homeElo: number
     let awayElo: number
     let backendAvailable = false
+    let backendProbs: { home: number; draw: number; away: number } | null = null
+    let backendGoals: { home: number; away: number } | null = null
+    let backendModelUsed: string | null = null
     
     // Try to get prediction from backend first
     try {
@@ -438,6 +450,33 @@ export async function POST(request: NextRequest) {
         const backendPrediction = await response.json()
         homeElo = backendPrediction.home_elo || getTeamElo(home_team, home_league)
         awayElo = backendPrediction.away_elo || getTeamElo(away_team, away_league)
+        const backendProbability = backendPrediction.probabilities
+        if (
+          typeof backendProbability?.home_win === 'number' &&
+          typeof backendProbability?.draw === 'number' &&
+          typeof backendProbability?.away_win === 'number'
+        ) {
+          const toPct = (value: number) => value <= 1 ? value * 100 : value
+          const homePct = Math.round(toPct(backendProbability.home_win))
+          const drawPct = Math.round(toPct(backendProbability.draw))
+          backendProbs = {
+            home: homePct,
+            draw: drawPct,
+            away: Math.max(0, 100 - homePct - drawPct),
+          }
+        }
+        if (
+          typeof backendPrediction.predicted_home_goals === 'number' &&
+          typeof backendPrediction.predicted_away_goals === 'number'
+        ) {
+          backendGoals = {
+            home: backendPrediction.predicted_home_goals,
+            away: backendPrediction.predicted_away_goals,
+          }
+        }
+        backendModelUsed = typeof backendPrediction.model_used === 'string'
+          ? backendPrediction.model_used
+          : null
         backendAvailable = true
       } else {
         homeElo = getTeamElo(home_team, home_league)
@@ -451,7 +490,8 @@ export async function POST(request: NextRequest) {
     
     // Calculate probabilities with per-league model and form adjustments
     const matchLeague = homeLeagueKey || awayLeagueKey
-    const probs = calculateWinProbabilities(homeElo, awayElo, homeForm, awayForm, matchLeague)
+    const localProbs = calculateWinProbabilities(homeElo, awayElo, homeForm, awayForm, matchLeague)
+    const probs = backendProbs || localProbs
     
     // Get league-specific parameters for goal prediction
     const params = (matchLeague && getLeagueParams()[matchLeague]) || DEFAULT_PARAMS
@@ -504,8 +544,8 @@ export async function POST(request: NextRequest) {
         draw: probs.draw / 100,
         away_win: probs.away / 100,
       },
-      predicted_home_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, topScore ? topScore.home : Math.round(homeBaseGoals * 10) / 10)),
-      predicted_away_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, topScore ? topScore.away : Math.round(awayBaseGoals * 10) / 10)),
+      predicted_home_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, backendGoals?.home ?? (topScore ? topScore.home : Math.round(homeBaseGoals * 10) / 10))),
+      predicted_away_goals: Math.max(0, Math.min(MAX_PREDICTED_GOALS, backendGoals?.away ?? (topScore ? topScore.away : Math.round(awayBaseGoals * 10) / 10))),
       total_goals: Math.round((homeBaseGoals + awayBaseGoals) * 10) / 10,
       markets: {
         over_2_5: Math.round(scoreMatrix.over25 * 1000) / 1000,
@@ -554,7 +594,7 @@ export async function POST(request: NextRequest) {
           'Poisson scoreline matrix',
           'Venue location',
           ...(isCrossLeague ? ['League strength coefficient'] : []),
-          ...(backendAvailable ? ['Backend ML ensemble'] : ['Statistical estimation'])
+          ...(backendAvailable ? [backendModelUsed ? `Backend ${backendModelUsed}` : 'Backend model'] : ['Statistical estimation'])
         ],
         note: isCrossLeague 
           ? 'Cross-league match: Results adjusted for league strength differences.'

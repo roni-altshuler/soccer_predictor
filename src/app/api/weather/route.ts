@@ -115,6 +115,13 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const venue = searchParams.get('venue') || 'Emirates Stadium'
   const team = searchParams.get('team')
+
+  if (process.env.ALLOW_SIMULATED_WEATHER !== 'true') {
+    return NextResponse.json(
+      { error: 'Real weather data is not configured. Set OPENWEATHER_API_KEY on the backend to enable match weather.' },
+      { status: 503 }
+    )
+  }
   
   try {
     // Use team name to look up venue if provided

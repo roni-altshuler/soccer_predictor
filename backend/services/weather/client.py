@@ -262,9 +262,12 @@ class WeatherService:
             try:
                 return await self._fetch_real_weather(coords, match_time)
             except Exception as e:
-                logger.warning(f"Failed to fetch real weather: {e}, using simulated data")
-        
-        return self._simulate_weather(coords, match_time)
+                logger.warning(f"Failed to fetch real weather: {e}")
+
+        if os.getenv("ALLOW_SIMULATED_WEATHER", "").lower() in {"1", "true", "yes"}:
+            return self._simulate_weather(coords, match_time)
+
+        raise RuntimeError("Real weather data unavailable. Set OPENWEATHER_API_KEY to enable match weather.")
     
     async def _fetch_real_weather(
         self,

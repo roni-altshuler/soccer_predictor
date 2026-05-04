@@ -22,19 +22,31 @@ const KEY_TO_H2H_LEAGUE: Record<string, string> = {
   'uefa.europa.conf': 'conference_league', 'fifa.world': 'world_cup',
 }
 
+const PARAM_DEFAULTS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function sanitizeH2HLeagueParams(lp: Record<string, unknown> | null | undefined): { avg_goals: number; home_adv: number; rho: number; draw_rate: number } {
+  return {
+    avg_goals: clamp(Number(lp?.avg_goals ?? PARAM_DEFAULTS.avg_goals), 0.75, 2.25),
+    home_adv: clamp(Number(lp?.home_adv ?? PARAM_DEFAULTS.home_adv), 0.05, 0.45),
+    rho: clamp(Number(lp?.rho ?? PARAM_DEFAULTS.rho), -0.35, 0.15),
+    draw_rate: clamp(Number(lp?.draw_rate ?? PARAM_DEFAULTS.draw_rate), 0.08, 0.38),
+  }
+}
+
 function loadH2HLeagueParams(): Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> {
   try {
     const paramsFile = path.join(process.cwd(), 'backend', 'data', 'league_params.json')
     if (fs.existsSync(paramsFile)) {
       const data = JSON.parse(fs.readFileSync(paramsFile, 'utf-8'))
       const result: Record<string, { avg_goals: number; home_adv: number; rho: number; draw_rate: number }> = {}
-      for (const [key, lp] of Object.entries(data.leagues || {}) as [string, any][]) {
+      for (const [key, lp] of Object.entries(data.leagues || {}) as [string, Record<string, unknown>][]) {
         const name = KEY_TO_H2H_LEAGUE[key]
         if (name) {
-          result[name] = {
-            avg_goals: lp.avg_goals ?? 1.35, home_adv: lp.home_adv ?? 0.25,
-            rho: lp.rho ?? -0.12, draw_rate: lp.draw_rate ?? 0.24,
-          }
+          result[name] = sanitizeH2HLeagueParams(lp)
         }
       }
       if (Object.keys(result).length > 0) return result
@@ -62,7 +74,7 @@ function getH2HLeagueParams() {
   return _h2hParamsCache
 }
 
-const DEFAULT_PARAMS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
+const DEFAULT_PARAMS = PARAM_DEFAULTS
 
 // Team ELO ratings (top teams, approximated from historical data — Jan 2026)
 const TEAM_ELO: Record<string, number> = {

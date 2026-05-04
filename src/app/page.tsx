@@ -9,6 +9,7 @@ import {
   teamMatchesWatchlist,
   type WatchTeam,
 } from '@/lib/watchlist'
+import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 
 type TodayMatch = {
   id?: string
@@ -83,6 +84,7 @@ function getLeagueFlagUrl(league: string): string | null {
 function MatchRow({ match }: { match: TodayMatch }) {
   const isLive = match.status === 'live'
   const isFinished = match.status === 'finished' || match.status === 'completed'
+  const venue = match.venue?.trim()
   const href = match.id
     ? `/matches/${match.id}${match.leagueId ? `?league=${match.leagueId}` : ''}`
     : '/matches'
@@ -92,48 +94,53 @@ function MatchRow({ match }: { match: TodayMatch }) {
       href={href}
       className={`match-card group ${isLive ? 'bg-[var(--live-bg)]' : ''}`}
     >
-      <div className="flex items-center w-full">
-        {/* Home team */}
-        <div className="flex-1 text-right pr-3">
-          <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-            {match.home_team}
-          </span>
-        </div>
+      <div className="w-full">
+        <div className="flex items-center w-full">
+          {/* Home team */}
+          <div className="flex-1 text-right pr-3">
+            <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
+              {match.home_team}
+            </span>
+          </div>
 
-        {/* Score / Time */}
-        <div className="w-24 flex-shrink-0 text-center">
-          {isLive ? (
-            <div>
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="text-lg font-bold text-[var(--text-primary)]">{match.home_score}</span>
-                <span className="text-[var(--text-tertiary)] text-xs">-</span>
-                <span className="text-lg font-bold text-[var(--text-primary)]">{match.away_score}</span>
+          {/* Score / Time */}
+          <div className="w-24 flex-shrink-0 text-center">
+            {isLive ? (
+              <div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-lg font-bold text-[var(--text-primary)]">{match.home_score}</span>
+                  <span className="text-[var(--text-tertiary)] text-xs">-</span>
+                  <span className="text-lg font-bold text-[var(--text-primary)]">{match.away_score}</span>
+                </div>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-red-500">{match.minute ? `${match.minute}'` : 'LIVE'}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-red-500">{match.minute ? `${match.minute}'` : 'LIVE'}</span>
+            ) : isFinished ? (
+              <div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-lg font-bold text-[var(--text-secondary)]">{match.home_score}</span>
+                  <span className="text-[var(--text-tertiary)] text-xs">-</span>
+                  <span className="text-lg font-bold text-[var(--text-secondary)]">{match.away_score}</span>
+                </div>
+                <span className="text-[10px] text-[var(--text-tertiary)] font-medium">FT</span>
               </div>
-            </div>
-          ) : isFinished ? (
-            <div>
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="text-lg font-bold text-[var(--text-secondary)]">{match.home_score}</span>
-                <span className="text-[var(--text-tertiary)] text-xs">-</span>
-                <span className="text-lg font-bold text-[var(--text-secondary)]">{match.away_score}</span>
-              </div>
-              <span className="text-[10px] text-[var(--text-tertiary)] font-medium">FT</span>
-            </div>
-          ) : (
-            <span className="text-sm font-semibold text-[var(--accent-primary)]">{formatMatchTime(match.time)}</span>
-          )}
-        </div>
+            ) : (
+              <span className="text-sm font-semibold text-[var(--accent-primary)]">{formatMatchTime(match.time)}</span>
+            )}
+          </div>
 
-        {/* Away team */}
-        <div className="flex-1 text-left pl-3">
-          <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-            {match.away_team}
-          </span>
+          {/* Away team */}
+          <div className="flex-1 text-left pl-3">
+            <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
+              {match.away_team}
+            </span>
+          </div>
         </div>
+        {venue && (
+          <p className="mt-1 text-center text-[10px] text-[var(--text-tertiary)]">{venue}</p>
+        )}
       </div>
     </Link>
   )
@@ -399,6 +406,8 @@ export default function Home() {
         selectedDateLabel={selectedDateLabel}
       />
 
+      <WorldCupCountdown />
+
       {/* Date Selector — FotMob horizontal scroll */}
       <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">
         <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1 max-w-3xl mx-auto" style={{ scrollbarWidth: 'none' }}>
@@ -504,7 +513,7 @@ export default function Home() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-[var(--text-primary)]">Neural Ensemble v5.1</p>
-              <p className="text-[10px] text-[var(--text-tertiary)]">66 features · 7-model stack · 11 leagues · retrains 3x daily</p>
+              <p className="text-[10px] text-[var(--text-tertiary)]">66 features · neural-first serving · calibrated league parameters · audit-ready tracking</p>
             </div>
             <Link href="/about" className="text-[10px] text-[var(--accent-primary)] font-medium flex-shrink-0">Learn more</Link>
           </div>

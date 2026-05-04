@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { format, parseISO, addMonths, subMonths } from 'date-fns'
-import { leagueNames as leagues, leagueFlagUrls } from '@/data/leagues'
+import { leagueNames as leagues } from '@/data/leagues'
 
 type MatchData = {
   home_team: string
@@ -22,6 +22,8 @@ type MatchData = {
   home_rating?: number
   away_rating?: number
   confidence?: number
+  prediction_model?: string
+  recommended_action?: string
 }
 
 type CalendarDay = {
@@ -81,6 +83,25 @@ function PredictionBadge({ correct }: { correct?: boolean }) {
   )
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function clampPct(value: number): number {
+  return Math.max(0, Math.min(100, value * 100))
+}
+
+function formatProbability(value: number): string {
+  return `${clampPct(value).toFixed(0)}%`
+}
+
+function normalizeStatus(status: string): 'played' | 'live' | 'scheduled' {
+  const normalized = status.toLowerCase()
+  if (['played', 'finished', 'completed', 'full_time', 'ft'].includes(normalized)) return 'played'
+  if (normalized.includes('live') || normalized.includes('progress')) return 'live'
+  return 'scheduled'
+}
+
 function ScoreDisplay({ 
   homeScore, 
   awayScore, 
@@ -93,6 +114,10 @@ function ScoreDisplay({
   isPredicted?: boolean
 }) {
   const label = isActual ? 'FT' : isPredicted ? 'Pred' : ''
+  const formatValue = (score: number | null | undefined) => {
+    if (!isFiniteNumber(score)) return '-'
+    return isPredicted && !Number.isInteger(score) ? score.toFixed(2) : String(score)
+  }
   
   return (
     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
@@ -108,23 +133,39 @@ function ScoreDisplay({
         </span>
       )}
       <span className={`font-mono text-lg font-bold ${isActual ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
-        {homeScore ?? '-'}
+        {formatValue(homeScore)}
       </span>
       <span className="text-[var(--text-tertiary)]">-</span>
       <span className={`font-mono text-lg font-bold ${isActual ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
-        {awayScore ?? '-'}
+        {formatValue(awayScore)}
       </span>
     </div>
   )
 }
 
 function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: boolean }) {
-  const isPlayed = match.status === 'played' || match.status === 'finished'
-  const isLive = match.status === 'live'
+  const status = normalizeStatus(match.status)
+  const isPlayed = status === 'played'
+  const isLive = status === 'live'
+  const homeProb = match.predicted_home_win
+  const drawProb = match.predicted_draw
+  const awayProb = match.predicted_away_win
+  const homeXg = match.predicted_home_goals
+  const awayXg = match.predicted_away_goals
+  const hasPrediction =
+    isFiniteNumber(homeProb) &&
+    isFiniteNumber(drawProb) &&
+    isFiniteNumber(awayProb)
+  const hasExpectedGoals =
+    isFiniteNumber(homeXg) &&
+    isFiniteNumber(awayXg)
+  const venue = match.venue?.trim()
   
   // Determine winner for styling
-  const homeWon = isPlayed && (match.actual_home_goals ?? 0) > (match.actual_away_goals ?? 0)
-  const awayWon = isPlayed && (match.actual_away_goals ?? 0) > (match.actual_home_goals ?? 0)
+  const actualHome = match.actual_home_goals
+  const actualAway = match.actual_away_goals
+  const homeWon = isPlayed && isFiniteNumber(actualHome) && isFiniteNumber(actualAway) && actualHome > actualAway
+  const awayWon = isPlayed && isFiniteNumber(actualHome) && isFiniteNumber(actualAway) && actualAway > actualHome
   
   return (
     <div className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
@@ -183,9 +224,15 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
             </span>
           </div>
         </div>
+
+        {venue && (
+          <div className="mb-3 text-center">
+            <span className="text-[11px] text-[var(--text-tertiary)]">{venue}</span>
+          </div>
+        )}
         
         {/* Prediction Section */}
-        {(match.predicted_home_win !== undefined || expanded) && (
+        {hasPrediction ? (
           <div className={`border-t border-[var(--border-color)] pt-3 mt-3 ${expanded ? '' : 'opacity-90 hover:opacity-100'}`}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
@@ -196,11 +243,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
             
             <div className="flex items-center justify-between gap-4">
               {/* Predicted Score */}
-              <ScoreDisplay 
-                homeScore={match.predicted_home_goals} 
-                awayScore={match.predicted_away_goals}
-                isPredicted 
-              />
+              {hasExpectedGoals && (
+                <ScoreDisplay
+                  homeScore={homeXg}
+                  awayScore={awayXg}
+                  isPredicted
+                />
+              )}
               
               {/* Win Probabilities */}
               <div className="flex-1 flex items-center gap-2">
@@ -208,13 +257,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Home</span>
                     <span className="text-emerald-400 font-bold">
-                      {((match.predicted_home_win ?? 0) * 100).toFixed(0)}%
+                      {formatProbability(homeProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full"
-                      style={{ width: `${(match.predicted_home_win ?? 0) * 100}%` }}
+                      style={{ width: `${clampPct(homeProb)}%` }}
                     />
                   </div>
                 </div>
@@ -222,13 +271,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Draw</span>
                     <span className="text-amber-400 font-bold">
-                      {((match.predicted_draw ?? 0) * 100).toFixed(0)}%
+                      {formatProbability(drawProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
-                      style={{ width: `${(match.predicted_draw ?? 0) * 100}%` }}
+                      style={{ width: `${clampPct(drawProb)}%` }}
                     />
                   </div>
                 </div>
@@ -236,13 +285,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Away</span>
                     <span className="text-rose-400 font-bold">
-                      {((match.predicted_away_win ?? 0) * 100).toFixed(0)}%
+                      {formatProbability(awayProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-rose-600 to-rose-400 rounded-full"
-                      style={{ width: `${(match.predicted_away_win ?? 0) * 100}%` }}
+                      style={{ width: `${clampPct(awayProb)}%` }}
                     />
                   </div>
                 </div>
@@ -250,22 +299,31 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
             </div>
             
             {/* Confidence indicator */}
-            {match.confidence && (
+            {isFiniteNumber(match.confidence) && (
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-[10px] text-[var(--text-tertiary)]">Confidence:</span>
                 <div className="flex-1 h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-[var(--accent-ai)] to-[var(--accent-ai-light)] rounded-full"
-                    style={{ width: `${match.confidence * 100}%` }}
+                    style={{ width: `${clampPct(match.confidence)}%` }}
                   />
                 </div>
                 <span className="text-[10px] font-bold text-[var(--accent-ai)]">
-                  {(match.confidence * 100).toFixed(0)}%
+                  {formatProbability(match.confidence)}
                 </span>
               </div>
             )}
+            {match.prediction_model && (
+              <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">{match.prediction_model}</p>
+            )}
           </div>
-        )}
+        ) : expanded ? (
+          <div className="border-t border-[var(--border-color)] pt-3 mt-3">
+            <p className="text-[11px] text-[var(--text-tertiary)]">
+              Model prediction is not available for this fixture yet.
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -285,8 +343,8 @@ function CalendarCell({
   }
   
   const hasMatches = day.match_count > 0
-  const hasPlayedMatches = day.matches.some(m => m.status === 'played')
-  const hasUpcomingMatches = day.matches.some(m => m.status === 'scheduled')
+  const hasPlayedMatches = day.matches.some(m => normalizeStatus(m.status) === 'played')
+  const hasUpcomingMatches = day.matches.some(m => normalizeStatus(m.status) === 'scheduled')
   
   return (
     <button

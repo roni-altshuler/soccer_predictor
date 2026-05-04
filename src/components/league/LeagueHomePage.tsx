@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
 
@@ -158,9 +157,6 @@ const LEAGUE_CONFIGS: Record<string, { color: string; gradient: string; flag: st
   '53': { color: '#091C3E', gradient: 'from-blue-900 to-blue-700', flag: '🇫🇷' },
 }
 
-// Simulation count options (like in Predict tab)
-const SIMULATION_OPTIONS = [1000, 5000, 10000, 25000, 50000]
-
 // Table column counts for colSpan calculations
 const MLS_CONFERENCE_TABLE_COLUMNS = 5  // #, Team, P, Pts, Form
 
@@ -242,6 +238,111 @@ const isInConference = (teamName: string, conferenceTeams: string[]): boolean =>
     if (confLower.includes(teamLower) && teamLower.length > 3) return true
   }
   return false
+}
+
+const formatShortDate = (value: string) => {
+  if (!value) return 'TBD'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function LeagueFact({ label, value, note }: { label: string; value: string | number; note: string }) {
+  return (
+    <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+      <p className="text-[10px] uppercase tracking-wider text-white/65 font-semibold">{label}</p>
+      <p className="mt-1 truncate text-sm md:text-base font-bold text-white">{value}</p>
+      <p className="text-[11px] text-white/70 truncate">{note}</p>
+    </div>
+  )
+}
+
+function MatchStrip({
+  match,
+  mode,
+}: {
+  match: UpcomingMatch | RecentMatch
+  mode: 'upcoming' | 'result'
+}) {
+  const isResult = mode === 'result'
+  const result = match as RecentMatch
+  const upcoming = match as UpcomingMatch
+  const homeWon = isResult && result.homeScore > result.awayScore
+  const awayWon = isResult && result.awayScore > result.homeScore
+
+  return (
+    <Link
+      href={`/matches/${match.id}`}
+      className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 hover:bg-[var(--card-hover)] transition-colors"
+    >
+      <div className="min-w-0 text-right">
+        <p className={`truncate text-sm font-semibold ${homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
+          {match.homeTeam}
+        </p>
+      </div>
+      <div className="min-w-[84px] text-center">
+        {isResult ? (
+          <>
+            <p className="font-mono text-lg font-black text-[var(--text-primary)]">
+              {result.homeScore}-{result.awayScore}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">FT</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-bold text-[var(--accent-ai)]">{upcoming.time || 'TBD'}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{formatShortDate(upcoming.date)}</p>
+          </>
+        )}
+      </div>
+      <div className="min-w-0 text-left">
+        <p className={`truncate text-sm font-semibold ${awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
+          {match.awayTeam}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
+function ActionCard({
+  title,
+  description,
+  eyebrow,
+  href,
+  onClick,
+}: {
+  title: string
+  description: string
+  eyebrow: string
+  href?: string
+  onClick?: () => void
+}) {
+  const content = (
+    <div className="h-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">{eyebrow}</p>
+          <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">{title}</h3>
+        </div>
+        <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--accent-ai)]">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M9 7h8v8" />
+          </svg>
+        </span>
+      </div>
+      <p className="mt-2 text-sm leading-5 text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+
+  if (href) {
+    return <Link href={href} className="block h-full">{content}</Link>
+  }
+
+  return (
+    <button type="button" onClick={onClick} className="block h-full w-full text-left">
+      {content}
+    </button>
+  )
 }
 
 export default function LeagueHomePage({ leagueId, leagueName, country }: LeagueHomePageProps) {
@@ -702,44 +803,50 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
   return (
     <div className="flex-1" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Hero Header - FotMob Style */}
-      <div className={`bg-gradient-to-r ${config.gradient} py-8 px-4`}>
+      {/* Hero Header - compact soccer-reporting style */}
+      <div
+        className="border-b border-white/10 px-4 py-5 md:py-6"
+        style={{
+          background: `linear-gradient(135deg, ${config.color} 0%, #111827 72%)`,
+        }}
+      >
         <div className="max-w-6xl mx-auto">
-          {/* Back Button */}
           <Link
             href="/matches"
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/70 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Leagues
+            Leagues
           </Link>
           
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-            <div className="flex items-center gap-4">
-              {/* League Logo */}
+          <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="flex items-center gap-4 min-w-0">
               {leagueLogo ? (
                 <img 
                   src={leagueLogo} 
                   alt={leagueName}
-                  className="w-16 h-16 object-contain bg-white rounded-xl p-1"
+                  className="h-16 w-16 rounded-lg bg-white object-contain p-1.5 shadow-lg"
                 />
               ) : (
-                <span className="text-4xl">{config.flag}</span>
+                <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/12 text-3xl">{config.flag}</span>
               )}
-              <div>
-                <h1 className="text-3xl font-bold text-white">{leagueName}</h1>
-                <p className="text-white/80">{seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} Season • {country}</p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">{country}</p>
+                <h1 className="truncate text-3xl md:text-4xl font-black text-white">{leagueName}</h1>
+                <p className="mt-1 text-sm text-white/75">
+                  {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} season
+                </p>
               </div>
             </div>
             
-            {/* Season Dropdown */}
-            <div className="flex items-center gap-3">
+            <div className="w-full md:w-auto">
+              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/55">Season</label>
               <select
                 value={selectedSeason}
                 onChange={(e) => setSelectedSeason(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-white/20 text-white border border-white/30 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+                className="w-full md:w-40 rounded-lg border border-white/20 bg-white/12 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 focus:outline-none focus:ring-2 focus:ring-white/30"
               >
                 {seasons.map(season => (
                   <option key={season.value} value={season.value} className="text-gray-900">
@@ -750,12 +857,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             </div>
           </div>
           
-          {/* Simulation Results */}
           {simulationResults && (
-            <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+            <div className="mt-5 rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-amber-300 text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
                   <p className="text-white font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
                   <p className="text-white/70 text-sm mt-1">
                     Top 4: {simulationResults.likely_top_4.join(', ')}
@@ -771,61 +877,41 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             </div>
           )}
 
-          {/* Quick Stats - Always show based on available data */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            {/* Current Leader */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/70 text-sm">Current Leader</p>
-              <p className="text-white font-bold text-lg">{data?.standings[0]?.teamName || 'TBD'}</p>
-              <p className="text-white/80 text-sm">{data?.standings[0]?.points || 0} points</p>
-            </div>
-            
-            {/* Top Scorer or point diff leader */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/70 text-sm">{data?.topScorers[0] ? 'Top Scorer' : 'Best GD'}</p>
-              {data?.topScorers[0] ? (
-                <>
-                  <p className="text-white font-bold text-lg truncate">{data.topScorers[0].name}</p>
-                  <p className="text-white/80 text-sm">{data.topScorers[0].goals} goals</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-white font-bold text-lg">{data?.standings[0]?.teamName || 'TBD'}</p>
-                  <p className="text-white/80 text-sm">
-                    {data?.standings[0]?.goalDiff > 0 ? '+' : ''}{data?.standings[0]?.goalDiff || 0} GD
-                  </p>
-                </>
-              )}
-            </div>
-            
-            {/* Matches Played */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/70 text-sm">Matchweek</p>
-              <p className="text-white font-bold text-lg">{data?.standings[0]?.played || 0}</p>
-              <p className="text-white/80 text-sm">matches played</p>
-            </div>
-            
-            {/* Upcoming Matches */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-white/70 text-sm">Coming Up</p>
-              <p className="text-white font-bold text-lg">{data?.upcomingMatches?.length || 0}</p>
-              <p className="text-white/80 text-sm">fixtures scheduled</p>
-            </div>
+          <div className="mt-5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+            <LeagueFact
+              label="Leader"
+              value={data?.standings[0]?.teamName || 'TBD'}
+              note={`${data?.standings[0]?.points || 0} points`}
+            />
+            <LeagueFact
+              label={data?.topScorers[0] ? 'Top Scorer' : 'Best GD'}
+              value={data?.topScorers[0]?.name || data?.standings[0]?.teamName || 'TBD'}
+              note={data?.topScorers[0] ? `${data.topScorers[0].goals} goals` : `${data?.standings[0]?.goalDiff || 0} goal diff`}
+            />
+            <LeagueFact
+              label="Matchweek"
+              value={data?.standings[0]?.played || 0}
+              note="matches played"
+            />
+            <LeagueFact
+              label="Coming Up"
+              value={data?.upcomingMatches?.length || 0}
+              note="fixtures scheduled"
+            />
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs - Match tournament pill-button styling */}
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+      <div className="sticky top-0 z-20 border-b border-[var(--border-color)] bg-[var(--background)]/90 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto px-4 py-3">
           {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize whitespace-nowrap transition-colors ${
+              className={`rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
                 activeTab === tab
-                  ? `bg-gradient-to-r ${config.gradient} text-white`
-                  : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]'
               }`}
             >
               {TAB_LABELS[tab] || tab}
@@ -839,113 +925,82 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         {/* Overview Tab - Like Tournament pages */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Matches */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Upcoming Matches */}
-              <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Upcoming Matches</h2>
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+                <div className="flex items-center justify-between border-b border-[var(--border-color)] px-4 py-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Schedule</p>
+                    <h2 className="text-base font-bold text-[var(--text-primary)]">Upcoming Matches</h2>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('fixtures')}
+                    className="rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+                  >
+                    Calendar
+                  </button>
                 </div>
-                <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="divide-y divide-[var(--border-color)]">
                   {data?.upcomingMatches && data.upcomingMatches.length > 0 ? (
                     data.upcomingMatches.slice(0, 5).map((match) => (
-                      <Link
-                        key={match.id}
-                        href={`/matches/${match.id}`}
-                        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <p className="font-medium text-[var(--text-primary)]">{match.homeTeam}</p>
-                            <p className="font-medium text-[var(--text-primary)]">{match.awayTeam}</p>
-                          </div>
-                          <div className="text-right text-sm">
-                            <p className="text-[var(--text-secondary)]">{match.date}</p>
-                            <p className="text-[var(--text-tertiary)]">{match.time}</p>
-                          </div>
-                        </div>
-                      </Link>
+                      <MatchStrip key={match.id} match={match} mode="upcoming" />
                     ))
                   ) : (
-                    <p className="p-4 text-[var(--text-tertiary)]">No upcoming matches</p>
+                    <p className="p-4 text-sm text-[var(--text-tertiary)]">No upcoming matches</p>
                   )}
                 </div>
               </div>
 
-              {/* Recent Results */}
-              <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Recent Results</h2>
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+                <div className="border-b border-[var(--border-color)] px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Form Check</p>
+                  <h2 className="text-base font-bold text-[var(--text-primary)]">Recent Results</h2>
                 </div>
-                <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="divide-y divide-[var(--border-color)]">
                   {data?.recentResults && data.recentResults.length > 0 ? (
                     data.recentResults.slice(0, 5).map((match) => (
-                      <Link
-                        key={match.id}
-                        href={`/matches/${match.id}`}
-                        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <p className={`font-medium ${match.homeScore > match.awayScore ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-                              {match.homeTeam}
-                            </p>
-                            <p className={`font-medium ${match.awayScore > match.homeScore ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
-                              {match.awayTeam}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-[var(--text-primary)]">{match.homeScore}</p>
-                            <p className="text-lg font-bold text-[var(--text-primary)]">{match.awayScore}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{match.date}</p>
-                      </Link>
+                      <MatchStrip key={match.id} match={match} mode="result" />
                     ))
                   ) : (
-                    <p className="p-4 text-[var(--text-tertiary)]">No recent results</p>
+                    <p className="p-4 text-sm text-[var(--text-tertiary)]">No recent results</p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Simulation Card */}
             <div className="space-y-6">
-              <div
-                onClick={() => setActiveTab('simulator')}
-                className="bg-gradient-to-br from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 rounded-xl p-6 cursor-pointer hover:from-[var(--accent-ai)]/24 hover:to-[var(--accent-primary)]/22 transition-all border border-[var(--accent-ai)]/30 hover:scale-[1.02] hover:shadow-lg"
-              >
-                <div className="text-4xl mb-3">🎲</div>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Run Simulation</h3>
-                <p className="text-sm text-[var(--text-secondary)]">Predict final standings with AI</p>
+              <div className="grid grid-cols-1 gap-3">
+                <ActionCard
+                  eyebrow="Projection"
+                  title="Run Simulation"
+                  description="Simulate the remaining season using current standings, ELO strength, and scoreline probabilities."
+                  onClick={() => setActiveTab('simulator')}
+                />
+                <ActionCard
+                  eyebrow="Model Room"
+                  title="AI Model Accuracy"
+                  description="Review hit rate, Brier score, calibration, drift alerts, and league-level tuning."
+                  href="/tracking"
+                />
               </div>
 
-              {/* AI Model Accuracy Card */}
-              <Link
-                href="/tracking"
-                className="block bg-gradient-to-br from-emerald-600/20 to-teal-600/20 rounded-xl p-6 hover:from-emerald-600/30 hover:to-teal-600/30 transition-all border border-emerald-500/30 hover:scale-[1.02] hover:shadow-lg"
-              >
-                <div className="text-4xl mb-3">📊</div>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)]">AI Model Accuracy</h3>
-                <p className="text-sm text-[var(--text-secondary)]">Track prediction performance vs real outcomes</p>
-              </Link>
-
-              {/* Compact Standings Preview */}
-              <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'var(--border-color)' }}>
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Standings</h2>
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+                <div className="border-b border-[var(--border-color)] px-4 py-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Table</p>
+                    <h2 className="text-base font-bold text-[var(--text-primary)]">Standings</h2>
+                  </div>
                   <button
                     onClick={() => setActiveTab('standings')}
-                    className="text-sm text-[var(--accent-primary)] hover:underline"
+                    className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
                   >
                     View All
                   </button>
                 </div>
-                <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="divide-y divide-[var(--border-color)]">
                   {data?.standings.slice(0, 5).map((team, idx) => (
                     <div key={team.teamName} className="flex justify-between items-center p-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className={`w-1.5 h-10 rounded-full ${idx < 4 ? 'bg-emerald-400' : idx < 6 ? 'bg-sky-400' : 'bg-transparent'}`} />
+                        <span className={`w-1 h-9 rounded-full ${idx < 4 ? 'bg-emerald-400' : idx < 6 ? 'bg-sky-400' : 'bg-transparent'}`} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="w-5 text-center text-sm text-[var(--text-tertiary)]">{idx + 1}</span>

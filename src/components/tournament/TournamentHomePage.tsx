@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
 import MatchCalendar from '@/components/match/MatchCalendar'
+import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
+import WorldCupReadinessPanel from '@/components/worldcup/WorldCupReadinessPanel'
 
 interface TournamentHomePageProps {
   tournamentId: 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup'
@@ -816,6 +818,13 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           </div>
         </div>
       </div>
+
+      {tournamentId === 'world_cup' && (
+        <div className="max-w-6xl mx-auto space-y-3 px-4 pt-4">
+          <WorldCupCountdown compact />
+          <WorldCupReadinessPanel compact />
+        </div>
+      )}
 
       {/* Navigation Tabs - Consistent with LeagueHomePage */}
       <div className="max-w-6xl mx-auto px-4 py-4">

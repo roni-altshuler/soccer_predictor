@@ -612,34 +612,49 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
   }
 }
 
-async function fetchBackendPrediction(matchId: string): Promise<PredictionData | null> {
+async function fetchBackendPrediction(homeTeam: string, awayTeam: string, leagueId?: string): Promise<PredictionData | null> {
+  if (!homeTeam || !awayTeam) return null
+
   try {
-    const res = await fetch(`${BACKEND_URL}/api/v1/predictions/match/${matchId}`, {
+    const res = await fetch(`${BACKEND_URL}/api/predict/unified`, {
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
       },
-      next: { revalidate: 300 },
+      body: JSON.stringify({
+        home_team: homeTeam,
+        away_team: awayTeam,
+        league: leagueId,
+      }),
+      cache: 'no-store',
     })
 
     if (!res.ok) return null
 
     const data = await res.json()
-    const confidencePct = Math.round((data.confidence?.overall ?? data.outcome?.confidence ?? 0) * 100)
+    const confidencePct = Math.round(data.confidence ?? 0)
+    const homeWin = Number(data.probabilities?.home_win)
+    const draw = Number(data.probabilities?.draw)
+    const awayWin = Number(data.probabilities?.away_win)
+
+    if (![homeWin, draw, awayWin].every(Number.isFinite)) {
+      return null
+    }
 
     return {
-      home_win: data.outcome?.home_win ?? 0,
-      draw: data.outcome?.draw ?? 0,
-      away_win: data.outcome?.away_win ?? 0,
+      home_win: homeWin / 100,
+      draw: draw / 100,
+      away_win: awayWin / 100,
       predicted_score: {
-        home: data.most_likely_score?.home_goals ?? 0,
-        away: data.most_likely_score?.away_goals ?? 0,
+        home: data.predicted_home_goals ?? 0,
+        away: data.predicted_away_goals ?? 0,
       },
       confidence: confidencePct,
-      total_goals: data.goals?.total_expected_goals ?? undefined,
-      over_2_5: data.goals?.over_2_5 ?? undefined,
-      btts_yes: data.goals?.btts_yes ?? undefined,
-      most_likely_score: data.most_likely_score?.score ?? undefined,
-      model_version: data.model_version ?? undefined,
+      total_goals: Number.isFinite(Number(data.predicted_home_goals)) && Number.isFinite(Number(data.predicted_away_goals))
+        ? Number(data.predicted_home_goals) + Number(data.predicted_away_goals)
+        : undefined,
+      model_version: data.model_used ?? undefined,
       confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
     }
   } catch (error) {
@@ -763,123 +778,6 @@ async function fetchH2H(homeTeam: string, awayTeam: string, leagueId?: string): 
   }
 }
 
-// Expected goals coefficients based on historical match outcome analysis
-// Higher values when winning team dominates, lower when losing
-const XG_COEFFICIENTS = {
-  WIN_XG: 2.2,      // Expected goals when team wins
-  DRAW_XG: 1.1,     // Expected goals in a draw
-  LOSE_XG: 0.8,     // Expected goals when team loses
-  AWAY_WIN_XG: 2.0, // Away team expected goals when winning
-  AWAY_DRAW_XG: 1.0,// Away team expected goals in draw
-  AWAY_LOSE_XG: 0.7 // Away team expected goals when losing
-}
-
-// Team strength tiers for more accurate predictions
-const TEAM_TIERS = {
-  // Tier 1: Elite teams (historically top performers)
-  ELITE: ['manchester city', 'real madrid', 'bayern munich', 'bayern', 'liverpool', 'barcelona'],
-  // Tier 2: Top contenders
-  TOP: ['arsenal', 'chelsea', 'psg', 'inter', 'milan', 'juventus', 'atletico', 'dortmund', 'napoli', 'man united', 'tottenham'],
-  // Tier 3: Strong teams (typically Europa League level)
-  STRONG: ['roma', 'lazio', 'sevilla', 'villarreal', 'newcastle', 'aston villa', 'brighton', 'west ham', 'leicester', 'benfica', 'porto'],
-}
-
-// Tier order for calculating tier difference
-const TIER_ORDER = ['elite', 'top', 'strong', 'average'] as const
-
-// Confidence calculation constants
-const CONFIDENCE_CONFIG = {
-  MIN_PROB_BASELINE: 0.25,    // Probability baseline (when all equal, 0.33 is threshold)
-  PROB_SCALE: 120,            // Multiplier to scale probability spread (0-60 range)
-  TIER_BONUS_PER_LEVEL: 8,    // Confidence bonus per tier difference level
-  BASE_CONFIDENCE: 35,        // Baseline confidence added to all predictions
-  MIN_CONFIDENCE: 55,         // Minimum confidence floor
-  MAX_CONFIDENCE: 92,         // Maximum confidence ceiling
-}
-
-function getTeamTier(teamName: string): 'elite' | 'top' | 'strong' | 'average' {
-  const name = teamName.toLowerCase()
-  if (TEAM_TIERS.ELITE.some(t => name.includes(t))) return 'elite'
-  if (TEAM_TIERS.TOP.some(t => name.includes(t))) return 'top'
-  if (TEAM_TIERS.STRONG.some(t => name.includes(t))) return 'strong'
-  return 'average'
-}
-
-// Generate prediction using an enhanced ELO-based model with higher confidence
-function generatePrediction(homeTeam: string, awayTeam: string, _leagueId?: string): PredictionData {
-  // Enhanced ELO-based prediction model
-  // Uses team tiers and home advantage for more accurate predictions
-  
-  const homeTier = getTeamTier(homeTeam)
-  const awayTier = getTeamTier(awayTeam)
-  
-  // Base probabilities by tier matchup (includes home advantage ~8-10%)
-  // Probability matrix: [homeWin, draw, awayWin]
-  const TIER_PROBS: Record<string, Record<string, [number, number, number]>> = {
-    'elite': {
-      'elite': [0.42, 0.30, 0.28],
-      'top': [0.58, 0.24, 0.18],
-      'strong': [0.68, 0.20, 0.12],
-      'average': [0.75, 0.16, 0.09],
-    },
-    'top': {
-      'elite': [0.22, 0.28, 0.50],
-      'top': [0.45, 0.28, 0.27],
-      'strong': [0.55, 0.25, 0.20],
-      'average': [0.65, 0.22, 0.13],
-    },
-    'strong': {
-      'elite': [0.14, 0.22, 0.64],
-      'top': [0.28, 0.27, 0.45],
-      'strong': [0.44, 0.30, 0.26],
-      'average': [0.55, 0.26, 0.19],
-    },
-    'average': {
-      'elite': [0.10, 0.18, 0.72],
-      'top': [0.20, 0.25, 0.55],
-      'strong': [0.28, 0.28, 0.44],
-      'average': [0.44, 0.30, 0.26],
-    },
-  }
-  
-  let [homeWin, draw, awayWin] = TIER_PROBS[homeTier][awayTier]
-  
-  // Normalize probabilities to ensure they sum to 1.0
-  const total = homeWin + draw + awayWin
-  homeWin = homeWin / total
-  draw = draw / total
-  awayWin = awayWin / total
-  
-  // Calculate expected goals based on probabilities and coefficients
-  const homeXG = homeWin * XG_COEFFICIENTS.WIN_XG + draw * XG_COEFFICIENTS.DRAW_XG + awayWin * XG_COEFFICIENTS.LOSE_XG
-  const awayXG = awayWin * XG_COEFFICIENTS.AWAY_WIN_XG + draw * XG_COEFFICIENTS.AWAY_DRAW_XG + homeWin * XG_COEFFICIENTS.AWAY_LOSE_XG
-  
-  // Calculate confidence based on probability spread and tier difference
-  // Higher confidence when there's a clear favorite
-  const maxProb = Math.max(homeWin, draw, awayWin)
-  const tierDiff = Math.abs(TIER_ORDER.indexOf(homeTier) - TIER_ORDER.indexOf(awayTier))
-  
-  // Base confidence from probability spread, bonus from tier difference
-  // Results in 60-85% confidence for clear matchups, 55-70% for even matchups
-  const { MIN_PROB_BASELINE, PROB_SCALE, TIER_BONUS_PER_LEVEL, BASE_CONFIDENCE, MIN_CONFIDENCE, MAX_CONFIDENCE } = CONFIDENCE_CONFIG
-  const baseConfidence = Math.round((maxProb - MIN_PROB_BASELINE) * PROB_SCALE)
-  const tierBonus = tierDiff * TIER_BONUS_PER_LEVEL
-  const confidence = Math.min(MAX_CONFIDENCE, Math.max(MIN_CONFIDENCE, baseConfidence + tierBonus + BASE_CONFIDENCE))
-  const confidenceBand: 'Low' | 'Medium' | 'High' = confidence >= 70 ? 'High' : confidence >= 55 ? 'Medium' : 'Low'
-  
-  return {
-    home_win: Math.round(homeWin * 100) / 100,
-    draw: Math.round(draw * 100) / 100,
-    away_win: Math.round(awayWin * 100) / 100,
-    predicted_score: {
-      home: Math.round(homeXG),
-      away: Math.round(awayXG)
-    },
-    confidence,
-    confidence_band: confidenceBand,
-  }
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -910,7 +808,7 @@ export async function GET(
   // Fetch additional data: H2H and predictions
   const [h2h, backendPrediction] = await Promise.all([
     fetchH2H(matchData.home_team, matchData.away_team, matchData.leagueId),
-    fetchBackendPrediction(matchId)
+    fetchBackendPrediction(matchData.home_team, matchData.away_team, matchData.leagueId)
   ])
   
   // Add H2H and prediction to response
@@ -920,7 +818,9 @@ export async function GET(
     awayWins: 0,
     recentMatches: []
   }
-  matchData.prediction = backendPrediction || generatePrediction(matchData.home_team, matchData.away_team, matchData.leagueId)
+  if (backendPrediction) {
+    matchData.prediction = backendPrediction
+  }
   
   return NextResponse.json(matchData, {
     headers: {

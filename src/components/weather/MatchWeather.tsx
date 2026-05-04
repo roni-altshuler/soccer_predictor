@@ -52,7 +52,7 @@ const WIND_DIRECTIONS: Record<string, string> = {
   'S': '↓', 'SW': '↙', 'W': '←', 'NW': '↖'
 }
 
-export default function MatchWeather({ matchId, venue, kickoffTime, homeTeam, awayTeam }: MatchWeatherProps) {
+export default function MatchWeather({ venue, kickoffTime, homeTeam }: MatchWeatherProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [impact, setImpact] = useState<WeatherImpact | null>(null)
   const [loading, setLoading] = useState(true)
@@ -60,63 +60,59 @@ export default function MatchWeather({ matchId, venue, kickoffTime, homeTeam, aw
 
   useEffect(() => {
     const fetchWeather = async () => {
-      if (!venue && !matchId) return
+      if (!homeTeam) {
+        setLoading(false)
+        return
+      }
 
       setLoading(true)
       setError(null)
 
       try {
-        // Fetch weather data from our backend
-        const response = await fetch(`/api/v1/weather/match/${matchId}`)
+        const query = new URLSearchParams()
+        if (kickoffTime) query.set('match_time', kickoffTime)
+        const response = await fetch(`/api/v1/weather/match/${encodeURIComponent(homeTeam)}${query.toString() ? `?${query}` : ''}`)
         
         if (!response.ok) {
           throw new Error('Weather data unavailable')
         }
 
         const data = await response.json()
+        const temperature = Number(data.temperature)
+        if (!Number.isFinite(temperature)) {
+          throw new Error('Weather data unavailable')
+        }
         
         setWeather({
-          temperature: data.temperature || 15,
-          feelsLike: data.feels_like || data.temperature || 15,
-          humidity: data.humidity || 50,
-          windSpeed: data.wind_speed || 0,
-          windDirection: data.wind_direction || 'N',
-          description: data.description || 'Clear',
-          icon: data.weather_condition || 'clear',
+          temperature,
+          feelsLike: Number(data.feelsLike ?? data.feels_like ?? temperature),
+          humidity: Number(data.humidity ?? 0),
+          windSpeed: Number(data.windSpeed ?? data.wind_speed ?? 0),
+          windDirection: String(data.windDirection ?? data.wind_direction ?? ''),
+          description: String(data.description ?? data.conditions ?? ''),
+          icon: String(data.conditions ?? data.weather_condition ?? data.icon ?? 'default'),
           precipitation: data.precipitation,
           visibility: data.visibility,
           pressure: data.pressure
         })
 
         setImpact({
-          level: data.impact_level || 'none',
-          description: data.impact_description || 'No significant weather impact expected',
+          level: data.impact || data.impact_level || 'none',
+          description: data.impactDescription || data.impact_description || 'Weather impact not provided',
           factors: data.impact_factors || [],
           predictionAdjustment: data.prediction_adjustment
         })
       } catch (err) {
-        // Fallback to mock data if API unavailable
-        setWeather({
-          temperature: 18,
-          feelsLike: 17,
-          humidity: 65,
-          windSpeed: 12,
-          windDirection: 'SW',
-          description: 'Partly Cloudy',
-          icon: 'clouds'
-        })
-        setImpact({
-          level: 'low',
-          description: 'Mild conditions expected',
-          factors: ['Moderate wind may affect long passes']
-        })
+        setWeather(null)
+        setImpact(null)
+        setError(err instanceof Error ? err.message : 'Weather data unavailable')
       } finally {
         setLoading(false)
       }
     }
 
     fetchWeather()
-  }, [matchId, venue])
+  }, [homeTeam, kickoffTime])
 
   const getImpactColor = (level: string): string => {
     switch (level) {
@@ -155,7 +151,7 @@ export default function MatchWeather({ matchId, venue, kickoffTime, homeTeam, aw
     )
   }
 
-  if (!weather) return null
+  if (error || !weather) return null
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>

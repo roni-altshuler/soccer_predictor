@@ -8,7 +8,8 @@ This creates a feedback cycle:
   1. predict_upcoming.py stores pre-match predictions
   2. fetch-outcomes API (or this script) fills in real results
   3. This script analyzes accuracy and adjusts league parameters
-  4. Next run of predict_upcoming.py uses improved parameters
+  4. Neural heads are updated from stored real feature vectors
+  5. Next run of predict_upcoming.py uses improved parameters
 
 Usage:
     python -m backend.scripts.train_feedback
@@ -26,6 +27,17 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"
 ADJUSTMENTS_FILE = DATA_DIR / "model_adjustments.json"
+
+MIN_AVG_GOALS = 0.75
+MAX_AVG_GOALS = 2.25
+MIN_HOME_ADV = 0.05
+MAX_HOME_ADV = 0.45
+MIN_DRAW_RATE = 0.08
+MAX_DRAW_RATE = 0.38
+
+
+def _clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
 
 
 def load_completed_predictions() -> List[dict]:
@@ -166,12 +178,15 @@ def suggested_params(adjustments: Dict[str, Dict]) -> Dict[str, Dict]:
             params = DEFAULT_PARAMS.copy()
 
         new_params = {
-            "avg_goals": round(params["avg_goals"] + adj["goals_scale_adjustment"], 3),
+            "avg_goals": round(
+                _clamp(params["avg_goals"] + adj["goals_scale_adjustment"], MIN_AVG_GOALS, MAX_AVG_GOALS),
+                3,
+            ),
             "home_adv": round(
-                max(0.10, min(0.40, params["home_adv"] + adj["home_adv_adjustment"])), 3
+                _clamp(params["home_adv"] + adj["home_adv_adjustment"], MIN_HOME_ADV, MAX_HOME_ADV), 3
             ),
             "draw_rate": round(
-                max(0.12, min(0.35, params["draw_rate"] + adj["draw_rate_adjustment"])), 3
+                _clamp(params["draw_rate"] + adj["draw_rate_adjustment"], MIN_DRAW_RATE, MAX_DRAW_RATE), 3
             ),
             "rho": params["rho"],  # Keep rho stable unless we have strong evidence
         }
@@ -292,10 +307,12 @@ _DISPLAY_TO_KEY = {
 
 def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
     """
-    Run online/incremental learning on per-league neural network models.
+    Run online/incremental learning on neural network models.
     
     For each league with new outcomes, calls partial_fit() on the NN
-    to update weights with the latest match data.
+    to update weights with the latest match data. If a cross-league
+    "global" model exists, update it from the latest real-feature
+    samples across all competitions as the long-term challenger model.
     """
     import numpy as np
 
@@ -314,27 +331,14 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
 
     from backend.services.prediction.training import N_FEATURES
 
-    updated = 0
-    skipped_no_features = 0
-    for league_display, preds in by_league.items():
-        league_key = _DISPLAY_TO_KEY.get(league_display)
-        if not league_key:
-            continue
-
-        model = registry.get_model(league_key)
-        if not model.is_fitted:
-            continue
-
-        # Sort by date and use the latest finished matches.
-        recent = sorted(preds, key=lambda p: p.get("match_date", ""))[-80:]
-
+    def _sample_arrays(recent_preds: List[dict]):
         # Use stored real feature vectors from predict_upcoming.py.
         # This prevents noisy updates from synthetic proxy features.
         X_list = []
         y_outcome = []
         y_goals = []
 
-        for p in recent:
+        for p in recent_preds:
             if p.get("actual_winner") is None:
                 continue
 
@@ -350,7 +354,6 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
             if not np.isfinite(features).all():
                 continue
 
-            # Outcome label
             actual = p["actual_winner"]
             if actual == "home":
                 label = 0
@@ -363,27 +366,74 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
             y_outcome.append(label)
             y_goals.append([
                 p.get("actual_home_goals", 0) or 0,
-                p.get("actual_away_goals", 0) or 0
+                p.get("actual_away_goals", 0) or 0,
             ])
 
-        if len(X_list) < 8:
+        if not X_list:
+            return None, None, None
+
+        return (
+            np.array(X_list, dtype=np.float64),
+            np.array(y_outcome, dtype=np.int32),
+            np.array(y_goals, dtype=np.float64),
+        )
+
+    def _mark_online_update(model, sample_count: int):
+        model.training_metadata["last_online_update"] = datetime.utcnow().isoformat()
+        model.training_metadata["last_online_update_samples"] = sample_count
+
+    updated = 0
+    skipped_no_features = 0
+    for league_display, preds in by_league.items():
+        league_key = _DISPLAY_TO_KEY.get(league_display)
+        if not league_key:
+            continue
+
+        model = registry.get_model(league_key)
+        if not model.is_fitted:
+            continue
+
+        # Sort by date and use the latest finished matches.
+        recent = sorted(preds, key=lambda p: p.get("match_date", ""))[-80:]
+        X, y_out, y_g = _sample_arrays(recent)
+
+        if X is None or len(X) < 8:
             skipped_no_features += 1
             continue
 
-        X = np.array(X_list, dtype=np.float64)
-        y_out = np.array(y_outcome, dtype=np.int32)
-        y_g = np.array(y_goals, dtype=np.float64)
-
         try:
             model.partial_fit(X, y_out, y_g)
+            _mark_online_update(model, len(X))
             model.save()
             updated += 1
-            logger.info(f"  Online update: {league_display} ({len(X_list)} real-feature samples)")
+            logger.info(f"  Online update: {league_display} ({len(X)} real-feature samples)")
         except Exception as e:
             logger.warning(f"  Online update failed for {league_display}: {e}")
 
+    try:
+        global_model = registry.get_model("global")
+    except Exception as e:
+        global_model = None
+        logger.debug(f"  Global online model load skipped: {e}")
+
+    if global_model is not None and global_model.is_fitted:
+        recent_global = sorted(predictions, key=lambda p: p.get("match_date", ""))[-240:]
+        X, y_out, y_g = _sample_arrays(recent_global)
+
+        if X is not None and len(X) >= 24:
+            try:
+                global_model.partial_fit(X, y_out, y_g)
+                _mark_online_update(global_model, len(X))
+                global_model.save()
+                updated += 1
+                logger.info(f"  Online update: global model ({len(X)} real-feature samples)")
+            except Exception as e:
+                logger.warning(f"  Online update failed for global model: {e}")
+        else:
+            logger.info("  Global online learning skipped: need at least 24 completed real-feature samples")
+
     if updated > 0:
-        logger.info(f"  Online learning: updated {updated} league models")
+        logger.info(f"  Online learning: updated {updated} neural model(s)")
     elif skipped_no_features > 0:
         logger.info("  Online learning skipped: insufficient completed predictions with stored feature vectors")
 
@@ -411,17 +461,17 @@ def _update_league_params(adjustments: Dict[str, Dict]):
         
         # Apply conservative adjustments
         if abs(adj.get("draw_rate_adjustment", 0)) > 0.005:
-            new_dr = round(max(0.12, min(0.35, lp["draw_rate"] + adj["draw_rate_adjustment"])), 4)
+            new_dr = round(_clamp(lp["draw_rate"] + adj["draw_rate_adjustment"], MIN_DRAW_RATE, MAX_DRAW_RATE), 4)
             lp["draw_rate"] = new_dr
             updated += 1
         
         if abs(adj.get("home_adv_adjustment", 0)) > 0.005:
-            new_ha = round(max(0.10, min(0.40, lp["home_adv"] + adj["home_adv_adjustment"])), 4)
+            new_ha = round(_clamp(lp["home_adv"] + adj["home_adv_adjustment"], MIN_HOME_ADV, MAX_HOME_ADV), 4)
             lp["home_adv"] = new_ha
             updated += 1
         
         if abs(adj.get("goals_scale_adjustment", 0)) > 0.003:
-            new_ag = round(lp["avg_goals"] + adj["goals_scale_adjustment"], 4)
+            new_ag = round(_clamp(lp["avg_goals"] + adj["goals_scale_adjustment"], MIN_AVG_GOALS, MAX_AVG_GOALS), 4)
             lp["avg_goals"] = new_ag
             updated += 1
     

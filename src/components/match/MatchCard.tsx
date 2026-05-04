@@ -39,6 +39,7 @@ interface MatchCardProps {
       away: number;
     };
     time?: string;
+    venue?: string;
   };
   league?: {
     id: number;
@@ -55,6 +56,13 @@ interface MatchCardProps {
   homeForm?: FormResult[];
   /** Last 5 form results for the away team */
   awayForm?: FormResult[];
+  prediction?: {
+    home_win?: number;
+    draw?: number;
+    away_win?: number;
+    confidence?: number;
+    model?: string;
+  };
   /** Whether to show the extra info sections (referee, H2H, form). Default: true when data is available */
   showExtras?: boolean;
 }
@@ -81,7 +89,15 @@ function FormBadges({ form, align = 'right' }: { form: FormResult[]; align?: 'le
   );
 }
 
-export default function MatchCard({ match, league, showLeague = true, onClick, referee, h2h, homeForm, awayForm, showExtras = true }: MatchCardProps) {
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function pct(value: number): string {
+  return `${Math.max(0, Math.min(100, value * 100)).toFixed(0)}%`;
+}
+
+export default function MatchCard({ match, league, showLeague = true, onClick, referee, h2h, homeForm, awayForm, prediction, showExtras = true }: MatchCardProps) {
   const isLive = match.status?.started && !match.status?.finished;
   const isFinished = match.status?.finished;
   const isUpcoming = !match.status?.started;
@@ -90,8 +106,19 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
   const awayScore = match.result?.away ?? '-';
   
   const liveMinute = match.status?.liveTime?.short || '';
+  const venue = match.venue?.trim();
+  const hasH2H = Boolean(h2h && h2h.totalMatches > 0);
+  const hasHomeForm = Boolean(homeForm && homeForm.length > 0);
+  const hasAwayForm = Boolean(awayForm && awayForm.length > 0);
+  const homePrediction = prediction?.home_win;
+  const drawPrediction = prediction?.draw;
+  const awayPrediction = prediction?.away_win;
+  const hasPrediction =
+    isFiniteNumber(homePrediction) &&
+    isFiniteNumber(drawPrediction) &&
+    isFiniteNumber(awayPrediction);
 
-  const hasExtras = showExtras && (referee || h2h || homeForm || awayForm);
+  const hasExtras = showExtras && (referee || hasH2H || hasHomeForm || hasAwayForm);
 
   return (
     <div 
@@ -122,7 +149,7 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
               {match.home.shortName || match.home.name}
             </span>
-            {showExtras && homeForm && homeForm.length > 0 && (
+            {showExtras && hasHomeForm && homeForm && (
               <FormBadges form={homeForm} align="right" />
             )}
           </div>
@@ -161,11 +188,43 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
               {match.away.shortName || match.away.name}
             </span>
-            {showExtras && awayForm && awayForm.length > 0 && (
+            {showExtras && hasAwayForm && awayForm && (
               <FormBadges form={awayForm} align="left" />
             )}
           </div>
         </div>
+
+        {venue && (
+          <p className="mt-3 text-center text-xs text-[var(--text-tertiary)]">{venue}</p>
+        )}
+
+        {hasPrediction && prediction && (
+          <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Model probabilities</span>
+              {isFiniteNumber(prediction.confidence) && (
+                <span className="text-[10px] font-semibold text-[var(--accent-ai)]">{pct(prediction.confidence)} confidence</span>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
+                <p className="text-[10px] text-[var(--text-tertiary)]">Home</p>
+                <p className="text-sm font-bold text-emerald-400">{pct(homePrediction)}</p>
+              </div>
+              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
+                <p className="text-[10px] text-[var(--text-tertiary)]">Draw</p>
+                <p className="text-sm font-bold text-amber-400">{pct(drawPrediction)}</p>
+              </div>
+              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
+                <p className="text-[10px] text-[var(--text-tertiary)]">Away</p>
+                <p className="text-sm font-bold text-blue-400">{pct(awayPrediction)}</p>
+              </div>
+            </div>
+            {prediction.model && (
+              <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">{prediction.model}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Extra Info Section: Referee + H2H */}
@@ -175,14 +234,13 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             {/* Referee */}
             {referee && (
               <span className="flex items-center gap-1">
-                <span>👨‍⚖️</span>
+                <span className="font-semibold">Referee</span>
                 <span>{referee}</span>
               </span>
             )}
             {/* H2H */}
-            {h2h && h2h.totalMatches > 0 && (
+            {hasH2H && h2h && (
               <span className="flex items-center gap-1">
-                <span>⚔️</span>
                 <span>H2H: </span>
                 <span className="text-green-500 font-semibold">{h2h.homeWins}W</span>
                 <span>-</span>

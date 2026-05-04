@@ -19,6 +19,7 @@ import asyncio
 import argparse
 import json
 import logging
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -110,6 +111,7 @@ def _load_existing_predictions() -> List[dict]:
 
 def build_features_and_labels(
     matches: List[dict],
+    include_leagues: bool = False,
 ) -> tuple:
     """
     Build feature matrix, outcome labels, goal targets, and season array
@@ -124,6 +126,7 @@ def build_features_and_labels(
     y_outcome_list = []
     y_goals_list = []
     seasons_list = []
+    leagues_list = []
     
     for match in sorted_matches:
         hs = match.get("home_score")
@@ -151,19 +154,49 @@ def build_features_and_labels(
         y_outcome_list.append(label)
         y_goals_list.append([hs, as_])
         seasons_list.append(match.get("season", 2025))
+        leagues_list.append(match.get("league", "unknown"))
     
     if not X_list:
-        return np.array([]), np.array([]), np.array([]), np.array([])
+        empty = (np.array([]), np.array([]), np.array([]), np.array([]))
+        return (*empty, np.array([])) if include_leagues else empty
     
     X = np.array(X_list, dtype=np.float64)
     y_outcome = np.array(y_outcome_list, dtype=np.int32)
     y_goals = np.array(y_goals_list, dtype=np.float64)
     seasons = np.array(seasons_list, dtype=np.int32)
+    league_labels = np.array(leagues_list, dtype=object)
     
     # Handle NaN/Inf
     X = np.nan_to_num(X, nan=0.0, posinf=5.0, neginf=-5.0)
     
+    if include_leagues:
+        return X, y_outcome, y_goals, seasons, league_labels
     return X, y_outcome, y_goals, seasons
+
+
+def compute_global_sample_weights(seasons: np.ndarray, league_labels: np.ndarray) -> np.ndarray:
+    """
+    Combine recency weights with league-balancing weights for one global model.
+
+    Without balancing, the biggest domestic leagues dominate the objective and
+    tournaments like UCL/UEL/World Cup barely move the loss.
+    """
+    weights = compute_season_weights(seasons)
+    counts = Counter(str(label) for label in league_labels)
+    if not counts:
+        return weights
+
+    target = len(league_labels) / max(1, len(counts))
+    league_weights = np.array(
+        [
+            max(0.45, min(3.0, target / max(1, counts[str(label)])))
+            for label in league_labels
+        ],
+        dtype=np.float64,
+    )
+    combined = weights * league_weights
+    mean = combined.mean() if len(combined) else 1.0
+    return combined / mean if mean > 0 else combined
 
 
 # ESPN ID → league key mapping
@@ -188,6 +221,7 @@ async def train_all_models(
     leagues: Optional[List[str]] = None,
     min_season: int = 2010,
     force_fetch: bool = False,
+    train_global_model: bool = False,
 ) -> Dict[str, dict]:
     """
     Full training pipeline:
@@ -218,6 +252,7 @@ async def train_all_models(
     
     # ── Step 3: Train per-league models ──
     results: Dict[str, dict] = {}
+    global_training_matches: List[dict] = []
     
     for hist_league, matches in historical.items():
         league_key = ESPN_TO_KEY.get(hist_league, hist_league)
@@ -229,6 +264,7 @@ async def train_all_models(
         league_display = registry.get_params(league_key).get("display_name", hist_league)
         league_extra = [m for m in extra_matches if m.get("league") == league_display]
         all_matches = matches + league_extra
+        global_training_matches.extend(all_matches)
         
         if len(all_matches) < 50:
             logger.warning(f"[{league_key}] Only {len(all_matches)} matches — skipping")
@@ -280,6 +316,48 @@ async def train_all_models(
             logger.info(f"  NN accuracy:       {nn_acc:.3f}")
             logger.info(f"  Ensemble accuracy:  {ens_acc:.3f}")
             logger.info(f"  CV accuracy:        {cv_acc:.3f}")
+
+    # ── Optional: train one cross-league global model ──
+    if train_global_model:
+        logger.info(f"\n{'='*60}")
+        logger.info("Training global cross-league model")
+        logger.info(f"  Candidate matches: {len(global_training_matches)}")
+        logger.info(f"{'='*60}")
+
+        if len(global_training_matches) < 100:
+            results["global"] = {
+                "error": "insufficient_data",
+                "matches": len(global_training_matches),
+            }
+        else:
+            X, y_outcome, y_goals, seasons, league_labels = build_features_and_labels(
+                global_training_matches,
+                include_leagues=True,
+            )
+
+            if len(X) < 80:
+                results["global"] = {
+                    "error": "insufficient_features",
+                    "samples": len(X),
+                }
+            else:
+                weights = compute_global_sample_weights(seasons, league_labels)
+                model = PerLeagueNeuralModel("global", registry.params_data.get("default", {}))
+                metrics = model.train(X, y_outcome, y_goals, sample_weights=weights)
+                model.training_metadata["league_scope"] = "cross_league_global"
+                model.training_metadata["league_sample_distribution"] = {
+                    str(k): int(v) for k, v in Counter(league_labels).items()
+                }
+                model.save()
+
+                results["global"] = {
+                    "status": "success",
+                    "matches": len(global_training_matches),
+                    "features": int(X.shape[1]) if X.ndim > 1 else 0,
+                    "samples": len(X),
+                    "metrics": metrics,
+                    "league_sample_distribution": model.training_metadata["league_sample_distribution"],
+                }
     
     # ── Step 4: Save overall results ──
     overall = {
@@ -327,12 +405,17 @@ async def main():
         "--force", action="store_true",
         help="Force re-fetch of historical data"
     )
+    parser.add_argument(
+        "--global-model", action="store_true",
+        help="Also train one cross-league global neural ensemble."
+    )
     args = parser.parse_args()
     
     await train_all_models(
         leagues=args.leagues,
         min_season=args.min_season,
         force_fetch=args.force,
+        train_global_model=args.global_model,
     )
 
 

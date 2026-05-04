@@ -25,6 +25,20 @@ logger = logging.getLogger(__name__)
 DEFAULT_PARAMS = {"avg_goals": 1.35, "home_adv": 0.25, "rho": -0.13, "draw_rate": 0.24}
 
 
+def _clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
+
+
+def _sanitize_params(raw: Dict[str, float]) -> Dict[str, float]:
+    """Keep learned feedback parameters inside physically realistic bounds."""
+    return {
+        "avg_goals": _clamp(float(raw.get("avg_goals", DEFAULT_PARAMS["avg_goals"])), 0.75, 2.25),
+        "home_adv": _clamp(float(raw.get("home_adv", DEFAULT_PARAMS["home_adv"])), 0.05, 0.45),
+        "rho": _clamp(float(raw.get("rho", DEFAULT_PARAMS["rho"])), -0.35, 0.15),
+        "draw_rate": _clamp(float(raw.get("draw_rate", DEFAULT_PARAMS["draw_rate"])), 0.08, 0.38),
+    }
+
+
 def _load_league_params() -> Dict[str, Dict[str, float]]:
     """Load per-league params from single source of truth."""
     params_file = Path(__file__).parent.parent.parent / "data" / "league_params.json"
@@ -43,12 +57,7 @@ def _load_league_params() -> Dict[str, Dict[str, float]]:
                 "uefa.europa.conf": "Conference League", "fifa.world": "FIFA World Cup",
             }
             for key, lp in leagues.items():
-                params = {
-                    "avg_goals": lp.get("avg_goals", DEFAULT_PARAMS["avg_goals"]),
-                    "home_adv": lp.get("home_adv", DEFAULT_PARAMS["home_adv"]),
-                    "rho": lp.get("rho", DEFAULT_PARAMS["rho"]),
-                    "draw_rate": lp.get("draw_rate", DEFAULT_PARAMS["draw_rate"]),
-                }
+                params = _sanitize_params(lp)
                 result[key] = params
                 # Also register friendly name alias
                 if key in display_map:

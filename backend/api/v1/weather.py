@@ -39,7 +39,10 @@ async def get_match_weather(
                 detail="Invalid match_time format. Use ISO format (e.g., 2024-01-15T15:00:00)"
             )
     
-    weather = await weather_service.get_weather_for_venue(home_team, match_datetime)
+    try:
+        weather = await weather_service.get_weather_for_venue(home_team, match_datetime)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     
     return weather.to_dict()
 
@@ -52,7 +55,10 @@ async def get_weather_impact(home_team: str):
     Returns prediction adjustments based on weather conditions.
     """
     weather_service = get_weather_service()
-    weather = await weather_service.get_weather_for_venue(home_team)
+    try:
+        weather = await weather_service.get_weather_for_venue(home_team)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     adjustments = weather_service.calculate_weather_adjustment(weather)
     
     return {
