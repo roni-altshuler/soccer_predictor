@@ -220,8 +220,11 @@ class KnockoutSimulator:
         Returns:
             TournamentSimulationResult with probabilities
         """
+        if len(teams) == 4:
+            return self._simulate_champions_league_semifinals(teams)
+
         if len(teams) != 16:
-            raise ValueError("Champions League knockout requires exactly 16 teams")
+            raise ValueError("Champions League knockout requires exactly 16 teams, or 4 teams for the current semi-final stage")
         
         # Create team lookup
         team_lookup = {t.name: t for t in teams}
@@ -285,6 +288,47 @@ class KnockoutSimulator:
             final_probabilities=final_probs,
             most_likely_winner=most_likely[0],
             winner_probability=most_likely[1] / total if total > 0 else 0,
+        )
+
+    def _simulate_champions_league_semifinals(
+        self,
+        teams: List[KnockoutTeam],
+    ) -> TournamentSimulationResult:
+        """Simulate the current Champions League semi-final bracket."""
+        winner_counts: Counter = Counter()
+        final_counts: Counter = Counter()
+        semi_counts: Counter = Counter({team.name: self.n_simulations for team in teams})
+
+        for _ in range(self.n_simulations):
+            finalist_a = self._simulate_two_legged_tie(teams[0], teams[1])
+            finalist_b = self._simulate_two_legged_tie(teams[2], teams[3])
+            final_counts[finalist_a.name] += 1
+            final_counts[finalist_b.name] += 1
+
+            champion = self._simulate_single_match(finalist_a, finalist_b, is_neutral=True)
+            winner_counts[champion.name] += 1
+
+        total = self.n_simulations
+        winner_probs = {team: count / total for team, count in winner_counts.most_common()}
+        final_probs = {team: count / total for team, count in final_counts.most_common()}
+        semi_probs = {team: count / total for team, count in semi_counts.most_common()}
+        most_likely = winner_counts.most_common(1)[0] if winner_counts else ("Unknown", 0)
+
+        return TournamentSimulationResult(
+            tournament_name="UEFA Champions League",
+            n_simulations=self.n_simulations,
+            winner_probabilities=winner_probs,
+            semi_final_probabilities=semi_probs,
+            final_probabilities=final_probs,
+            most_likely_winner=most_likely[0],
+            winner_probability=most_likely[1] / total if total > 0 else 0,
+            bracket_predictions={
+                "current_round": "Semi-finals",
+                "ties": [
+                    {"home_team": teams[0].name, "away_team": teams[1].name},
+                    {"home_team": teams[2].name, "away_team": teams[3].name},
+                ],
+            },
         )
     
     def simulate_europa_league(

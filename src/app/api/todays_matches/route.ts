@@ -16,6 +16,16 @@ interface Match {
   match_id: string | number
   venue?: string
   minute?: number | string
+  provider?: 'espn' | 'fotmob'
+}
+
+interface ESPNCompetitor {
+  homeAway?: string
+  score?: string | number
+  team?: {
+    displayName?: string
+    name?: string
+  }
 }
 
 // ESPN league IDs for major leagues
@@ -77,8 +87,9 @@ async function fetchESPNMatches(targetDate: Date): Promise<Match[]> {
         const competition = event.competitions?.[0]
         if (!competition) continue
         
-        const homeTeam = competition.competitors?.find((c: any) => c.homeAway === 'home')
-        const awayTeam = competition.competitors?.find((c: any) => c.homeAway === 'away')
+        const competitors = (competition.competitors || []) as ESPNCompetitor[]
+        const homeTeam = competitors.find((c) => c.homeAway === 'home')
+        const awayTeam = competitors.find((c) => c.homeAway === 'away')
         
         if (!homeTeam || !awayTeam) continue
         
@@ -105,8 +116,8 @@ async function fetchESPNMatches(targetDate: Date): Promise<Match[]> {
           id: String(event.id),
           home_team: homeTeam.team?.displayName || homeTeam.team?.name || '',
           away_team: awayTeam.team?.displayName || awayTeam.team?.name || '',
-          home_score: status !== 'upcoming' ? parseInt(homeTeam.score || '0') : null,
-          away_score: status !== 'upcoming' ? parseInt(awayTeam.score || '0') : null,
+          home_score: status !== 'upcoming' ? parseInt(String(homeTeam.score ?? '0'), 10) : null,
+          away_score: status !== 'upcoming' ? parseInt(String(awayTeam.score ?? '0'), 10) : null,
           time: event.date || '',
           status,
           league: league.name,
@@ -114,6 +125,7 @@ async function fetchESPNMatches(targetDate: Date): Promise<Match[]> {
           match_id: event.id,
           venue: competition.venue?.fullName,
           minute,
+          provider: 'espn',
         })
       }
     } catch (error) {
@@ -181,19 +193,24 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
               minute = 'HT'
             }
           }
+
+          const homeName = match.home?.name || match.home?.shortName || ''
+          const awayName = match.away?.name || match.away?.shortName || ''
+          if (!homeName || !awayName) continue
           
           matches.push({
             id: String(match.id),
-            home_team: match.home?.name || match.home?.shortName || '',
-            away_team: match.away?.name || match.away?.shortName || '',
-            home_score: match.home?.score ?? null,
-            away_score: match.away?.score ?? null,
+            home_team: homeName,
+            away_team: awayName,
+            home_score: status !== 'upcoming' ? match.home?.score ?? 0 : null,
+            away_score: status !== 'upcoming' ? match.away?.score ?? 0 : null,
             time: match.status?.utcTime || '',
             status,
             league: leagueName,
             leagueId: leagueId,
             match_id: match.id,
             minute,
+            provider: 'fotmob',
           })
         }
       }
@@ -205,18 +222,22 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
   return matches
 }
 
-// Sample data for when APIs are unavailable - no longer used to avoid showing inaccurate data
-// Users will see "No matches" when APIs are blocked
-
 export async function GET(request: NextRequest) {
   try {
     const requestedDate = resolveRequestedDate(request.nextUrl.searchParams.get('date'))
 
-    // Try ESPN first, then FotMob
+    // Try ESPN first, then FotMob. Never synthesize match rows.
+    let source: 'espn' | 'fotmob' | 'none' = 'espn'
     let matches = await fetchESPNMatches(requestedDate)
     
     if (matches.length === 0) {
-      matches = await fetchFotMobMatches(requestedDate)
+      const fotMobMatches = await fetchFotMobMatches(requestedDate)
+      if (fotMobMatches.length > 0) {
+        matches = fotMobMatches
+        source = 'fotmob'
+      } else {
+        source = 'none'
+      }
     }
     
     // Categorize matches
@@ -225,7 +246,14 @@ export async function GET(request: NextRequest) {
       upcoming: matches.filter(m => m.status === 'upcoming'),
       completed: matches.filter(m => m.status === 'completed'),
       leagues: [] as { name: string; matches: Match[] }[],
-      source: matches.length > 0 && matches[0].match_id.toString().startsWith('sample') ? 'sample' : 'live'
+      source,
+      sourceDetail: source === 'espn'
+        ? 'ESPN scoreboard endpoint'
+        : source === 'fotmob'
+          ? 'FotMob matches endpoint'
+          : 'No ESPN or FotMob matches found for the requested date',
+      requestedDate: requestedDate.toISOString().split('T')[0],
+      generatedAt: new Date().toISOString(),
     }
     
     // Group by league
@@ -254,7 +282,10 @@ export async function GET(request: NextRequest) {
       upcoming: [],
       completed: [],
       leagues: [],
-      source: 'error'
+      source: 'error',
+      sourceDetail: 'ESPN and FotMob match fetch failed',
+      requestedDate: request.nextUrl.searchParams.get('date') || null,
+      generatedAt: new Date().toISOString(),
     }, {
       headers: {
         'Cache-Control': 'no-store, max-age=0',

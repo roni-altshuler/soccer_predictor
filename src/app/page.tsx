@@ -23,6 +23,17 @@ type TodayMatch = {
   leagueId?: string
   minute?: number | string
   venue?: string
+  provider?: 'espn' | 'fotmob'
+}
+
+type TodayMatchesPayload = {
+  live: TodayMatch[]
+  upcoming: TodayMatch[]
+  completed: TodayMatch[]
+  source?: 'espn' | 'fotmob' | 'none' | 'error'
+  sourceDetail?: string
+  requestedDate?: string
+  generatedAt?: string
 }
 
 type DateOption = { label: string; date: string; isToday: boolean }
@@ -294,7 +305,7 @@ function AtAGlance({
 export default function Home() {
   const dateOptions = useMemo(() => getDateOptions(), [])
   const [selectedDate, setSelectedDate] = useState(() => dateOptions.find(d => d.isToday)?.date || dateOptions[3]?.date)
-  const [matches, setMatches] = useState<{ live: TodayMatch[]; upcoming: TodayMatch[]; completed: TodayMatch[] }>({
+  const [matches, setMatches] = useState<TodayMatchesPayload>({
     live: [], upcoming: [], completed: [],
   })
   const [loading, setLoading] = useState(true)
@@ -392,6 +403,13 @@ export default function Home() {
   const totalCount = live.length + upcoming.length + completed.length
   const trackedCount = trackedMatchesByTab.length
   const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
+  const sourceLabel = matches.source === 'espn'
+    ? 'ESPN'
+    : matches.source === 'fotmob'
+      ? 'FotMob'
+      : matches.source === 'error'
+        ? 'Provider error'
+        : 'No provider matches'
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -474,6 +492,10 @@ export default function Home() {
             {trackedTeams.length > 4 ? ` +${trackedTeams.length - 4} more` : ''}
           </div>
         )}
+        <div className="px-4 pb-2 text-[10px] text-[var(--text-tertiary)]">
+          Match data: {sourceLabel}
+          {matches.generatedAt ? ` · refreshed ${new Date(matches.generatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}
+        </div>
       </div>
 
       {/* Matches List — grouped by league */}

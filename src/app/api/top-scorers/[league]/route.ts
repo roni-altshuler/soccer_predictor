@@ -16,20 +16,41 @@ const ESPN_LEAGUE_MAP: Record<string, string> = {
   'world_cup': 'fifa.world', 'fifa.world': 'fifa.world',
 }
 
-// Curated 2025-26 season top scorers - updated regularly from official sources
-// This serves as a reliable fallback when ESPN API doesn't return scorer data
-const SEASON_TOP_SCORERS: Record<string, Array<{ name: string; team: string; goals: number; assists: number; matches: number }>> = {
+const CALENDAR_YEAR_LEAGUES = new Set(['usa.1', 'fifa.world'])
+
+type ScorerRow = {
+  name: string
+  team: string
+  goals: number
+  assists: number | null
+  matches: number | null
+}
+
+function defaultSeasonForLeague(espnSlug: string): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  if (CALENDAR_YEAR_LEAGUES.has(espnSlug)) return String(year)
+  return String(now.getMonth() >= 6 ? year : year - 1)
+}
+
+function withSeason(url: string, season: string): string {
+  return `${url}${url.includes('?') ? '&' : '?'}season=${encodeURIComponent(season)}`
+}
+
+// Verified public fallback for cases where ESPN's leaders endpoint is temporarily empty.
+// Keep this intentionally narrow so stale curated data is not displayed as live.
+const SEASON_TOP_SCORERS: Record<string, ScorerRow[]> = {
   'eng.1': [
-    { name: 'Mohamed Salah', team: 'Liverpool', goals: 23, assists: 15, matches: 28 },
-    { name: 'Erling Haaland', team: 'Manchester City', goals: 20, assists: 4, matches: 28 },
-    { name: 'Alexander Isak', team: 'Newcastle United', goals: 17, assists: 4, matches: 27 },
-    { name: 'Bryan Mbeumo', team: 'Brentford', goals: 15, assists: 6, matches: 28 },
-    { name: 'Chris Wood', team: 'Nottingham Forest', goals: 14, assists: 3, matches: 28 },
-    { name: 'Cole Palmer', team: 'Chelsea', goals: 13, assists: 8, matches: 27 },
-    { name: 'Matheus Cunha', team: 'Wolverhampton', goals: 13, assists: 6, matches: 28 },
-    { name: 'Nicolas Jackson', team: 'Chelsea', goals: 12, assists: 5, matches: 27 },
-    { name: 'Yoane Wissa', team: 'Brentford', goals: 12, assists: 3, matches: 26 },
-    { name: 'Ollie Watkins', team: 'Aston Villa', goals: 11, assists: 7, matches: 28 },
+    { name: 'Erling Haaland', team: 'Manchester City', goals: 24, assists: null, matches: null },
+    { name: 'Igor Thiago', team: 'Brentford', goals: 22, assists: null, matches: null },
+    { name: 'Antoine Semenyo', team: 'Manchester City', goals: 15, assists: null, matches: null },
+    { name: 'João Pedro', team: 'Chelsea', goals: 14, assists: null, matches: null },
+    { name: 'Viktor Gyökeres', team: 'Arsenal', goals: 14, assists: null, matches: null },
+    { name: 'Danny Welbeck', team: 'Brighton & Hove Albion', goals: 13, assists: null, matches: null },
+    { name: 'Morgan Gibbs-White', team: 'Nottingham Forest', goals: 13, assists: null, matches: null },
+    { name: 'Dominic Calvert-Lewin', team: 'Leeds United', goals: 12, assists: null, matches: null },
+    { name: 'Junior Kroupi', team: 'AFC Bournemouth', goals: 12, assists: null, matches: null },
+    { name: 'Hugo Ekitiké', team: 'Liverpool', goals: 11, assists: null, matches: null },
   ],
   'esp.1': [
     { name: 'Robert Lewandowski', team: 'Barcelona', goals: 22, assists: 4, matches: 27 },
@@ -153,14 +174,14 @@ const SEASON_TOP_SCORERS: Record<string, Array<{ name: string; team: string; goa
   ],
 }
 
-async function fetchESPNScorers(espnSlug: string): Promise<Array<{ name: string; team: string; goals: number; assists: number; matches: number }>> {
-  const scorers: Array<{ name: string; team: string; goals: number; assists: number; matches: number }> = []
+async function fetchESPNScorers(espnSlug: string, season: string): Promise<ScorerRow[]> {
+  const scorers: ScorerRow[] = []
   
   // Try ESPN leaders endpoint
   try {
     const res = await fetch(
-      `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/leaders`,
-      { next: { revalidate: 3600 } }
+      withSeason(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/leaders`, season),
+      { next: { revalidate: 1800 } }
     )
     if (res.ok) {
       const data = await res.json()
@@ -214,8 +235,8 @@ async function fetchESPNScorers(espnSlug: string): Promise<Array<{ name: string;
   if (scorers.length === 0) {
     try {
       const res = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/statistics`,
-        { next: { revalidate: 3600 } }
+        withSeason(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/statistics`, season),
+        { next: { revalidate: 1800 } }
       )
       if (res.ok) {
         const data = await res.json()
@@ -249,25 +270,33 @@ export async function GET(
 ) {
   const { league } = await params
   const espnSlug = ESPN_LEAGUE_MAP[league] || league
+  const season = request.nextUrl.searchParams.get('season') || defaultSeasonForLeague(espnSlug)
   
   // Try ESPN first
-  let scorers = await fetchESPNScorers(espnSlug)
+  let source = 'espn'
+  let scorers = await fetchESPNScorers(espnSlug, season)
   
-  // Fall back to curated season data if ESPN returns empty
-  if (scorers.length === 0) {
+  // Fall back only for source-verified leagues so stale data is not shown as live.
+  if (scorers.length === 0 && espnSlug === 'eng.1') {
     const fallback = SEASON_TOP_SCORERS[espnSlug] || SEASON_TOP_SCORERS[league]
     if (fallback) {
       scorers = fallback
+      source = 'verified_fallback'
     }
   }
   
   return NextResponse.json({
     success: true,
     league,
+    espnLeague: espnSlug,
+    season,
     scorers: scorers.slice(0, 10).map((s, idx) => ({
       rank: idx + 1,
       ...s,
     })),
-    source: scorers.length > 0 ? 'live' : 'none',
+    source: scorers.length > 0 ? source : 'none',
+    sourceDetail: source === 'verified_fallback'
+      ? 'Fallback verified against the Guardian Premier League Golden Boot table on 2026-05-04.'
+      : 'ESPN soccer leaders endpoint',
   })
 }

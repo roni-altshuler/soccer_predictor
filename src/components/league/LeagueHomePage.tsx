@@ -25,8 +25,8 @@ interface TopScorer {
   name: string
   team: string
   goals: number
-  assists: number
-  matches: number
+  assists: number | null
+  matches: number | null
 }
 
 interface UpcomingMatch {
@@ -62,6 +62,7 @@ interface LeagueHomeData {
   season: string
   standings: Standing[]
   topScorers: TopScorer[]
+  topScorerSource?: string
   upcomingMatches: UpcomingMatch[]
   recentResults: RecentMatch[]
   news: NewsItem[]
@@ -360,6 +361,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     league_name: string
     n_simulations: number
     remaining_matches: number
+    fixture_source?: string
     most_likely_champion: string
     champion_probability: number
     likely_top_4: string[]
@@ -448,6 +450,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           league_name: simData.league_name || leagueName,
           n_simulations: simData.n_simulations || numSimulations,
           remaining_matches: simData.remaining_matches || 0,
+          fixture_source: simData.fixture_source,
           most_likely_champion: simData.most_likely_champion || simData.standings?.[0]?.team_name || 'Unknown',
           champion_probability: simData.champion_probability || simData.standings?.[0]?.title_probability || 0,
           likely_top_4: simData.likely_top_4 || simData.standings?.slice(0, 4).map((s: any) => s.team_name) || [],
@@ -488,9 +491,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           : leagueId
         
         // Fetch data from existing endpoints in parallel
-        const [standingsRes, fixturesRes, newsRes] = await Promise.allSettled([
+        const [standingsRes, newsRes] = await Promise.allSettled([
           fetch(`/api/standings?league=${leagueParam}`),
-          fetch(`/api/upcoming_matches?league=${leagueParam}&limit=10`),
           fetch(`/api/news?league=${leagueParam}`),
         ])
         
@@ -512,7 +514,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         const espnResults = await Promise.allSettled([
           fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
           fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${scoreboardDateRange}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders`),
+          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders${seasonParam}`),
         ])
 
         const leagueData: LeagueHomeData = {
@@ -722,34 +724,35 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 }))
               }
             }
-          } catch (e) {
+          } catch {
             // Silently fail on alternative endpoint
           }
         }
 
-        // Final fallback: Use dedicated top-scorers API route with curated data
-        if (leagueData.topScorers.length === 0) {
-          try {
-            const leagueParam = leagueId.includes('.') 
-              ? leagueId
-              : LEAGUE_TO_ESPN_ID[leagueId] || leagueId
-            const scorersRes = await fetch(`/api/top-scorers/${leagueParam}`)
-            if (scorersRes.ok) {
-              const scorersData = await scorersRes.json()
-              if (scorersData.scorers && scorersData.scorers.length > 0) {
-                leagueData.topScorers = scorersData.scorers.map((s: any) => ({
-                  rank: s.rank,
-                  name: s.name,
-                  team: s.team,
-                  goals: s.goals,
-                  assists: s.assists || 0,
-                  matches: s.matches || 0,
-                }))
-              }
+        // Use the dedicated server route as the final authority for scorer rows.
+        try {
+          const leagueParam = leagueId.includes('.')
+            ? leagueId
+            : LEAGUE_TO_ESPN_ID[leagueId] || leagueId
+          const scorersRes = await fetch(`/api/top-scorers/${leagueParam}?season=${selectedSeason}`)
+          if (scorersRes.ok) {
+            const scorersData = await scorersRes.json()
+            if (scorersData.scorers && scorersData.scorers.length > 0) {
+              leagueData.topScorers = scorersData.scorers.map((s: any) => ({
+                rank: s.rank,
+                name: s.name,
+                team: s.team,
+                goals: s.goals,
+                assists: s.assists ?? null,
+                matches: s.matches ?? null,
+              }))
+              leagueData.topScorerSource = scorersData.source === 'verified_fallback'
+                ? 'Guardian verified fallback'
+                : 'ESPN leaders'
             }
-          } catch (e) {
-            // Top scorers fallback also failed
           }
+        } catch {
+          // Scorer route failed; keep any provider data already loaded.
         }
 
         // Process league-specific news from ESPN
@@ -768,7 +771,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               published: n.published || '',
             }))
           }
-        } catch (e) {
+        } catch {
           // Fallback to general news
           if (newsRes.status === 'fulfilled' && newsRes.value.ok) {
             const newsJson = await newsRes.value.json()
@@ -843,17 +846,22 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             
             <div className="w-full md:w-auto">
               <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/55">Season</label>
-              <select
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="w-full md:w-40 rounded-lg border border-white/20 bg-white/12 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 focus:outline-none focus:ring-2 focus:ring-white/30"
-              >
-                {seasons.map(season => (
-                  <option key={season.value} value={season.value} className="text-gray-900">
-                    {season.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  className="w-full md:w-44 appearance-none rounded-lg border border-white/20 bg-[#101826] px-3 py-2 pr-9 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#182236] focus:outline-none focus:ring-2 focus:ring-white/30"
+                >
+                  {seasons.map(season => (
+                    <option key={season.value} value={season.value} className="bg-[#101826] text-white">
+                      {season.label}
+                    </option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/65" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
             </div>
           </div>
           
@@ -886,7 +894,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             <LeagueFact
               label={data?.topScorers[0] ? 'Top Scorer' : 'Best GD'}
               value={data?.topScorers[0]?.name || data?.standings[0]?.teamName || 'TBD'}
-              note={data?.topScorers[0] ? `${data.topScorers[0].goals} goals` : `${data?.standings[0]?.goalDiff || 0} goal diff`}
+              note={data?.topScorers[0] ? `${data.topScorers[0].goals} goals · ${data.topScorerSource || 'provider data'}` : `${data?.standings[0]?.goalDiff || 0} goal diff`}
             />
             <LeagueFact
               label="Matchweek"
@@ -972,7 +980,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <ActionCard
                   eyebrow="Projection"
                   title="Run Simulation"
-                  description="Simulate the remaining season using current standings, ELO strength, and scoreline probabilities."
+                  description="Simulate the remaining season using current ESPN standings, listed fixtures when available, ELO strength, and scoreline probabilities."
                   onClick={() => setActiveTab('simulator')}
                 />
                 <ActionCard
@@ -1259,6 +1267,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
             <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top Scorers</h2>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                {data?.season || (isCalendarYear ? '2026' : '2025-26')} · {data?.topScorerSource || 'Provider data'}
+              </p>
             </div>
             {data?.topScorers && data.topScorers.length > 0 ? (
               <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
@@ -1277,7 +1288,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-bold text-[var(--accent-primary)]">{scorer.goals}</p>
-                      <p className="text-xs text-[var(--text-tertiary)]">{scorer.assists} assists</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {scorer.assists === null ? 'Goals verified' : `${scorer.assists} assists`}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -1302,15 +1315,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         {/* Simulator Tab - Like SeasonSimulator from Predict page */}
         {activeTab === 'simulator' && (
           <div className="space-y-6">
-            <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
+            <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-6">
               <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
                 <div>
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                    <span>🎲</span>
-                    Season Simulation
-                  </h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)]">Season Simulation</h3>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Monte Carlo simulation using team ELO ratings and Poisson goal distributions
+                    Monte Carlo simulation using current standings, provider fixtures, ELO ratings, and Poisson goal distributions.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1337,10 +1347,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         <span>Simulating...</span>
                       </>
                     ) : (
-                      <>
-                        <span>🎲</span>
-                        <span>Run Simulation</span>
-                      </>
+                      <span>Run Simulation</span>
                     )}
                   </button>
                 </div>
@@ -1351,7 +1358,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             {simulationResults && (
               <div className="space-y-6 animate-fade-in">
                 {/* Summary Card */}
-                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
+                <div className="bg-[var(--card-bg)] border border-[var(--border-color)] overflow-hidden">
                   <div className="p-6 bg-gradient-to-r from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 border-b border-[var(--border-color)]">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div>
@@ -1359,6 +1366,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         <p className="text-[var(--text-secondary)]">
                           {simulationResults.remaining_matches} matches remaining • {simulationResults.n_simulations.toLocaleString()} simulations
                         </p>
+                        {simulationResults.fixture_source && (
+                          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{simulationResults.fixture_source}</p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-[var(--text-secondary)]">Most Likely Champion</p>
@@ -1371,7 +1381,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   {/* Key Insights */}
                   <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                      <p className="text-sm text-[var(--text-secondary)] mb-2">🥇 Title Contenders</p>
+                      <p className="text-sm text-[var(--text-secondary)] mb-2">Title Contenders</p>
                       <div className="space-y-1">
                         {simulationResults.standings
                           .filter(t => t.title_probability > 0.01)
@@ -1387,7 +1397,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </div>
 
                     <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                      <p className="text-sm text-[var(--text-secondary)] mb-2">🏆 Top 4 Favorites</p>
+                      <p className="text-sm text-[var(--text-secondary)] mb-2">Top 4 Favorites</p>
                       <div className="space-y-1">
                         {simulationResults.likely_top_4?.slice(0, 4).map((team, idx) => (
                           <div key={team} className="flex items-center gap-2 text-sm">
@@ -1399,7 +1409,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </div>
 
                     <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                      <p className="text-sm text-[var(--text-secondary)] mb-2">⚠️ Relegation Danger</p>
+                      <p className="text-sm text-[var(--text-secondary)] mb-2">Relegation Risk</p>
                       <div className="space-y-1">
                         {simulationResults.relegation_candidates?.slice(0, 3).map((team) => (
                           <div key={team} className="flex items-center gap-2 text-sm">
@@ -1413,11 +1423,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 </div>
 
                 {/* Full Standings Table */}
-                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
+                <div className="bg-[var(--card-bg)] border border-[var(--border-color)] overflow-hidden">
                   <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
                     <h3 className="font-semibold text-[var(--text-primary)]">Predicted Final Standings</h3>
                     <span className="text-sm text-[var(--text-secondary)]">
-                      📊 {simulationResults.remaining_matches} games remaining
+                      {simulationResults.remaining_matches} games remaining
                     </span>
                   </div>
 
@@ -1532,7 +1542,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 {/* Disclaimer */}
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
-                    <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
+                    <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, provider fixtures when available, and team ratings.
                     Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                   </p>
                 </div>
@@ -1541,8 +1551,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
             {/* Initial state - no simulation run yet */}
             {!simulationResults && !runningSimulation && (
-              <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
-                <span className="text-6xl mb-4 block">🔮</span>
+              <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 text-center">
                 <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Season Simulation</h3>
                 <p className="text-[var(--text-secondary)] max-w-md mx-auto">
                   Run a Monte Carlo simulation to predict final standings, 

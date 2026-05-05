@@ -205,6 +205,38 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   const runTournamentSimulation = async () => {
     setRunningSimulation(true)
     try {
+      if (tournamentId === 'champions_league') {
+        const res = await fetch(`/api/v1/knockout/champions-league/simulate?n_simulations=${numSimulations}`)
+        if (res.ok) {
+          const simData = await res.json()
+          const winnerRows = simData.winnerProbabilities || []
+          const finalRows = simData.finalProbabilities || []
+          const semiRows = simData.semiFinalProbabilities || []
+          const teamNames = Array.from(new Set<string>([
+            ...winnerRows.map((row: { team: string }) => row.team),
+            ...finalRows.map((row: { team: string }) => row.team),
+            ...semiRows.map((row: { team: string }) => row.team),
+          ]))
+
+          setSimulationResults({
+            tournament_name: `${tournamentName} · ${simData.currentRound || 'Current knockout round'}`,
+            n_simulations: simData.n_simulations || numSimulations,
+            teams: teamNames.map((team) => ({
+              team_name: team,
+              current_points: 0,
+              win_probability: winnerRows.find((row: { team: string }) => row.team === team)?.probability || 0,
+              final_probability: finalRows.find((row: { team: string }) => row.team === team)?.probability || 0,
+              semi_final_probability: semiRows.find((row: { team: string }) => row.team === team)?.probability || 0,
+              quarter_final_probability: 1,
+            })).sort((a, b) => b.win_probability - a.win_probability),
+            most_likely_winner: simData.mostLikelyWinner || winnerRows[0]?.team || 'Unknown',
+            winner_probability: simData.winnerProbability || winnerRows[0]?.probability || 0,
+          })
+        }
+        setRunningSimulation(false)
+        return
+      }
+
       // Safely get teams from standings with null checks
       if (!data.groups || data.groups.length === 0) {
         console.error(`Tournament simulation requires group data. Please ensure tournament data is loaded.`)
@@ -920,12 +952,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                      <span>🎲</span>
-                      Tournament Simulation
-                    </h3>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)]">Tournament Simulation</h3>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Monte Carlo simulation using team standings and goal difference
+                      {tournamentId === 'champions_league'
+                        ? 'Monte Carlo projection from the current semi-final bracket'
+                        : 'Monte Carlo simulation using team standings and goal difference'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -940,7 +971,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     </select>
                     <button
                       onClick={runTournamentSimulation}
-                      disabled={runningSimulation || data.groups.length === 0}
+                      disabled={runningSimulation || (tournamentId !== 'champions_league' && data.groups.length === 0)}
                       className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2"
                     >
                       {runningSimulation ? (
@@ -949,10 +980,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           <span>Simulating...</span>
                         </>
                       ) : (
-                        <>
-                          <span>🎲</span>
-                          <span>Run Simulation</span>
-                        </>
+                        <span>Run Simulation</span>
                       )}
                     </button>
                   </div>
@@ -983,7 +1011,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     {/* Key Insights */}
                     <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                        <p className="text-sm text-[var(--text-secondary)] mb-2">🏆 Title Contenders</p>
+                        <p className="text-sm text-[var(--text-secondary)] mb-2">Title Contenders</p>
                         <div className="space-y-1">
                           {simulationResults.teams
                             .filter(t => t.win_probability > 0.01)
@@ -998,7 +1026,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </div>
 
                       <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                        <p className="text-sm text-[var(--text-secondary)] mb-2">🥈 Finalists</p>
+                        <p className="text-sm text-[var(--text-secondary)] mb-2">Finalists</p>
                         <div className="space-y-1">
                           {simulationResults.teams
                             .sort((a, b) => b.final_probability - a.final_probability)
@@ -1013,7 +1041,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       </div>
 
                       <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                        <p className="text-sm text-[var(--text-secondary)] mb-2">🥉 Semi-Finalists</p>
+                        <p className="text-sm text-[var(--text-secondary)] mb-2">Semi-Finalists</p>
                         <div className="space-y-1">
                           {simulationResults.teams
                             .sort((a, b) => b.semi_final_probability - a.semi_final_probability)
@@ -1034,7 +1062,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
                       <h3 className="font-semibold text-[var(--text-primary)]">Team Probabilities</h3>
                       <span className="text-sm text-[var(--text-secondary)]">
-                        📊 {simulationResults.teams.length} teams analyzed
+                        {simulationResults.teams.length} teams analyzed
                       </span>
                     </div>
 
@@ -1044,7 +1072,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
                             <th className="text-left py-3 px-4">Rank</th>
                             <th className="text-left py-3 px-4">Team</th>
-                            <th className="text-center py-3 px-4">Current Pts</th>
+                            <th className="text-center py-3 px-4">{tournamentId === 'champions_league' ? 'Stage' : 'Current Pts'}</th>
                             <th className="text-center py-3 px-4">Win %</th>
                             <th className="text-center py-3 px-4">Final %</th>
                             <th className="text-center py-3 px-4">Semi %</th>
@@ -1062,7 +1090,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             >
                               <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
                               <td className="py-3 px-4 text-[var(--text-primary)] font-medium">{team.team_name}</td>
-                              <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{team.current_points}</td>
+                              <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{tournamentId === 'champions_league' ? 'SF' : team.current_points}</td>
                               <td className="py-3 px-4 text-center">
                                 {team.win_probability > 0.001 ? (
                                   <span className="text-amber-400 font-semibold">{(team.win_probability * 100).toFixed(1)}%</span>
@@ -1113,7 +1141,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                   {/* Disclaimer */}
                   <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                     <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
-                      <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
+                      <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, bracket state, and team ratings.
                       Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                     </p>
                   </div>
@@ -1123,11 +1151,9 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               {/* Initial state - no simulation run yet */}
               {!simulationResults && !runningSimulation && (
                 <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
-                  <span className="text-6xl mb-4 block">🔮</span>
                   <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Tournament Simulation</h3>
                   <p className="text-[var(--text-secondary)] max-w-md mx-auto">
-                    Run a Monte Carlo simulation to predict the tournament winner, 
-                    finalists, and semi-finalists based on current group standings.
+                    Run a Monte Carlo simulation to project the tournament winner and remaining knockout path.
                   </p>
                 </div>
               )}

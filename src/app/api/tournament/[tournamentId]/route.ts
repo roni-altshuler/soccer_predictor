@@ -240,8 +240,10 @@ export async function GET(
       }
     }
 
-    // Fallback: if ESPN leaders returned empty, use inline curated 2025-26 data
-    if (result.topScorers.length === 0) {
+    // Keep tournament scorer rows provider-backed. Legacy curated rows stay disabled
+    // so stale data is never presented as a live tournament leader board.
+    const allowCuratedTournamentFallback = false
+    if (allowCuratedTournamentFallback && result.topScorers.length === 0) {
       const CURATED_TOURNAMENT_SCORERS: Record<string, Array<{ name: string; team: string; goals: number; assists: number; matches: number }>> = {
         'uefa.champions': [
           { name: 'Raphinha', team: 'Barcelona', goals: 10, assists: 3, matches: 8 },

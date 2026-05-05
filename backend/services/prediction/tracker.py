@@ -11,7 +11,7 @@ Tracks prediction outcomes and continuously improves the model:
 import json
 import os
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict, fields as dataclass_fields
+from dataclasses import dataclass, asdict, field, fields as dataclass_fields
 from datetime import datetime, timedelta
 from pathlib import Path
 import logging
@@ -162,6 +162,7 @@ class ModelAccuracyMetrics:
     # Winner prediction accuracy
     winner_correct_count: int = 0
     winner_accuracy: float = 0.0
+    avg_confidence: float = 0.0
     
     # Detailed accuracy
     home_win_predicted: int = 0
@@ -184,6 +185,7 @@ class ModelAccuracyMetrics:
     brier_score: float = 0.0
     log_loss: float = 0.0
     expected_calibration_error: float = 0.0
+    calibration_bins: List[Dict[str, Any]] = field(default_factory=list)
     
     # By confidence level
     high_confidence_accuracy: float = 0.0  # >70% confidence
@@ -486,6 +488,7 @@ class PredictionTracker:
         correct_count = sum(1 for p in completed if p.winner_correct)
         metrics.winner_correct_count = correct_count
         metrics.winner_accuracy = correct_count / len(completed)
+        metrics.avg_confidence = sum(self._normalize_confidence(p.confidence) for p in completed) / len(completed)
         
         # Detailed accuracy by outcome type
         for pred in completed:
@@ -571,6 +574,12 @@ class PredictionTracker:
             avg_conf = bin_conf[i] / bin_counts[i]
             avg_acc = bin_acc[i] / bin_counts[i]
             ece += abs(avg_acc - avg_conf) * (bin_counts[i] / total_completed)
+            metrics.calibration_bins.append({
+                "bucket": f"{i * 10}-{(i + 1) * 10}%",
+                "count": bin_counts[i],
+                "avg_confidence": round(avg_conf, 4),
+                "accuracy": round(avg_acc, 4),
+            })
         metrics.expected_calibration_error = ece
         
         # Accuracy by confidence level

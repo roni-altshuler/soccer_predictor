@@ -22,12 +22,15 @@ interface TodayMatch {
   status: string
   league: string
   minute?: number | string
+  provider?: 'espn' | 'fotmob'
 }
 
 interface TodayMatchesResponse {
   live?: TodayMatch[]
   upcoming?: TodayMatch[]
   completed?: TodayMatch[]
+  source?: 'espn' | 'fotmob' | 'none' | 'error'
+  sourceDetail?: string
 }
 
 interface PredictionRow {

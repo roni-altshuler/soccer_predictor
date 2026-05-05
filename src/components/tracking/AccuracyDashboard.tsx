@@ -216,20 +216,12 @@ export default function AccuracyDashboard() {
       {/* Hero Metrics Row */}
       <HeroMetrics metrics={m} streak={summary.current_streak} form={summary.recent_form} />
 
-      {/* Bettor-focused edge desk */}
-      <BettingEdgeDesk metrics={m} last30={summary.last_30_days} policy={summary.policy} />
+      <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-5">
+        <BettingEdgeDesk metrics={m} last30={summary.last_30_days} policy={summary.policy} />
+        <CalibrationPanel metrics={m} />
+      </div>
 
-      {/* Interpretation helper */}
-      <InterpretationPanel metrics={m} last30={summary.last_30_days} policy={summary.policy} />
-
-      {/* Key Performance Indicators */}
-      <KPIGrid metrics={m} last30={summary.last_30_days} />
-
-      {/* Outcome Accuracy */}
       <OutcomeAccuracy metrics={m} />
-
-      {/* Probability Calibration */}
-      <CalibrationPanel metrics={m} />
 
       {/* Accuracy Over Time */}
       {trend && trend.data_points > 0 && (
@@ -312,9 +304,9 @@ function BettingEdgeDesk({
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Edge Desk</h3>
+        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-normal">Decision Edge Desk</h3>
         <span className="text-[10px] text-[var(--text-tertiary)]">
-          Betting-focused lens: edge, selectivity, and confidence separation.
+          Edge, selectivity, and confidence separation from settled real results.
         </span>
       </div>
 
@@ -326,93 +318,6 @@ function BettingEdgeDesk({
             <p className="text-[10px] mt-1 text-[var(--text-tertiary)] leading-relaxed">{card.note}</p>
           </div>
         ))}
-      </div>
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   InterpretationPanel — plain-language reading aid
-   ────────────────────────────────────────────────────────────────────── */
-
-function InterpretationPanel({ metrics, last30, policy }: { metrics: OverallMetrics; last30: OverallMetrics; policy?: TrackingPolicy }) {
-  const randomBaseline = 1 / 3
-  const edgeVsBaseline = metrics.winner_accuracy - randomBaseline
-  const confidenceGap = Math.abs((metrics.avg_confidence ?? metrics.winner_accuracy) - metrics.winner_accuracy)
-  const highConfLift = metrics.high_confidence_accuracy - metrics.winner_accuracy
-  const thresholdLift = metrics.threshold_lift ?? 0
-  const thresholdQualified = metrics.threshold_qualified_predictions ?? 0
-  const thresholdRate = metrics.threshold_qualification_rate ?? 0
-  const last30Delta = last30.completed_predictions > 0 ? last30.winner_accuracy - metrics.winner_accuracy : 0
-  const policyConfidence = Math.round((policy?.min_confidence ?? 0.55) * 100)
-  const policyEdge = Math.round((policy?.min_edge ?? 0.12) * 100)
-
-  const cards = [
-    {
-      label: 'Edge vs random baseline',
-      value: pp(edgeVsBaseline),
-      note: 'Compares to 33.3% baseline for 1X2 picks.',
-      color: edgeVsBaseline >= 0.08 ? '#22c55e' : edgeVsBaseline >= 0.03 ? '#f59e0b' : '#ef4444',
-    },
-    {
-      label: 'Calibration gap',
-      value: pct(confidenceGap),
-      note: 'Absolute gap between confidence and real hit rate.',
-      color: confidenceGap <= 0.04 ? '#22c55e' : confidenceGap <= 0.08 ? '#f59e0b' : '#ef4444',
-    },
-    {
-      label: 'High-confidence lift',
-      value: pp(highConfLift),
-      note: 'How much >=55% confidence picks beat overall picks.',
-      color: highConfLift >= 0.06 ? '#22c55e' : highConfLift >= 0.02 ? '#f59e0b' : '#ef4444',
-    },
-    {
-      label: 'Last 30 days trend',
-      value: last30.completed_predictions > 0 ? pp(last30Delta) : 'N/A',
-      note: last30.completed_predictions > 0 ? 'Recent form minus long-run hit rate.' : 'Need more recent completed matches.',
-      color: last30.completed_predictions === 0 ? '#94a3b8' : last30Delta >= 0.03 ? '#22c55e' : last30Delta >= -0.03 ? '#f59e0b' : '#ef4444',
-    },
-    {
-      label: 'Policy-filtered lift',
-      value: thresholdQualified > 0 ? pp(thresholdLift) : 'N/A',
-      note: thresholdQualified > 0
-        ? `Picks above ${policyConfidence}% confidence and ${policyEdge}pp edge. n=${thresholdQualified} (${pct(thresholdRate)} qualified).`
-        : 'No completed picks met the current confidence/edge policy yet.',
-      color: thresholdQualified === 0 ? '#94a3b8' : thresholdLift >= 0.03 ? '#22c55e' : thresholdLift >= 0 ? '#f59e0b' : '#ef4444',
-    },
-  ]
-
-  const takeaway = edgeVsBaseline >= 0.08 && confidenceGap <= 0.06 && (thresholdQualified === 0 || thresholdLift >= 0)
-    ? 'Model is outperforming baseline with controlled confidence drift.'
-    : edgeVsBaseline >= 0.03
-      ? 'Model has positive signal, but calibration or confidence lift needs tighter tuning.'
-      : 'Model edge is currently thin; prioritize league-level feature updates and probability calibration.'
-
-  return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-          How To Read Accuracy + Outcomes
-        </h3>
-        <span className="text-[10px] text-[var(--text-tertiary)]">
-          Focus on edge, calibration, and confidence lift before raw scoreline hit rate.
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {cards.map((card) => (
-          <div key={card.label} className="rounded-xl border p-3 bg-[var(--muted-bg)]" style={{ borderColor: 'var(--border-color)' }}>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{card.label}</p>
-            <p className="text-xl font-bold mt-1" style={{ color: card.color }}>{card.value}</p>
-            <p className="text-[10px] text-[var(--text-tertiary)] mt-1 leading-relaxed">{card.note}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 rounded-xl border px-3 py-2.5 bg-[var(--muted-bg)]" style={{ borderColor: 'var(--border-color)' }}>
-        <p className="text-[11px] text-[var(--text-secondary)]">
-          <span className="font-semibold text-[var(--text-primary)]">Analyst takeaway:</span> {takeaway}
-        </p>
       </div>
     </div>
   )
@@ -435,120 +340,137 @@ function HeroMetrics({
   const scoreAcc = metrics.exact_scoreline_rate
   const weightedAcc = metrics.weighted_accuracy_score ?? ((metrics.winner_accuracy * 0.65) + (metrics.exact_scoreline_rate * 0.35))
   const outcomeColor = accuracyColor(outcomeAcc)
-  const scoreColor = accuracyColor(scoreAcc)
   const weightedColor = accuracyColor(weightedAcc)
+  const confidenceGap = Math.abs((metrics.avg_confidence ?? 0) - metrics.winner_accuracy)
+  const pending = metrics.pending_predictions ?? Math.max(metrics.total_predictions - metrics.completed_predictions, 0)
+  const formWins = form.filter((r) => r === 'W').length
+  const formRate = form.length > 0 ? formWins / form.length : 0
+  const scoreBar = Math.min(100, Math.max(2, scoreAcc * 100))
+  const outcomeBar = Math.min(100, Math.max(2, outcomeAcc * 100))
+  const weightedBar = Math.min(100, Math.max(2, weightedAcc * 100))
 
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="p-6">
-        <div className="flex flex-col lg:flex-row items-center gap-8">
-          {/* Outcome Accuracy Ring */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative w-32 h-32">
-              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
-                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
-                <circle
-                  cx="64" cy="64" r="52"
-                  stroke={outcomeColor} strokeWidth="8" fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={outcomeAcc * 326.7 + ' 326.7'}
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold" style={{ color: outcomeColor }}>{pct(outcomeAcc)}</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Outcome Accuracy</p>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                {metrics.winner_correct_count}/{metrics.completed_predictions} correct
-              </p>
-            </div>
-          </div>
-
-          {/* Scoreline Accuracy Ring */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative w-32 h-32">
-              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
-                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
-                <circle
-                  cx="64" cy="64" r="52"
-                  stroke={scoreColor} strokeWidth="8" fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={scoreAcc * 326.7 + ' 326.7'}
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold" style={{ color: scoreColor }}>{pct(scoreAcc)}</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Scoreline Accuracy</p>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                {metrics.exact_scoreline_count ?? 0}/{metrics.completed_predictions} exact
-              </p>
-            </div>
-          </div>
-
-          {/* Weighted Audit Ring */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative w-32 h-32">
-              <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
-                <circle cx="64" cy="64" r="52" stroke="var(--muted-bg)" strokeWidth="8" fill="none" />
-                <circle
-                  cx="64" cy="64" r="52"
-                  stroke={weightedColor} strokeWidth="8" fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={weightedAcc * 326.7 + ' 326.7'}
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold" style={{ color: weightedColor }}>{pct(weightedAcc)}</span>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Weighted Audit Score</p>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                65% outcome pick + 35% exact scoreline
-              </p>
-            </div>
-          </div>
-
-          {/* Stats + Form */}
-          <div className="flex-1 space-y-4">
+    <div className="border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="p-5 md:p-6 border-b xl:border-b-0 xl:border-r border-[var(--border-color)]">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-[var(--text-secondary)] mb-1">Evaluated Picks (Last 15 finished matches)</p>
-              <div className="flex gap-1 flex-wrap">
-                {form.slice(0, 15).map((r, i) => (
-                  <span
-                    key={i}
-                    className={'w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white ' + (r === 'W' ? 'bg-emerald-500' : 'bg-red-400')}
-                  >
-                    {r === 'W' ? '\u2713' : '\u2717'}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {streak.type !== 'N/A' && (
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Current streak: <span className="font-semibold text-[var(--text-primary)]">{streak.count}</span>{' '}
-                {streak.type === 'W' ? 'correct' : 'incorrect'} in a row
+              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">AI Visualization Board</p>
+              <h2 className="mt-1 text-2xl font-black text-[var(--text-primary)]">Model performance report</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                Outcome accuracy is scored only after real match results are fetched. Scoreline accuracy is tracked separately because exact scores are a much stricter target than 1X2 outcomes.
               </p>
-            )}
-            <div className="flex gap-4 text-xs text-[var(--text-tertiary)]">
-              <span>Pending: <span className="font-medium text-[var(--text-primary)]">{metrics.pending_predictions ?? Math.max(metrics.total_predictions - metrics.completed_predictions, 0)}</span></span>
-              <span>Brier: <span className="font-medium text-[var(--text-primary)]">{(metrics.brier_score ?? 0).toFixed(3)}</span></span>
-              <span>Log Loss: <span className="font-medium text-[var(--text-primary)]">{(metrics.log_loss ?? 0).toFixed(3)}</span></span>
-              <span>ECE: <span className="font-medium text-[var(--text-primary)]">{(metrics.expected_calibration_error ?? 0).toFixed(3)}</span></span>
-              <span>Avg Goal Diff: <span className="font-medium text-[var(--text-primary)]">{(metrics.avg_goals_difference ?? 0).toFixed(2)}</span></span>
-              <span>Within 1 Goal: <span className="font-medium text-[var(--text-primary)]">{pct(metrics.within_1_goal_rate ?? 0)}</span></span>
+            </div>
+            <div className="min-w-[150px] rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+              <p className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)]">Audit Score</p>
+              <p className="mt-1 text-3xl font-black" style={{ color: weightedColor }}>{pct(weightedAcc)}</p>
+              <p className="text-[11px] text-[var(--text-secondary)]">65% outcome, 35% scoreline</p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <MetricRail
+              label="1X2 outcome hit rate"
+              value={pct(outcomeAcc)}
+              detail={`${metrics.winner_correct_count}/${metrics.completed_predictions} settled picks`}
+              width={outcomeBar}
+              color={outcomeColor}
+            />
+            <MetricRail
+              label="Exact scoreline hit rate"
+              value={pct(scoreAcc)}
+              detail={`${metrics.exact_scoreline_count ?? 0}/${metrics.completed_predictions} exact scores`}
+              width={scoreBar}
+              color={accuracyColor(scoreAcc)}
+            />
+            <MetricRail
+              label="Weighted audit score"
+              value={pct(weightedAcc)}
+              detail="Blends outcome value and scoreline precision"
+              width={weightedBar}
+              color={weightedColor}
+            />
+          </div>
+        </div>
+
+        <div className="p-5 md:p-6">
+          <div className="grid grid-cols-2 gap-3">
+            <AuditTile label="Completed" value={metrics.completed_predictions.toLocaleString()} note={`${pending.toLocaleString()} pending`} />
+            <AuditTile label="Avg Confidence" value={pct(metrics.avg_confidence ?? 0)} note={`${pct(confidenceGap)} calibration gap`} />
+            <AuditTile label="Brier" value={(metrics.brier_score ?? 0).toFixed(3)} note="Lower is better" />
+            <AuditTile label="Within 1 Goal" value={pct(metrics.within_1_goal_rate ?? 0)} note="Score closeness" />
+          </div>
+
+          <div className="mt-5 rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Recent settled form</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  {form.length > 0 ? `${pct(formRate)} over last ${form.length}` : 'Waiting for settled picks'}
+                </p>
+              </div>
+              {streak.type !== 'N/A' && (
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Streak <span className="font-semibold text-[var(--text-primary)]">{streak.count}</span> {streak.type === 'W' ? 'correct' : 'missed'}
+                </p>
+              )}
+            </div>
+            <div className="mt-3 grid grid-cols-10 gap-1">
+              {form.slice(0, 10).map((r, i) => (
+                <div
+                  key={i}
+                  className={`h-7 rounded flex items-center justify-center text-[10px] font-bold ${
+                    r === 'W'
+                      ? 'bg-emerald-500/18 text-emerald-300'
+                      : 'bg-red-500/18 text-red-300'
+                  }`}
+                >
+                  {r === 'W' ? '✓' : '×'}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function MetricRail({
+  label,
+  value,
+  detail,
+  width,
+  color,
+}: {
+  label: string
+  value: string
+  detail: string
+  width: number
+  color: string
+}) {
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
+        </div>
+        <p className="text-lg font-black" style={{ color }}>{value}</p>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  )
+}
+
+function AuditTile({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">{label}</p>
+      <p className="mt-1 text-xl font-black text-[var(--text-primary)]">{value}</p>
+      <p className="text-[11px] text-[var(--text-secondary)]">{note}</p>
     </div>
   )
 }
@@ -600,69 +522,6 @@ function CalibrationPanel({ metrics }: { metrics: OverallMetrics }) {
           })}
         </div>
       )}
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   KPIGrid — 6 clean stat cards
-   ────────────────────────────────────────────────────────────────────── */
-
-function KPIGrid({ metrics, last30 }: { metrics: OverallMetrics; last30: OverallMetrics }) {
-  const kpis = [
-    {
-      label: '1X2 Hit Rate',
-      value: pct(metrics.winner_accuracy),
-      sub: metrics.completed_predictions + ' finished matches',
-      color: accuracyColor(metrics.winner_accuracy),
-    },
-    {
-      label: 'Exact Scoreline',
-      value: pct(metrics.exact_scoreline_rate),
-      sub: (metrics.exact_scoreline_count ?? 0) + ' of ' + metrics.completed_predictions,
-      color: accuracyColor(metrics.exact_scoreline_rate),
-    },
-    {
-      label: 'Weighted Audit',
-      value: pct(metrics.weighted_accuracy_score ?? 0),
-      sub: '65% outcome + 35% scoreline',
-      color: accuracyColor(metrics.weighted_accuracy_score ?? 0),
-    },
-    {
-      label: 'Last 30D 1X2',
-      value: last30.completed_predictions > 0 ? pct(last30.winner_accuracy) : '\u2014',
-      sub: last30.completed_predictions + ' finished matches',
-      color: last30.completed_predictions > 0 ? accuracyColor(last30.winner_accuracy) : '#888',
-    },
-    {
-      label: 'High-Conf Hit',
-      value: pct(metrics.high_confidence_accuracy),
-      sub: 'Confidence \u2265 55%',
-      color: accuracyColor(metrics.high_confidence_accuracy),
-    },
-    {
-      label: 'Calibration ECE',
-      value: (metrics.expected_calibration_error ?? 0).toFixed(3),
-      sub: 'Lower is better',
-      color: (metrics.expected_calibration_error ?? 0) <= 0.05 ? '#22c55e' : (metrics.expected_calibration_error ?? 0) <= 0.1 ? '#f59e0b' : '#ef4444',
-    },
-    {
-      label: 'Within 1 Goal',
-      value: pct(metrics.within_1_goal_rate ?? 0),
-      sub: 'Prediction closeness',
-      color: accuracyColor(metrics.within_1_goal_rate ?? 0),
-    },
-  ]
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-      {kpis.map((k) => (
-        <div key={k.label} className="bg-[var(--card-bg)] border rounded-xl p-4 text-center" style={{ borderColor: 'var(--border-color)' }}>
-          <p className="text-2xl font-bold" style={{ color: k.color }}>{k.value}</p>
-          <p className="text-xs font-medium text-[var(--text-primary)] mt-1">{k.label}</p>
-          <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{k.sub}</p>
-        </div>
-      ))}
     </div>
   )
 }
@@ -1039,10 +898,10 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
 
 function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
   const methods = [
-    { icon: '\uD83E\uDDE0', name: 'Neural Ensemble', desc: 'Per-league MLP + XGBoost + LightGBM + GradientBoosting + RandomForest' },
-    { icon: '\uD83D\uDCCA', name: 'Dixon-Coles Poisson', desc: 'Corrected bivariate Poisson for scoreline prediction' },
-    { icon: '\u26A1', name: 'ELO Ratings', desc: 'Dynamic ratings with league coefficients and goal-difference weighting' },
-    { icon: '\uD83D\uDD04', name: 'Online Learning', desc: 'Auto-updating neural nets and ELO after each matchday' },
+    { code: 'NN', name: 'Neural Ensemble', desc: 'Per-league MLP + XGBoost + LightGBM + GradientBoosting + RandomForest' },
+    { code: 'xG', name: 'Dixon-Coles Poisson', desc: 'Corrected bivariate Poisson for scoreline prediction' },
+    { code: 'ELO', name: 'ELO Ratings', desc: 'Dynamic ratings with league coefficients and goal-difference weighting' },
+    { code: 'OL', name: 'Online Learning', desc: 'Auto-updating neural nets and ELO after each matchday' },
   ]
 
   const neuralCount = modelInfo?.summary?.neural_ensemble_count ?? 0
@@ -1055,7 +914,7 @@ function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
       <div className="space-y-3">
         {methods.map(m => (
           <div key={m.name} className="flex items-start gap-2.5">
-            <span className="text-base mt-0.5">{m.icon}</span>
+            <span className="mt-0.5 flex h-7 w-9 items-center justify-center rounded border border-[var(--border-color)] bg-[var(--muted-bg)] text-[10px] font-bold text-[var(--accent-primary)]">{m.code}</span>
             <div>
               <p className="text-xs font-semibold text-[var(--text-primary)]">{m.name}</p>
               <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">{m.desc}</p>
@@ -1065,7 +924,7 @@ function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
       </div>
       {neuralCount > 0 && (
         <p className="text-[10px] text-[var(--text-tertiary)] mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
-          {neuralCount} league-specific neural models trained · 55-feature pipeline
+          {neuralCount} league-specific neural models trained · 66-feature pipeline
         </p>
       )}
     </div>

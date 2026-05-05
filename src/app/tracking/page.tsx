@@ -16,17 +16,12 @@ export default function TrackingPage({
   const initialView = resolveInitialView(searchParams?.view)
 
   return (
-    <div className="min-h-screen bg-[var(--background)] relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
-        <div className="absolute top-[-140px] left-[-120px] w-[340px] h-[340px] rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute top-[80px] right-[-100px] w-[300px] h-[300px] rounded-full bg-cyan-500/10 blur-3xl" />
-      </div>
-
-      <div className="relative max-w-5xl mx-auto px-4 pt-5 pb-10">
-        <div className="mb-5 fm-surface p-5 md:p-6 animate-fadeIn">
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="max-w-7xl mx-auto px-4 pt-5 pb-10">
+        <div className="mb-5 border border-[var(--border-color)] bg-[var(--card-bg)] p-5 md:p-6 animate-fadeIn">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-[var(--text-tertiary)] mb-2">Model Reality Check</p>
+              <p className="text-[10px] uppercase tracking-normal font-semibold text-[var(--text-tertiary)] mb-2">Model Reality Check</p>
               <h1 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] leading-tight">
                 Prediction Intelligence Center
               </h1>
@@ -34,7 +29,7 @@ export default function TrackingPage({
                 Accuracy diagnostics, league learning loops, and personal team watchlists now share one workspace.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-secondary)]">
               <span className="px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-semibold">Outcome + Scoreline Audits</span>
               <span className="px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 text-cyan-400 font-semibold">Diagnostics + League Learning</span>
               <span className="px-2.5 py-1 rounded-full border border-violet-500/30 bg-violet-500/15 text-violet-300 font-semibold">Personal Team Tracking</span>
@@ -44,8 +39,8 @@ export default function TrackingPage({
 
         <TrackingCenter initialView={initialView} />
 
-        <div className="mt-5 bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 md:p-5 shadow-[var(--shadow-sm)]">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Continuous Learning Pipeline</p>
+        <div className="mt-5 bg-[var(--card-bg)] border border-[var(--border-color)] p-4 md:p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)] mb-3">Continuous Learning Pipeline</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             {[
               { step: 'Observe Outcomes', desc: 'Finished matches synced and labeled by league' },

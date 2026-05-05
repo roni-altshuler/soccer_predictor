@@ -28,11 +28,6 @@ const LEAGUE_MATCH_CONFIG: Record<number, number> = {
   47: 38, 87: 38, 55: 38, 54: 34, 53: 34, 130: 34, 57: 34, 61: 34,
 }
 
-// League size (number of teams)
-const LEAGUE_SIZE: Record<number, number> = {
-  47: 20, 87: 20, 55: 20, 54: 18, 53: 18, 130: 29, 57: 18, 61: 18,
-}
-
 interface TeamData {
   name: string
   points: number
@@ -43,6 +38,11 @@ interface TeamData {
   ga: number
   gd: number
   matchesPlayed: number
+}
+
+interface SimulationFixture {
+  homeIdx: number
+  awayIdx: number
 }
 
 interface Standing {
@@ -79,6 +79,7 @@ function runMonteCarloSimulation(
   totalMatchesPerSeason: number,
   nSimulations: number,
   leagueId: number,
+  remainingFixtures: SimulationFixture[] | null = null,
 ): Standing[] {
   const numTeams = teams.length
   if (numTeams === 0) return []
@@ -102,11 +103,9 @@ function runMonteCarloSimulation(
   // twice (home and away). We generate "abstract" remaining fixtures.
   // For simplicity, distribute remaining matches as matchups against league opponents
   // weighted by how many games each needs to play.
-  interface Fixture { homeIdx: number; awayIdx: number }
-
   // Generate remaining fixtures: sample proportionally
-  function generateRemainingFixtures(): Fixture[] {
-    const fixtures: Fixture[] = []
+  function generateRemainingFixtures(): SimulationFixture[] {
+    const fixtures: SimulationFixture[] = []
     const remaining = [...remainingPerTeam]
 
     // Create a pool of possible matchups
@@ -123,8 +122,9 @@ function runMonteCarloSimulation(
     return fixtures
   }
 
-  const fixtures = generateRemainingFixtures()
-  const totalRemainingMatches = fixtures.length
+  const fixtures = remainingFixtures && remainingFixtures.length > 0
+    ? remainingFixtures
+    : generateRemainingFixtures()
 
   // Home advantage factor (empirically ~1.3-1.5 for most leagues)
   const homeFactor = 1.35
@@ -261,6 +261,101 @@ function runMonteCarloSimulation(
   return standings
 }
 
+function formatESPNDate(d: Date): string {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+}
+
+function normalizeTeamName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/\b(football club|fc|afc|cf|sc|club|the)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function resolveTeamIndex(candidates: string[], lookup: Map<string, number>): number | null {
+  for (const candidate of candidates) {
+    const normalized = normalizeTeamName(candidate)
+    if (lookup.has(normalized)) return lookup.get(normalized) ?? null
+  }
+  return null
+}
+
+async function fetchRemainingFixtures(
+  espnLeagueId: string,
+  teams: TeamData[],
+  leagueId: number,
+): Promise<SimulationFixture[]> {
+  const lookup = new Map<string, number>()
+  teams.forEach((team, idx) => {
+    lookup.set(normalizeTeamName(team.name), idx)
+  })
+
+  const today = new Date()
+  const future = new Date(today)
+  future.setDate(future.getDate() + (leagueId === 130 ? 240 : 100))
+  const dateRange = `${formatESPNDate(today)}-${formatESPNDate(future)}`
+
+  const response = await fetch(
+    `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`,
+    {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      next: { revalidate: 300 },
+    },
+  )
+
+  if (!response.ok) return []
+
+  const data = await response.json()
+  const fixtures: SimulationFixture[] = []
+  const seen = new Set<string>()
+
+  for (const event of data.events || []) {
+    const comp = event.competitions?.[0]
+    if (!comp) continue
+
+    const statusType = comp.status?.type || event.status?.type || {}
+    const statusName = statusType.name || ''
+    const isFinished = Boolean(statusType.completed) || statusName.includes('FINAL') || statusName.includes('FULL_TIME')
+    const matchDate = new Date(event.date)
+    if (isFinished || matchDate < today) continue
+
+    const home = comp.competitors?.find((c: any) => c.homeAway === 'home')
+    const away = comp.competitors?.find((c: any) => c.homeAway === 'away')
+    if (!home || !away) continue
+
+    const homeIdx = resolveTeamIndex([
+      home.team?.displayName,
+      home.team?.name,
+      home.team?.shortDisplayName,
+      home.team?.location,
+      home.team?.abbreviation,
+    ].filter(Boolean), lookup)
+    const awayIdx = resolveTeamIndex([
+      away.team?.displayName,
+      away.team?.name,
+      away.team?.shortDisplayName,
+      away.team?.location,
+      away.team?.abbreviation,
+    ].filter(Boolean), lookup)
+
+    if (homeIdx === null || awayIdx === null || homeIdx === awayIdx) continue
+
+    const key = `${event.id || matchDate.toISOString()}-${homeIdx}-${awayIdx}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    fixtures.push({ homeIdx, awayIdx })
+  }
+
+  return fixtures
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ leagueId: string }> }
@@ -326,9 +421,20 @@ export async function GET(
       return b.gd - a.gd
     })
 
-    const standings = runMonteCarloSimulation(teams, totalMatchesPerSeason, nSimulations, leagueId)
+    let remainingFixtures: SimulationFixture[] = []
+    try {
+      remainingFixtures = await fetchRemainingFixtures(espnLeagueId, teams, leagueId)
+    } catch {
+      remainingFixtures = []
+    }
 
-    const remainingMatches = Math.max(0, totalMatchesPerSeason - (teams[0]?.matchesPlayed || 0))
+    const standings = runMonteCarloSimulation(teams, totalMatchesPerSeason, nSimulations, leagueId, remainingFixtures)
+
+    const generatedRemainingMatches = Math.max(
+      0,
+      Math.round(teams.reduce((sum, team) => sum + Math.max(0, totalMatchesPerSeason - team.matchesPlayed), 0) / 2),
+    )
+    const remainingMatches = remainingFixtures.length > 0 ? remainingFixtures.length : generatedRemainingMatches
     const mostLikelyChampion = standings[0]?.team_name || 'Unknown'
     const championProbability = standings[0]?.title_probability || 0
 
@@ -343,6 +449,9 @@ export async function GET(
       league_name: leagueName,
       n_simulations: nSimulations,
       remaining_matches: remainingMatches,
+      fixture_source: remainingFixtures.length > 0
+        ? 'ESPN scoreboard remaining fixtures'
+        : 'Generated fixture fallback from current ESPN standings',
       matches_per_season: totalMatchesPerSeason,
       most_likely_champion: mostLikelyChampion,
       champion_probability: championProbability,

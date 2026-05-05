@@ -44,24 +44,13 @@ class KnockoutSimulationResponse(BaseModel):
     final_probabilities: dict
 
 
-# Default Champions League teams (current season)
+# Current 2025-26 Champions League state as of May 4, 2026:
+# Semi-finals only: PSG vs Bayern Munich, Arsenal vs Atlético Madrid.
 CL_TEAMS_2025_26 = [
-    {"name": "Real Madrid", "elo": 2050, "group": "A", "group_position": 1, "country": "Spain"},
-    {"name": "Bayern Munich", "elo": 2020, "group": "B", "group_position": 1, "country": "Germany"},
-    {"name": "Manchester City", "elo": 2080, "group": "C", "group_position": 1, "country": "England"},
-    {"name": "Barcelona", "elo": 1980, "group": "D", "group_position": 1, "country": "Spain"},
-    {"name": "Arsenal", "elo": 1960, "group": "E", "group_position": 1, "country": "England"},
-    {"name": "Inter", "elo": 1920, "group": "F", "group_position": 1, "country": "Italy"},
-    {"name": "Paris Saint-Germain", "elo": 1950, "group": "G", "group_position": 1, "country": "France"},
-    {"name": "Liverpool", "elo": 1970, "group": "H", "group_position": 1, "country": "England"},
-    {"name": "Atletico Madrid", "elo": 1900, "group": "A", "group_position": 2, "country": "Spain"},
-    {"name": "Dortmund", "elo": 1880, "group": "B", "group_position": 2, "country": "Germany"},
-    {"name": "Napoli", "elo": 1870, "group": "C", "group_position": 2, "country": "Italy"},
-    {"name": "Porto", "elo": 1820, "group": "D", "group_position": 2, "country": "Portugal"},
-    {"name": "PSV", "elo": 1800, "group": "E", "group_position": 2, "country": "Netherlands"},
-    {"name": "Benfica", "elo": 1840, "group": "F", "group_position": 2, "country": "Portugal"},
-    {"name": "RB Leipzig", "elo": 1860, "group": "G", "group_position": 2, "country": "Germany"},
-    {"name": "Chelsea", "elo": 1890, "group": "H", "group_position": 2, "country": "England"},
+    {"name": "Paris Saint-Germain", "elo": 1995, "group": "SF1", "group_position": 1, "country": "France"},
+    {"name": "Bayern Munich", "elo": 2020, "group": "SF1", "group_position": 2, "country": "Germany"},
+    {"name": "Arsenal", "elo": 2010, "group": "SF2", "group_position": 1, "country": "England"},
+    {"name": "Atlético Madrid", "elo": 1945, "group": "SF2", "group_position": 2, "country": "Spain"},
 ]
 
 # Default World Cup teams
@@ -242,6 +231,8 @@ async def simulate_champions_league(
     return {
         "tournament": result.tournament_name,
         "n_simulations": result.n_simulations,
+        "currentRound": "Semi-finals",
+        "source": "UEFA/ESPN public schedule, verified 2026-05-04",
         "mostLikelyWinner": result.most_likely_winner,
         "winnerProbability": round(result.winner_probability, 4),
         "winnerProbabilities": [
@@ -250,7 +241,7 @@ async def simulate_champions_league(
         ],
         "semiFinalProbabilities": [
             {"team": team, "probability": round(prob, 4)}
-            for team, prob in sorted(result.semi_final_probabilities.items(), key=lambda x: -x[1])[:8]
+            for team, prob in sorted(result.semi_final_probabilities.items(), key=lambda x: -x[1])
         ],
         "finalProbabilities": [
             {"team": team, "probability": round(prob, 4)}
