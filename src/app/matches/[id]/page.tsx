@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
@@ -10,6 +10,8 @@ import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
+import DataSourceBadge from '@/components/DataSourceBadge'
+import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 
 interface MatchEvent {
   type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'substitution' | 'var' | 'penalty_missed' | 'own_goal'
@@ -39,6 +41,9 @@ interface PlayerLineup {
 
 interface MatchDetails {
   id: string
+  source?: 'espn' | 'fotmob'
+  sourceDetail?: string
+  generatedAt?: string
   home_team: string
   away_team: string
   home_score: number | null
@@ -102,6 +107,9 @@ interface MatchDetails {
   }
   commentary?: { minute: number; text: string }[]
 }
+
+const DETAIL_TABS = ['summary', 'lineup', 'stats', 'h2h'] as const
+type DetailTab = typeof DETAIL_TABS[number]
 
 type MatchStats = MatchDetails['stats']
 
@@ -193,6 +201,194 @@ function FotmobStatsCard({
   )
 }
 
+type PredictionDriverTone = 'positive' | 'neutral' | 'risk'
+
+type PredictionDriver = {
+  label: string
+  detail: string
+  tone: PredictionDriverTone
+}
+
+function formatProbability(value: number): string {
+  return `${Math.round(value * 100)}%`
+}
+
+function getPredictionRank(match: MatchDetails) {
+  if (!match.prediction) return []
+  return [
+    { key: 'home' as const, label: match.home_team, shortLabel: 'Home', value: match.prediction.home_win },
+    { key: 'draw' as const, label: 'Draw', shortLabel: 'Draw', value: match.prediction.draw },
+    { key: 'away' as const, label: match.away_team, shortLabel: 'Away', value: match.prediction.away_win },
+  ].sort((a, b) => b.value - a.value)
+}
+
+function buildPredictionDrivers(match: MatchDetails): PredictionDriver[] {
+  if (!match.prediction) return []
+
+  const ranked = getPredictionRank(match)
+  const leader = ranked[0]
+  const runnerUp = ranked[1]
+  const margin = leader && runnerUp ? Math.round((leader.value - runnerUp.value) * 100) : 0
+  const drivers: PredictionDriver[] = []
+
+  if (leader) {
+    drivers.push({
+      label: 'Primary lean',
+      detail: `${leader.label} leads the market-style outcome grid at ${formatProbability(leader.value)}${runnerUp ? `, ${margin} points above ${runnerUp.shortLabel.toLowerCase()}` : ''}.`,
+      tone: margin >= 10 ? 'positive' : 'neutral',
+    })
+  }
+
+  if (match.homeStanding && match.awayStanding) {
+    const positionGap = match.awayStanding.position - match.homeStanding.position
+    const pointsGap = match.homeStanding.points - match.awayStanding.points
+    const strongerTeam = positionGap > 0 ? match.home_team : positionGap < 0 ? match.away_team : null
+
+    if (strongerTeam) {
+      drivers.push({
+        label: 'Table context',
+        detail: `${strongerTeam} is ${Math.abs(positionGap)} places above the opponent with a ${Math.abs(pointsGap)} point table gap.`,
+        tone: Math.abs(positionGap) >= 4 || Math.abs(pointsGap) >= 8 ? 'positive' : 'neutral',
+      })
+    } else {
+      drivers.push({
+        label: 'Table context',
+        detail: `Both teams are adjacent in the table, so the model does not treat league position as a major separator.`,
+        tone: 'neutral',
+      })
+    }
+  }
+
+  const h2hTotal = match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins
+  if (h2hTotal > 0) {
+    const h2hLeader = [
+      { label: match.home_team, wins: match.h2h.homeWins },
+      { label: 'Draws', wins: match.h2h.draws },
+      { label: match.away_team, wins: match.h2h.awayWins },
+    ].sort((a, b) => b.wins - a.wins)[0]
+
+    drivers.push({
+      label: 'Head-to-head sample',
+      detail: `${h2hLeader.label} has the strongest recent H2H count: ${match.h2h.homeWins}-${match.h2h.draws}-${match.h2h.awayWins} across ${h2hTotal} recorded meetings.`,
+      tone: h2hLeader.wins / h2hTotal >= 0.5 ? 'positive' : 'neutral',
+    })
+  }
+
+  const totalGoals = match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)
+  if (Number.isFinite(totalGoals)) {
+    const overText = match.prediction.over_2_5 !== undefined
+      ? ` Over 2.5 is priced by the model at ${formatProbability(match.prediction.over_2_5)}.`
+      : ''
+    drivers.push({
+      label: 'Goal profile',
+      detail: `Projected total is ${totalGoals.toFixed(1)} goals with a ${match.prediction.predicted_score.home}-${match.prediction.predicted_score.away} model scoreline.${overText}`,
+      tone: totalGoals >= 2.8 ? 'positive' : totalGoals <= 1.8 ? 'risk' : 'neutral',
+    })
+  }
+
+  if (match.prediction.confidence_band || Number.isFinite(match.prediction.confidence)) {
+    drivers.push({
+      label: 'Confidence calibration',
+      detail: `${match.prediction.confidence_band || 'Medium'} confidence at ${match.prediction.confidence}% means the model sees a ${margin >= 12 ? 'clearer' : 'competitive'} outcome distribution.`,
+      tone: match.prediction.confidence >= 70 ? 'positive' : match.prediction.confidence < 55 ? 'risk' : 'neutral',
+    })
+  }
+
+  const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
+  if (!isScheduled && match.stats.shots[0] + match.stats.shots[1] > 0) {
+    const shotLeader = match.stats.shots[0] > match.stats.shots[1]
+      ? match.home_team
+      : match.stats.shots[1] > match.stats.shots[0]
+        ? match.away_team
+        : null
+
+    drivers.push({
+      label: 'In-match evidence',
+      detail: shotLeader
+        ? `${shotLeader} leads total shots ${match.stats.shots[0]}-${match.stats.shots[1]} in the current match data feed.`
+        : `Shot volume is level at ${match.stats.shots[0]}-${match.stats.shots[1]} in the current match data feed.`,
+      tone: shotLeader ? 'positive' : 'neutral',
+    })
+  }
+
+  return drivers.slice(0, 5)
+}
+
+function PredictionInsightPanel({ match }: { match: MatchDetails }) {
+  if (!match.prediction) return null
+
+  const ranked = getPredictionRank(match)
+  const leader = ranked[0]
+  const runnerUp = ranked[1]
+  const separation = leader && runnerUp ? Math.round((leader.value - runnerUp.value) * 100) : 0
+  const drivers = buildPredictionDrivers(match)
+  const toneClass: Record<PredictionDriverTone, string> = {
+    positive: 'border-emerald-500/25 bg-emerald-500/10',
+    neutral: 'border-sky-500/20 bg-sky-500/10',
+    risk: 'border-amber-500/25 bg-amber-500/10',
+  }
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="p-4 border-b flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Prediction Explainability</p>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Why the model leans this way</h3>
+        </div>
+        <DataSourceBadge provider="model" detail={match.prediction.model_version || 'Unified neural ensemble'} />
+      </div>
+
+      <div className="p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Top outcome</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">{leader?.label || 'Unavailable'}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{leader ? formatProbability(leader.value) : 'N/A'}</p>
+          </div>
+          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Separation</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">{separation} points</p>
+            <p className="text-xs text-[var(--text-secondary)]">vs next outcome</p>
+          </div>
+          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Scoreline</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">
+              {match.prediction.predicted_score.home}-{match.prediction.predicted_score.away}
+            </p>
+            <p className="text-xs text-[var(--text-secondary)]">
+              {match.prediction.most_likely_score ? `Mode: ${match.prediction.most_likely_score}` : 'Expected goals output'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {drivers.map((driver) => (
+            <div key={driver.label} className={`rounded-xl border p-3 ${toneClass[driver.tone]}`}>
+              <p className="text-xs font-bold text-[var(--text-primary)]">{driver.label}</p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{driver.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
+            Model output is probabilistic and uses available provider data, standings context, H2H samples, and calibrated scoring features.
+          </p>
+          {match.source && (
+            <DataSourceBadge
+              provider={match.source}
+              detail={match.sourceDetail}
+              refreshedAt={match.generatedAt}
+              compact
+              className="flex-shrink-0"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MatchDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -202,13 +398,18 @@ export default function MatchDetailPage() {
   
   const [match, setMatch] = useState<MatchDetails | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'summary' | 'lineup' | 'stats' | 'h2h'>('summary')
+  const [activeTab, setActiveTab] = useState<DetailTab>('summary')
   const [halftimeCountdown, setHalftimeCountdown] = useState<string>('')
   const [retryCount, setRetryCount] = useState(0) // Used to trigger refetch
+  const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
 
   // Derived state for live status - compute before hooks that depend on it
   const isLive = match?.status?.includes('IN_PROGRESS') || match?.status?.includes('HALF') || match?.status?.includes('LIVE') || false
   const isHalftime = match?.status?.toLowerCase().includes('half') && !match?.status?.toLowerCase().includes('first') && !match?.status?.toLowerCase().includes('second') || false
+  const trackedNameSet = useMemo(
+    () => new Set(trackedTeams.map((team) => normalizeTeamName(team.name))),
+    [trackedTeams]
+  )
 
   // Halftime countdown effect - must be before early returns
   useEffect(() => {
@@ -240,6 +441,27 @@ export default function MatchDetailPage() {
   }, [isHalftime])
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return
+      setTrackedTeams(
+        parsed
+          .filter((item): item is WatchTeam => {
+            if (!item || typeof item !== 'object') return false
+            const entry = item as Partial<WatchTeam>
+            return typeof entry.name === 'string' && typeof entry.league === 'string'
+          })
+          .map((item) => ({ name: item.name.trim(), league: item.league.trim() }))
+          .filter((item) => item.name.length > 0 && item.league.length > 0)
+      )
+    } catch (error) {
+      console.error('Failed to load match watchlist:', error)
+    }
+  }, [])
+
+  useEffect(() => {
     const fetchMatchDetails = async () => {
       try {
         // Use our server-side API proxy to fetch match details
@@ -259,6 +481,9 @@ export default function MatchDetailPage() {
         // Map the API response to MatchDetails format
         const matchDetails: MatchDetails = {
           id: data.id,
+          source: data.source,
+          sourceDetail: data.sourceDetail,
+          generatedAt: data.generatedAt,
           home_team: data.home_team,
           away_team: data.away_team,
           home_score: data.home_score,
@@ -296,11 +521,25 @@ export default function MatchDetailPage() {
             fouls: [0, 0],
           },
           shotmap: data.shotmap || [],
-          h2h: data.h2h || {
-            homeWins: 0,
-            draws: 0,
-            awayWins: 0,
-            recentMatches: [],
+          h2h: {
+            homeWins: data.h2h?.homeWins ?? 0,
+            draws: data.h2h?.draws ?? 0,
+            awayWins: data.h2h?.awayWins ?? 0,
+            recentMatches: (data.h2h?.recentMatches || []).map((m: {
+              date?: string
+              homeTeam?: string
+              awayTeam?: string
+              home_score?: number
+              away_score?: number
+              homeScore?: number
+              awayScore?: number
+            }) => ({
+              date: m.date || '',
+              homeTeam: m.homeTeam,
+              awayTeam: m.awayTeam,
+              home_score: Number(m.home_score ?? m.homeScore ?? 0),
+              away_score: Number(m.away_score ?? m.awayScore ?? 0),
+            })),
           },
           prediction: data.prediction,
           commentary: data.commentary || [],
@@ -498,6 +737,19 @@ export default function MatchDetailPage() {
     }
   }
 
+  const trackTeam = (teamName: string) => {
+    const normalized = normalizeTeamName(teamName)
+    if (!normalized || trackedNameSet.has(normalized)) return
+
+    setTrackedTeams((current) => {
+      const next = [...current, { name: teamName, league: match.league || 'Unknown' }]
+      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const isTeamTracked = (teamName: string) => trackedNameSet.has(normalizeTeamName(teamName))
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       {/* Header */}
@@ -590,6 +842,32 @@ export default function MatchDetailPage() {
             </div>
             
             <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-tertiary)' }}>{formatDate(match.date)}</p>
+            <div className="mt-3 flex justify-center">
+              <DataSourceBadge
+                provider={match.source || 'none'}
+                detail={match.sourceDetail || 'Match detail feed'}
+                refreshedAt={match.generatedAt}
+              />
+            </div>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {[match.home_team, match.away_team].map((teamName) => {
+                const tracked = isTeamTracked(teamName)
+                return (
+                  <button
+                    key={teamName}
+                    onClick={() => trackTeam(teamName)}
+                    disabled={tracked}
+                    className={`max-w-[220px] truncate rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                      tracked
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
+                        : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]'
+                    }`}
+                  >
+                    {tracked ? `Tracking ${teamName}` : `Track ${teamName}`}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -598,10 +876,10 @@ export default function MatchDetailPage() {
       <div className="bg-[var(--background-secondary)] border-b sticky top-16 z-10" style={{ borderColor: 'var(--border-color)' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-4 overflow-x-auto justify-center">
-            {['summary', 'lineup', 'stats', 'h2h'].map((tab) => (
+            {DETAIL_TABS.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab)}
                 className={`py-4 px-2 font-medium capitalize transition-colors border-b-2 whitespace-nowrap ${
                   activeTab === tab
                     ? 'text-[var(--accent-primary)] border-[var(--accent-primary)]'
@@ -730,6 +1008,8 @@ export default function MatchDetailPage() {
                 </div>
               </div>
             )}
+
+            <PredictionInsightPanel match={match} />
 
             {/* ── Events Timeline ── */}
             {match.events.length > 0 && (
@@ -872,6 +1152,25 @@ export default function MatchDetailPage() {
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatDate(match.date)}</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{match.league}</p>
                   </div>
+                </div>
+                {/* Data source */}
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] text-[10px] font-black text-[var(--text-secondary)]">
+                    DS
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Match data source</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                      Provider-backed details are used when available; unavailable fields stay blank.
+                    </p>
+                  </div>
+                  <DataSourceBadge
+                    provider={match.source || 'none'}
+                    detail={match.sourceDetail}
+                    refreshedAt={match.generatedAt}
+                    compact
+                    className="flex-shrink-0"
+                  />
                 </div>
                 {/* Referee */}
                 {match.referee && (

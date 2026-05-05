@@ -10,6 +10,7 @@ import {
   type WatchTeam,
 } from '@/lib/watchlist'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
+import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 
 type TodayMatch = {
   id?: string
@@ -91,6 +92,11 @@ function getLeagueFlagUrl(league: string): string | null {
   return code ? (leagueFlagUrls[code] || null) : null
 }
 
+function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch['provider']): DataProvider {
+  if (source === 'espn' || source === 'fotmob' || source === 'error') return source
+  return 'none'
+}
+
 /* ── Match Row (FotMob style) ── */
 function MatchRow({ match }: { match: TodayMatch }) {
   const isLive = match.status === 'live'
@@ -151,6 +157,15 @@ function MatchRow({ match }: { match: TodayMatch }) {
         </div>
         {venue && (
           <p className="mt-1 text-center text-[10px] text-[var(--text-tertiary)]">{venue}</p>
+        )}
+        {match.provider && (
+          <div className="mt-1.5 flex justify-center">
+            <DataSourceBadge
+              provider={resolveDataProvider(match.provider)}
+              compact
+              className="px-2 py-0.5 text-[9px]"
+            />
+          </div>
         )}
       </div>
     </Link>
@@ -403,13 +418,6 @@ export default function Home() {
   const totalCount = live.length + upcoming.length + completed.length
   const trackedCount = trackedMatchesByTab.length
   const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
-  const sourceLabel = matches.source === 'espn'
-    ? 'ESPN'
-    : matches.source === 'fotmob'
-      ? 'FotMob'
-      : matches.source === 'error'
-        ? 'Provider error'
-        : 'No provider matches'
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -492,9 +500,13 @@ export default function Home() {
             {trackedTeams.length > 4 ? ` +${trackedTeams.length - 4} more` : ''}
           </div>
         )}
-        <div className="px-4 pb-2 text-[10px] text-[var(--text-tertiary)]">
-          Match data: {sourceLabel}
-          {matches.generatedAt ? ` · refreshed ${new Date(matches.generatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}
+        <div className="px-4 pb-2">
+          <DataSourceBadge
+            provider={resolveDataProvider(matches.source)}
+            detail={matches.sourceDetail || 'Daily match feed'}
+            refreshedAt={matches.generatedAt}
+            compact
+          />
         </div>
       </div>
 

@@ -142,8 +142,39 @@ interface ShotMapPoint {
   player?: string
 }
 
+type ESPNEventLike = {
+  team?: { id?: string | number; displayName?: string; shortDisplayName?: string }
+  competitor?: { id?: string | number }
+  competitorId?: string | number
+  teamId?: string | number
+  homeAway?: string
+}
+
+type FotMobShot = {
+  x?: unknown
+  X?: unknown
+  y?: unknown
+  Y?: unknown
+  position?: { x?: unknown; y?: unknown }
+  isHome?: boolean
+  teamId?: string | number
+  eventType?: string
+  expectedGoals?: unknown
+  xG?: unknown
+  expectedGoal?: unknown
+  isGoal?: boolean
+  min?: unknown
+  minute?: unknown
+  time?: unknown
+  playerName?: string
+  player?: { name?: string }
+}
+
 interface MatchDetailsResponse {
   id: string
+  source?: 'espn' | 'fotmob'
+  sourceDetail?: string
+  generatedAt?: string
   home_team: string
   away_team: string
   home_score: number | null
@@ -241,7 +272,7 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
       const awayTeamId = String(awayTeam.team?.id || '')
       const resolvedLeagueId = resolveLeagueIdFromESPN(data.header?.league, league)
 
-      const inferEventTeam = (rawEvent: any, text?: string): 'home' | 'away' | null => {
+      const inferEventTeam = (rawEvent: ESPNEventLike, text?: string): 'home' | 'away' | null => {
         const eventTeamId = String(
           rawEvent?.team?.id ||
           rawEvent?.competitor?.id ||
@@ -394,6 +425,9 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
       
       return {
         id: matchId,
+        source: 'espn',
+        sourceDetail: 'ESPN soccer summary endpoint',
+        generatedAt: new Date().toISOString(),
         home_team: homeTeam.team?.displayName || homeTeam.team?.name || '',
         away_team: awayTeam.team?.displayName || awayTeam.team?.name || '',
         home_score: status !== 'scheduled' ? parseInt(homeTeam.score || '0') : null,
@@ -534,7 +568,7 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
     const rawShots = content.shotmap?.shots || content.shotmap?.shotsData || content.shotMap?.shots || []
     const shotmap: ShotMapPoint[] = Array.isArray(rawShots)
       ? rawShots
-          .map((shot: any) => {
+          .map((shot: FotMobShot) => {
             const x = normalizeShotCoordinate(shot?.x ?? shot?.X ?? shot?.position?.x, 'x')
             const y = normalizeShotCoordinate(shot?.y ?? shot?.Y ?? shot?.position?.y, 'y')
             if (x === null || y === null) return null
@@ -568,6 +602,9 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
     
     return {
       id: matchId,
+      source: 'fotmob',
+      sourceDetail: 'FotMob match details endpoint',
+      generatedAt: new Date().toISOString(),
       home_team: general.homeTeam?.name || header.teams?.[0]?.name || '',
       away_team: general.awayTeam?.name || header.teams?.[1]?.name || '',
       home_score: header.teams?.[0]?.score ?? null,

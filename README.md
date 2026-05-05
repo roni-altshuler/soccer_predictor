@@ -12,6 +12,8 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 
 - **Live Scores & Match Tracking** — Real-time scores, today's matches grouped by league, and a date-swipe navigation (like FotMob)
 - **AI Match Predictions** — Neural-first unified prediction endpoint using 66 match features, calibrated league parameters, and ELO-Poisson fallback
+- **Prediction Explainability** — Match detail pages explain model lean using probability separation, standings context, H2H samples, goal profile, confidence, and live stats when available
+- **Data Source Transparency** — Match feeds and match detail pages label ESPN/FotMob/model provenance so provider-backed fields are separated from model output and unavailable data
 - **League Standings & Fixtures** — ESPN-sourced standings, recent results, upcoming fixtures, and top scorers for all supported leagues
 - **Season Simulator** — Monte Carlo simulation (1,000 iterations) on live standings to project title, top-4, Europa, and relegation probabilities
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
@@ -19,6 +21,19 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **News Feed** — Aggregated soccer news from ESPN
 - **World Cup 2026 Hub** — FIFA World Cup countdown, readiness panel, tournament page, fixtures, and `fifa.world` prediction support
 - **Progressive Web App** — Installable on desktop/mobile with offline support
+
+---
+
+## Product Roadmap
+
+The May 5, 2026 product roadmap is saved in [`docs/PRODUCT_ROADMAP_2026-05-05.md`](docs/PRODUCT_ROADMAP_2026-05-05.md). The current implementation tranche starts with the strongest and fastest trust-building work:
+
+1. Data Trust Layer
+2. Prediction Explainability
+3. Mobile Matchday Polish
+4. Personal Watchlist Expansion
+
+Heavier follow-up work includes the World Cup command center, scenario simulator controls, live prediction updates, global model promotion gates, and model-vs-market intelligence.
 
 ---
 
@@ -310,6 +325,8 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - Match rows show only provider-backed fields: team names, score, kickoff time/status, league, venue, and real model outputs.
 - Venue, referee, weather, H2H, and prediction modules are hidden when source data is unavailable.
 - The app must not display random weather, invented referee details, synthetic H2H records, or zero-probability placeholders as if they were real.
+- Source badges identify ESPN/FotMob/model provenance on match feeds and match detail pages.
+- Match detail pages can add either team directly to the local watchlist.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
 ---
