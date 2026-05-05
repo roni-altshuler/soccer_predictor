@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
@@ -8,6 +8,7 @@ import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch 
 import MatchCalendar from '@/components/match/MatchCalendar'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import WorldCupReadinessPanel from '@/components/worldcup/WorldCupReadinessPanel'
+import WorldCupCommandCenter from '@/components/worldcup/WorldCupCommandCenter'
 
 interface TournamentHomePageProps {
   tournamentId: 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup'
@@ -151,10 +152,31 @@ const SIMULATION_OPTIONS = [
   { value: 50000, label: '50,000' },
 ]
 
+const SCENARIO_OPTIONS = [
+  { value: 'baseline', label: 'Baseline', detail: 'Use current standings and model balance.' },
+  { value: 'favorable', label: 'Favorable Path', detail: 'Boost the focus team to test an optimistic route.' },
+  { value: 'adverse', label: 'Adverse Path', detail: 'Stress-test the focus team with a harder route.' },
+] as const
+
+const VOLATILITY_OPTIONS = [
+  { value: 'low', label: 'Low volatility', detail: 'Favorites are more stable.' },
+  { value: 'standard', label: 'Standard', detail: 'Balanced tournament randomness.' },
+  { value: 'high', label: 'High volatility', detail: 'Upset-prone path simulation.' },
+] as const
+
+type ScenarioMode = typeof SCENARIO_OPTIONS[number]['value']
+type VolatilityMode = typeof VOLATILITY_OPTIONS[number]['value']
+
 // Simulation constants
 const GOAL_DIFF_NORMALIZATION = 10  // Factor to normalize goal difference impact
 const RANDOM_VARIANCE = 5  // Random variance added to team strength
 const ROUND_VARIANCE = 3   // Random variance for knockout round outcomes
+
+const VOLATILITY_CONFIG: Record<VolatilityMode, { randomVariance: number; roundVariance: number }> = {
+  low: { randomVariance: Math.max(2, RANDOM_VARIANCE - 2), roundVariance: Math.max(1, ROUND_VARIANCE - 1.5) },
+  standard: { randomVariance: RANDOM_VARIANCE, roundVariance: ROUND_VARIANCE },
+  high: { randomVariance: RANDOM_VARIANCE + 3, roundVariance: ROUND_VARIANCE + 2 },
+}
 
 export default function TournamentHomePage({ tournamentId, tournamentName }: TournamentHomePageProps) {
   const config = TOURNAMENT_CONFIG[tournamentId]
@@ -164,10 +186,18 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   const [selectedSeason, setSelectedSeason] = useState(tournamentId === 'world_cup' ? '2026' : '2025')
   const [runningSimulation, setRunningSimulation] = useState(false)
   const [numSimulations, setNumSimulations] = useState(10000)
+  const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('baseline')
+  const [scenarioFocusTeam, setScenarioFocusTeam] = useState('')
+  const [volatilityMode, setVolatilityMode] = useState<VolatilityMode>('standard')
   // New: Probability-based simulation results (like LeagueHomePage)
   const [simulationResults, setSimulationResults] = useState<{
     tournament_name: string
     n_simulations: number
+    scenario?: {
+      mode: ScenarioMode
+      focusTeam: string
+      volatility: VolatilityMode
+    }
     teams: Array<{
       team_name: string
       current_points: number
@@ -198,6 +228,24 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   // Get available seasons based on tournament type
   const availableSeasons = tournamentId === 'world_cup' ? WORLD_CUP_SEASONS : TOURNAMENT_SEASONS
 
+  const simulationTeamOptions = useMemo(() => {
+    const names = data.groups
+      .flatMap(group => group.standings || [])
+      .map(team => team.team)
+      .filter((name) => name && name !== 'TBD')
+    return Array.from(new Set(names)).sort()
+  }, [data.groups])
+
+  useEffect(() => {
+    if (simulationTeamOptions.length === 0) {
+      if (scenarioFocusTeam) setScenarioFocusTeam('')
+      return
+    }
+    if (!scenarioFocusTeam || !simulationTeamOptions.includes(scenarioFocusTeam)) {
+      setScenarioFocusTeam(simulationTeamOptions[0])
+    }
+  }, [simulationTeamOptions, scenarioFocusTeam])
+
   // Minimum number of teams required for tournament simulation
   const MIN_TEAMS_FOR_SIMULATION = 8
 
@@ -221,6 +269,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           setSimulationResults({
             tournament_name: `${tournamentName} · ${simData.currentRound || 'Current knockout round'}`,
             n_simulations: simData.n_simulations || numSimulations,
+            scenario: {
+              mode: 'baseline',
+              focusTeam: 'Current semifinal field',
+              volatility: 'standard',
+            },
             teams: teamNames.map((team) => ({
               team_name: team,
               current_points: 0,
@@ -265,12 +318,25 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       })
 
       // Run simulations
+      const volatility = VOLATILITY_CONFIG[volatilityMode]
+      const focusDelta = scenarioMode === 'favorable'
+        ? 4
+        : scenarioMode === 'adverse'
+          ? -3
+          : 0
+
       for (let sim = 0; sim < numSimulations; sim++) {
         // Create tournament bracket simulation
         // Weight teams by their points + goal difference using named constants
         const weightedTeams = teams.map(t => ({
           ...t,
-          strength: t.points + (t.goalDifference / GOAL_DIFF_NORMALIZATION) + Math.random() * RANDOM_VARIANCE,
+          strength: Math.max(
+            0.1,
+            t.points +
+              (t.goalDifference / GOAL_DIFF_NORMALIZATION) +
+              (t.team === scenarioFocusTeam ? focusDelta : 0) +
+              Math.random() * volatility.randomVariance
+          ),
         })).sort((a, b) => b.strength - a.strength)
 
         // Simulate knockout rounds
@@ -279,14 +345,14 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
 
         // Semi-finals (top 4 based on weighted random)
         const semiFinalists = quarterFinalists
-          .map(t => ({ ...t, roundStrength: t.strength + Math.random() * ROUND_VARIANCE }))
+          .map(t => ({ ...t, roundStrength: t.strength + Math.random() * volatility.roundVariance }))
           .sort((a, b) => b.roundStrength - a.roundStrength)
           .slice(0, 4)
         semiFinalists.forEach(t => teamResults[t.team].semis++)
 
         // Finals (top 2)
         const finalists = semiFinalists
-          .map(t => ({ ...t, roundStrength: t.strength + Math.random() * ROUND_VARIANCE }))
+          .map(t => ({ ...t, roundStrength: t.strength + Math.random() * volatility.roundVariance }))
           .sort((a, b) => b.roundStrength - a.roundStrength)
           .slice(0, 2)
         finalists.forEach(t => teamResults[t.team].finals++)
@@ -316,6 +382,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       setSimulationResults({
         tournament_name: tournamentName,
         n_simulations: numSimulations,
+        scenario: {
+          mode: scenarioMode,
+          focusTeam: scenarioFocusTeam || 'No focus team',
+          volatility: volatilityMode,
+        },
         teams: teamProbabilities,
         most_likely_winner: mostLikelyWinner?.team_name || 'Unknown',
         winner_probability: mostLikelyWinner?.win_probability || 0,
@@ -455,7 +526,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             </tr>
           </thead>
           <tbody>
-            {group.standings.map((team, teamIdx) => {
+            {group.standings.map((team) => {
               // Determine qualification status based on tournament type
               // For UCL/UEL new league format (36 teams in single league):
               // - Positions 1-8 = Direct to Round of 16
@@ -853,6 +924,15 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
 
       {tournamentId === 'world_cup' && (
         <div className="max-w-6xl mx-auto space-y-3 px-4 pt-4">
+          <WorldCupCommandCenter
+            selectedSeason={selectedSeason}
+            groups={data.groups}
+            upcomingMatches={data.upcomingMatches}
+            recentResults={data.recentResults}
+            topScorers={data.topScorers}
+            simulationProbabilities={simulationProbabilities}
+            onOpenTab={setActiveTab}
+          />
           <WorldCupCountdown compact />
           <WorldCupReadinessPanel compact />
         </div>
@@ -959,7 +1039,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                         : 'Monte Carlo simulation using team standings and goal difference'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <select
                       value={numSimulations}
                       onChange={(e) => setNumSimulations(parseInt(e.target.value))}
@@ -968,7 +1048,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       {SIMULATION_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
-                    </select>
+                      </select>
                     <button
                       onClick={runTournamentSimulation}
                       disabled={runningSimulation || (tournamentId !== 'champions_league' && data.groups.length === 0)}
@@ -985,6 +1065,78 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     </button>
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 gap-3 border-t border-[var(--border-color)] pt-5 lg:grid-cols-[1fr_1fr_0.8fr]">
+                  <div>
+                    <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                      Focus team
+                    </label>
+                    <select
+                      value={scenarioFocusTeam}
+                      onChange={(e) => setScenarioFocusTeam(e.target.value)}
+                      disabled={tournamentId === 'champions_league' || simulationTeamOptions.length === 0}
+                      className="w-full rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 py-2 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {tournamentId === 'champions_league' ? (
+                        <option>Current semifinal field</option>
+                      ) : simulationTeamOptions.length > 0 ? (
+                        simulationTeamOptions.map((team) => (
+                          <option key={team} value={team}>{team}</option>
+                        ))
+                      ) : (
+                        <option>Provider teams unavailable</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                      Scenario
+                    </p>
+                    <div className="grid grid-cols-3 gap-1 rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] p-1">
+                      {SCENARIO_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => setScenarioMode(option.value)}
+                          disabled={tournamentId === 'champions_league'}
+                          title={option.detail}
+                          className={`rounded-md px-2 py-1.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            scenarioMode === option.value
+                              ? 'bg-[var(--accent-primary)] text-[#04120a]'
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                      Volatility
+                    </label>
+                    <select
+                      value={volatilityMode}
+                      onChange={(e) => setVolatilityMode(e.target.value as VolatilityMode)}
+                      disabled={tournamentId === 'champions_league'}
+                      className="w-full rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 py-2 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {VOLATILITY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Scenario note</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                    {tournamentId === 'champions_league'
+                      ? 'Champions League simulation is anchored to the current semifinal bracket returned by the knockout API; scenario controls remain baseline-only for that live bracket.'
+                      : `${SCENARIO_OPTIONS.find(option => option.value === scenarioMode)?.detail || 'Baseline scenario'} ${VOLATILITY_OPTIONS.find(option => option.value === volatilityMode)?.detail || ''}`}
+                  </p>
+                </div>
               </div>
 
               {/* Simulation Results - Full probability table */}
@@ -999,6 +1151,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           <p className="text-[var(--text-secondary)]">
                             {simulationResults.n_simulations.toLocaleString()} simulations completed
                           </p>
+                          {simulationResults.scenario && (
+                            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                              Scenario: {SCENARIO_OPTIONS.find(option => option.value === simulationResults.scenario?.mode)?.label || 'Baseline'} · {simulationResults.scenario.focusTeam} · {VOLATILITY_OPTIONS.find(option => option.value === simulationResults.scenario?.volatility)?.label || 'Standard'}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-[var(--text-secondary)]">Most Likely Winner</p>

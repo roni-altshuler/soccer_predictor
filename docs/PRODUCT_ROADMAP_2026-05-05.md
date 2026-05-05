@@ -11,8 +11,8 @@ This roadmap triages the next 10 product ideas by a combined score of user impac
 | 3 | Mobile Matchday Polish | High | Low | The first paid-app impression comes from fast, scannable, FotMob-style match cards and match detail headers. | Started: provider-backed badges and direct team-tracking actions improve match browsing. |
 | 4 | Personal Watchlist Expansion | High | Low-Medium | Retention improves when users can follow teams, matches, and model picks from natural entry points. | Started: match detail pages can add either team to the local team watchlist. |
 | 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution and model reasoning. |
-| 6 | World Cup Command Center | Very high | Medium-High | World Cup 2026 is a major acquisition moment. The app needs countdown, readiness, groups, knockout paths, and global-model validation. | Existing: countdown and readiness panel. Next: group/bracket prediction flows. |
-| 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | Existing: league simulation. Next: scenario controls and saved simulation cards. |
+| 6 | World Cup Command Center | Very high | Medium-High | World Cup 2026 is a major acquisition moment. The app needs countdown, readiness, groups, knockout paths, and global-model validation. | Started: World Cup hub now has a command-center board for data coverage, fixtures, scorer readiness, model source badges, and jump actions into groups/fixtures/knockout/simulator. |
+| 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | Started: tournament simulator now supports focus-team, favorable/adverse path, and volatility scenario controls where provider team data is available. |
 | 8 | Live Prediction Updates | High | High | Live win probability and momentum shifts would make the app feel elite, but it requires careful calibration and data freshness controls. | Planned. |
 | 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Existing global challenger support. Next: promote only after benchmark gates pass. |
 | 10 | Model-vs-Market Intelligence | High | Very high | Comparing model probabilities with market-implied odds can be powerful, but betting-adjacent UX and data licensing require extra care. | Planned with compliance constraints. |
@@ -27,7 +27,7 @@ This roadmap triages the next 10 product ideas by a combined score of user impac
 
 ## First Tranche
 
-The current implementation pass starts ranks 1-4:
+The first implementation pass starts ranks 1-4:
 
 - Add reusable data-source badges.
 - Carry source metadata through match detail API responses.
@@ -39,8 +39,8 @@ The current implementation pass starts ranks 1-4:
 
 Recommended next work after this pass:
 
-1. Add a saved match watchlist with kickoff reminders and predicted-confidence alerts.
-2. Add a World Cup command center view with countdown, qualified-team readiness, group placeholders, and knockout path simulations.
-3. Add scenario simulator controls for "what if Team A wins/draws/loses next match".
+1. Add saved match watchlists with kickoff reminders and predicted-confidence alerts.
+2. Add saved World Cup scenario cards so users can compare baseline, favorable, adverse, and high-volatility paths.
+3. Connect scenario controls to true fixture-level "what if Team A wins/draws/loses next match" inputs for domestic leagues.
 4. Build live win-probability curves only when enough live event data is available.
 5. Create benchmark gates for promoting the cross-league global model over per-league artifacts.
