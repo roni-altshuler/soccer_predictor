@@ -178,6 +178,30 @@ const VOLATILITY_CONFIG: Record<VolatilityMode, { randomVariance: number; roundV
   high: { randomVariance: RANDOM_VARIANCE + 3, roundVariance: ROUND_VARIANCE + 2 },
 }
 
+const SAVED_SCENARIOS_STORAGE_KEY = 'fotpredict-saved-tournament-scenarios-v1'
+
+type SavedScenarioCard = {
+  id: string
+  tournamentId: TournamentHomePageProps['tournamentId']
+  season: string
+  mode: ScenarioMode
+  focusTeam: string
+  volatility: VolatilityMode
+  winner: string
+  winnerProbability: number
+  nSimulations: number
+  createdAt: string
+  topContenders: Array<{ team: string; probability: number }>
+}
+
+function scenarioLabel(mode?: ScenarioMode): string {
+  return SCENARIO_OPTIONS.find(option => option.value === mode)?.label || 'Baseline'
+}
+
+function volatilityLabel(mode?: VolatilityMode): string {
+  return VOLATILITY_OPTIONS.find(option => option.value === mode)?.label || 'Standard'
+}
+
 export default function TournamentHomePage({ tournamentId, tournamentName }: TournamentHomePageProps) {
   const config = TOURNAMENT_CONFIG[tournamentId]
   const router = useRouter()
@@ -189,6 +213,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('baseline')
   const [scenarioFocusTeam, setScenarioFocusTeam] = useState('')
   const [volatilityMode, setVolatilityMode] = useState<VolatilityMode>('standard')
+  const [savedScenarioCards, setSavedScenarioCards] = useState<SavedScenarioCard[]>([])
   // New: Probability-based simulation results (like LeagueHomePage)
   const [simulationResults, setSimulationResults] = useState<{
     tournament_name: string
@@ -245,6 +270,36 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       setScenarioFocusTeam(simulationTeamOptions[0])
     }
   }, [simulationTeamOptions, scenarioFocusTeam])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_SCENARIOS_STORAGE_KEY)
+      if (!raw) {
+        setSavedScenarioCards([])
+        return
+      }
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) {
+        setSavedScenarioCards([])
+        return
+      }
+      setSavedScenarioCards(
+        parsed
+          .filter((item): item is SavedScenarioCard => {
+            if (!item || typeof item !== 'object') return false
+            const card = item as Partial<SavedScenarioCard>
+            return typeof card.id === 'string' &&
+              card.tournamentId === tournamentId &&
+              typeof card.season === 'string' &&
+              typeof card.winner === 'string' &&
+              typeof card.winnerProbability === 'number'
+          })
+          .slice(0, 6)
+      )
+    } catch {
+      setSavedScenarioCards([])
+    }
+  }, [tournamentId])
 
   // Minimum number of teams required for tournament simulation
   const MIN_TEAMS_FOR_SIMULATION = 8
@@ -395,6 +450,51 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       console.error('Simulation error:', error)
     } finally {
       setRunningSimulation(false)
+    }
+  }
+
+  const saveScenarioCard = () => {
+    if (!simulationResults) return
+
+    const card: SavedScenarioCard = {
+      id: `${tournamentId}-${selectedSeason}-${Date.now()}`,
+      tournamentId,
+      season: selectedSeason,
+      mode: simulationResults.scenario?.mode || 'baseline',
+      focusTeam: simulationResults.scenario?.focusTeam || 'No focus team',
+      volatility: simulationResults.scenario?.volatility || 'standard',
+      winner: simulationResults.most_likely_winner,
+      winnerProbability: simulationResults.winner_probability,
+      nSimulations: simulationResults.n_simulations,
+      createdAt: new Date().toISOString(),
+      topContenders: simulationResults.teams.slice(0, 3).map((team) => ({
+        team: team.team_name,
+        probability: team.win_probability,
+      })),
+    }
+
+    try {
+      const raw = localStorage.getItem(SAVED_SCENARIOS_STORAGE_KEY)
+      const existing = raw ? JSON.parse(raw) as unknown : []
+      const existingCards = Array.isArray(existing) ? existing.filter((item): item is SavedScenarioCard => Boolean(item && typeof item === 'object')) : []
+      const nextAll = [card, ...existingCards].slice(0, 30)
+      localStorage.setItem(SAVED_SCENARIOS_STORAGE_KEY, JSON.stringify(nextAll))
+      setSavedScenarioCards(nextAll.filter(item => item.tournamentId === tournamentId).slice(0, 6))
+    } catch {
+      setSavedScenarioCards((current) => [card, ...current].slice(0, 6))
+    }
+  }
+
+  const removeScenarioCard = (id: string) => {
+    try {
+      const raw = localStorage.getItem(SAVED_SCENARIOS_STORAGE_KEY)
+      const existing = raw ? JSON.parse(raw) as unknown : []
+      const existingCards = Array.isArray(existing) ? existing.filter((item): item is SavedScenarioCard => Boolean(item && typeof item === 'object')) : []
+      const nextAll = existingCards.filter(card => card.id !== id)
+      localStorage.setItem(SAVED_SCENARIOS_STORAGE_KEY, JSON.stringify(nextAll))
+      setSavedScenarioCards(nextAll.filter(card => card.tournamentId === tournamentId).slice(0, 6))
+    } catch {
+      setSavedScenarioCards((current) => current.filter(card => card.id !== id))
     }
   }
 
@@ -1139,6 +1239,50 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                 </div>
               </div>
 
+              {savedScenarioCards.length > 0 && (
+                <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
+                  <div className="border-b border-[var(--border-color)] p-4">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Saved Scenario Cards</p>
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">Compare saved paths</h3>
+                      </div>
+                      <span className="text-xs text-[var(--text-secondary)]">{savedScenarioCards.length} saved</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+                    {savedScenarioCards.map((card) => (
+                      <div key={card.id} className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[var(--text-primary)]">{card.winner}</p>
+                            <p className="mt-1 text-xs text-amber-400">{(card.winnerProbability * 100).toFixed(1)}% title probability</p>
+                          </div>
+                          <button
+                            onClick={() => removeScenarioCard(card.id)}
+                            className="rounded-md border border-[var(--border-color)] px-2 py-1 text-[10px] font-bold text-[var(--text-tertiary)] hover:border-red-400 hover:text-red-400"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="mt-3 space-y-1 text-[11px] leading-5 text-[var(--text-secondary)]">
+                          <p>{scenarioLabel(card.mode)} · {card.focusTeam}</p>
+                          <p>{volatilityLabel(card.volatility)} · {card.nSimulations.toLocaleString()} runs · {card.season}</p>
+                        </div>
+                        <div className="mt-3 space-y-1">
+                          {card.topContenders.map((team) => (
+                            <div key={team.team} className="flex items-center justify-between gap-3 text-[11px]">
+                              <span className="truncate text-[var(--text-secondary)]">{team.team}</span>
+                              <span className="font-bold text-[var(--text-primary)]">{(team.probability * 100).toFixed(1)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Simulation Results - Full probability table */}
               {simulationResults && (
                 <div className="space-y-6 animate-fade-in">
@@ -1153,7 +1297,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           </p>
                           {simulationResults.scenario && (
                             <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                              Scenario: {SCENARIO_OPTIONS.find(option => option.value === simulationResults.scenario?.mode)?.label || 'Baseline'} · {simulationResults.scenario.focusTeam} · {VOLATILITY_OPTIONS.find(option => option.value === simulationResults.scenario?.volatility)?.label || 'Standard'}
+                              Scenario: {scenarioLabel(simulationResults.scenario.mode)} · {simulationResults.scenario.focusTeam} · {volatilityLabel(simulationResults.scenario.volatility)}
                             </p>
                           )}
                         </div>
@@ -1161,6 +1305,12 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           <p className="text-sm text-[var(--text-secondary)]">Most Likely Winner</p>
                           <p className="text-xl font-bold text-amber-400">{simulationResults.most_likely_winner}</p>
                           <p className="text-sm text-amber-400/80">{(simulationResults.winner_probability * 100).toFixed(1)}% probability</p>
+                          <button
+                            onClick={saveScenarioCard}
+                            className="mt-3 rounded-lg border border-amber-400/40 px-3 py-2 text-xs font-bold text-amber-400 transition-colors hover:bg-amber-400/10"
+                          >
+                            Save Scenario
+                          </button>
                         </div>
                       </div>
                     </div>

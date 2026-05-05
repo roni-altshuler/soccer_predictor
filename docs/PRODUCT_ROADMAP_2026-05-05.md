@@ -12,7 +12,7 @@ This roadmap triages the next 10 product ideas by a combined score of user impac
 | 4 | Personal Watchlist Expansion | High | Low-Medium | Retention improves when users can follow teams, matches, and model picks from natural entry points. | Started: match detail pages can add either team to the local team watchlist. |
 | 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution and model reasoning. |
 | 6 | World Cup Command Center | Very high | Medium-High | World Cup 2026 is a major acquisition moment. The app needs countdown, readiness, groups, knockout paths, and global-model validation. | Started: World Cup hub now has a command-center board for data coverage, fixtures, scorer readiness, model source badges, and jump actions into groups/fixtures/knockout/simulator. |
-| 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | Started: tournament simulator now supports focus-team, favorable/adverse path, and volatility scenario controls where provider team data is available. |
+| 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | Started: tournament simulator now supports focus-team, favorable/adverse path, volatility controls, and saved local scenario cards where provider team data is available. |
 | 8 | Live Prediction Updates | High | High | Live win probability and momentum shifts would make the app feel elite, but it requires careful calibration and data freshness controls. | Planned. |
 | 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Existing global challenger support. Next: promote only after benchmark gates pass. |
 | 10 | Model-vs-Market Intelligence | High | Very high | Comparing model probabilities with market-implied odds can be powerful, but betting-adjacent UX and data licensing require extra care. | Planned with compliance constraints. |
@@ -40,7 +40,7 @@ The first implementation pass starts ranks 1-4:
 Recommended next work after this pass:
 
 1. Add saved match watchlists with kickoff reminders and predicted-confidence alerts.
-2. Add saved World Cup scenario cards so users can compare baseline, favorable, adverse, and high-volatility paths.
+2. Add export/share actions for saved World Cup scenario cards.
 3. Connect scenario controls to true fixture-level "what if Team A wins/draws/loses next match" inputs for domestic leagues.
 4. Build live win-probability curves only when enough live event data is available.
 5. Create benchmark gates for promoting the cross-league global model over per-league artifacts.

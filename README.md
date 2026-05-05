@@ -19,7 +19,7 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
 - **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
-- **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, scenario simulator, and `fifa.world` prediction support
+- **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards, and `fifa.world` prediction support
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 
 ---
@@ -327,7 +327,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - The app must not display random weather, invented referee details, synthetic H2H records, or zero-probability placeholders as if they were real.
 - Source badges identify ESPN/FotMob/model provenance on match feeds and match detail pages.
 - Match detail pages can add either team directly to the local watchlist.
-- The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, and scenario controls in one workflow.
+- The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
 ---
