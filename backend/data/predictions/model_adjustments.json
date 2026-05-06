@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-06T16:02:53.531570",
+  "generated_at": "2026-05-06T22:52:43.301863",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -316,28 +316,28 @@
     "La Liga": {
       "current": {
         "avg_goals": 1.3,
-        "home_adv": 0.412,
+        "home_adv": 0.4344,
         "rho": -0.12,
-        "draw_rate": 0.12
+        "draw_rate": 0.096
       },
       "suggested": {
         "avg_goals": 1.298,
-        "home_adv": 0.434,
-        "draw_rate": 0.096,
+        "home_adv": 0.45,
+        "draw_rate": 0.08,
         "rho": -0.12
       },
       "changed": true
     },
     "Premier League": {
       "current": {
-        "avg_goals": 1.341,
-        "home_adv": 0.2335,
+        "avg_goals": 1.3252,
+        "home_adv": 0.2242,
         "rho": -0.13,
         "draw_rate": 0.35
       },
       "suggested": {
-        "avg_goals": 1.325,
-        "home_adv": 0.224,
+        "avg_goals": 1.309,
+        "home_adv": 0.215,
         "draw_rate": 0.354,
         "rho": -0.13
       },
@@ -346,14 +346,14 @@
     "Ligue 1": {
       "current": {
         "avg_goals": 1.3,
-        "home_adv": 0.325,
+        "home_adv": 0.336,
         "rho": -0.12,
-        "draw_rate": 0.129
+        "draw_rate": 0.1069
       },
       "suggested": {
         "avg_goals": 1.303,
-        "home_adv": 0.336,
-        "draw_rate": 0.107,
+        "home_adv": 0.347,
+        "draw_rate": 0.085,
         "rho": -0.12
       },
       "changed": true
@@ -363,12 +363,12 @@
         "avg_goals": 1.45,
         "home_adv": 0.24,
         "rho": -0.11,
-        "draw_rate": 0.1835
+        "draw_rate": 0.1782
       },
       "suggested": {
         "avg_goals": 1.448,
         "home_adv": 0.241,
-        "draw_rate": 0.178,
+        "draw_rate": 0.173,
         "rho": -0.11
       },
       "changed": true
@@ -391,27 +391,27 @@
     "Primeira Liga": {
       "current": {
         "avg_goals": 1.28,
-        "home_adv": 0.3325,
+        "home_adv": 0.345,
         "rho": -0.13,
-        "draw_rate": 0.142
+        "draw_rate": 0.1204
       },
       "suggested": {
         "avg_goals": 1.278,
-        "home_adv": 0.345,
-        "draw_rate": 0.12,
+        "home_adv": 0.358,
+        "draw_rate": 0.099,
         "rho": -0.13
       },
       "changed": true
     },
     "Serie A": {
       "current": {
-        "avg_goals": 1.2845,
+        "avg_goals": 1.2774,
         "home_adv": 0.26,
         "rho": -0.14,
-        "draw_rate": 0.097
+        "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.277,
+        "avg_goals": 1.27,
         "home_adv": 0.264,
         "draw_rate": 0.08,
         "rho": -0.14
@@ -420,14 +420,14 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.4975,
-        "home_adv": 0.319,
+        "avg_goals": 1.507,
+        "home_adv": 0.3428,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.507,
-        "home_adv": 0.343,
+        "avg_goals": 1.516,
+        "home_adv": 0.367,
         "draw_rate": 0.08,
         "rho": -0.1
       },
@@ -435,14 +435,14 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 1.533,
-        "home_adv": 0.299,
+        "avg_goals": 1.5396,
+        "home_adv": 0.3148,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.54,
-        "home_adv": 0.315,
+        "avg_goals": 1.546,
+        "home_adv": 0.331,
         "draw_rate": 0.08,
         "rho": -0.12
       },
@@ -450,14 +450,14 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": 1.3705,
-        "home_adv": 0.258,
+        "avg_goals": 1.3606,
+        "home_adv": 0.2696,
         "rho": -0.11,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.361,
-        "home_adv": 0.27,
+        "avg_goals": 1.351,
+        "home_adv": 0.281,
         "draw_rate": 0.08,
         "rho": -0.11
       },
@@ -466,13 +466,13 @@
     "Conference League": {
       "current": {
         "avg_goals": 1.38,
-        "home_adv": 0.1565,
+        "home_adv": 0.1478,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
         "avg_goals": 1.379,
-        "home_adv": 0.148,
+        "home_adv": 0.139,
         "draw_rate": 0.08,
         "rho": -0.1
       },
