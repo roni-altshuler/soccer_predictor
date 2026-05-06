@@ -5,13 +5,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { KnockoutBracket, type BracketRound, type KnockoutMatch as BracketMatch } from '@/components/knockout'
+import BracketChallengeBoard from '@/components/tournament/BracketChallengeBoard'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import WorldCupReadinessPanel from '@/components/worldcup/WorldCupReadinessPanel'
 import WorldCupCommandCenter from '@/components/worldcup/WorldCupCommandCenter'
 
+type TournamentId = 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup' | 'euro' | 'copa_america'
+
 interface TournamentHomePageProps {
-  tournamentId: 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup'
+  tournamentId: TournamentId
   tournamentName: string
 }
 
@@ -107,6 +110,28 @@ const TOURNAMENT_CONFIG = {
     espnId: 'fifa.world',
     logo: 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/4.png',
   },
+  euro: {
+    name: 'UEFA European Championship',
+    emoji: '🏆',
+    gradient: 'from-sky-700 to-blue-500',
+    color: 'sky',
+    knockoutType: 'euro' as const,
+    groupCount: 6,
+    leagueId: 'uefa.euro',
+    espnId: 'uefa.euro',
+    logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/74.png',
+  },
+  copa_america: {
+    name: 'Copa America',
+    emoji: '🏆',
+    gradient: 'from-yellow-500 to-emerald-600',
+    color: 'emerald',
+    knockoutType: 'copa_america' as const,
+    groupCount: 4,
+    leagueId: 'conmebol.america',
+    espnId: 'conmebol.america',
+    logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/83.png',
+  },
   conference_league: {
     name: 'UEFA Conference League',
     emoji: '🏆',
@@ -120,7 +145,7 @@ const TOURNAMENT_CONFIG = {
   },
 }
 
-const TABS = ['Overview', 'Groups', 'Knockout', 'Top Scorers', 'Fixtures', 'Simulator', 'News'] as const
+const TABS = ['Overview', 'Groups', 'Knockout', 'Challenge', 'Top Scorers', 'Fixtures', 'Simulator', 'News'] as const
 type TabType = typeof TABS[number]
 
 // Available tournament seasons for dropdown
@@ -141,6 +166,35 @@ const WORLD_CUP_SEASONS = [
   { value: '2014', label: '2014 (Brazil)' },
   { value: '2010', label: '2010 (South Africa)' },
 ]
+
+const EURO_SEASONS = [
+  { value: '2024', label: '2024 (Germany)' },
+  { value: '2020', label: '2020' },
+  { value: '2016', label: '2016 (France)' },
+  { value: '2012', label: '2012 (Poland/Ukraine)' },
+  { value: '2008', label: '2008 (Austria/Switzerland)' },
+]
+
+const COPA_AMERICA_SEASONS = [
+  { value: '2024', label: '2024 (United States)' },
+  { value: '2021', label: '2021 (Brazil)' },
+  { value: '2019', label: '2019 (Brazil)' },
+  { value: '2016', label: '2016 (Centenario)' },
+  { value: '2015', label: '2015 (Chile)' },
+]
+
+function getDefaultSeason(tournamentId: TournamentId): string {
+  if (tournamentId === 'world_cup') return '2026'
+  if (tournamentId === 'euro' || tournamentId === 'copa_america') return '2024'
+  return '2025'
+}
+
+function getAvailableSeasons(tournamentId: TournamentId) {
+  if (tournamentId === 'world_cup') return WORLD_CUP_SEASONS
+  if (tournamentId === 'euro') return EURO_SEASONS
+  if (tournamentId === 'copa_america') return COPA_AMERICA_SEASONS
+  return TOURNAMENT_SEASONS
+}
 
 // Simulation count options (like in Predict tab)
 const SIMULATION_OPTIONS = [
@@ -182,7 +236,7 @@ const SAVED_SCENARIOS_STORAGE_KEY = 'fotpredict-saved-tournament-scenarios-v1'
 
 type SavedScenarioCard = {
   id: string
-  tournamentId: TournamentHomePageProps['tournamentId']
+  tournamentId: TournamentId
   season: string
   mode: ScenarioMode
   focusTeam: string
@@ -207,13 +261,14 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('Overview')
   const [loading, setLoading] = useState(true)
-  const [selectedSeason, setSelectedSeason] = useState(tournamentId === 'world_cup' ? '2026' : '2025')
+  const [selectedSeason, setSelectedSeason] = useState(getDefaultSeason(tournamentId))
   const [runningSimulation, setRunningSimulation] = useState(false)
   const [numSimulations, setNumSimulations] = useState(10000)
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>('baseline')
   const [scenarioFocusTeam, setScenarioFocusTeam] = useState('')
   const [volatilityMode, setVolatilityMode] = useState<VolatilityMode>('standard')
   const [savedScenarioCards, setSavedScenarioCards] = useState<SavedScenarioCard[]>([])
+  const [scenarioShareMessage, setScenarioShareMessage] = useState('')
   // New: Probability-based simulation results (like LeagueHomePage)
   const [simulationResults, setSimulationResults] = useState<{
     tournament_name: string
@@ -251,7 +306,9 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   })
 
   // Get available seasons based on tournament type
-  const availableSeasons = tournamentId === 'world_cup' ? WORLD_CUP_SEASONS : TOURNAMENT_SEASONS
+  const availableSeasons = getAvailableSeasons(tournamentId)
+  const visibleTabs = TABS
+  const isInternationalTournament = tournamentId === 'world_cup' || tournamentId === 'euro' || tournamentId === 'copa_america'
 
   const simulationTeamOptions = useMemo(() => {
     const names = data.groups
@@ -498,6 +555,15 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     }
   }
 
+  const copyScenarioCard = async (card: SavedScenarioCard) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(card, null, 2))
+      setScenarioShareMessage(`Copied ${card.winner} scenario card to clipboard.`)
+    } catch {
+      setScenarioShareMessage('Clipboard access failed while exporting the scenario card.')
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -522,11 +588,13 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           // Build bracket rounds from knockout matches
           const ROUND_ORDER = [
             'Knockout Round Playoffs',
+            'Rd of 16',
             'Round of 16',
             'Quarterfinals',
             'Quarter-Finals',
             'Semifinals',
             'Semi-Finals',
+            '3rd-Place Match',
             'Third Place',
             'Final',
           ]
@@ -581,11 +649,18 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
   useEffect(() => {
     const fetchSimulation = async () => {
       try {
-        const endpoint = tournamentId === 'champions_league' 
+        const endpoint = tournamentId === 'champions_league'
           ? '/api/v1/knockout/champions-league/simulate'
           : tournamentId === 'europa_league'
-          ? '/api/v1/knockout/europa-league/simulate'
-          : '/api/v1/knockout/world-cup/simulate'
+            ? '/api/v1/knockout/europa-league/simulate'
+            : tournamentId === 'world_cup'
+              ? '/api/v1/knockout/world-cup/simulate'
+              : null
+
+        if (!endpoint) {
+          setSimulationProbabilities(null)
+          return
+        }
         
         const res = await fetch(`${endpoint}?n_simulations=5000`)
         if (res.ok) {
@@ -644,8 +719,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               let statusBadge = null
               let bgClass = ''
               
-              if (tournamentId === 'world_cup') {
-                // World Cup: Top 2 qualify, 3rd has possible qualification
+              if (isInternationalTournament) {
+                // International tournaments: top 2 qualify, 3rd can matter in expanded formats.
                 if (team.position <= 2) {
                   statusBadge = <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Qualified</span>
                   bgClass = 'bg-green-500/20 border-l-4 border-l-green-400'
@@ -698,7 +773,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         </table>
       </div>
       <div className="px-4 py-2 text-xs text-[var(--text-tertiary)] border-t flex flex-wrap gap-3" style={{ borderColor: 'var(--border-color)' }}>
-        {tournamentId === 'world_cup' ? (
+        {isInternationalTournament ? (
           <>
             <span><span className="inline-block w-3 h-3 rounded-sm bg-green-400 mr-1"></span> Qualified for knockout</span>
             <span><span className="inline-block w-3 h-3 rounded-sm bg-amber-400 mr-1"></span> Possible qualification</span>
@@ -941,7 +1016,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               <div>
                 <h1 className="text-3xl font-bold text-white">{tournamentName}</h1>
                 <p className="text-white/80">
-                  {tournamentId === 'world_cup' ? 'International Tournament' : 'European Club Competition'} • {availableSeasons.find(s => s.value === selectedSeason)?.label || '2025-26'}
+                  {isInternationalTournament ? 'International Tournament' : 'European Club Competition'} • {availableSeasons.find(s => s.value === selectedSeason)?.label || '2025-26'}
                 </p>
               </div>
             </div>
@@ -1041,7 +1116,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       {/* Navigation Tabs - Consistent with LeagueHomePage */}
       <div className="max-w-6xl mx-auto px-4 py-4">
         <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
-          {TABS.map(tab => (
+          {visibleTabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1085,6 +1160,15 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           )}
           
           {activeTab === 'Knockout' && renderKnockoutBracket()}
+
+          {activeTab === 'Challenge' && (
+            <BracketChallengeBoard
+              tournamentId={tournamentId}
+              tournamentName={tournamentName}
+              season={selectedSeason}
+              rounds={bracketRounds}
+            />
+          )}
 
           {activeTab === 'Top Scorers' && (
             <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
@@ -1250,6 +1334,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                       <span className="text-xs text-[var(--text-secondary)]">{savedScenarioCards.length} saved</span>
                     </div>
                   </div>
+                  {scenarioShareMessage && (
+                    <div className="border-b border-[var(--border-color)] px-4 py-3 text-xs text-emerald-300">
+                      {scenarioShareMessage}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
                     {savedScenarioCards.map((card) => (
                       <div key={card.id} className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
@@ -1277,6 +1366,12 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             </div>
                           ))}
                         </div>
+                        <button
+                          onClick={() => copyScenarioCard(card)}
+                          className="mt-4 rounded-lg border border-[var(--border-color)] px-3 py-2 text-[11px] font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)]"
+                        >
+                          Copy JSON
+                        </button>
                       </div>
                     ))}
                   </div>

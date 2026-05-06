@@ -2,7 +2,7 @@
 
 import DataSourceBadge from '@/components/DataSourceBadge'
 
-type CommandTab = 'Groups' | 'Knockout' | 'Fixtures' | 'Simulator'
+type CommandTab = 'Groups' | 'Knockout' | 'Fixtures' | 'Simulator' | 'Challenge'
 
 type WorldCupGroupStanding = {
   position: number
@@ -201,6 +201,11 @@ export default function WorldCupCommandCenter({
                 label="Knockout path"
                 detail={`Prepare the ${expectedKnockoutTeams}-team knockout bracket and probability view.`}
                 onClick={() => onOpenTab('Knockout')}
+              />
+              <ActionButton
+                label="Bracket challenge"
+                detail="Create private pick'em groups and score them against real knockout results."
+                onClick={() => onOpenTab('Challenge')}
               />
             </div>
           </div>

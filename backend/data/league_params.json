@@ -146,6 +146,30 @@
       "total_matchdays": 3,
       "relegation_spots": 0,
       "season_type": "tournament"
+    },
+    "uefa.euro": {
+      "display_name": "UEFA European Championship",
+      "country": "Europe",
+      "avg_goals": 1.28,
+      "home_adv": 0.12,
+      "rho": -0.09,
+      "draw_rate": 0.22,
+      "league_coefficient": 1.12,
+      "total_matchdays": 3,
+      "relegation_spots": 0,
+      "season_type": "tournament"
+    },
+    "conmebol.america": {
+      "display_name": "Copa America",
+      "country": "South America",
+      "avg_goals": 1.26,
+      "home_adv": 0.12,
+      "rho": -0.09,
+      "draw_rate": 0.2,
+      "league_coefficient": 1.08,
+      "total_matchdays": 3,
+      "relegation_spots": 0,
+      "season_type": "tournament"
     }
   },
   "default": {

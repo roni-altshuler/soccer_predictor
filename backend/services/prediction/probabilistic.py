@@ -55,6 +55,7 @@ def _load_league_params() -> Dict[str, Dict[str, float]]:
                 "por.1": "Primeira Liga", "usa.1": "MLS",
                 "uefa.champions": "Champions League", "uefa.europa": "Europa League",
                 "uefa.europa.conf": "Conference League", "fifa.world": "FIFA World Cup",
+                "uefa.euro": "UEFA European Championship", "conmebol.america": "Copa America",
             }
             for key, lp in leagues.items():
                 params = _sanitize_params(lp)
@@ -81,6 +82,8 @@ def _load_league_params() -> Dict[str, Dict[str, float]]:
         "uefa.europa":      {"avg_goals": 1.42, "home_adv": 0.20, "rho": -0.11, "draw_rate": 0.22},
         "uefa.europa.conf": {"avg_goals": 1.38, "home_adv": 0.20, "rho": -0.10, "draw_rate": 0.23},
         "fifa.world":       {"avg_goals": 1.30, "home_adv": 0.15, "rho": -0.09, "draw_rate": 0.18},
+        "uefa.euro":        {"avg_goals": 1.28, "home_adv": 0.12, "rho": -0.09, "draw_rate": 0.22},
+        "conmebol.america": {"avg_goals": 1.26, "home_adv": 0.12, "rho": -0.09, "draw_rate": 0.20},
     }
 
 

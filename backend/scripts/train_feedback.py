@@ -302,6 +302,8 @@ _DISPLAY_TO_KEY = {
     "Eredivisie": "ned.1",
     "Primeira Liga": "por.1",
     "FIFA World Cup": "fifa.world",
+    "UEFA European Championship": "uefa.euro",
+    "Copa America": "conmebol.america",
 }
 
 

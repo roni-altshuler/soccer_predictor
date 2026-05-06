@@ -46,6 +46,8 @@ export type League =
   | 'ucl'
   | 'uel'
   | 'world_cup'
+  | 'euro'
+  | 'copa_america'
   | 'eredivisie'
   | 'primeira_liga'
   | 'conference_league';

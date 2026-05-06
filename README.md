@@ -19,7 +19,8 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
 - **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
-- **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards, and `fifa.world` prediction support
+- **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards with export, and `fifa.world` prediction support
+- **Tournament Bracket Challenge** — Local-first knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, commissioner scoring rules, live leaderboard scoring, invite-link import, and JSON import/export
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 
 ---
@@ -33,7 +34,7 @@ The May 5, 2026 product roadmap is saved in [`docs/PRODUCT_ROADMAP_2026-05-05.md
 3. Mobile Matchday Polish
 4. Personal Watchlist Expansion
 
-Heavier follow-up work includes the World Cup command center, scenario simulator controls, live prediction updates, global model promotion gates, and model-vs-market intelligence.
+Heavier follow-up work includes richer live prediction updates, global model promotion gates, model-vs-market intelligence, and turning local-first tournament bracket challenges into synced multi-user rooms.
 
 ---
 
@@ -114,7 +115,7 @@ Results are auto-committed back to the repository. New production predictions sh
 
 ---
 
-## Supported Competitions (12)
+## Supported Competitions (14)
 
 | League | ID | Country |
 |--------|----|---------|
@@ -130,6 +131,8 @@ Results are auto-committed back to the repository. New production predictions sh
 | UEFA Europa League | `uefa.europa` | Europe |
 | UEFA Conference League | `uefa.europa.conf` | Europe |
 | FIFA World Cup 2026 | `fifa.world` | International |
+| UEFA European Championship | `uefa.euro` | Europe |
+| Copa America | `conmebol.america` | South America |
 
 ### World Cup Readiness
 

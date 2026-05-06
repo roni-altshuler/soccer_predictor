@@ -5,6 +5,8 @@ const TOURNAMENT_ESPN_IDS: Record<string, string> = {
   europa_league: 'uefa.europa',
   conference_league: 'uefa.europa.conf',
   world_cup: 'fifa.world',
+  euro: 'uefa.euro',
+  copa_america: 'conmebol.america',
 }
 
 export async function GET(
@@ -24,8 +26,11 @@ export async function GET(
 
   // Build knockout date range covering the full knockout stage (Feb–Jun)
   const seasonYear = parseInt(season || String(new Date().getFullYear()))
-  const knockoutStartYear = tournamentId === 'world_cup' ? seasonYear : seasonYear + 1
-  const knockoutDateRange = `${knockoutStartYear}0201-${knockoutStartYear}0630`
+  const isInternationalTournament = ['world_cup', 'euro', 'copa_america'].includes(tournamentId)
+  const knockoutStartYear = isInternationalTournament ? seasonYear : seasonYear + 1
+  const knockoutDateRange = isInternationalTournament
+    ? `${knockoutStartYear}0601-${knockoutStartYear}0731`
+    : `${knockoutStartYear}0201-${knockoutStartYear}0630`
 
   // Build upcoming/recent date range (45 days before and after today)
   const today = new Date()
@@ -69,7 +74,7 @@ export async function GET(
               return parseInt(s?.value || '0', 10)
             }
             return {
-              position: idx + 1,
+              position: stat('rank') || idx + 1,
               team: entry.team?.displayName || 'Unknown',
               teamId: entry.team?.id,
               played: stat('gamesPlayed'),
@@ -81,7 +86,7 @@ export async function GET(
               goalDifference: stat('pointDifferential'),
               points: stat('points'),
             }
-          })
+          }).sort((a: { position: number }, b: { position: number }) => a.position - b.position)
           result.groups.push({ name: groupName, standings })
         }
       }
@@ -143,6 +148,8 @@ export async function GET(
           seasonSlug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') ||
           'Knockout'
 
+        if (roundName.toLowerCase().includes('group')) continue
+
         const noteText = comp.notes?.[0]?.text || ''
         const leg = noteText.includes('1st Leg') ? 1 : noteText.includes('2nd Leg') ? 2 : undefined
 
@@ -150,7 +157,9 @@ export async function GET(
         if (isFinished) {
           const homeScore = parseInt(home?.score || '0')
           const awayScore = parseInt(away?.score || '0')
-          if (homeScore > awayScore) winner = 'home'
+          if (home?.winner) winner = 'home'
+          else if (away?.winner) winner = 'away'
+          else if (homeScore > awayScore) winner = 'home'
           else if (awayScore > homeScore) winner = 'away'
         }
         if (comp.series?.completed) {

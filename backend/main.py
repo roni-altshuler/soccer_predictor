@@ -431,6 +431,8 @@ LEAGUE_KEY_TO_DISPLAY = {
     "uefa.europa": "Europa League",
     "uefa.europa.conf": "Conference League",
     "fifa.world": "FIFA World Cup",
+    "uefa.euro": "UEFA European Championship",
+    "conmebol.america": "Copa America",
 }
 
 LEAGUE_ALIASES = {
@@ -459,6 +461,13 @@ LEAGUE_ALIASES = {
     "world_cup": "fifa.world",
     "world cup": "fifa.world",
     "fifa world cup": "fifa.world",
+    "euro": "uefa.euro",
+    "euros": "uefa.euro",
+    "uefa euro": "uefa.euro",
+    "uefa european championship": "uefa.euro",
+    "copa_america": "conmebol.america",
+    "copa america": "conmebol.america",
+    "conmebol copa america": "conmebol.america",
 }
 
 _RUNTIME_ELO_PREDICTOR = None

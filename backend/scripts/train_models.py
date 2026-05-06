@@ -212,6 +212,8 @@ ESPN_TO_KEY = {
     "champions_league": "uefa.champions",
     "europa_league": "uefa.europa",
     "world_cup": "fifa.world",
+    "euro": "uefa.euro",
+    "copa_america": "conmebol.america",
 }
 
 KEY_TO_ESPN = {v: k for k, v in ESPN_TO_KEY.items()}

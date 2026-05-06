@@ -64,6 +64,8 @@ LEAGUE_IDS = {
     "europa_league": 73,
     "conference_league": 0,
     "world_cup": 0,
+    "euro": 0,
+    "copa_america": 0,
 }
 
 # League display names

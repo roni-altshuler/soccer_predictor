@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import KnockoutSimulator from '@/components/knockout/KnockoutSimulator'
 
-type TournamentType = 'champions_league' | 'europa_league' | 'world_cup'
+type TournamentType = 'champions_league' | 'europa_league' | 'world_cup' | 'euro' | 'copa_america'
 
 const tournaments: { id: TournamentType; name: string; emoji: string }[] = [
   { id: 'champions_league', name: 'Champions League', emoji: '🏆' },
   { id: 'europa_league', name: 'Europa League', emoji: '🏆' },
   { id: 'world_cup', name: 'World Cup', emoji: '🌍' },
+  { id: 'euro', name: 'Euros', emoji: '🏆' },
+  { id: 'copa_america', name: 'Copa America', emoji: '🏆' },
 ]
 
 export default function SimulatorPage() {

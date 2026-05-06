@@ -35,6 +35,8 @@ const leagueNameToKey: Record<string, string> = {
   'Eredivisie': 'eredivisie',
   'Primeira Liga': 'primeira_liga',
   'FIFA World Cup': 'world_cup',
+  'UEFA European Championship': 'euro',
+  'Copa America': 'copa_america',
 }
 
 // League strength coefficients (used for cross-league predictions)
@@ -51,6 +53,8 @@ const leagueStrength: Record<string, number> = {
   'eredivisie': 0.92,
   'primeira_liga': 0.95,
   'world_cup': 1.10,
+  'euro': 1.12,
+  'copa_america': 1.08,
 }
 
 // Per-league Dixon-Coles calibrated parameters
@@ -61,6 +65,7 @@ const KEY_TO_LEAGUE: Record<string, string> = {
   'ned.1': 'eredivisie', 'por.1': 'primeira_liga',
   'uefa.champions': 'champions_league', 'uefa.europa': 'europa_league',
   'uefa.europa.conf': 'conference_league', 'fifa.world': 'world_cup',
+  'uefa.euro': 'euro', 'conmebol.america': 'copa_america',
 }
 
 const PARAM_DEFAULTS = { avg_goals: 1.35, home_adv: 0.25, rho: -0.12, draw_rate: 0.24 }
@@ -107,6 +112,8 @@ function loadLeagueParams(): Record<string, { avg_goals: number; home_adv: numbe
     'europa_league':  { avg_goals: 1.42, home_adv: 0.20, rho: -0.11, draw_rate: 0.22 },
     'conference_league': { avg_goals: 1.38, home_adv: 0.20, rho: -0.10, draw_rate: 0.23 },
     'world_cup':      { avg_goals: 1.30, home_adv: 0.15, rho: -0.09, draw_rate: 0.18 },
+    'euro':           { avg_goals: 1.28, home_adv: 0.12, rho: -0.09, draw_rate: 0.22 },
+    'copa_america':   { avg_goals: 1.26, home_adv: 0.12, rho: -0.09, draw_rate: 0.20 },
   }
 }
 
@@ -300,6 +307,7 @@ async function fetchTeamForm(teamName: string, leagueKey?: string): Promise<numb
     eredivisie: 'ned.1', primeira_liga: 'por.1',
     champions_league: 'uefa.champions', europa_league: 'uefa.europa',
     conference_league: 'uefa.europa.conf', world_cup: 'fifa.world',
+    euro: 'uefa.euro', copa_america: 'conmebol.america',
   }
   const espnId = espnLeagueMap[leagueKey]
   if (!espnId) return 0

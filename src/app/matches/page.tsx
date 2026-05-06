@@ -19,6 +19,8 @@ const LEAGUES = [
   { id: 'uefa.europa', name: 'Europa League', country: 'Europe', flagCode: 'EU' },
   { id: 'uefa.europa.conf', name: 'Conference League', country: 'Europe', flagCode: 'EU' },
   { id: 'fifa.world', name: 'World Cup 2026', country: 'USA/MEX/CAN', flagCode: 'WORLD' },
+  { id: 'uefa.euro', name: 'UEFA European Championship', country: 'Europe', flagCode: 'EU' },
+  { id: 'conmebol.america', name: 'Copa America', country: 'South America', flagCode: 'SA' },
 ];
 
 const REGIONS = [
@@ -26,7 +28,7 @@ const REGIONS = [
   { label: 'England', filter: (l: typeof LEAGUES[0]) => l.id === 'eng.1' },
   { label: 'Europe', filter: (l: typeof LEAGUES[0]) => ['esp.1','ita.1','ger.1','fra.1','ned.1','por.1'].includes(l.id) },
   { label: 'UEFA', filter: (l: typeof LEAGUES[0]) => l.id.startsWith('uefa.') },
-  { label: 'Americas', filter: (l: typeof LEAGUES[0]) => ['usa.1','fifa.world'].includes(l.id) },
+  { label: 'Americas', filter: (l: typeof LEAGUES[0]) => ['usa.1','fifa.world','conmebol.america'].includes(l.id) },
 ];
 
 interface Standing {

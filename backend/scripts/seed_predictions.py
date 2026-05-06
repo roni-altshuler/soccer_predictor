@@ -36,6 +36,8 @@ LEAGUES = {
     "ned.1": "Eredivisie",
     "por.1": "Primeira Liga",
     "fifa.world": "FIFA World Cup",
+    "uefa.euro": "UEFA European Championship",
+    "conmebol.america": "Copa America",
 }
 
 # League-specific draw rates (empirical 5-season averages)

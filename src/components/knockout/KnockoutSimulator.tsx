@@ -52,7 +52,7 @@ interface KnockoutSimulationResult {
 }
 
 interface KnockoutSimulatorProps {
-  tournament: 'champions_league' | 'europa_league' | 'world_cup'
+  tournament: 'champions_league' | 'europa_league' | 'world_cup' | 'euro' | 'copa_america'
   initialTeams?: string[]
 }
 
@@ -91,6 +91,30 @@ const TOURNAMENT_CONFIGS = {
       'Germany', 'Spain', 'Netherlands', 'Portugal',
       'Belgium', 'Croatia', 'Uruguay', 'Denmark',
       'Japan', 'Morocco', 'USA', 'Mexico'
+    ]
+  },
+  euro: {
+    name: 'UEFA European Championship',
+    emoji: '🏆',
+    gradient: 'from-sky-700 to-blue-500',
+    rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    defaultTeams: [
+      'Spain', 'England', 'France', 'Germany',
+      'Portugal', 'Netherlands', 'Italy', 'Belgium',
+      'Croatia', 'Denmark', 'Switzerland', 'Austria',
+      'Türkiye', 'Ukraine', 'Scotland', 'Poland'
+    ]
+  },
+  copa_america: {
+    name: 'Copa America',
+    emoji: '🏆',
+    gradient: 'from-yellow-500 to-emerald-600',
+    rounds: ['Quarter-Finals', 'Semi-Finals', 'Third Place', 'Final'],
+    defaultTeams: [
+      'Argentina', 'Brazil', 'Uruguay', 'Colombia',
+      'Ecuador', 'Chile', 'Peru', 'Paraguay',
+      'Venezuela', 'Bolivia', 'United States', 'Mexico',
+      'Canada', 'Costa Rica', 'Panama', 'Jamaica'
     ]
   }
 }

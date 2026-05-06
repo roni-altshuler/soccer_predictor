@@ -44,7 +44,7 @@ interface SimulationData {
 }
 
 interface KnockoutBracketProps {
-  tournament: 'champions_league' | 'europa_league' | 'world_cup' | 'conference_league'
+  tournament: 'champions_league' | 'europa_league' | 'world_cup' | 'conference_league' | 'euro' | 'copa_america'
   rounds?: BracketRound[]
   simulationData?: SimulationData
   showProbabilities?: boolean
@@ -88,6 +88,28 @@ const TOURNAMENT_CONFIG = {
     rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
     isTwoLegged: [false, false, false, false],
     roundShort: ['R16', 'QF', 'SF', 'F'],
+  },
+  euro: {
+    name: 'UEFA European Championship',
+    emoji: '\u{1F3C6}',
+    gradient: 'from-[#075985] to-[#2563EB]',
+    accent: '#38BDF8',
+    accentBg: 'rgba(56,189,248,0.12)',
+    textColor: 'text-sky-400',
+    rounds: ['Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Final'],
+    isTwoLegged: [false, false, false, false],
+    roundShort: ['R16', 'QF', 'SF', 'F'],
+  },
+  copa_america: {
+    name: 'Copa America',
+    emoji: '\u{1F3C6}',
+    gradient: 'from-[#7A4A00] to-[#047857]',
+    accent: '#FBBF24',
+    accentBg: 'rgba(251,191,36,0.12)',
+    textColor: 'text-amber-400',
+    rounds: ['Quarter-Finals', 'Semi-Finals', 'Third Place', 'Final'],
+    isTwoLegged: [false, false, false, false],
+    roundShort: ['QF', 'SF', '3P', 'F'],
   },
   conference_league: {
     name: 'UEFA Conference League',

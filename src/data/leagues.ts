@@ -10,7 +10,9 @@ export const leagueNames = [
   'Europa League (UEL)',
   'Conference League (UECL)',
   'MLS',
-  'FIFA World Cup'
+  'FIFA World Cup',
+  'UEFA European Championship',
+  'Copa America'
 ] as const;
 
 // Flag URLs using flagcdn.com
@@ -24,6 +26,7 @@ export const leagueFlagUrls: Record<string, string> = {
   'PT': 'https://flagcdn.com/24x18/pt.png',
   'EU': 'https://flagcdn.com/24x18/eu.png',
   'US': 'https://flagcdn.com/24x18/us.png',
+  'SA': 'https://flagcdn.com/24x18/un.png',
   'WORLD': 'https://flagcdn.com/24x18/un.png'
 };
 
@@ -39,7 +42,9 @@ export const leagues = [
   { name: 'UEFA Europa League', country: 'EU', matches: '200+' },
   { name: 'UEFA Conference League', country: 'EU', matches: '150+' },
   { name: 'MLS', country: 'US', matches: '500+' },
-  { name: 'FIFA World Cup', country: 'WORLD', matches: '64' }
+  { name: 'FIFA World Cup', country: 'WORLD', matches: '64' },
+  { name: 'UEFA European Championship', country: 'EU', matches: '51' },
+  { name: 'Copa America', country: 'SA', matches: '32' }
 ];
 
 // Complete team lists for each league
@@ -55,5 +60,7 @@ export const teams: Record<string, string[]> = {
   'Eredivisie': ['Ajax', 'Almere City', 'AZ Alkmaar', 'Feyenoord', 'Fortuna Sittard', 'Go Ahead Eagles', 'Groningen', 'Heerenveen', 'Heracles Almelo', 'NAC Breda', 'NEC Nijmegen', 'PEC Zwolle', 'PSV', 'RKC Waalwijk', 'Sparta Rotterdam', 'Twente', 'Utrecht', 'Willem II'],
   'Primeira Liga': ['Arouca', 'AVS', 'Benfica', 'Boavista', 'Braga', 'Casa Pia', 'Estoril', 'Estrela Amadora', 'Famalicão', 'Farense', 'Gil Vicente', 'Moreirense', 'Nacional', 'Porto', 'Rio Ave', 'Santa Clara', 'Sporting CP', 'Vitória Guimarães'],
   'Conference League (UECL)': ['Astana FK', 'Betis', 'Bodø/Glimt', 'Borac Banja Luka', 'Cercle Brugge', 'Chelsea', 'Club Brugge', 'Copenhagen', 'Djurgården', 'FC Heidenheim', 'Ferencváros', 'Fiorentina', 'Gent', 'Hearts', 'HJK Helsinki', 'Jagiellonia', 'KÍ Klaksvík', 'Larne FC', 'Legia Warsaw', 'Lugano', 'Malmö', 'Molde', 'NK Celje', 'Olimpija', 'Omonia', 'Panathinaikos', 'Pafos FC', 'Petrocub', 'Rapid Wien', 'Real Betis', 'Shamrock Rov', 'Sheriff Tiraspol', 'St. Gallen', 'TNS', 'Vikingur Reyk', 'Vitória Guimarães', 'Wolverhampton'],
-  'FIFA World Cup': ['Algeria', 'Angola', 'Argentina', 'Australia', 'Austria', 'Belgium', 'Bolivia', "Bosnia & Herz'na", 'Brazil', 'Bulgaria', 'Cameroon', 'Canada', 'Chile', 'China PR', 'Colombia', 'Costa Rica', 'Croatia', 'Cuba', 'Czechia', 'Czechoslovakia', "Côte d'Ivoire", 'Denmark', 'Dutch East Indies', 'Ecuador', 'Egypt', 'El Salvador', 'England', 'France', 'Germany', 'Germany DR', 'Ghana', 'Greece', 'Haiti', 'Honduras', 'Hungary', 'IR Iran', 'Iceland', 'Iraq', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Korea DPR', 'Korea Republic', 'Kuwait', 'Mexico', 'Morocco', 'Netherlands', 'New Zealand', 'Nigeria', 'Northern Ireland', 'Norway', 'Panama', 'Paraguay', 'Peru', 'Poland', 'Portugal', 'Qatar', 'Rep. of Ireland', 'Romania', 'Russia', 'Saudi Arabia', 'Scotland', 'Senegal', 'Serbia', 'Serbia & Montenegro', 'Slovakia', 'Slovenia', 'South Africa', 'Soviet Union', 'Spain', 'Sweden', 'Switzerland', 'Togo', 'Trin & Tobago', 'Tunisia', 'Türkiye', 'UAE', 'Ukraine', 'United States', 'Uruguay', 'Wales', 'West Germany', 'Yugoslavia', 'Zaire']
+  'FIFA World Cup': ['Algeria', 'Angola', 'Argentina', 'Australia', 'Austria', 'Belgium', 'Bolivia', "Bosnia & Herz'na", 'Brazil', 'Bulgaria', 'Cameroon', 'Canada', 'Chile', 'China PR', 'Colombia', 'Costa Rica', 'Croatia', 'Cuba', 'Czechia', 'Czechoslovakia', "Côte d'Ivoire", 'Denmark', 'Dutch East Indies', 'Ecuador', 'Egypt', 'El Salvador', 'England', 'France', 'Germany', 'Germany DR', 'Ghana', 'Greece', 'Haiti', 'Honduras', 'Hungary', 'IR Iran', 'Iceland', 'Iraq', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Korea DPR', 'Korea Republic', 'Kuwait', 'Mexico', 'Morocco', 'Netherlands', 'New Zealand', 'Nigeria', 'Northern Ireland', 'Norway', 'Panama', 'Paraguay', 'Peru', 'Poland', 'Portugal', 'Qatar', 'Rep. of Ireland', 'Romania', 'Russia', 'Saudi Arabia', 'Scotland', 'Senegal', 'Serbia', 'Serbia & Montenegro', 'Slovakia', 'Slovenia', 'South Africa', 'Soviet Union', 'Spain', 'Sweden', 'Switzerland', 'Togo', 'Trin & Tobago', 'Tunisia', 'Türkiye', 'UAE', 'Ukraine', 'United States', 'Uruguay', 'Wales', 'West Germany', 'Yugoslavia', 'Zaire'],
+  'UEFA European Championship': ['Albania', 'Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'England', 'France', 'Georgia', 'Germany', 'Hungary', 'Italy', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Scotland', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Switzerland', 'Türkiye', 'Ukraine'],
+  'Copa America': ['Argentina', 'Bolivia', 'Brazil', 'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Ecuador', 'Jamaica', 'Mexico', 'Panama', 'Paraguay', 'Peru', 'United States', 'Uruguay', 'Venezuela']
 };

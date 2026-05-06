@@ -34,6 +34,8 @@ ESPN_LEAGUE_IDS = {
     "europa_league": "uefa.europa",
     "conference_league": "uefa.europa.conf",
     "world_cup": "fifa.world",
+    "euro": "uefa.euro",
+    "copa_america": "conmebol.america",
 }
 
 
