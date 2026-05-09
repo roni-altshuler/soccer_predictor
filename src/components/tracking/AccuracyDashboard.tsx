@@ -96,6 +96,25 @@ interface ModelInfoResponse {
   summary?: {
     neural_ensemble_count?: number
   }
+  model_selection?: {
+    generated_at?: string
+    promoted_leagues: string[]
+    decision_counts: Record<string, number>
+    decisions: ModelSelectionDecision[]
+  } | null
+}
+
+interface ModelSelectionDecision {
+  league_key: string
+  display_name: string
+  decision: string
+  reason: string
+  global_blend_weight: number
+  sample_size: number | null
+  best_accuracy: number | null
+  league_accuracy: number | null
+  global_accuracy: number | null
+  best_f1_macro: number | null
 }
 
 interface FetcherStatusResponse {
@@ -237,8 +256,9 @@ export default function AccuracyDashboard() {
       <PredictionHistory initialPredictions={summary.recent_predictions} />
 
       {/* Model Info + Fetch */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <ModelCard modelInfo={modelInfo} />
+        <ModelPolicyCard policy={modelInfo?.model_selection ?? null} />
         <FetcherPanel status={fetcherStatus} fetching={fetching} onFetch={triggerFetch} />
       </div>
     </div>
@@ -925,6 +945,81 @@ function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
       {neuralCount > 0 && (
         <p className="text-[10px] text-[var(--text-tertiary)] mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
           {neuralCount} league-specific neural models trained · 66-feature pipeline
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ModelPolicyCard — league/global/hybrid routing policy
+   ────────────────────────────────────────────────────────────────────── */
+
+function ModelPolicyCard({ policy }: { policy: ModelInfoResponse['model_selection'] | null }) {
+  const decisionTone: Record<string, string> = {
+    global: '#22c55e',
+    blend: '#38bdf8',
+    league: '#f59e0b',
+    global_fallback: '#a78bfa',
+  }
+  const topDecisions = (policy?.decisions || [])
+    .filter(d => d.decision !== 'global_fallback')
+    .sort((a, b) => (b.global_blend_weight - a.global_blend_weight) || (b.sample_size || 0) - (a.sample_size || 0))
+    .slice(0, 6)
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h3 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+            Model Selection Policy
+          </h3>
+          <p className="text-[10px] text-[var(--text-tertiary)] mt-1">
+            {policy?.generated_at ? new Date(policy.generated_at).toLocaleString() : 'No policy artifact'}
+          </p>
+        </div>
+        <span className="rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-2 py-1 text-[10px] font-semibold text-[var(--text-primary)]">
+          {policy?.promoted_leagues.length || 0} global
+        </span>
+      </div>
+
+      {policy ? (
+        <>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {['league', 'blend', 'global', 'global_fallback'].map(key => (
+              <div key={key} className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-2">
+                <p className="text-sm font-black" style={{ color: decisionTone[key] || 'var(--text-primary)' }}>
+                  {policy.decision_counts[key] || 0}
+                </p>
+                <p className="text-[9px] uppercase text-[var(--text-tertiary)]">{key.replace('_', ' ')}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {topDecisions.map(decision => (
+              <div key={decision.league_key} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-3 py-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-[var(--text-primary)]">{decision.display_name}</p>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">
+                    n={decision.sample_size ?? 'N/A'} · best {decision.best_accuracy != null ? pct(decision.best_accuracy) : 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold uppercase" style={{ color: decisionTone[decision.decision] || 'var(--text-primary)' }}>
+                    {decision.decision.replace('_', ' ')}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">
+                    {decision.global_blend_weight > 0 ? `${Math.round(decision.global_blend_weight * 100)}% global` : 'league'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+          Run the global retraining job to generate model-selection routing.
         </p>
       )}
     </div>

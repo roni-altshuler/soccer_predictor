@@ -58,6 +58,43 @@ AVAILABLE_SEASONS = {
     "europa_league": list(range(2009, 2026)),
     # World Cup: all tournament years from 1998 onwards
     "world_cup": [1998, 2002, 2006, 2010, 2014, 2018, 2022],
+    # International tournaments use tournament years, except Euro 2020,
+    # which was played in 2021 but remains the 2020 edition.
+    "euro": [2000, 2004, 2008, 2012, 2016, 2020, 2024],
+    "copa_america": [2001, 2004, 2007, 2011, 2015, 2016, 2019, 2021, 2024],
+}
+
+# Midweek/sparse tournament schedules are easy to miss with weekly date probes.
+# ESPN supports YYYYMMDD-YYYYMMDD range queries, so these competitions fetch
+# monthly/window chunks instead of single-day weekly snapshots.
+ESPN_RANGE_FETCH_LEAGUES = {
+    "champions_league",
+    "europa_league",
+    "world_cup",
+    "euro",
+    "copa_america",
+}
+
+EURO_WINDOWS = {
+    2000: ("20000610", "20000702"),
+    2004: ("20040612", "20040704"),
+    2008: ("20080607", "20080629"),
+    2012: ("20120608", "20120701"),
+    2016: ("20160610", "20160710"),
+    2020: ("20210611", "20210711"),
+    2024: ("20240614", "20240714"),
+}
+
+COPA_AMERICA_WINDOWS = {
+    2001: ("20010711", "20010729"),
+    2004: ("20040706", "20040725"),
+    2007: ("20070626", "20070715"),
+    2011: ("20110701", "20110724"),
+    2015: ("20150611", "20150704"),
+    2016: ("20160603", "20160626"),
+    2019: ("20190614", "20190707"),
+    2021: ("20210613", "20210710"),
+    2024: ("20240620", "20240715"),
 }
 
 # football-data.co.uk CSV codes
@@ -147,6 +184,50 @@ class HistoricalDataCollector:
 
     def _cache_path(self, league: str, season: int) -> Path:
         return self.data_dir / f"{league}_{season}_{season + 1}.json"
+
+    @staticmethod
+    def _parse_yyyymmdd(value: str) -> datetime:
+        return datetime.strptime(value, "%Y%m%d")
+
+    def _season_windows(self, league: str, season: int) -> List[Tuple[datetime, datetime]]:
+        if league == "mls":
+            return [(datetime(season, 2, 1), datetime(season, 12, 15))]
+
+        if league == "world_cup":
+            # Qatar 2022 was a winter tournament; most World Cups are June-July.
+            if season == 2022:
+                return [(datetime(season, 11, 20), datetime(season, 12, 20))]
+            return [(datetime(season, 6, 1), datetime(season, 7, 20))]
+
+        if league == "euro":
+            start, end = EURO_WINDOWS.get(
+                season,
+                (f"{season}0601", f"{season}0731"),
+            )
+            return [(self._parse_yyyymmdd(start), self._parse_yyyymmdd(end))]
+
+        if league == "copa_america":
+            start, end = COPA_AMERICA_WINDOWS.get(
+                season,
+                (f"{season}0601", f"{season}0731"),
+            )
+            return [(self._parse_yyyymmdd(start), self._parse_yyyymmdd(end))]
+
+        return [(datetime(season, 8, 1), datetime(season + 1, 6, 30))]
+
+    @staticmethod
+    def _date_chunks(
+        start_date: datetime,
+        end_date: datetime,
+        chunk_days: int = 31,
+    ) -> List[Tuple[datetime, datetime]]:
+        chunks = []
+        current = start_date
+        while current <= end_date:
+            chunk_end = min(end_date, current + timedelta(days=chunk_days - 1))
+            chunks.append((current, chunk_end))
+            current = chunk_end + timedelta(days=1)
+        return chunks
 
     def _is_cached(self, league: str, season: int) -> bool:
         path = self._cache_path(league, season)
@@ -309,31 +390,29 @@ class HistoricalDataCollector:
         all_matches = []
 
         try:
-            if league == "mls":
-                start_date = datetime(season, 2, 1)
-                end_date = datetime(season, 12, 15)
-            elif league == "world_cup":
-                # World Cup tournaments: scan DAILY during tournament windows
-                # 2022 Qatar was Nov-Dec, all others are June-July
-                if season == 2022:
-                    windows = [(datetime(season, 11, 20), datetime(season, 12, 20))]
-                else:
-                    windows = [(datetime(season, 6, 1), datetime(season, 7, 20))]
-            else:
-                start_date = datetime(season, 8, 1)
-                end_date = datetime(season + 1, 6, 30)
-                windows = [(start_date, end_date)]
+            windows = self._season_windows(league, season)
 
-            for window_start, window_end in (windows if league == "world_cup" else [(start_date, end_date)]):
-                # Use daily scanning for World Cup (64 matches in ~30 days)
-                # Use weekly scanning for club leagues (~380 matches over 10 months)
-                step = timedelta(days=1) if league == "world_cup" else timedelta(days=7)
-                current = window_start
-                while current <= window_end:
-                    date_str = current.strftime("%Y%m%d")
+            for window_start, window_end in windows:
+                if league in ESPN_RANGE_FETCH_LEAGUES:
+                    date_ranges = [
+                        (
+                            start.strftime("%Y%m%d")
+                            if start == end
+                            else f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
+                        )
+                        for start, end in self._date_chunks(window_start, window_end)
+                    ]
+                else:
+                    date_ranges = []
+                    current = window_start
+                    while current <= window_end:
+                        date_ranges.append(current.strftime("%Y%m%d"))
+                        current += timedelta(days=7)
+
+                for date_str in date_ranges:
                     url = (
                         f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
-                        f"?dates={date_str}&limit=100"
+                        f"?dates={date_str}&limit=1000"
                     )
                     try:
                         resp = await client.get(url)
@@ -346,8 +425,7 @@ class HistoricalDataCollector:
                     except Exception as e:
                         logger.debug(f"Error fetching {league} {date_str}: {e}")
 
-                    current += step
-                    await asyncio.sleep(0.15 if league != "world_cup" else 0.1)
+                    await asyncio.sleep(0.1 if league in ESPN_RANGE_FETCH_LEAGUES else 0.15)
 
             seen = set()
             unique_matches = []
@@ -393,8 +471,15 @@ class HistoricalDataCollector:
                 result = "D"
 
             venue = competition.get("venue", {})
+            home_stats = self._parse_competitor_stats(home)
+            away_stats = self._parse_competitor_stats(away)
+            home_cards = self._count_cards(competition, home.get("team", {}).get("id", ""))
+            away_cards = self._count_cards(competition, away.get("team", {}).get("id", ""))
+
             return {
                 "match_id": str(event.get("id", "")),
+                "source": "espn",
+                "source_league_id": ESPN_LEAGUES.get(league),
                 "league": league,
                 "season": season,
                 "date": event.get("date", ""),
@@ -406,11 +491,63 @@ class HistoricalDataCollector:
                 "away_score": away_score,
                 "result": result,
                 "venue": venue.get("fullName", ""),
-                "attendance": venue.get("capacity"),
+                "attendance": competition.get("attendance") or venue.get("capacity"),
                 "matchday": event.get("week", {}).get("number"),
+                "phase": event.get("season", {}).get("slug"),
+                "status_detail": status.get("detail") or status.get("shortDetail"),
+                "home_shots": home_stats.get("totalShots"),
+                "away_shots": away_stats.get("totalShots"),
+                "home_shots_on_target": home_stats.get("shotsOnTarget"),
+                "away_shots_on_target": away_stats.get("shotsOnTarget"),
+                "home_corners": home_stats.get("wonCorners"),
+                "away_corners": away_stats.get("wonCorners"),
+                "home_fouls": home_stats.get("foulsCommitted"),
+                "away_fouls": away_stats.get("foulsCommitted"),
+                "home_yellows": home_cards["yellows"],
+                "away_yellows": away_cards["yellows"],
+                "home_reds": home_cards["reds"],
+                "away_reds": away_cards["reds"],
             }
         except Exception:
             return None
+
+    @staticmethod
+    def _parse_stat_value(value: Any) -> Optional[float]:
+        try:
+            if value is None:
+                return None
+            if isinstance(value, (int, float)):
+                return float(value)
+            cleaned = str(value).replace("%", "").replace(",", "").strip()
+            return float(cleaned) if cleaned else None
+        except (TypeError, ValueError):
+            return None
+
+    def _parse_competitor_stats(self, competitor: Dict[str, Any]) -> Dict[str, Optional[float]]:
+        stats: Dict[str, Optional[float]] = {}
+        for item in competitor.get("statistics", []) or []:
+            name = item.get("name")
+            if not name:
+                continue
+            stats[name] = self._parse_stat_value(
+                item.get("value")
+                if item.get("value") is not None
+                else item.get("displayValue")
+            )
+        return stats
+
+    @staticmethod
+    def _count_cards(competition: Dict[str, Any], team_id: str) -> Dict[str, int]:
+        yellows = 0
+        reds = 0
+        for detail in competition.get("details", []) or []:
+            if str(detail.get("team", {}).get("id", "")) != str(team_id):
+                continue
+            if detail.get("yellowCard"):
+                yellows += 1
+            if detail.get("redCard"):
+                reds += 1
+        return {"yellows": yellows, "reds": reds}
 
     def _save_cache(self, league: str, season: int, matches: List[Dict]):
         path = self._cache_path(league, season)

@@ -39,7 +39,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, brier_score_loss, log_loss
+from sklearn.metrics import accuracy_score, brier_score_loss, log_loss, precision_recall_fscore_support
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
@@ -50,6 +50,8 @@ logger = logging.getLogger(__name__)
 
 MODEL_DIR = Path(__file__).parent.parent.parent / "data" / "models"
 PARAMS_FILE = Path(__file__).parent.parent.parent / "data" / "league_params.json"
+OUTCOME_LABELS = [0, 1, 2]
+OUTCOME_NAMES = ["home_win", "draw", "away_win"]
 
 
 def load_league_params() -> Dict[str, Any]:
@@ -339,12 +341,47 @@ class PerLeagueNeuralModel:
         blend_proba = self._blend_probas(X_test)
         blend_pred = np.argmax(blend_proba, axis=1)
         metrics['ensemble_accuracy'] = float(accuracy_score(y_test, blend_pred))
+        macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+            y_test,
+            blend_pred,
+            labels=OUTCOME_LABELS,
+            average="macro",
+            zero_division=0,
+        )
+        weighted_precision, weighted_recall, weighted_f1, _ = precision_recall_fscore_support(
+            y_test,
+            blend_pred,
+            labels=OUTCOME_LABELS,
+            average="weighted",
+            zero_division=0,
+        )
+        class_precision, class_recall, class_f1, class_support = precision_recall_fscore_support(
+            y_test,
+            blend_pred,
+            labels=OUTCOME_LABELS,
+            zero_division=0,
+        )
+        metrics['ensemble_precision_macro'] = float(macro_precision)
+        metrics['ensemble_recall_macro'] = float(macro_recall)
+        metrics['ensemble_f1_macro'] = float(macro_f1)
+        metrics['ensemble_precision_weighted'] = float(weighted_precision)
+        metrics['ensemble_recall_weighted'] = float(weighted_recall)
+        metrics['ensemble_f1_weighted'] = float(weighted_f1)
+        metrics['ensemble_per_class'] = {
+            name: {
+                'precision': float(class_precision[index]),
+                'recall': float(class_recall[index]),
+                'f1': float(class_f1[index]),
+                'support': int(class_support[index]),
+            }
+            for index, name in enumerate(OUTCOME_NAMES)
+        }
         try:
             metrics['ensemble_log_loss'] = float(log_loss(y_test, blend_proba))
         except Exception:
             pass
 
-        for cls, name in enumerate(['home_win', 'draw', 'away_win']):
+        for cls, name in enumerate(OUTCOME_NAMES):
             mask = (y_test == cls).astype(int)
             if mask.sum() > 0:
                 metrics[f'brier_{name}'] = float(brier_score_loss(mask, blend_proba[:, cls]))

@@ -44,7 +44,7 @@ This is what differentiates FotPredict from standard live-score apps. The predic
 
 ### Model Architecture (v5.1.x)
 
-Most trained competitions have a **per-league neural ensemble** containing 7 models. The training script also supports a cross-league `global` challenger model so the project can move toward one shared model trained across domestic leagues, UEFA competitions, MLS, and World Cup history.
+Most trained competitions have a **per-league neural ensemble** containing 7 models. The training script also supports a cross-league `global` challenger model so the project can move toward one shared model trained across domestic leagues, UEFA competitions, MLS, and international tournament history.
 
 | Model | Architecture | Notes |
 |-------|-------------|-------|
@@ -99,9 +99,54 @@ The neural ensemble is blended with a classical statistical model:
 The May 3, 2026 audit is saved in [`docs/PROJECT_AUDIT_2026-05-03.md`](docs/PROJECT_AUDIT_2026-05-03.md). Key findings:
 
 - The unified API is neural-first for trained leagues and returns the model used with each prediction.
+- The global model is now fail-closed and benchmarked league by league: runtime can use the league model, the global model, or a calibrated league/global hybrid blend only when `backend/data/models/model_selection.json` says the recent same-fixture gates passed.
 - League parameter clamps now prevent impossible values such as negative average goals.
+- Training recency weights now use the current UTC year automatically, so 2026 retraining keeps the newest seasons properly emphasized without a manual code edit.
 - Scheduled predictions now store their 66-feature vectors, allowing online neural `partial_fit()` to learn from future settled matches without fabricating proxy features.
-- A cross-league global model can be trained with `--global-model`; when the artifact exists, `train_feedback.py` also updates it from the latest settled feature-vector predictions across competitions.
+- A cross-league global model can be trained with `--global-model`; training writes recent holdout metrics, same-fixture global-vs-league-vs-hybrid comparisons, and a model-selection policy. `train_feedback.py` also updates it from the latest settled feature-vector predictions across competitions.
+
+The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality.
+
+### Latest Full Historical Retrain
+
+Last full retrain: **May 9, 2026** using cached/refreshed historical data from 1998+ where available, then a corrected `--global-only` rerun after normalizing source league labels to canonical runtime keys. The repaired data run used **61,816 ESPN/football-data historical matches**, loaded **1,399 settled prediction outcomes**, and trained the global challenger on **63,195 candidate matches**. Each neural artifact uses a chronological **70% train / 15% calibration / 15% test** split.
+
+Tournament data repair completed in this pass:
+
+- UEFA Euro now collects **246 sourced historical matches** from ESPN range windows (Euro 2004 through Euro 2024; ESPN returned no Euro 2000 events for the tested range).
+- Copa America now collects **248 sourced historical matches** from ESPN range windows (2001 through 2024).
+- Champions League and Europa League no longer miss the current season: the 2025-26 refresh collected **188 completed matches** for each competition.
+- ESPN box-score fields now populate tournament tactical features where available: shots, shots on target, corners, fouls, yellow cards, red cards, attendance, phase, and status detail.
+
+| Model | Samples | Train / Cal / Test | Test Accuracy | Macro P/R/F1 | Weighted F1 | Log Loss |
+|-------|---------|--------------------|---------------|--------------|-------------|----------|
+| Global cross-league | 61,062 | 42,743 / 9,159 / 9,160 | 49.3% | 50.0 / 48.8 / 48.5 | 50.5% | 1.002 |
+| Premier League | 8,776 | 6,143 / 1,316 / 1,317 | 45.4% | 41.8 / 41.9 / 41.8 | 44.8% | 1.053 |
+| La Liga | 8,757 | 6,129 / 1,314 / 1,314 | 43.9% | 43.7 / 42.6 / 42.5 | 44.8% | 1.070 |
+| Bundesliga | 7,172 | 5,020 / 1,076 / 1,076 | 44.3% | 40.6 / 41.6 / 40.1 | 42.9% | 1.062 |
+| Serie A | 8,535 | 5,974 / 1,280 / 1,281 | 44.1% | 43.8 / 43.3 / 43.3 | 44.6% | 1.058 |
+| Ligue 1 | 8,012 | 5,608 / 1,202 / 1,202 | 45.3% | 41.0 / 41.2 / 41.1 | 44.9% | 1.058 |
+| Eredivisie | 6,024 | 4,216 / 904 / 904 | 43.8% | 42.3 / 42.1 / 42.0 | 44.3% | 1.068 |
+| Primeira Liga | 4,629 | 3,240 / 694 / 695 | 51.8% | 51.1 / 51.2 / 50.7 | 52.3% | 0.976 |
+| MLS | 1,185 | 829 / 178 / 178 | 36.5% | 35.9 / 36.0 / 34.8 | 37.9% | 1.177 |
+| Champions League | 2,944 | 2,060 / 442 / 442 | 53.4% | 45.6 / 46.1 / 45.6 | 53.5% | 0.993 |
+| Europa League | 3,631 | 2,541 / 545 / 545 | 48.3% | 42.5 / 42.2 / 42.2 | 47.9% | 1.036 |
+| World Cup | 297 | 207 / 45 / 45 | 40.0% | 33.0 / 41.2 / 31.2 | 34.4% | 1.159 |
+| UEFA Euro | 169 | 118 / 25 / 26 | 34.6% | 35.0 / 34.2 / 34.1 | 34.7% | 1.089 |
+| Copa America | 206 | 144 / 31 / 31 | 61.3% | 68.9 / 70.2 / 62.0 | 59.8% | 0.945 |
+
+Corrected model-selection policy after the retrain:
+
+- **Use global model:** `conmebol.america`, `esp.1`, `ger.1`, `ita.1`, `por.1`
+- **Use hybrid blend:** `eng.1` (65% global), `fra.1` (85% global), `ned.1` (75% global), `uefa.champions` (65% global), `uefa.europa` (85% global)
+- **Keep league model:** `fifa.world`, `uefa.euro`, `usa.1`
+- **World Cup remains league-only for now:** recent global holdout coverage is insufficient even though the `fifa.world` model trained successfully.
+
+Important caveats from this run:
+
+- Euro and World Cup remain small-sample tournament models, so their confidence should be displayed conservatively.
+- The global model improved the long-term architecture, but the held-out test scores are not high enough to claim betting-grade accuracy. Draws, squad rotation, injuries, and late-season motivation remain hard prediction cases.
+- Any provider-missing field should stay unavailable in the UI rather than being filled with a fabricated placeholder.
 
 ### Automated Pipeline
 
@@ -237,11 +282,15 @@ npm install
 ### Train Models
 
 ```bash
-# Train per-league neural ensemble on historical data (back to 2003)
-python -m backend.scripts.train_models --min-season 2003
+# Train per-league neural ensemble on all available historical data
+python -m backend.scripts.train_models --min-season 1998
 
 # Train per-league models plus a cross-league global challenger
-python -m backend.scripts.train_models --min-season 2003 --global-model
+# Also writes backend/data/models/model_selection.json with league/global/hybrid promotion gates
+python -m backend.scripts.train_models --min-season 1998 --global-model
+
+# Reuse saved league artifacts and retrain only the corrected global challenger/policy
+python -m backend.scripts.train_models --min-season 1998 --global-only
 
 # Train specific leagues only
 python -m backend.scripts.train_models --leagues eng.1 esp.1
@@ -303,7 +352,7 @@ npm run build && npm start
 | GET | `/api/v1/tracking/accuracy/summary` | Dashboard data |
 | GET | `/api/v1/tracking/accuracy/trend` | Rolling accuracy trend |
 | GET | `/api/v1/tracking/predictions` | Paginated prediction history |
-| GET | `/api/v1/tracking/model-info` | Per-league model status |
+| GET | `/api/v1/tracking/model-info` | Per-league model status plus model-selection policy decisions |
 | POST | `/api/v1/tracking/fetch-outcomes` | Trigger ESPN result resolution |
 
 ### Simulation

@@ -525,17 +525,60 @@ def _get_model_tuning(league_key: str) -> Dict[str, float]:
     return {**default, **league_tuning}
 
 
-def _select_neural_model(league_key: str):
-    """Prefer a trained global model when present, otherwise use the league model."""
+def _select_neural_strategy(league_key: str):
+    """Select league/global/hybrid neural strategy using benchmark promotion gates."""
     try:
         from backend.services.prediction.neural_model import get_league_model_registry
+        from backend.services.prediction.model_selection import (
+            get_global_blend_weight,
+            get_model_selection_decision,
+            load_model_selection_policy,
+        )
+
         registry = get_league_model_registry()
         global_model = registry.get_model("global")
-        if global_model.is_fitted:
-            return global_model, "neural_global_v5"
         league_model = registry.get_model(league_key)
+
+        policy = load_model_selection_policy()
+        decision = get_model_selection_decision(league_key, policy)
+        decision_name = str(decision.get("decision") or "league")
+
+        if (
+            decision_name == "blend"
+            and league_model.is_fitted
+            and global_model.is_fitted
+        ):
+            global_weight = get_global_blend_weight(league_key, policy)
+            return {
+                "mode": "blend",
+                "league_model": league_model,
+                "global_model": global_model,
+                "global_weight": global_weight,
+                "reason": decision.get("reason", "hybrid_blend_benchmark_winner"),
+            }, "neural_hybrid_v5_benchmark_blend"
+
         if league_model.is_fitted:
-            return league_model, "neural_ensemble_v5"
+            if decision_name == "global" and global_model.is_fitted:
+                return {
+                    "mode": "single",
+                    "model": global_model,
+                    "global_weight": 1.0,
+                    "reason": decision.get("reason", "benchmark_gates_passed"),
+                }, "neural_global_v5_benchmark_promoted"
+            return {
+                "mode": "single",
+                "model": league_model,
+                "global_weight": 0.0,
+                "reason": decision.get("reason", "league_model_preferred"),
+            }, "neural_ensemble_v5"
+
+        if global_model.is_fitted and policy.get("fallback_to_global_when_league_missing", True):
+            return {
+                "mode": "single",
+                "model": global_model,
+                "global_weight": 1.0,
+                "reason": "league_model_missing_global_fallback",
+            }, "neural_global_v5_fallback"
     except Exception as exc:
         logger.debug(f"Neural model unavailable for {league_key}: {exc}")
     return None, "elo_poisson"
@@ -568,6 +611,7 @@ async def predict_match(request: PredictionRequest):
     model_used = "elo_poisson"
     blend_nn_weight = None
     blend_entropy = None
+    model_selection = None
     runtime_elo = None
 
     try:
@@ -589,8 +633,8 @@ async def predict_match(request: PredictionRequest):
     predicted_home_goals = elo_home_xg
     predicted_away_goals = elo_away_xg
 
-    neural_model, neural_tag = _select_neural_model(league_key)
-    if neural_model is not None and runtime_elo is not None:
+    neural_strategy, neural_tag = _select_neural_strategy(league_key)
+    if neural_strategy is not None and runtime_elo is not None:
         try:
             from backend.scripts.predict_upcoming import _build_match_features
             features = _build_match_features(
@@ -604,17 +648,56 @@ async def predict_match(request: PredictionRequest):
                 league_results=None,
                 match_date=datetime.utcnow().isoformat(),
             )
-            raw_probs = neural_model.predict_proba(features)[0]
+
+            if neural_strategy["mode"] == "blend":
+                global_weight = float(neural_strategy.get("global_weight", 0.5))
+                league_weight = 1.0 - global_weight
+                league_model = neural_strategy["league_model"]
+                global_model = neural_strategy["global_model"]
+
+                league_raw_probs = league_model.predict_proba(features)[0]
+                global_raw_probs = global_model.predict_proba(features)[0]
+                raw_probs = [
+                    (league_weight * float(league_raw_probs[i])) + (global_weight * float(global_raw_probs[i]))
+                    for i in range(3)
+                ]
+
+                league_goals = league_model.predict_goals(features)
+                global_goals = global_model.predict_goals(features)
+                predicted_home_goals = (
+                    0.75 * (
+                        league_weight * float(league_goals[0, 0])
+                        + global_weight * float(global_goals[0, 0])
+                    )
+                    + 0.25 * elo_home_xg
+                )
+                predicted_away_goals = (
+                    0.75 * (
+                        league_weight * float(league_goals[0, 1])
+                        + global_weight * float(global_goals[0, 1])
+                    )
+                    + 0.25 * elo_away_xg
+                )
+            else:
+                neural_model = neural_strategy["model"]
+                raw_probs = neural_model.predict_proba(features)[0]
+                raw_goals = neural_model.predict_goals(features)
+                predicted_home_goals = 0.75 * float(raw_goals[0, 0]) + 0.25 * elo_home_xg
+                predicted_away_goals = 0.75 * float(raw_goals[0, 1]) + 0.25 * elo_away_xg
+
+            raw_total = sum(float(p) for p in raw_probs) or 1.0
             nn_probs = {
-                "home_win": float(raw_probs[0]),
-                "draw": float(raw_probs[1]),
-                "away_win": float(raw_probs[2]),
+                "home_win": float(raw_probs[0]) / raw_total,
+                "draw": float(raw_probs[1]) / raw_total,
+                "away_win": float(raw_probs[2]) / raw_total,
             }
             outcome, blend_nn_weight, blend_entropy = _blend_neural_with_elo(nn_probs, elo_probs, league_key)
-            raw_goals = neural_model.predict_goals(features)
-            predicted_home_goals = 0.75 * float(raw_goals[0, 0]) + 0.25 * elo_home_xg
-            predicted_away_goals = 0.75 * float(raw_goals[0, 1]) + 0.25 * elo_away_xg
             model_used = neural_tag
+            model_selection = {
+                "mode": neural_strategy.get("mode"),
+                "reason": neural_strategy.get("reason"),
+                "global_weight": round(float(neural_strategy.get("global_weight", 0.0)), 4),
+            }
         except Exception as exc:
             logger.debug(f"Neural prediction failed for {league_key}: {exc}")
     
@@ -647,6 +730,7 @@ async def predict_match(request: PredictionRequest):
         "model_used": model_used,
         "blend_nn_weight": round(blend_nn_weight, 4) if blend_nn_weight is not None else None,
         "blend_entropy": round(blend_entropy, 4) if blend_entropy is not None else None,
+        "model_selection": model_selection,
         "predicted_home_goals": round(max(0.1, min(5.0, predicted_home_goals)), 2),
         "predicted_away_goals": round(max(0.1, min(5.0, predicted_away_goals)), 2),
         "confidence": confidence_pct,  # Clamp between 0.1-99.9%

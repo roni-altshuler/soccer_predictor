@@ -15,6 +15,8 @@ const LEAGUE_DISPLAY: Record<string, string> = {
   'uefa.europa': 'Europa League',
   'uefa.europa.conf': 'Conference League',
   'fifa.world': 'FIFA World Cup',
+  'uefa.euro': 'UEFA Euro',
+  'conmebol.america': 'Copa America',
 }
 
 interface ModelMetadata {
@@ -46,10 +48,45 @@ interface LeagueModelInfo {
   } | null
 }
 
+interface ModelSelectionDecision {
+  league_key: string
+  display_name: string
+  decision: string
+  reason: string
+  global_blend_weight: number
+  sample_size: number | null
+  best_accuracy: number | null
+  league_accuracy: number | null
+  global_accuracy: number | null
+  best_f1_macro: number | null
+}
+
+interface ModelSelectionPolicy {
+  generated_at?: string
+  promoted_leagues?: string[]
+  league_decisions?: Record<string, {
+    decision?: string
+    reason?: string
+    global_blend_weight?: number
+    same_fixture_comparison?: {
+      sample_size?: number
+      best_metrics?: Record<string, number>
+      league?: Record<string, number>
+      global?: Record<string, number>
+    }
+  }>
+}
+
+function metricValue(source: Record<string, number> | undefined, key: string): number | null {
+  const value = source?.[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 export async function GET() {
   const modelsDir = path.join(process.cwd(), 'backend', 'data', 'models')
   const paramsFile = path.join(process.cwd(), 'backend', 'data', 'league_params.json')
   const adjustmentsFile = path.join(process.cwd(), 'backend', 'data', 'predictions', 'model_adjustments.json')
+  const modelSelectionFile = path.join(modelsDir, 'model_selection.json')
 
   // Load league params
   let leagueKeys = Object.keys(LEAGUE_DISPLAY)
@@ -127,9 +164,50 @@ export async function GET() {
   // Count neural vs baseline
   const neuralCount = Object.values(result).filter(m => m.is_fitted).length
   const totalCount = Object.keys(result).length
+  let modelSelection: {
+    generated_at?: string
+    promoted_leagues: string[]
+    decision_counts: Record<string, number>
+    decisions: ModelSelectionDecision[]
+  } | null = null
+
+  try {
+    if (fs.existsSync(modelSelectionFile)) {
+      const policy: ModelSelectionPolicy = JSON.parse(fs.readFileSync(modelSelectionFile, 'utf-8'))
+      const decisions = Object.entries(policy.league_decisions || {}).map(([key, decision]) => {
+        const comparison = decision.same_fixture_comparison
+        const best = comparison?.best_metrics
+        const league = comparison?.league
+        const global = comparison?.global
+        return {
+          league_key: key,
+          display_name: LEAGUE_DISPLAY[key] || key,
+          decision: decision.decision || 'league',
+          reason: decision.reason || 'policy_unavailable',
+          global_blend_weight: typeof decision.global_blend_weight === 'number' ? decision.global_blend_weight : 0,
+          sample_size: typeof comparison?.sample_size === 'number' ? comparison.sample_size : null,
+          best_accuracy: metricValue(best, 'accuracy'),
+          league_accuracy: metricValue(league, 'accuracy'),
+          global_accuracy: metricValue(global, 'accuracy'),
+          best_f1_macro: metricValue(best, 'f1_macro'),
+        }
+      })
+      const decisionCounts = decisions.reduce<Record<string, number>>((acc, item) => {
+        acc[item.decision] = (acc[item.decision] || 0) + 1
+        return acc
+      }, {})
+      modelSelection = {
+        generated_at: policy.generated_at,
+        promoted_leagues: policy.promoted_leagues || [],
+        decision_counts: decisionCounts,
+        decisions,
+      }
+    }
+  } catch { /* skip model-selection policy */ }
 
   return NextResponse.json({
     leagues: result,
+    model_selection: modelSelection,
     summary: {
       total_leagues: totalCount,
       neural_ensemble_count: neuralCount,

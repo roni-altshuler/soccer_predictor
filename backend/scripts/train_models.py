@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
+from sklearn.metrics import accuracy_score, log_loss, precision_recall_fscore_support
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,9 +33,12 @@ logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).parent.parent / "data"
 PREDICTIONS_DIR = DATA_DIR / "predictions"
 RESULTS_FILE = DATA_DIR / "training_results.json"
+MODEL_SELECTION_FILE = DATA_DIR / "models" / "model_selection.json"
+OUTCOME_LABELS = [0, 1, 2]
+OUTCOME_NAMES = ["home_win", "draw", "away_win"]
 
 
-def compute_season_weights(seasons: np.ndarray, current_season: int = 2025) -> np.ndarray:
+def compute_season_weights(seasons: np.ndarray, current_season: Optional[int] = None) -> np.ndarray:
     """
     Compute sample weights with exponential decay for season recency.
 
@@ -48,6 +52,9 @@ def compute_season_weights(seasons: np.ndarray, current_season: int = 2025) -> n
       10 years ago:    0.30
       15+ years ago:   0.15 (floor)
     """
+    if current_season is None:
+        current_season = datetime.utcnow().year
+
     weights = np.ones(len(seasons), dtype=np.float64)
     for i, s in enumerate(seasons):
         age = max(0, current_season - s)
@@ -154,7 +161,7 @@ def build_features_and_labels(
         y_outcome_list.append(label)
         y_goals_list.append([hs, as_])
         seasons_list.append(match.get("season", 2025))
-        leagues_list.append(match.get("league", "unknown"))
+        leagues_list.append(normalize_league_key(match.get("league", "unknown")))
     
     if not X_list:
         empty = (np.array([]), np.array([]), np.array([]), np.array([]))
@@ -199,6 +206,344 @@ def compute_global_sample_weights(seasons: np.ndarray, league_labels: np.ndarray
     return combined / mean if mean > 0 else combined
 
 
+def _normalize_probabilities(proba: np.ndarray) -> np.ndarray:
+    probs = np.asarray(proba, dtype=np.float64)
+    probs = np.clip(probs, 1e-12, 1.0)
+    row_sums = probs.sum(axis=1, keepdims=True)
+    row_sums[row_sums <= 0] = 1.0
+    return probs / row_sums
+
+
+def _multiclass_brier(y_true: np.ndarray, y_proba: np.ndarray) -> float:
+    probs = _normalize_probabilities(y_proba)
+    one_hot = np.zeros_like(probs)
+    one_hot[np.arange(len(y_true)), y_true.astype(int)] = 1.0
+    return float(np.mean(np.sum((probs - one_hot) ** 2, axis=1)))
+
+
+def _model_objective(metric_block: Dict) -> Optional[float]:
+    logloss_value = metric_block.get("log_loss")
+    brier_value = metric_block.get("brier_score")
+    if not isinstance(logloss_value, (int, float)) or not isinstance(brier_value, (int, float)):
+        return None
+    return float((0.65 * float(logloss_value)) + (0.35 * float(brier_value)))
+
+
+def _metric_block(y_true: np.ndarray, y_proba: np.ndarray) -> Dict:
+    if len(y_true) == 0:
+        return {"sample_size": 0}
+
+    probs = _normalize_probabilities(y_proba)
+    preds = np.argmax(probs, axis=1)
+    macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+        y_true,
+        preds,
+        labels=OUTCOME_LABELS,
+        average="macro",
+        zero_division=0,
+    )
+    weighted_precision, weighted_recall, weighted_f1, _ = precision_recall_fscore_support(
+        y_true,
+        preds,
+        labels=OUTCOME_LABELS,
+        average="weighted",
+        zero_division=0,
+    )
+    class_precision, class_recall, class_f1, class_support = precision_recall_fscore_support(
+        y_true,
+        preds,
+        labels=OUTCOME_LABELS,
+        zero_division=0,
+    )
+    try:
+        logloss_value = float(log_loss(y_true, probs, labels=OUTCOME_LABELS))
+    except Exception:
+        logloss_value = None
+
+    block = {
+        "sample_size": int(len(y_true)),
+        "accuracy": float(accuracy_score(y_true, preds)),
+        "precision_macro": float(macro_precision),
+        "recall_macro": float(macro_recall),
+        "f1_macro": float(macro_f1),
+        "precision_weighted": float(weighted_precision),
+        "recall_weighted": float(weighted_recall),
+        "f1_weighted": float(weighted_f1),
+        "log_loss": logloss_value,
+        "brier_score": _multiclass_brier(y_true, probs),
+        "class_distribution": {
+            "home_win": int((y_true == 0).sum()),
+            "draw": int((y_true == 1).sum()),
+            "away_win": int((y_true == 2).sum()),
+        },
+        "per_class": {
+            name: {
+                "precision": float(class_precision[index]),
+                "recall": float(class_recall[index]),
+                "f1": float(class_f1[index]),
+                "support": int(class_support[index]),
+            }
+            for index, name in enumerate(OUTCOME_NAMES)
+        },
+    }
+    block["objective"] = _model_objective(block)
+    return block
+
+
+def _mean_brier_from_metrics(metrics: Dict) -> Optional[float]:
+    values = [
+        metrics.get("brier_home_win"),
+        metrics.get("brier_draw"),
+        metrics.get("brier_away_win"),
+    ]
+    numeric = [float(value) for value in values if isinstance(value, (int, float))]
+    return float(np.mean(numeric)) if numeric else None
+
+
+def evaluate_global_holdout_by_league(
+    model,
+    X: np.ndarray,
+    y_outcome: np.ndarray,
+    league_labels: np.ndarray,
+    holdout_fraction: float = 0.15,
+) -> Dict[str, Dict]:
+    """
+    Evaluate the trained global model on the recent chronological holdout.
+
+    This is the minimum safety layer before allowing a global artifact to
+    override a trained league-specific artifact in runtime prediction.
+    """
+    n = len(X)
+    if n < 80:
+        return {"overall": {"sample_size": 0}, "by_league": {}}
+
+    split_idx = max(1, min(n - 1, int(n * (1 - holdout_fraction))))
+    X_test = X[split_idx:]
+    y_test = y_outcome[split_idx:]
+    leagues_test = league_labels[split_idx:]
+
+    proba = _normalize_probabilities(model.predict_proba(X_test))
+
+    def metric_block(indices: np.ndarray) -> Dict:
+        if len(indices) == 0:
+            return {"sample_size": 0}
+        return _metric_block(y_test[indices], proba[indices])
+
+    by_league: Dict[str, Dict] = {}
+    for league_key in sorted(set(str(label) for label in leagues_test)):
+        indices = np.where(leagues_test == league_key)[0]
+        by_league[league_key] = metric_block(indices)
+
+    return {
+        "overall": metric_block(np.arange(len(y_test))),
+        "by_league": by_league,
+    }
+
+
+def evaluate_hybrid_holdout_by_league(
+    global_model,
+    registry,
+    X: np.ndarray,
+    y_outcome: np.ndarray,
+    league_labels: np.ndarray,
+    holdout_fraction: float = 0.15,
+) -> Dict[str, Dict]:
+    """
+    Compare league, global, and blended probabilities on the same holdout rows.
+
+    This creates a league-by-league architecture policy: keep the league model,
+    promote the global model, or use a calibrated hybrid blend.
+    """
+    n = len(X)
+    if n < 80:
+        return {"overall": {"sample_size": 0}, "by_league": {}}
+
+    split_idx = max(1, min(n - 1, int(n * (1 - holdout_fraction))))
+    X_test = X[split_idx:]
+    y_test = y_outcome[split_idx:]
+    leagues_test = league_labels[split_idx:]
+    global_proba_all = _normalize_probabilities(global_model.predict_proba(X_test))
+
+    by_league: Dict[str, Dict] = {}
+    for league_key in sorted(set(str(label) for label in leagues_test)):
+        indices = np.where(leagues_test == league_key)[0]
+        if len(indices) == 0:
+            continue
+
+        league_y = y_test[indices]
+        league_X = X_test[indices]
+        global_proba = global_proba_all[indices]
+        global_metrics = _metric_block(league_y, global_proba)
+
+        league_model = registry.get_model(league_key)
+        league_proba = None
+        league_metrics = {"sample_size": 0, "error": "league_model_unavailable"}
+        if league_model.is_fitted:
+            try:
+                league_proba = _normalize_probabilities(league_model.predict_proba(league_X))
+                league_metrics = _metric_block(league_y, league_proba)
+            except Exception as exc:
+                league_metrics = {"sample_size": int(len(indices)), "error": exc.__class__.__name__}
+
+        candidates = {
+            "global": {
+                "global_blend_weight": 1.0,
+                "metrics": global_metrics,
+            }
+        }
+        if league_proba is not None:
+            candidates["league"] = {
+                "global_blend_weight": 0.0,
+                "metrics": league_metrics,
+            }
+            for global_weight in np.arange(0.15, 0.90, 0.10):
+                blend = (float(global_weight) * global_proba) + ((1.0 - float(global_weight)) * league_proba)
+                candidates[f"blend_{global_weight:.2f}"] = {
+                    "global_blend_weight": round(float(global_weight), 2),
+                    "metrics": _metric_block(league_y, blend),
+                }
+
+        best_name = min(
+            candidates,
+            key=lambda name: (
+                candidates[name]["metrics"].get("objective")
+                if candidates[name]["metrics"].get("objective") is not None
+                else float("inf")
+            ),
+        )
+        best = candidates[best_name]
+
+        by_league[league_key] = {
+            "sample_size": int(len(indices)),
+            "best_candidate": best_name,
+            "best_global_blend_weight": best["global_blend_weight"],
+            "best_metrics": best["metrics"],
+            "league": league_metrics,
+            "global": global_metrics,
+            "candidates": candidates,
+        }
+
+    return {
+        "overall": _metric_block(y_test, global_proba_all),
+        "by_league": by_league,
+    }
+
+
+def build_global_promotion_policy(results: Dict[str, dict], challenger_eval: Dict[str, Dict]) -> Dict:
+    """
+    Build a fail-closed runtime policy for global-vs-league model selection.
+
+    A league is promoted to the global model only when the global model has
+    enough recent holdout samples and is not meaningfully worse on accuracy,
+    log-loss, or Brier score than the league artifact. This protects against
+    global sample-size gains being erased by league-specific calibration loss.
+    """
+    gates = {
+        "min_global_holdout_samples": 25,
+        "max_accuracy_drop": 0.015,
+        "max_log_loss_increase": 0.025,
+        "max_brier_increase": 0.015,
+    }
+    by_league = challenger_eval.get("by_league", {})
+    promoted_leagues: List[str] = []
+    league_decisions: Dict[str, Dict] = {}
+
+    for league_key, league_result in sorted(results.items()):
+        if league_key == "global":
+            continue
+
+        comparison = by_league.get(league_key, {})
+        global_metrics = comparison.get("global", {})
+        same_fixture_league_metrics = comparison.get("league", {})
+        best_candidate = str(comparison.get("best_candidate") or "league")
+        best_metrics = comparison.get("best_metrics", {})
+        league_metrics = league_result.get("metrics", {}) if isinstance(league_result, dict) else {}
+        sample_size = int(comparison.get("sample_size") or global_metrics.get("sample_size") or 0)
+
+        decision = "league"
+        reason = "league_model_preferred"
+        global_blend_weight = 0.0
+
+        league_status = league_result.get("status") if isinstance(league_result, dict) else None
+        if league_status != "success":
+            decision = "global_fallback"
+            reason = "league_model_not_available"
+            global_blend_weight = 1.0
+        elif sample_size < gates["min_global_holdout_samples"]:
+            reason = "insufficient_global_holdout"
+        else:
+            league_acc = same_fixture_league_metrics.get("accuracy")
+            league_logloss = same_fixture_league_metrics.get("log_loss")
+            league_brier = same_fixture_league_metrics.get("brier_score")
+            best_acc = best_metrics.get("accuracy")
+            best_logloss = best_metrics.get("log_loss")
+            best_brier = best_metrics.get("brier_score")
+            best_objective = best_metrics.get("objective")
+            league_objective = same_fixture_league_metrics.get("objective")
+
+            checks = {
+                "accuracy_gate": (
+                    isinstance(league_acc, (int, float))
+                    and isinstance(best_acc, (int, float))
+                    and best_acc >= float(league_acc) - gates["max_accuracy_drop"]
+                ),
+                "log_loss_gate": (
+                    league_logloss is None
+                    or best_logloss is None
+                    or float(best_logloss) <= float(league_logloss) + gates["max_log_loss_increase"]
+                ),
+                "brier_gate": (
+                    league_brier is None
+                    or best_brier is None
+                    or float(best_brier) <= float(league_brier) + gates["max_brier_increase"]
+                ),
+                "objective_gate": (
+                    isinstance(best_objective, (int, float))
+                    and isinstance(league_objective, (int, float))
+                    and float(best_objective) < float(league_objective)
+                ),
+            }
+
+            if all(checks.values()) and best_candidate == "global":
+                decision = "global"
+                reason = "benchmark_gates_passed"
+                global_blend_weight = 1.0
+                promoted_leagues.append(league_key)
+            elif all(checks.values()) and best_candidate.startswith("blend_"):
+                decision = "blend"
+                reason = "hybrid_blend_benchmark_winner"
+                global_blend_weight = float(comparison.get("best_global_blend_weight") or 0.5)
+            else:
+                reason = "benchmark_gates_failed"
+
+        league_decisions[league_key] = {
+            "decision": decision,
+            "reason": reason,
+            "global_blend_weight": round(global_blend_weight, 2),
+            "global_holdout": global_metrics,
+            "same_fixture_comparison": comparison,
+            "league_model": {
+                "samples": league_result.get("samples") if isinstance(league_result, dict) else None,
+                "ensemble_accuracy": league_metrics.get("ensemble_accuracy"),
+                "ensemble_log_loss": league_metrics.get("ensemble_log_loss"),
+                "mean_brier_score": _mean_brier_from_metrics(league_metrics),
+                "same_fixture": same_fixture_league_metrics,
+            },
+        }
+
+    return {
+        "policy_version": "2026-05-09",
+        "generated_at": datetime.utcnow().isoformat(),
+        "global_default": False,
+        "fallback_to_global_when_league_missing": True,
+        "promoted_leagues": promoted_leagues,
+        "gates": gates,
+        "global_holdout_overall": challenger_eval.get("overall", {}),
+        "league_decisions": league_decisions,
+        "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
+    }
+
+
 # ESPN ID → league key mapping
 ESPN_TO_KEY = {
     "premier_league": "eng.1",
@@ -218,12 +563,66 @@ ESPN_TO_KEY = {
 
 KEY_TO_ESPN = {v: k for k, v in ESPN_TO_KEY.items()}
 
+LEAGUE_LABEL_TO_KEY = {
+    **ESPN_TO_KEY,
+    "Premier League": "eng.1",
+    "La Liga": "esp.1",
+    "Bundesliga": "ger.1",
+    "Serie A": "ita.1",
+    "Ligue 1": "fra.1",
+    "Eredivisie": "ned.1",
+    "Primeira Liga": "por.1",
+    "MLS": "usa.1",
+    "Champions League": "uefa.champions",
+    "UEFA Champions League": "uefa.champions",
+    "Europa League": "uefa.europa",
+    "UEFA Europa League": "uefa.europa",
+    "FIFA World Cup": "fifa.world",
+    "World Cup": "fifa.world",
+    "Euro": "uefa.euro",
+    "UEFA Euro": "uefa.euro",
+    "Copa America": "conmebol.america",
+    "Copa América": "conmebol.america",
+}
+
+
+def normalize_league_key(value: object) -> str:
+    """Normalize source/display league labels to canonical runtime keys."""
+    raw = str(value or "unknown").strip()
+    if raw in LEAGUE_LABEL_TO_KEY:
+        return LEAGUE_LABEL_TO_KEY[raw]
+    lowered = raw.lower().replace(" ", "_").replace("-", "_")
+    return LEAGUE_LABEL_TO_KEY.get(lowered, raw)
+
+
+def _load_existing_model_result(league_key: str, matches: int = 0) -> Dict:
+    """Build a training-result entry from an already saved model artifact."""
+    metadata_path = DATA_DIR / "models" / league_key / "metadata.json"
+    if not metadata_path.exists():
+        return {"error": "model_metadata_missing", "matches": matches}
+
+    try:
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+    except Exception as exc:
+        return {"error": exc.__class__.__name__, "matches": matches}
+
+    return {
+        "status": "success",
+        "matches": matches,
+        "features": int(metadata.get("n_features") or 0),
+        "samples": int(metadata.get("samples") or 0),
+        "metrics": metadata.get("metrics", {}),
+        "reused_existing_artifact": True,
+    }
+
 
 async def train_all_models(
     leagues: Optional[List[str]] = None,
     min_season: int = 2010,
     force_fetch: bool = False,
     train_global_model: bool = False,
+    train_league_models: bool = True,
 ) -> Dict[str, dict]:
     """
     Full training pipeline:
@@ -267,6 +666,10 @@ async def train_all_models(
         league_extra = [m for m in extra_matches if m.get("league") == league_display]
         all_matches = matches + league_extra
         global_training_matches.extend(all_matches)
+
+        if not train_league_models:
+            results[league_key] = _load_existing_model_result(league_key, len(all_matches))
+            continue
         
         if len(all_matches) < 50:
             logger.warning(f"[{league_key}] Only {len(all_matches)} matches — skipping")
@@ -346,11 +749,36 @@ async def train_all_models(
                 weights = compute_global_sample_weights(seasons, league_labels)
                 model = PerLeagueNeuralModel("global", registry.params_data.get("default", {}))
                 metrics = model.train(X, y_outcome, y_goals, sample_weights=weights)
+                global_holdout = evaluate_global_holdout_by_league(model, X, y_outcome, league_labels)
+                challenger_eval = evaluate_hybrid_holdout_by_league(
+                    model,
+                    registry,
+                    X,
+                    y_outcome,
+                    league_labels,
+                )
                 model.training_metadata["league_scope"] = "cross_league_global"
                 model.training_metadata["league_sample_distribution"] = {
                     str(k): int(v) for k, v in Counter(league_labels).items()
                 }
+                model.training_metadata["recent_holdout_by_league"] = global_holdout
+                model.training_metadata["same_fixture_challenger_eval"] = challenger_eval
                 model.save()
+
+                promotion_policy = build_global_promotion_policy(
+                    {
+                        **results,
+                        "global": {
+                            "status": "success",
+                            "metrics": metrics,
+                            "samples": len(X),
+                        },
+                    },
+                    challenger_eval,
+                )
+                MODEL_SELECTION_FILE.parent.mkdir(parents=True, exist_ok=True)
+                with open(MODEL_SELECTION_FILE, "w") as f:
+                    json.dump(promotion_policy, f, indent=2)
 
                 results["global"] = {
                     "status": "success",
@@ -358,6 +786,10 @@ async def train_all_models(
                     "features": int(X.shape[1]) if X.ndim > 1 else 0,
                     "samples": len(X),
                     "metrics": metrics,
+                    "recent_holdout_by_league": global_holdout,
+                    "same_fixture_challenger_eval": challenger_eval,
+                    "promotion_policy_file": str(MODEL_SELECTION_FILE),
+                    "promoted_leagues": promotion_policy.get("promoted_leagues", []),
                     "league_sample_distribution": model.training_metadata["league_sample_distribution"],
                 }
     
@@ -411,13 +843,18 @@ async def main():
         "--global-model", action="store_true",
         help="Also train one cross-league global neural ensemble."
     )
+    parser.add_argument(
+        "--global-only", action="store_true",
+        help="Reuse saved league artifacts and retrain only the cross-league global model."
+    )
     args = parser.parse_args()
     
     await train_all_models(
         leagues=args.leagues,
         min_season=args.min_season,
         force_fetch=args.force,
-        train_global_model=args.global_model,
+        train_global_model=args.global_model or args.global_only,
+        train_league_models=not args.global_only,
     )
 
 
