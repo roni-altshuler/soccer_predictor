@@ -1,13 +1,13 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-05-10T14:55:30.458546",
+  "updated_at": "2026-05-10T22:45:21.352573",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
       "display_name": "Premier League",
       "country": "England",
-      "avg_goals": 1.1356,
-      "home_adv": 0.1126,
+      "avg_goals": 1.1198,
+      "home_adv": 0.1033,
       "rho": -0.13,
       "draw_rate": 0.35,
       "league_coefficient": 1.15,
@@ -42,7 +42,7 @@
     "ita.1": {
       "display_name": "Serie A",
       "country": "Italy",
-      "avg_goals": 1.1922,
+      "avg_goals": 1.1851,
       "home_adv": 0.26,
       "rho": -0.14,
       "draw_rate": 0.08,
@@ -69,7 +69,7 @@
       "avg_goals": 1.45,
       "home_adv": 0.24,
       "rho": -0.11,
-      "draw_rate": 0.1146,
+      "draw_rate": 0.1093,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -90,7 +90,7 @@
     "usa.1": {
       "display_name": "MLS",
       "country": "USA",
-      "avg_goals": 1.621,
+      "avg_goals": 1.6305,
       "home_adv": 0.45,
       "rho": -0.1,
       "draw_rate": 0.08,
@@ -102,7 +102,7 @@
     "uefa.champions": {
       "display_name": "Champions League",
       "country": "Europe",
-      "avg_goals": 1.6188,
+      "avg_goals": 1.6254,
       "home_adv": 0.45,
       "rho": -0.12,
       "draw_rate": 0.08,
@@ -114,8 +114,8 @@
     "uefa.europa": {
       "display_name": "Europa League",
       "country": "Europe",
-      "avg_goals": 1.2418,
-      "home_adv": 0.4088,
+      "avg_goals": 1.2319,
+      "home_adv": 0.4204,
       "rho": -0.11,
       "draw_rate": 0.08,
       "league_coefficient": 1.05,
