@@ -6,16 +6,16 @@ This roadmap triages the next 10 product ideas by a combined score of user impac
 
 | Rank | Idea | Strength | Effort | Why This Order | Current Status |
 |------|------|----------|--------|----------------|----------------|
-| 1 | Data Trust Layer | Very high | Low | Users must know which fields are real provider data, model output, or unavailable. This protects credibility across every screen. | Started: source badges now appear on home match rows and match detail pages. Match detail API returns ESPN/FotMob provenance. |
+| 1 | Data Trust Layer | Very high | Low | Users must know which fields are real provider data, model output, or unavailable. This protects credibility across every screen. | Advanced: source badges appear on home match rows and match detail pages, match detail API returns ESPN/FotMob provenance, and data-quality CI now guards core tournament/current-season source files. |
 | 2 | Prediction Explainability | Very high | Medium | Probabilities become more valuable when users can understand the drivers behind them. This is core to a paid analytics product. | Started: match detail pages now show a model explainability panel using probability separation, standings, H2H, goal profile, confidence, and in-match stats. |
 | 3 | Mobile Matchday Polish | High | Low | The first paid-app impression comes from fast, scannable, FotMob-style match cards and match detail headers. | Started: provider-backed badges and direct team-tracking actions improve match browsing. More card-level mobile polish still remains. |
 | 4 | Personal Watchlist Expansion | High | Low-Medium | Retention improves when users can follow teams, matches, and model picks from natural entry points. | Started: match detail pages can add either team to the local team watchlist. Kickoff reminders and confidence alerts remain open. |
-| 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution and model reasoning. |
+| 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution, model reasoning, expanded league resolution, and guarded live win probability in the API. |
 | 6 | World Cup Command Center | Very high | Medium-High | World Cup 2026 is a major acquisition moment. The app needs countdown, readiness, groups, knockout paths, and global-model validation. | In progress: World Cup hub now has a command-center board for data coverage, fixtures, scorer readiness, model source badges, jump actions, and a bracket challenge entry point. |
 | 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | In progress: tournament simulator now supports focus-team, favorable/adverse path, volatility controls, saved local scenario cards, JSON export, and local-first bracket challenges with invite-link import plus commissioner scoring rules across World Cup, UEFA club tournaments, Euros, and Copa America. |
-| 8 | Live Prediction Updates | High | High | Live win probability and momentum shifts would make the app feel elite, but it requires careful calibration and data freshness controls. | Planned. |
-| 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Advanced: full 1998+ historical retrain completed May 9, 2026 and regenerated after tournament data repair. Runtime now supports league, global, or calibrated hybrid league/global prediction by policy. Corrected label-normalized benchmark promotes global for Copa America, La Liga, Bundesliga, Serie A, Primeira Liga and hybrid blends for PL, Ligue 1, Eredivisie, UCL, and UEL. |
-| 10 | Model-vs-Market Intelligence | High | Very high | Comparing model probabilities with market-implied odds can be powerful, but betting-adjacent UX and data licensing require extra care. | Planned with compliance constraints. |
+| 8 | Live Prediction Updates | High | High | Live win probability and momentum shifts would make the app feel elite, but it requires careful calibration and data freshness controls. | Started: match API now returns live win probability only when score, clock, pre-match probabilities, and provider live stats are available. Visual curves remain open. |
+| 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Advanced: full 1998+ historical retrain completed May 9, 2026 and global-only refresh completed May 11 after Euro 2000 backfill. Runtime supports league, global, or calibrated hybrid league/global prediction by policy. Current global test metrics: 49.6% accuracy, 49.7% macro precision, 49.0% macro recall, 48.6% macro F1. |
+| 10 | Model-vs-Market Intelligence | High | Very high | Comparing model probabilities with market-implied odds can be powerful, but betting-adjacent UX and data licensing require extra care. | Started with compliance constraints: audit-only `/api/market-intelligence` accepts user-supplied decimal odds, removes overround, compares no-vig probabilities with model probabilities, and returns `guarantee: false` plus `betting_advice: false`. |
 
 ## Implementation Principles
 
@@ -36,9 +36,9 @@ This is the current triage from closest to final implementation to most time-int
 5. Scenario Simulator — broad feature base exists; deeper domestic what-if controls remain.
 6. Match Center Upgrades — progressing, but needs more live events/stat modules.
 7. Personal Watchlist Expansion — started; reminders and alerts need persistence/notification plumbing.
-8. Unified Model Evolution — advanced with full retraining, label-normalized global benchmarking, hybrid promotion policy, global-only retrain support, Accuracy dashboard policy status, and repaired small-tournament data for Euro/Copa.
-9. Live Prediction Updates — high-value but depends on reliable live event feeds and calibration.
-10. Model-vs-Market Intelligence — intentionally last because odds data licensing and betting-compliance UX need more care.
+8. Unified Model Evolution — advanced with full retraining, label-normalized global benchmarking, hybrid promotion policy, global-only retrain support, Accuracy dashboard policy status, repaired small-tournament data for Euro/Copa, and May 11 global-policy refresh.
+9. Live Prediction Updates — API availability gate started; visual timeline curves and calibration history still need work.
+10. Model-vs-Market Intelligence — audit-only no-vig comparison endpoint started; licensed odds feed integration and betting-compliance UX remain later work.
 
 ## Checked Off
 
@@ -55,6 +55,11 @@ This is the current triage from closest to final implementation to most time-int
 - [x] Add working historical feeds for UEFA Euro and Copa America before enabling serious predictions for those tournament pages.
 - [x] Improve UEFA current-season fixture ingestion; the repaired May 9 retrain collected 188 current 2025-26 UCL matches and 188 UEL matches from ESPN range windows.
 - [x] Add model accuracy deep-dive with next implementation methods in `docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`.
+- [x] Backfill Euro 2000 with a curated 31-match archive because ESPN's current Euro range endpoint returns no 2000 rows.
+- [x] Add historical data-quality CI for required Euro, Copa America, UCL, and UEL source files.
+- [x] Add Accuracy dashboard model quality gate with coverage, calibration, holdout, and league attention checks.
+- [x] Add audit-only model-vs-market no-vig comparison endpoint.
+- [x] Add guarded live win probability to match details API when live data is complete enough.
 - [ ] Build live win-probability curves only where live event data is complete enough.
 - [ ] Add synced bracket rooms/auth and cross-device persistence.
 
@@ -75,6 +80,6 @@ Recommended next work after this pass:
 1. Add saved match watchlists with kickoff reminders and predicted-confidence alerts.
 2. Upgrade bracket challenge groups from local JSON sharing to true synced rooms with authentication, invite links, and cross-device persistence.
 3. Connect scenario controls to true fixture-level "what if Team A wins/draws/loses next match" inputs for domestic leagues.
-4. Build live win-probability curves only when enough live event data is available.
+4. Build visual live win-probability curves on top of the guarded match API.
 5. Expand Accuracy dashboard policy rows into detailed per-league drill-downs with accuracy, log-loss, Brier, F1, and calibration trend history.
-6. Add data-quality CI checks that fail when supported competitions unexpectedly return 0 current-season matches.
+6. Add licensed odds-provider ingestion and responsible product UX around market-intelligence views.

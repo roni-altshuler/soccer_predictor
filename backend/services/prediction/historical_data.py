@@ -75,6 +75,13 @@ ESPN_RANGE_FETCH_LEAGUES = {
     "copa_america",
 }
 
+# Some older international tournaments are no longer exposed by ESPN's
+# current scoreboard range endpoint. Keep curated cache rows from being
+# replaced with an empty response when force-refreshing historical data.
+CURATED_STATIC_ARCHIVES = {
+    ("euro", 2000): "UEFA Euro 2000 archive rows",
+}
+
 EURO_WINDOWS = {
     2000: ("20000610", "20000702"),
     2004: ("20040612", "20040704"),
@@ -434,6 +441,16 @@ class HistoricalDataCollector:
                 if mid and mid not in seen:
                     seen.add(mid)
                     unique_matches.append(m)
+
+            if not unique_matches and (league, season) in CURATED_STATIC_ARCHIVES:
+                curated_matches = self._load_cache(league, season)
+                if curated_matches:
+                    logger.info(
+                        "Using curated static archive for %s %s because live source returned no rows",
+                        league,
+                        season,
+                    )
+                    unique_matches = curated_matches
 
             self._save_cache(league, season, unique_matches)
             logger.info(f"Fetched {len(unique_matches)} matches for {league} {season}/{season+1}")

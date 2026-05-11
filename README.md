@@ -17,6 +17,8 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **League Standings & Fixtures** — ESPN-sourced standings, recent results, upcoming fixtures, and top scorers for all supported leagues
 - **Season Simulator** — Monte Carlo simulation (1,000 iterations) on live standings to project title, top-4, Europa, and relegation probabilities
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
+- **Model Quality Gates** — Sportsbook-style governance for coverage, calibration, holdout metrics, model-selection policy, and source-data validation without making betting guarantees
+- **Market Intelligence Guardrails** — User-supplied decimal odds can be converted into no-vig probabilities and compared with model probabilities for audit-only edge review
 - **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
 - **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards with export, and `fifa.world` prediction support
@@ -105,22 +107,22 @@ The May 3, 2026 audit is saved in [`docs/PROJECT_AUDIT_2026-05-03.md`](docs/PROJ
 - Scheduled predictions now store their 66-feature vectors, allowing online neural `partial_fit()` to learn from future settled matches without fabricating proxy features.
 - A cross-league global model can be trained with `--global-model`; training writes recent holdout metrics, same-fixture global-vs-league-vs-hybrid comparisons, and a model-selection policy. `train_feedback.py` also updates it from the latest settled feature-vector predictions across competitions.
 
-The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality.
+The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality. The May 11, 2026 implementation added data-quality CI, live-probability availability gates, no-vig market comparison scaffolding, and Accuracy dashboard quality gates.
 
 ### Latest Full Historical Retrain
 
-Last full retrain: **May 9, 2026** using cached/refreshed historical data from 1998+ where available, then a corrected `--global-only` rerun after normalizing source league labels to canonical runtime keys. The repaired data run used **61,816 ESPN/football-data historical matches**, loaded **1,399 settled prediction outcomes**, and trained the global challenger on **63,195 candidate matches**. Each neural artifact uses a chronological **70% train / 15% calibration / 15% test** split.
+Last full per-league retrain: **May 9, 2026** using cached/refreshed historical data from 1998+ where available. Latest global-policy refresh: **May 11, 2026** after backfilling UEFA Euro 2000 and rerunning `--global-only`. The repaired global run used **61,847 ESPN/football-data/archive historical matches**, loaded **1,399 settled prediction outcomes**, and trained the global challenger on **63,226 candidate matches**. Each neural artifact uses a chronological **70% train / 15% calibration / 15% test** split.
 
 Tournament data repair completed in this pass:
 
-- UEFA Euro now collects **246 sourced historical matches** from ESPN range windows (Euro 2004 through Euro 2024; ESPN returned no Euro 2000 events for the tested range).
+- UEFA Euro now collects **277 sourced historical matches**: Euro 2004 through Euro 2024 from ESPN range windows plus a curated 31-match Euro 2000 archive because ESPN's current range endpoint returns no Euro 2000 events.
 - Copa America now collects **248 sourced historical matches** from ESPN range windows (2001 through 2024).
 - Champions League and Europa League no longer miss the current season: the 2025-26 refresh collected **188 completed matches** for each competition.
 - ESPN box-score fields now populate tournament tactical features where available: shots, shots on target, corners, fouls, yellow cards, red cards, attendance, phase, and status detail.
 
 | Model | Samples | Train / Cal / Test | Test Accuracy | Macro P/R/F1 | Weighted F1 | Log Loss |
 |-------|---------|--------------------|---------------|--------------|-------------|----------|
-| Global cross-league | 61,062 | 42,743 / 9,159 / 9,160 | 49.3% | 50.0 / 48.8 / 48.5 | 50.5% | 1.002 |
+| Global cross-league | 61,085 | 42,759 / 9,163 / 9,163 | 49.6% | 49.7 / 49.0 / 48.6 | 50.7% | 1.003 |
 | Premier League | 8,776 | 6,143 / 1,316 / 1,317 | 45.4% | 41.8 / 41.9 / 41.8 | 44.8% | 1.053 |
 | La Liga | 8,757 | 6,129 / 1,314 / 1,314 | 43.9% | 43.7 / 42.6 / 42.5 | 44.8% | 1.070 |
 | Bundesliga | 7,172 | 5,020 / 1,076 / 1,076 | 44.3% | 40.6 / 41.6 / 40.1 | 42.9% | 1.062 |
@@ -137,16 +139,17 @@ Tournament data repair completed in this pass:
 
 Corrected model-selection policy after the retrain:
 
-- **Use global model:** `conmebol.america`, `esp.1`, `ger.1`, `ita.1`, `por.1`
-- **Use hybrid blend:** `eng.1` (65% global), `fra.1` (85% global), `ned.1` (75% global), `uefa.champions` (65% global), `uefa.europa` (85% global)
+- **Use global model:** `conmebol.america`, `esp.1`, `ger.1`, `por.1`
+- **Use hybrid blend:** `eng.1` (65% global), `fra.1` (75% global), `ita.1` (85% global), `ned.1` (75% global), `uefa.champions` (45% global), `uefa.europa` (85% global)
 - **Keep league model:** `fifa.world`, `uefa.euro`, `usa.1`
 - **World Cup remains league-only for now:** recent global holdout coverage is insufficient even though the `fifa.world` model trained successfully.
 
 Important caveats from this run:
 
 - Euro and World Cup remain small-sample tournament models, so their confidence should be displayed conservatively.
-- The global model improved the long-term architecture, but the held-out test scores are not high enough to claim betting-grade accuracy. Draws, squad rotation, injuries, and late-season motivation remain hard prediction cases.
+- The global model improved the long-term architecture, but the held-out test scores are not high enough to claim guaranteed or betting-grade outcomes. Draws, squad rotation, injuries, and late-season motivation remain hard prediction cases.
 - Any provider-missing field should stay unavailable in the UI rather than being filled with a fabricated placeholder.
+- Market comparison is audit-only: `/api/market-intelligence` removes sportsbook overround from user-supplied odds, compares no-vig implied probabilities to model probabilities, and returns `guarantee: false` plus `betting_advice: false`.
 
 ### Automated Pipeline
 
@@ -157,6 +160,8 @@ The GitHub Actions pipeline (`.github/workflows/prediction_pipeline.yml`) runs 3
 | 06:00, 14:00, 22:00 | `fetch_outcomes` — resolve pending predictions against ESPN results | `predict_upcoming` — generate predictions for next 7 days | `train_feedback` — online learning via `partial_fit()` + parameter tuning |
 
 Results are auto-committed back to the repository. New production predictions should be stored before kickoff and resolved only from real results; missing model, weather, venue, referee, or H2H data should be omitted from the UI instead of replaced with fake placeholder values.
+
+Historical source coverage is guarded by `.github/workflows/data_quality.yml` and `python -m backend.scripts.validate_data_quality`. The validator fails if required Euro, Copa America, Champions League, or Europa League source files disappear, return zero rows, or lose required score/result fields.
 
 ---
 
@@ -222,7 +227,8 @@ soccer_predictor/
 │   │   ├── train_models.py         # Full training pipeline (multi-season, 2003+)
 │   │   ├── predict_upcoming.py     # Generate predictions for next N days
 │   │   ├── fetch_outcomes.py       # Resolve pending predictions
-│   │   └── train_feedback.py       # Online learning + parameter adjustment
+│   │   ├── train_feedback.py       # Online learning + parameter adjustment
+│   │   └── validate_data_quality.py # Historical tournament/current-season source checks
 │   └── data/
 │       ├── league_params.json      # Per-league model parameters
 │       ├── predictions/            # JSON prediction storage (monthly files)
@@ -249,7 +255,8 @@ soccer_predictor/
 │   └── data/leagues.ts             # League metadata + flag URLs
 ├── public/                         # Static assets, PWA manifest, icons
 ├── .github/workflows/
-│   └── prediction_pipeline.yml     # 3× daily automated pipeline
+│   ├── prediction_pipeline.yml     # 3× daily automated pipeline
+│   └── data_quality.yml            # Historical source coverage gate
 ├── requirements.txt                # Python dependencies
 ├── package.json                    # Node dependencies
 └── next.config.js                  # Next.js configuration
@@ -334,6 +341,7 @@ npm run build && npm start
 | POST | `/api/predict/any-teams` | Predict any matchup |
 | POST | `/api/predict/head-to-head` | H2H prediction with history |
 | POST | `/api/predict/cross-league` | Cross-league prediction |
+| POST | `/api/market-intelligence` | Convert user-supplied decimal odds to no-vig market probabilities and compare model edge for audit-only review |
 
 ### Live Data
 | Method | Route | Description |
@@ -352,7 +360,7 @@ npm run build && npm start
 | GET | `/api/v1/tracking/accuracy/summary` | Dashboard data |
 | GET | `/api/v1/tracking/accuracy/trend` | Rolling accuracy trend |
 | GET | `/api/v1/tracking/predictions` | Paginated prediction history |
-| GET | `/api/v1/tracking/model-info` | Per-league model status plus model-selection policy decisions |
+| GET | `/api/v1/tracking/model-info` | Per-league model status, model-selection policy decisions, and quality-gate checks |
 | POST | `/api/v1/tracking/fetch-outcomes` | Trigger ESPN result resolution |
 
 ### Simulation
@@ -379,6 +387,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - The app must not display random weather, invented referee details, synthetic H2H records, or zero-probability placeholders as if they were real.
 - Source badges identify ESPN/FotMob/model provenance on match feeds and match detail pages.
 - Match detail pages can add either team directly to the local watchlist.
+- Live win probability is returned only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
@@ -386,7 +395,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 
 ## Disclaimer
 
-This project is for **educational and entertainment purposes only**. Predictions are based on statistical models and historical data. Football outcomes are inherently unpredictable. **Do not use for betting.**
+This project is for **educational and entertainment purposes only**. Predictions are based on statistical models and historical data. Football outcomes are inherently unpredictable. The app can compare probabilities to user-supplied odds for calibration review, but it does not provide betting advice and cannot guarantee outcomes. **Do not use for betting.**
 
 Match data is sourced from ESPN and FotMob public endpoints where available. This project is not affiliated with ESPN, FotMob, FIFA, or any football organization.
 

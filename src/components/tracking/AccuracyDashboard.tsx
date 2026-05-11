@@ -102,6 +102,7 @@ interface ModelInfoResponse {
     decision_counts: Record<string, number>
     decisions: ModelSelectionDecision[]
   } | null
+  quality_gate?: ModelQualityGate | null
 }
 
 interface ModelSelectionDecision {
@@ -115,6 +116,37 @@ interface ModelSelectionDecision {
   league_accuracy: number | null
   global_accuracy: number | null
   best_f1_macro: number | null
+}
+
+interface QualityGateCheck {
+  id: string
+  label: string
+  status: 'pass' | 'monitor' | 'fail'
+  value: number | null
+  threshold: string
+  note: string
+}
+
+interface LeagueQualityGate {
+  league_key: string
+  display_name: string
+  status: 'pass' | 'monitor' | 'fail'
+  samples: number
+  accuracy: number | null
+  f1_macro: number | null
+  log_loss: number | null
+  mean_brier: number | null
+  notes: string[]
+}
+
+interface ModelQualityGate {
+  generated_at: string | null
+  guarantee: false
+  standard: string
+  overall_status: 'pass' | 'monitor' | 'fail'
+  checks: QualityGateCheck[]
+  league_gates: LeagueQualityGate[]
+  guardrails: string[]
 }
 
 interface FetcherStatusResponse {
@@ -242,6 +274,8 @@ export default function AccuracyDashboard() {
 
       <OutcomeAccuracy metrics={m} />
 
+      <ModelQualityGatePanel gate={modelInfo?.quality_gate ?? null} />
+
       {/* Accuracy Over Time */}
       {trend && trend.data_points > 0 && (
         <TrendChart trend={trend} window={trendWindow} onWindowChange={setTrendWindow} />
@@ -339,6 +373,116 @@ function BettingEdgeDesk({
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function gateTone(status: 'pass' | 'monitor' | 'fail'): string {
+  if (status === 'pass') return '#22c55e'
+  if (status === 'monitor') return '#f59e0b'
+  return '#ef4444'
+}
+
+function gateLabel(status: 'pass' | 'monitor' | 'fail'): string {
+  if (status === 'pass') return 'Pass'
+  if (status === 'monitor') return 'Monitor'
+  return 'Needs work'
+}
+
+function formatGateValue(check: QualityGateCheck): string {
+  if (check.value == null) return 'N/A'
+  if (check.id.includes('samples')) return Math.round(check.value).toLocaleString()
+  if (check.id.includes('loss') || check.id.includes('brier')) return check.value.toFixed(3)
+  return pct(check.value)
+}
+
+function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
+  const leagueAlerts = (gate?.league_gates || [])
+    .filter(item => item.status !== 'pass')
+    .slice(0, 6)
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Sportsbook-Style Governance</p>
+          <h3 className="mt-1 text-xl font-black text-[var(--text-primary)]">Model quality gate</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            This board checks coverage, calibration, and holdout performance before presenting model confidence. It is a probability audit layer, not a betting guarantee.
+          </p>
+        </div>
+        <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-4 py-3 min-w-[170px]">
+          <p className="text-[10px] uppercase text-[var(--text-tertiary)]">Overall Gate</p>
+          <p className="mt-1 text-2xl font-black" style={{ color: gate ? gateTone(gate.overall_status) : '#94a3b8' }}>
+            {gate ? gateLabel(gate.overall_status) : 'N/A'}
+          </p>
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            {gate?.generated_at ? new Date(gate.generated_at).toLocaleDateString() : 'No artifact'}
+          </p>
+        </div>
+      </div>
+
+      {gate ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+            {gate.checks.map(check => (
+              <div key={check.id} className="rounded-xl border bg-[var(--muted-bg)] p-3" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)]">{check.label}</p>
+                  <span className="h-2 w-2 rounded-full mt-1.5" style={{ backgroundColor: gateTone(check.status) }} />
+                </div>
+                <p className="mt-2 text-lg font-black" style={{ color: gateTone(check.status) }}>{formatGateValue(check)}</p>
+                <p className="text-[10px] text-[var(--text-tertiary)]">{check.threshold}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-4">
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">League Attention Queue</p>
+                <span className="text-[10px] text-[var(--text-tertiary)]">{leagueAlerts.length} shown</span>
+              </div>
+              {leagueAlerts.length > 0 ? (
+                <div className="space-y-2">
+                  {leagueAlerts.map(item => (
+                    <div key={item.league_key} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-[var(--text-primary)]">{item.display_name}</p>
+                        <p className="text-[10px] text-[var(--text-tertiary)] truncate">{item.notes[0]}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold" style={{ color: gateTone(item.status) }}>{gateLabel(item.status)}</p>
+                        <p className="text-[10px] text-[var(--text-tertiary)]">
+                          {item.accuracy != null ? pct(item.accuracy) : 'N/A'} acc · n={item.samples.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[var(--text-secondary)]">All trained leagues currently meet the configured quality thresholds.</p>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)] mb-3">Guardrails</p>
+              <div className="space-y-2">
+                {gate.guardrails.slice(0, 5).map(item => (
+                  <div key={item} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    <p className="text-xs leading-5 text-[var(--text-secondary)]">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <p className="text-sm text-[var(--text-secondary)]">
+          Run the full historical retraining and model-info generation to populate the quality gate.
+        </p>
+      )}
     </div>
   )
 }

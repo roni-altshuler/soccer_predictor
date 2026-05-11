@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "concurrently \"PYTHONPATH=./backend ./.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000\" \"next start\"",
     "lint": "next lint",
+    "data:quality": "python -m backend.scripts.validate_data_quality",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -7,7 +8,8 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
 // Map league IDs for ESPN API
 const LEAGUE_ENDPOINTS = [
-  'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'fifa.world'
+  'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1', 'usa.1',
+  'uefa.champions', 'uefa.europa', 'uefa.euro', 'conmebol.america', 'fifa.world'
 ]
 
 const ESPN_LEAGUE_ABBREVIATION_MAP: Record<string, string> = {
@@ -52,6 +54,8 @@ function resolveLeagueIdFromESPN(leagueData: { slug?: string; abbreviation?: str
   if (name.includes('mls') || name.includes('major league soccer')) return 'usa.1'
   if (name.includes('champions league')) return 'uefa.champions'
   if (name.includes('europa league')) return 'uefa.europa'
+  if (name.includes('european championship') || name.includes('uefa euro')) return 'uefa.euro'
+  if (name.includes('copa america')) return 'conmebol.america'
   if (name.includes('world cup')) return 'fifa.world'
 
   return fallback
@@ -206,6 +210,7 @@ interface MatchDetailsResponse {
   }
   commentary?: { minute: number; text: string }[]
   prediction?: PredictionData
+  liveWinProbability?: LiveWinProbabilityResult
   h2h?: H2HData
   shotmap?: ShotMapPoint[]
 }
@@ -858,6 +863,20 @@ export async function GET(
   if (backendPrediction) {
     matchData.prediction = backendPrediction
   }
+  matchData.liveWinProbability = computeLiveWinProbability({
+    status: matchData.status,
+    minute: matchData.minute,
+    homeScore: matchData.home_score,
+    awayScore: matchData.away_score,
+    stats: matchData.stats,
+    preMatch: backendPrediction
+      ? {
+          home_win: backendPrediction.home_win,
+          draw: backendPrediction.draw,
+          away_win: backendPrediction.away_win,
+        }
+      : null,
+  })
   
   return NextResponse.json(matchData, {
     headers: {
