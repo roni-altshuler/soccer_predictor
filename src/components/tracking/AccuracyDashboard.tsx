@@ -400,6 +400,10 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
   const leagueAlerts = (gate?.league_gates || [])
     .filter(item => item.status !== 'pass')
     .slice(0, 6)
+  const leagueRows = [...(gate?.league_gates || [])].sort((a, b) => {
+    const statusRank = { fail: 0, monitor: 1, pass: 2 }
+    return statusRank[a.status] - statusRank[b.status] || (a.accuracy ?? 0) - (b.accuracy ?? 0)
+  })
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
@@ -477,6 +481,55 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
               </div>
             </div>
           </div>
+
+          {leagueRows.length > 0 && (
+            <div className="mt-4 rounded-xl border border-[var(--border-color)] overflow-hidden">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-4 py-3 bg-[var(--muted-bg)] border-b border-[var(--border-color)]">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Per-League Model Drilldown</p>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">Accuracy, F1, log-loss, and Brier checks from saved training artifacts.</p>
+                </div>
+                <span className="text-[10px] text-[var(--text-tertiary)]">{leagueRows.length} competitions</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)] bg-[var(--card-bg)]">
+                      <th className="px-4 py-2 text-left font-semibold">League</th>
+                      <th className="px-3 py-2 text-left font-semibold">Status</th>
+                      <th className="px-3 py-2 text-right font-semibold">Samples</th>
+                      <th className="px-3 py-2 text-right font-semibold">Accuracy</th>
+                      <th className="px-3 py-2 text-right font-semibold">F1</th>
+                      <th className="px-3 py-2 text-right font-semibold">Log Loss</th>
+                      <th className="px-3 py-2 text-right font-semibold">Brier</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border-color)]">
+                    {leagueRows.map(item => (
+                      <tr key={item.league_key} className="hover:bg-[var(--muted-bg)]/55">
+                        <td className="px-4 py-2.5">
+                          <p className="font-semibold text-[var(--text-primary)]">{item.display_name}</p>
+                          <p className="text-[10px] text-[var(--text-tertiary)]">{item.notes[0] || 'Quality gate evaluated'}</p>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ color: gateTone(item.status), backgroundColor: gateTone(item.status) + '1A' }}>
+                            {gateLabel(item.status)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.samples.toLocaleString()}</td>
+                        <td className="px-3 py-2.5 text-right font-semibold" style={{ color: item.accuracy != null ? accuracyColor(item.accuracy) : '#94a3b8' }}>
+                          {item.accuracy != null ? pct(item.accuracy) : 'N/A'}
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.f1_macro != null ? pct(item.f1_macro) : 'N/A'}</td>
+                        <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.log_loss != null ? item.log_loss.toFixed(3) : 'N/A'}</td>
+                        <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.mean_brier != null ? item.mean_brier.toFixed(3) : 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <p className="text-sm text-[var(--text-secondary)]">

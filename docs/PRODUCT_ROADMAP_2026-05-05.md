@@ -10,11 +10,11 @@ This roadmap triages the next 10 product ideas by a combined score of user impac
 | 2 | Prediction Explainability | Very high | Medium | Probabilities become more valuable when users can understand the drivers behind them. This is core to a paid analytics product. | Started: match detail pages now show a model explainability panel using probability separation, standings, H2H, goal profile, confidence, and in-match stats. |
 | 3 | Mobile Matchday Polish | High | Low | The first paid-app impression comes from fast, scannable, FotMob-style match cards and match detail headers. | Started: provider-backed badges and direct team-tracking actions improve match browsing. More card-level mobile polish still remains. |
 | 4 | Personal Watchlist Expansion | High | Low-Medium | Retention improves when users can follow teams, matches, and model picks from natural entry points. | Started: match detail pages can add either team to the local team watchlist. Kickoff reminders and confidence alerts remain open. |
-| 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution, model reasoning, expanded league resolution, and guarded live win probability in the API. |
+| 5 | Match Center Upgrades | High | Medium | A richer match center can combine live stats, events, model state, H2H, weather, and highlights into one professional workflow. | In progress: match detail page now has source attribution, model reasoning, expanded league resolution, guarded live win probability in the API, and the unified prediction endpoint now exposes the tuned decision policy. |
 | 6 | World Cup Command Center | Very high | Medium-High | World Cup 2026 is a major acquisition moment. The app needs countdown, readiness, groups, knockout paths, and global-model validation. | In progress: World Cup hub now has a command-center board for data coverage, fixtures, scorer readiness, model source badges, jump actions, and a bracket challenge entry point. |
 | 7 | Scenario Simulator | High | High | Premium users should be able to test title/top-4/relegation and tournament paths from live standings. | In progress: tournament simulator now supports focus-team, favorable/adverse path, volatility controls, saved local scenario cards, JSON export, and local-first bracket challenges with invite-link import plus commissioner scoring rules across World Cup, UEFA club tournaments, Euros, and Copa America. |
 | 8 | Live Prediction Updates | High | High | Live win probability and momentum shifts would make the app feel elite, but it requires careful calibration and data freshness controls. | Started: match API now returns live win probability only when score, clock, pre-match probabilities, and provider live stats are available. Visual curves remain open. |
-| 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Advanced: full 1998+ historical retrain completed May 9, 2026 and global-only refresh completed May 11 after Euro 2000 backfill. Runtime supports league, global, or calibrated hybrid league/global prediction by policy. Current global test metrics: 49.6% accuracy, 49.7% macro precision, 49.0% macro recall, 48.6% macro F1. |
+| 9 | Unified Model Evolution | Very high | Very high | A single cross-league model with per-league calibration is the long-term architecture, but it must not regress current trained leagues. | Advanced: full 1998+ historical retrain completed May 9, 2026 and global-only refresh completed May 11 after Euro 2000 backfill. Runtime supports league, global, or calibrated hybrid league/global prediction by policy, and scheduled predictions now use the same routing. Current global test metrics: 49.6% accuracy, 49.7% macro precision, 49.0% macro recall, 48.6% macro F1. Latest decision-policy tuning lifted test macro F1 from 41.90% to 43.40%. |
 | 10 | Model-vs-Market Intelligence | High | Very high | Comparing model probabilities with market-implied odds can be powerful, but betting-adjacent UX and data licensing require extra care. | Started with compliance constraints: audit-only `/api/market-intelligence` accepts user-supplied decimal odds, removes overround, compares no-vig probabilities with model probabilities, and returns `guarantee: false` plus `betting_advice: false`. |
 
 ## Implementation Principles
@@ -60,6 +60,9 @@ This is the current triage from closest to final implementation to most time-int
 - [x] Add Accuracy dashboard model quality gate with coverage, calibration, holdout, and league attention checks.
 - [x] Add audit-only model-vs-market no-vig comparison endpoint.
 - [x] Add guarded live win probability to match details API when live data is complete enough.
+- [x] Add chronological draw-decision tuning simulation and apply guarded league threshold updates.
+- [x] Align scheduled prediction generation with benchmark-gated league/global/hybrid model routing.
+- [x] Expand Accuracy dashboard policy rows into detailed per-league drill-downs with accuracy, log-loss, Brier, and F1.
 - [ ] Build live win-probability curves only where live event data is complete enough.
 - [ ] Add synced bracket rooms/auth and cross-device persistence.
 
@@ -81,5 +84,5 @@ Recommended next work after this pass:
 2. Upgrade bracket challenge groups from local JSON sharing to true synced rooms with authentication, invite links, and cross-device persistence.
 3. Connect scenario controls to true fixture-level "what if Team A wins/draws/loses next match" inputs for domestic leagues.
 4. Build visual live win-probability curves on top of the guarded match API.
-5. Expand Accuracy dashboard policy rows into detailed per-league drill-downs with accuracy, log-loss, Brier, F1, and calibration trend history.
+5. Add calibration trend history to the new per-league model drilldown.
 6. Add licensed odds-provider ingestion and responsible product UX around market-intelligence views.

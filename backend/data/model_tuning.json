@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "generated_at": "2026-05-03T20:13:32.442091",
-  "description": "Auto-tuned blend and draw-threshold parameters from completed prediction diagnostics.",
+  "version": "1.1.0",
+  "generated_at": "2026-05-11T19:38:13.229336",
+  "description": "Auto-tuned neural/ELO blending and draw-threshold parameters from completed prediction diagnostics plus chronological model decision-policy tuning.",
   "default": {
     "blend_nn_base": 0.66,
     "blend_nn_min": 0.55,
@@ -27,9 +27,15 @@
       "blend_nn_min": 0.5386,
       "blend_nn_max": 0.7786,
       "entropy_sensitivity": 0.16,
-      "draw_min_prob": 0.16,
+      "draw_min_prob": 0.14,
       "draw_margin": 0.0,
-      "source_sample_size": 90
+      "source_sample_size": 346,
+      "decision_policy_source": "chronological_model_decision_policy_tuning",
+      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "decision_policy_calibration_samples": 346,
+      "decision_policy_test_samples": 586,
+      "decision_policy_test_accuracy": 0.5921501706484642,
+      "decision_policy_accuracy_lift": 0.0
     },
     "uefa.europa.conf": {
       "display_name": "Conference League",
@@ -107,9 +113,15 @@
       "blend_nn_min": 0.5733,
       "blend_nn_max": 0.8133,
       "entropy_sensitivity": 0.16,
-      "draw_min_prob": 0.1904,
-      "draw_margin": 0.0,
-      "source_sample_size": 146
+      "draw_min_prob": 0.34,
+      "draw_margin": 0.03,
+      "source_sample_size": 1031,
+      "decision_policy_source": "chronological_model_decision_policy_tuning",
+      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "decision_policy_calibration_samples": 1031,
+      "decision_policy_test_samples": 946,
+      "decision_policy_test_accuracy": 0.5771670190274841,
+      "decision_policy_accuracy_lift": 0.0
     },
     "ita.1": {
       "display_name": "Serie A",
@@ -117,9 +129,54 @@
       "blend_nn_min": 0.5999,
       "blend_nn_max": 0.8399,
       "entropy_sensitivity": 0.16,
-      "draw_min_prob": 0.1665,
+      "draw_min_prob": 0.29,
+      "draw_margin": 0.08,
+      "source_sample_size": 1223,
+      "decision_policy_source": "chronological_model_decision_policy_tuning",
+      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "decision_policy_calibration_samples": 1223,
+      "decision_policy_test_samples": 1190,
+      "decision_policy_test_accuracy": 0.5369747899159664,
+      "decision_policy_accuracy_lift": 0.0008403361344537785
+    },
+    "conmebol.america": {
+      "display_name": "Copa America",
+      "draw_min_prob": 0.14,
+      "draw_margin": 0.07,
+      "decision_policy_source": "chronological_model_decision_policy_tuning",
+      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "decision_policy_calibration_samples": 28,
+      "decision_policy_test_samples": 32,
+      "decision_policy_test_accuracy": 0.5625,
+      "decision_policy_accuracy_lift": 0.0,
+      "source_sample_size": 28
+    },
+    "uefa.euro": {
+      "display_name": "UEFA European Championship",
+      "draw_min_prob": 0.14,
       "draw_margin": 0.0,
-      "source_sample_size": 185
+      "decision_policy_source": "chronological_model_decision_policy_tuning",
+      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "decision_policy_calibration_samples": 45,
+      "decision_policy_test_samples": 48,
+      "decision_policy_test_accuracy": 0.5416666666666666,
+      "decision_policy_accuracy_lift": 0.0,
+      "source_sample_size": 45
     }
+  },
+  "decision_policy_experiment": {
+    "generated_at": "2026-05-11T19:38:13.219890",
+    "artifact": "data/model_decision_policy_tuning.json",
+    "guarantee": false,
+    "baseline_argmax_accuracy": 0.5415666593934104,
+    "current_policy_accuracy": 0.5415666593934104,
+    "tuned_policy_accuracy": 0.5416757582369627,
+    "applied_leagues": [
+      "conmebol.america",
+      "ita.1",
+      "por.1",
+      "uefa.champions",
+      "uefa.euro"
+    ]
   }
 }

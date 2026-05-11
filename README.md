@@ -107,7 +107,7 @@ The May 3, 2026 audit is saved in [`docs/PROJECT_AUDIT_2026-05-03.md`](docs/PROJ
 - Scheduled predictions now store their 66-feature vectors, allowing online neural `partial_fit()` to learn from future settled matches without fabricating proxy features.
 - A cross-league global model can be trained with `--global-model`; training writes recent holdout metrics, same-fixture global-vs-league-vs-hybrid comparisons, and a model-selection policy. `train_feedback.py` also updates it from the latest settled feature-vector predictions across competitions.
 
-The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality. The May 11, 2026 implementation added data-quality CI, live-probability availability gates, no-vig market comparison scaffolding, and Accuracy dashboard quality gates.
+The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality. The May 11, 2026 implementation added data-quality CI, live-probability availability gates, no-vig market comparison scaffolding, Accuracy dashboard quality gates, and a chronological draw-decision tuning simulation saved in [`docs/MODEL_DECISION_POLICY_TUNING_2026-05-11.md`](docs/MODEL_DECISION_POLICY_TUNING_2026-05-11.md).
 
 ### Latest Full Historical Retrain
 
@@ -143,6 +143,15 @@ Corrected model-selection policy after the retrain:
 - **Use hybrid blend:** `eng.1` (65% global), `fra.1` (75% global), `ita.1` (85% global), `ned.1` (75% global), `uefa.champions` (45% global), `uefa.europa` (85% global)
 - **Keep league model:** `fifa.world`, `uefa.euro`, `usa.1`
 - **World Cup remains league-only for now:** recent global holdout coverage is insufficient even though the `fifa.world` model trained successfully.
+
+Latest decision-policy tuning after the baseline:
+
+- Command run: `python -m backend.scripts.tune_decision_policy --min-season 1998 --apply`
+- Chronological split: **42,770 train / 9,165 calibration / 9,166 test** rows.
+- Test accuracy moved from **54.16%** current policy to **54.17%** tuned guarded policy.
+- Macro F1 moved from **41.90%** to **43.40%**, mainly by reducing draw under-prediction.
+- Applied threshold updates for **Copa America, Serie A, Primeira Liga, Champions League, and UEFA Euro**.
+- `/api/predict/unified` and `predict_upcoming.py` now both use the tuned draw decision policy; scheduled predictions also use the benchmark-gated league/global/hybrid model routing policy.
 
 Important caveats from this run:
 

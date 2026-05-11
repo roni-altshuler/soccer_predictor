@@ -520,6 +520,8 @@ def _get_model_tuning(league_key: str) -> Dict[str, float]:
         "blend_nn_min": 0.55,
         "blend_nn_max": 0.82,
         "entropy_sensitivity": 0.18,
+        "draw_min_prob": 0.24,
+        "draw_margin": 0.02,
     }
     league_tuning = (_MODEL_TUNING_CACHE.get("leagues", {}) if _MODEL_TUNING_CACHE else {}).get(league_key, {})
     return {**default, **league_tuning}
@@ -602,6 +604,46 @@ def _blend_neural_with_elo(
     }
     total = sum(probs.values()) or 1.0
     return {k: v / total for k, v in probs.items()}, nn_weight, entropy_norm
+
+
+def _select_prediction_label(
+    outcome: Dict[str, float],
+    home_team: str,
+    away_team: str,
+    league_key: str,
+) -> tuple[str, float, str, Dict[str, float | str]]:
+    """
+    Convert calibrated probabilities into a 1X2 pick using the tuned draw policy.
+
+    Soccer draws are structurally under-predicted by plain argmax rules because a
+    draw can be the correct label even when one win side is only narrowly higher.
+    The same threshold policy is used by scheduled predictions.
+    """
+    tuning = _get_model_tuning(league_key)
+    draw_min_prob = float(tuning.get("draw_min_prob", 0.24))
+    draw_margin = float(tuning.get("draw_margin", 0.02))
+    home_prob = float(outcome.get("home_win", 0.0))
+    draw_prob = float(outcome.get("draw", 0.0))
+    away_prob = float(outcome.get("away_win", 0.0))
+    max_non_draw = max(home_prob, away_prob)
+
+    if draw_prob >= draw_min_prob and draw_prob + draw_margin >= max_non_draw:
+        return "Draw", draw_prob, "draw", {
+            "type": "draw_threshold",
+            "draw_min_prob": round(draw_min_prob, 4),
+            "draw_margin": round(draw_margin, 4),
+        }
+    if home_prob >= away_prob:
+        return f"{home_team} Win", home_prob, "home", {
+            "type": "win_argmax_after_draw_gate",
+            "draw_min_prob": round(draw_min_prob, 4),
+            "draw_margin": round(draw_margin, 4),
+        }
+    return f"{away_team} Win", away_prob, "away", {
+        "type": "win_argmax_after_draw_gate",
+        "draw_min_prob": round(draw_min_prob, 4),
+        "draw_margin": round(draw_margin, 4),
+    }
 
 
 @app.post("/api/predict/unified")
@@ -701,16 +743,12 @@ async def predict_match(request: PredictionRequest):
         except Exception as exc:
             logger.debug(f"Neural prediction failed for {league_key}: {exc}")
     
-    # Determine prediction
-    if outcome["home_win"] > outcome["draw"] and outcome["home_win"] > outcome["away_win"]:
-        prediction = f"{request.home_team} Win"
-        confidence = outcome["home_win"]
-    elif outcome["away_win"] > outcome["draw"] and outcome["away_win"] > outcome["home_win"]:
-        prediction = f"{request.away_team} Win"
-        confidence = outcome["away_win"]
-    else:
-        prediction = "Draw"
-        confidence = outcome["draw"]
+    prediction, confidence, predicted_outcome, decision_policy = _select_prediction_label(
+        outcome,
+        request.home_team,
+        request.away_team,
+        league_key,
+    )
 
     confidence_pct = min(99.9, max(0.1, round(confidence * 100, 1)))
     edge = _edge_from_probabilities(outcome["home_win"], outcome["draw"], outcome["away_win"])
@@ -727,10 +765,12 @@ async def predict_match(request: PredictionRequest):
         "home_elo": round(home_elo, 0),
         "away_elo": round(away_elo, 0),
         "prediction": prediction,
+        "predicted_outcome": predicted_outcome,
         "model_used": model_used,
         "blend_nn_weight": round(blend_nn_weight, 4) if blend_nn_weight is not None else None,
         "blend_entropy": round(blend_entropy, 4) if blend_entropy is not None else None,
         "model_selection": model_selection,
+        "decision_policy": decision_policy,
         "predicted_home_goals": round(max(0.1, min(5.0, predicted_home_goals)), 2),
         "predicted_away_goals": round(max(0.1, min(5.0, predicted_away_goals)), 2),
         "confidence": confidence_pct,  # Clamp between 0.1-99.9%
