@@ -1,8 +1,23 @@
 export const WATCHLIST_STORAGE_KEY = 'fotpredict-team-watchlist-v1'
+export const WATCHLIST_ALERTS_STORAGE_KEY = 'fotpredict-watchlist-alert-settings-v1'
 
 export interface WatchTeam {
   name: string
   league: string
+}
+
+export interface WatchlistAlertSettings {
+  kickoffReminders: boolean
+  reminderMinutes: number
+  confidenceAlerts: boolean
+  confidenceThreshold: number
+}
+
+export const DEFAULT_WATCHLIST_ALERT_SETTINGS: WatchlistAlertSettings = {
+  kickoffReminders: true,
+  reminderMinutes: 60,
+  confidenceAlerts: true,
+  confidenceThreshold: 0.58,
 }
 
 export function normalizeTeamName(value: string): string {

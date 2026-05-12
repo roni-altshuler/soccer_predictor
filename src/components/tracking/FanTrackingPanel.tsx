@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  DEFAULT_WATCHLIST_ALERT_SETTINGS,
+  WATCHLIST_ALERTS_STORAGE_KEY,
   WATCHLIST_STORAGE_KEY,
   normalizeTeamName,
   teamMatchesWatchlist,
+  type WatchlistAlertSettings,
   type WatchTeam,
 } from '@/lib/watchlist'
 
@@ -51,6 +54,14 @@ interface PredictionResponse {
   predictions?: PredictionRow[]
 }
 
+interface WatchlistAlertItem {
+  id: string
+  type: 'kickoff' | 'confidence'
+  title: string
+  detail: string
+  tone: string
+}
+
 function formatLocalDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
@@ -89,8 +100,25 @@ function statusLabel(match: TodayMatch): string {
   return formatKickoff(match.time)
 }
 
+function minutesUntil(time?: string): number | null {
+  if (!time) return null
+  const parsed = new Date(time)
+  if (Number.isNaN(parsed.getTime())) return null
+  return Math.round((parsed.getTime() - Date.now()) / 60_000)
+}
+
+function timeUntilLabel(minutes: number): string {
+  if (minutes <= 0) return 'starting now'
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+}
+
 export default function FanTrackingPanel() {
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
+  const [alertSettings, setAlertSettings] = useState<WatchlistAlertSettings>(DEFAULT_WATCHLIST_ALERT_SETTINGS)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>('unsupported')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<WatchTeam[]>([])
   const [searchingTeams, setSearchingTeams] = useState(false)
@@ -102,18 +130,35 @@ export default function FanTrackingPanel() {
     if (typeof window === 'undefined') return
     try {
       const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as unknown
-      if (!Array.isArray(parsed)) return
-      const restored = parsed
-        .filter((item): item is WatchTeam => {
-          if (!item || typeof item !== 'object') return false
-          const entry = item as Partial<WatchTeam>
-          return typeof entry.name === 'string' && typeof entry.league === 'string'
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown
+        if (Array.isArray(parsed)) {
+          const restored = parsed
+            .filter((item): item is WatchTeam => {
+              if (!item || typeof item !== 'object') return false
+              const entry = item as Partial<WatchTeam>
+              return typeof entry.name === 'string' && typeof entry.league === 'string'
+            })
+            .map((item) => ({ name: item.name.trim(), league: item.league.trim() }))
+            .filter((item) => item.name.length > 0 && item.league.length > 0)
+          setTrackedTeams(restored)
+        }
+      }
+
+      const rawSettings = localStorage.getItem(WATCHLIST_ALERTS_STORAGE_KEY)
+      if (rawSettings) {
+        const parsedSettings = JSON.parse(rawSettings) as Partial<WatchlistAlertSettings>
+        setAlertSettings({
+          ...DEFAULT_WATCHLIST_ALERT_SETTINGS,
+          ...parsedSettings,
+          reminderMinutes: Math.max(5, Math.min(240, Number(parsedSettings.reminderMinutes) || DEFAULT_WATCHLIST_ALERT_SETTINGS.reminderMinutes)),
+          confidenceThreshold: Math.max(0.35, Math.min(0.9, Number(parsedSettings.confidenceThreshold) || DEFAULT_WATCHLIST_ALERT_SETTINGS.confidenceThreshold)),
         })
-        .map((item) => ({ name: item.name.trim(), league: item.league.trim() }))
-        .filter((item) => item.name.length > 0 && item.league.length > 0)
-      setTrackedTeams(restored)
+      }
+
+      if ('Notification' in window) {
+        setNotificationPermission(Notification.permission)
+      }
     } catch (error) {
       console.error('Failed to load team watchlist:', error)
     }
@@ -123,6 +168,11 @@ export default function FanTrackingPanel() {
     if (typeof window === 'undefined') return
     localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(trackedTeams))
   }, [trackedTeams])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(WATCHLIST_ALERTS_STORAGE_KEY, JSON.stringify(alertSettings))
+  }, [alertSettings])
 
   const trackedNameSet = useMemo(
     () => new Set(trackedTeams.map((team) => normalizeTeamName(team.name))),
@@ -246,6 +296,38 @@ export default function FanTrackingPanel() {
     return correct / resolvedPredictions.length
   }, [resolvedPredictions])
 
+  const watchlistAlerts = useMemo<WatchlistAlertItem[]>(() => {
+    const alerts: WatchlistAlertItem[] = []
+    if (alertSettings.kickoffReminders) {
+      for (const match of upcomingMatches) {
+        const minutes = minutesUntil(match.time)
+        if (minutes == null || minutes < -5 || minutes > alertSettings.reminderMinutes) continue
+        alerts.push({
+          id: `kickoff-${match.id || match.home_team}-${match.away_team}`,
+          type: 'kickoff',
+          title: `${match.home_team} vs ${match.away_team}`,
+          detail: `Kickoff ${timeUntilLabel(minutes)} · ${match.league}`,
+          tone: '#38bdf8',
+        })
+      }
+    }
+
+    if (alertSettings.confidenceAlerts) {
+      for (const prediction of pendingPredictions) {
+        const confidence = normalizeConfidence(prediction.confidence)
+        if (confidence < alertSettings.confidenceThreshold) continue
+        alerts.push({
+          id: `confidence-${prediction.match_id}`,
+          type: 'confidence',
+          title: `${prediction.home_team} vs ${prediction.away_team}`,
+          detail: `${predictedOutcomeLabel(prediction)} at ${(confidence * 100).toFixed(1)}% · ${prediction.league}`,
+          tone: '#22c55e',
+        })
+      }
+    }
+    return alerts.slice(0, 8)
+  }, [alertSettings, pendingPredictions, upcomingMatches])
+
   const addTrackedTeam = (team: WatchTeam) => {
     setTrackedTeams((current) => {
       const nextKey = normalizeTeamName(team.name)
@@ -259,6 +341,24 @@ export default function FanTrackingPanel() {
   const removeTrackedTeam = (name: string) => {
     const removeKey = normalizeTeamName(name)
     setTrackedTeams((current) => current.filter((team) => normalizeTeamName(team.name) !== removeKey))
+  }
+
+  const updateAlertSettings = (next: Partial<WatchlistAlertSettings>) => {
+    setAlertSettings((current) => ({
+      ...current,
+      ...next,
+      reminderMinutes: Math.max(5, Math.min(240, Number(next.reminderMinutes ?? current.reminderMinutes))),
+      confidenceThreshold: Math.max(0.35, Math.min(0.9, Number(next.confidenceThreshold ?? current.confidenceThreshold))),
+    }))
+  }
+
+  const requestBrowserNotifications = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotificationPermission('unsupported')
+      return
+    }
+    const permission = await Notification.requestPermission()
+    setNotificationPermission(permission)
   }
 
   return (
@@ -355,6 +455,91 @@ export default function FanTrackingPanel() {
               tone={resolvedAccuracy >= 0.6 ? '#22c55e' : resolvedAccuracy >= 0.5 ? '#f59e0b' : '#ef4444'}
               sub={resolvedPredictions.length > 0 ? `${resolvedPredictions.length} resolved` : 'awaiting outcomes'}
             />
+          </section>
+
+          <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+            <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Watchlist Alerts</p>
+                <h4 className="mt-1 text-base font-bold text-[var(--text-primary)]">Kickoff reminders + confidence alerts</h4>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                  Local alert rules for tracked-team matches and high-confidence pending model picks.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => updateAlertSettings({ kickoffReminders: !alertSettings.kickoffReminders })}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.kickoffReminders ? 'border-cyan-500/45 bg-cyan-500/10 text-cyan-300' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
+                >
+                  Kickoffs {alertSettings.kickoffReminders ? 'On' : 'Off'}
+                </button>
+                <button
+                  onClick={() => updateAlertSettings({ confidenceAlerts: !alertSettings.confidenceAlerts })}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.confidenceAlerts ? 'border-emerald-500/45 bg-emerald-500/10 text-emerald-300' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
+                >
+                  Confidence {alertSettings.confidenceAlerts ? 'On' : 'Off'}
+                </button>
+                <button
+                  onClick={requestBrowserNotifications}
+                  className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Browser {notificationPermission === 'granted' ? 'Allowed' : notificationPermission === 'denied' ? 'Blocked' : 'Enable'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Kickoff window</span>
+                  <input
+                    type="number"
+                    min={5}
+                    max={240}
+                    step={5}
+                    value={alertSettings.reminderMinutes}
+                    onChange={(event) => updateAlertSettings({ reminderMinutes: Number(event.target.value) })}
+                    className="mt-2 w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-2 py-1.5 text-sm font-semibold text-[var(--text-primary)]"
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--text-tertiary)]">minutes before kickoff</span>
+                </label>
+                <label className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Confidence floor</span>
+                  <input
+                    type="number"
+                    min={35}
+                    max={90}
+                    step={1}
+                    value={Math.round(alertSettings.confidenceThreshold * 100)}
+                    onChange={(event) => updateAlertSettings({ confidenceThreshold: Number(event.target.value) / 100 })}
+                    className="mt-2 w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-2 py-1.5 text-sm font-semibold text-[var(--text-primary)]"
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--text-tertiary)]">percent model confidence</span>
+                </label>
+              </div>
+
+              <div className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Active alert queue</p>
+                  <span className="text-[10px] text-[var(--text-tertiary)]">{watchlistAlerts.length} active</span>
+                </div>
+                {watchlistAlerts.length === 0 ? (
+                  <p className="mt-3 text-xs text-[var(--text-tertiary)]">No kickoff or confidence alerts match the current rules.</p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {watchlistAlerts.map((alert) => (
+                      <div key={alert.id} className="flex items-start gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2">
+                        <span className="mt-1.5 h-2 w-2 rounded-full" style={{ backgroundColor: alert.tone }} />
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-semibold text-[var(--text-primary)]">{alert.title}</p>
+                          <p className="text-[11px] text-[var(--text-tertiary)]">{alert.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
 
           <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">

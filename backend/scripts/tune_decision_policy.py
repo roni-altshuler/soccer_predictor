@@ -64,6 +64,23 @@ LEAGUE_DISPLAY = {
     "conmebol.america": "Copa America",
 }
 
+LEAGUE_DRAW_RATES = {
+    "eng.1": 0.26,
+    "esp.1": 0.24,
+    "ger.1": 0.24,
+    "ita.1": 0.26,
+    "fra.1": 0.23,
+    "ned.1": 0.23,
+    "por.1": 0.24,
+    "usa.1": 0.21,
+    "uefa.champions": 0.20,
+    "uefa.europa": 0.22,
+    "uefa.europa.conf": 0.22,
+    "fifa.world": 0.18,
+    "uefa.euro": 0.22,
+    "conmebol.america": 0.20,
+}
+
 
 def _normalize_probabilities(proba: np.ndarray) -> np.ndarray:
     probs = np.asarray(proba, dtype=np.float64)
@@ -86,6 +103,33 @@ def _decision_predictions(
     draw_mask = (draw >= draw_min_prob) & (draw + draw_margin >= np.maximum(home, away))
     preds[draw_mask] = 1
     return preds
+
+
+def _elo_proxy_probabilities(X: np.ndarray, league_labels: np.ndarray) -> np.ndarray:
+    """
+    Reconstruct the runtime ELO prior from pre-match ELO features.
+
+    This lets the tuning job evaluate the same deployable neural/ELO blend used
+    by `/api/predict/unified` and `predict_upcoming.py`, without relying on
+    unavailable future odds feeds.
+    """
+    home_elo = X[:, 0].astype(np.float64)
+    away_elo = X[:, 1].astype(np.float64)
+    diff = (home_elo + 30.0) - away_elo
+
+    draw_rates = np.array(
+        [LEAGUE_DRAW_RATES.get(str(label), 0.24) for label in league_labels],
+        dtype=np.float64,
+    )
+    elo_closeness = np.exp(-(diff ** 2) / (2 * 250 ** 2))
+    draw = draw_rates * (0.7 + 0.9 * elo_closeness)
+    draw = np.clip(draw, 0.12, 0.42)
+
+    win_pool = 1.0 - draw
+    home_raw = 1.0 / (1.0 + np.power(10.0, -diff / 400.0))
+    home = win_pool * home_raw
+    away = win_pool * (1.0 - home_raw)
+    return _normalize_probabilities(np.column_stack([home, draw, away]))
 
 
 def _multiclass_brier(y_true: np.ndarray, y_proba: np.ndarray) -> float:
@@ -167,8 +211,10 @@ def _metrics_from_predictions(
 def _metric_score(metrics: Dict[str, Any]) -> float:
     accuracy = float(metrics.get("accuracy") or 0.0)
     macro_f1 = float(metrics.get("f1_macro") or 0.0)
+    logloss_value = float(metrics.get("log_loss") or 1.1)
+    brier_value = float(metrics.get("brier_score") or 0.67)
     draw_gap = abs(float(metrics.get("predicted_draw_rate") or 0.0) - float(metrics.get("actual_draw_rate") or 0.0))
-    return accuracy + (0.20 * macro_f1) - (0.03 * draw_gap)
+    return accuracy + (0.18 * macro_f1) - (0.06 * logloss_value) - (0.03 * brier_value) - (0.03 * draw_gap)
 
 
 def _load_current_tuning() -> Dict[str, Any]:
@@ -203,6 +249,53 @@ def _thresholds_from_tuning(tuning: Dict[str, Any], league_key: str) -> tuple[fl
     )
 
 
+def _blend_params_from_tuning(tuning: Dict[str, Any], league_key: str) -> Dict[str, float]:
+    default = tuning.get("default", {})
+    league = tuning.get("leagues", {}).get(league_key, {})
+    return {
+        "blend_nn_base": float(league.get("blend_nn_base", default.get("blend_nn_base", 0.66))),
+        "blend_nn_min": float(league.get("blend_nn_min", default.get("blend_nn_min", 0.55))),
+        "blend_nn_max": float(league.get("blend_nn_max", default.get("blend_nn_max", 0.82))),
+        "entropy_sensitivity": float(league.get("entropy_sensitivity", default.get("entropy_sensitivity", 0.18))),
+    }
+
+
+def _blend_arrays_with_params(
+    model_proba: np.ndarray,
+    elo_proba: np.ndarray,
+    params: Dict[str, float],
+) -> np.ndarray:
+    model = _normalize_probabilities(model_proba)
+    elo = _normalize_probabilities(elo_proba)
+    entropy = -np.sum(np.clip(model, 1e-12, 1.0) * np.log(np.clip(model, 1e-12, 1.0)), axis=1)
+    entropy_norm = np.minimum(1.0, entropy / np.log(3.0))
+    weights = float(params["blend_nn_base"]) + (1.0 - entropy_norm) * float(params["entropy_sensitivity"])
+    weights = np.clip(weights, float(params["blend_nn_min"]), float(params["blend_nn_max"]))
+    blended = (weights[:, None] * model) + ((1.0 - weights)[:, None] * elo)
+    return _normalize_probabilities(blended)
+
+
+def _blend_model_with_elo(
+    model_proba: np.ndarray,
+    elo_proba: np.ndarray,
+    league_labels: np.ndarray,
+    tuning: Dict[str, Any],
+    blend_overrides: Optional[Dict[str, Dict[str, float]]] = None,
+) -> np.ndarray:
+    blended = np.zeros_like(model_proba, dtype=np.float64)
+    for league_key in sorted(set(str(label) for label in league_labels)):
+        indices = np.where(league_labels == league_key)[0]
+        if len(indices) == 0:
+            continue
+        params = (
+            blend_overrides.get(league_key)
+            if blend_overrides and league_key in blend_overrides
+            else _blend_params_from_tuning(tuning, league_key)
+        )
+        blended[indices] = _blend_arrays_with_params(model_proba[indices], elo_proba[indices], params)
+    return _normalize_probabilities(blended)
+
+
 def _tune_thresholds(
     y_true: np.ndarray,
     y_proba: np.ndarray,
@@ -229,9 +322,57 @@ def _tune_thresholds(
     }
 
 
+def _blend_weight_grid() -> list[float]:
+    return [round(float(value), 4) for value in np.arange(0.50, 0.861, 0.03)]
+
+
+def _params_from_base_weight(base_weight: float, current_params: Dict[str, float]) -> Dict[str, float]:
+    sensitivity = float(current_params.get("entropy_sensitivity", 0.16))
+    return {
+        "blend_nn_base": round(float(base_weight), 4),
+        "blend_nn_min": round(max(0.45, float(base_weight) - 0.11), 4),
+        "blend_nn_max": round(min(0.9, float(base_weight) + 0.13), 4),
+        "entropy_sensitivity": round(max(0.08, min(0.24, sensitivity)), 4),
+    }
+
+
+def _tune_runtime_policy(
+    y_true: np.ndarray,
+    model_proba: np.ndarray,
+    elo_proba: np.ndarray,
+    threshold_candidates: Iterable[tuple[float, float]],
+    blend_weight_candidates: Iterable[float],
+    current_params: Dict[str, float],
+) -> Dict[str, Any]:
+    best: Optional[Dict[str, Any]] = None
+    for blend_weight in blend_weight_candidates:
+        params = _params_from_base_weight(blend_weight, current_params)
+        blended = _blend_arrays_with_params(model_proba, elo_proba, params)
+        for draw_min_prob, draw_margin in threshold_candidates:
+            preds = _decision_predictions(blended, draw_min_prob, draw_margin)
+            metrics = _metrics_from_predictions(y_true, blended, preds)
+            score = _metric_score(metrics)
+            item = {
+                "blend": params,
+                "draw_min_prob": round(float(draw_min_prob), 4),
+                "draw_margin": round(float(draw_margin), 4),
+                "score": score,
+                "metrics": metrics,
+            }
+            if best is None or score > best["score"]:
+                best = item
+    return best or {
+        "blend": current_params,
+        "draw_min_prob": 0.24,
+        "draw_margin": 0.02,
+        "score": 0.0,
+        "metrics": {"sample_size": int(len(y_true))},
+    }
+
+
 def _candidate_grid() -> list[tuple[float, float]]:
-    draw_thresholds = np.round(np.arange(0.14, 0.341, 0.01), 4)
-    margins = np.round(np.arange(0.00, 0.081, 0.01), 4)
+    draw_thresholds = np.round(np.arange(0.14, 0.501, 0.02), 4)
+    margins = np.round(np.arange(0.00, 0.081, 0.02), 4)
     return [(float(t), float(m)) for t in draw_thresholds for m in margins]
 
 
@@ -349,30 +490,42 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
         len(X_test),
     )
 
-    proba_cal, routing_cal = _predict_policy_probabilities(X_cal, labels_cal)
-    proba_test, routing_test = _predict_policy_probabilities(X_test, labels_test)
+    model_proba_cal, routing_cal = _predict_policy_probabilities(X_cal, labels_cal)
+    model_proba_test, routing_test = _predict_policy_probabilities(X_test, labels_test)
+    elo_proba_cal = _elo_proxy_probabilities(X_cal, labels_cal)
+    elo_proba_test = _elo_proxy_probabilities(X_test, labels_test)
     candidates = _candidate_grid()
+    blend_candidates = _blend_weight_grid()
     tuning = _load_current_tuning()
 
-    argmax_test = _argmax_metrics(y_test, proba_test)
-    current_policy_test = _policy_metrics(y_test, proba_test, labels_test, tuning)
-    overall_selected = _tune_thresholds(y_cal, proba_cal, candidates)
-    overall_test = _policy_metrics(
+    current_proba_cal = _blend_model_with_elo(model_proba_cal, elo_proba_cal, labels_cal, tuning)
+    current_proba_test = _blend_model_with_elo(model_proba_test, elo_proba_test, labels_test, tuning)
+
+    argmax_test = _argmax_metrics(y_test, current_proba_test)
+    current_policy_test = _policy_metrics(y_test, current_proba_test, labels_test, tuning)
+    default_blend_params = _blend_params_from_tuning(tuning, "__default__")
+    overall_selected = _tune_runtime_policy(
+        y_cal,
+        model_proba_cal,
+        elo_proba_cal,
+        candidates,
+        blend_candidates,
+        default_blend_params,
+    )
+    overall_test_proba = _blend_arrays_with_params(model_proba_test, elo_proba_test, overall_selected["blend"])
+    overall_test = _metrics_from_predictions(
         y_test,
-        proba_test,
-        labels_test,
-        tuning,
-        {
-            str(league_key): (
-                float(overall_selected["draw_min_prob"]),
-                float(overall_selected["draw_margin"]),
-            )
-            for league_key in set(labels_test)
-        },
+        overall_test_proba,
+        _decision_predictions(
+            overall_test_proba,
+            float(overall_selected["draw_min_prob"]),
+            float(overall_selected["draw_margin"]),
+        ),
     )
 
     league_results: Dict[str, Any] = {}
-    league_overrides: Dict[str, tuple[float, float]] = {}
+    decision_overrides: Dict[str, tuple[float, float]] = {}
+    blend_overrides: Dict[str, Dict[str, float]] = {}
     applied_leagues: list[str] = []
 
     for league_key in sorted(set(str(label) for label in np.concatenate([labels_cal, labels_test]))):
@@ -382,10 +535,11 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
             continue
 
         current_draw_min, current_draw_margin = _thresholds_from_tuning(tuning, league_key)
+        current_blend_params = _blend_params_from_tuning(tuning, league_key)
         current_metrics = _metrics_from_predictions(
             y_test[test_idx],
-            proba_test[test_idx],
-            _decision_predictions(proba_test[test_idx], current_draw_min, current_draw_margin),
+            current_proba_test[test_idx],
+            _decision_predictions(current_proba_test[test_idx], current_draw_min, current_draw_margin),
         )
 
         selected = None
@@ -394,12 +548,24 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
         reason = "insufficient_calibration_samples"
 
         if len(cal_idx) >= args.min_cal_samples:
-            selected = _tune_thresholds(y_cal[cal_idx], proba_cal[cal_idx], candidates)
+            selected = _tune_runtime_policy(
+                y_cal[cal_idx],
+                model_proba_cal[cal_idx],
+                elo_proba_cal[cal_idx],
+                candidates,
+                blend_candidates,
+                current_blend_params,
+            )
+            selected_test_proba = _blend_arrays_with_params(
+                model_proba_test[test_idx],
+                elo_proba_test[test_idx],
+                selected["blend"],
+            )
             selected_test = _metrics_from_predictions(
                 y_test[test_idx],
-                proba_test[test_idx],
+                selected_test_proba,
                 _decision_predictions(
-                    proba_test[test_idx],
+                    selected_test_proba,
                     float(selected["draw_min_prob"]),
                     float(selected["draw_margin"]),
                 ),
@@ -416,10 +582,11 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
                 )
                 reason = "test_guard_passed" if apply_recommended else "test_guard_failed"
             if apply_recommended:
-                league_overrides[league_key] = (
+                decision_overrides[league_key] = (
                     float(selected["draw_min_prob"]),
                     float(selected["draw_margin"]),
                 )
+                blend_overrides[league_key] = selected["blend"]
                 applied_leagues.append(league_key)
 
         league_results[league_key] = {
@@ -428,6 +595,7 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
             "test_samples": int(len(test_idx)),
             "routing": routing_test.get(league_key, routing_cal.get(league_key, {})),
             "current": {
+                "blend": current_blend_params,
                 "draw_min_prob": round(current_draw_min, 4),
                 "draw_margin": round(current_draw_margin, 4),
                 "metrics": current_metrics,
@@ -438,11 +606,18 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
             "reason": reason,
         }
 
-    tuned_policy_test = _policy_metrics(y_test, proba_test, labels_test, tuning, league_overrides)
+    tuned_proba_test = _blend_model_with_elo(
+        model_proba_test,
+        elo_proba_test,
+        labels_test,
+        tuning,
+        blend_overrides,
+    )
+    tuned_policy_test = _policy_metrics(y_test, tuned_proba_test, labels_test, tuning, decision_overrides)
     payload = {
-        "version": "2026-05-11",
+        "version": "2026-05-12",
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "description": "Chronological calibration/test simulation for tuned draw decision thresholds on current league/global/hybrid model probabilities.",
+        "description": "Chronological calibration/test simulation for runtime neural/ELO blend weights plus tuned draw decision thresholds on current league/global/hybrid model probabilities.",
         "guarantee": False,
         "split": {
             "train_samples": int(train_end),
@@ -464,9 +639,9 @@ async def run_tuning(args: argparse.Namespace) -> Dict[str, Any]:
         "applied_leagues": applied_leagues,
         "league_results": league_results,
         "notes": [
-            "Thresholds are fit only on the calibration split and judged on the untouched chronological test split.",
+            "Runtime neural/ELO blend weights and draw thresholds are fit only on the calibration split and judged on the untouched chronological test split.",
+            "The ELO prior is reconstructed from pre-match ELO features so this remains deployable without unlicensed future odds feeds.",
             "The model remains probabilistic; this artifact improves decision selection and calibration governance but does not guarantee betting outcomes.",
-            "Log-loss and Brier score are unchanged by decision thresholds because probability estimates are unchanged.",
         ],
     }
 
@@ -499,6 +674,8 @@ def _apply_tuning_updates(tuning: Dict[str, Any], payload: Dict[str, Any]) -> No
         "baseline_argmax_accuracy": payload.get("baseline_argmax_test", {}).get("accuracy"),
         "current_policy_accuracy": payload.get("current_policy_test", {}).get("accuracy"),
         "tuned_policy_accuracy": payload.get("tuned_policy_test", {}).get("accuracy"),
+        "current_policy_log_loss": payload.get("current_policy_test", {}).get("log_loss"),
+        "tuned_policy_log_loss": payload.get("tuned_policy_test", {}).get("log_loss"),
         "applied_leagues": payload.get("applied_leagues", []),
     }
 
@@ -509,15 +686,23 @@ def _apply_tuning_updates(tuning: Dict[str, Any], payload: Dict[str, Any]) -> No
         current = result.get("current", {}).get("metrics", {})
         league_tuning = tuning["leagues"].setdefault(league_key, {})
         league_tuning["display_name"] = result.get("display_name", LEAGUE_DISPLAY.get(league_key, league_key))
+        for field, value in (selected.get("blend") or {}).items():
+            league_tuning[field] = round(float(value), 4)
         league_tuning["draw_min_prob"] = round(float(selected.get("draw_min_prob", 0.24)), 4)
         league_tuning["draw_margin"] = round(float(selected.get("draw_margin", 0.02)), 4)
-        league_tuning["decision_policy_source"] = "chronological_model_decision_policy_tuning"
+        league_tuning["decision_policy_source"] = "chronological_runtime_blend_and_decision_tuning"
         league_tuning["decision_policy_generated_at"] = payload.get("generated_at")
         league_tuning["decision_policy_calibration_samples"] = int(result.get("calibration_samples") or 0)
         league_tuning["decision_policy_test_samples"] = int(result.get("test_samples") or 0)
         league_tuning["decision_policy_test_accuracy"] = selected_test.get("accuracy")
         league_tuning["decision_policy_accuracy_lift"] = (
             float(selected_test.get("accuracy") or 0.0) - float(current.get("accuracy") or 0.0)
+        )
+        league_tuning["decision_policy_log_loss_lift"] = (
+            float(current.get("log_loss") or 0.0) - float(selected_test.get("log_loss") or 0.0)
+        )
+        league_tuning["decision_policy_brier_lift"] = (
+            float(current.get("brier_score") or 0.0) - float(selected_test.get("brier_score") or 0.0)
         )
         league_tuning["source_sample_size"] = int(result.get("calibration_samples") or 0)
 
@@ -532,7 +717,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--apply", action="store_true", help="Update backend/data/model_tuning.json for leagues that pass test guards")
     parser.add_argument("--min-cal-samples", type=int, default=25)
     parser.add_argument("--min-test-samples", type=int, default=25)
-    parser.add_argument("--max-accuracy-regression", type=float, default=0.0025)
+    parser.add_argument("--max-accuracy-regression", type=float, default=0.0)
     parser.add_argument("--max-f1-regression", type=float, default=0.01)
     return parser.parse_args()
 

@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
-  "generated_at": "2026-05-11T19:38:13.229336",
+  "generated_at": "2026-05-12T18:24:26.691525+00:00",
   "description": "Auto-tuned neural/ELO blending and draw-threshold parameters from completed prediction diagnostics plus chronological model decision-policy tuning.",
   "default": {
     "blend_nn_base": 0.66,
@@ -13,13 +13,21 @@
   "leagues": {
     "ger.1": {
       "display_name": "Bundesliga",
-      "blend_nn_base": 0.6882,
-      "blend_nn_min": 0.5782,
-      "blend_nn_max": 0.8182,
+      "blend_nn_base": 0.74,
+      "blend_nn_min": 0.63,
+      "blend_nn_max": 0.87,
       "entropy_sensitivity": 0.16,
-      "draw_min_prob": 0.2281,
-      "draw_margin": 0.0186,
-      "source_sample_size": 150
+      "draw_min_prob": 0.32,
+      "draw_margin": 0.08,
+      "source_sample_size": 1089,
+      "decision_policy_source": "chronological_runtime_blend_and_decision_tuning",
+      "decision_policy_generated_at": "2026-05-12T18:24:26.594611+00:00",
+      "decision_policy_calibration_samples": 1089,
+      "decision_policy_test_samples": 966,
+      "decision_policy_test_accuracy": 0.5289855072463768,
+      "decision_policy_accuracy_lift": 0.0,
+      "decision_policy_log_loss_lift": 0.0,
+      "decision_policy_brier_lift": 0.0
     },
     "uefa.champions": {
       "display_name": "Champions League",
@@ -142,14 +150,20 @@
     "conmebol.america": {
       "display_name": "Copa America",
       "draw_min_prob": 0.14,
-      "draw_margin": 0.07,
-      "decision_policy_source": "chronological_model_decision_policy_tuning",
-      "decision_policy_generated_at": "2026-05-11T19:38:13.219890",
+      "draw_margin": 0.08,
+      "decision_policy_source": "chronological_runtime_blend_and_decision_tuning",
+      "decision_policy_generated_at": "2026-05-12T18:24:26.594611+00:00",
       "decision_policy_calibration_samples": 28,
       "decision_policy_test_samples": 32,
-      "decision_policy_test_accuracy": 0.5625,
+      "decision_policy_test_accuracy": 0.53125,
       "decision_policy_accuracy_lift": 0.0,
-      "source_sample_size": 28
+      "source_sample_size": 28,
+      "blend_nn_base": 0.59,
+      "blend_nn_min": 0.48,
+      "blend_nn_max": 0.72,
+      "entropy_sensitivity": 0.18,
+      "decision_policy_log_loss_lift": 0.0,
+      "decision_policy_brier_lift": 0.0
     },
     "uefa.euro": {
       "display_name": "UEFA European Championship",
@@ -165,18 +179,17 @@
     }
   },
   "decision_policy_experiment": {
-    "generated_at": "2026-05-11T19:38:13.219890",
+    "generated_at": "2026-05-12T18:24:26.594611+00:00",
     "artifact": "data/model_decision_policy_tuning.json",
     "guarantee": false,
-    "baseline_argmax_accuracy": 0.5415666593934104,
-    "current_policy_accuracy": 0.5415666593934104,
-    "tuned_policy_accuracy": 0.5416757582369627,
+    "baseline_argmax_accuracy": 0.5413484617063059,
+    "current_policy_accuracy": 0.5368754091206633,
+    "tuned_policy_accuracy": 0.5368754091206633,
+    "current_policy_log_loss": 0.965548541658303,
+    "tuned_policy_log_loss": 0.965548541658303,
     "applied_leagues": [
       "conmebol.america",
-      "ita.1",
-      "por.1",
-      "uefa.champions",
-      "uefa.euro"
+      "ger.1"
     ]
   }
 }

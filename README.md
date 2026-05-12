@@ -148,9 +148,8 @@ Latest decision-policy tuning after the baseline:
 
 - Command run: `python -m backend.scripts.tune_decision_policy --min-season 1998 --apply`
 - Chronological split: **42,770 train / 9,165 calibration / 9,166 test** rows.
-- Test accuracy moved from **54.16%** current policy to **54.17%** tuned guarded policy.
-- Macro F1 moved from **41.90%** to **43.40%**, mainly by reducing draw under-prediction.
-- Applied threshold updates for **Copa America, Serie A, Primeira Liga, Champions League, and UEFA Euro**.
+- The initial May 11 label-decision pass moved test accuracy from **54.16%** current policy to **54.17%** tuned guarded policy and macro F1 from **41.90%** to **43.40%**, mainly by reducing draw under-prediction.
+- The May 12 runtime pass now tunes deployable neural/ELO blend weights plus draw thresholds together. With a stricter no-accuracy-regression guard, it retained only conservative probability-quality updates for **Copa America** and **Bundesliga**; the broader runtime search did **not** produce a global accuracy lift.
 - `/api/predict/unified` and `predict_upcoming.py` now both use the tuned draw decision policy; scheduled predictions also use the benchmark-gated league/global/hybrid model routing policy.
 
 Important caveats from this run:

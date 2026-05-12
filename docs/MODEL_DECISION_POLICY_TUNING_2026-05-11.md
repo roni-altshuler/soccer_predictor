@@ -17,7 +17,7 @@ This is not a betting guarantee. It is a calibration and decision-policy improve
 ## What Changed
 
 - Added `backend/scripts/tune_decision_policy.py`.
-- The script loads sourced historical matches plus completed prediction outcomes, builds the same 66-feature matrix, simulates the current league/global/hybrid routing policy, tunes draw thresholds on the calibration split, and evaluates on the untouched chronological test split.
+- The script loads sourced historical matches plus completed prediction outcomes, builds the same 66-feature matrix, simulates the current league/global/hybrid routing policy, reconstructs a deployable ELO prior from pre-match ELO features, tunes runtime neural/ELO blend weights plus draw thresholds on the calibration split, and evaluates on the untouched chronological test split.
 - Updated `/api/predict/unified` so the interactive prediction endpoint now uses the same tuned draw decision policy as scheduled predictions.
 - Updated `predict_upcoming.py` so generated future match cards use the benchmark-gated league/global/hybrid policy, not the older per-league-only neural path.
 - Added `backend/data/model_decision_policy_tuning.json` as the full audit artifact.
@@ -25,7 +25,7 @@ This is not a betting guarantee. It is a calibration and decision-policy improve
 
 ## Validation Run
 
-Command:
+Initial May 11 command:
 
 ```bash
 python -m backend.scripts.tune_decision_policy --min-season 1998 --apply
@@ -63,6 +63,35 @@ Interpretation:
 | UEFA Euro | League | 48 | 54.17% | 54.17% | 0.14 | 0.00 |
 
 Some league updates are neutral on accuracy but still pass because they improve the guarded decision objective without degrading test performance. Small tournament samples remain volatile and should stay visibly lower-confidence in the UI.
+
+## May 12 Runtime Blend Addendum
+
+The May 12 pass upgraded the tuning job from label-only draw thresholds to the actual deployable runtime policy: benchmark-gated neural probabilities blended with an ELO prior, followed by the draw decision gate. The guard was tightened so a league update cannot be applied when untouched test accuracy drops.
+
+Command:
+
+```bash
+python -m backend.scripts.tune_decision_policy --min-season 1998 --apply
+```
+
+| Runtime Policy | Accuracy | Macro Precision | Macro Recall | Macro F1 | Log Loss | Brier | Predicted Draw Rate | Actual Draw Rate |
+|----------------|----------|-----------------|--------------|----------|----------|-------|---------------------|------------------|
+| Runtime argmax | 54.13% | 45.87% | 47.42% | 42.74% | 0.966 | 0.574 | 3.14% | 24.57% |
+| Current runtime policy | 53.69% | 46.95% | 47.89% | 45.53% | 0.966 | 0.574 | 8.86% | 24.57% |
+| Strict tuned policy | 53.69% | 46.95% | 47.89% | 45.53% | 0.966 | 0.574 | 8.86% | 24.57% |
+
+Applied under the strict no-accuracy-regression guard:
+
+| League | Runtime Route | Test Samples | Accuracy Lift | Log-Loss Lift | Brier Lift | Blend Base | Draw Min | Draw Margin |
+|--------|---------------|--------------|---------------|---------------|------------|------------|----------|-------------|
+| Copa America | Global | 32 | 0.00pp | +0.0004 | +0.0005 | 0.59 | 0.14 | 0.08 |
+| Bundesliga | Global | 966 | 0.00pp | +0.0007 | +0.0005 | 0.74 | 0.32 | 0.08 |
+
+Interpretation:
+
+- The wider runtime blend search did not produce a broad global accuracy lift, so the artifact does not claim one.
+- The accepted updates are conservative: no holdout accuracy regression, with tiny probability-quality gains.
+- The most honest next accuracy improvements are dataset expansion and richer feature coverage, especially player availability, lineup strength, reliable xG, and licensed odds or market snapshots where legally usable.
 
 ## Next Model Improvements
 
