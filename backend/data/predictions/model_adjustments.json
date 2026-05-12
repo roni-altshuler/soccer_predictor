@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-12T08:51:02.212948",
+  "generated_at": "2026-05-12T16:20:16.666152",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -330,14 +330,14 @@
     },
     "Premier League": {
       "current": {
-        "avg_goals": 1.0724,
-        "home_adv": 0.0754,
+        "avg_goals": 1.0566,
+        "home_adv": 0.0661,
         "rho": -0.13,
         "draw_rate": 0.35
       },
       "suggested": {
-        "avg_goals": 1.057,
-        "home_adv": 0.066,
+        "avg_goals": 1.041,
+        "home_adv": 0.057,
         "draw_rate": 0.354,
         "rho": -0.13
       },
@@ -363,12 +363,12 @@
         "avg_goals": 1.45,
         "home_adv": 0.24,
         "rho": -0.11,
-        "draw_rate": 0.0934
+        "draw_rate": 0.0881
       },
       "suggested": {
         "avg_goals": 1.448,
         "home_adv": 0.241,
-        "draw_rate": 0.088,
+        "draw_rate": 0.083,
         "rho": -0.11
       },
       "changed": true
@@ -405,13 +405,13 @@
     },
     "Serie A": {
       "current": {
-        "avg_goals": 1.1638,
+        "avg_goals": 1.1567,
         "home_adv": 0.26,
         "rho": -0.14,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.157,
+        "avg_goals": 1.15,
         "home_adv": 0.264,
         "draw_rate": 0.08,
         "rho": -0.14
@@ -420,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.659,
+        "avg_goals": 1.6685,
         "home_adv": 0.45,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.668,
+        "avg_goals": 1.678,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.1
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 1.6452,
+        "avg_goals": 1.6518,
         "home_adv": 0.45,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.652,
+        "avg_goals": 1.658,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.12
@@ -450,13 +450,13 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": 1.2022,
+        "avg_goals": 1.1923,
         "home_adv": 0.45,
         "rho": -0.11,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.192,
+        "avg_goals": 1.182,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.11
