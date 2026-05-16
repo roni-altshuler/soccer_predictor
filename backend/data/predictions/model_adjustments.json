@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-15T22:53:30.235410",
+  "generated_at": "2026-05-16T08:14:53.988909",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -330,13 +330,13 @@
     },
     "Premier League": {
       "current": {
-        "avg_goals": 0.8986,
+        "avg_goals": 0.8828,
         "home_adv": 0.05,
         "rho": -0.13,
         "draw_rate": 0.35
       },
       "suggested": {
-        "avg_goals": 0.883,
+        "avg_goals": 0.867,
         "home_adv": 0.05,
         "draw_rate": 0.354,
         "rho": -0.13
@@ -405,13 +405,13 @@
     },
     "Serie A": {
       "current": {
-        "avg_goals": 1.0857,
+        "avg_goals": 1.0786,
         "home_adv": 0.26,
         "rho": -0.14,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.079,
+        "avg_goals": 1.072,
         "home_adv": 0.264,
         "draw_rate": 0.08,
         "rho": -0.14
@@ -420,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.7635,
+        "avg_goals": 1.773,
         "home_adv": 0.45,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.773,
+        "avg_goals": 1.782,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.1
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 1.7178,
+        "avg_goals": 1.7244,
         "home_adv": 0.45,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.724,
+        "avg_goals": 1.731,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.12
@@ -450,13 +450,13 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": 1.0933,
+        "avg_goals": 1.0834,
         "home_adv": 0.45,
         "rho": -0.11,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.083,
+        "avg_goals": 1.073,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.11
