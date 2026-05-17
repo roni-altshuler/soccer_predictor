@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getJsonStoreMeta, readJsonStore, writeJsonStore } from '@/lib/serverJsonStore'
+import {
+  getSyncStoreMeta,
+  getWatchlistAlertRoom,
+  saveWatchlistAlertRoom,
+  watchlistAlertRoomExists,
+  type WatchlistAlertRoomRecord,
+} from '@/lib/serverSyncStore'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 interface WatchTeam {
   name: string
@@ -23,7 +30,7 @@ interface AlertItem {
   tone: string
 }
 
-interface WatchlistAlertRoom {
+interface WatchlistAlertRoom extends WatchlistAlertRoomRecord {
   syncCode: string
   createdAt: string
   updatedAt: string
@@ -33,12 +40,6 @@ interface WatchlistAlertRoom {
   alerts: AlertItem[]
 }
 
-interface WatchlistAlertStore {
-  rooms: Record<string, WatchlistAlertRoom>
-}
-
-const STORE_FILE = 'watchlist-alerts.json'
-
 function normalizeSyncCode(value?: string): string {
   return (value || '')
     .toUpperCase()
@@ -46,10 +47,10 @@ function normalizeSyncCode(value?: string): string {
     .slice(0, 10)
 }
 
-function createSyncCode(existing: Record<string, WatchlistAlertRoom>): string {
+async function createSyncCode(): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = Math.random().toString(36).slice(2, 9).toUpperCase()
-    if (!existing[code]) return code
+    if (!(await watchlistAlertRoomExists(code))) return code
   }
   return Date.now().toString(36).slice(-7).toUpperCase()
 }
@@ -101,29 +102,20 @@ function sanitizeSettings(value: unknown): AlertSettings {
   }
 }
 
-function loadStore(): WatchlistAlertStore {
-  return readJsonStore<WatchlistAlertStore>(STORE_FILE, { rooms: {} })
-}
-
-function saveStore(store: WatchlistAlertStore): void {
-  writeJsonStore(STORE_FILE, store)
-}
-
 export async function GET(request: NextRequest) {
   const syncCode = normalizeSyncCode(request.nextUrl.searchParams.get('syncCode') || '')
   if (!syncCode) {
     return NextResponse.json({ error: 'syncCode is required.' }, { status: 400 })
   }
 
-  const store = loadStore()
-  const room = store.rooms[syncCode]
+  const room = await getWatchlistAlertRoom(syncCode)
   if (!room) {
     return NextResponse.json({ error: 'Watchlist alert sync code not found.' }, { status: 404 })
   }
 
   return NextResponse.json({
     ...room,
-    storage: getJsonStoreMeta(),
+    storage: getSyncStoreMeta(),
     push_delivery: {
       enabled: false,
       note: 'This endpoint provides server-backed alert sync. Native Web Push delivery should be enabled with a dedicated push provider before production launch.',
@@ -136,11 +128,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const store = loadStore()
     const now = new Date().toISOString()
     const requestedCode = normalizeSyncCode(body.syncCode)
-    const syncCode = requestedCode || createSyncCode(store.rooms)
-    const existing = store.rooms[syncCode]
+    const syncCode = requestedCode || await createSyncCode()
+    const existing = await getWatchlistAlertRoom(syncCode)
 
     const room: WatchlistAlertRoom = {
       syncCode,
@@ -154,12 +145,11 @@ export async function POST(request: NextRequest) {
       alerts: sanitizeAlerts(body.alerts),
     }
 
-    store.rooms[syncCode] = room
-    saveStore(store)
+    await saveWatchlistAlertRoom(room)
 
     return NextResponse.json({
       ...room,
-      storage: getJsonStoreMeta(),
+      storage: getSyncStoreMeta(),
       push_delivery: {
         enabled: false,
         note: 'Server alert sync is active. Configure native Web Push separately before relying on background delivery.',

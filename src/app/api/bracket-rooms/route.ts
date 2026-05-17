@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getJsonStoreMeta, readJsonStore, writeJsonStore } from '@/lib/serverJsonStore'
+import {
+  bracketRoomExists,
+  getBracketRoom,
+  getSyncStoreMeta,
+  saveBracketRoom,
+  type BracketRoomRecord,
+} from '@/lib/serverSyncStore'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 type WinnerPick = 'home' | 'away'
 
@@ -29,29 +36,6 @@ interface BracketChallengeGroup {
   entries: BracketChallengeEntry[]
 }
 
-interface BracketRoomRecord {
-  roomCode: string
-  ownerPinHash: string
-  createdAt: string
-  updatedAt: string
-  lastSyncedBy: string
-  group: BracketChallengeGroup
-}
-
-interface BracketRoomStore {
-  rooms: Record<string, BracketRoomRecord>
-}
-
-const STORE_FILE = 'bracket-rooms.json'
-
-function loadStore(): BracketRoomStore {
-  return readJsonStore<BracketRoomStore>(STORE_FILE, { rooms: {} })
-}
-
-function saveStore(store: BracketRoomStore): void {
-  writeJsonStore(STORE_FILE, store)
-}
-
 function normalizeRoomCode(value?: string): string {
   return (value || '')
     .toUpperCase()
@@ -59,10 +43,10 @@ function normalizeRoomCode(value?: string): string {
     .slice(0, 8)
 }
 
-function createRoomCode(existing: Record<string, BracketRoomRecord>): string {
+async function createRoomCode(): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = Math.random().toString(36).slice(2, 8).toUpperCase()
-    if (!existing[code]) return code
+    if (!(await bracketRoomExists(code))) return code
   }
   return `${Date.now().toString(36).slice(-6)}`.toUpperCase()
 }
@@ -103,7 +87,7 @@ function sanitizeGroup(value: unknown): BracketChallengeGroup {
     season: group.season,
     name: group.name,
     ownerName: group.ownerName || 'Commissioner',
-    inviteCode: group.inviteCode || normalizeRoomCode(group.id) || createRoomCode({}),
+    inviteCode: group.inviteCode || normalizeRoomCode(group.id) || 'PENDING',
     createdAt: group.createdAt || new Date().toISOString(),
     scoring: group.scoring || {},
     entries: group.entries.filter((entry): entry is BracketChallengeEntry => {
@@ -124,7 +108,7 @@ function serializeRoom(room: BracketRoomRecord) {
     updatedAt: room.updatedAt,
     lastSyncedBy: room.lastSyncedBy,
     group: room.group,
-    storage: getJsonStoreMeta(),
+    storage: getSyncStoreMeta(),
   }
 }
 
@@ -134,10 +118,9 @@ export async function POST(request: NextRequest) {
     const ownerPin = sanitizePin(body.ownerPin)
     const group = sanitizeGroup(body.group)
     const now = new Date().toISOString()
-    const store = loadStore()
     const requestedCode = normalizeRoomCode(body.roomCode)
-    const roomCode = requestedCode || createRoomCode(store.rooms)
-    const existing = store.rooms[roomCode]
+    const roomCode = requestedCode || await createRoomCode()
+    const existing = await getBracketRoom(roomCode)
 
     if (existing && existing.ownerPinHash !== hashPin(ownerPin)) {
       return NextResponse.json(
@@ -161,8 +144,7 @@ export async function POST(request: NextRequest) {
       },
     }
 
-    store.rooms[roomCode] = record
-    saveStore(store)
+    await saveBracketRoom(record)
 
     return NextResponse.json(serializeRoom(record), {
       headers: { 'Cache-Control': 'no-store, max-age=0' },

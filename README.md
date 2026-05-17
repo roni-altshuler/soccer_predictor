@@ -36,7 +36,7 @@ The May 5, 2026 product roadmap is saved in [`docs/PRODUCT_ROADMAP_2026-05-05.md
 3. Mobile Matchday Polish
 4. Personal Watchlist Expansion
 
-The remaining roadmap is now mostly production hardening: replacing the file-backed sync store with a managed database, connecting native Web Push delivery, and configuring a licensed odds provider key in deployment.
+The remaining roadmap is now mostly production hardening: native Web Push delivery, account/auth ownership, licensed odds-provider configuration, and legal/compliance review. Public sync storage now supports managed Postgres for launch deployments.
 
 ---
 
@@ -339,6 +339,30 @@ npm run dev
 npm run build && npm start
 ```
 
+### Public Launch Persistence
+
+Bracket challenge rooms and watchlist alert queues are backed by managed PostgreSQL in production. Configure one of these environment variables in Vercel, Neon, Supabase, Railway, Render, or another managed Postgres host:
+
+```bash
+DATABASE_URL=postgres://...
+# or
+POSTGRES_URL=postgres://...
+
+# Optional local-only override when your database does not require SSL
+PGSSLMODE=disable
+
+# Optional pool size for serverless deployments
+PGPOOL_MAX=3
+```
+
+The app auto-initializes the required sync tables on first use. For explicit migrations, apply [`db/fotpredict_sync_schema.sql`](db/fotpredict_sync_schema.sql):
+
+```bash
+psql "$DATABASE_URL" -f db/fotpredict_sync_schema.sql
+```
+
+Use `GET /api/launch-readiness` after deployment to verify that public sync features are running on managed Postgres. If no database URL is configured, local development falls back to `FOTPREDICT_STORE_DIR` or the runtime temp directory, but that fallback is not considered launch-ready.
+
 ---
 
 ## API Endpoints
@@ -364,6 +388,7 @@ npm run build && npm start
 | GET | `/api/world-cup/readiness` | World Cup model, calibration, diagnostics, and data-integrity status |
 | GET/POST | `/api/bracket-rooms` and `/api/bracket-rooms/[roomCode]` | Server-backed tournament bracket room sync with commissioner PIN-protected writes |
 | GET/POST | `/api/watchlist-alerts` | Server-backed watchlist alert queue sync by code |
+| GET | `/api/launch-readiness` | Public-launch health check for managed sync storage |
 
 ### AI Tracking
 | Method | Route | Description |
@@ -403,7 +428,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - Live win probability is returned and visualized only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
 - Tournament challenge pages can generate a FotPredict AI bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
-- Synced bracket rooms and alert queues use `FOTPREDICT_STORE_DIR` when configured. Without it, local development uses a temp-file store that should be replaced with durable storage before production launch.
+- Synced bracket rooms and alert queues use managed Postgres when `DATABASE_URL` or `POSTGRES_URL` is configured. `FOTPREDICT_STORE_DIR` and temp-file storage are local/staging fallbacks only.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
 ---
