@@ -22,7 +22,7 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
 - **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards with export, and `fifa.world` prediction support
-- **Tournament Bracket Challenge** — Local-first knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, commissioner scoring rules, live leaderboard scoring, invite-link import, and JSON import/export
+- **Tournament Bracket Challenge** — Local-first knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, model-backed AI bracket entries, commissioner scoring rules, live leaderboard scoring, invite-link import, and JSON import/export
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 
 ---
@@ -36,7 +36,7 @@ The May 5, 2026 product roadmap is saved in [`docs/PRODUCT_ROADMAP_2026-05-05.md
 3. Mobile Matchday Polish
 4. Personal Watchlist Expansion
 
-Heavier follow-up work includes richer live prediction updates, global model promotion gates, model-vs-market intelligence, and turning local-first tournament bracket challenges into synced multi-user rooms.
+Heavier follow-up work includes global model promotion gates, calibration history, licensed model-vs-market intelligence, and turning local-first tournament bracket challenges into synced multi-user rooms.
 
 ---
 
@@ -395,8 +395,9 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - The app must not display random weather, invented referee details, synthetic H2H records, or zero-probability placeholders as if they were real.
 - Source badges identify ESPN/FotMob/model provenance on match feeds and match detail pages.
 - Match detail pages can add either team directly to the local watchlist.
-- Live win probability is returned only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
+- Live win probability is returned and visualized only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
+- Tournament challenge pages can generate a FotPredict AI bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
 ---

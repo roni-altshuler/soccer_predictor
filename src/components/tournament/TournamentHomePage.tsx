@@ -318,6 +318,30 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     return Array.from(new Set(names)).sort()
   }, [data.groups])
 
+  const challengeSimulationData = useMemo(() => {
+    if (simulationProbabilities) return simulationProbabilities
+    if (!simulationResults) return null
+
+    return {
+      champion: simulationResults.teams.map((team) => ({
+        team: team.team_name,
+        probability: team.win_probability,
+      })),
+      final: simulationResults.teams.map((team) => ({
+        team: team.team_name,
+        probability: team.final_probability,
+      })),
+      semi_finals: simulationResults.teams.map((team) => ({
+        team: team.team_name,
+        probability: team.semi_final_probability,
+      })),
+      quarter_finals: simulationResults.teams.map((team) => ({
+        team: team.team_name,
+        probability: team.quarter_final_probability,
+      })),
+    }
+  }, [simulationProbabilities, simulationResults])
+
   useEffect(() => {
     if (simulationTeamOptions.length === 0) {
       if (scenarioFocusTeam) setScenarioFocusTeam('')
@@ -1167,6 +1191,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               tournamentName={tournamentName}
               season={selectedSeason}
               rounds={bracketRounds}
+              simulationData={challengeSimulationData || undefined}
             />
           )}
 

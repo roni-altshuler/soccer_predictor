@@ -13,6 +13,10 @@ type BracketChallengeEntry = {
   createdAt: string
   updatedAt: string
   picks: Record<string, WinnerPick>
+  source?: 'manual' | 'model'
+  modelLabel?: string
+  generatedPicks?: number
+  averagePickConfidence?: number
 }
 
 type BracketChallengeGroup = {
@@ -32,10 +36,31 @@ type BracketChallengeBoardProps = {
   tournamentName: string
   season: string
   rounds: BracketRound[]
+  simulationData?: SimulationProbabilityData
 }
 
 type MatchWithRound = KnockoutMatch & {
   roundName: string
+}
+
+type TeamProbability = {
+  team: string
+  probability: number
+}
+
+type SimulationProbabilityData = {
+  champion?: TeamProbability[]
+  final?: TeamProbability[]
+  semi_finals?: TeamProbability[]
+  quarter_finals?: TeamProbability[]
+  round_of_16?: TeamProbability[]
+}
+
+type ModelPickSummary = {
+  picks: Record<string, WinnerPick>
+  generatedPicks: number
+  missingPicks: number
+  averagePickConfidence: number
 }
 
 const ROUND_ORDER = ['Knockout Playoffs', 'Round of 16', 'Quarter-Finals', 'Semi-Finals', 'Third Place', 'Final']
@@ -99,6 +124,86 @@ function getMatchWinner(match: KnockoutMatch): WinnerPick | null {
     if (match.awayPenalties > match.homePenalties) return 'away'
   }
   return null
+}
+
+function normalizeTeamKey(team: string): string {
+  return team
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function isKnownTeam(team?: string): team is string {
+  return !!team && team.trim().length > 0 && team.trim().toLowerCase() !== 'tbd'
+}
+
+function probabilityRoundKey(roundName: string): keyof SimulationProbabilityData {
+  const normalized = normalizeRoundName(roundName)
+  if (normalized === 'Final') return 'champion'
+  if (normalized === 'Semi-Finals') return 'final'
+  if (normalized === 'Quarter-Finals') return 'semi_finals'
+  if (normalized === 'Round of 16') return 'quarter_finals'
+  return 'quarter_finals'
+}
+
+function findTeamProbability(rows: TeamProbability[] | undefined, team: string): number | null {
+  if (!rows || rows.length === 0) return null
+  const teamKey = normalizeTeamKey(team)
+  const exact = rows.find((row) => normalizeTeamKey(row.team) === teamKey)
+  if (exact) return exact.probability
+
+  const partial = rows.find((row) => {
+    const rowKey = normalizeTeamKey(row.team)
+    return rowKey.includes(teamKey) || teamKey.includes(rowKey)
+  })
+
+  return partial?.probability ?? null
+}
+
+function getModelPick(match: MatchWithRound, simulationData?: SimulationProbabilityData): { pick: WinnerPick; confidence: number } | null {
+  const lockedWinner = getMatchWinner(match)
+  if (lockedWinner) return { pick: lockedWinner, confidence: 1 }
+  if (!simulationData || !isKnownTeam(match.homeTeam) || !isKnownTeam(match.awayTeam)) return null
+
+  const primaryKey = probabilityRoundKey(match.roundName)
+  const fallbackKeys: Array<keyof SimulationProbabilityData> = [primaryKey, 'champion', 'final', 'semi_finals', 'quarter_finals']
+  const uniqueKeys = Array.from(new Set(fallbackKeys))
+
+  for (const key of uniqueKeys) {
+    const homeProbability = findTeamProbability(simulationData[key], match.homeTeam)
+    const awayProbability = findTeamProbability(simulationData[key], match.awayTeam)
+
+    if (homeProbability === null || awayProbability === null || homeProbability === awayProbability) continue
+
+    const pick = homeProbability > awayProbability ? 'home' : 'away'
+    const confidence = Math.min(0.99, Math.max(0.5, Math.abs(homeProbability - awayProbability) + 0.5))
+    return { pick, confidence }
+  }
+
+  return null
+}
+
+function buildModelPickSummary(matches: MatchWithRound[], simulationData?: SimulationProbabilityData): ModelPickSummary {
+  const picks: Record<string, WinnerPick> = {}
+  let confidenceTotal = 0
+  let generatedPicks = 0
+
+  for (const match of matches) {
+    const modelPick = getModelPick(match, simulationData)
+    if (!modelPick) continue
+    picks[match.id] = modelPick.pick
+    generatedPicks += 1
+    confidenceTotal += modelPick.confidence
+  }
+
+  return {
+    picks,
+    generatedPicks,
+    missingPicks: Math.max(0, matches.length - generatedPicks),
+    averagePickConfidence: generatedPicks > 0 ? confidenceTotal / generatedPicks : 0,
+  }
 }
 
 function buildInviteCode(): string {
@@ -179,6 +284,7 @@ export default function BracketChallengeBoard({
   tournamentName,
   season,
   rounds,
+  simulationData,
 }: BracketChallengeBoardProps) {
   const [allGroups, setAllGroups] = useState<BracketChallengeGroup[]>([])
   const [activeGroupId, setActiveGroupId] = useState('')
@@ -243,6 +349,11 @@ export default function BracketChallengeBoard({
         return a.entry.userName.localeCompare(b.entry.userName)
       })
   }, [activeGroup, matches, scoring])
+
+  const modelPickSummary = useMemo(
+    () => buildModelPickSummary(matches, simulationData),
+    [matches, simulationData]
+  )
 
   useEffect(() => {
     try {
@@ -368,6 +479,7 @@ export default function BracketChallengeBoard({
       createdAt: activeGroup.entries.find((entry) => entry.id === editingEntryId)?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       picks: entryPicks,
+      source: activeGroup.entries.find((entry) => entry.id === editingEntryId)?.source || 'manual',
     }
 
     const nextGroups = allGroups.map((group) => {
@@ -381,6 +493,60 @@ export default function BracketChallengeBoard({
 
     persistGroups(nextGroups)
     setStatusMessage(`Saved picks for ${trimmedName}.`)
+    clearEntryDraft()
+  }
+
+  const handleGenerateModelEntry = () => {
+    if (modelPickSummary.generatedPicks === 0) {
+      setStatusMessage('Run or load a tournament simulation before generating a model-backed bracket entry.')
+      return
+    }
+
+    const now = new Date().toISOString()
+    const targetGroup: BracketChallengeGroup = activeGroup || {
+      id: createId('group'),
+      tournamentId,
+      season,
+      name: `${tournamentName} AI Bracket Room`,
+      ownerName: 'FotPredict AI',
+      inviteCode: buildInviteCode(),
+      createdAt: now,
+      scoring: DEFAULT_ROUND_WEIGHTS,
+      entries: [],
+    }
+
+    const existingModelEntry = targetGroup.entries.find((entry) => entry.source === 'model')
+    const nextEntry: BracketChallengeEntry = {
+      id: existingModelEntry?.id || createId('entry'),
+      userName: 'FotPredict AI Bracket',
+      createdAt: existingModelEntry?.createdAt || now,
+      updatedAt: now,
+      picks: modelPickSummary.picks,
+      source: 'model',
+      modelLabel: 'Simulation probability pick',
+      generatedPicks: modelPickSummary.generatedPicks,
+      averagePickConfidence: modelPickSummary.averagePickConfidence,
+    }
+
+    const baseGroups = activeGroup ? allGroups : [targetGroup, ...allGroups]
+    const nextGroups = baseGroups.map((group) => {
+      if (group.id !== targetGroup.id) return group
+      const otherEntries = group.entries.filter((entry) => entry.id !== nextEntry.id)
+      return {
+        ...group,
+        entries: [nextEntry, ...otherEntries].sort((a, b) => {
+          if (a.source === 'model' && b.source !== 'model') return -1
+          if (b.source === 'model' && a.source !== 'model') return 1
+          return a.userName.localeCompare(b.userName)
+        }),
+      }
+    })
+
+    persistGroups(nextGroups)
+    setActiveGroupId(targetGroup.id)
+    setStatusMessage(
+      `Generated an AI bracket entry with ${modelPickSummary.generatedPicks}/${matches.length} available picks.`
+    )
     clearEntryDraft()
   }
 
@@ -547,6 +713,37 @@ export default function BracketChallengeBoard({
             </div>
 
             <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">AI Bracket</p>
+              <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">Model-backed personal entry</h3>
+              <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+                Generate a FotPredict entry from the current simulation probability table. Locked real results are kept, and unknown matchups stay unpicked.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-[var(--background-secondary)] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Available</p>
+                  <p className="mt-1 text-lg font-black text-[var(--text-primary)]">{modelPickSummary.generatedPicks}</p>
+                </div>
+                <div className="rounded-xl bg-[var(--background-secondary)] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Open</p>
+                  <p className="mt-1 text-lg font-black text-[var(--text-primary)]">{modelPickSummary.missingPicks}</p>
+                </div>
+                <div className="rounded-xl bg-[var(--background-secondary)] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Avg Lean</p>
+                  <p className="mt-1 text-lg font-black text-[var(--text-primary)]">
+                    {modelPickSummary.generatedPicks > 0 ? `${Math.round(modelPickSummary.averagePickConfidence * 100)}%` : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleGenerateModelEntry}
+                disabled={modelPickSummary.generatedPicks === 0}
+                className="mt-3 w-full rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Generate AI Bracket Entry
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Import / Export</p>
               <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
                 This release is local-first. Share an invite link or export a challenge group JSON payload to continue the competition on another device or browser.
@@ -645,6 +842,12 @@ export default function BracketChallengeBoard({
                           <p className="text-sm font-bold text-[var(--text-primary)]">
                             {index + 1}. {entry.userName}
                           </p>
+                          {entry.source === 'model' && (
+                            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--accent-ai)]">
+                              AI-generated · {entry.generatedPicks || Object.keys(entry.picks).length} picks
+                              {entry.averagePickConfidence ? ` · ${Math.round(entry.averagePickConfidence * 100)}% avg lean` : ''}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-[var(--text-secondary)]">
                             {summary.correct} correct · {summary.wrong} wrong · {summary.pending} pending
                           </p>
