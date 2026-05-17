@@ -18,11 +18,11 @@ FotPredict AI combines the real-time match experience of apps like FotMob with a
 - **Season Simulator** — Monte Carlo simulation (1,000 iterations) on live standings to project title, top-4, Europa, and relegation probabilities
 - **AI Accuracy Dashboard** — Full prediction history with per-league accuracy, Brier scores, rolling trend, confidence calibration, and model status
 - **Model Quality Gates** — Sportsbook-style governance for coverage, calibration, holdout metrics, model-selection policy, and source-data validation without making betting guarantees
-- **Market Intelligence Guardrails** — User-supplied decimal odds can be converted into no-vig probabilities and compared with model probabilities for audit-only edge review
-- **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, and home-feed filtering for followed clubs
+- **Market Intelligence Guardrails** — User-supplied decimal odds or configured licensed-provider odds can be converted into no-vig probabilities and compared with model probabilities for audit-only edge review
+- **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, server-synced alert queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
 - **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards with export, and `fifa.world` prediction support
-- **Tournament Bracket Challenge** — Local-first knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, model-backed AI bracket entries, commissioner scoring rules, live leaderboard scoring, invite-link import, and JSON import/export
+- **Tournament Bracket Challenge** — Knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, model-backed AI bracket entries, commissioner scoring rules, live leaderboard scoring, synced room codes, invite-link import, and JSON import/export
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 
 ---
@@ -36,7 +36,7 @@ The May 5, 2026 product roadmap is saved in [`docs/PRODUCT_ROADMAP_2026-05-05.md
 3. Mobile Matchday Polish
 4. Personal Watchlist Expansion
 
-Heavier follow-up work includes global model promotion gates, calibration history, licensed model-vs-market intelligence, and turning local-first tournament bracket challenges into synced multi-user rooms.
+The remaining roadmap is now mostly production hardening: replacing the file-backed sync store with a managed database, connecting native Web Push delivery, and configuring a licensed odds provider key in deployment.
 
 ---
 
@@ -158,6 +158,7 @@ Important caveats from this run:
 - The global model improved the long-term architecture, but the held-out test scores are not high enough to claim guaranteed or betting-grade outcomes. Draws, squad rotation, injuries, and late-season motivation remain hard prediction cases.
 - Any provider-missing field should stay unavailable in the UI rather than being filled with a fabricated placeholder.
 - Market comparison is audit-only: `/api/market-intelligence` removes sportsbook overround from user-supplied odds, compares no-vig implied probabilities to model probabilities, and returns `guarantee: false` plus `betting_advice: false`.
+- Licensed odds ingestion is available at `/api/market-intelligence/live` when `ODDS_API_KEY` or `THE_ODDS_API_KEY` is configured. It uses provider odds for no-vig calibration comparison only and stays disabled rather than scraping or inventing market data when no key is present.
 
 ### Automated Pipeline
 
@@ -361,6 +362,8 @@ npm run build && npm start
 | GET | `/api/recent_results/[league]` | Recent results |
 | GET | `/api/top-scorers/[league]` | Top scorers |
 | GET | `/api/world-cup/readiness` | World Cup model, calibration, diagnostics, and data-integrity status |
+| GET/POST | `/api/bracket-rooms` and `/api/bracket-rooms/[roomCode]` | Server-backed tournament bracket room sync with commissioner PIN-protected writes |
+| GET/POST | `/api/watchlist-alerts` | Server-backed watchlist alert queue sync by code |
 
 ### AI Tracking
 | Method | Route | Description |
@@ -369,12 +372,14 @@ npm run build && npm start
 | GET | `/api/v1/tracking/accuracy/trend` | Rolling accuracy trend |
 | GET | `/api/v1/tracking/predictions` | Paginated prediction history |
 | GET | `/api/v1/tracking/model-info` | Per-league model status, model-selection policy decisions, and quality-gate checks |
+| GET | `/api/v1/tracking/calibration-trend` | Rolling calibration history with ECE, Brier, log-loss, confidence, and accuracy |
 | POST | `/api/v1/tracking/fetch-outcomes` | Trigger ESPN result resolution |
 
 ### Simulation
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/api/simulation/[leagueId]` | Monte Carlo season simulation |
+| GET | `/api/simulation/[leagueId]?what_if_fixture=X&what_if_outcome=home\|draw\|away` | Fixture-level what-if simulation using provider-backed remaining fixtures |
 
 ---
 
@@ -398,6 +403,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - Live win probability is returned and visualized only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
 - Tournament challenge pages can generate a FotPredict AI bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
+- Synced bracket rooms and alert queues use `FOTPREDICT_STORE_DIR` when configured. Without it, local development uses a temp-file store that should be replaced with durable storage before production launch.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 
 ---

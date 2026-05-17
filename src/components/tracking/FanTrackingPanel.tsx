@@ -125,6 +125,10 @@ export default function FanTrackingPanel() {
   const [loadingSnapshot, setLoadingSnapshot] = useState(false)
   const [todayMatches, setTodayMatches] = useState<TodayMatch[]>([])
   const [predictions, setPredictions] = useState<PredictionRow[]>([])
+  const [cloudAlertSyncCode, setCloudAlertSyncCode] = useState('')
+  const [cloudAlertStatus, setCloudAlertStatus] = useState('')
+  const [syncingCloudAlerts, setSyncingCloudAlerts] = useState(false)
+  const [cloudAlerts, setCloudAlerts] = useState<WatchlistAlertItem[]>([])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -327,6 +331,66 @@ export default function FanTrackingPanel() {
     }
     return alerts.slice(0, 8)
   }, [alertSettings, pendingPredictions, upcomingMatches])
+
+  const syncAlertQueue = async () => {
+    setSyncingCloudAlerts(true)
+    try {
+      const response = await fetch('/api/watchlist-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          syncCode: cloudAlertSyncCode,
+          trackedTeams,
+          settings: alertSettings,
+          alerts: watchlistAlerts,
+          sourceDevice: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 80) : 'Browser session',
+        }),
+      })
+      const payload = await response.json()
+      if (!response.ok) {
+        setCloudAlertStatus(payload.error || 'Cloud alert sync failed.')
+        return
+      }
+      setCloudAlertSyncCode(payload.syncCode)
+      setCloudAlerts(payload.alerts || [])
+      setCloudAlertStatus(`Synced ${payload.alerts?.length || 0} active alerts to code ${payload.syncCode}.`)
+    } catch {
+      setCloudAlertStatus('Cloud alert sync failed. Check your connection and try again.')
+    } finally {
+      setSyncingCloudAlerts(false)
+    }
+  }
+
+  const pullAlertQueue = async () => {
+    const syncCode = cloudAlertSyncCode.trim().toUpperCase()
+    if (!syncCode) {
+      setCloudAlertStatus('Enter a sync code before pulling cloud alerts.')
+      return
+    }
+
+    setSyncingCloudAlerts(true)
+    try {
+      const response = await fetch(`/api/watchlist-alerts?syncCode=${encodeURIComponent(syncCode)}`, { cache: 'no-store' })
+      const payload = await response.json()
+      if (!response.ok) {
+        setCloudAlertStatus(payload.error || 'Cloud alert sync code was not found.')
+        return
+      }
+      if (Array.isArray(payload.trackedTeams)) setTrackedTeams(payload.trackedTeams)
+      if (payload.settings) {
+        setAlertSettings({
+          ...DEFAULT_WATCHLIST_ALERT_SETTINGS,
+          ...payload.settings,
+        })
+      }
+      setCloudAlerts(payload.alerts || [])
+      setCloudAlertStatus(`Pulled ${payload.alerts?.length || 0} cloud alerts from ${payload.syncCode}.`)
+    } catch {
+      setCloudAlertStatus('Could not pull cloud alerts. Check the sync code and try again.')
+    } finally {
+      setSyncingCloudAlerts(false)
+    }
+  }
 
   const addTrackedTeam = (team: WatchTeam) => {
     setTrackedTeams((current) => {
@@ -539,6 +603,50 @@ export default function FanTrackingPanel() {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Server Alert Sync</p>
+                  <h5 className="mt-1 text-sm font-bold text-[var(--text-primary)]">Cross-device notification queue</h5>
+                  <p className="mt-1 text-xs leading-5 text-[var(--text-tertiary)]">
+                    Push your current alert rules and active queue to a sync code, then pull the same watchlist from another device.
+                  </p>
+                </div>
+                <div className="grid min-w-full gap-2 sm:min-w-[360px] sm:grid-cols-[1fr_auto_auto]">
+                  <input
+                    value={cloudAlertSyncCode}
+                    onChange={(event) => setCloudAlertSyncCode(event.target.value.toUpperCase())}
+                    placeholder="Sync code"
+                    className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 text-xs uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                  />
+                  <button
+                    onClick={syncAlertQueue}
+                    disabled={syncingCloudAlerts}
+                    className="rounded-lg border border-emerald-500/45 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {syncingCloudAlerts ? 'Syncing' : 'Sync'}
+                  </button>
+                  <button
+                    onClick={pullAlertQueue}
+                    disabled={syncingCloudAlerts}
+                    className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Pull
+                  </button>
+                </div>
+              </div>
+              {(cloudAlertStatus || cloudAlerts.length > 0) && (
+                <div className="mt-3 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2">
+                  {cloudAlertStatus && <p className="text-xs text-[var(--text-secondary)]">{cloudAlertStatus}</p>}
+                  {cloudAlerts.length > 0 && (
+                    <p className="mt-1 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Cloud queue: {cloudAlerts.length} active alert{cloudAlerts.length === 1 ? '' : 's'}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 

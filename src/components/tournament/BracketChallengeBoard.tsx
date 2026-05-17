@@ -295,6 +295,9 @@ export default function BracketChallengeBoard({
   const [entryPicks, setEntryPicks] = useState<Record<string, WinnerPick>>({})
   const [importPayload, setImportPayload] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
+  const [syncRoomCode, setSyncRoomCode] = useState('')
+  const [syncPin, setSyncPin] = useState('')
+  const [syncingRoom, setSyncingRoom] = useState(false)
 
   const scopedGroups = useMemo(
     () => allGroups.filter((group) => group.tournamentId === tournamentId && group.season === season),
@@ -579,6 +582,82 @@ export default function BracketChallengeBoard({
     }
   }
 
+  const syncActiveGroup = async () => {
+    if (!activeGroup) {
+      setStatusMessage('Create or select a challenge group before syncing a room.')
+      return
+    }
+    if (syncPin.trim().length < 4) {
+      setStatusMessage('Enter a 4+ character room PIN before syncing.')
+      return
+    }
+
+    setSyncingRoom(true)
+    try {
+      const response = await fetch('/api/bracket-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomCode: syncRoomCode,
+          ownerPin: syncPin,
+          syncedBy: activeGroup.ownerName,
+          group: activeGroup,
+        }),
+      })
+      const payload = await response.json()
+      if (!response.ok) {
+        setStatusMessage(payload.error || 'Room sync failed.')
+        return
+      }
+
+      const importedGroup = parseChallengeGroupPayload(JSON.stringify(payload.group), tournamentId)
+      const nextGroups = [
+        importedGroup,
+        ...allGroups.filter((existing) => existing.id !== importedGroup.id),
+      ]
+      persistGroups(nextGroups)
+      setActiveGroupId(importedGroup.id)
+      setSyncRoomCode(payload.roomCode || importedGroup.inviteCode)
+      setStatusMessage(`Synced "${importedGroup.name}" to room ${payload.roomCode}.`)
+    } catch {
+      setStatusMessage('Room sync failed. Check your connection and try again.')
+    } finally {
+      setSyncingRoom(false)
+    }
+  }
+
+  const pullSyncedRoom = async () => {
+    const roomCode = syncRoomCode.trim().toUpperCase()
+    if (!roomCode) {
+      setStatusMessage('Enter a room code to pull a synced challenge.')
+      return
+    }
+
+    setSyncingRoom(true)
+    try {
+      const response = await fetch(`/api/bracket-rooms/${encodeURIComponent(roomCode)}`, { cache: 'no-store' })
+      const payload = await response.json()
+      if (!response.ok) {
+        setStatusMessage(payload.error || 'Synced room was not found.')
+        return
+      }
+
+      const importedGroup = parseChallengeGroupPayload(JSON.stringify(payload.group), tournamentId)
+      const nextGroups = [
+        importedGroup,
+        ...allGroups.filter((existing) => existing.id !== importedGroup.id),
+      ]
+      persistGroups(nextGroups)
+      setActiveGroupId(importedGroup.id)
+      setSyncRoomCode(payload.roomCode || importedGroup.inviteCode)
+      setStatusMessage(`Pulled latest room ${payload.roomCode}, last synced by ${payload.lastSyncedBy || 'commissioner'}.`)
+    } catch {
+      setStatusMessage('Could not pull the synced room. Check the room code and try again.')
+    } finally {
+      setSyncingRoom(false)
+    }
+  }
+
   const exportActiveGroup = async () => {
     if (!activeGroup) return
     try {
@@ -746,7 +825,7 @@ export default function BracketChallengeBoard({
             <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Import / Export</p>
               <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-                This release is local-first. Share an invite link or export a challenge group JSON payload to continue the competition on another device or browser.
+                Share an invite link, export JSON, or use synced rooms below to continue the competition on another device or browser.
               </p>
               <div className="mt-3 grid gap-3">
                 <textarea
@@ -776,6 +855,45 @@ export default function BracketChallengeBoard({
                     className="rounded-xl border border-[var(--border-color)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Copy Invite Link
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Synced Room</p>
+              <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">Cross-device bracket room</h3>
+              <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+                Sync the active group to a server-backed room code, then pull it from another browser. The PIN protects commissioner overwrites.
+              </p>
+              <div className="mt-3 grid gap-3">
+                <input
+                  value={syncRoomCode}
+                  onChange={(event) => setSyncRoomCode(event.target.value.toUpperCase())}
+                  placeholder={activeGroup?.inviteCode || 'Room code'}
+                  className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 py-2 text-sm uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                />
+                <input
+                  value={syncPin}
+                  onChange={(event) => setSyncPin(event.target.value)}
+                  placeholder="Commissioner PIN"
+                  type="password"
+                  className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 py-2 text-sm text-[var(--text-primary)]"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={syncActiveGroup}
+                    disabled={!activeGroup || syncingRoom}
+                    className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {syncingRoom ? 'Syncing...' : 'Sync Room'}
+                  </button>
+                  <button
+                    onClick={pullSyncedRoom}
+                    disabled={syncingRoom}
+                    className="rounded-xl border border-[var(--border-color)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Pull Room
                   </button>
                 </div>
               </div>

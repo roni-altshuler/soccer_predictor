@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { leaguesApi, LeagueSimulationResult } from '@/lib/api';
+import { LeagueSimulationResult } from '@/lib/api';
 import { leagueFlagUrls } from '@/data/leagues';
 
 // League options for simulation with flag codes
@@ -23,6 +23,8 @@ export default function SeasonSimulator() {
   const [result, setResult] = useState<LeagueSimulationResult | null>(null);
   const [nSimulations, setNSimulations] = useState(10000);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [whatIfFixtureKey, setWhatIfFixtureKey] = useState('');
+  const [whatIfOutcome, setWhatIfOutcome] = useState<'home' | 'draw' | 'away'>('home');
 
   const runSimulation = async () => {
     if (!selectedLeague) return;
@@ -33,7 +35,12 @@ export default function SeasonSimulator() {
 
     try {
       // Use local API route instead of external backend
-      const response = await fetch(`/api/simulation/${selectedLeague.id}?n_simulations=${nSimulations}`);
+      const params = new URLSearchParams({ n_simulations: String(nSimulations) });
+      if (whatIfFixtureKey) {
+        params.set('what_if_fixture', whatIfFixtureKey);
+        params.set('what_if_outcome', whatIfOutcome);
+      }
+      const response = await fetch(`/api/simulation/${selectedLeague.id}?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to run simulation');
       }
@@ -62,6 +69,7 @@ export default function SeasonSimulator() {
               onClick={() => {
                 setSelectedLeague(league);
                 setResult(null);
+                setWhatIfFixtureKey('');
               }}
               className={`p-4 rounded-xl border transition-all text-center ${
                 selectedLeague?.id === league.id
@@ -124,6 +132,60 @@ export default function SeasonSimulator() {
           Monte Carlo simulation using Bradley-Terry model with team strength derived from current performance
         </p>
       </div>
+
+      {selectedLeague && result?.upcoming_fixtures && result.upcoming_fixtures.length > 0 && (
+        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Fixture What-If Lab</p>
+              <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">Lock one remaining result and rerun the table</h3>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Select a provider-backed upcoming fixture, force the outcome, and compare how title, top-four, and relegation probabilities move.
+              </p>
+            </div>
+            {result.what_if && (
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${result.what_if.applied ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'}`}>
+                {result.what_if.applied ? 'What-if applied' : 'What-if not applied'}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
+            <select
+              value={whatIfFixtureKey}
+              onChange={(event) => setWhatIfFixtureKey(event.target.value)}
+              className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-3 text-sm text-[var(--text-primary)]"
+            >
+              <option value="">Baseline, no locked fixture</option>
+              {result.upcoming_fixtures.map((fixture) => (
+                <option key={fixture.key} value={fixture.key}>
+                  {fixture.home_team} vs {fixture.away_team}{fixture.date ? ` · ${new Date(fixture.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                </option>
+              ))}
+            </select>
+            <select
+              value={whatIfOutcome}
+              onChange={(event) => setWhatIfOutcome(event.target.value as 'home' | 'draw' | 'away')}
+              disabled={!whatIfFixtureKey}
+              className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="home">Home win</option>
+              <option value="draw">Draw</option>
+              <option value="away">Away win</option>
+            </select>
+            <button
+              onClick={runSimulation}
+              disabled={loading || !selectedLeague}
+              className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-5 py-3 text-sm font-bold text-indigo-300 transition-colors hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Rerun What-If
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-[var(--text-tertiary)]">
+            Fixture source: {result.fixture_source || 'Current standings fallback'}
+          </p>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (

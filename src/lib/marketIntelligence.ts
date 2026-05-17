@@ -20,7 +20,7 @@ export interface MarketEdge {
 }
 
 export interface MarketIntelligenceResult {
-  source: 'user_supplied_odds'
+  source: 'user_supplied_odds' | 'licensed_provider_odds'
   guarantee: false
   betting_advice: false
   odds_format: 'decimal'
@@ -51,6 +51,7 @@ function labelEdge(edge?: number): MarketEdge['label'] {
 export function buildMarketIntelligence(
   odds: DecimalThreeWayOdds,
   model?: ModelThreeWayProbabilities | null,
+  source: MarketIntelligenceResult['source'] = 'user_supplied_odds',
 ): MarketIntelligenceResult {
   assertDecimalOdd(odds.home, 'home')
   assertDecimalOdd(odds.draw, 'draw')
@@ -85,7 +86,7 @@ export function buildMarketIntelligence(
   })
 
   return {
-    source: 'user_supplied_odds',
+    source,
     guarantee: false,
     betting_advice: false,
     odds_format: 'decimal',

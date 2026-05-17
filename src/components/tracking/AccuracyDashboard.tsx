@@ -172,6 +172,27 @@ interface TrendData {
   latest_accuracy: number | null
 }
 
+interface CalibrationTrendPoint {
+  index: number
+  date: string
+  sample_size: number
+  accuracy: number
+  avg_confidence: number
+  brier_score: number
+  log_loss: number
+  expected_calibration_error: number
+  overconfidence: number
+  sample_match?: string
+}
+
+interface CalibrationTrendData {
+  window: number
+  step: number
+  data_points: number
+  trend: CalibrationTrendPoint[]
+  latest: CalibrationTrendPoint | null
+}
+
 /* ──────────────────────────────────────────────────────────────────────
    Helpers
    ────────────────────────────────────────────────────────────────────── */
@@ -205,6 +226,7 @@ export default function AccuracyDashboard() {
   const [summary, setSummary] = useState<AccuracySummary | null>(null)
   const [trend, setTrend] = useState<TrendData | null>(null)
   const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null)
+  const [calibrationTrend, setCalibrationTrend] = useState<CalibrationTrendData | null>(null)
   const [loading, setLoading] = useState(true)
   const [trendWindow, setTrendWindow] = useState(10)
   const [fetcherStatus, setFetcherStatus] = useState<FetcherStatusResponse | null>(null)
@@ -213,16 +235,18 @@ export default function AccuracyDashboard() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [summaryRes, trendRes, statusRes, modelRes] = await Promise.all([
+      const [summaryRes, trendRes, statusRes, modelRes, calibrationTrendRes] = await Promise.all([
         fetch('/api/v1/tracking/accuracy/summary'),
         fetch('/api/v1/tracking/accuracy/trend?window=' + trendWindow),
         fetch('/api/v1/tracking/outcome-status'),
         fetch('/api/v1/tracking/model-info'),
+        fetch('/api/v1/tracking/calibration-trend?window=100&step=25'),
       ])
       if (summaryRes.ok) setSummary(await summaryRes.json())
       if (trendRes.ok) setTrend(await trendRes.json())
       if (statusRes.ok) setFetcherStatus(await statusRes.json())
       if (modelRes.ok) setModelInfo(await modelRes.json())
+      if (calibrationTrendRes.ok) setCalibrationTrend(await calibrationTrendRes.json())
     } catch (e) {
       console.error('Failed to fetch accuracy data:', e)
     } finally {
@@ -271,6 +295,8 @@ export default function AccuracyDashboard() {
         <BettingEdgeDesk metrics={m} last30={summary.last_30_days} policy={summary.policy} />
         <CalibrationPanel metrics={m} />
       </div>
+
+      <CalibrationTrendHistory data={calibrationTrend} />
 
       <OutcomeAccuracy metrics={m} />
 
@@ -739,6 +765,78 @@ function CalibrationPanel({ metrics }: { metrics: OverallMetrics }) {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }) {
+  if (!data || data.data_points < 2 || !data.latest) {
+    return (
+      <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Calibration Trend History</p>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          More settled predictions are needed before rolling calibration history can be plotted.
+        </p>
+      </div>
+    )
+  }
+
+  const points = data.trend
+  const W = 600
+  const H = 170
+  const PAD = 34
+  const xFor = (index: number) => PAD + (index / Math.max(1, points.length - 1)) * (W - 2 * PAD)
+  const yFor = (value: number) => PAD + (1 - Math.min(0.25, Math.max(0, value)) / 0.25) * (H - 2 * PAD)
+  const ecePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${xFor(index).toFixed(1)},${yFor(point.expected_calibration_error).toFixed(1)}`).join(' ')
+  const brierPath = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${xFor(index).toFixed(1)},${yFor(point.brier_score / 2).toFixed(1)}`).join(' ')
+  const latest = data.latest
+  const statusColor = latest.expected_calibration_error <= 0.06
+    ? '#22c55e'
+    : latest.expected_calibration_error <= 0.1
+      ? '#f59e0b'
+      : '#ef4444'
+
+  return (
+    <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Calibration Trend History</p>
+          <h3 className="mt-1 text-lg font-black text-[var(--text-primary)]">Rolling reliability drift</h3>
+          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+            Tracks expected calibration error, Brier score, confidence, and hit rate across chronological windows of settled real outcomes.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[460px]">
+          <AuditTile label="Latest ECE" value={latest.expected_calibration_error.toFixed(3)} note={`window ${data.window}`} />
+          <AuditTile label="Brier" value={latest.brier_score.toFixed(3)} note="lower is better" />
+          <AuditTile label="Avg Conf" value={pct(latest.avg_confidence)} note="rolling prior" />
+          <AuditTile label="Accuracy" value={pct(latest.accuracy)} note="same window" />
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rolling calibration error and Brier trend">
+          {[0.05, 0.1, 0.15, 0.2].map((value) => {
+            const y = yFor(value)
+            return (
+              <g key={value}>
+                <line x1={PAD} x2={W - PAD} y1={y} y2={y} stroke="var(--border-color)" strokeDasharray="4 4" />
+                <text x={PAD - 6} y={y + 3} textAnchor="end" fontSize="9" fill="var(--text-tertiary)">{value.toFixed(2)}</text>
+              </g>
+            )
+          })}
+          <path d={brierPath} fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.75} />
+          <path d={ecePath} fill="none" stroke={statusColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          {points.map((point, index) => (
+            <circle key={`${point.index}-${point.date}`} cx={xFor(index)} cy={yFor(point.expected_calibration_error)} r="2.2" fill={statusColor} />
+          ))}
+        </svg>
+        <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />ECE</span>
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-400" />Brier / 2</span>
+          <span>{data.data_points} rolling windows · step {data.step}</span>
+        </div>
+      </div>
     </div>
   )
 }

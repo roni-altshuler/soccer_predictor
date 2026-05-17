@@ -182,6 +182,18 @@ export interface LeagueSimulationResult {
   league_name: string;
   n_simulations: number;
   remaining_matches: number;
+  fixture_source?: string;
+  what_if?: {
+    fixture_key: string;
+    outcome: 'home' | 'draw' | 'away';
+    applied: boolean;
+  } | null;
+  upcoming_fixtures?: Array<{
+    key: string;
+    home_team: string;
+    away_team: string;
+    date: string | null;
+  }>;
   matches_per_season: number;
   most_likely_champion: string;
   champion_probability: number;

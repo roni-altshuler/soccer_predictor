@@ -43,6 +43,17 @@ interface TeamData {
 interface SimulationFixture {
   homeIdx: number
   awayIdx: number
+  key?: string
+  homeTeam?: string
+  awayTeam?: string
+  date?: string
+}
+
+type WhatIfOutcome = 'home' | 'draw' | 'away'
+
+interface FixtureOverride {
+  fixtureKey: string
+  outcome: WhatIfOutcome
 }
 
 interface Standing {
@@ -80,6 +91,7 @@ function runMonteCarloSimulation(
   nSimulations: number,
   leagueId: number,
   remainingFixtures: SimulationFixture[] | null = null,
+  fixtureOverride: FixtureOverride | null = null,
 ): Standing[] {
   const numTeams = teams.length
   if (numTeams === 0) return []
@@ -112,7 +124,13 @@ function runMonteCarloSimulation(
     for (let i = 0; i < numTeams; i++) {
       for (let j = 0; j < numTeams; j++) {
         if (i !== j && remaining[i] > 0 && remaining[j] > 0) {
-          fixtures.push({ homeIdx: i, awayIdx: j })
+          fixtures.push({
+            homeIdx: i,
+            awayIdx: j,
+            key: `generated-${i}-${j}-${fixtures.length}`,
+            homeTeam: teams[i]?.name,
+            awayTeam: teams[j]?.name,
+          })
           remaining[i]--
           remaining[j]--
           if (remaining[i] <= 0) break
@@ -152,6 +170,22 @@ function runMonteCarloSimulation(
 
     for (const fixture of fixtures) {
       const { homeIdx, awayIdx } = fixture
+      if (fixtureOverride && fixture.key === fixtureOverride.fixtureKey) {
+        if (fixtureOverride.outcome === 'home') {
+          simPoints[homeIdx] += 3
+          simGD[homeIdx] += 1
+          simGD[awayIdx] -= 1
+        } else if (fixtureOverride.outcome === 'draw') {
+          simPoints[homeIdx] += 1
+          simPoints[awayIdx] += 1
+        } else {
+          simPoints[awayIdx] += 3
+          simGD[awayIdx] += 1
+          simGD[homeIdx] -= 1
+        }
+        continue
+      }
+
       const homeStr = strengths[homeIdx] * homeFactor
       const awayStr = strengths[awayIdx]
       const total = homeStr + awayStr
@@ -350,7 +384,14 @@ async function fetchRemainingFixtures(
     const key = `${event.id || matchDate.toISOString()}-${homeIdx}-${awayIdx}`
     if (seen.has(key)) continue
     seen.add(key)
-    fixtures.push({ homeIdx, awayIdx })
+    fixtures.push({
+      homeIdx,
+      awayIdx,
+      key,
+      homeTeam: teams[homeIdx]?.name,
+      awayTeam: teams[awayIdx]?.name,
+      date: event.date,
+    })
   }
 
   return fixtures
@@ -367,6 +408,12 @@ export async function GET(
 
   const searchParams = request.nextUrl.searchParams
   const nSimulations = Math.min(50000, Math.max(100, parseInt(searchParams.get('n_simulations') || '10000', 10)))
+  const whatIfFixture = searchParams.get('what_if_fixture') || ''
+  const rawWhatIfOutcome = searchParams.get('what_if_outcome')
+  const whatIfOutcome: WhatIfOutcome | null =
+    rawWhatIfOutcome === 'home' || rawWhatIfOutcome === 'draw' || rawWhatIfOutcome === 'away'
+      ? rawWhatIfOutcome
+      : null
 
   if (!espnLeagueId) {
     return NextResponse.json({ error: 'Invalid league ID' }, { status: 400 })
@@ -428,7 +475,20 @@ export async function GET(
       remainingFixtures = []
     }
 
-    const standings = runMonteCarloSimulation(teams, totalMatchesPerSeason, nSimulations, leagueId, remainingFixtures)
+    const availableFixtures = remainingFixtures.length > 0
+      ? remainingFixtures
+      : []
+    const fixtureOverride = whatIfFixture && whatIfOutcome
+      ? { fixtureKey: whatIfFixture, outcome: whatIfOutcome }
+      : null
+    const standings = runMonteCarloSimulation(
+      teams,
+      totalMatchesPerSeason,
+      nSimulations,
+      leagueId,
+      remainingFixtures,
+      fixtureOverride,
+    )
 
     const generatedRemainingMatches = Math.max(
       0,
@@ -452,6 +512,19 @@ export async function GET(
       fixture_source: remainingFixtures.length > 0
         ? 'ESPN scoreboard remaining fixtures'
         : 'Generated fixture fallback from current ESPN standings',
+      what_if: fixtureOverride
+        ? {
+          fixture_key: fixtureOverride.fixtureKey,
+          outcome: fixtureOverride.outcome,
+          applied: remainingFixtures.some((fixture) => fixture.key === fixtureOverride.fixtureKey),
+        }
+        : null,
+      upcoming_fixtures: availableFixtures.slice(0, 30).map((fixture) => ({
+        key: fixture.key,
+        home_team: fixture.homeTeam || teams[fixture.homeIdx]?.name,
+        away_team: fixture.awayTeam || teams[fixture.awayIdx]?.name,
+        date: fixture.date || null,
+      })),
       matches_per_season: totalMatchesPerSeason,
       most_likely_champion: mostLikelyChampion,
       champion_probability: championProbability,
