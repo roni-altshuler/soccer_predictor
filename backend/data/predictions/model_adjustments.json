@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-17T14:58:33.494360",
+  "generated_at": "2026-05-17T22:52:37.992457",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -330,13 +330,13 @@
     },
     "Premier League": {
       "current": {
-        "avg_goals": 0.8196,
+        "avg_goals": 0.8038,
         "home_adv": 0.05,
         "rho": -0.13,
         "draw_rate": 0.35
       },
       "suggested": {
-        "avg_goals": 0.804,
+        "avg_goals": 0.788,
         "home_adv": 0.05,
         "draw_rate": 0.354,
         "rho": -0.13
@@ -405,13 +405,13 @@
     },
     "Serie A": {
       "current": {
-        "avg_goals": 1.0502,
+        "avg_goals": 1.0431,
         "home_adv": 0.26,
         "rho": -0.14,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.043,
+        "avg_goals": 1.036,
         "home_adv": 0.264,
         "draw_rate": 0.08,
         "rho": -0.14
@@ -420,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 1.811,
+        "avg_goals": 1.8205,
         "home_adv": 0.45,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.82,
+        "avg_goals": 1.83,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.1
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 1.7508,
+        "avg_goals": 1.7574,
         "home_adv": 0.45,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.757,
+        "avg_goals": 1.764,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.12
@@ -450,13 +450,13 @@
     },
     "Europa League": {
       "current": {
-        "avg_goals": 1.0438,
+        "avg_goals": 1.0339,
         "home_adv": 0.45,
         "rho": -0.11,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.034,
+        "avg_goals": 1.024,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.11
