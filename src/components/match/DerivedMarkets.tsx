@@ -32,7 +32,7 @@ export default function DerivedMarkets({ data, homeTeam, awayTeam, onRefresh }: 
     return OVER_UNDER_LINES.map((line) => {
       const row = data.over_under?.[line]
       if (!row) return null
-      return { line, over: clamp01(row.over), under: clamp01(row.under) }
+      return { line: line as string, over: clamp01(row.over), under: clamp01(row.under) }
     }).filter((row): row is { line: string; over: number; under: number } => row !== null)
   }, [data])
 
