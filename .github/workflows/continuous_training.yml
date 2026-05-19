@@ -1,0 +1,98 @@
+name: Continuous Training
+
+on:
+  schedule:
+    # Weekly: Sundays at 04:00 UTC.
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      leagues:
+        description: 'Space-separated league keys (e.g. "eng.1 esp.1"). Leave blank for all.'
+        required: false
+        default: ''
+        type: string
+      force:
+        description: 'Skip the freshness check.'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: continuous-training
+  cancel-in-progress: false
+
+jobs:
+  continuous-training:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run continuous training orchestrator
+        id: orchestrator
+        run: |
+          set +e
+          ARGS="--global-model"
+          if [ -n "${{ github.event.inputs.leagues }}" ]; then
+            ARGS="$ARGS --leagues ${{ github.event.inputs.leagues }}"
+          fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+          echo "Running: python -m backend.scripts.continuous_training $ARGS"
+          python -m backend.scripts.continuous_training $ARGS
+          RC=$?
+          echo "exit_code=$RC" >> "$GITHUB_OUTPUT"
+          exit 0
+        working-directory: ${{ github.workspace }}
+
+      - name: Commit updated artifacts
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage the artifacts the orchestrator produces. Model binaries
+          # under backend/data/models/ are typically gitignored — try anyway.
+          git add backend/data/diagnostics/ || true
+          git add backend/data/training_results.json || true
+          git add backend/data/models/model_selection.json || true
+          git add backend/data/models/ || true
+
+          if git diff --cached --quiet; then
+            echo "No continuous-training artifacts changed"
+          else
+            STATS=$(git diff --cached --stat | tail -1)
+            MSG="chore: continuous training run [automated]"
+            MSG="$MSG"$'\n\n'"Weekly retrain + walk-forward evaluation + drift report."
+            MSG="$MSG"$'\n'"$STATS"
+            git commit -m "$MSG"
+            git push
+          fi
+
+      - name: Fail job on regression
+        if: always()
+        run: |
+          RC="${{ steps.orchestrator.outputs.exit_code }}"
+          echo "Orchestrator exit code: $RC"
+          if [ "$RC" != "0" ]; then
+            echo "::warning::Continuous training detected a regression — see training_drift_<date>.json."
+            exit 1
+          fi

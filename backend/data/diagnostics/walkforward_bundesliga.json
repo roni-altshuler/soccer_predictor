@@ -1,0 +1,118 @@
+{
+  "league": "bundesliga",
+  "generated_at": "2026-05-18T21:09:54.214949Z",
+  "partial": false,
+  "warmup_seasons": 3,
+  "n_test_seasons": 2,
+  "aggregate": {
+    "accuracy_mean": 0.4365,
+    "accuracy_std": 0.0142,
+    "log_loss_mean": 1.2433,
+    "brier_mean": 0.7132,
+    "ece_mean": 0.2026
+  },
+  "seasons": [
+    {
+      "season": "2020_2021",
+      "train_samples": 574,
+      "test_samples": 180,
+      "accuracy": 0.4222,
+      "log_loss": 1.2868,
+      "brier_score": 0.7363,
+      "ece": 0.2381,
+      "class_distribution": {
+        "H": 73,
+        "D": 47,
+        "A": 60
+      },
+      "buckets": [
+        {
+          "bucket": "0.00-0.40",
+          "count": 6,
+          "coverage": 0.0333,
+          "accuracy": 0.1667,
+          "mean_confidence": 0.3833
+        },
+        {
+          "bucket": "0.40-0.50",
+          "count": 25,
+          "coverage": 0.1389,
+          "accuracy": 0.24,
+          "mean_confidence": 0.4494
+        },
+        {
+          "bucket": "0.50-0.60",
+          "count": 44,
+          "coverage": 0.2444,
+          "accuracy": 0.4545,
+          "mean_confidence": 0.5534
+        },
+        {
+          "bucket": "0.60-0.70",
+          "count": 38,
+          "coverage": 0.2111,
+          "accuracy": 0.3158,
+          "mean_confidence": 0.6545
+        },
+        {
+          "bucket": "0.70-1.01",
+          "count": 67,
+          "coverage": 0.3722,
+          "accuracy": 0.5522,
+          "mean_confidence": 0.8373
+        }
+      ]
+    },
+    {
+      "season": "2021_2022",
+      "train_samples": 754,
+      "test_samples": 71,
+      "accuracy": 0.4507,
+      "log_loss": 1.1998,
+      "brier_score": 0.6901,
+      "ece": 0.1672,
+      "class_distribution": {
+        "H": 28,
+        "D": 20,
+        "A": 23
+      },
+      "buckets": [
+        {
+          "bucket": "0.00-0.40",
+          "count": 2,
+          "coverage": 0.0282,
+          "accuracy": 0.5,
+          "mean_confidence": 0.3732
+        },
+        {
+          "bucket": "0.40-0.50",
+          "count": 19,
+          "coverage": 0.2676,
+          "accuracy": 0.3158,
+          "mean_confidence": 0.4454
+        },
+        {
+          "bucket": "0.50-0.60",
+          "count": 18,
+          "coverage": 0.2535,
+          "accuracy": 0.4444,
+          "mean_confidence": 0.549
+        },
+        {
+          "bucket": "0.60-0.70",
+          "count": 10,
+          "coverage": 0.1408,
+          "accuracy": 0.3,
+          "mean_confidence": 0.6625
+        },
+        {
+          "bucket": "0.70-1.01",
+          "count": 22,
+          "coverage": 0.3099,
+          "accuracy": 0.6364,
+          "mean_confidence": 0.802
+        }
+      ]
+    }
+  ]
+}

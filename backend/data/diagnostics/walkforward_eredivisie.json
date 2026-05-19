@@ -1,0 +1,67 @@
+{
+  "league": "eredivisie",
+  "generated_at": "2026-05-18T21:09:57.169878Z",
+  "partial": false,
+  "warmup_seasons": 3,
+  "n_test_seasons": 1,
+  "aggregate": {
+    "accuracy_mean": 0.5103,
+    "accuracy_std": 0.0,
+    "log_loss_mean": 1.3363,
+    "brier_mean": 0.7037,
+    "ece_mean": 0.2019
+  },
+  "seasons": [
+    {
+      "season": "2021_2022",
+      "train_samples": 505,
+      "test_samples": 145,
+      "accuracy": 0.5103,
+      "log_loss": 1.3363,
+      "brier_score": 0.7037,
+      "ece": 0.2019,
+      "class_distribution": {
+        "H": 60,
+        "D": 23,
+        "A": 62
+      },
+      "buckets": [
+        {
+          "bucket": "0.00-0.40",
+          "count": 2,
+          "coverage": 0.0138,
+          "accuracy": 1.0,
+          "mean_confidence": 0.381
+        },
+        {
+          "bucket": "0.40-0.50",
+          "count": 20,
+          "coverage": 0.1379,
+          "accuracy": 0.45,
+          "mean_confidence": 0.4624
+        },
+        {
+          "bucket": "0.50-0.60",
+          "count": 30,
+          "coverage": 0.2069,
+          "accuracy": 0.4333,
+          "mean_confidence": 0.5559
+        },
+        {
+          "bucket": "0.60-0.70",
+          "count": 25,
+          "coverage": 0.1724,
+          "accuracy": 0.56,
+          "mean_confidence": 0.6546
+        },
+        {
+          "bucket": "0.70-1.01",
+          "count": 68,
+          "coverage": 0.469,
+          "accuracy": 0.5294,
+          "mean_confidence": 0.8493
+        }
+      ]
+    }
+  ]
+}

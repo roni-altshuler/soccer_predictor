@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-05-18T21:10:17.938588Z",
+  "leagues": [
+    {
+      "league": "premier_league",
+      "accuracy_mean": 0.4183,
+      "accuracy_std": 0.0051,
+      "log_loss_mean": 1.2012,
+      "brier_mean": 0.7175,
+      "ece_mean": 0.2344,
+      "n_test_seasons": 2
+    },
+    {
+      "league": "la_liga",
+      "accuracy_mean": 0.4893,
+      "accuracy_std": 0.048,
+      "log_loss_mean": 1.1228,
+      "brier_mean": 0.6505,
+      "ece_mean": 0.152,
+      "n_test_seasons": 3
+    },
+    {
+      "league": "bundesliga",
+      "accuracy_mean": 0.4365,
+      "accuracy_std": 0.0142,
+      "log_loss_mean": 1.2433,
+      "brier_mean": 0.7132,
+      "ece_mean": 0.2026,
+      "n_test_seasons": 2
+    },
+    {
+      "league": "serie_a",
+      "accuracy_mean": 0.4006,
+      "accuracy_std": 0.0564,
+      "log_loss_mean": 1.2249,
+      "brier_mean": 0.7192,
+      "ece_mean": 0.2291,
+      "n_test_seasons": 3
+    },
+    {
+      "league": "ligue_1",
+      "accuracy_mean": 0.3588,
+      "accuracy_std": 0.0255,
+      "log_loss_mean": 1.2883,
+      "brier_mean": 0.76,
+      "ece_mean": 0.2387,
+      "n_test_seasons": 2
+    },
+    {
+      "league": "eredivisie",
+      "accuracy_mean": 0.5103,
+      "accuracy_std": 0.0,
+      "log_loss_mean": 1.3363,
+      "brier_mean": 0.7037,
+      "ece_mean": 0.2019,
+      "n_test_seasons": 1
+    },
+    {
+      "league": "primeira_liga",
+      "error": "no_eligible_seasons"
+    },
+    {
+      "league": "mls",
+      "accuracy_mean": 0.33,
+      "accuracy_std": 0.0118,
+      "log_loss_mean": 1.3817,
+      "brier_mean": 0.8178,
+      "ece_mean": 0.2823,
+      "n_test_seasons": 2
+    },
+    {
+      "league": "champions_league",
+      "accuracy_mean": 0.496,
+      "accuracy_std": 0.0438,
+      "log_loss_mean": 1.0895,
+      "brier_mean": 0.6369,
+      "ece_mean": 0.1481,
+      "n_test_seasons": 16
+    },
+    {
+      "league": "europa_league",
+      "accuracy_mean": 0.4225,
+      "accuracy_std": 0.0419,
+      "log_loss_mean": 1.1391,
+      "brier_mean": 0.6768,
+      "ece_mean": 0.1494,
+      "n_test_seasons": 14
+    },
+    {
+      "league": "world_cup",
+      "error": "no_eligible_seasons"
+    },
+    {
+      "league": "euro",
+      "error": "no_eligible_seasons"
+    },
+    {
+      "league": "copa_america",
+      "error": "no_eligible_seasons"
+    }
+  ]
+}
