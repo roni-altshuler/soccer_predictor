@@ -4,8 +4,12 @@ Prediction tracking API endpoints.
 Handles storing predictions, updating outcomes, and retrieving accuracy metrics.
 """
 
+import json
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional, List
 from pydantic import BaseModel
 
 from backend.services.prediction.tracker import (
@@ -14,7 +18,14 @@ from backend.services.prediction.tracker import (
     POLICY_MIN_EDGE,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/tracking", tags=["tracking"])
+
+# Continuous training diagnostics — produced by continuous_training.py.
+_DIAGNOSTICS_DIR = Path(__file__).parent.parent.parent / "data" / "diagnostics"
+_TRAINING_HISTORY_PATH = _DIAGNOSTICS_DIR / "training_history.jsonl"
+_LAST_RUN_PATH = _DIAGNOSTICS_DIR / "last_training_run.json"
 
 
 class StorePredictionRequest(BaseModel):
@@ -328,4 +339,91 @@ async def get_accuracy_summary():
             }
             for p in recent_preds
         ],
+    }
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Continuous-training surfaces — populated by backend.scripts.continuous_training.
+# Light-touch read-only endpoints; UI can wire later.
+# ────────────────────────────────────────────────────────────────────────────
+
+def _read_history_tail(limit: int) -> List[Dict[str, Any]]:
+    """Read the last `limit` JSONL records from training_history.jsonl."""
+    if not _TRAINING_HISTORY_PATH.exists():
+        return []
+    try:
+        with open(_TRAINING_HISTORY_PATH) as f:
+            lines = f.readlines()
+    except OSError as exc:
+        logger.warning("Failed to read %s: %s", _TRAINING_HISTORY_PATH, exc)
+        return []
+
+    tail = lines[-limit:] if limit > 0 else lines
+    out: List[Dict[str, Any]] = []
+    for line in tail:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
+def _latest_drift_report() -> Optional[Dict[str, Any]]:
+    """Return the most recent training_drift_<date>.json blob (or None)."""
+    if not _DIAGNOSTICS_DIR.exists():
+        return None
+    drift_files = sorted(_DIAGNOSTICS_DIR.glob("training_drift_*.json"))
+    if not drift_files:
+        return None
+    try:
+        with open(drift_files[-1]) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("Failed to load latest drift report: %s", exc)
+        return None
+
+
+@router.get("/training/history")
+async def get_training_history(limit: int = Query(12, ge=1, le=200)):
+    """
+    Return the most recent records from training_history.jsonl.
+
+    Each record is one continuous-training run summary:
+    { date, retrained_leagues, n_wins, n_regressions, n_held_back,
+      accuracy_mean_global, ece_mean_global }.
+    """
+    records = _read_history_tail(limit)
+    return {
+        "count": len(records),
+        "limit": limit,
+        "records": records,
+    }
+
+
+@router.get("/training/latest")
+async def get_latest_training_run():
+    """
+    Return the latest continuous-training run record + drift summary.
+
+    Combines last_training_run.json with the most recent training_drift_<date>.json
+    so dashboards can render the current state of the long-running self-improvement loop.
+    """
+    last_run: Dict[str, Any] = {}
+    if _LAST_RUN_PATH.exists():
+        try:
+            with open(_LAST_RUN_PATH) as f:
+                last_run = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("Failed to load last_training_run.json: %s", exc)
+
+    drift = _latest_drift_report()
+    history = _read_history_tail(12)
+
+    return {
+        "last_run": last_run,
+        "latest_drift": drift,
+        "history_tail": history,
     }

@@ -268,6 +268,27 @@ class PredictionService:
             referee_factor=referee_goal_factor if referee_goal_factor != 1.0 else None,
         )
         
+        # Per-league bucketed calibration (optional, gated by buckets file).
+        league_name = (match_context or {}).get("league") if match_context else None
+        if league_name and self._trained_model is not None:
+            try:
+                buckets = getattr(self._trained_model, "calibration_buckets", None)
+                if buckets is None and hasattr(self._trained_model, "_load_calibration_buckets"):
+                    self._trained_model._load_calibration_buckets()
+                    buckets = getattr(self._trained_model, "calibration_buckets", None)
+                if buckets:
+                    raw = np.array([[
+                        prediction["outcome"]["home_win"],
+                        prediction["outcome"]["draw"],
+                        prediction["outcome"]["away_win"],
+                    ]], dtype=np.float64)
+                    adj = self._trained_model.apply_bucket_calibration(raw, league_name)[0]
+                    prediction["outcome"]["home_win"] = round(float(adj[0]), 4)
+                    prediction["outcome"]["draw"] = round(float(adj[1]), 4)
+                    prediction["outcome"]["away_win"] = round(float(adj[2]), 4)
+            except Exception as cal_err:
+                logger.debug(f"Bucket calibration skipped: {cal_err}")
+
         # Apply draw bias from tracker
         draw_bias = tracker_adj.get("draw_bias", 0.0)
         if abs(draw_bias) > 0.001:
@@ -286,6 +307,29 @@ class PredictionService:
             away_win=prediction["outcome"]["away_win"],
             confidence=prediction["outcome"]["confidence"]
         )
+
+        # ── Derived markets (Over/Under, BTTS, Correct Score top-5) ──
+        # Source from the same xG estimates the unified prediction already produced.
+        # All three helpers reuse the Dixon-Coles corrected joint distribution.
+        derived_markets = None
+        try:
+            home_xg_for_markets = float(prediction["goals"]["home_xG"])
+            away_xg_for_markets = float(prediction["goals"]["away_xG"])
+            rho_for_markets = float(getattr(self.hybrid, "rho", -0.13))
+            derived_markets = {
+                "over_under": self.poisson.over_under_probabilities(
+                    home_xg_for_markets, away_xg_for_markets, rho=rho_for_markets,
+                ),
+                "btts": self.poisson.btts_probability(
+                    home_xg_for_markets, away_xg_for_markets, rho=rho_for_markets,
+                ),
+                "correct_score_top5": self.poisson.top_n_scorelines(
+                    home_xg_for_markets, away_xg_for_markets, n=5, rho=rho_for_markets,
+                ),
+            }
+        except Exception as derived_err:
+            logger.debug(f"Derived markets computation skipped: {derived_err}")
+            derived_markets = None
         
         # Build goals prediction
         goals = GoalsPrediction(
@@ -372,6 +416,7 @@ class PredictionService:
             confidence=confidence,
             home_context=home_context,
             away_context=away_context,
+            derived_markets=derived_markets,
             model_version=self.model_version
         )
     
