@@ -10,7 +10,12 @@ import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
+import EventTimeline from '@/components/match/EventTimeline'
+import LiveProbabilityBar from '@/components/match/LiveProbabilityBar'
+import DerivedMarkets from '@/components/match/DerivedMarkets'
+import BettingIntelligence from '@/components/match/BettingIntelligence'
 import DataSourceBadge from '@/components/DataSourceBadge'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import type { LiveWinProbabilityResult, ThreeWayProbabilities } from '@/lib/liveWinProbability'
 
@@ -105,6 +110,11 @@ interface MatchDetails {
     most_likely_score?: string
     model_version?: string
     confidence_band?: 'Low' | 'Medium' | 'High'
+    derived_markets?: {
+      over_under?: Record<string, { over: number; under: number }>
+      btts?: { yes: number; no: number }
+      correct_score_top5?: Array<{ home: number; away: number; probability: number }>
+    } | null
   }
   liveWinProbability?: LiveWinProbabilityResult
   commentary?: { minute: number; text: string }[]
@@ -891,6 +901,17 @@ export default function MatchDetailPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="max-w-4xl mx-auto px-4 pt-3 pb-1">
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            ...(match.league
+              ? [{ label: match.league, href: match.leagueId ? `/leagues/${match.leagueId}` : '/matches' }]
+              : [{ label: 'Leagues', href: '/matches' }]),
+            { label: `${match.home_team} vs ${match.away_team}` },
+          ]}
+        />
+      </div>
       {/* Header */}
       <div style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -1011,8 +1032,19 @@ export default function MatchDetailPage() {
         </div>
       </div>
 
+      {/* Live Win Probability Strip */}
+      <div className="max-w-4xl mx-auto px-4 pt-4">
+        <LiveProbabilityBar
+          matchId={match.id}
+          homeTeam={match.home_team}
+          awayTeam={match.away_team}
+          status={match.status}
+          league={match.leagueId}
+        />
+      </div>
+
       {/* Tabs */}
-      <div className="bg-[var(--background-secondary)] border-b sticky top-16 z-10" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="bg-[var(--background-secondary)] border-b sticky top-16 z-10 mt-4" style={{ borderColor: 'var(--border-color)' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-4 overflow-x-auto justify-center">
             {DETAIL_TABS.map((tab) => (
@@ -1036,6 +1068,15 @@ export default function MatchDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {activeTab === 'summary' && (
           <div className="space-y-6">
+            {/* ── Live Event Timeline ── */}
+            <EventTimeline
+              matchId={match.id}
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
+              status={match.status}
+              league={match.leagueId}
+            />
+
             {/* ── Momentum Chart (FotMob-style) ── */}
             {match.events.length > 0 && (
               <MatchMomentum
@@ -1329,12 +1370,36 @@ export default function MatchDetailPage() {
             </div>
 
             {/* ── Key Match Factors ── */}
-            <KeyMatchFactors 
+            <KeyMatchFactors
               homeTeam={match.home_team}
               awayTeam={match.away_team}
               leagueId={match.leagueId}
               matchDate={match.date}
             />
+
+            {/* ── Derived Markets (Over/Under, BTTS, Correct Score Top 5) ── */}
+            {match.prediction?.derived_markets && (
+              <DerivedMarkets
+                data={match.prediction.derived_markets}
+                homeTeam={match.home_team}
+                awayTeam={match.away_team}
+              />
+            )}
+
+            {/* ── Betting Intelligence (model vs market) ── */}
+            {match.prediction && !isFinished && (
+              <BettingIntelligence
+                matchId={match.id}
+                leagueId={match.leagueId}
+                modelProbs={{
+                  homeWin: match.prediction.home_win,
+                  draw: match.prediction.draw,
+                  awayWin: match.prediction.away_win,
+                }}
+                kickoff={match.date}
+                status={match.status}
+              />
+            )}
 
             {/* ── H2H & Team Form Summary ── */}
             {(match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins > 0 || match.homeStanding || match.awayStanding) && (

@@ -1,5 +1,6 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
 import TournamentHomePage from '@/components/tournament/TournamentHomePage'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 
 type TournamentId = 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup' | 'euro' | 'copa_america'
 
@@ -73,22 +74,40 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
     country: 'Unknown'
   }
   
+  const breadcrumbs = (
+    <div className="max-w-6xl mx-auto px-4 pt-3 pb-1">
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Leagues', href: '/matches' },
+          { label: config.name },
+        ]}
+      />
+    </div>
+  )
+
   // Use TournamentHomePage for tournament competitions (UCL, UEL, World Cup)
   if (config.isTournament && config.tournamentId) {
     return (
-      <TournamentHomePage
-        tournamentId={config.tournamentId}
-        tournamentName={config.name}
-      />
+      <>
+        {breadcrumbs}
+        <TournamentHomePage
+          tournamentId={config.tournamentId}
+          tournamentName={config.name}
+        />
+      </>
     )
   }
-  
+
   return (
-    <LeagueHomePage
-      leagueId={leagueId}
-      leagueName={config.name}
-      country={config.country}
-    />
+    <>
+      {breadcrumbs}
+      <LeagueHomePage
+        leagueId={leagueId}
+        leagueName={config.name}
+        country={config.country}
+      />
+    </>
   )
 }
 

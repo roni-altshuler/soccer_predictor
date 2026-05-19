@@ -122,6 +122,12 @@ interface H2HData {
   recentMatches: H2HMatch[]
 }
 
+export interface DerivedMarkets {
+  over_under?: Record<string, { over: number; under: number }>
+  btts?: { yes: number; no: number }
+  correct_score_top5?: Array<{ home: number; away: number; probability: number }>
+}
+
 interface PredictionData {
   home_win: number
   draw: number
@@ -134,6 +140,7 @@ interface PredictionData {
   most_likely_score?: string
   model_version?: string
   confidence_band?: 'Low' | 'Medium' | 'High'
+  derived_markets?: DerivedMarkets | null
 }
 
 interface ShotMapPoint {
@@ -684,6 +691,11 @@ async function fetchBackendPrediction(homeTeam: string, awayTeam: string, league
       return null
     }
 
+    const derivedMarkets: DerivedMarkets | null =
+      data && typeof data === 'object' && data.derived_markets && typeof data.derived_markets === 'object'
+        ? (data.derived_markets as DerivedMarkets)
+        : null
+
     return {
       home_win: homeWin / 100,
       draw: draw / 100,
@@ -698,6 +710,7 @@ async function fetchBackendPrediction(homeTeam: string, awayTeam: string, league
         : undefined,
       model_version: data.model_used ?? undefined,
       confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
+      derived_markets: derivedMarkets,
     }
   } catch (error) {
     console.error('Backend prediction fetch failed:', error)

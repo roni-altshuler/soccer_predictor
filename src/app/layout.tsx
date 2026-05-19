@@ -4,6 +4,7 @@ import { Sora, Source_Sans_3 } from 'next/font/google'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
+import { StatusBanner } from '@/components/StatusBanner'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
@@ -66,6 +67,7 @@ export default function RootLayout({
       <body className={`${bodyFont.variable} ${headingFont.variable} min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased`}>
         <ThemeProvider>
           <AuthProvider>
+            <StatusBanner />
             <Suspense fallback={null}>
               <PageLoader />
             </Suspense>

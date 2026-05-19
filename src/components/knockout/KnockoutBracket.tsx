@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 /* ==================================================================
    TYPES
@@ -43,12 +43,43 @@ interface SimulationData {
   round_of_16?: TeamProbability[]
 }
 
+export interface BracketPathTeam {
+  team_id?: number | null
+  name: string
+  p_champion: number
+  p_final: number
+  p_semi: number
+  p_quarter: number
+  p_r16: number
+  most_likely_round_reached?: string
+}
+
+export interface BracketPaths {
+  tournament: string
+  generated_at: string
+  n_simulations: number
+  bracket_set: boolean
+  teams: BracketPathTeam[]
+  round_matchups?: unknown
+}
+
 interface KnockoutBracketProps {
   tournament: 'champions_league' | 'europa_league' | 'world_cup' | 'conference_league' | 'euro' | 'copa_america'
   rounds?: BracketRound[]
   simulationData?: SimulationData
   showProbabilities?: boolean
+  probabilities?: BracketPaths
   onMatchClick?: (match: KnockoutMatch) => void
+}
+
+// AI purple — accent color for live probability badges.
+const PROBABILITY_BADGE_COLOR = '#7c3aed'
+
+function pctLabel(p: number): string {
+  if (p <= 0) return '<1%'
+  if (p >= 0.995) return '99%+'
+  if (p < 0.01) return '<1%'
+  return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`
 }
 
 /* ==================================================================
@@ -168,12 +199,16 @@ function BracketMatchCard({
   isTwoLegged,
   mirrored = false,
   onMatchClick,
+  probsLookup,
+  roundProbKey,
 }: {
   tie: Tie
   accent: string
   isTwoLegged: boolean
   mirrored?: boolean
   onMatchClick?: (m: KnockoutMatch) => void
+  probsLookup?: Map<string, BracketPathTeam>
+  roundProbKey?: keyof BracketPathTeam
 }) {
   const first = tie.legs[0]
   const second = tie.legs[1]
@@ -199,32 +234,57 @@ function BracketMatchCard({
     ? (hasResult ? (mirrored ? aggHome : aggAway) : undefined)
     : mirrored ? first.homeScore : first.awayScore
 
-  const TeamRow = ({ name, score, isWinner }: { name: string; score?: number; isWinner: boolean }) => (
-    <div
-      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/[0.04] transition-colors"
-      style={isWinner ? { background: `${accent}18` } : undefined}
-      onClick={() => onMatchClick?.(displayMatch)}
-    >
-      <span
-        className="w-1.5 self-stretch rounded-full"
-        style={{ background: isWinner ? accent : 'transparent' }}
-      />
-      <span className={`text-[11px] flex-1 truncate leading-tight ${
-        isWinner ? 'font-bold text-[var(--text-primary)]'
-        : name === 'TBD' ? 'text-[var(--text-tertiary)] italic'
-        : 'text-[var(--text-secondary)]'
-      }`}>
-        {name || 'TBD'}
-      </span>
-      <span className={`text-[11px] tabular-nums min-w-[16px] text-right font-bold ${
-        isLive ? 'text-red-400'
-        : isWinner ? 'text-[var(--text-primary)]'
-        : 'text-[var(--text-tertiary)]'
-      }`}>
-        {score !== undefined ? score : '-'}
-      </span>
-    </div>
-  )
+  const TeamRow = ({ name, score, isWinner }: { name: string; score?: number; isWinner: boolean }) => {
+    const probTeam = probsLookup?.get(name)
+    const champPct = probTeam ? probTeam.p_champion : undefined
+    const survivalPct = probTeam && roundProbKey ? (probTeam[roundProbKey] as number | undefined) : undefined
+    return (
+      <div
+        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/[0.04] transition-colors"
+        style={isWinner ? { background: `${accent}18` } : undefined}
+        onClick={() => onMatchClick?.(displayMatch)}
+      >
+        <span
+          className="w-1.5 self-stretch rounded-full"
+          style={{ background: isWinner ? accent : 'transparent' }}
+        />
+        <span className={`flex-1 min-w-0 flex items-center gap-1.5`}>
+          <span className={`text-[11px] truncate leading-tight ${
+            isWinner ? 'font-bold text-[var(--text-primary)]'
+            : name === 'TBD' ? 'text-[var(--text-tertiary)] italic'
+            : 'text-[var(--text-secondary)]'
+          }`}>
+            {name || 'TBD'}
+          </span>
+          {champPct !== undefined && name && name !== 'TBD' && (
+            <span
+              className="text-[9px] font-semibold leading-none px-1 py-0.5 rounded-sm shrink-0"
+              style={{ color: PROBABILITY_BADGE_COLOR, background: `${PROBABILITY_BADGE_COLOR}1A` }}
+              title={`Predicted to win the tournament: ${(champPct * 100).toFixed(1)}%`}
+            >
+              {pctLabel(champPct)}
+            </span>
+          )}
+        </span>
+        {survivalPct !== undefined && name && name !== 'TBD' && roundProbKey !== 'p_champion' && (
+          <span
+            className="text-[9px] font-semibold tabular-nums shrink-0"
+            style={{ color: PROBABILITY_BADGE_COLOR, opacity: 0.85 }}
+            title={`Reaches this round: ${(survivalPct * 100).toFixed(1)}%`}
+          >
+            {pctLabel(survivalPct)}
+          </span>
+        )}
+        <span className={`text-[11px] tabular-nums min-w-[16px] text-right font-bold ${
+          isLive ? 'text-red-400'
+          : isWinner ? 'text-[var(--text-primary)]'
+          : 'text-[var(--text-tertiary)]'
+        }`}>
+          {score !== undefined ? score : '-'}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div className={`rounded-xl border overflow-hidden transition-all w-full shadow-sm ${
@@ -250,6 +310,8 @@ function BracketColumn({
   isTwoLegged,
   mirrored = false,
   onMatchClick,
+  probsLookup,
+  roundProbKey,
 }: {
   roundShort: string
   ties: Tie[]
@@ -257,6 +319,8 @@ function BracketColumn({
   isTwoLegged: boolean
   mirrored?: boolean
   onMatchClick?: (m: KnockoutMatch) => void
+  probsLookup?: Map<string, BracketPathTeam>
+  roundProbKey?: keyof BracketPathTeam
 }) {
   return (
     <div className="flex flex-col items-center" style={{ minWidth: 0, flex: '1 1 0' }}>
@@ -270,6 +334,8 @@ function BracketColumn({
               isTwoLegged={isTwoLegged}
               mirrored={mirrored}
               onMatchClick={onMatchClick}
+              probsLookup={probsLookup}
+              roundProbKey={roundProbKey}
             />
           ))
         ) : (
@@ -292,12 +358,14 @@ function TrophyCenter({
   finalTie,
   accent,
   onMatchClick,
+  probsLookup,
 }: {
   config: typeof TOURNAMENT_CONFIG.champions_league
   champion?: TeamProbability
   finalTie?: Tie
   accent: string
   onMatchClick?: (m: KnockoutMatch) => void
+  probsLookup?: Map<string, BracketPathTeam>
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-2" style={{ minWidth: 100 }}>
@@ -316,6 +384,8 @@ function TrophyCenter({
             accent={accent}
             isTwoLegged={false}
             onMatchClick={onMatchClick}
+            probsLookup={probsLookup}
+            roundProbKey="p_final"
           />
         </div>
       )}
@@ -342,12 +412,23 @@ function MobileBracketView({
   roundTies,
   onMatchClick,
   simulationData,
+  probsLookup,
 }: {
   config: typeof TOURNAMENT_CONFIG.champions_league
   roundTies: { name: string; ties: Tie[]; isTwoLegged: boolean; short: string }[]
   onMatchClick?: (m: KnockoutMatch) => void
   simulationData?: SimulationData
+  probsLookup?: Map<string, BracketPathTeam>
 }) {
+  const mobileRoundProbKeyForShort = (short: string): keyof BracketPathTeam | undefined => {
+    switch (short) {
+      case 'R16': return 'p_r16'
+      case 'QF': return 'p_quarter'
+      case 'SF': return 'p_semi'
+      case 'F': return 'p_final'
+      default: return undefined
+    }
+  }
   const [activeIdx, setActiveIdx] = useState(0)
   const current = roundTies[activeIdx] || roundTies[0]
 
@@ -396,6 +477,8 @@ function MobileBracketView({
               accent={config.accent}
               isTwoLegged={current.isTwoLegged}
               onMatchClick={onMatchClick}
+              probsLookup={probsLookup}
+              roundProbKey={mobileRoundProbKeyForShort(current.short)}
             />
           ))}
         </div>
@@ -423,11 +506,53 @@ export default function KnockoutBracket({
   tournament,
   rounds = [],
   simulationData,
-  showProbabilities = false,
+  showProbabilities,
+  probabilities,
   onMatchClick,
 }: KnockoutBracketProps) {
   const config = TOURNAMENT_CONFIG[tournament]
   const displayRounds = rounds.length > 0 ? rounds : []
+
+  // Default `showProbabilities` to true for the World Cup, false otherwise —
+  // until other tournaments have a bracket-paths endpoint, keep them off.
+  const probsEnabled = showProbabilities ?? (tournament === 'world_cup')
+
+  // Optionally fetch live bracket paths if the caller did not pass them in
+  // (SSR is welcome to pre-populate via the `probabilities` prop).
+  const [fetchedProbs, setFetchedProbs] = useState<BracketPaths | undefined>(undefined)
+  useEffect(() => {
+    if (!probsEnabled || probabilities || tournament !== 'world_cup') return
+    let cancelled = false
+    fetch('/api/world-cup/bracket/paths')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (!cancelled && data && Array.isArray(data.teams)) {
+          setFetchedProbs(data as BracketPaths)
+        }
+      })
+      .catch(() => { /* swallow — probability badges are optional */ })
+    return () => {
+      cancelled = true
+    }
+  }, [probsEnabled, probabilities, tournament])
+
+  const activeProbs = probabilities ?? fetchedProbs
+  const probsLookup = useMemo<Map<string, BracketPathTeam> | undefined>(() => {
+    if (!probsEnabled || !activeProbs?.teams) return undefined
+    const map = new Map<string, BracketPathTeam>()
+    for (const t of activeProbs.teams) map.set(t.name, t)
+    return map
+  }, [probsEnabled, activeProbs])
+
+  const roundProbKeyForShort = (short: string): keyof BracketPathTeam | undefined => {
+    switch (short) {
+      case 'R16': return 'p_r16'
+      case 'QF': return 'p_quarter'
+      case 'SF': return 'p_semi'
+      case 'F': return 'p_final'
+      default: return undefined
+    }
+  }
 
   const roundTies = useMemo(() =>
     displayRounds.map((r, idx) => ({
@@ -509,6 +634,8 @@ export default function KnockoutBracket({
             accent={config.accent}
             isTwoLegged={r.isTwoLegged}
             onMatchClick={onMatchClick}
+            probsLookup={probsLookup}
+            roundProbKey={roundProbKeyForShort(r.short)}
           />
         ))}
 
@@ -519,6 +646,7 @@ export default function KnockoutBracket({
           finalTie={finalTie}
           accent={config.accent}
           onMatchClick={onMatchClick}
+          probsLookup={probsLookup}
         />
 
         {/* RIGHT SIDE - mirrored, reversed order */}
@@ -531,6 +659,8 @@ export default function KnockoutBracket({
             isTwoLegged={r.isTwoLegged}
             mirrored={true}
             onMatchClick={onMatchClick}
+            probsLookup={probsLookup}
+            roundProbKey={roundProbKeyForShort(r.short)}
           />
         ))}
       </div>
@@ -542,6 +672,7 @@ export default function KnockoutBracket({
           roundTies={roundTies}
           onMatchClick={onMatchClick}
           simulationData={simulationData}
+          probsLookup={probsLookup}
         />
       </div>
 
@@ -561,3 +692,4 @@ export default function KnockoutBracket({
 }
 
 export type { SimulationData, TeamProbability }
+// BracketPaths / BracketPathTeam are exported above via `export interface`.

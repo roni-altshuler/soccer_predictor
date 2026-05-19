@@ -11,6 +11,8 @@ import {
 } from '@/lib/watchlist'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
+import FeaturedMatchHero, { type FeaturedMatchHeroProps } from '@/components/home/FeaturedMatchHero'
+import NewsStrip from '@/components/home/NewsStrip'
 
 type TodayMatch = {
   id?: string
@@ -260,17 +262,188 @@ function QuickLeagues() {
   )
 }
 
-/* ── Live Indicator Bar ── */
+/* ── Live Indicator Bar (sticky just below navbar) ── */
 function LiveBar({ liveCount }: { liveCount: number }) {
   if (liveCount === 0) return null
   return (
-    <div className="flex items-center justify-center gap-2 py-2 bg-[var(--live-bg)] border-b border-[var(--live-border)]">
+    <div
+      className="sticky top-12 md:top-[62px] z-30 flex items-center justify-center gap-2 py-1.5 bg-[var(--live-bg)] border-b border-[var(--live-border)] backdrop-blur-md"
+    >
       <span className="relative flex h-2 w-2">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
       </span>
-      <span className="text-xs font-bold text-red-500 uppercase tracking-wider">{liveCount} Live</span>
+      <span className="text-[11px] font-bold text-red-500 uppercase tracking-wider">
+        {liveCount} {liveCount === 1 ? 'match' : 'matches'} live now
+      </span>
     </div>
+  )
+}
+
+/* ── Featured-match selection helpers ── */
+const PRIORITY_LIVE_LEAGUES = new Set([
+  'UEFA Champions League',
+  'Champions League',
+  'UEFA Europa League',
+  'Europa League',
+  'Premier League',
+])
+
+const WORLD_CUP_LEAGUE_NAMES = new Set([
+  'FIFA World Cup 2026',
+  'FIFA World Cup',
+  'World Cup',
+])
+
+function toIsoKickoff(t?: string): string {
+  if (!t) return new Date().toISOString()
+  try {
+    return new Date(t).toISOString()
+  } catch {
+    return new Date().toISOString()
+  }
+}
+
+function buildHeroMatch(m: TodayMatch, status: 'pre' | 'live' | 'final'): FeaturedMatchHeroProps['match'] {
+  const score =
+    status !== 'pre' &&
+    typeof m.home_score === 'number' &&
+    typeof m.away_score === 'number'
+      ? { home: m.home_score, away: m.away_score }
+      : undefined
+  return {
+    matchId: m.id || `${m.home_team}-${m.away_team}`,
+    leagueId: m.leagueId || '',
+    leagueName: m.league || 'Match',
+    homeTeam: { id: m.home_team, name: m.home_team },
+    awayTeam: { id: m.away_team, name: m.away_team },
+    kickoff: toIsoKickoff(m.time),
+    status,
+    score,
+    venue: m.venue,
+    liveMinute: m.minute,
+  }
+}
+
+function selectFeaturedMatch(
+  live: TodayMatch[],
+  upcoming: TodayMatch[],
+  trackedNameSet: Set<string>,
+): FeaturedMatchHeroProps['match'] | null {
+  // 1. Live match involving a tracked team
+  const liveTracked = live.find(
+    (m) =>
+      teamMatchesWatchlist(m.home_team, trackedNameSet) ||
+      teamMatchesWatchlist(m.away_team, trackedNameSet),
+  )
+  if (liveTracked) return buildHeroMatch(liveTracked, 'live')
+
+  // 2. Live match in Champions/Europa/Premier League
+  const livePriority = live.find((m) => PRIORITY_LIVE_LEAGUES.has(m.league))
+  if (livePriority) return buildHeroMatch(livePriority, 'live')
+
+  // Any live match falls back into later tiers if confidence/WC don't match
+  const now = Date.now()
+  const sixHours = 6 * 60 * 60 * 1000
+  const twentyFourHours = 24 * 60 * 60 * 1000
+
+  // 3. Highest-AI-confidence upcoming match in next 6h
+  //    Without per-match prediction calls here, proxy "confidence" by priority league weight.
+  const within6h = upcoming
+    .map((m) => {
+      const k = m.time ? new Date(m.time).getTime() : NaN
+      return { m, k }
+    })
+    .filter(({ k }) => Number.isFinite(k) && k - now <= sixHours && k - now >= -10 * 60 * 1000)
+
+  if (within6h.length > 0) {
+    const leagueWeight = (name: string): number => {
+      if (PRIORITY_LIVE_LEAGUES.has(name)) return 3
+      if (
+        name === 'La Liga' ||
+        name === 'Serie A' ||
+        name === 'Bundesliga' ||
+        name === 'Ligue 1'
+      )
+        return 2
+      return 1
+    }
+    within6h.sort((a, b) => {
+      const wd = leagueWeight(b.m.league) - leagueWeight(a.m.league)
+      if (wd !== 0) return wd
+      return a.k - b.k
+    })
+    return buildHeroMatch(within6h[0].m, 'pre')
+  }
+
+  // 4. Next World Cup match within 24h
+  const nextWc = upcoming
+    .filter((m) => WORLD_CUP_LEAGUE_NAMES.has(m.league))
+    .map((m) => ({ m, k: m.time ? new Date(m.time).getTime() : NaN }))
+    .filter(({ k }) => Number.isFinite(k) && k - now <= twentyFourHours && k - now >= 0)
+    .sort((a, b) => a.k - b.k)
+  if (nextWc.length > 0) return buildHeroMatch(nextWc[0].m, 'pre')
+
+  // Live fallback (any live match) before falling back to next upcoming
+  if (live.length > 0) return buildHeroMatch(live[0], 'live')
+
+  // 5. First upcoming match of the day
+  const nextUp = [...upcoming]
+    .map((m) => ({ m, k: m.time ? new Date(m.time).getTime() : NaN }))
+    .filter(({ k }) => Number.isFinite(k))
+    .sort((a, b) => a.k - b.k)
+  if (nextUp.length > 0) return buildHeroMatch(nextUp[0].m, 'pre')
+
+  return null
+}
+
+/* ── Fallback hero pointing to WC when nothing is scheduled ── */
+function FeaturedFallbackHero() {
+  return (
+    <section className="px-3 md:px-4 pt-3">
+      <Link
+        href="/leagues/fifa.world"
+        className="fm-hero block group focus:outline-none"
+      >
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] min-h-[260px] md:min-h-[300px]">
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(circle at 18% 22%, rgba(27, 214, 108, 0.28), transparent 55%), radial-gradient(circle at 82% 80%, rgba(33, 183, 255, 0.28), transparent 55%), linear-gradient(160deg, color-mix(in srgb, var(--card-bg) 88%, white 6%), var(--card-bg))',
+            }}
+          />
+          <div className="relative p-5 md:p-6 flex flex-col gap-3">
+            <span className="inline-flex items-center self-start gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-ai)]/15 border border-[var(--accent-ai)]/30 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-ai)]">
+              World Cup 2026 · Featured
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] leading-tight">
+              No live matches yet. The World Cup is around the corner.
+            </h2>
+            <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-prose">
+              Track group stage fixtures, AI win probabilities, and bracket scenarios as soon as the schedule drops.
+            </p>
+            <div>
+              <span
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-[#04120a] shadow-lg"
+                style={{
+                  background:
+                    'linear-gradient(160deg, var(--accent-secondary), var(--accent-primary))',
+                  boxShadow:
+                    '0 8px 18px color-mix(in srgb, var(--surface-glow) 80%, transparent)',
+                }}
+              >
+                Open World Cup hub
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </section>
   )
 }
 
@@ -418,13 +591,50 @@ export default function Home() {
   const totalCount = live.length + upcoming.length + completed.length
   const trackedCount = trackedMatchesByTab.length
   const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
+  const isToday = dateOptions.find((d) => d.date === selectedDate)?.isToday ?? false
+
+  const featuredMatch = useMemo(() => {
+    if (!isToday) return null
+    return selectFeaturedMatch(live, upcoming, trackedNameSet)
+  }, [isToday, live, upcoming, trackedNameSet])
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      {/* Live indicator */}
+      {/* 1. Sticky live ticker — shown only when there are live matches */}
       <LiveBar liveCount={live.length} />
 
-      {/* At-a-glance summary */}
+      {/* 2. Featured match hero (only for today's view) */}
+      <div className="max-w-3xl mx-auto">
+        {isToday && (
+          loading && !featuredMatch ? (
+            <FeaturedFallbackHero />
+          ) : featuredMatch ? (
+            <FeaturedMatchHero match={featuredMatch} />
+          ) : (
+            <FeaturedFallbackHero />
+          )
+        )}
+      </div>
+
+      {/* 3. News strip */}
+      <div className="max-w-3xl mx-auto">
+        <NewsStrip />
+      </div>
+
+      {/* 4. World Cup countdown (kept) */}
+      <WorldCupCountdown />
+
+      {/* 5. Quick leagues row (kept, promoted above-the-fold) */}
+      <div className="max-w-3xl mx-auto">
+        <QuickLeagues />
+      </div>
+
+      {/* 6. AI prediction banner (kept) */}
+      <div className="max-w-3xl mx-auto">
+        <AIPredictionBanner />
+      </div>
+
+      {/* At-a-glance summary (kept) */}
       <AtAGlance
         liveCount={live.length}
         upcomingCount={upcoming.length}
@@ -432,10 +642,14 @@ export default function Home() {
         selectedDateLabel={selectedDateLabel}
       />
 
-      <WorldCupCountdown />
-
-      {/* Date Selector — FotMob horizontal scroll */}
-      <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">
+      {/* Date Selector — FotMob horizontal scroll (offset when live ticker is sticky) */}
+      <div
+        className={`sticky z-20 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md ${
+          live.length > 0
+            ? 'top-[78px] md:top-[92px]'
+            : 'top-12 md:top-[62px]'
+        }`}
+      >
         <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1 max-w-3xl mx-auto" style={{ scrollbarWidth: 'none' }}>
           {dateOptions.map((opt) => (
             <button
@@ -532,12 +746,6 @@ export default function Home() {
             <p className="text-xs text-[var(--text-tertiary)] mt-1">Try selecting a different date</p>
           </div>
         )}
-
-        {/* AI Prediction Banner — between matches and leagues */}
-        <AIPredictionBanner />
-
-        {/* Quick Leagues */}
-        <QuickLeagues />
 
         {/* Model info stripe */}
         <div className="mx-4 mt-2 p-3 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-[var(--shadow-sm)]">

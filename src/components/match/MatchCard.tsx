@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 interface FormResult {
   result: 'W' | 'D' | 'L';
@@ -146,9 +147,19 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
         <div className="flex items-center justify-between">
           {/* Home Team */}
           <div className="flex-1 text-right pr-4 space-y-1">
-            <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
-              {match.home.shortName || match.home.name}
-            </span>
+            {match.home.id ? (
+              <Link
+                href={`/teams/${match.home.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-[var(--text-primary)] text-sm md:text-base block hover:underline"
+              >
+                {match.home.shortName || match.home.name}
+              </Link>
+            ) : (
+              <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
+                {match.home.shortName || match.home.name}
+              </span>
+            )}
             {showExtras && hasHomeForm && homeForm && (
               <FormBadges form={homeForm} align="right" />
             )}
@@ -185,9 +196,19 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
           
           {/* Away Team */}
           <div className="flex-1 text-left pl-4 space-y-1">
-            <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
-              {match.away.shortName || match.away.name}
-            </span>
+            {match.away.id ? (
+              <Link
+                href={`/teams/${match.away.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-[var(--text-primary)] text-sm md:text-base block hover:underline"
+              >
+                {match.away.shortName || match.away.name}
+              </Link>
+            ) : (
+              <span className="font-medium text-[var(--text-primary)] text-sm md:text-base block">
+                {match.away.shortName || match.away.name}
+              </span>
+            )}
             {showExtras && hasAwayForm && awayForm && (
               <FormBadges form={awayForm} align="left" />
             )}

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 interface StandingsTableProps {
   standings: Array<{
@@ -89,9 +90,18 @@ export default function StandingsTable({ standings, highlightTeams = [], leagueN
                         className="w-6 h-6 object-contain"
                       />
                     )}
-                    <span className="font-medium text-gray-900 dark:text-white text-sm">
-                      {row.team_name}
-                    </span>
+                    {row.team_id ? (
+                      <Link
+                        href={`/teams/${row.team_id}`}
+                        className="font-medium text-gray-900 dark:text-white text-sm hover:underline"
+                      >
+                        {row.team_name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-gray-900 dark:text-white text-sm">
+                        {row.team_name}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">{row.played}</td>
