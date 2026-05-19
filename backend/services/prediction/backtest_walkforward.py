@@ -1,10 +1,34 @@
 """
 Walk-forward backtesting harness for the match prediction ensemble.
 
-Unlike the in-training TimeSeriesSplit audit (which slices by sample count),
-this harness splits by *season boundary*: for each test season T, the model
-trains on every match strictly before T and evaluates on every match in T.
-That mirrors the real deployment regime and surfaces season-to-season drift.
+Three evaluation modes:
+
+1. Default (per-fold re-train, full ensemble).
+   For each test season T: train the production-equivalent VotingClassifier
+   on every match strictly before T, evaluate on every match in T. True
+   walk-forward — no lookahead. Slow (~minutes/league).
+
+2. --fast (per-fold re-train, single LightGBM).
+   Same season-rolling split, but trains one LightGBM per fold instead of
+   the 4-model voting ensemble. ~10-20x faster; signal is comparable
+   accuracy and slightly higher log-loss vs the full ensemble. Useful for
+   quick baseline sweeps.
+
+3. --load-production (no re-train, evaluate saved artifacts).
+   Loads each league's saved match_predictor.pkl + scaler + calibration
+   buckets from backend/data/models/<espn_slug>/ and evaluates per season
+   WITHOUT retraining. Measures the actual deployed model's confidence
+   distribution and calibration on real matches.
+
+   WARNING: this mode has *lookahead leakage* — the saved model was
+   trained on all available history, including seasons it is now being
+   asked to predict. Per-season accuracy will be optimistic. The value
+   is in observing how the production model's *calibration* (ECE) and
+   confidence distribution look on real seasons, NOT in claiming
+   prediction accuracy.
+
+   For an honest production-ensemble walk-forward, use the default mode
+   (no --fast, no --load-production) and accept the longer runtime.
 
 Output (per league):
     backend/data/diagnostics/walkforward_<league>.json
@@ -13,12 +37,20 @@ Each report contains, per test season:
     - accuracy, log_loss, brier_score, ECE (10-bin)
     - per-confidence-bucket accuracy and coverage
     - train_samples / test_samples / class distribution
-And aggregate means across all reported seasons.
+And aggregate means across all reported seasons. The top-level report
+includes an `eval_mode` field: "fresh_full_ensemble" | "fresh_fast_lgbm"
+| "saved_production_artifacts".
 
 CLI:
-    python -m backend.services.prediction.backtest_walkforward \
-        --league premier_league --warmup-seasons 3
+    # True walk-forward, full ensemble per fold (slow, no leakage)
     python -m backend.services.prediction.backtest_walkforward --all
+
+    # Fast baseline (single LightGBM per fold, no leakage)
+    python -m backend.services.prediction.backtest_walkforward --all --fast
+
+    # Evaluate saved production artifacts (no re-train, has leakage)
+    python -m backend.services.prediction.backtest_walkforward --all \\
+        --load-production
 """
 
 from __future__ import annotations
@@ -39,7 +71,7 @@ from .historical_data import (
     ESPN_LEAGUES,
     HISTORICAL_DATA_DIR,
 )
-from .training import FeatureBuilder, ModelTrainer, HAS_LIGHTGBM, HAS_XGBOOST
+from .training import FeatureBuilder, ModelTrainer, HAS_LIGHTGBM, HAS_XGBOOST, MODEL_DIR
 
 try:
     from lightgbm import LGBMClassifier  # type: ignore
@@ -230,6 +262,28 @@ def _build_fast_model(class_weights: Dict[int, float]):
     )
 
 
+def _load_production_model(league: str) -> Optional[ModelTrainer]:
+    """Load the production ModelTrainer for a league key.
+
+    Translates the friendly league key (e.g. ``premier_league``) to the
+    ESPN slug used as the model-dir name (e.g. ``eng.1``) via the
+    ``ESPN_LEAGUES`` table. Returns ``None`` if no saved artifact exists.
+    """
+    espn_slug = ESPN_LEAGUES.get(league)
+    if not espn_slug:
+        logger.warning("no ESPN slug mapped for league=%s; cannot load production artifacts", league)
+        return None
+    league_dir = MODEL_DIR / espn_slug
+    if not league_dir.exists():
+        logger.warning("no model dir at %s; cannot load production artifacts", league_dir)
+        return None
+    trainer = ModelTrainer(model_dir=league_dir)
+    if not trainer.load_model(name="match_predictor"):
+        logger.warning("ModelTrainer.load_model returned False for %s", league_dir)
+        return None
+    return trainer
+
+
 def backtest_league(
     league: str,
     warmup_seasons: int = 3,
@@ -237,6 +291,7 @@ def backtest_league(
     min_test_samples: int = 60,
     fast: bool = False,
     incremental_write: bool = True,
+    load_production: bool = False,
 ) -> Dict[str, Any]:
     """Run the full walk-forward backtest for a single league."""
     matches = _load_matches_with_season(league)
@@ -260,7 +315,28 @@ def backtest_league(
     seasons_arr = np.array(seasons)
     reports: List[SeasonReport] = []
 
+    if fast and load_production:
+        raise ValueError("--fast and --load-production are mutually exclusive; pick one mode.")
+
+    if load_production:
+        eval_mode = "saved_production_artifacts"
+    elif fast:
+        eval_mode = "fresh_fast_lgbm"
+    else:
+        eval_mode = "fresh_full_ensemble"
+
     trainer = ModelTrainer()
+    production_trainer: Optional[ModelTrainer] = None
+    espn_slug = ESPN_LEAGUES.get(league)
+    if load_production:
+        production_trainer = _load_production_model(league)
+        if production_trainer is None:
+            return {
+                "league": league,
+                "error": "production_artifacts_unavailable",
+                "eval_mode": eval_mode,
+                "note": "No saved match_predictor.pkl found for this league; run train_models first.",
+            }
 
     for test_season in season_order[warmup_seasons:]:
         train_mask = seasons_arr < test_season  # lexicographic on YYYY_YYYY works
@@ -269,30 +345,48 @@ def backtest_league(
         X_train, y_train = X[train_mask], y[train_mask]
         X_test, y_test = X[test_mask], y[test_mask]
 
-        if len(X_train) < min_train_samples or len(X_test) < min_test_samples:
+        # In production-load mode the model is already trained; ignore the
+        # train-size threshold (history is informational only).
+        effective_min_train = 0 if load_production else min_train_samples
+        if len(X_train) < effective_min_train or len(X_test) < min_test_samples:
             logger.info("  skip season=%s (train=%d test=%d)",
                         test_season, len(X_train), len(X_test))
             continue
-        if len(np.unique(y_train)) < 3 or len(np.unique(y_test)) < 2:
+        if not load_production and len(np.unique(y_train)) < 3:
+            continue
+        if len(np.unique(y_test)) < 2:
             continue
 
-        scaler = StandardScaler()
-        X_train_s = scaler.fit_transform(X_train)
-        X_test_s = scaler.transform(X_test)
-
-        class_weights = ModelTrainer.compute_class_weights(y_train)
-        if fast:
-            model = _build_fast_model(class_weights)
+        if load_production:
+            # Use the saved production model directly. The trainer's
+            # predict_proba handles scaler.transform + bucket calibration.
+            assert production_trainer is not None
+            try:
+                proba = ModelTrainer._normalize_probabilities(
+                    production_trainer.predict_proba(X_test, league=espn_slug)
+                )
+            except Exception as exc:
+                logger.warning("  season=%s production predict_proba failed: %s", test_season, exc)
+                continue
         else:
-            model = trainer._build_ensemble(class_weights)
-        sample_weights = np.array([class_weights[int(label)] for label in y_train], dtype=np.float64)
+            scaler = StandardScaler()
+            X_train_s = scaler.fit_transform(X_train)
+            X_test_s = scaler.transform(X_test)
 
-        try:
-            model.fit(X_train_s, y_train, sample_weight=sample_weights)
-        except TypeError:
-            model.fit(X_train_s, y_train)
+            class_weights = ModelTrainer.compute_class_weights(y_train)
+            if fast:
+                model = _build_fast_model(class_weights)
+            else:
+                model = trainer._build_ensemble(class_weights, n_samples=len(X_train_s))
+            sample_weights = np.array([class_weights[int(label)] for label in y_train], dtype=np.float64)
 
-        proba = ModelTrainer._normalize_probabilities(model.predict_proba(X_test_s))
+            try:
+                model.fit(X_train_s, y_train, sample_weight=sample_weights)
+            except TypeError:
+                model.fit(X_train_s, y_train)
+
+            proba = ModelTrainer._normalize_probabilities(model.predict_proba(X_test_s))
+
         pred = np.argmax(proba, axis=1)
 
         acc = float(accuracy_score(y_test, pred))
@@ -317,18 +411,18 @@ def backtest_league(
         )
         reports.append(report)
         logger.info(
-            "  season=%s acc=%.4f log_loss=%.4f brier=%.4f ece=%.4f (n_train=%d n_test=%d)",
-            test_season, acc, ll, brier, ece, len(X_train), len(X_test),
+            "  season=%s acc=%.4f log_loss=%.4f brier=%.4f ece=%.4f (n_train=%d n_test=%d) [%s]",
+            test_season, acc, ll, brier, ece, len(X_train), len(X_test), eval_mode,
         )
 
         if incremental_write:
-            partial = _build_league_report(league, warmup_seasons, reports, partial=True)
+            partial = _build_league_report(league, warmup_seasons, reports, partial=True, eval_mode=eval_mode)
             write_report(league, partial)
 
     if not reports:
-        return {"league": league, "error": "no_eligible_seasons", "seasons": []}
+        return {"league": league, "error": "no_eligible_seasons", "seasons": [], "eval_mode": eval_mode}
 
-    return _build_league_report(league, warmup_seasons, reports, partial=False)
+    return _build_league_report(league, warmup_seasons, reports, partial=False, eval_mode=eval_mode)
 
 
 def _build_league_report(
@@ -336,15 +430,26 @@ def _build_league_report(
     warmup_seasons: int,
     reports: List[SeasonReport],
     partial: bool,
+    eval_mode: str = "fresh_fast_lgbm",
 ) -> Dict[str, Any]:
     accs = [r.accuracy for r in reports]
     lls = [r.log_loss for r in reports]
     briers = [r.brier_score for r in reports]
     eces = [r.ece for r in reports]
+    leakage_note = (
+        "WARNING: this report was produced with --load-production. The saved "
+        "model was trained on all available history including the test seasons "
+        "below, so per-season accuracy is optimistic and not a true generalization "
+        "measurement. Use the ECE, Brier, and confidence-bucket coverage as the "
+        "calibration signal; ignore the raw accuracy."
+        if eval_mode == "saved_production_artifacts" else None
+    )
     return {
         "league": league,
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "partial": partial,
+        "eval_mode": eval_mode,
+        "leakage_warning": leakage_note,
         "warmup_seasons": warmup_seasons,
         "n_test_seasons": len(reports),
         "aggregate": {
@@ -376,6 +481,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--min-test-samples", type=int, default=60)
     parser.add_argument("--fast", action="store_true",
                         help="use a single fast model (LightGBM) instead of the full production ensemble")
+    parser.add_argument("--load-production", action="store_true",
+                        help="evaluate the saved production model (no re-train). "
+                             "WARNING: introduces lookahead leakage since the saved model "
+                             "was trained on all available history. Use ECE / Brier / "
+                             "confidence-bucket coverage as the signal, not raw accuracy. "
+                             "Mutually exclusive with --fast.")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -400,21 +511,36 @@ def main(argv: Optional[List[str]] = None) -> int:
             min_train_samples=args.min_train_samples,
             min_test_samples=args.min_test_samples,
             fast=args.fast,
+            load_production=args.load_production,
         )
         path = write_report(lg, report)
         logger.info("wrote %s", path)
         if "aggregate" in report:
             summary.append({"league": lg, **report["aggregate"],
-                            "n_test_seasons": report["n_test_seasons"]})
+                            "n_test_seasons": report["n_test_seasons"],
+                            "eval_mode": report.get("eval_mode")})
         else:
-            summary.append({"league": lg, "error": report.get("error")})
+            summary.append({"league": lg, "error": report.get("error"),
+                            "eval_mode": report.get("eval_mode")})
 
     if summary:
+        if args.load_production:
+            eval_mode_summary = "saved_production_artifacts"
+        elif args.fast:
+            eval_mode_summary = "fresh_fast_lgbm"
+        else:
+            eval_mode_summary = "fresh_full_ensemble"
         summary_path = DIAGNOSTICS_DIR / "walkforward_summary.json"
         with open(summary_path, "w") as f:
             json.dump({"generated_at": datetime.utcnow().isoformat() + "Z",
+                       "eval_mode": eval_mode_summary,
+                       "leakage_warning": (
+                           "Per-season accuracy is optimistic in this mode — the saved "
+                           "model was trained on all available history including the test "
+                           "seasons. Use ECE / Brier as the calibration signal."
+                       ) if eval_mode_summary == "saved_production_artifacts" else None,
                        "leagues": summary}, f, indent=2)
-        logger.info("wrote summary -> %s", summary_path)
+        logger.info("wrote summary -> %s (mode=%s)", summary_path, eval_mode_summary)
 
     return 0
 

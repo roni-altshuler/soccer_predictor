@@ -910,7 +910,7 @@ class ModelTrainer:
             X_train_fold = scaler_fold.fit_transform(X[train_idx])
             X_val_fold = scaler_fold.transform(X[val_idx])
 
-            fold_model = self._build_ensemble(class_weights)
+            fold_model = self._build_ensemble(class_weights, n_samples=len(train_idx))
             fold_weights = np.array([class_weights[int(label)] for label in y_train_fold], dtype=np.float64)
 
             try:
@@ -960,7 +960,13 @@ class ModelTrainer:
             "folds": folds,
         }
 
-    def _build_ensemble(self, class_weights: Optional[Dict] = None) -> Any:
+    # Corpus-size thresholds. CatBoost overfits on small leagues (MLS held-out
+    # accuracy dropped to 30% with CV at 50% in the May 19 retrain) and
+    # StackingClassifier's meta-learner needs enough data to generalize.
+    SMALL_CORPUS_THRESHOLD = 1500   # below this: drop CatBoost
+    TINY_CORPUS_THRESHOLD = 300     # below this: drop CatBoost AND stacking
+
+    def _build_ensemble(self, class_weights: Optional[Dict] = None, n_samples: Optional[int] = None) -> Any:
         estimators = []
 
         cw = class_weights or {0: 1.0, 1: 1.2, 2: 1.0}
@@ -968,14 +974,23 @@ class ModelTrainer:
         # Convert class_weight dict to sklearn format
         sklearn_cw = cw
 
+        is_tiny = n_samples is not None and n_samples < self.TINY_CORPUS_THRESHOLD
+        is_small = n_samples is not None and n_samples < self.SMALL_CORPUS_THRESHOLD
+
+        # Shrink base-learner complexity for small corpora to fight overfit.
+        small_depth = 4 if is_small else 5
+        small_estimators = 300 if is_small else 400
+
         gb = GradientBoostingClassifier(
-            n_estimators=400, max_depth=5, learning_rate=0.04,
-            subsample=0.8, min_samples_leaf=15, random_state=42,
+            n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+            subsample=0.8, min_samples_leaf=15 if not is_small else 25, random_state=42,
         )
         estimators.append(("gb", gb))
 
         rf = RandomForestClassifier(
-            n_estimators=300, max_depth=10, min_samples_leaf=10,
+            n_estimators=300 if not is_small else 250,
+            max_depth=10 if not is_small else 8,
+            min_samples_leaf=10 if not is_small else 20,
             class_weight=sklearn_cw, random_state=42, n_jobs=-1,
         )
         estimators.append(("rf", rf))
@@ -983,8 +998,10 @@ class ModelTrainer:
         if HAS_XGBOOST:
             # XGBoost doesn't take class_weight dict — use sample_weight in fit
             xgb = XGBClassifier(
-                n_estimators=400, max_depth=5, learning_rate=0.04,
-                subsample=0.8, colsample_bytree=0.8, min_child_weight=8,
+                n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+                subsample=0.8, colsample_bytree=0.8,
+                min_child_weight=8 if not is_small else 16,
+                reg_lambda=1.0 if not is_small else 3.0,
                 eval_metric="mlogloss", random_state=42,
                 use_label_encoder=False, verbosity=0,
             )
@@ -992,13 +1009,18 @@ class ModelTrainer:
 
         if HAS_LIGHTGBM:
             lgb = LGBMClassifier(
-                n_estimators=400, max_depth=5, learning_rate=0.04,
-                subsample=0.8, colsample_bytree=0.8, min_child_samples=12,
+                n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+                subsample=0.8, colsample_bytree=0.8,
+                min_child_samples=12 if not is_small else 25,
+                reg_lambda=0.0 if not is_small else 1.0,
                 class_weight=sklearn_cw, random_state=42, verbose=-1,
             )
             estimators.append(("lgb", lgb))
 
-        if HAS_CATBOOST:
+        # CatBoost dropped entirely for small corpora — it dominates the
+        # ensemble vote and overfits per the May-19 MLS/World-Cup numbers.
+        catboost_active = HAS_CATBOOST and not is_small
+        if catboost_active:
             cb = CatBoostClassifier(
                 iterations=400, depth=5, learning_rate=0.04,
                 l2_leaf_reg=3, random_seed=42, verbose=False,
@@ -1011,10 +1033,14 @@ class ModelTrainer:
             weights_list.append(1.2)
         if HAS_LIGHTGBM:
             weights_list.append(1.1)
-        if HAS_CATBOOST:
+        if catboost_active:
             weights_list.append(1.1)
 
-        if getattr(self, "use_stacking", True):
+        # Tiny corpora can't support a logistic meta-learner — fall back to
+        # voting regardless of self.use_stacking.
+        use_stacking_effective = bool(getattr(self, "use_stacking", True)) and not is_tiny
+
+        if use_stacking_effective:
             meta = LogisticRegression(max_iter=2000, C=1.0)
             return StackingClassifier(
                 estimators=estimators,
@@ -1242,7 +1268,7 @@ class ModelTrainer:
             X_cal = None
             y_cal = None
 
-        self.model = self._build_ensemble(class_weights)
+        self.model = self._build_ensemble(class_weights, n_samples=len(X_fit))
         self.model.fit(X_fit, y_fit, sample_weight=fit_weights)
 
         # Recency-weighted meta-learner refit (stacking only). Re-fits the
@@ -1339,7 +1365,7 @@ class ModelTrainer:
 
         tscv = TimeSeriesSplit(n_splits=5)
         cv_scores = cross_val_score(
-            self._build_ensemble(class_weights),
+            self._build_ensemble(class_weights, n_samples=len(X_train_scaled)),
             X_train_scaled,
             y_train,
             cv=tscv,
