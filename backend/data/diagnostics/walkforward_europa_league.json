@@ -1,17 +1,68 @@
 {
   "league": "europa_league",
-  "generated_at": "2026-05-18T21:10:17.611702Z",
+  "generated_at": "2026-05-19T17:32:34.222729Z",
   "partial": false,
-  "warmup_seasons": 3,
-  "n_test_seasons": 14,
+  "warmup_seasons": 2,
+  "n_test_seasons": 15,
   "aggregate": {
-    "accuracy_mean": 0.4225,
+    "accuracy_mean": 0.4195,
     "accuracy_std": 0.0419,
-    "log_loss_mean": 1.1391,
-    "brier_mean": 0.6768,
-    "ece_mean": 0.1494
+    "log_loss_mean": 1.1602,
+    "brier_mean": 0.6868,
+    "ece_mean": 0.1595
   },
   "seasons": [
+    {
+      "season": "2011_2012",
+      "train_samples": 334,
+      "test_samples": 222,
+      "accuracy": 0.3784,
+      "log_loss": 1.4547,
+      "brier_score": 0.8261,
+      "ece": 0.3003,
+      "class_distribution": {
+        "H": 111,
+        "D": 47,
+        "A": 64
+      },
+      "buckets": [
+        {
+          "bucket": "0.00-0.40",
+          "count": 3,
+          "coverage": 0.0135,
+          "accuracy": 0.3333,
+          "mean_confidence": 0.3772
+        },
+        {
+          "bucket": "0.40-0.50",
+          "count": 35,
+          "coverage": 0.1577,
+          "accuracy": 0.4286,
+          "mean_confidence": 0.4487
+        },
+        {
+          "bucket": "0.50-0.60",
+          "count": 53,
+          "coverage": 0.2387,
+          "accuracy": 0.3019,
+          "mean_confidence": 0.5468
+        },
+        {
+          "bucket": "0.60-0.70",
+          "count": 36,
+          "coverage": 0.1622,
+          "accuracy": 0.3889,
+          "mean_confidence": 0.653
+        },
+        {
+          "bucket": "0.70-1.01",
+          "count": 95,
+          "coverage": 0.4279,
+          "accuracy": 0.4,
+          "mean_confidence": 0.8561
+        }
+      ]
+    },
     {
       "season": "2012_2013",
       "train_samples": 556,

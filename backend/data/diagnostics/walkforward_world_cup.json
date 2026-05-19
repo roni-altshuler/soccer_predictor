@@ -1,5 +1,67 @@
 {
   "league": "world_cup",
-  "error": "no_eligible_seasons",
-  "seasons": []
+  "generated_at": "2026-05-19T17:32:34.696910Z",
+  "partial": false,
+  "warmup_seasons": 2,
+  "n_test_seasons": 1,
+  "aggregate": {
+    "accuracy_mean": 0.4545,
+    "accuracy_std": 0.0,
+    "log_loss_mean": 1.6519,
+    "brier_mean": 0.8153,
+    "ece_mean": 0.3271
+  },
+  "seasons": [
+    {
+      "season": "2022_2023",
+      "train_samples": 242,
+      "test_samples": 55,
+      "accuracy": 0.4545,
+      "log_loss": 1.6519,
+      "brier_score": 0.8153,
+      "ece": 0.3271,
+      "class_distribution": {
+        "H": 26,
+        "D": 14,
+        "A": 15
+      },
+      "buckets": [
+        {
+          "bucket": "0.00-0.40",
+          "count": 0,
+          "coverage": 0.0,
+          "accuracy": null,
+          "mean_confidence": null
+        },
+        {
+          "bucket": "0.40-0.50",
+          "count": 9,
+          "coverage": 0.1636,
+          "accuracy": 0.3333,
+          "mean_confidence": 0.4726
+        },
+        {
+          "bucket": "0.50-0.60",
+          "count": 2,
+          "coverage": 0.0364,
+          "accuracy": 0.0,
+          "mean_confidence": 0.5665
+        },
+        {
+          "bucket": "0.60-0.70",
+          "count": 5,
+          "coverage": 0.0909,
+          "accuracy": 0.4,
+          "mean_confidence": 0.6678
+        },
+        {
+          "bucket": "0.70-1.01",
+          "count": 39,
+          "coverage": 0.7091,
+          "accuracy": 0.5128,
+          "mean_confidence": 0.8786
+        }
+      ]
+    }
+  ]
 }

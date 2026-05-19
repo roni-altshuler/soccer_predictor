@@ -188,7 +188,19 @@ def run_walkforward(eval_keys: List[str]) -> Dict[str, LeagueEval]:
             continue
         logger.info("walkforward: %s", league)
         try:
-            report = backtest_league(league, fast=True, incremental_write=True)
+            # Loose thresholds match the CLI defaults used to seed the baseline.
+            # The library default (warmup=3, min_train=500, min_test=60) is too
+            # strict for sparse-data leagues (Primeira Liga, Eredivisie, Euro,
+            # Copa) and produces phantom "no_eligible_seasons" regressions when
+            # the per-league cache shape changes slightly between retrains.
+            report = backtest_league(
+                league,
+                warmup_seasons=2,
+                min_train_samples=200,
+                min_test_samples=20,
+                fast=True,
+                incremental_write=True,
+            )
         except Exception as exc:
             logger.warning("walkforward failed for %s: %s", league, exc)
             results[league] = LeagueEval(league=league, aggregate={}, error=str(exc))
