@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { ThemeToggle } from './ThemeToggle'
 import { AuthModal } from './AuthModal'
+import { GenderToggle } from './GenderToggle'
 import { useAuth } from '@/contexts/AuthContext'
 
 const navLinks = [
@@ -83,10 +84,14 @@ export const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-[var(--nav-bg)] border-b border-[var(--nav-border)] backdrop-blur-md hidden md:block" role="navigation">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-[62px]">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-[1.04] transition-transform">
-                <span className="text-base font-black text-[#04120a]">⚽</span>
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group" aria-label="FotPredict AI home">
+              <img
+                src="/brand/logo-mark.svg"
+                alt=""
+                width={36}
+                height={36}
+                className="w-9 h-9 group-hover:scale-[1.04] transition-transform"
+              />
               <div className="flex items-baseline gap-1.5">
                 <span className="text-base font-bold text-[var(--text-primary)] tracking-tight">FotPredict</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">AI</span>
@@ -112,6 +117,7 @@ export const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <GenderToggle className="hidden lg:inline-flex" />
               <ThemeToggle />
               {isAuthenticated && user ? (
                 <div className="relative">
@@ -150,14 +156,13 @@ export const Navbar = () => {
       {/* Mobile Top Bar (minimal) */}
       <div className="md:hidden sticky top-0 z-50 bg-[var(--nav-bg)] border-b border-[var(--nav-border)] backdrop-blur-md">
         <div className="flex items-center justify-between h-12 px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <span className="text-sm font-black text-[#04120a]">⚽</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2" aria-label="FotPredict AI home">
+            <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="w-7 h-7" />
             <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
             <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/16 text-[var(--accent-ai)] border border-[var(--accent-ai)]/25">AI</span>
           </Link>
           <div className="flex items-center gap-2">
+            <GenderToggle compact />
             <ThemeToggle />
             {isAuthenticated && user ? (
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-xs shadow-md shadow-emerald-500/20">

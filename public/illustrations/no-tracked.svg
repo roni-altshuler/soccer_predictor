@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="nt-grad" x1="0" y1="0" x2="240" y2="240">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- empty heart frame -->
+  <path d="M120 196 c-44 -34 -76 -56 -76 -94 c0 -22 18 -38 40 -38 c14 0 26 6 36 18 c10 -12 22 -18 36 -18 c22 0 40 16 40 38 c0 38 -32 60 -76 94 z" fill="#111e36" stroke="url(#nt-grad)" stroke-width="2" stroke-opacity="0.7"/>
+  <!-- dashed plus icon -->
+  <g transform="translate(120 110)">
+    <circle cx="0" cy="0" r="22" fill="#22c55e" fill-opacity="0.15" stroke="#22c55e" stroke-width="1.6" stroke-dasharray="3 4"/>
+    <path d="M-10 0 H10 M0 -10 V10" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <!-- ambient dots -->
+  <circle cx="64" cy="48" r="3" fill="#22d3ee" opacity="0.6"/>
+  <circle cx="196" cy="64" r="3" fill="#22c55e" opacity="0.6"/>
+  <circle cx="44" cy="148" r="2" fill="#f59e0b" opacity="0.6"/>
+</svg>

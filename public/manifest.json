@@ -1,11 +1,11 @@
 {
-  "name": "Soccer Stats Predictor",
-  "short_name": "Soccer Predictor",
-  "description": "AI-powered soccer match prediction and analysis with real-time data from ESPN and FotMob",
+  "name": "FotPredict AI",
+  "short_name": "FotPredict",
+  "description": "AI-powered match predictions across the world's leagues. Live scores, calibrated probabilities, and accuracy tracking.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F172A",
-  "theme_color": "#4F46E5",
+  "background_color": "#07101f",
+  "theme_color": "#22c55e",
   "orientation": "portrait-primary",
   "icons": [
     {

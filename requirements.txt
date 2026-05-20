@@ -16,6 +16,13 @@ python-dateutil>=2.8.0
 scipy>=1.11.0
 xgboost>=2.0.0
 lightgbm>=4.2.0
+torch>=2.2.0
+
+# Local Data Warehouse
+duckdb>=0.10.0
+
+# Config formats
+pyyaml>=6.0
 
 # Web Scraping
 beautifulsoup4>=4.12.0

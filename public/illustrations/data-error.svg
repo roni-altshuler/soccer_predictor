@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="de-grad" x1="0" y1="0" x2="240" y2="240">
+      <stop offset="0" stop-color="#f87171"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <!-- broken card -->
+  <g transform="translate(60 64)">
+    <rect width="120" height="92" rx="14" fill="#111e36" stroke="#243954" stroke-width="1.6"/>
+    <!-- diagonal crack -->
+    <path d="M14 78 L48 50 L62 64 L88 28 L110 50" stroke="url(#de-grad)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- failed bars -->
+    <rect x="14" y="16" width="46" height="6" rx="3" fill="#243954"/>
+    <rect x="14" y="28" width="32" height="4" rx="2" fill="#243954"/>
+  </g>
+  <!-- exclamation badge -->
+  <g transform="translate(176 50)">
+    <circle r="20" fill="url(#de-grad)"/>
+    <path d="M0 -10 V4" stroke="#02180c" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="0" cy="10" r="1.8" fill="#02180c"/>
+  </g>
+</svg>

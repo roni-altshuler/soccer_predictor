@@ -1,0 +1,47 @@
+name: Backend Tests
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'requirements.txt'
+      - 'conftest.py'
+      - '.github/workflows/test_backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'requirements.txt'
+      - 'conftest.py'
+      - '.github/workflows/test_backend.yml'
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install CPU-only PyTorch (small wheel)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.2.0'
+
+      - name: Install other requirements
+        run: |
+          # Skip torch (already installed); install the rest.
+          grep -v '^torch' requirements.txt > /tmp/req-no-torch.txt
+          pip install -r /tmp/req-no-torch.txt
+
+      - name: Run backend tests
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: pytest backend/tests/ -v --maxfail=5
