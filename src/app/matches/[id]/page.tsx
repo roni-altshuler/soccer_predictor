@@ -11,6 +11,7 @@ import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import DataSourceBadge from '@/components/DataSourceBadge'
+import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import type { LiveWinProbabilityResult, ThreeWayProbabilities } from '@/lib/liveWinProbability'
 
@@ -110,8 +111,90 @@ interface MatchDetails {
   commentary?: { minute: number; text: string }[]
 }
 
-const DETAIL_TABS = ['summary', 'lineup', 'stats', 'h2h'] as const
+const DETAIL_TABS = ['summary', 'lineup', 'stats', 'h2h', 'ai'] as const
 type DetailTab = typeof DETAIL_TABS[number]
+
+/**
+ * Convert the existing `MatchDetails.prediction` shape — populated by the
+ * legacy `/api/matches/[id]` route — into the unified
+ * `PredictionPayload` consumed by the showcase visualisation. When the
+ * page later wires to `/api/predictions/unified-by-name` directly the
+ * adapter goes away.
+ */
+function adaptMatchPrediction(match: MatchDetails): PredictionPayload {
+  const p = match.prediction!
+  const total = p.home_win + p.draw + p.away_win || 1
+  const norm = {
+    home: p.home_win / total,
+    draw: p.draw / total,
+    away: p.away_win / total,
+  }
+  const conf = Math.max(0, Math.min(1, (p.confidence ?? 50) / 100))
+  const totalGoals = p.total_goals ?? p.predicted_score.home + p.predicted_score.away
+  const over25 = p.over_2_5 ?? Math.max(0, Math.min(1, (totalGoals - 1.5) / 2))
+  const over15 = Math.max(over25, Math.min(1, (totalGoals - 0.5) / 2))
+  const over35 = Math.max(0, Math.min(over25, (totalGoals - 2.5) / 2))
+  const btts = p.btts_yes ?? 0.5
+
+  return {
+    match_id: match.id,
+    home_team: match.home_team,
+    away_team: match.away_team,
+    league: match.league ?? 'Match',
+    outcome: { home_win: norm.home, draw: norm.draw, away_win: norm.away, confidence: conf },
+    goals: {
+      home_expected_goals: p.predicted_score.home,
+      away_expected_goals: p.predicted_score.away,
+      total_expected_goals: totalGoals,
+      over_1_5: over15,
+      over_2_5: over25,
+      over_3_5: over35,
+      btts_yes: btts,
+    },
+    most_likely_score: {
+      score: p.most_likely_score ?? `${p.predicted_score.home}-${p.predicted_score.away}`,
+      home_goals: p.predicted_score.home,
+      away_goals: p.predicted_score.away,
+      probability: Math.max(norm.home, norm.draw, norm.away),
+    },
+    alternative_scores: [],
+    factors: {
+      home_elo: match.homeStanding?.points
+        ? 1500 + match.homeStanding.points * 5
+        : 1500,
+      away_elo: match.awayStanding?.points
+        ? 1500 + match.awayStanding.points * 5
+        : 1500,
+      elo_difference: (match.homeStanding?.points ?? 0) * 5 - (match.awayStanding?.points ?? 0) * 5,
+      home_form_score: 0.5,
+      away_form_score: 0.5,
+      home_advantage: 0.25,
+      h2h_advantage:
+        match.h2h.homeWins + match.h2h.awayWins > 0
+          ? (match.h2h.homeWins - match.h2h.awayWins) /
+            (match.h2h.homeWins + match.h2h.awayWins)
+          : 0,
+      injury_impact: 0,
+      rest_days_diff: 0,
+      importance_factor: 1.0,
+    },
+    confidence: {
+      data_quality: 0.75,
+      model_certainty: conf,
+      historical_accuracy: 0.5,
+      overall: conf,
+    },
+    model_version: p.model_version ?? 'unified-multitask',
+  }
+}
+
+const DETAIL_TAB_LABELS: Record<DetailTab, string> = {
+  summary: 'Summary',
+  lineup: 'Lineup',
+  stats: 'Stats',
+  h2h: 'H2H & Form',
+  ai: 'AI Prediction',
+}
 
 type MatchStats = MatchDetails['stats']
 
@@ -1025,7 +1108,7 @@ export default function MatchDetailPage() {
                     : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)]'
                 }`}
               >
-                {tab === 'h2h' ? 'H2H & Form' : tab}
+                {DETAIL_TAB_LABELS[tab]}
               </button>
             ))}
           </div>
@@ -1727,6 +1810,18 @@ export default function MatchDetailPage() {
                 },
               } : undefined}
             />
+          </div>
+        )}
+
+        {activeTab === 'ai' && (
+          <div className="space-y-4">
+            {match.prediction ? (
+              <PredictionResultViz prediction={adaptMatchPrediction(match)} />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+                The unified model has no prediction for this fixture yet. It will appear here once the next prediction-pipeline run picks it up.
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="np-glow" x1="0" y1="0" x2="240" y2="240">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#22c55e" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <!-- soft glow disc -->
+  <circle cx="120" cy="120" r="90" fill="url(#np-glow)"/>
+  <!-- empty bars where predictions would be -->
+  <g transform="translate(56 80)">
+    <rect width="128" height="14" rx="7" fill="#243954"/>
+    <rect width="60" height="14" rx="7" fill="#22c55e" fill-opacity="0.4"/>
+  </g>
+  <g transform="translate(56 110)">
+    <rect width="128" height="14" rx="7" fill="#243954"/>
+    <rect width="32" height="14" rx="7" fill="#f59e0b" fill-opacity="0.4"/>
+  </g>
+  <g transform="translate(56 140)">
+    <rect width="128" height="14" rx="7" fill="#243954"/>
+    <rect width="46" height="14" rx="7" fill="#f87171" fill-opacity="0.4"/>
+  </g>
+  <!-- AI sparkles -->
+  <g stroke="#22d3ee" stroke-linecap="round" stroke-width="1.6" opacity="0.85">
+    <path d="M168 60 v10 M163 65 h10"/>
+    <path d="M188 92 v6 M185 95 h6"/>
+    <path d="M44 168 v8 M40 172 h8"/>
+  </g>
+</svg>

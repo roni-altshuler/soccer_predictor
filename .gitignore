@@ -60,8 +60,16 @@ htmlcov/
 
 # models & training artifacts
 *.pkl
+*.pt
 backend/data/historical/
 backend/data/models/
+backend/data/warehouse.sqlite
+backend/data/warehouse.sqlite-journal
+backend/data/cache/
+backend/data/raw/
+
+# Agent worktrees
+.claude/worktrees/
 
 # Gemini API Key
 gemini.md

@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { Bookmark, BookmarkCheck, Brain, Filter, Loader2, RefreshCw } from 'lucide-react'
+
 import { leagues, leagueFlagUrls } from '@/data/leagues'
 import {
   WATCHLIST_STORAGE_KEY,
@@ -11,19 +14,23 @@ import {
 } from '@/lib/watchlist'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
+import { EmptyState } from '@/components/EmptyState'
+import {
+  MatchCenterHeader,
+  type DateOption,
+} from '@/components/match/MatchCenterHeader'
+import { LeagueSection } from '@/components/match/LeagueSection'
+import type { MatchRowMatch } from '@/components/match/MatchRow'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
-type TodayMatch = {
-  id?: string
-  home_team: string
-  away_team: string
-  home_score?: number
-  away_score?: number
-  time?: string
-  status: string
-  league: string
+/* ── data shapes mirror /api/todays_matches ── */
+
+type TodayMatch = MatchRowMatch & {
   leagueId?: string
-  minute?: number | string
-  venue?: string
+  league: string
   provider?: 'espn' | 'fotmob'
 }
 
@@ -37,14 +44,14 @@ type TodayMatchesPayload = {
   generatedAt?: string
 }
 
-type DateOption = { label: string; date: string; isToday: boolean }
+/* ── helpers ── */
 
 function formatLocalDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function getDateOptions(): DateOption[] {
-  const options: DateOption[] = []
+  const out: DateOption[] = []
   const now = new Date()
   for (let i = -3; i <= 3; i++) {
     const d = new Date(now)
@@ -55,41 +62,68 @@ function getDateOptions(): DateOption[] {
     else if (i === 0) label = 'Today'
     else if (i === 1) label = 'Tomorrow'
     else label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    options.push({ label, date: iso, isToday: i === 0 })
+    out.push({ label, date: iso, isToday: i === 0 })
   }
-  return options
-}
-
-function formatMatchTime(timeStr?: string): string {
-  if (!timeStr) return 'TBD'
-  try {
-    const date = new Date(timeStr)
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  } catch {
-    return 'TBD'
-  }
+  return out
 }
 
 function groupMatchesByLeague(matches: TodayMatch[]): Record<string, TodayMatch[]> {
   return matches.reduce((acc, match) => {
-    const league = match.league || 'Other'
-    if (!acc[league]) acc[league] = []
-    acc[league].push(match)
+    const key = match.league || 'Other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(match)
     return acc
   }, {} as Record<string, TodayMatch[]>)
 }
 
-const leagueFlagCodes: Record<string, string> = {
-  'Premier League': 'ENG', 'La Liga': 'ES', 'LaLiga': 'ES', 'Serie A': 'IT',
-  'Bundesliga': 'DE', 'Ligue 1': 'FR', 'Champions League': 'EU',
-  'UEFA Champions League': 'EU', 'Europa League': 'EU', 'UEFA Europa League': 'EU',
-  'FA Cup': 'ENG', 'Copa del Rey': 'ES', 'MLS': 'US',
-  'Eredivisie': 'NL', 'Primeira Liga': 'PT',
+// FotMob-style league prioritisation — the eye-catching leagues bubble to the top.
+const LEAGUE_PRIORITY: string[] = [
+  'UEFA Champions League', 'Champions League',
+  'UEFA Europa League', 'Europa League',
+  'Premier League', 'La Liga', 'LaLiga',
+  'Bundesliga', 'Serie A', 'Ligue 1',
+  'MLS', 'Major League Soccer',
+  'Eredivisie', 'Primeira Liga',
+  'FIFA World Cup', 'World Cup',
+  "UEFA European Championship", 'EURO 2024',
+]
+
+const LEAGUE_COUNTRY: Record<string, { country: string; code: string }> = {
+  'Premier League': { country: 'England', code: 'ENG' },
+  'La Liga': { country: 'Spain', code: 'ES' },
+  LaLiga: { country: 'Spain', code: 'ES' },
+  'Serie A': { country: 'Italy', code: 'IT' },
+  Bundesliga: { country: 'Germany', code: 'DE' },
+  'Ligue 1': { country: 'France', code: 'FR' },
+  Eredivisie: { country: 'Netherlands', code: 'NL' },
+  'Primeira Liga': { country: 'Portugal', code: 'PT' },
+  MLS: { country: 'USA', code: 'US' },
+  'UEFA Champions League': { country: 'Europe', code: 'EU' },
+  'Champions League': { country: 'Europe', code: 'EU' },
+  'UEFA Europa League': { country: 'Europe', code: 'EU' },
+  'Europa League': { country: 'Europe', code: 'EU' },
+  'FIFA World Cup': { country: 'World', code: 'EARTH' },
+  'World Cup': { country: 'World', code: 'EARTH' },
 }
 
-function getLeagueFlagUrl(league: string): string | null {
-  const code = leagueFlagCodes[league]
-  return code ? (leagueFlagUrls[code] || null) : null
+function leagueFlagFor(leagueName: string): string | null {
+  const meta = LEAGUE_COUNTRY[leagueName]
+  if (!meta) return null
+  return leagueFlagUrls[meta.code] ?? null
+}
+
+function leaguePriority(leagueName: string): number {
+  const idx = LEAGUE_PRIORITY.indexOf(leagueName)
+  return idx === -1 ? 100 : idx
+}
+
+const LEAGUE_ID_MAP: Record<string, string> = {
+  'Premier League': 'eng.1', 'La Liga': 'esp.1', LaLiga: 'esp.1',
+  'Serie A': 'ita.1', Bundesliga: 'ger.1', 'Ligue 1': 'fra.1',
+  Eredivisie: 'ned.1', 'Primeira Liga': 'por.1', MLS: 'usa.1',
+  'UEFA Champions League': 'uefa.champions', 'Champions League': 'uefa.champions',
+  'UEFA Europa League': 'uefa.europa', 'Europa League': 'uefa.europa',
+  'FIFA World Cup': 'fifa.world',
 }
 
 function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch['provider']): DataProvider {
@@ -97,229 +131,19 @@ function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch
   return 'none'
 }
 
-/* ── Match Row (FotMob style) ── */
-function MatchRow({ match }: { match: TodayMatch }) {
-  const isLive = match.status === 'live'
-  const isFinished = match.status === 'finished' || match.status === 'completed'
-  const venue = match.venue?.trim()
-  const href = match.id
-    ? `/matches/${match.id}${match.leagueId ? `?league=${match.leagueId}` : ''}`
-    : '/matches'
-
-  return (
-    <Link
-      href={href}
-      className={`match-card group ${isLive ? 'bg-[var(--live-bg)]' : ''}`}
-    >
-      <div className="w-full">
-        <div className="flex items-center w-full">
-          {/* Home team */}
-          <div className="flex-1 text-right pr-3">
-            <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-              {match.home_team}
-            </span>
-          </div>
-
-          {/* Score / Time */}
-          <div className="w-24 flex-shrink-0 text-center">
-            {isLive ? (
-              <div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-lg font-bold text-[var(--text-primary)]">{match.home_score}</span>
-                  <span className="text-[var(--text-tertiary)] text-xs">-</span>
-                  <span className="text-lg font-bold text-[var(--text-primary)]">{match.away_score}</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-red-500">{match.minute ? `${match.minute}'` : 'LIVE'}</span>
-                </div>
-              </div>
-            ) : isFinished ? (
-              <div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-lg font-bold text-[var(--text-secondary)]">{match.home_score}</span>
-                  <span className="text-[var(--text-tertiary)] text-xs">-</span>
-                  <span className="text-lg font-bold text-[var(--text-secondary)]">{match.away_score}</span>
-                </div>
-                <span className="text-[10px] text-[var(--text-tertiary)] font-medium">FT</span>
-              </div>
-            ) : (
-              <span className="text-sm font-semibold text-[var(--accent-primary)]">{formatMatchTime(match.time)}</span>
-            )}
-          </div>
-
-          {/* Away team */}
-          <div className="flex-1 text-left pl-3">
-            <span className={`text-sm font-medium ${isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-              {match.away_team}
-            </span>
-          </div>
-        </div>
-        {venue && (
-          <p className="mt-1 text-center text-[10px] text-[var(--text-tertiary)]">{venue}</p>
-        )}
-        {match.provider && (
-          <div className="mt-1.5 flex justify-center">
-            <DataSourceBadge
-              provider={resolveDataProvider(match.provider)}
-              compact
-              className="px-2 py-0.5 text-[9px]"
-            />
-          </div>
-        )}
-      </div>
-    </Link>
-  )
+function matchHref(m: TodayMatch): string | undefined {
+  if (!m.id) return undefined
+  const search = m.leagueId ? `?league=${encodeURIComponent(m.leagueId)}` : ''
+  return `/matches/${m.id}${search}`
 }
 
-/* ── League Section ── */
-function LeagueSection({ league, matches }: { league: string; matches: TodayMatch[] }) {
-  const flagUrl = getLeagueFlagUrl(league)
-  return (
-    <div className="mb-1">
-      <div className="league-header">
-        <div className="flex items-center gap-2">
-          {flagUrl ? (
-            <img src={flagUrl} alt="" className="w-4 h-auto rounded-sm" />
-          ) : (
-            <span className="text-xs">⚽</span>
-          )}
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{league}</span>
-        </div>
-        <span className="text-[10px] text-[var(--text-tertiary)]">{matches.length}</span>
-      </div>
-      <div>
-        {matches.map((m, i) => (
-          <MatchRow key={`${league}-${i}`} match={m} />
-        ))}
-      </div>
-    </div>
-  )
-}
+/* ── page ── */
 
-/* ── AI Prediction Banner ── */
-function AIPredictionBanner() {
-  return (
-    <Link href="/predict" className="block mx-4 my-4">
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--accent-ai)]/30 bg-gradient-to-r from-[var(--accent-ai)]/22 via-[var(--surface-highlight)] to-[var(--accent-primary)]/24 p-4">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/8 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/18 flex items-center justify-center flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai)" strokeWidth="2">
-              <path d="M12 2v4" /><path d="m15.5 7.5 2.8-2.8" /><path d="M20 12h-4" />
-              <path d="m15.5 16.5 2.8 2.8" /><path d="M12 18v4" /><path d="m4.2 19.8 2.8-2.8" />
-              <path d="M4 12h4" /><path d="m4.2 4.2 2.8 2.8" /><circle cx="12" cy="12" r="4" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-[var(--text-primary)] font-bold text-sm">AI Match Predictions</p>
-            <p className="text-[var(--text-secondary)] text-xs">66-feature neural ensemble, calibrated for real match context</p>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" className="flex-shrink-0">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-/* ── Quick Leagues Row ── */
-function QuickLeagues() {
-  const leagueIdMap: Record<string, string> = {
-    'Premier League': 'eng.1', 'La Liga': 'esp.1', 'Serie A': 'ita.1',
-    'Bundesliga': 'ger.1', 'Ligue 1': 'fra.1', 'Eredivisie': 'ned.1',
-    'Primeira Liga': 'por.1', 'MLS': 'usa.1',
-    'UEFA Champions League': 'uefa.champions', 'UEFA Europa League': 'uefa.europa',
-  }
-
-  return (
-    <div className="px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Leagues</span>
-        <Link href="/matches" className="text-[10px] text-[var(--accent-primary)] font-medium">See all</Link>
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-        {leagues.slice(0, 8).map((league) => {
-          const id = leagueIdMap[league.name] || ''
-          return (
-            <Link
-              key={league.name}
-              href={id ? `/matches?league=${id}` : '/matches'}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent-primary)]"
-            >
-              {leagueFlagUrls[league.country] && (
-                <img src={leagueFlagUrls[league.country]} alt="" className="w-3.5 h-auto rounded-sm" />
-              )}
-              <span className="whitespace-nowrap">{league.name.replace('UEFA ', '')}</span>
-            </Link>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ── Live Indicator Bar ── */
-function LiveBar({ liveCount }: { liveCount: number }) {
-  if (liveCount === 0) return null
-  return (
-    <div className="flex items-center justify-center gap-2 py-2 bg-[var(--live-bg)] border-b border-[var(--live-border)]">
-      <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-      </span>
-      <span className="text-xs font-bold text-red-500 uppercase tracking-wider">{liveCount} Live</span>
-    </div>
-  )
-}
-
-function AtAGlance({
-  liveCount,
-  upcomingCount,
-  finishedCount,
-  selectedDateLabel,
-}: {
-  liveCount: number
-  upcomingCount: number
-  finishedCount: number
-  selectedDateLabel: string
-}) {
-  return (
-    <div className="max-w-3xl mx-auto px-4 pt-4 pb-2 animate-slideUp">
-      <div className="fm-surface p-4 md:p-5">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] font-semibold mb-1">Match Center</p>
-            <h1 className="text-xl md:text-2xl font-black text-[var(--text-primary)]">{selectedDateLabel} Fixtures & Results</h1>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">Follow live games, check completed scorelines, and jump into AI picks with one tap.</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 w-full md:w-auto">
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-center min-w-[82px]">
-              <p className="text-lg font-bold text-red-400">{liveCount}</p>
-              <p className="text-[10px] uppercase tracking-wider text-red-300/90">Live</p>
-            </div>
-            <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-3 py-2 text-center min-w-[82px]">
-              <p className="text-lg font-bold text-cyan-400">{upcomingCount}</p>
-              <p className="text-[10px] uppercase tracking-wider text-cyan-300/90">Upcoming</p>
-            </div>
-            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-center min-w-[82px]">
-              <p className="text-lg font-bold text-emerald-400">{finishedCount}</p>
-              <p className="text-[10px] uppercase tracking-wider text-emerald-300/90">Finished</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ════════════════════════════════════════
- *  HOME PAGE
- * ════════════════════════════════════════ */
 export default function Home() {
   const dateOptions = useMemo(() => getDateOptions(), [])
-  const [selectedDate, setSelectedDate] = useState(() => dateOptions.find(d => d.isToday)?.date || dateOptions[3]?.date)
+  const [selectedDate, setSelectedDate] = useState(() =>
+    dateOptions.find((d) => d.isToday)?.date || dateOptions[3]?.date
+  )
   const [matches, setMatches] = useState<TodayMatchesPayload>({
     live: [], upcoming: [], completed: [],
   })
@@ -327,44 +151,38 @@ export default function Home() {
   const [tab, setTab] = useState<'all' | 'live' | 'finished'>('all')
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
   const [watchlistOnly, setWatchlistOnly] = useState(false)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
 
+  // Watchlist state — load from localStorage and react to cross-tab updates.
   useEffect(() => {
-    const loadWatchlist = () => {
+    const load = () => {
       try {
         const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
-        if (!raw) {
-          setTrackedTeams([])
-          return
-        }
+        if (!raw) return setTrackedTeams([])
         const parsed = JSON.parse(raw) as unknown
-        if (!Array.isArray(parsed)) {
-          setTrackedTeams([])
-          return
-        }
+        if (!Array.isArray(parsed)) return setTrackedTeams([])
         const restored = parsed
           .filter((item): item is WatchTeam => {
             if (!item || typeof item !== 'object') return false
-            const entry = item as Partial<WatchTeam>
-            return typeof entry.name === 'string' && typeof entry.league === 'string'
+            const e = item as Partial<WatchTeam>
+            return typeof e.name === 'string' && typeof e.league === 'string'
           })
           .map((item) => ({ name: item.name.trim(), league: item.league.trim() }))
           .filter((item) => item.name.length > 0 && item.league.length > 0)
         setTrackedTeams(restored)
-      } catch (error) {
-        console.error('Failed to load home watchlist:', error)
+      } catch {
         setTrackedTeams([])
       }
     }
-
-    loadWatchlist()
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === WATCHLIST_STORAGE_KEY) loadWatchlist()
+    load()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === WATCHLIST_STORAGE_KEY) load()
     }
     window.addEventListener('storage', onStorage)
-    window.addEventListener('focus', loadWatchlist)
+    window.addEventListener('focus', load)
     return () => {
       window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', loadWatchlist)
+      window.removeEventListener('focus', load)
     }
   }, [])
 
@@ -374,6 +192,7 @@ export default function Home() {
     }
   }, [trackedTeams.length, watchlistOnly])
 
+  // Today's matches — refetch every minute for live updates.
   useEffect(() => {
     let cancelled = false
     const fetchMatches = async () => {
@@ -383,23 +202,28 @@ export default function Home() {
         if (res.ok && !cancelled) {
           const data = await res.json()
           setMatches(data)
+          setLastFetched(new Date())
         }
       } catch (e) {
-        console.error('Error fetching matches:', e)
+        console.error('Failed fetching matches:', e)
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
     fetchMatches()
-    const interval = setInterval(fetchMatches, 60000)
-    return () => { cancelled = true; clearInterval(interval) }
+    const interval = setInterval(fetchMatches, 60_000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [selectedDate])
 
   const live = matches?.live || []
   const upcoming = matches?.upcoming || []
   const completed = matches?.completed || []
+
   const trackedNameSet = useMemo(
-    () => new Set(trackedTeams.map((team) => normalizeTeamName(team.name))),
+    () => new Set(trackedTeams.map((t) => normalizeTeamName(t.name))),
     [trackedTeams]
   )
 
@@ -408,24 +232,30 @@ export default function Home() {
   else if (tab === 'finished') tabMatches = completed
   else tabMatches = [...live, ...upcoming, ...completed]
 
-  const trackedMatchesByTab = tabMatches.filter(
-    (match) => teamMatchesWatchlist(match.home_team, trackedNameSet) || teamMatchesWatchlist(match.away_team, trackedNameSet)
+  const trackedMatchesInTab = tabMatches.filter(
+    (m) =>
+      teamMatchesWatchlist(m.home_team, trackedNameSet) ||
+      teamMatchesWatchlist(m.away_team, trackedNameSet)
   )
-  const filteredMatches = watchlistOnly ? trackedMatchesByTab : tabMatches
+  const visibleMatches = watchlistOnly ? trackedMatchesInTab : tabMatches
+  const matchesByLeague = groupMatchesByLeague(visibleMatches)
 
-  const matchesByLeague = groupMatchesByLeague(filteredMatches)
-  const leagueNames = Object.keys(matchesByLeague)
-  const totalCount = live.length + upcoming.length + completed.length
-  const trackedCount = trackedMatchesByTab.length
-  const selectedDateLabel = dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
+  const sortedLeagueNames = Object.keys(matchesByLeague).sort((a, b) => {
+    const pa = leaguePriority(a)
+    const pb = leaguePriority(b)
+    if (pa !== pb) return pa - pb
+    return a.localeCompare(b)
+  })
+
+  const selectedDateLabel =
+    dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      {/* Live indicator */}
-      <LiveBar liveCount={live.length} />
-
-      {/* At-a-glance summary */}
-      <AtAGlance
+      <MatchCenterHeader
+        dateOptions={dateOptions}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
         liveCount={live.length}
         upcomingCount={upcoming.length}
         finishedCount={completed.length}
@@ -434,127 +264,184 @@ export default function Home() {
 
       <WorldCupCountdown />
 
-      {/* Date Selector — FotMob horizontal scroll */}
-      <div className="sticky top-12 md:top-14 z-40 bg-[var(--nav-bg)] border-b border-[var(--border-color)] backdrop-blur-md">
-        <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1 max-w-3xl mx-auto" style={{ scrollbarWidth: 'none' }}>
-          {dateOptions.map((opt) => (
-            <button
-              key={opt.date}
-              onClick={() => setSelectedDate(opt.date)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                selectedDate === opt.date
-                  ? 'bg-[var(--accent-primary)] text-[#04120a] border-[var(--accent-primary)]'
-                  : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--card-hover)]'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+      <div className="mx-auto w-full max-w-5xl px-4 pt-4">
+        {/* Filter row */}
+        <Card className="overflow-hidden">
+          <div className="flex flex-wrap items-center gap-2 p-3">
+            {(['all', 'live', 'finished'] as const).map((t) => {
+              const count = t === 'all' ? tabMatches.length : t === 'live' ? live.length : completed.length
+              return (
+                <Button
+                  key={t}
+                  variant={tab === t ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setTab(t)}
+                  className="gap-1.5"
+                >
+                  {t === 'live' && live.length > 0 && (
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+                    </span>
+                  )}
+                  <span className="uppercase tracking-wide">{t}</span>
+                  <span className="text-[10px] opacity-75">({count})</span>
+                </Button>
+              )
+            })}
+
+            {trackedTeams.length > 0 && (
+              <Button
+                variant={watchlistOnly ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setWatchlistOnly((v) => !v)}
+                className={cn('ml-auto gap-1.5', watchlistOnly && 'bg-violet-500/90 hover:bg-violet-500')}
+              >
+                {watchlistOnly ? (
+                  <BookmarkCheck className="h-3.5 w-3.5" />
+                ) : (
+                  <Bookmark className="h-3.5 w-3.5" />
+                )}
+                Tracked teams
+                <span className="text-[10px] opacity-75">({trackedMatchesInTab.length})</span>
+              </Button>
+            )}
+
+            {trackedTeams.length === 0 && (
+              <Link
+                href="/tracking?view=fan"
+                className="ml-auto text-[11px] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]"
+              >
+                <Filter className="inline h-3 w-3 mr-1" />
+                Add a team watchlist
+              </Link>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-color)] px-3 py-2">
+            <DataSourceBadge
+              provider={resolveDataProvider(matches.source)}
+              detail={matches.sourceDetail || 'Daily match feed'}
+              refreshedAt={matches.generatedAt}
+              compact
+            />
+            {lastFetched && (
+              <span className="flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
+                <RefreshCw className="h-3 w-3" />
+                Refreshed {lastFetched.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+        </Card>
       </div>
 
-      {/* Tab Filter: All / Live / Finished */}
-      <div className="max-w-3xl mx-auto">
-        <div className="flex flex-wrap items-center gap-1 px-4 pt-3 pb-1">
-          {(['all', 'live', 'finished'] as const).map((t) => {
-            const count = t === 'all' ? totalCount : t === 'live' ? live.length : completed.length
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg border transition-colors ${
-                  tab === t
-                    ? 'border-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--tab-active-bg)]'
-                    : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
-                }`}
-              >
-                {t === 'all' ? 'All' : t === 'live' ? 'Live' : 'Finished'}
-                {count > 0 && <span className="ml-1 text-[10px]">({count})</span>}
-              </button>
-            )
-          })}
-          {trackedTeams.length > 0 && (
-            <button
-              onClick={() => setWatchlistOnly((value) => !value)}
-              className={`ml-auto px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-lg border transition-colors ${
-                watchlistOnly
-                  ? 'border-violet-400/60 text-violet-300 bg-violet-500/15'
-                  : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
-              }`}
-            >
-              Tracked Teams {watchlistOnly ? 'On' : 'Off'}
-              <span className="ml-1 text-[10px]">({trackedCount})</span>
-            </button>
-          )}
-        </div>
-        {trackedTeams.length === 0 && (
-          <div className="px-4 pb-1">
-            <Link href="/tracking?view=fan" className="text-[11px] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]">
-              Add a team watchlist in Tracking → Fan Team Tracker
+      {/* Matches list */}
+      <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-8">
+        {loading && visibleMatches.length === 0 ? (
+          <Card className="flex items-center justify-center gap-2 py-12 text-small text-[var(--text-tertiary)]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading matches…
+          </Card>
+        ) : sortedLeagueNames.length === 0 ? (
+          <EmptyState
+            illustration="no-matches"
+            title={`No matches ${watchlistOnly ? 'for tracked teams ' : ''}${tab === 'live' ? 'are live' : tab === 'finished' ? 'have finished' : 'scheduled'}`}
+            description="Try a different date or filter — the AI prediction tool still works for any matchup you can dream up."
+            action={
+              <Button asChild variant="default" size="sm">
+                <Link href="/predict">Run a custom prediction</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.04 } },
+              hidden: {},
+            }}
+          >
+            <Card className="overflow-hidden">
+              {sortedLeagueNames.map((leagueName) => (
+                <motion.div
+                  key={leagueName}
+                  variants={{
+                    hidden: { opacity: 0, y: 8 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } },
+                  }}
+                >
+                  <LeagueSection
+                    leagueName={leagueName}
+                    leagueId={LEAGUE_ID_MAP[leagueName]}
+                    countryFlagUrl={leagueFlagFor(leagueName)}
+                    countryLabel={LEAGUE_COUNTRY[leagueName]?.country}
+                    matches={matchesByLeague[leagueName]}
+                    hrefFor={matchHref}
+                    defaultOpen
+                  />
+                </motion.div>
+              ))}
+            </Card>
+          </motion.div>
+        )}
+
+        {/* AI promo card */}
+        <Card className="mt-4 overflow-hidden border-[var(--accent-ai)]/30 bg-gradient-to-r from-[var(--accent-ai)]/12 via-[var(--surface-highlight)] to-[var(--accent-primary)]/15 p-4">
+          <Link href="/predict" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/15">
+              <Brain className="h-5 w-5 text-[var(--accent-ai)]" strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-small font-bold text-[var(--text-primary)]">
+                Run the unified AI model on any fixture
+              </p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">
+                Multi-task neural network · scoreline distribution · 80 contextual features
+              </p>
+            </div>
+            <Badge variant="outline" className="border-[var(--accent-ai)]/40 text-[var(--accent-ai)]">
+              Try it
+            </Badge>
+          </Link>
+        </Card>
+
+        {/* Quick league chips */}
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+              Explore leagues
+            </span>
+            <Link href="/matches" className="text-[10px] font-medium text-[var(--accent-primary)] hover:underline">
+              See all
             </Link>
           </div>
-        )}
-        {trackedTeams.length > 0 && (
-          <div className="px-4 pb-1 text-[10px] text-[var(--text-tertiary)]">
-            Tracking: {trackedTeams.map((team) => team.name).slice(0, 4).join(', ')}
-            {trackedTeams.length > 4 ? ` +${trackedTeams.length - 4} more` : ''}
-          </div>
-        )}
-        <div className="px-4 pb-2">
-          <DataSourceBadge
-            provider={resolveDataProvider(matches.source)}
-            detail={matches.sourceDetail || 'Daily match feed'}
-            refreshedAt={matches.generatedAt}
-            compact
-          />
-        </div>
-      </div>
-
-      {/* Matches List — grouped by league */}
-      <div className="max-w-3xl mx-auto pb-6">
-        {loading ? (
-          <div className="py-16 flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs text-[var(--text-tertiary)]">Loading matches...</span>
-          </div>
-        ) : leagueNames.length > 0 ? (
-          <>
-            {leagueNames.map((league) => (
-              <LeagueSection key={league} league={league} matches={matchesByLeague[league]} />
-            ))}
-          </>
-        ) : (
-          <div className="py-16 text-center">
-            <span className="text-3xl block mb-2">⚽</span>
-            <p className="text-sm text-[var(--text-secondary)]">
-              No matches {watchlistOnly ? 'for tracked teams ' : ''}{tab === 'live' ? 'live right now' : tab === 'finished' ? 'finished yet' : 'scheduled'}
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">Try selecting a different date</p>
-          </div>
-        )}
-
-        {/* AI Prediction Banner — between matches and leagues */}
-        <AIPredictionBanner />
-
-        {/* Quick Leagues */}
-        <QuickLeagues />
-
-        {/* Model info stripe */}
-        <div className="mx-4 mt-2 p-3 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-[var(--shadow-sm)]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-ai)]/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-base">🧠</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[var(--text-primary)]">Neural Ensemble v5.1</p>
-              <p className="text-[10px] text-[var(--text-tertiary)]">66 features · neural-first serving · calibrated league parameters · audit-ready tracking</p>
-            </div>
-            <Link href="/about" className="text-[10px] text-[var(--accent-primary)] font-medium flex-shrink-0">Learn more</Link>
+          <div className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none]">
+            {leagues.slice(0, 10).map((league) => {
+              const id = LEAGUE_ID_MAP[league.name] || ''
+              return (
+                <Link
+                  key={league.name}
+                  href={id ? `/leagues/${id}` : '/matches'}
+                  prefetch={false}
+                  className={cn(
+                    'flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-color)]',
+                    'bg-[var(--card-bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]',
+                    'transition-colors hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]'
+                  )}
+                >
+                  {leagueFlagUrls[league.country] && (
+                    <img src={leagueFlagUrls[league.country]} alt="" className="h-3 w-auto rounded-sm" />
+                  )}
+                  <span className="whitespace-nowrap">{league.name.replace('UEFA ', '')}</span>
+                </Link>
+              )
+            })}
           </div>
         </div>
 
         {/* Disclaimer */}
-        <p className="text-center text-[10px] text-[var(--text-tertiary)] px-4 mt-4">
+        <p className="mt-6 text-center text-[10px] text-[var(--text-tertiary)]">
           Predictions are for educational/entertainment purposes only. Not intended for betting.
         </p>
       </div>

@@ -1,0 +1,373 @@
+# Manual team-name overrides.
+#
+# Each entry binds a canonical name (the spelling stored in `teams.canonical_name`)
+# to one or more known aliases observed across ESPN / football-data.co.uk /
+# ClubElo / OpenFootball / FBref / Understat. The team resolver consults this
+# file before fuzzy matching, so this is where you resolve ambiguity (e.g.
+# "Athletic" -> Athletic Bilbao, not Atletico Madrid).
+#
+# Keys:
+#   canonical: human-readable canonical name (any spelling you prefer)
+#   gender:    'M' or 'F'
+#   country:   ISO 3166-1 alpha-2 (optional but useful)
+#   aliases:   list of strings exactly as sources spell them
+#
+# When this file grows, run `python -m backend.scripts.build_warehouse --refresh-aliases`
+# (or just rerun the full build) to push entries into the warehouse.
+
+teams:
+  # ---- England, Men ----
+  - canonical: Manchester United
+    gender: M
+    country: GB
+    aliases: [Man United, Man Utd, Manchester Utd, ManUnited, Manchester United FC]
+  - canonical: Manchester City
+    gender: M
+    country: GB
+    aliases: [Man City, ManCity, Manchester City FC]
+  - canonical: Liverpool
+    gender: M
+    country: GB
+    aliases: [Liverpool FC, LiverpoolFC]
+  - canonical: Arsenal
+    gender: M
+    country: GB
+    aliases: [Arsenal FC, ArsenalFC]
+  - canonical: Chelsea
+    gender: M
+    country: GB
+    aliases: [Chelsea FC, ChelseaFC]
+  - canonical: Tottenham Hotspur
+    gender: M
+    country: GB
+    aliases: [Tottenham, Spurs, Tottenham Hotspur FC]
+  - canonical: Newcastle United
+    gender: M
+    country: GB
+    aliases: [Newcastle, Newcastle Utd, Newcastle United FC]
+  - canonical: West Ham United
+    gender: M
+    country: GB
+    aliases: [West Ham, West Ham United FC]
+  - canonical: Aston Villa
+    gender: M
+    country: GB
+    aliases: [Aston Villa FC]
+  - canonical: Brighton & Hove Albion
+    gender: M
+    country: GB
+    aliases: [Brighton, Brighton and Hove Albion]
+  - canonical: Wolverhampton Wanderers
+    gender: M
+    country: GB
+    aliases: [Wolves, Wolverhampton]
+  - canonical: Leeds United
+    gender: M
+    country: GB
+    aliases: [Leeds, Leeds Utd]
+  - canonical: Nottingham Forest
+    gender: M
+    country: GB
+    aliases: [Nott'm Forest, Nottm Forest, Nottingham]
+  - canonical: Leicester City
+    gender: M
+    country: GB
+    aliases: [Leicester]
+  - canonical: Brentford
+    gender: M
+    country: GB
+    aliases: [Brentford FC]
+  - canonical: Crystal Palace
+    gender: M
+    country: GB
+    aliases: [Palace, Crystal Palace FC]
+  - canonical: Fulham
+    gender: M
+    country: GB
+    aliases: [Fulham FC]
+  - canonical: Everton
+    gender: M
+    country: GB
+    aliases: [Everton FC]
+  - canonical: Bournemouth
+    gender: M
+    country: GB
+    aliases: [AFC Bournemouth]
+  - canonical: Southampton
+    gender: M
+    country: GB
+    aliases: [Southampton FC]
+
+  # ---- Spain, Men ----
+  - canonical: Real Madrid
+    gender: M
+    country: ES
+    aliases: [Real Madrid CF, RealMadrid]
+  - canonical: Barcelona
+    gender: M
+    country: ES
+    aliases: [FC Barcelona, Barca, Barça, Barcelona CF]
+  - canonical: Atletico Madrid
+    gender: M
+    country: ES
+    aliases: [Atlético Madrid, Atl Madrid, Atletico, Atlético, AtletiMadrid]
+  - canonical: Athletic Bilbao
+    gender: M
+    country: ES
+    aliases: [Athletic Club, Athletic, Ath Bilbao, Athletic Club Bilbao]
+  - canonical: Real Sociedad
+    gender: M
+    country: ES
+    aliases: [Sociedad, RealSociedad]
+  - canonical: Valencia
+    gender: M
+    country: ES
+    aliases: [Valencia CF]
+  - canonical: Sevilla
+    gender: M
+    country: ES
+    aliases: [Sevilla FC]
+  - canonical: Villarreal
+    gender: M
+    country: ES
+    aliases: [Villarreal CF]
+  - canonical: Real Betis
+    gender: M
+    country: ES
+    aliases: [Betis, Real Betis Balompié]
+  - canonical: Celta Vigo
+    gender: M
+    country: ES
+    aliases: [Celta, RC Celta]
+  - canonical: Espanyol
+    gender: M
+    country: ES
+    aliases: [RCD Espanyol, Espanyol Barcelona]
+
+  # ---- Germany, Men ----
+  - canonical: Bayern Munich
+    gender: M
+    country: DE
+    aliases: [FC Bayern Munich, Bayern München, FC Bayern München, BayernMunich, Bayern]
+  - canonical: Borussia Dortmund
+    gender: M
+    country: DE
+    aliases: [Dortmund, BVB, Bor. Dortmund]
+  - canonical: RB Leipzig
+    gender: M
+    country: DE
+    aliases: [Leipzig, RBLeipzig]
+  - canonical: Bayer Leverkusen
+    gender: M
+    country: DE
+    aliases: [Leverkusen, Bayer 04 Leverkusen]
+  - canonical: Eintracht Frankfurt
+    gender: M
+    country: DE
+    aliases: [Frankfurt, Ein Frankfurt, SG Eintracht Frankfurt]
+  - canonical: Borussia Monchengladbach
+    gender: M
+    country: DE
+    aliases: ["M'gladbach", Mönchengladbach, Bor. Mönchengladbach, Bor. Monchengladbach]
+  - canonical: VfB Stuttgart
+    gender: M
+    country: DE
+    aliases: [Stuttgart, VfBStuttgart]
+  - canonical: VfL Wolfsburg
+    gender: M
+    country: DE
+    aliases: [Wolfsburg, VfLWolfsburg]
+  - canonical: Werder Bremen
+    gender: M
+    country: DE
+    aliases: [Werder, SV Werder Bremen]
+  - canonical: Hoffenheim
+    gender: M
+    country: DE
+    aliases: [TSG Hoffenheim, TSG 1899 Hoffenheim]
+
+  # ---- Italy, Men ----
+  - canonical: Juventus
+    gender: M
+    country: IT
+    aliases: [Juventus FC, Juve]
+  - canonical: Inter
+    gender: M
+    country: IT
+    aliases: [Internazionale, Inter Milan, Inter Milano, FC Internazionale Milano]
+  - canonical: AC Milan
+    gender: M
+    country: IT
+    aliases: [Milan, Milan AC]
+  - canonical: Napoli
+    gender: M
+    country: IT
+    aliases: [SSC Napoli]
+  - canonical: Roma
+    gender: M
+    country: IT
+    aliases: [AS Roma]
+  - canonical: Lazio
+    gender: M
+    country: IT
+    aliases: [SS Lazio]
+  - canonical: Atalanta
+    gender: M
+    country: IT
+    aliases: [Atalanta BC]
+  - canonical: Fiorentina
+    gender: M
+    country: IT
+    aliases: [ACF Fiorentina]
+  - canonical: Bologna
+    gender: M
+    country: IT
+    aliases: [Bologna FC]
+  - canonical: Torino
+    gender: M
+    country: IT
+    aliases: [Torino FC]
+  - canonical: Genoa
+    gender: M
+    country: IT
+    aliases: [Genoa CFC]
+
+  # ---- France, Men ----
+  - canonical: Paris Saint-Germain
+    gender: M
+    country: FR
+    aliases: [PSG, Paris SG, Paris-SG, Paris Saint Germain]
+  - canonical: Marseille
+    gender: M
+    country: FR
+    aliases: [OM, Olympique de Marseille, Olympique Marseille]
+  - canonical: Lyon
+    gender: M
+    country: FR
+    aliases: [OL, Olympique Lyonnais]
+  - canonical: Monaco
+    gender: M
+    country: FR
+    aliases: [AS Monaco]
+  - canonical: Lille
+    gender: M
+    country: FR
+    aliases: [LOSC, Lille OSC]
+  - canonical: Nice
+    gender: M
+    country: FR
+    aliases: [OGC Nice]
+  - canonical: Rennes
+    gender: M
+    country: FR
+    aliases: [Stade Rennais, Stade Rennes]
+
+  # ---- Netherlands & Portugal, Men ----
+  - canonical: Ajax
+    gender: M
+    country: NL
+    aliases: [AFC Ajax, Ajax Amsterdam]
+  - canonical: PSV
+    gender: M
+    country: NL
+    aliases: [PSV Eindhoven]
+  - canonical: Feyenoord
+    gender: M
+    country: NL
+    aliases: [Feyenoord Rotterdam]
+  - canonical: Benfica
+    gender: M
+    country: PT
+    aliases: [SL Benfica, Sport Lisboa e Benfica]
+  - canonical: Porto
+    gender: M
+    country: PT
+    aliases: [FC Porto]
+  - canonical: Sporting CP
+    gender: M
+    country: PT
+    aliases: [Sporting Lisbon, Sporting, Sporting Clube de Portugal]
+
+  # ---- USA / MLS, Men ----
+  - canonical: LA Galaxy
+    gender: M
+    country: US
+    aliases: [Los Angeles Galaxy]
+  - canonical: LAFC
+    gender: M
+    country: US
+    aliases: [Los Angeles FC]
+  - canonical: Inter Miami
+    gender: M
+    country: US
+    aliases: [Inter Miami CF]
+  - canonical: Seattle Sounders
+    gender: M
+    country: US
+    aliases: [Seattle Sounders FC]
+  - canonical: Atlanta United
+    gender: M
+    country: US
+    aliases: [Atlanta United FC]
+
+  # ---- Women's universe ----
+  - canonical: Chelsea
+    gender: F
+    country: GB
+    aliases: [Chelsea Women, Chelsea FC Women, Chelsea LFC]
+  - canonical: Arsenal
+    gender: F
+    country: GB
+    aliases: [Arsenal Women, Arsenal WFC]
+  - canonical: Manchester City
+    gender: F
+    country: GB
+    aliases: [Man City Women, Manchester City Women]
+  - canonical: Manchester United
+    gender: F
+    country: GB
+    aliases: [Man Utd Women, Manchester United Women]
+  - canonical: Barcelona
+    gender: F
+    country: ES
+    aliases: [FC Barcelona Femení, Barca Femeni, Barca Femení, Barcelona Femení]
+  - canonical: Real Madrid
+    gender: F
+    country: ES
+    aliases: [Real Madrid Femenino, Real Madrid Women]
+  - canonical: Atletico Madrid
+    gender: F
+    country: ES
+    aliases: [Atlético Madrid Femenino, Atletico Madrid Women]
+  - canonical: Lyon
+    gender: F
+    country: FR
+    aliases: [Olympique Lyonnais Féminin, OL Féminin]
+  - canonical: Paris Saint-Germain
+    gender: F
+    country: FR
+    aliases: [PSG Féminines, PSG Women, Paris Saint-Germain Féminines]
+  - canonical: Wolfsburg
+    gender: F
+    country: DE
+    aliases: [VfL Wolfsburg Frauen, Wolfsburg Women]
+  - canonical: Bayern Munich
+    gender: F
+    country: DE
+    aliases: [Bayern Munich Frauen, FC Bayern Frauen]
+  - canonical: Portland Thorns
+    gender: F
+    country: US
+    aliases: [Portland Thorns FC]
+  - canonical: OL Reign
+    gender: F
+    country: US
+    aliases: [Seattle Reign, OL Reign FC]
+  - canonical: Angel City
+    gender: F
+    country: US
+    aliases: [Angel City FC]
+  - canonical: NJ/NY Gotham FC
+    gender: F
+    country: US
+    aliases: [Gotham FC, Sky Blue FC]
