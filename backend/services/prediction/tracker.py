@@ -444,13 +444,19 @@ class PredictionTracker:
         limit: int = 50,
         league: Optional[str] = None,
         completed_only: bool = False,
+        gender: Optional[str] = None,
     ) -> List[PredictionRecord]:
         """Get recent predictions, optionally filtered."""
         predictions = list(self._predictions.values())
-        
+
         # Filter by league
         if league:
             predictions = [p for p in predictions if p.league.lower() == league.lower()]
+
+        # Filter by gender
+        if gender:
+            wanted = "F" if str(gender).upper() == "F" else "M"
+            predictions = [p for p in predictions if (p.gender or "M").upper() == wanted]
         
         # Filter to completed only
         if completed_only:

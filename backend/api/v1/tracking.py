@@ -137,20 +137,23 @@ async def get_recent_predictions(
     limit: int = Query(50, ge=1, le=200),
     league: Optional[str] = None,
     completed_only: bool = False,
+    gender: Optional[Literal["M", "F"]] = Query(None, description="Filter to one gender universe."),
 ):
     """
     Get recent predictions.
-    
+
     Args:
         limit: Maximum number of predictions to return
         league: Filter by league
         completed_only: Only return predictions with outcomes
+        gender: 'M' or 'F' to filter to one universe
     """
     tracker = get_prediction_tracker()
     predictions = tracker.get_recent_predictions(
         limit=limit,
         league=league,
         completed_only=completed_only,
+        gender=gender,
     )
     
     return {

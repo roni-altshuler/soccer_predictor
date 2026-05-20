@@ -15,6 +15,8 @@ import {
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
+import { GenderToggle } from '@/components/GenderToggle'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 import {
   MatchCenterHeader,
   type DateOption,
@@ -192,13 +194,18 @@ export default function Home() {
     }
   }, [trackedTeams.length, watchlistOnly])
 
-  // Today's matches — refetch every minute for live updates.
+  // Today's matches — refetch every minute for live updates, and every
+  // time the user toggles the men's/women's universe.
+  const { gender, asQueryParam } = useGenderQuery()
   useEffect(() => {
     let cancelled = false
     const fetchMatches = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/todays_matches?date=${selectedDate}`, { cache: 'no-store' })
+        const res = await fetch(
+          `/api/todays_matches?date=${selectedDate}&gender=${asQueryParam}`,
+          { cache: 'no-store' }
+        )
         if (res.ok && !cancelled) {
           const data = await res.json()
           setMatches(data)
@@ -216,7 +223,7 @@ export default function Home() {
       cancelled = true
       clearInterval(interval)
     }
-  }, [selectedDate])
+  }, [selectedDate, asQueryParam])
 
   const live = matches?.live || []
   const upcoming = matches?.upcoming || []
@@ -252,6 +259,38 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      {/* Hero strip — anchors the gender toggle and the AI accuracy headline */}
+      <div
+        className={cn(
+          'border-b border-[var(--border-color)]',
+          gender === 'women'
+            ? 'bg-gradient-to-r from-pink-500/10 via-[var(--background)] to-violet-500/10'
+            : 'bg-gradient-to-r from-[var(--accent-ai)]/10 via-[var(--background)] to-[var(--accent-primary)]/10'
+        )}
+      >
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              {gender === 'women' ? "Women's football" : "Men's football"} · Match Centre
+            </p>
+            <h1 className="text-h2 font-black leading-tight text-[var(--text-primary)]">
+              Watch live. See what the AI thinks.
+            </h1>
+            <p className="max-w-xl text-small text-[var(--text-tertiary)]">
+              Every fixture below is powered by our unified prediction model.
+              Switch universes to surface the {gender === 'women' ? 'top women\'s competitions' : "top men's competitions"} — and{' '}
+              <Link href="/accuracy" className="font-semibold text-[var(--accent-primary)] hover:underline">
+                see how accurate we've been
+              </Link>
+              .
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <GenderToggle size="hero" />
+          </div>
+        </div>
+      </div>
+
       <MatchCenterHeader
         dateOptions={dateOptions}
         selectedDate={selectedDate}
