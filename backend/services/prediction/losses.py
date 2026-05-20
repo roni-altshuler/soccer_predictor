@@ -230,10 +230,12 @@ def outcome_probabilities_from_pmf(pmf: torch.Tensor) -> Tuple[torch.Tensor, tor
     """Sum the scoreline grid into (P(home_win), P(draw), P(away_win)).
 
     `pmf` is ``(B, M, M)`` where ``pmf[b, h, a]`` = P(home=h, away=a).
+    Home win requires h > a — that's the lower triangle of the (h, a) grid
+    (row index > column index). Away win is the upper triangle.
     """
-    home_win = torch.triu(pmf, diagonal=1).sum(dim=(-2, -1))   # away < home
-    draw = pmf.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
-    away_win = torch.tril(pmf, diagonal=-1).sum(dim=(-2, -1))  # away > home
+    home_win = torch.tril(pmf, diagonal=-1).sum(dim=(-2, -1))   # h > a
+    draw = pmf.diagonal(dim1=-2, dim2=-1).sum(dim=-1)           # h == a
+    away_win = torch.triu(pmf, diagonal=1).sum(dim=(-2, -1))    # a > h
     return home_win, draw, away_win
 
 

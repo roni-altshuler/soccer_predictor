@@ -85,6 +85,39 @@ def test_outcome_probabilities_sum_to_one():
     assert torch.allclose(total, torch.ones(3), atol=1e-4)
 
 
+def test_outcome_probabilities_correctly_assign_home_and_away():
+    """Regression test: ``home_win`` must be probability mass where home > away.
+
+    The bug we caught: torch.triu(pmf, diagonal=1) gathers cells where
+    column-index > row-index, i.e. away > home — that's away_win, not
+    home_win. This test pins the correct mapping so it can't regress.
+    """
+    # Build a one-batch hand-crafted PMF where mass lives on three cells only:
+    #   pmf[2, 0] = 0.6  (home 2, away 0 → home_win)
+    #   pmf[1, 1] = 0.2  (home 1, away 1 → draw)
+    #   pmf[0, 2] = 0.2  (home 0, away 2 → away_win)
+    M = 3
+    pmf = torch.zeros(1, M, M)
+    pmf[0, 2, 0] = 0.6
+    pmf[0, 1, 1] = 0.2
+    pmf[0, 0, 2] = 0.2
+    hw, dr, aw = outcome_probabilities_from_pmf(pmf)
+    assert torch.allclose(hw, torch.tensor([0.6]))
+    assert torch.allclose(dr, torch.tensor([0.2]))
+    assert torch.allclose(aw, torch.tensor([0.2]))
+
+
+def test_outcome_consistent_with_xg_dominance():
+    """Sanity: when home xG strongly dominates away xG, home_win > away_win."""
+    lh = torch.tensor([3.0])  # high home xG
+    la = torch.tensor([0.5])  # low away xG
+    lc = torch.tensor([0.1])
+    pmf = scoreline_distribution(lh, la, lc)
+    hw, dr, aw = outcome_probabilities_from_pmf(pmf)
+    assert float(hw) > float(aw)
+    assert float(hw) > float(dr)
+
+
 def test_top_k_scorelines_returns_descending_probabilities():
     lh = torch.tensor([1.4])
     la = torch.tensor([1.0])
