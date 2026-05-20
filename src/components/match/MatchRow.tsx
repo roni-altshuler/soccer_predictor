@@ -4,23 +4,28 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 
+import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
+import { TeamFormPill, type FormEntry } from '@/components/match/TeamFormPill'
 import { Badge } from '@/components/ui/badge'
-import { cn, formatPct } from '@/lib/utils'
+import { cn, clamp, formatPct } from '@/lib/utils'
 
 /**
- * Canonical FotMob-style match row.
+ * Canonical FotMob-style match row, redesigned for visual density and
+ * AI legibility:
  *
- * Layout (left → right):
- *   ┌────────┬─────────────────────┬───────┬─────────────────────┬────────┐
- *   │ status │  home team (right)  │ score │  away team (left)   │ extras │
- *   └────────┴─────────────────────┴───────┴─────────────────────┴────────┘
+ *   ┌────┬──────────────────────┬───────────┬──────────────────────┬────┐
+ *   │ ★  │ home form · TEAM 🛡  │ FT 2 - 1  │ 🛡 TEAM · away form  │    │
+ *   │    │ AI lean bar (10px) ───────────────────────────────────────── │
+ *   └────┴────────────────────────────────────────────────────────────────┘
  *
- * - Status column: kickoff time, or live minute with red pulse, or "FT".
- * - Both team columns reserve room for a 24px crest; falls back to a
- *   stylised first-letter circle when no crest is supplied.
- * - The extras column hosts the AI lean bar + the user's favourite star.
- *
- * The row is fully clickable when `href` is supplied.
+ * - 52px tap target on mobile (FotMob is 56px; we trim slightly so
+ *   dense lists don't dominate the viewport).
+ * - The AI lean bar is 10px tall — the previous 1px bar was effectively
+ *   invisible and the user's #1 "looks beginner" complaint.
+ * - When confidence is supplied, a chip is rendered next to the
+ *   score so the model's certainty is visible without clicking through.
+ * - Crest fallback is a 28×28 letterform on the league accent colour
+ *   instead of the previous raw character.
  */
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'completed'
@@ -31,8 +36,8 @@ export interface MatchRowMatch {
   away_team: string
   home_score?: number | null
   away_score?: number | null
-  time?: string                // ISO datetime for upcoming
-  status: MatchStatus | string // tolerate unknown server values
+  time?: string
+  status: MatchStatus | string
   minute?: number | string | null
   venue?: string | null
   home_crest_url?: string | null
@@ -41,6 +46,13 @@ export interface MatchRowMatch {
   ai_home_prob?: number | null
   ai_draw_prob?: number | null
   ai_away_prob?: number | null
+  /** Optional 0..1 model confidence; if absent, derived from max probability. */
+  ai_confidence?: number | null
+  /** Optional recent form strings (e.g. "WDLLW") for inline pills. */
+  home_form?: string | FormEntry[] | null
+  away_form?: string | FormEntry[] | null
+  /** Optional league accent colour for the crest fallback background. */
+  league_accent?: string | null
 }
 
 function formatKickoff(timeStr?: string): string {
@@ -60,19 +72,22 @@ function TeamCrest({
   url,
   name,
   align,
+  leagueAccent,
 }: {
   url?: string | null
   name: string
   align: 'left' | 'right'
+  leagueAccent?: string | null
 }) {
+  const margin = align === 'right' ? 'order-2 ml-2' : 'mr-2'
   if (url) {
     return (
       <img
         src={url}
         alt=""
         className={cn(
-          'h-6 w-6 rounded-full bg-[var(--card-bg)] object-contain ring-1 ring-[var(--border-color)]',
-          align === 'right' ? 'order-2 ml-2' : 'mr-2'
+          'h-7 w-7 rounded-full bg-[var(--card-bg)] object-contain ring-1 ring-[var(--border-color)] shrink-0',
+          margin
         )}
         loading="lazy"
       />
@@ -82,10 +97,14 @@ function TeamCrest({
   return (
     <span
       className={cn(
-        'inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold',
-        'bg-[var(--surface-highlight)] text-[var(--text-secondary)] ring-1 ring-[var(--border-color)]',
-        align === 'right' ? 'order-2 ml-2' : 'mr-2'
+        'inline-flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-bold tracking-tight shrink-0',
+        'ring-1 ring-[var(--border-color)]',
+        margin
       )}
+      style={{
+        background: leagueAccent ? `${leagueAccent}1f` : 'var(--surface-highlight)',
+        color: leagueAccent || 'var(--text-secondary)',
+      }}
       aria-hidden="true"
     >
       {initial}
@@ -99,11 +118,11 @@ function StatusBlock({ match }: { match: MatchRowMatch }) {
     const homeScore = match.home_score ?? 0
     const awayScore = match.away_score ?? 0
     return (
-      <div className="flex w-20 flex-col items-center">
+      <div className="flex w-24 flex-col items-center">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-lg font-bold tabular-nums text-[var(--text-primary)]">{homeScore}</span>
+          <span className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{homeScore}</span>
           <span className="text-xs text-[var(--text-tertiary)]">–</span>
-          <span className="text-lg font-bold tabular-nums text-[var(--text-primary)]">{awayScore}</span>
+          <span className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{awayScore}</span>
         </div>
         <div className="mt-0.5 flex items-center gap-1">
           <span className="relative inline-flex h-1.5 w-1.5">
@@ -121,19 +140,19 @@ function StatusBlock({ match }: { match: MatchRowMatch }) {
     const homeScore = match.home_score ?? 0
     const awayScore = match.away_score ?? 0
     return (
-      <div className="flex w-20 flex-col items-center">
+      <div className="flex w-24 flex-col items-center">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-lg font-bold tabular-nums text-[var(--text-secondary)]">{homeScore}</span>
+          <span className="text-xl font-bold tabular-nums text-[var(--text-secondary)]">{homeScore}</span>
           <span className="text-xs text-[var(--text-tertiary)]">–</span>
-          <span className="text-lg font-bold tabular-nums text-[var(--text-secondary)]">{awayScore}</span>
+          <span className="text-xl font-bold tabular-nums text-[var(--text-secondary)]">{awayScore}</span>
         </div>
         <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">FT</span>
       </div>
     )
   }
   return (
-    <div className="flex w-20 flex-col items-center">
-      <span className="text-sm font-semibold tabular-nums text-[var(--accent-primary)]">
+    <div className="flex w-24 flex-col items-center">
+      <span className="text-base font-semibold tabular-nums text-[var(--accent-primary)]">
         {formatKickoff(match.time)}
       </span>
       <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -143,28 +162,43 @@ function StatusBlock({ match }: { match: MatchRowMatch }) {
   )
 }
 
-function AILeanBar({ home, draw, away }: { home: number; draw: number; away: number }) {
+/**
+ * Visible AI lean bar — 10px tall with embedded percentage labels at the
+ * three ends. The old 1px version was invisible on mobile.
+ */
+function AILeanBar({
+  home,
+  draw,
+  away,
+  homeTeam,
+  awayTeam,
+}: {
+  home: number
+  draw: number
+  away: number
+  homeTeam: string
+  awayTeam: string
+}) {
   const total = Math.max(1e-6, home + draw + away)
   const homePct = (home / total) * 100
   const drawPct = (draw / total) * 100
   const awayPct = (away / total) * 100
   return (
-    <div
-      className="mt-1.5 flex h-1 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]/30"
-      title={`AI lean: home ${formatPct(home)} · draw ${formatPct(draw)} · away ${formatPct(away)}`}
-    >
-      <span
-        className="block h-full bg-[var(--accent-primary)] transition-[width]"
-        style={{ width: `${homePct}%` }}
-      />
-      <span
-        className="block h-full bg-[var(--accent-warn)] transition-[width]"
-        style={{ width: `${drawPct}%` }}
-      />
-      <span
-        className="block h-full bg-[var(--accent-loss)] transition-[width]"
-        style={{ width: `${awayPct}%` }}
-      />
+    <div className="mt-1.5 w-full">
+      <div
+        className="flex h-2.5 w-full overflow-hidden rounded-full ring-1 ring-[var(--border-color)]"
+        title={`AI lean: ${homeTeam} ${formatPct(home)} · draw ${formatPct(draw)} · ${awayTeam} ${formatPct(away)}`}
+        aria-label="AI prediction lean"
+      >
+        <span className="block h-full bg-[var(--accent-primary)]" style={{ width: `${homePct}%` }} />
+        <span className="block h-full bg-[var(--accent-warn)]" style={{ width: `${drawPct}%` }} />
+        <span className="block h-full bg-[var(--accent-loss)]" style={{ width: `${awayPct}%` }} />
+      </div>
+      <div className="mt-1 flex items-center justify-between text-[10px] tabular-nums">
+        <span className="font-semibold text-[var(--accent-primary)]">{formatPct(home)}</span>
+        <span className="font-semibold text-[var(--accent-warn)]">{formatPct(draw)}</span>
+        <span className="font-semibold text-[var(--accent-loss)]">{formatPct(away)}</span>
+      </div>
     </div>
   )
 }
@@ -191,10 +225,23 @@ export function MatchRow({
     typeof match.ai_home_prob === 'number' &&
     typeof match.ai_draw_prob === 'number' &&
     typeof match.ai_away_prob === 'number'
+  const aiHome = clamp(match.ai_home_prob ?? 0)
+  const aiDraw = clamp(match.ai_draw_prob ?? 0)
+  const aiAway = clamp(match.ai_away_prob ?? 0)
+  const aiPick = hasAILean
+    ? aiHome > aiAway && aiHome > aiDraw
+      ? match.home_team
+      : aiAway > aiDraw
+      ? match.away_team
+      : 'Draw'
+    : null
+  const confidence = match.ai_confidence ?? (hasAILean ? Math.max(aiHome, aiDraw, aiAway) : null)
+
+  const isFinished = match.status === 'finished' || match.status === 'completed'
+  const teamTextClass = isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
 
   const body = (
     <div className="flex w-full items-center gap-2">
-      {/* Favourite toggle */}
       {showFavoriteToggle && (
         <button
           type="button"
@@ -204,47 +251,53 @@ export function MatchRow({
             onToggleFavorite?.(match)
           }}
           className={cn(
-            'flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
-            'text-[var(--text-tertiary)] hover:text-[var(--accent-warn)]',
-            isFavorite && 'text-[var(--accent-warn)]'
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+            'text-[var(--text-tertiary)] hover:text-amber-400',
+            isFavorite && 'text-amber-400'
           )}
           aria-label={isFavorite ? 'Unfollow match' : 'Follow match'}
         >
-          <Star className="h-3.5 w-3.5" fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
+          <Star className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
         </button>
       )}
 
       <div className="flex min-w-0 flex-1 items-center">
-        {/* Home team — right-aligned text, crest on right */}
         <div className="flex min-w-0 flex-1 items-center justify-end overflow-hidden text-right">
-          <span
-            className={cn(
-              'truncate text-sm font-medium',
-              match.status === 'finished' || match.status === 'completed'
-                ? 'text-[var(--text-secondary)]'
-                : 'text-[var(--text-primary)]'
-            )}
-          >
-            {match.home_team}
-          </span>
-          <TeamCrest url={match.home_crest_url} name={match.home_team} align="right" />
+          {match.home_form && (
+            <TeamFormPill
+              form={match.home_form}
+              size="xs"
+              className="mr-2 hidden sm:inline-flex"
+              teamName={match.home_team}
+            />
+          )}
+          <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.home_team}</span>
+          <TeamCrest
+            url={match.home_crest_url}
+            name={match.home_team}
+            align="right"
+            leagueAccent={match.league_accent}
+          />
         </div>
 
         <StatusBlock match={match} />
 
-        {/* Away team — left-aligned text, crest on left */}
         <div className="flex min-w-0 flex-1 items-center overflow-hidden">
-          <TeamCrest url={match.away_crest_url} name={match.away_team} align="left" />
-          <span
-            className={cn(
-              'truncate text-sm font-medium',
-              match.status === 'finished' || match.status === 'completed'
-                ? 'text-[var(--text-secondary)]'
-                : 'text-[var(--text-primary)]'
-            )}
-          >
-            {match.away_team}
-          </span>
+          <TeamCrest
+            url={match.away_crest_url}
+            name={match.away_team}
+            align="left"
+            leagueAccent={match.league_accent}
+          />
+          <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.away_team}</span>
+          {match.away_form && (
+            <TeamFormPill
+              form={match.away_form}
+              size="xs"
+              className="ml-2 hidden sm:inline-flex"
+              teamName={match.away_team}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -255,19 +308,27 @@ export function MatchRow({
       {body}
       {hasAILean && (
         <AILeanBar
-          home={match.ai_home_prob as number}
-          draw={match.ai_draw_prob as number}
-          away={match.ai_away_prob as number}
+          home={aiHome}
+          draw={aiDraw}
+          away={aiAway}
+          homeTeam={match.home_team}
+          awayTeam={match.away_team}
         />
       )}
-      {match.venue && (
-        <p className="mt-1 truncate text-center text-[10px] text-[var(--text-tertiary)]">{match.venue}</p>
+      {(match.venue || (confidence !== null && hasAILean)) && (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1 truncate text-[10px] text-[var(--text-tertiary)]">{match.venue}</div>
+          {confidence !== null && hasAILean && aiPick && (
+            <ConfidenceIndicator value={confidence} pick={aiPick} />
+          )}
+        </div>
       )}
     </div>
   )
 
   const className = cn(
     'group relative block w-full rounded-md px-3 py-2.5 transition-colors',
+    'min-h-[52px]',
     'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
   )
 
@@ -281,10 +342,7 @@ export function MatchRow({
   )
 }
 
-/**
- * Animated container that staggers rows on mount.
- * Use it when rendering a freshly-loaded list of matches.
- */
+/** Animated container that staggers rows on mount. */
 export function MatchRowList({
   children,
   className,
@@ -319,9 +377,6 @@ export function MatchRowList({
   )
 }
 
-/**
- * Convenience pill shown above a match list — FotMob shows these as the date-strip selector.
- */
 export function StatusPill({
   label,
   count,

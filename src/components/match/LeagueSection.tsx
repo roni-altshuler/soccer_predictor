@@ -5,23 +5,24 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
+import { LeagueBadge } from '@/components/match/LeagueBadge'
 import { MatchRow, type MatchRowMatch } from '@/components/match/MatchRow'
 import { Badge } from '@/components/ui/badge'
+import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
 
 /**
- * One league group on a Match Centre page, FotMob-style:
+ * One league group on a Match Centre page. Redesign goals (from the
+ * "feels beginner" audit):
  *
- *   ┌────────────────────────────────────────────────────────────┐
- *   │ 🏴󠁧󠁢󠁥󠁮󠁧󠁿  Premier League · England                  ▾  4 │   <- header
- *   ├────────────────────────────────────────────────────────────┤
- *   │ 14:00     Tottenham         🏟  Chelsea            FT 1-2  │
- *   │ 16:30     Liverpool         🏟  Man City           20:30   │
- *   │ ...                                                        │
- *   └────────────────────────────────────────────────────────────┘
- *
- * The header is clickable to collapse the section. Falls back to a soccer-
- * ball icon when no flag URL is provided.
+ *   - Replace the ⚽ emoji fallback with the new `LeagueBadge` so each
+ *     league has a clear brand presence.
+ *   - Add a thin left-edge accent bar coloured per league (Premier
+ *     League purple, La Liga red, NWSL green, …) for visual
+ *     differentiation between competitions in a long list.
+ *   - Surface a "table leader" pill in the header when the caller
+ *     supplies one.
+ *   - Keep the collapsible interaction — FotMob does the same.
  */
 
 export interface LeagueSectionProps {
@@ -32,34 +33,42 @@ export interface LeagueSectionProps {
   countryLabel?: string
   matches: MatchRowMatch[]
   defaultOpen?: boolean
-  /** Optional href factory turning a match into the destination URL. */
   hrefFor?: (match: MatchRowMatch) => string | undefined
+  /** Optional caption shown next to the league name (e.g. "Manchester City lead"). */
+  tableLeader?: string | null
 }
 
 export function LeagueSection({
   leagueName,
   leagueId,
-  countryFlagUrl,
-  leagueLogoUrl,
-  countryLabel,
   matches,
   defaultOpen = true,
   hrefFor,
+  tableLeader,
 }: LeagueSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
+  const accent = getLeagueAccent(leagueId ?? leagueName)
 
   if (matches.length === 0) return null
 
   const liveCount = matches.filter((m) => m.status === 'live').length
-  const headerIcon = leagueLogoUrl || countryFlagUrl
+  // Stamp every match with the league accent so the crest-fallback in
+  // MatchRow picks up the right brand colour.
+  const stampedMatches = matches.map((m) => ({
+    ...m,
+    league_accent: m.league_accent ?? accent.accent,
+  }))
 
   return (
-    <section className="border-b border-[var(--border-color)]/40 first:border-t">
+    <section
+      className="relative border-b border-[var(--border-color)]/40 first:border-t"
+      style={{ borderLeft: `3px solid ${accent.accent}` }}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center gap-2 px-3 py-2 transition-colors',
+          'flex w-full items-center gap-2 px-3 py-2.5 transition-colors',
           'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
         )}
         aria-expanded={open}
@@ -70,27 +79,18 @@ export function LeagueSection({
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.5} />
         )}
-        {headerIcon ? (
-          <img
-            src={headerIcon}
-            alt=""
-            aria-hidden="true"
-            className="h-4 w-auto rounded-sm"
-            loading="lazy"
-          />
-        ) : (
-          <span className="text-sm" aria-hidden="true">
-            ⚽
-          </span>
-        )}
-        <span className="truncate text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-          {leagueName}
-          {countryLabel && (
-            <span className="ml-1.5 text-[var(--text-tertiary)] normal-case font-medium tracking-normal">
-              · {countryLabel}
-            </span>
-          )}
+        <LeagueBadge league={leagueId ?? leagueName} size="md" />
+        <span className="ml-1 hidden truncate text-xs font-medium text-[var(--text-tertiary)] sm:inline">
+          {accent.country}
         </span>
+        {tableLeader && (
+          <Badge
+            variant="outline"
+            className="hidden border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 text-[10px] text-[var(--accent-primary)] md:inline-flex"
+          >
+            Leader: {tableLeader}
+          </Badge>
+        )}
         <div className="ml-auto flex items-center gap-2">
           {liveCount > 0 && (
             <Badge
@@ -107,7 +107,7 @@ export function LeagueSection({
               href={`/leagues/${leagueId}`}
               onClick={(e) => e.stopPropagation()}
               prefetch={false}
-              className="text-[10px] font-medium text-[var(--accent-primary)] hover:underline"
+              className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)] hover:underline"
             >
               View
             </Link>
@@ -126,7 +126,7 @@ export function LeagueSection({
             className="overflow-hidden"
           >
             <div className="divide-y divide-[var(--border-color)]/40">
-              {matches.map((match, idx) => (
+              {stampedMatches.map((match, idx) => (
                 <MatchRow
                   key={match.id ?? `${leagueName}-${idx}`}
                   match={match}

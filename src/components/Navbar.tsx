@@ -117,7 +117,7 @@ export const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <GenderToggle className="hidden lg:inline-flex" />
+              <GenderToggle className="hidden lg:inline-flex" size="default" />
               <ThemeToggle />
               {isAuthenticated && user ? (
                 <div className="relative">
@@ -162,7 +162,7 @@ export const Navbar = () => {
             <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/16 text-[var(--accent-ai)] border border-[var(--accent-ai)]/25">AI</span>
           </Link>
           <div className="flex items-center gap-2">
-            <GenderToggle compact />
+            <GenderToggle size="compact" />
             <ThemeToggle />
             {isAuthenticated && user ? (
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-xs shadow-md shadow-emerald-500/20">
