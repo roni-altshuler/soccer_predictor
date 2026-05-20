@@ -109,7 +109,31 @@ The May 3, 2026 audit is saved in [`docs/PROJECT_AUDIT_2026-05-03.md`](docs/PROJ
 
 The May 9, 2026 accuracy deep dive is saved in [`docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md`](docs/MODEL_ACCURACY_DEEP_DIVE_2026-05-09.md). It tracks the tournament data repair, the updated global-policy result, and the next methods most likely to improve real prediction quality. The May 11, 2026 implementation added data-quality CI, live-probability availability gates, no-vig market comparison scaffolding, Accuracy dashboard quality gates, and a chronological draw-decision tuning simulation saved in [`docs/MODEL_DECISION_POLICY_TUNING_2026-05-11.md`](docs/MODEL_DECISION_POLICY_TUNING_2026-05-11.md).
 
-### Latest Full Historical Retrain
+### Latest Unified Model Release — May 20, 2026
+
+The new **unified multi-task PyTorch model** is the headline change. Full
+release notes: [`docs/MODEL_UNIFIED_RELEASE_2026-05-20.md`](docs/MODEL_UNIFIED_RELEASE_2026-05-20.md).
+
+| Metric | May 9 global challenger | **May 20 unified (men's)** | Δ |
+|---|---|---|---|
+| Train / test matches | 61,847 / 9,163 | **77,735 / 11,661** | +27% / +27% |
+| Test accuracy | 49.6% | **60.56%** | **+10.96pp** |
+| Log loss | 1.003 | **0.865** | −0.138 |
+| Brier | ≈0.66 | **0.505** | −0.155 |
+| Draw recall | <1% | **21.0%** | **+20pp+** |
+
+A second `unified_women.pt` artefact was trained for the new women's
+universe (3,210 matches across NWSL, WSL, UWCL, Women's WC, Women's
+Euro): **51.45% test accuracy** on a 482-match holdout, with 140
+women's teams in the embedding vocabulary.
+
+The unified model is opt-in at the API for now (`?engine=unified` /
+`/api/v1/predictions/unified-by-name`); the live `?engine=auto` default
+falls back to legacy ELO-Poisson when the unified artefact is missing
+or a team isn't in the warehouse. The frontend match-detail page
+already has an **AI Prediction** tab rendering the new model.
+
+### Previous Per-League Retrain — May 9, 2026 (legacy)
 
 Last full per-league retrain: **May 9, 2026** using cached/refreshed historical data from 1998+ where available. Latest global-policy refresh: **May 11, 2026** after backfilling UEFA Euro 2000 and rerunning `--global-only`. The repaired global run used **61,847 ESPN/football-data/archive historical matches**, loaded **1,399 settled prediction outcomes**, and trained the global challenger on **63,226 candidate matches**. Each neural artifact uses a chronological **70% train / 15% calibration / 15% test** split.
 
