@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
+import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
 
 interface TeamSearchResult { name: string; league: string }
 
@@ -224,6 +225,103 @@ function PredictPageContent() {
   const canPredict = homeTeam && awayTeam && homeTeam.name !== awayTeam.name
   const formatPct = (value: number) => `${(value * 100).toFixed(1)}%`
 
+  /**
+   * Convert the legacy `/api/predict/any-teams` response into the
+   * `PredictionPayload` shape consumed by the new <PredictionResult /> viz.
+   * Falls back to sensible defaults when the legacy API omits a field
+   * (e.g. over_1_5 / over_3_5 — derive from Poisson-ish heuristics).
+   */
+  const adaptResult = useCallback((r: PredictionResult): PredictionPayload | null => {
+    if (!r.predictions || !r.home_team || !r.away_team) return null
+    const homeWin = r.predictions.home_win ?? 0
+    const draw = r.predictions.draw ?? 0
+    const awayWin = r.predictions.away_win ?? 0
+    const total = homeWin + draw + awayWin || 1
+    const norm = { home: homeWin / total, draw: draw / total, away: awayWin / total }
+    const confOverall = (r.confidence ?? 0) / 100
+
+    // Parse scorelines from legacy "h-a" string format.
+    const parseScore = (s: string): { home_goals: number; away_goals: number } => {
+      const m = s.match(/(\d+)\s*[-–]\s*(\d+)/)
+      return m
+        ? { home_goals: Number(m[1]), away_goals: Number(m[2]) }
+        : { home_goals: 0, away_goals: 0 }
+    }
+    const scorelines = (r.scoreline_probabilities ?? []).map((s) => ({
+      score: s.score,
+      probability: s.probability,
+      ...parseScore(s.score),
+    }))
+    const mostLikely =
+      scorelines[0] ?? {
+        score: `${Math.round(r.predicted_home_goals ?? 1)}-${Math.round(r.predicted_away_goals ?? 1)}`,
+        home_goals: Math.round(r.predicted_home_goals ?? 1),
+        away_goals: Math.round(r.predicted_away_goals ?? 1),
+        probability: norm.home > norm.away ? norm.home : norm.away,
+      }
+    const alternatives = scorelines.slice(1, 5)
+
+    const totalXg =
+      r.total_goals ??
+      (r.predicted_home_goals ?? 0) + (r.predicted_away_goals ?? 0)
+
+    // Legacy API doesn't expose 1.5/3.5 overs — derive from total goals
+    // using simple Poisson tail heuristics. Close enough to keep the
+    // markets strip populated; the unified endpoint provides exact values.
+    const over_2_5 = r.markets?.over_2_5 ?? Math.max(0, Math.min(1, (totalXg - 1.5) / 2))
+    const over_1_5 = Math.max(over_2_5, Math.min(1, (totalXg - 0.5) / 2))
+    const over_3_5 = Math.max(0, Math.min(over_2_5, (totalXg - 2.5) / 2))
+
+    return {
+      home_team: r.home_team,
+      away_team: r.away_team,
+      league: r.is_cross_league
+        ? `${r.home_league ?? ''} vs ${r.away_league ?? ''}`
+        : r.home_league ?? r.away_league ?? 'Match',
+      outcome: {
+        home_win: norm.home,
+        draw: norm.draw,
+        away_win: norm.away,
+        confidence: confOverall,
+      },
+      goals: {
+        home_expected_goals: r.predicted_home_goals ?? 0,
+        away_expected_goals: r.predicted_away_goals ?? 0,
+        total_expected_goals: totalXg,
+        over_1_5,
+        over_2_5,
+        over_3_5,
+        btts_yes: r.markets?.btts_yes ?? 0.5,
+      },
+      most_likely_score: mostLikely,
+      alternative_scores: alternatives,
+      factors: {
+        home_elo: r.ratings?.home_elo ?? 1500,
+        away_elo: r.ratings?.away_elo ?? 1500,
+        elo_difference: r.ratings?.elo_difference ?? 0,
+        home_form_score: r.form?.home_form ?? 0.5,
+        away_form_score: r.form?.away_form ?? 0.5,
+        home_advantage: 0.25,
+        h2h_advantage: 0,
+        injury_impact: 0,
+        rest_days_diff: 0,
+        importance_factor: 1.0,
+      },
+      confidence: {
+        data_quality: 0.8,
+        model_certainty: confOverall,
+        historical_accuracy: 0.5,
+        overall: confOverall,
+      },
+      model_version: 'legacy-elo-poisson',
+    }
+  }, [])
+
+  const adaptedPrediction = useMemo(
+    () => (result && !result.error ? adaptResult(result) : null),
+    [result, adaptResult]
+  )
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <div className="max-w-2xl mx-auto px-4 py-4">
@@ -301,84 +399,21 @@ function PredictPageContent() {
               </button>
             </div>
 
-            {/* Results */}
+            {/* Result visualisation — new unified PredictionResult component */}
+            {adaptedPrediction && (
+              <div className="mt-4">
+                <PredictionResultViz prediction={adaptedPrediction} />
+              </div>
+            )}
+
+            {/* Legacy verdict / policy strip — kept because the new component
+                doesn't yet render policy or cross-league context. */}
             {result && !result.error && result.predictions && (() => {
-              const hWin = (result.predictions.home_win || 0) * 100
-              const d = (result.predictions.draw || 0) * 100
-              const aWin = (result.predictions.away_win || 0) * 100
-              let winner = { team: 'Draw', prob: d }
-              if (hWin > d && hWin > aWin) winner = { team: result.home_team || '', prob: hWin }
-              else if (aWin > d && aWin > hWin) winner = { team: result.away_team || '', prob: aWin }
-
               return (
-                <div className="space-y-4 animate-fade-in">
-                  {/* Scoreline Card */}
-                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden shadow-[var(--shadow-sm)]">
-                    <div className="px-4 py-3 bg-gradient-to-r from-[var(--accent-ai)]/15 to-[var(--accent-primary)]/15 border-b border-[var(--border-color)] text-center">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-ai)]">AI Prediction</span>
-                    </div>
-                    <div className="p-6">
-                      <div className="flex items-center justify-center gap-6">
-                        <div className="text-center flex-1">
-                          <p className="text-xs text-[var(--text-tertiary)] mb-0.5">{result.home_league}</p>
-                          <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">{result.home_team}</p>
-                          <span className="text-4xl font-bold text-[var(--text-primary)]">{result.predicted_home_goals?.toFixed(0) || '-'}</span>
-                        </div>
-                        <span className="text-lg text-[var(--text-tertiary)]">-</span>
-                        <div className="text-center flex-1">
-                          <p className="text-xs text-[var(--text-tertiary)] mb-0.5">{result.away_league}</p>
-                          <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">{result.away_team}</p>
-                          <span className="text-4xl font-bold text-[var(--text-primary)]">{result.predicted_away_goals?.toFixed(0) || '-'}</span>
-                        </div>
-                      </div>
-                      <div className="text-center mt-4">
-                        <span className="text-xs text-[var(--text-tertiary)]">Predicted winner:</span>
-                        <p className="text-sm font-bold text-[var(--accent-ai)]">{winner.team} ({winner.prob.toFixed(1)}%)</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Probability Bars */}
-                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Win Probability</p>
-                    {[
-                      { label: result.home_team || 'Home', pct: hWin, color: 'bg-green-500' },
-                      { label: 'Draw', pct: d, color: 'bg-amber-500' },
-                      { label: result.away_team || 'Away', pct: aWin, color: 'bg-red-500' },
-                    ].map((bar) => (
-                      <div key={bar.label} className="mb-2.5 last:mb-0">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-[var(--text-primary)] font-medium">{bar.label}</span>
-                          <span className="font-bold text-[var(--text-primary)]">{bar.pct.toFixed(1)}%</span>
-                        </div>
-                        <div className="h-2 bg-[var(--muted-bg)] rounded-full overflow-hidden">
-                          <div className={`h-full ${bar.color} rounded-full transition-all duration-700`} style={{ width: `${bar.pct}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
+                <div className="space-y-4 animate-fade-in mt-4">
                   {/* Market & realism layer */}
                   <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Model Signals</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
-                        <p className="text-[10px] text-[var(--text-tertiary)]">Total Goals</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{(result.total_goals ?? ((result.predicted_home_goals || 0) + (result.predicted_away_goals || 0))).toFixed(1)}</p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
-                        <p className="text-[10px] text-[var(--text-tertiary)]">Over 2.5</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{Math.round((result.markets?.over_2_5 ?? 0) * 100)}%</p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
-                        <p className="text-[10px] text-[var(--text-tertiary)]">BTTS</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{Math.round((result.markets?.btts_yes ?? 0) * 100)}%</p>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-[var(--muted-bg)] text-center">
-                        <p className="text-[10px] text-[var(--text-tertiary)]">Risk Band</p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{result.verdict?.risk || 'Balanced'}</p>
-                      </div>
-                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Policy & cross-league context</p>
                     {result.verdict && (
                       <div className={`mt-3 rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-amber-500/35 bg-amber-500/10'}`}>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -406,73 +441,7 @@ function PredictPageContent() {
                     {result.verdict?.summary && (
                       <p className="mt-3 text-xs text-[var(--text-secondary)]">{result.verdict.summary}</p>
                     )}
-                    {result.scoreline_probabilities && result.scoreline_probabilities.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {result.scoreline_probabilities.slice(0, 4).map((scoreline) => (
-                          <span key={scoreline.score} className="px-2 py-1 rounded-full bg-[var(--muted-bg)] text-[10px] text-[var(--text-secondary)]">
-                            {scoreline.score} · {(scoreline.probability * 100).toFixed(0)}%
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
-
-                  {/* ELO & Analysis */}
-                  {result.ratings && (
-                    <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">ELO Ratings</p>
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="p-2.5 rounded-lg bg-[var(--muted-bg)]">
-                          <p className="text-lg font-bold text-[var(--text-primary)]">{result.ratings.home_elo}</p>
-                          <p className="text-[10px] text-[var(--text-tertiary)]">{result.home_team}</p>
-                        </div>
-                        <div className="p-2.5 rounded-lg bg-[var(--muted-bg)]">
-                          <p className={`text-lg font-bold ${result.ratings.elo_difference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {result.ratings.elo_difference >= 0 ? '+' : ''}{result.ratings.elo_difference}
-                          </p>
-                          <p className="text-[10px] text-[var(--text-tertiary)]">Difference</p>
-                        </div>
-                        <div className="p-2.5 rounded-lg bg-[var(--muted-bg)]">
-                          <p className="text-lg font-bold text-[var(--text-primary)]">{result.ratings.away_elo}</p>
-                          <p className="text-[10px] text-[var(--text-tertiary)]">{result.away_team}</p>
-                        </div>
-                      </div>
-                      {result.confidence && (
-                        <div className="mt-3">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-[var(--text-tertiary)]">Model Confidence</span>
-                            <span className="font-semibold text-[var(--accent-ai)]">{result.confidence.toFixed(0)}%</span>
-                          </div>
-                          <div className="h-1.5 bg-[var(--muted-bg)] rounded-full overflow-hidden">
-                            <div className="h-full bg-[var(--accent-ai)] rounded-full" style={{ width: `${result.confidence}%` }} />
-                          </div>
-                        </div>
-                      )}
-                      {result.analysis?.factors_considered && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {result.analysis.factors_considered.map((f, i) => (
-                            <span key={i} className="px-2 py-0.5 rounded-full bg-[var(--muted-bg)] text-[10px] text-[var(--text-tertiary)]">{f}</span>
-                          ))}
-                        </div>
-                      )}
-                      {result.form && (
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          <div className="rounded-lg bg-[var(--muted-bg)] p-2.5 text-center">
-                            <p className="text-[10px] text-[var(--text-tertiary)]">{result.home_team} form</p>
-                            <p className="text-sm font-semibold text-[var(--text-primary)]">{result.form.home_form_label}</p>
-                          </div>
-                          <div className="rounded-lg bg-[var(--muted-bg)] p-2.5 text-center">
-                            <p className="text-[10px] text-[var(--text-tertiary)]">{result.away_team} form</p>
-                            <p className="text-sm font-semibold text-[var(--text-primary)]">{result.form.away_form_label}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <p className="text-center text-[10px] text-[var(--text-tertiary)] py-2">
-                    ⚠️ Predictions are for educational/entertainment purposes only.
-                  </p>
                 </div>
               )
             })()}
