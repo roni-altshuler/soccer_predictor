@@ -5,7 +5,7 @@ Handles storing predictions, updating outcomes, and retrieving accuracy metrics.
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional, List
+from typing import Literal, Optional, List
 from pydantic import BaseModel
 
 from backend.services.prediction.tracker import (
@@ -163,27 +163,50 @@ async def get_recent_predictions(
 async def get_accuracy_metrics(
     league: Optional[str] = None,
     days: Optional[int] = Query(None, ge=1, le=365),
+    gender: Optional[Literal["M", "F"]] = Query(
+        None,
+        description="Filter to a specific gender universe. Omit for combined metrics.",
+    ),
 ):
     """
     Get model accuracy metrics.
-    
+
     Args:
         league: Filter to specific league
         days: Only consider predictions from last N days
+        gender: 'M' or 'F' to scope to one universe
     """
     tracker = get_prediction_tracker()
-    metrics = tracker.calculate_accuracy_metrics(league=league, days=days)
-    
+    metrics = tracker.calculate_accuracy_metrics(league=league, days=days, gender=gender)
+
     return metrics.to_dict()
 
 
 @router.get("/accuracy/by-league")
-async def get_accuracy_by_league():
+async def get_accuracy_by_league(
+    gender: Optional[Literal["M", "F"]] = Query(
+        None,
+        description="Filter to a specific gender universe.",
+    ),
+):
     """
     Get accuracy metrics broken down by league.
     """
     tracker = get_prediction_tracker()
-    return tracker.get_league_performance()
+    return tracker.get_league_performance(gender=gender)
+
+
+@router.get("/accuracy/by-gender")
+async def get_accuracy_by_gender():
+    """
+    Return accuracy metrics for both gender universes side by side.
+    Convenient for the /accuracy page tabs.
+    """
+    tracker = get_prediction_tracker()
+    return {
+        "M": tracker.calculate_accuracy_metrics(gender="M").to_dict(),
+        "F": tracker.calculate_accuracy_metrics(gender="F").to_dict(),
+    }
 
 
 @router.get("/model-adjustments")

@@ -58,6 +58,10 @@ class PredictionRecord:
     edge_score: Optional[float] = None
     threshold_qualified: Optional[bool] = None
     
+    # Gender universe: 'M' (men's) or 'F' (women's). Records written before
+    # the gender field existed default to 'M' on read — see from_dict below.
+    gender: str = "M"
+
     # Model factors used
     home_elo: float = 0.0
     away_elo: float = 0.0
@@ -100,6 +104,10 @@ class PredictionRecord:
         conf = filtered.get("confidence")
         if isinstance(conf, (int, float)) and conf > 1:
             filtered["confidence"] = conf / 100.0
+
+        # Records written before the gender column existed default to men's.
+        raw_gender = str(filtered.get("gender", "M") or "M").upper()
+        filtered["gender"] = "F" if raw_gender == "F" else "M"
 
         # Backfill missing/invalid predicted winner from probabilities.
         if filtered.get("predicted_winner") not in {"home", "draw", "away"}:
@@ -310,6 +318,7 @@ class PredictionTracker:
         away_elo: float = 0.0,
         weather_factor: float = 1.0,
         referee_factor: float = 1.0,
+        gender: str = "M",
     ) -> PredictionRecord:
         """
         Store a prediction before a match.
@@ -332,12 +341,14 @@ class PredictionTracker:
         edge_score = self._edge_from_probabilities(home_win_prob, draw_prob, away_win_prob)
         threshold_qualified = self._is_threshold_qualified(normalized_confidence, edge_score)
         
+        normalised_gender = "F" if str(gender or "M").upper() == "F" else "M"
         record = PredictionRecord(
             match_id=match_id,
             home_team=home_team,
             away_team=away_team,
             league=league,
             match_date=match_date,
+            gender=normalised_gender,
             predicted_home_win=home_win_prob,
             predicted_draw=draw_prob,
             predicted_away_win=away_win_prob,
@@ -454,22 +465,28 @@ class PredictionTracker:
         self,
         league: Optional[str] = None,
         days: Optional[int] = None,
+        gender: Optional[str] = None,
     ) -> ModelAccuracyMetrics:
         """
         Calculate comprehensive accuracy metrics.
-        
+
         Args:
             league: Filter to specific league
             days: Only consider predictions from last N days
+            gender: 'M' or 'F' to scope to one universe; None returns combined.
         """
         metrics = ModelAccuracyMetrics()
-        
+
         predictions = list(self._predictions.values())
-        
+
         # Apply filters
         if league:
             predictions = [p for p in predictions if p.league.lower() == league.lower()]
-        
+
+        if gender:
+            wanted = "F" if str(gender).upper() == "F" else "M"
+            predictions = [p for p in predictions if (p.gender or "M").upper() == wanted]
+
         if days:
             cutoff = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
             predictions = [p for p in predictions if p.match_date >= cutoff]
@@ -693,13 +710,25 @@ class PredictionTracker:
         
         return adjustments
     
-    def get_league_performance(self) -> Dict[str, Dict[str, Any]]:
-        """Get accuracy metrics broken down by league."""
-        leagues = set(p.league for p in self._predictions.values() if p.league)
-        
+    def get_league_performance(self, gender: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+        """Get accuracy metrics broken down by league.
+
+        Args:
+            gender: 'M' or 'F' to scope to one universe; None aggregates both.
+        """
+        gender_filter = None
+        if gender:
+            gender_filter = "F" if str(gender).upper() == "F" else "M"
+
+        leagues = set(
+            p.league
+            for p in self._predictions.values()
+            if p.league and (gender_filter is None or (p.gender or "M").upper() == gender_filter)
+        )
+
         results = {}
         for league in leagues:
-            metrics = self.calculate_accuracy_metrics(league=league)
+            metrics = self.calculate_accuracy_metrics(league=league, gender=gender_filter)
             results[league] = {
                 "total": metrics.total_predictions,
                 "completed": metrics.completed_predictions,
@@ -709,7 +738,7 @@ class PredictionTracker:
                 "exactScoreline": round(metrics.exact_scoreline_rate, 3),
                 "brierScore": round(metrics.brier_score, 4),
             }
-        
+
         return results
 
 

@@ -28,8 +28,8 @@ interface ESPNCompetitor {
   }
 }
 
-// ESPN league IDs for major leagues
-const ESPN_LEAGUES = [
+// ESPN league IDs for men's leagues (the default).
+const MENS_ESPN_LEAGUES = [
   { id: 'eng.1', name: 'Premier League' },
   { id: 'esp.1', name: 'La Liga' },
   { id: 'ita.1', name: 'Serie A' },
@@ -43,6 +43,18 @@ const ESPN_LEAGUES = [
   { id: 'uefa.europa.conf', name: 'UEFA Conference League' },
   { id: 'fifa.world', name: 'FIFA World Cup 2026' },
 ]
+
+// ESPN league IDs for women's competitions. The warehouse + unified women's
+// model are trained on this set; see backend/services/data/espn_loader.py.
+const WOMENS_ESPN_LEAGUES = [
+  { id: 'usa.nwsl', name: 'NWSL' },
+  { id: 'eng.w.1', name: "FA Women's Super League" },
+  { id: 'uefa.wchampions', name: "UEFA Women's Champions League" },
+  { id: 'uefa.weuro', name: "UEFA Women's European Championship" },
+  { id: 'fifa.wwc', name: "FIFA Women's World Cup" },
+]
+
+const ESPN_LEAGUES = MENS_ESPN_LEAGUES // legacy alias, kept for callers below
 
 function resolveRequestedDate(rawDate: string | null): Date {
   if (!rawDate) return new Date()
@@ -59,13 +71,15 @@ function resolveRequestedDate(rawDate: string | null): Date {
   return parsed
 }
 
-async function fetchESPNMatches(targetDate: Date): Promise<Match[]> {
+async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Promise<Match[]> {
   const allMatches: Match[] = []
-  
+
   // Convert target date to YYYYMMDD format for ESPN API
   const targetDateStr = `${targetDate.getUTCFullYear()}${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}${String(targetDate.getUTCDate()).padStart(2, '0')}`
-  
-  for (const league of ESPN_LEAGUES) {
+
+  const leaguesToFetch = gender === 'F' ? WOMENS_ESPN_LEAGUES : MENS_ESPN_LEAGUES
+
+  for (const league of leaguesToFetch) {
     try {
       // Use dates parameter to explicitly request today's matches
       const response = await fetch(
@@ -225,12 +239,17 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
 export async function GET(request: NextRequest) {
   try {
     const requestedDate = resolveRequestedDate(request.nextUrl.searchParams.get('date'))
+    const rawGender = request.nextUrl.searchParams.get('gender')
+    const gender: 'M' | 'F' = rawGender === 'F' ? 'F' : 'M'
 
     // Try ESPN first, then FotMob. Never synthesize match rows.
     let source: 'espn' | 'fotmob' | 'none' = 'espn'
-    let matches = await fetchESPNMatches(requestedDate)
-    
-    if (matches.length === 0) {
+    let matches = await fetchESPNMatches(requestedDate, gender)
+
+    // FotMob's coverage is essentially men's-only; only fall back to it for
+    // the men's universe. For women's, we trust the ESPN result (even if
+    // empty) so the UI shows an honest "no women's matches today" state.
+    if (matches.length === 0 && gender === 'M') {
       const fotMobMatches = await fetchFotMobMatches(requestedDate)
       if (fotMobMatches.length > 0) {
         matches = fotMobMatches
@@ -238,6 +257,8 @@ export async function GET(request: NextRequest) {
       } else {
         source = 'none'
       }
+    } else if (matches.length === 0) {
+      source = 'none'
     }
     
     // Categorize matches
