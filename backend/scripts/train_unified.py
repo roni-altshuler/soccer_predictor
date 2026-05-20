@@ -179,6 +179,10 @@ def _train_one_epoch(
     *,
     batch_size: int,
     class_weights: torch.Tensor,
+    outcome_weight: float,
+    bivariate_weight: float,
+    xg_mse_weight: float,
+    focal_gamma: float,
 ) -> Dict[str, float]:
     model.train()
     totals = {"total": 0.0, "outcome": 0.0, "bivariate": 0.0, "xg_mse": 0.0, "n": 0}
@@ -195,6 +199,10 @@ def _train_one_epoch(
             home_goals=batch["home_goals"],
             away_goals=batch["away_goals"],
             class_weights=class_weights,
+            outcome_weight=outcome_weight,
+            bivariate_weight=bivariate_weight,
+            xg_mse_weight=xg_mse_weight,
+            focal_gamma=focal_gamma,
         )
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
@@ -355,6 +363,33 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--patience", type=int, default=10, help="Early stopping patience in epochs.")
     parser.add_argument("--device", default=None, help="torch device, e.g. 'cpu' or 'cuda'.")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--outcome-loss-weight", type=float, default=0.7,
+        help="Weight on the focal outcome loss. Lower values prevent the model "
+             "from collapsing onto the majority class.",
+    )
+    parser.add_argument(
+        "--bivariate-loss-weight", type=float, default=1.0,
+        help="Weight on the bivariate-Poisson scoreline NLL.",
+    )
+    parser.add_argument(
+        "--xg-mse-weight", type=float, default=0.25,
+        help="Weight on the auxiliary xG MSE anchor.",
+    )
+    parser.add_argument(
+        "--focal-gamma", type=float, default=1.5,
+        help="Focal loss focusing parameter. 0 = cross-entropy; 2 = paper default.",
+    )
+    parser.add_argument(
+        "--class-weight-cap", type=float, default=1.5,
+        help="Maximum ratio between any two class weights. 1.0 disables class "
+             "weighting entirely; full inverse-frequency would be ~1.8.",
+    )
+    parser.add_argument(
+        "--draw-recall-floor", type=float, default=0.10,
+        help="Composite stopping criterion penalises models whose val draw "
+             "recall drops below this threshold.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -399,16 +434,34 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.info("Built UnifiedMatchModel with %d parameters", n_parameters(model))
 
     # Class weights to nudge the model away from collapsing onto home_win.
+    # Full inverse-frequency over-corrects (the bug we hit in the first real
+    # run: model collapsed onto away_win). Cap the spread between any two
+    # classes at `--class-weight-cap` so the rare-class bonus stays gentle.
     class_counts = np.bincount([r.outcome_target for r in train_rows], minlength=3)
     inv_freq = class_counts.sum() / np.maximum(class_counts, 1) / 3.0
-    class_weights = torch.tensor(inv_freq, dtype=torch.float32, device=device)
+    if args.class_weight_cap > 1.0:
+        min_w = inv_freq.min()
+        capped = np.minimum(inv_freq, min_w * args.class_weight_cap)
+        class_weights_np = capped / capped.mean()  # renormalise so mean weight = 1
+    else:
+        class_weights_np = np.ones(3, dtype=np.float32)
+    class_weights = torch.tensor(class_weights_np, dtype=torch.float32, device=device)
     logger.info("Class weights (home_win, draw, away_win): %s", class_weights.tolist())
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
-    best_val_loss = math.inf
+    # Composite stopping score: accuracy − sharp penalty when draw recall
+    # drops below the floor. This prevents the "ignore draws to chase
+    # accuracy" failure mode we saw in the v1 run (best val_log_loss
+    # epoch had val_draw_recall = 0.017).
+    def _composite_score(m: Dict[str, float]) -> float:
+        penalty = max(0.0, args.draw_recall_floor - m["draw_recall"])
+        return m["accuracy"] - 0.5 * penalty
+
+    best_score = -math.inf
     best_state: Optional[Dict] = None
+    best_epoch_metrics: Dict[str, float] = {}
     epochs_no_improve = 0
     history: List[Dict] = []
 
@@ -417,6 +470,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         train_metrics = _train_one_epoch(
             model, optimizer, train_tensors,
             batch_size=args.batch_size, class_weights=class_weights,
+            outcome_weight=args.outcome_loss_weight,
+            bivariate_weight=args.bivariate_loss_weight,
+            xg_mse_weight=args.xg_mse_weight,
+            focal_gamma=args.focal_gamma,
         )
         val_metrics = _evaluate(model, val_tensors)
         scheduler.step()
@@ -427,27 +484,39 @@ def main(argv: Optional[List[str]] = None) -> int:
                         "val_brier": val_metrics["brier"],
                         "val_draw_recall": val_metrics["draw_recall"]})
 
+        score = _composite_score(val_metrics)
         logger.info(
-            "epoch %3d/%d  train_total=%.4f  val_acc=%.4f  val_logloss=%.4f  val_draw_recall=%.3f  (%.1fs)",
+            "epoch %3d/%d  train=%.4f  val_acc=%.4f  val_ll=%.4f  val_dr=%.3f  score=%.4f  (%.1fs)",
             epoch + 1, args.epochs,
             train_metrics["total"],
-            val_metrics["accuracy"], val_metrics["log_loss"], val_metrics["draw_recall"],
+            val_metrics["accuracy"], val_metrics["log_loss"],
+            val_metrics["draw_recall"], score,
             time.time() - t0,
         )
 
-        if val_metrics["log_loss"] < best_val_loss - 1e-4:
-            best_val_loss = val_metrics["log_loss"]
+        if score > best_score + 1e-4:
+            best_score = score
             best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+            best_epoch_metrics = dict(val_metrics)
+            best_epoch_metrics["epoch"] = epoch + 1
+            best_epoch_metrics["score"] = score
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= args.patience:
-                logger.info("Early stopping at epoch %d (no improvement for %d epochs).", epoch + 1, args.patience)
+                logger.info("Early stopping at epoch %d (no composite-score improvement for %d epochs).", epoch + 1, args.patience)
                 break
 
     if best_state is not None:
         model.load_state_dict(best_state)
-    logger.info("Best val log-loss: %.4f", best_val_loss)
+    logger.info(
+        "Best epoch: %d  val_acc=%.4f  val_ll=%.4f  val_dr=%.3f  score=%.4f",
+        best_epoch_metrics.get("epoch", -1),
+        best_epoch_metrics.get("accuracy", 0.0),
+        best_epoch_metrics.get("log_loss", 0.0),
+        best_epoch_metrics.get("draw_recall", 0.0),
+        best_score,
+    )
 
     # Fit calibrator on val set, evaluate on test set.
     calibrators = _fit_calibrator(model, val_tensors)

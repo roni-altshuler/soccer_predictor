@@ -2,8 +2,8 @@
 Prediction-related API endpoints.
 """
 
-from typing import List, Optional
-from datetime import datetime
+from typing import List, Literal, Optional
+from datetime import datetime, timezone
 import logging
 from fastapi import APIRouter, HTTPException, Query, Body
 
@@ -17,12 +17,99 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/predictions", tags=["predictions"])
 
 
+# --- ESPN league → warehouse competition_id map (mirrors espn_loader.py) ---
+_LEAGUE_NAME_TO_COMPETITION_ID = {
+    "Premier League": "eng.1",
+    "La Liga": "esp.1",
+    "LALIGA EA SPORTS": "esp.1",
+    "Bundesliga": "ger.1",
+    "Serie A": "ita.1",
+    "Ligue 1": "fra.1",
+    "Eredivisie": "ned.1",
+    "Primeira Liga": "por.1",
+    "Liga Portugal": "por.1",
+    "MLS": "usa.1",
+    "Major League Soccer": "usa.1",
+    "UEFA Champions League": "uefa.champions",
+    "Champions League": "uefa.champions",
+    "UEFA Europa League": "uefa.europa",
+    "Europa League": "uefa.europa",
+    "FIFA World Cup": "fifa.world",
+    "World Cup": "fifa.world",
+    "UEFA European Championship": "uefa.euro",
+    "EURO 2024": "uefa.euro",
+    "Copa América": "conmebol.america",
+    "Copa America": "conmebol.america",
+}
+
+
+def _league_name_to_competition_id(league_name: str) -> Optional[str]:
+    """Best-effort mapping from FotMob/ESPN league name → warehouse competition_id."""
+    if not league_name:
+        return None
+    if league_name in _LEAGUE_NAME_TO_COMPETITION_ID:
+        return _LEAGUE_NAME_TO_COMPETITION_ID[league_name]
+    # Loose substring match (handles things like "English Premier League").
+    lname = league_name.lower()
+    for known, comp in _LEAGUE_NAME_TO_COMPETITION_ID.items():
+        if known.lower() in lname or lname in known.lower():
+            return comp
+    return None
+
+
+def _try_unified_prediction(
+    *,
+    home_team: str,
+    away_team: str,
+    league_name: str,
+    kickoff_time: datetime,
+    gender: str,
+    match_id: int,
+) -> Optional[MatchPrediction]:
+    """Try the unified model. Returns None on any failure so caller can fall back."""
+    try:
+        from backend.services.prediction.unified_inference import predict_for_fixture
+    except Exception as exc:
+        logger.debug("Unified inference import failed: %s", exc)
+        return None
+
+    comp_id = _league_name_to_competition_id(league_name)
+    if not comp_id:
+        logger.debug("No competition_id mapping for league %r — skipping unified.", league_name)
+        return None
+
+    try:
+        pred = predict_for_fixture(
+            home_team, away_team, comp_id, league_name,
+            kickoff_time, gender=gender,
+        )
+    except Exception as exc:
+        logger.warning("Unified prediction errored for %s vs %s: %s", home_team, away_team, exc)
+        return None
+
+    if pred is not None:
+        # Backfill the integer match_id we got from FotMob since the inference
+        # path doesn't know about it.
+        pred.match_id = int(match_id)
+    return pred
+
+
 @router.get("/match/{match_id}")
-async def predict_match(match_id: int):
+async def predict_match(
+    match_id: int,
+    gender: Literal["M", "F"] = Query("M", description="Gender universe: M for men's, F for women's."),
+    engine: Literal["auto", "unified", "legacy"] = Query(
+        "auto",
+        description="Which prediction engine to use. 'auto' tries the unified model first and falls back to legacy.",
+    ),
+):
     """
     Get prediction for a specific match.
-    
-    Fetches match data from FotMob and generates a comprehensive prediction.
+
+    Fetches match data from FotMob to identify the teams + league, then runs
+    the unified multi-task model when available (or the legacy ELO-Poisson
+    service when not). Use `?engine=legacy` to force the legacy path or
+    `?engine=unified` to require the new model.
     """
     client = get_fotmob_client()
     elo = get_elo_system()
@@ -128,8 +215,48 @@ async def predict_match(match_id: int):
         "home_rest_days": 7,
         "away_rest_days": 7,
     }
-    
-    # Generate prediction
+
+    # Try the unified model first when allowed. It pulls everything it needs
+    # from the warehouse, so we can skip the rest of the FotMob plumbing.
+    if engine in ("auto", "unified"):
+        unified = _try_unified_prediction(
+            home_team=home_name, away_team=away_name,
+            league_name=league, kickoff_time=kickoff_time,
+            gender=gender, match_id=match_id,
+        )
+        if unified is not None:
+            try:
+                from backend.services.prediction.tracker import get_prediction_tracker
+                tracker = get_prediction_tracker()
+                tracker.store_prediction(
+                    match_id=str(match_id),
+                    home_team=home_name,
+                    away_team=away_name,
+                    league=league,
+                    match_date=kickoff_time.isoformat()[:10],
+                    home_win_prob=unified.outcome.home_win,
+                    draw_prob=unified.outcome.draw,
+                    away_win_prob=unified.outcome.away_win,
+                    home_xG=unified.goals.home_expected_goals,
+                    away_xG=unified.goals.away_expected_goals,
+                    confidence=unified.confidence.overall,
+                    home_elo=unified.factors.home_elo,
+                    away_elo=unified.factors.away_elo,
+                )
+            except Exception as exc:
+                logger.warning("Auto-store unified prediction failed: %s", exc)
+            return unified
+        if engine == "unified":
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Unified model unavailable for {home_name} vs {away_name} "
+                    f"(gender={gender}, league={league!r}). Try ?engine=legacy or "
+                    f"verify the warehouse + model artifact are present."
+                ),
+            )
+
+    # Generate prediction (legacy path)
     service = get_prediction_service()
     prediction = await service.predict_match(
         match_id=match_id,
@@ -163,6 +290,46 @@ async def predict_match(match_id: int):
         logger.warning(f"Auto-store prediction failed: {e}")
 
     return prediction
+
+
+@router.get("/unified-by-name", response_model=MatchPrediction)
+async def predict_by_team_names(
+    home_team: str = Query(..., description="Home team name as the warehouse / aliases know it."),
+    away_team: str = Query(..., description="Away team name."),
+    competition_id: str = Query(..., description="Warehouse competition_id, e.g. 'eng.1' or 'fifa.world.w'."),
+    competition_name: Optional[str] = Query(None, description="Display name; defaults to competition_id."),
+    kickoff_utc: Optional[datetime] = Query(None, description="ISO 8601 kickoff time. Defaults to 'now'."),
+    gender: Literal["M", "F"] = Query("M"),
+):
+    """
+    Run the unified multi-task model directly for an arbitrary home/away/competition.
+
+    This is the endpoint the new prediction wizard UI calls — it doesn't need a
+    FotMob match ID, just team names + a warehouse competition_id. Returns the
+    same `MatchPrediction` shape as `/match/{match_id}`.
+
+    Returns 503 if the unified artifact for the requested gender hasn't been
+    trained yet (run `python -m backend.scripts.train_unified --gender M/F`).
+    """
+    from backend.services.prediction.unified_inference import predict_for_fixture
+
+    kickoff = (kickoff_utc or datetime.now(timezone.utc))
+    pred = predict_for_fixture(
+        home_team, away_team,
+        competition_id, competition_name or competition_id,
+        kickoff, gender=gender,
+    )
+    if pred is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Unified prediction unavailable: either the {gender}-gender artifact "
+                f"is missing or one of '{home_team}'/'{away_team}' is not in the warehouse. "
+                "Build the warehouse via `python -m backend.scripts.build_warehouse --full` "
+                "and train via `python -m backend.scripts.train_unified --gender M`."
+            ),
+        )
+    return pred
 
 
 @router.post("/batch")
