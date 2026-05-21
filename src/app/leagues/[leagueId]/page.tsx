@@ -5,6 +5,12 @@ type TournamentId = 'champions_league' | 'europa_league' | 'conference_league' |
 
 // League configuration for known leagues (FotMob-style IDs and names)
 const LEAGUE_CONFIG: Record<string, { name: string; country: string; isTournament?: boolean; tournamentId?: TournamentId }> = {
+  // Women's universe
+  'eng.1.w': { name: "FA Women's Super League", country: 'England' },
+  'usa.1.w': { name: 'NWSL', country: 'USA' },
+  'uefa.champions.w': { name: "UEFA Women's Champions League", country: 'Europe', isTournament: true, tournamentId: 'champions_league' },
+  'uefa.euro.w': { name: "UEFA Women's European Championship", country: 'Europe', isTournament: true, tournamentId: 'euro' },
+  'fifa.world.w': { name: "FIFA Women's World Cup", country: 'World', isTournament: true, tournamentId: 'world_cup' },
   // ESPN-style IDs
   'eng.1': { name: 'Premier League', country: 'England' },
   'esp.1': { name: 'La Liga', country: 'Spain' },

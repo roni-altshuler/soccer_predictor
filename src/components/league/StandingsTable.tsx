@@ -1,150 +1,234 @@
-'use client';
+'use client'
 
-import React from 'react';
+import Link from 'next/link'
 
-interface StandingsTableProps {
-  standings: Array<{
-    position: number;
-    team_id?: number;
-    team_name: string;
-    team_logo?: string;
-    played: number;
-    won: number;
-    drawn: number;
-    lost: number;
-    goals_for: number;
-    goals_against: number;
-    goal_difference: number;
-    points: number;
-    form?: string[];
-  }>;
-  highlightTeams?: number[];
-  leagueName?: string;
+import { TeamFormPill } from '@/components/match/TeamFormPill'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+/**
+ * Domestic-league standings table. Redesign notes:
+ *
+ *   - Uses CSS variables for every colour instead of hard-coded
+ *     `border-blue-500` / `border-orange-500` etc. so the table
+ *     respects the app's brand palette and survives dark/light flips.
+ *   - "Competition zones" are shaded full-row backgrounds (top-4 =
+ *     UCL tint, 5-6 = Europa tint, bottom-3 = relegation tint) — the
+ *     previous left-edge ribbon was visually weak and easy to miss.
+ *   - Form column is always visible (never `hidden md:`), since the
+ *     last-five run is one of the most-glanced data points in FotMob.
+ *   - Each row links to the future team page when a `team_id` is
+ *     present.
+ *   - Wrapped in `<Card>` so it shares the same border / shadow /
+ *     radius tokens as the rest of the redesigned surfaces.
+ */
+
+interface StandingsRow {
+  position: number
+  team_id?: number
+  team_name: string
+  team_logo?: string
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  goals_for: number
+  goals_against: number
+  goal_difference: number
+  points: number
+  form?: string[]
 }
 
-export default function StandingsTable({ standings, highlightTeams = [], leagueName }: StandingsTableProps) {
-  const getPositionColor = (position: number, total: number) => {
-    if (position <= 4) return 'border-l-4 border-blue-500'; // Champions League
-    if (position === 5) return 'border-l-4 border-orange-500'; // Europa League
-    if (position === 6) return 'border-l-4 border-green-500'; // Conference League
-    if (position > total - 3) return 'border-l-4 border-red-500'; // Relegation
-    return '';
-  };
+interface StandingsTableProps {
+  standings: StandingsRow[]
+  highlightTeams?: number[]
+  leagueName?: string
+  /** Show or hide the legend strip. */
+  showLegend?: boolean
+  /** When the league has no European places (smaller leagues), pass `false`. */
+  showEuropeanZones?: boolean
+}
 
-  const getFormBadge = (result: string) => {
-    switch (result.toUpperCase()) {
-      case 'W':
-        return 'bg-green-500 text-white';
-      case 'D':
-        return 'bg-gray-400 text-white';
-      case 'L':
-        return 'bg-red-500 text-white';
-      default:
-        return 'bg-gray-200';
-    }
-  };
+type Zone = 'ucl' | 'europa' | 'conference' | 'relegation' | null
 
+function zoneForPosition(position: number, total: number, showEuropeanZones: boolean): Zone {
+  if (!showEuropeanZones) {
+    if (position > total - 3) return 'relegation'
+    return null
+  }
+  if (position <= 4) return 'ucl'
+  if (position === 5) return 'europa'
+  if (position === 6) return 'conference'
+  if (position > total - 3) return 'relegation'
+  return null
+}
+
+const zoneStyles: Record<NonNullable<Zone>, { bg: string; bar: string; chip: string; label: string }> = {
+  ucl: {
+    bg: 'bg-[var(--accent-ai)]/8',
+    bar: 'border-l-2 border-[var(--accent-ai)]',
+    chip: 'bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]',
+    label: 'Champions League',
+  },
+  europa: {
+    bg: 'bg-amber-500/8',
+    bar: 'border-l-2 border-amber-500',
+    chip: 'bg-amber-500/15 text-amber-400',
+    label: 'Europa League',
+  },
+  conference: {
+    bg: 'bg-emerald-500/8',
+    bar: 'border-l-2 border-emerald-500',
+    chip: 'bg-emerald-500/15 text-emerald-400',
+    label: 'Conference League',
+  },
+  relegation: {
+    bg: 'bg-red-500/8',
+    bar: 'border-l-2 border-red-500',
+    chip: 'bg-red-500/15 text-red-400',
+    label: 'Relegation',
+  },
+}
+
+export default function StandingsTable({
+  standings,
+  highlightTeams = [],
+  leagueName,
+  showLegend = true,
+  showEuropeanZones = true,
+}: StandingsTableProps) {
+  if (!standings || standings.length === 0) {
+    return (
+      <Card className="flex h-32 items-center justify-center text-sm text-[var(--text-tertiary)]">
+        No standings available.
+      </Card>
+    )
+  }
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+    <Card className="overflow-hidden">
       {leagueName && (
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{leagueName}</h3>
+        <div className="border-b border-[var(--border-color)] px-4 py-3">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">{leagueName}</h3>
         </div>
       )}
-      
+
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
-              <th className="px-4 py-3 text-left">#</th>
-              <th className="px-4 py-3 text-left">Team</th>
-              <th className="px-4 py-3 text-center">P</th>
-              <th className="px-4 py-3 text-center">W</th>
-              <th className="px-4 py-3 text-center">D</th>
-              <th className="px-4 py-3 text-center">L</th>
-              <th className="px-4 py-3 text-center hidden md:table-cell">GF</th>
-              <th className="px-4 py-3 text-center hidden md:table-cell">GA</th>
-              <th className="px-4 py-3 text-center">GD</th>
-              <th className="px-4 py-3 text-center font-bold">Pts</th>
-              <th className="px-4 py-3 text-center hidden lg:table-cell">Form</th>
+            <tr className="border-b border-[var(--border-color)] bg-[var(--surface-muted)]/30 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+              <th className="px-3 py-3 text-left w-8">#</th>
+              <th className="px-3 py-3 text-left">Team</th>
+              <th className="px-2 py-3 text-center" title="Played">P</th>
+              <th className="px-2 py-3 text-center" title="Won">W</th>
+              <th className="px-2 py-3 text-center" title="Drawn">D</th>
+              <th className="px-2 py-3 text-center" title="Lost">L</th>
+              <th className="hidden px-2 py-3 text-center md:table-cell" title="Goals for">GF</th>
+              <th className="hidden px-2 py-3 text-center md:table-cell" title="Goals against">GA</th>
+              <th className="px-2 py-3 text-center" title="Goal difference">GD</th>
+              <th className="px-3 py-3 text-center font-bold text-[var(--text-secondary)]">Pts</th>
+              <th className="px-3 py-3 text-center">Form</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-            {standings.map((row) => (
-              <tr 
-                key={row.position}
-                className={`
-                  hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors
-                  ${getPositionColor(row.position, standings.length)}
-                  ${highlightTeams.includes(row.team_id || 0) ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}
-                `}
-              >
-                <td className="px-4 py-3 text-sm font-medium text-gray-500">{row.position}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {row.team_logo && (
-                      <img 
-                        src={row.team_logo} 
-                        alt={row.team_name}
-                        className="w-6 h-6 object-contain"
-                      />
-                    )}
-                    <span className="font-medium text-gray-900 dark:text-white text-sm">
-                      {row.team_name}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">{row.played}</td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">{row.won}</td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">{row.drawn}</td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">{row.lost}</td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell">{row.goals_for}</td>
-                <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell">{row.goals_against}</td>
-                <td className="px-4 py-3 text-center text-sm font-medium text-gray-900 dark:text-white">
-                  {row.goal_difference > 0 ? '+' : ''}{row.goal_difference}
-                </td>
-                <td className="px-4 py-3 text-center text-sm font-bold text-gray-900 dark:text-white">{row.points}</td>
-                <td className="px-4 py-3 hidden lg:table-cell">
-                  {row.form && (
-                    <div className="flex gap-1 justify-center">
-                      {row.form.slice(0, 5).map((result, i) => (
-                        <span
-                          key={i}
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${getFormBadge(result)}`}
-                        >
-                          {result.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
+          <tbody>
+            {standings.map((row) => {
+              const zone = zoneForPosition(row.position, standings.length, showEuropeanZones)
+              const styles = zone ? zoneStyles[zone] : null
+              const highlighted = highlightTeams.includes(row.team_id || 0)
+              const teamHref = row.team_id ? `/teams/${row.team_id}` : undefined
+
+              return (
+                <tr
+                  key={`${row.position}-${row.team_name}`}
+                  className={cn(
+                    'border-b border-[var(--border-color)]/40 transition-colors hover:bg-[var(--card-hover)]',
+                    styles?.bg,
+                    styles?.bar,
+                    highlighted && 'bg-amber-500/10'
                   )}
-                </td>
-              </tr>
-            ))}
+                >
+                  <td className="px-3 py-2.5 text-center text-xs font-semibold tabular-nums text-[var(--text-secondary)]">
+                    {row.position}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      {row.team_logo && (
+                        <img
+                          src={row.team_logo}
+                          alt=""
+                          className="h-5 w-5 object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      {teamHref ? (
+                        <Link
+                          href={teamHref}
+                          prefetch={false}
+                          className="truncate text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent-primary)]"
+                        >
+                          {row.team_name}
+                        </Link>
+                      ) : (
+                        <span className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                          {row.team_name}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)]">{row.played}</td>
+                  <td className="px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)]">{row.won}</td>
+                  <td className="px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)]">{row.drawn}</td>
+                  <td className="px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)]">{row.lost}</td>
+                  <td className="hidden px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)] md:table-cell">{row.goals_for}</td>
+                  <td className="hidden px-2 py-2.5 text-center text-[12px] tabular-nums text-[var(--text-secondary)] md:table-cell">{row.goals_against}</td>
+                  <td
+                    className={cn(
+                      'px-2 py-2.5 text-center text-[12px] font-semibold tabular-nums',
+                      row.goal_difference > 0 ? 'text-emerald-400' : row.goal_difference < 0 ? 'text-red-400' : 'text-[var(--text-secondary)]'
+                    )}
+                  >
+                    {row.goal_difference > 0 ? '+' : ''}{row.goal_difference}
+                  </td>
+                  <td className="px-3 py-2.5 text-center text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                    {row.points}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {row.form && row.form.length > 0 ? (
+                      <TeamFormPill form={row.form.join('')} size="xs" className="justify-center" />
+                    ) : (
+                      <span className="text-[10px] text-[var(--text-tertiary)]">—</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
-      
-      {/* Legend */}
-      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-600">
-        <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-blue-500 rounded" />
-            <span>Champions League</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-orange-500 rounded" />
-            <span>Europa League</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-500 rounded" />
-            <span>Conference League</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-500 rounded" />
-            <span>Relegation</span>
+
+      {showLegend && (
+        <div className="border-t border-[var(--border-color)] bg-[var(--surface-muted)]/20 px-4 py-2.5">
+          <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-tertiary)]">
+            {showEuropeanZones && (
+              <>
+                <ZoneChip zone="ucl" />
+                <ZoneChip zone="europa" />
+                <ZoneChip zone="conference" />
+              </>
+            )}
+            <ZoneChip zone="relegation" />
           </div>
         </div>
-      </div>
-    </div>
-  );
+      )}
+    </Card>
+  )
+}
+
+function ZoneChip({ zone }: { zone: NonNullable<Zone> }) {
+  const styles = zoneStyles[zone]
+  return (
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold', styles.chip)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {styles.label}
+    </span>
+  )
 }

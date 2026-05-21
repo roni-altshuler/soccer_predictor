@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
+import { GenderToggle } from '@/components/GenderToggle'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 
 interface TeamSearchResult { name: string; league: string }
 
@@ -207,14 +209,22 @@ function PredictPageContent() {
     }
   }, [selectedLeagues])
 
+  const { asQueryParam } = useGenderQuery()
+
   const handlePredict = async () => {
     if (!homeTeam || !awayTeam) return
     if (homeTeam.name === awayTeam.name) { setResult({ error: 'Please select different teams' }); return }
     setLoading(true); setResult(null)
     try {
-      const response = await fetch('/api/predict/any-teams', {
+      const response = await fetch(`/api/predict/any-teams?gender=${asQueryParam}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ home_team: homeTeam.name, away_team: awayTeam.name, home_league: homeTeam.league, away_league: awayTeam.league }),
+        body: JSON.stringify({
+          home_team: homeTeam.name,
+          away_team: awayTeam.name,
+          home_league: homeTeam.league,
+          away_league: awayTeam.league,
+          gender: asQueryParam,
+        }),
       })
       if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || 'Prediction failed') }
       setResult(await response.json())
@@ -327,11 +337,16 @@ function PredictPageContent() {
       <div className="max-w-2xl mx-auto px-4 py-4">
         <>
             <div className="mb-4 fm-surface p-4 md:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Match Predictor</p>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">Realistic match outcome forecasts</h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Predictions blend team strength, recent form, league calibration, and scoreline realism. Season simulation has been removed from the main workflow to keep the product focused on match forecasting.
-              </p>
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Match Predictor</p>
+                  <h1 className="text-xl font-bold text-[var(--text-primary)]">Realistic match outcome forecasts</h1>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">
+                    Predictions blend team strength, recent form, league calibration, and scoreline realism. Toggle to women&apos;s to use the dedicated women&apos;s universe model.
+                  </p>
+                </div>
+                <GenderToggle size="default" />
+              </div>
             </div>
             {/* Team Selection Card */}
             <div className="fm-surface p-4 mb-4">
