@@ -111,7 +111,9 @@ interface MatchDetails {
   commentary?: { minute: number; text: string }[]
 }
 
-const DETAIL_TABS = ['summary', 'lineup', 'stats', 'h2h', 'ai'] as const
+// AI Prediction promoted to 2nd tab so the model lean is visible
+// immediately after the basic match summary, not buried at the end.
+const DETAIL_TABS = ['summary', 'ai', 'stats', 'lineup', 'h2h'] as const
 type DetailTab = typeof DETAIL_TABS[number]
 
 /**
