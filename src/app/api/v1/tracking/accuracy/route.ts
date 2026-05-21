@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   }
 
   const totalPredictions = pool.length
-  let completed = pool.filter((p) => p.actual_winner !== null)
+  const completed = pool.filter((p) => p.actual_winner !== null)
   const pendingPredictions = totalPredictions - completed.length
 
   const total = completed.length
