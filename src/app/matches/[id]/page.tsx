@@ -14,6 +14,7 @@ import DataSourceBadge from '@/components/DataSourceBadge'
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
 import { LeagueBadge } from '@/components/match/LeagueBadge'
+import { SplitStatBar } from '@/components/match/SplitStatBar'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
@@ -276,15 +277,28 @@ function FotmobStatsCard({
         <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Fotmob-style side-by-side match comparison</p>
       </div>
 
-      <div className={compact ? 'p-4 space-y-3' : 'p-5 space-y-3.5'}>
+      <div className={compact ? 'p-4 space-y-4' : 'p-5 space-y-4'}>
         <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-primary)]">
           <span className="truncate pr-3">{homeTeam}</span>
           <span className="truncate pl-3 text-right">{awayTeam}</span>
         </div>
 
-        <DuelStatRow label="Possession" home={stats.possession[0]} away={stats.possession[1]} suffix="%" fixedTotal={100} />
+        {/* Possession + Shots-on-target render as FotMob-style split bars
+            so the share is visible at a glance instead of the older
+            numeric-pair DuelStatRow that hid the proportion. */}
+        <SplitStatBar
+          label="Possession"
+          homeValue={stats.possession[0]}
+          awayValue={stats.possession[1]}
+          format={(v) => `${Math.round(v)}%`}
+        />
+        <SplitStatBar
+          label="Shots on target"
+          homeValue={stats.shotsOnTarget[0]}
+          awayValue={stats.shotsOnTarget[1]}
+        />
+
         <DuelStatRow label="Total Shots" home={stats.shots[0]} away={stats.shots[1]} />
-        <DuelStatRow label="Shots On Target" home={stats.shotsOnTarget[0]} away={stats.shotsOnTarget[1]} />
         <DuelStatRow label="Corners" home={stats.corners[0]} away={stats.corners[1]} />
         <DuelStatRow label="Fouls" home={stats.fouls[0]} away={stats.fouls[1]} inverse />
       </div>
