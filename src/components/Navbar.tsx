@@ -123,7 +123,7 @@ export const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-sm shadow-lg shadow-emerald-500/20"
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[var(--accent-on-primary)] font-bold text-sm shadow-lg shadow-emerald-500/20"
                   >
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
@@ -144,7 +144,7 @@ export const Navbar = () => {
                   )}
                 </div>
               ) : (
-                <button onClick={() => setAuthModalOpen(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[#04120a] shadow-lg shadow-emerald-500/20">
+                <button onClick={() => setAuthModalOpen(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-lg shadow-emerald-500/20">
                   Sign In
                 </button>
               )}
@@ -165,11 +165,11 @@ export const Navbar = () => {
             <GenderToggle size="compact" />
             <ThemeToggle />
             {isAuthenticated && user ? (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[#04120a] font-bold text-xs shadow-md shadow-emerald-500/20">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-[var(--accent-on-primary)] font-bold text-xs shadow-md shadow-emerald-500/20">
                 {(user.display_name || user.email)[0].toUpperCase()}
               </div>
             ) : (
-              <button onClick={() => setAuthModalOpen(true)} className="px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[#04120a] shadow-md shadow-emerald-500/20">
+              <button onClick={() => setAuthModalOpen(true)} className="px-2.5 py-1 rounded-md text-xs font-semibold bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-md shadow-emerald-500/20">
                 Sign In
               </button>
             )}

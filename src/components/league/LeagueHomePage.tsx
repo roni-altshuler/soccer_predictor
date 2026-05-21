@@ -854,15 +854,15 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <select
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="w-full md:w-44 appearance-none rounded-lg border border-white/20 bg-[#101826] px-3 py-2 pr-9 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#182236] focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full md:w-44 appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 pr-9 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--accent-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40"
                 >
                   {seasons.map(season => (
-                    <option key={season.value} value={season.value} className="bg-[#101826] text-white">
+                    <option key={season.value} value={season.value} className="bg-[var(--card-bg)] text-[var(--text-primary)]">
                       {season.label}
                     </option>
                   ))}
                 </select>
-                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/65" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
                 </svg>
               </div>

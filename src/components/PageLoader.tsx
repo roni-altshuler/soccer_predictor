@@ -35,7 +35,7 @@ export const PageLoader = () => {
   if (!loading) return null
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed top-0 left-0 w-full h-full bg-[var(--overlay-bg)] flex justify-center items-center z-50">
       <SoccerSpinner />
     </div>
   )

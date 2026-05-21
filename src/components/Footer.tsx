@@ -10,7 +10,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <span className="text-sm font-black text-[#04120a]">⚽</span>
+              <span className="text-sm font-black text-[var(--accent-on-primary)]">⚽</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
