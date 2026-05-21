@@ -58,6 +58,15 @@
   --surface-highlight: color-mix(in srgb, var(--accent-ai) 10%, transparent);
   --surface-glow: color-mix(in srgb, var(--accent-primary) 18%, transparent);
 
+  /* Theme tokens added during the light-mode sweep — see Stream B of the
+     bug-fix + FotMob polish plan. Components should pick from these tokens
+     instead of hard-coding Tailwind grays / `text-white` / `bg-black`. */
+  --accent-on-primary: #04120a;       /* high-contrast text on green/cyan CTAs */
+  --overlay-bg: rgba(15, 26, 44, 0.45); /* page-loader, modal backdrops */
+  --pitch-bg: #0d2918;                 /* lineup pitch surface (dark in both modes) */
+  --pitch-text: #f1f5fb;
+  --ticker-bg: linear-gradient(to right, #14223a, #1c2c4d);
+
   /* shadcn radius tokens */
   --radius: 0.75rem;
 }
@@ -99,6 +108,13 @@
   --tab-active-bg: color-mix(in srgb, var(--accent-primary) 18%, transparent);
   --surface-highlight: color-mix(in srgb, var(--accent-ai) 14%, transparent);
   --surface-glow: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+
+  /* Dark-mode equivalents of the Stream B tokens. */
+  --accent-on-primary: #04120a;
+  --overlay-bg: rgba(0, 0, 0, 0.55);
+  --pitch-bg: #0a1e10;
+  --pitch-text: #f1f5fb;
+  --ticker-bg: linear-gradient(to right, #07101f, #14223a);
 }
 
 /* ────────────────────────────────────────────────────────────

@@ -12,9 +12,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-[var(--accent-primary)] text-[#04120a] shadow-[0_8px_22px_-12px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] hover:opacity-90 active:translate-y-px',
+          'bg-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-[0_8px_22px_-12px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] hover:opacity-90 active:translate-y-px',
         ai:
-          'bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-ai)_75%,white)] to-[var(--accent-ai)] text-[#041320] shadow-[0_8px_22px_-12px_color-mix(in_srgb,var(--accent-ai)_70%,transparent)] hover:opacity-90 active:translate-y-px',
+          'bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-ai)_75%,white)] to-[var(--accent-ai)] text-[var(--accent-on-primary)] shadow-[0_8px_22px_-12px_color-mix(in_srgb,var(--accent-ai)_70%,transparent)] hover:opacity-90 active:translate-y-px',
         destructive:
           'bg-[var(--accent-loss)] text-white hover:opacity-90 active:translate-y-px',
         outline:

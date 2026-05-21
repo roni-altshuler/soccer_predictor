@@ -18,7 +18,7 @@ export default function LiveScoreTicker({ matches }: LiveScoreTickerProps) {
   }
 
   return (
-    <div className="bg-gradient-to-r from-gray-900 to-gray-800 overflow-hidden">
+    <div className="overflow-hidden" style={{ background: 'var(--ticker-bg)' }}>
       <div className="relative flex items-center h-10">
         {/* Live indicator */}
         <div className="flex items-center gap-2 px-4 bg-red-600 h-full shrink-0">

@@ -81,25 +81,25 @@ export const ImageModal = ({ src, alt, title, description }: ImageModalProps) =>
               style={{ maxHeight: 'calc(90vh - 80px)', maxWidth: '95vw' }}
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-green-600 to-blue-600 px-6 py-4">
-                <h3 className="text-2xl font-bold text-white">{title}</h3>
-                <p className="text-sm text-gray-100 mt-1">{description}</p>
+              <div className="bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-ai)] px-6 py-4">
+                <h3 className="text-2xl font-bold text-[var(--accent-on-primary)]">{title}</h3>
+                <p className="mt-1 text-sm text-[var(--accent-on-primary)] opacity-85">{description}</p>
               </div>
 
               {/* Image - scrollable container */}
-              <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-white">
-                <img 
-                  src={src} 
-                  alt={alt} 
-                  className="w-full h-auto object-contain"
+              <div className="flex flex-1 items-center justify-center overflow-auto bg-[var(--card-bg)] p-6">
+                <img
+                  src={src}
+                  alt={alt}
+                  className="h-auto w-full object-contain"
                   style={{ maxHeight: 'calc(90vh - 220px)' }}
                 />
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-100 px-6 py-3 text-center border-t border-gray-300">
-                <p className="text-sm text-gray-700">
-                  Press <kbd className="px-2 py-1 bg-gray-300 rounded text-gray-800 font-mono text-xs border border-gray-400">ESC</kbd> or click outside to close
+              <div className="border-t border-[var(--border-color)] bg-[var(--muted-bg)] px-6 py-3 text-center">
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Press <kbd className="rounded border border-[var(--border-color)] bg-[var(--card-bg)] px-2 py-1 font-mono text-xs text-[var(--text-primary)]">ESC</kbd> or click outside to close
                 </p>
               </div>
             </div>

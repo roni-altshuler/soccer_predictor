@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
 
+import { GenderToggle } from '@/components/GenderToggle'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
+
 interface Standing {
   position: number
   teamName: string
@@ -350,6 +353,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator' | 'news'>('overview')
+  const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
   const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
   const seasons = isCalendarYear ? MLS_SEASONS : AVAILABLE_SEASONS
@@ -492,8 +496,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         
         // Fetch data from existing endpoints in parallel
         const [standingsRes, newsRes] = await Promise.allSettled([
-          fetch(`/api/standings?league=${leagueParam}`),
-          fetch(`/api/news?league=${leagueParam}`),
+          fetch(`/api/standings?league=${leagueParam}&gender=${genderParam}`),
+          fetch(`/api/news?league=${leagueParam}&gender=${genderParam}`),
         ])
         
         // Also fetch from ESPN for real-time data including top scorers
@@ -794,7 +798,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     }
 
     fetchLeagueData()
-  }, [leagueId, leagueName, country, selectedSeason])
+  }, [leagueId, leagueName, country, selectedSeason, genderParam])
 
   if (loading) {
     return (
@@ -850,15 +854,15 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <select
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="w-full md:w-44 appearance-none rounded-lg border border-white/20 bg-[#101826] px-3 py-2 pr-9 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#182236] focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full md:w-44 appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 pr-9 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--accent-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40"
                 >
                   {seasons.map(season => (
-                    <option key={season.value} value={season.value} className="bg-[#101826] text-white">
+                    <option key={season.value} value={season.value} className="bg-[var(--card-bg)] text-[var(--text-primary)]">
                       {season.label}
                     </option>
                   ))}
                 </select>
-                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/65" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
                 </svg>
               </div>

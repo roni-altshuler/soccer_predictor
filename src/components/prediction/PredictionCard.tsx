@@ -77,13 +77,13 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-4">
           <div className="flex justify-between items-center">
             <div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Prediction</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Prediction</span>
               <p className="font-semibold text-gray-900 dark:text-white">
                 {pred.winner} {pred.type !== 'draw' ? 'Win' : ''}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Score</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Score</span>
               <p className="font-semibold text-gray-900 dark:text-white">{most_likely_score.score}</p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
         
         {/* Confidence */}
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-gray-500 dark:text-gray-400">Confidence</span>
+          <span className="text-xs text-[var(--text-tertiary)]">Confidence</span>
           <span className={`font-semibold ${confidenceColor}`}>
             {(outcome.confidence * 100).toFixed(0)}%
           </span>
@@ -112,7 +112,7 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
 function ProbabilityBar({ label, value, isHighest }: { label: string; value: number; isHighest: boolean }) {
   const percentage = (value * 100).toFixed(0);
   const bgColor = isHighest ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-600';
-  const textColor = isHighest ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400';
+  const textColor = isHighest ? 'text-emerald-500' : 'text-[var(--text-tertiary)]';
   
   return (
     <div className="flex-1">
@@ -131,7 +131,7 @@ function ProbabilityBar({ label, value, isHighest }: { label: string; value: num
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2">
-      <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-xs text-[var(--text-tertiary)]">{label}</div>
       <div className="font-semibold text-gray-900 dark:text-white text-sm">{value}</div>
     </div>
   );

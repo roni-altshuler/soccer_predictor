@@ -120,12 +120,39 @@ export default function AccuracyPage() {
           gender={gender}
         />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <CalibrationPlot bins={calibrationBins} className="lg:col-span-3" />
-          <ConfusionHeatmap rows={confusion} className="lg:col-span-2" />
-        </div>
+        {/* When no predictions have been settled yet, the confusion +
+            calibration views collapse to NaN/0% — render a clean
+            empty-state card instead and keep the explainer below. */}
+        {completed === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)]/60 p-8 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              Collecting predictions
+            </p>
+            <h2 className="mt-2 text-h4 font-bold text-[var(--text-primary)]">
+              We&apos;re still waiting on settled matches
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-small text-[var(--text-tertiary)]">
+              {total > 0 ? (
+                <>
+                  {total.toLocaleString()} prediction{total === 1 ? '' : 's'} tracked, none with a
+                  final result yet. The calibration plot, confusion matrix, and recent-picks feed
+                  appear here once the outcome fetcher settles its first match.
+                </>
+              ) : (
+                <>The unified model hasn&apos;t made any predictions yet. Run a fixture from <a className="font-semibold text-[var(--accent-primary)] hover:underline" href="/predict">/predict</a> or wait for the scheduled pipeline to fire.</>
+              )}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+              <CalibrationPlot bins={calibrationBins} className="lg:col-span-3" />
+              <ConfusionHeatmap rows={confusion} className="lg:col-span-2" />
+            </div>
 
-        <RecentPicksFeed picks={picks} />
+            <RecentPicksFeed picks={picks} />
+          </>
+        )}
 
         <ModelExplainer />
 

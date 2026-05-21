@@ -16,6 +16,8 @@ import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { GenderToggle } from '@/components/GenderToggle'
+import { LiveTickerBar } from '@/components/home/LiveTickerBar'
+import { NewsStrip } from '@/components/home/NewsStrip'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import {
   MatchCenterHeader,
@@ -291,6 +293,19 @@ export default function Home() {
         </div>
       </div>
 
+      <LiveTickerBar
+        matches={live.map((m) => ({
+          id: m.id,
+          home_team: m.home_team,
+          away_team: m.away_team,
+          home_score: m.home_score ?? 0,
+          away_score: m.away_score ?? 0,
+          minute: m.minute ?? null,
+          league: m.league,
+          leagueId: m.leagueId,
+        }))}
+      />
+
       <MatchCenterHeader
         dateOptions={dateOptions}
         selectedDate={selectedDate}
@@ -300,6 +315,8 @@ export default function Home() {
         finishedCount={completed.length}
         selectedDateLabel={selectedDateLabel}
       />
+
+      <NewsStrip />
 
       <WorldCupCountdown />
 

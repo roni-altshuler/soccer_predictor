@@ -200,7 +200,7 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
               </h3>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                className="rounded-lg bg-[var(--accent-primary)] px-3 py-1 text-sm font-semibold text-[var(--accent-on-primary)] transition-colors hover:opacity-90"
               >
                 Today
               </button>

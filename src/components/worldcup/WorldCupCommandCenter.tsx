@@ -46,6 +46,13 @@ type WorldCupCommandCenterProps = {
     quarter_finals: ProbabilityRow[]
   } | null
   onOpenTab: (tab: CommandTab) => void
+  /**
+   * Where the command centre is rendered. The 'public' surface hides
+   * the "Tournament Desk / What needs attention" action grid because
+   * that reads like an internal TODO list. The 'diagnostics' surface
+   * keeps the grid for operators on /diagnostics.
+   */
+  surface?: 'public' | 'diagnostics'
 }
 
 function pct(value?: number): string {
@@ -107,7 +114,9 @@ export default function WorldCupCommandCenter({
   topScorers,
   simulationProbabilities,
   onOpenTab,
+  surface = 'public',
 }: WorldCupCommandCenterProps) {
+  const isDiagnostics = surface === 'diagnostics'
   const isExpandedFormat = selectedSeason === '2026'
   const expectedTeams = isExpandedFormat ? 48 : 32
   const expectedGroups = isExpandedFormat ? 12 : 8
@@ -171,44 +180,46 @@ export default function WorldCupCommandCenter({
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Tournament Desk</p>
-                <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">What needs attention</h3>
+          {isDiagnostics && (
+            <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Tournament Desk</p>
+                  <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">What needs attention</h3>
+                </div>
+                <span className="rounded-full border border-[var(--border-color)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-secondary)]">
+                  {selectedSeason}
+                </span>
               </div>
-              <span className="rounded-full border border-[var(--border-color)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-secondary)]">
-                {selectedSeason}
-              </span>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <ActionButton
+                  label="Review groups"
+                  detail={loadedTeamCount > 0 ? 'Inspect qualification status and group table gaps.' : 'Open group tables when provider data appears.'}
+                  onClick={() => onOpenTab('Groups')}
+                />
+                <ActionButton
+                  label="Run scenario simulation"
+                  detail="Stress-test a focus team, volatility profile, and tournament path."
+                  onClick={() => onOpenTab('Simulator')}
+                />
+                <ActionButton
+                  label="Open fixtures"
+                  detail={nextMatch ? `Next provider fixture: ${nextMatch.date}${nextMatch.time ? ` at ${nextMatch.time}` : ''}.` : 'Check official fixtures as the tournament feed fills.'}
+                  onClick={() => onOpenTab('Fixtures')}
+                />
+                <ActionButton
+                  label="Knockout path"
+                  detail={`Prepare the ${expectedKnockoutTeams}-team knockout bracket and probability view.`}
+                  onClick={() => onOpenTab('Knockout')}
+                />
+                <ActionButton
+                  label="Bracket challenge"
+                  detail="Create private pick'em groups and score them against real knockout results."
+                  onClick={() => onOpenTab('Challenge')}
+                />
+              </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <ActionButton
-                label="Review groups"
-                detail={loadedTeamCount > 0 ? 'Inspect qualification status and group table gaps.' : 'Open group tables when provider data appears.'}
-                onClick={() => onOpenTab('Groups')}
-              />
-              <ActionButton
-                label="Run scenario simulation"
-                detail="Stress-test a focus team, volatility profile, and tournament path."
-                onClick={() => onOpenTab('Simulator')}
-              />
-              <ActionButton
-                label="Open fixtures"
-                detail={nextMatch ? `Next provider fixture: ${nextMatch.date}${nextMatch.time ? ` at ${nextMatch.time}` : ''}.` : 'Check official fixtures as the tournament feed fills.'}
-                onClick={() => onOpenTab('Fixtures')}
-              />
-              <ActionButton
-                label="Knockout path"
-                detail={`Prepare the ${expectedKnockoutTeams}-team knockout bracket and probability view.`}
-                onClick={() => onOpenTab('Knockout')}
-              />
-              <ActionButton
-                label="Bracket challenge"
-                detail="Create private pick'em groups and score them against real knockout results."
-                onClick={() => onOpenTab('Challenge')}
-              />
-            </div>
-          </div>
+          )}
 
           <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Live Context</p>
