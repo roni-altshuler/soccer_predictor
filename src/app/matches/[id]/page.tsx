@@ -15,6 +15,7 @@ import { PredictionResult as PredictionResultViz, type PredictionPayload } from 
 import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
 import { LeagueBadge } from '@/components/match/LeagueBadge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import type { LiveWinProbabilityResult, ThreeWayProbabilities } from '@/lib/liveWinProbability'
 
@@ -622,6 +623,7 @@ export default function MatchDetailPage() {
   const matchId = params.id as string
   const leagueId = searchParams.get('league') || ''
   
+  const { asQueryParam: genderParam } = useGenderQuery()
   const [match, setMatch] = useState<MatchDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<DetailTab>('summary')
@@ -692,7 +694,9 @@ export default function MatchDetailPage() {
       try {
         // Use our server-side API proxy to fetch match details
         // This avoids CORS issues and handles fallbacks between ESPN and FotMob
-        const url = `/api/match/${matchId}${leagueId ? `?league=${leagueId}` : ''}`
+        const baseUrl = `/api/match/${matchId}${leagueId ? `?league=${leagueId}` : ''}`
+        const sep = baseUrl.includes('?') ? '&' : '?'
+        const url = `${baseUrl}${sep}gender=${genderParam}`
         const res = await fetch(url, { cache: 'no-store' })
         
         if (!res.ok) {

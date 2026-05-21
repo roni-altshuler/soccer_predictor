@@ -10,6 +10,7 @@ import MatchCalendar from '@/components/match/MatchCalendar'
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import WorldCupReadinessPanel from '@/components/worldcup/WorldCupReadinessPanel'
 import WorldCupCommandCenter from '@/components/worldcup/WorldCupCommandCenter'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 
 type TournamentId = 'champions_league' | 'europa_league' | 'conference_league' | 'world_cup' | 'euro' | 'copa_america'
 
@@ -259,6 +260,7 @@ function volatilityLabel(mode?: VolatilityMode): string {
 export default function TournamentHomePage({ tournamentId, tournamentName }: TournamentHomePageProps) {
   const config = TOURNAMENT_CONFIG[tournamentId]
   const router = useRouter()
+  const { asQueryParam: genderParam } = useGenderQuery()
   const [activeTab, setActiveTab] = useState<TabType>('Overview')
   const [loading, setLoading] = useState(true)
   const [selectedSeason, setSelectedSeason] = useState(getDefaultSeason(tournamentId))
@@ -595,7 +597,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         // Fetch all tournament data from server-side API route
         // This ensures ESPN requests happen server-side (not blocked by browser)
         const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
-        const res = await fetch(`/api/tournament/${tournamentId}${seasonParam}`)
+        const sep = seasonParam ? '&' : '?'
+        const res = await fetch(`/api/tournament/${tournamentId}${seasonParam}${sep}gender=${genderParam}`)
         
         if (res.ok) {
           const apiData = await res.json()
@@ -667,7 +670,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
     }
 
     fetchData()
-  }, [tournamentId, selectedSeason])
+  }, [tournamentId, selectedSeason, genderParam])
   
   // Fetch simulation probabilities for the tournament
   useEffect(() => {
@@ -1131,6 +1134,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             topScorers={data.topScorers}
             simulationProbabilities={simulationProbabilities}
             onOpenTab={setActiveTab}
+            surface="public"
           />
           <WorldCupCountdown compact />
           <WorldCupReadinessPanel compact />

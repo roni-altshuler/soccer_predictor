@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import MatchCalendar from '@/components/match/MatchCalendar'
 
+import { GenderToggle } from '@/components/GenderToggle'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
+
 interface Standing {
   position: number
   teamName: string
@@ -350,6 +353,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator' | 'news'>('overview')
+  const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
   const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
   const seasons = isCalendarYear ? MLS_SEASONS : AVAILABLE_SEASONS
@@ -492,8 +496,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         
         // Fetch data from existing endpoints in parallel
         const [standingsRes, newsRes] = await Promise.allSettled([
-          fetch(`/api/standings?league=${leagueParam}`),
-          fetch(`/api/news?league=${leagueParam}`),
+          fetch(`/api/standings?league=${leagueParam}&gender=${genderParam}`),
+          fetch(`/api/news?league=${leagueParam}&gender=${genderParam}`),
         ])
         
         // Also fetch from ESPN for real-time data including top scorers
@@ -794,7 +798,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     }
 
     fetchLeagueData()
-  }, [leagueId, leagueName, country, selectedSeason])
+  }, [leagueId, leagueName, country, selectedSeason, genderParam])
 
   if (loading) {
     return (

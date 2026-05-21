@@ -5,10 +5,12 @@ import path from 'path'
 interface CompletedPrediction {
   league: string
   match_date: string
+  gender?: 'M' | 'F' | null
   confidence: number
   predicted_home_win: number
   predicted_draw: number
   predicted_away_win: number
+  predicted_winner?: 'home' | 'draw' | 'away' | null
   actual_winner: string | null
   winner_correct: boolean | null
   scoreline_correct: boolean | null
@@ -23,7 +25,7 @@ function normalizeConfidence(value: number): number {
   return value > 1 ? value / 100 : value
 }
 
-function loadCompleted() {
+function loadAll() {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return [] as CompletedPrediction[]
 
@@ -34,7 +36,7 @@ function loadCompleted() {
     try {
       const data = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8')) as PredictionFile
       if (Array.isArray(data.predictions)) {
-        all.push(...data.predictions.filter((p) => p.actual_winner !== null))
+        all.push(...data.predictions)
       }
     } catch { /* skip */ }
   }
@@ -42,32 +44,62 @@ function loadCompleted() {
   return all
 }
 
+// Kept (currently unused) — useful if a caller wants only-settled records.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function loadCompleted() {
+  return loadAll().filter((p) => p.actual_winner !== null)
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const league = searchParams.get('league') || null
   const days = searchParams.get('days') ? parseInt(searchParams.get('days')!, 10) : null
+  const gender = searchParams.get('gender')
+  const wantedGender = gender === 'F' || gender === 'M' ? gender : null
 
-  let completed = loadCompleted()
-
-  // Apply filters
+  // Total includes pending; completed only those with an actual outcome.
+  let pool = loadAll()
+  if (wantedGender) {
+    pool = pool.filter((p) => (p.gender || 'M').toString().toUpperCase() === wantedGender)
+  }
   if (league) {
-    completed = completed.filter((p) => p.league === league)
+    pool = pool.filter((p) => p.league === league)
   }
   if (days) {
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
-    completed = completed.filter((p) => new Date(p.match_date) >= cutoff)
+    pool = pool.filter((p) => new Date(p.match_date) >= cutoff)
   }
+
+  const totalPredictions = pool.length
+  let completed = pool.filter((p) => p.actual_winner !== null)
+  const pendingPredictions = totalPredictions - completed.length
 
   const total = completed.length
   if (total === 0) {
     return NextResponse.json({
-      total_predictions: 0,
+      // legacy field names the older tracking-summary surfaces expected:
+      total_predictions: totalPredictions,
       correct_predictions: 0,
       accuracy: 0,
       result_accuracy: 0,
       score_accuracy: 0,
       weighted_accuracy: 0,
+      // canonical AccuracyResponse field names consumed by /accuracy:
+      completed_predictions: 0,
+      pending_predictions: pendingPredictions,
+      winner_accuracy: 0,
+      recent_accuracy: 0,
+      brier_score: 0,
+      log_loss: 0,
+      expected_calibration_error: 0,
+      home_win_predicted: 0,
+      home_win_correct: 0,
+      draw_predicted: 0,
+      draw_correct: 0,
+      away_win_predicted: 0,
+      away_win_correct: 0,
+      calibration_bins: [],
       by_confidence: {
         high: { total: 0, correct: 0, accuracy: 0 },
         medium: { total: 0, correct: 0, accuracy: 0 },
@@ -125,20 +157,77 @@ export async function GET(request: NextRequest) {
   const low = completed.filter((p) => normalizeConfidence(p.confidence) < 0.42)
   const acc = (arr: CompletedPrediction[]) => arr.length > 0 ? arr.filter((p) => p.winner_correct).length / arr.length : 0
 
-  // Recent form (last 20)
+  // Recent form (last 20) — chronologically newest first
   const sorted = [...completed].sort((a, b) => b.match_date.localeCompare(a.match_date))
   const form = sorted.slice(0, 20).map((p) => p.winner_correct ? 'W' : 'L')
 
+  // Per-class breakdown for the confusion matrix view on /accuracy.
+  const predictedWinner = (p: CompletedPrediction): 'home' | 'draw' | 'away' => {
+    if (p.predicted_winner === 'home' || p.predicted_winner === 'draw' || p.predicted_winner === 'away') {
+      return p.predicted_winner
+    }
+    const h = Number(p.predicted_home_win) || 0
+    const d = Number(p.predicted_draw) || 0
+    const a = Number(p.predicted_away_win) || 0
+    return h >= d && h >= a ? 'home' : a >= d ? 'away' : 'draw'
+  }
+
+  const homePred = completed.filter((p) => predictedWinner(p) === 'home')
+  const drawPred = completed.filter((p) => predictedWinner(p) === 'draw')
+  const awayPred = completed.filter((p) => predictedWinner(p) === 'away')
+
+  // Recent accuracy: last 50 predictions, newest first
+  const last50 = sorted.slice(0, 50)
+  const recentAccuracy = last50.length > 0
+    ? last50.filter((p) => p.winner_correct).length / last50.length
+    : 0
+
+  // Calibration bins for the dot-plot.
+  const calibrationBins = []
+  for (let i = 0; i < 10; i++) {
+    if (binCounts[i] === 0) continue
+    calibrationBins.push({
+      bin_lower: i / 10,
+      bin_upper: (i + 1) / 10,
+      avg_predicted: binConf[i] / binCounts[i],
+      avg_actual: binAcc[i] / binCounts[i],
+      count: binCounts[i],
+    })
+  }
+
   return NextResponse.json({
-    total_predictions: total,
+    // Legacy field names retained for old summary surfaces:
+    total_predictions: totalPredictions,
     correct_predictions: correct,
     accuracy: Math.round((correct / total) * 1000) / 1000,
     result_accuracy: Math.round((correct / total) * 1000) / 1000,
     score_accuracy: Math.round((scoreCorrect / total) * 1000) / 1000,
     weighted_accuracy: Math.round(weightedAccuracy * 1000) / 1000,
+    // Canonical fields consumed by /accuracy:
+    completed_predictions: total,
+    pending_predictions: pendingPredictions,
+    winner_accuracy: Math.round((correct / total) * 1000) / 1000,
+    winner_correct_count: correct,
+    recent_accuracy: Math.round(recentAccuracy * 1000) / 1000,
+    avg_confidence: 0,
+    exact_scoreline_count: scoreCorrect,
+    exact_scoreline_rate: Math.round((scoreCorrect / total) * 1000) / 1000,
+    weighted_accuracy_score: Math.round(weightedAccuracy * 1000) / 1000,
+    avg_goals_difference: 0,
+    within_1_goal_rate: 0,
     brier_score: Math.round((brier / total) * 10000) / 10000,
     log_loss: Math.round((logLoss / total) * 10000) / 10000,
     expected_calibration_error: Math.round(ece * 10000) / 10000,
+    home_win_predicted: homePred.length,
+    home_win_correct: homePred.filter((p) => p.winner_correct).length,
+    draw_predicted: drawPred.length,
+    draw_correct: drawPred.filter((p) => p.winner_correct).length,
+    away_win_predicted: awayPred.length,
+    away_win_correct: awayPred.filter((p) => p.winner_correct).length,
+    calibration_bins: calibrationBins,
+    high_confidence_accuracy: Math.round(acc(high) * 1000) / 1000,
+    medium_confidence_accuracy: Math.round(acc(med) * 1000) / 1000,
+    low_confidence_accuracy: Math.round(acc(low) * 1000) / 1000,
     by_confidence: {
       high: { total: high.length, correct: high.filter((p) => p.winner_correct).length, accuracy: Math.round(acc(high) * 1000) / 1000 },
       medium: { total: med.length, correct: med.filter((p) => p.winner_correct).length, accuracy: Math.round(acc(med) * 1000) / 1000 },

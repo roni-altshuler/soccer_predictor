@@ -99,16 +99,41 @@ export function AccuracyHero({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
             Outcome accuracy ({universeLabel})
           </p>
-          <h1 className="text-display font-black leading-none text-[var(--text-primary)]">
-            <AnimatedPercent value={accuracyPct} />
-          </h1>
-          <p className="max-w-2xl text-small text-[var(--text-secondary)]">
-            Across <span className="font-semibold text-[var(--text-primary)] tabular-nums">{completedPredictions.toLocaleString()}</span>{' '}
-            completed predictions of the{' '}
-            <span className="font-semibold text-[var(--text-primary)] tabular-nums">{totalPredictions.toLocaleString()}</span>{' '}
-            we've tracked. Last 50 picks running at{' '}
-            <span className="font-semibold text-[var(--accent-primary)] tabular-nums">{(recentAccuracy * 100).toFixed(1)}%</span>.
-          </p>
+          {completedPredictions === 0 ? (
+            <>
+              <h1 className="text-display font-black leading-none text-[var(--text-primary)]">
+                Collecting…
+              </h1>
+              <p className="max-w-2xl text-small text-[var(--text-secondary)]">
+                {totalPredictions > 0 ? (
+                  <>
+                    <span className="font-semibold text-[var(--text-primary)] tabular-nums">
+                      {totalPredictions.toLocaleString()}
+                    </span>{' '}
+                    prediction{totalPredictions === 1 ? '' : 's'} tracked — none with a final result yet.
+                    The accuracy number appears here once the outcome fetcher settles its first match.
+                  </>
+                ) : (
+                  <>
+                    The unified {universeLabel} model hasn&apos;t made any predictions yet.
+                  </>
+                )}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-display font-black leading-none text-[var(--text-primary)]">
+                <AnimatedPercent value={accuracyPct} />
+              </h1>
+              <p className="max-w-2xl text-small text-[var(--text-secondary)]">
+                Across <span className="font-semibold text-[var(--text-primary)] tabular-nums">{completedPredictions.toLocaleString()}</span>{' '}
+                completed predictions of the{' '}
+                <span className="font-semibold text-[var(--text-primary)] tabular-nums">{totalPredictions.toLocaleString()}</span>{' '}
+                we&apos;ve tracked. Last 50 picks running at{' '}
+                <span className="font-semibold text-[var(--accent-primary)] tabular-nums">{(recentAccuracy * 100).toFixed(1)}%</span>.
+              </p>
+            </>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
+import { useGenderQuery } from '@/hooks/useGenderQuery'
+
 interface NewsArticle {
   id: string; title: string; description: string; published: string
   image: string | null; imageCaption?: string | null; url: string; type: string; category?: string
@@ -11,11 +13,13 @@ export default function NewsPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { asQueryParam } = useGenderQuery()
 
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch('/api/news')
+        setLoading(true)
+        const res = await fetch(`/api/news?gender=${asQueryParam}`)
         if (!res.ok) throw new Error('Failed to fetch news')
         const data = await res.json()
         setArticles(data.articles || [])
@@ -23,7 +27,7 @@ export default function NewsPage() {
       finally { setLoading(false) }
     }
     fetchNews()
-  }, [])
+  }, [asQueryParam])
 
   const formatDate = (dateStr: string) => {
     try {

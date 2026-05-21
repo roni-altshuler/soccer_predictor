@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MatchCalendar from '@/components/match/MatchCalendar';
 import { leagueFlagUrls } from '@/data/leagues';
 
-const LEAGUES = [
+import { useGenderQuery } from '@/hooks/useGenderQuery';
+
+const MENS_LEAGUES = [
   { id: 'eng.1', name: 'Premier League', country: 'England', flagCode: 'ENG' },
   { id: 'esp.1', name: 'La Liga', country: 'Spain', flagCode: 'ES' },
   { id: 'ita.1', name: 'Serie A', country: 'Italy', flagCode: 'IT' },
@@ -23,12 +25,22 @@ const LEAGUES = [
   { id: 'conmebol.america', name: 'Copa America', country: 'South America', flagCode: 'SA' },
 ];
 
+// Women's universe — mirrors backend/services/data/espn_loader.py WOMEN_COMPETITIONS.
+// IDs route directly to ESPN's women's scoreboard / standings endpoints.
+const WOMENS_LEAGUES = [
+  { id: 'eng.w.1',        name: "FA Women's Super League", country: 'England', flagCode: 'ENG' },
+  { id: 'usa.nwsl',       name: 'NWSL', country: 'USA', flagCode: 'US' },
+  { id: 'uefa.wchampions',name: "UEFA Women's Champions League", country: 'Europe', flagCode: 'EU' },
+  { id: 'uefa.weuro',     name: "UEFA Women's European Championship", country: 'Europe', flagCode: 'EU' },
+  { id: 'fifa.wwc',       name: "FIFA Women's World Cup", country: 'World', flagCode: 'WORLD' },
+];
+
 const REGIONS = [
   { label: 'All', filter: () => true },
-  { label: 'England', filter: (l: typeof LEAGUES[0]) => l.id === 'eng.1' },
-  { label: 'Europe', filter: (l: typeof LEAGUES[0]) => ['esp.1','ita.1','ger.1','fra.1','ned.1','por.1'].includes(l.id) },
-  { label: 'UEFA', filter: (l: typeof LEAGUES[0]) => l.id.startsWith('uefa.') },
-  { label: 'Americas', filter: (l: typeof LEAGUES[0]) => ['usa.1','fifa.world','conmebol.america'].includes(l.id) },
+  { label: 'England', filter: (l: typeof MENS_LEAGUES[0]) => l.id === 'eng.1' },
+  { label: 'Europe', filter: (l: typeof MENS_LEAGUES[0]) => ['esp.1','ita.1','ger.1','fra.1','ned.1','por.1'].includes(l.id) },
+  { label: 'UEFA', filter: (l: typeof MENS_LEAGUES[0]) => l.id.startsWith('uefa.') },
+  { label: 'Americas', filter: (l: typeof MENS_LEAGUES[0]) => ['usa.1','fifa.world','conmebol.america'].includes(l.id) },
 ];
 
 interface Standing {
@@ -41,16 +53,18 @@ function MatchesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const leagueParam = searchParams.get('league');
-  const initialLeague = leagueParam ? LEAGUES.find(l => l.id === leagueParam) : null;
+  const { gender } = useGenderQuery();
+  const LEAGUES = useMemo(() => (gender === 'women' ? WOMENS_LEAGUES : MENS_LEAGUES), [gender]);
+  const initialLeague = leagueParam ? LEAGUES.find((l) => l.id === leagueParam) : null;
 
-  const [selectedLeague, setSelectedLeague] = useState<typeof LEAGUES[0] | null>(initialLeague);
+  const [selectedLeague, setSelectedLeague] = useState<typeof MENS_LEAGUES[0] | null>(initialLeague);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [groupStandings, setGroupStandings] = useState<GroupStanding[]>([]);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [activeTab, setActiveTab] = useState<'fixtures' | 'standings'>('fixtures');
   const [regionFilter, setRegionFilter] = useState('All');
 
-  const handleSelectLeague = (league: typeof LEAGUES[0]) => {
+  const handleSelectLeague = (league: typeof MENS_LEAGUES[0]) => {
     router.push(`/leagues/${league.id}`);
   };
 
