@@ -242,6 +242,7 @@ async def predict_match(
                     confidence=unified.confidence.overall,
                     home_elo=unified.factors.home_elo,
                     away_elo=unified.factors.away_elo,
+                    gender=gender,
                 )
             except Exception as exc:
                 logger.warning("Auto-store unified prediction failed: %s", exc)
@@ -285,6 +286,7 @@ async def predict_match(
             confidence=prediction.confidence.overall,
             home_elo=elo.get_elo(home_name),
             away_elo=elo.get_elo(away_name),
+            gender=gender,
         )
     except Exception as e:
         logger.warning(f"Auto-store prediction failed: {e}")

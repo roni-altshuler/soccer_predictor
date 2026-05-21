@@ -151,8 +151,65 @@ async def get_live_scores():
 
 
 @app.get("/api/todays_matches")
-async def get_todays_matches():
-    """Get all matches for today (legacy endpoint)."""
+async def get_todays_matches(gender: Optional[str] = None):
+    """Get all matches for today (legacy endpoint).
+
+    When `gender=F`, returns only women's matches sourced from the warehouse
+    (since FotMob women's coverage is unreliable). When unset or `M`, falls
+    back to FotMob's general feed which is men's-heavy.
+    """
+    if gender and gender.upper() == "F":
+        # Pull today's women's matches directly from the warehouse.
+        try:
+            from backend.services.data.warehouse import open_warehouse
+            from datetime import timedelta as _td
+
+            now = datetime.utcnow()
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            tomorrow_start = today_start + _td(days=1)
+
+            live_matches, upcoming_matches, completed_matches = [], [], []
+            with open_warehouse() as wh:
+                for row in wh.iter_matches(
+                    gender="F",
+                    since=today_start.isoformat(),
+                    until=tomorrow_start.isoformat(),
+                ):
+                    is_finished = row["home_score"] is not None and row["away_score"] is not None
+                    md = {
+                        "home_team": "",  # team name lookup below
+                        "away_team": "",
+                        "home_score": row["home_score"],
+                        "away_score": row["away_score"],
+                        "time": row["date_utc"],
+                        "status": "finished" if is_finished else "upcoming",
+                        "league": row["competition_name"],
+                        "match_id": row["match_id"],
+                    }
+                    # Look up team names by id.
+                    home = wh._conn.execute(  # noqa: SLF001
+                        "SELECT canonical_name FROM teams WHERE team_id = ?",
+                        (row["home_team_id"],),
+                    ).fetchone()
+                    away = wh._conn.execute(  # noqa: SLF001
+                        "SELECT canonical_name FROM teams WHERE team_id = ?",
+                        (row["away_team_id"],),
+                    ).fetchone()
+                    md["home_team"] = home["canonical_name"] if home else ""
+                    md["away_team"] = away["canonical_name"] if away else ""
+                    if is_finished:
+                        completed_matches.append(md)
+                    else:
+                        upcoming_matches.append(md)
+            return {
+                "live": live_matches,
+                "upcoming": upcoming_matches,
+                "completed": completed_matches,
+            }
+        except Exception as exc:
+            logger.error("Women's todays_matches error: %s", exc)
+            return {"live": [], "upcoming": [], "completed": []}
+
     client = get_fotmob_client()
     today = datetime.now().strftime("%Y%m%d")
     
