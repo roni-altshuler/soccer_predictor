@@ -6,6 +6,10 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
+# `email-validator` is required because backend/models/user.py uses
+# Pydantic's EmailStr type; without it test collection fails on
+# `backend/models/user.py:17 class UserBase(BaseModel)` in CI.
+email-validator>=2.0.0
 
 # HTTP Client (async)
 httpx>=0.26.0

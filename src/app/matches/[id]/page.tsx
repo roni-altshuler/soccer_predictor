@@ -12,6 +12,9 @@ import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import DataSourceBadge from '@/components/DataSourceBadge'
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
+import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
+import { LeagueBadge } from '@/components/match/LeagueBadge'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import type { LiveWinProbabilityResult, ThreeWayProbabilities } from '@/lib/liveWinProbability'
 
@@ -992,7 +995,26 @@ export default function MatchDetailPage() {
           
           {/* Match Header - FotMob-inspired */}
           <div className="text-center">
-            <p className="text-sm font-medium mb-4 text-center" style={{ color: 'var(--text-secondary)' }}>{match.league}</p>
+            <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+              <LeagueBadge league={match.leagueId ?? match.league} size="md" />
+              {match.prediction && (
+                <ConfidenceIndicator
+                  value={Math.max(
+                    Number(match.prediction.home_win) || 0,
+                    Number(match.prediction.draw) || 0,
+                    Number(match.prediction.away_win) || 0,
+                  )}
+                  pick={
+                    (match.prediction.home_win ?? 0) >= (match.prediction.draw ?? 0) &&
+                    (match.prediction.home_win ?? 0) >= (match.prediction.away_win ?? 0)
+                      ? match.home_team
+                      : (match.prediction.away_win ?? 0) >= (match.prediction.draw ?? 0)
+                      ? match.away_team
+                      : 'Draw'
+                  }
+                />
+              )}
+            </div>
             
             <div className="flex items-start justify-center gap-4 md:gap-8">
               {/* Home team column */}
@@ -1096,24 +1118,33 @@ export default function MatchDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-[var(--background-secondary)] border-b sticky top-16 z-10" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-4 overflow-x-auto justify-center">
-            {DETAIL_TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 font-medium capitalize transition-colors border-b-2 whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'text-[var(--accent-primary)] border-[var(--accent-primary)]'
-                    : 'text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {DETAIL_TAB_LABELS[tab]}
-              </button>
-            ))}
-          </div>
+      {/* Tabs — shadcn primitives for consistent styling with the rest of the app */}
+      <div
+        className="sticky top-16 z-10 border-b bg-[var(--background-secondary)]/95 backdrop-blur-sm"
+        style={{ borderColor: 'var(--border-color)' }}
+      >
+        <div className="mx-auto max-w-4xl px-4">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as DetailTab)}>
+            <TabsList className="h-12 w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0">
+              {DETAIL_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="relative h-12 rounded-none border-b-2 border-transparent px-3 text-sm font-semibold capitalize text-[var(--text-secondary)] hover:text-[var(--text-primary)] data-[state=active]:border-[var(--accent-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--accent-primary)] data-[state=active]:shadow-none"
+                >
+                  {DETAIL_TAB_LABELS[tab]}
+                  {tab === 'ai' && (
+                    <span
+                      aria-hidden="true"
+                      className="ml-1.5 rounded-full bg-[var(--accent-ai)]/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--accent-ai)]"
+                    >
+                      AI
+                    </span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
