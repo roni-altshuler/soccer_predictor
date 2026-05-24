@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, Clock, MapPin } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { HeadToHeadDisplay } from '@/components/match'
@@ -11,7 +14,8 @@ import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import DataSourceBadge from '@/components/DataSourceBadge'
-import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
+import { type PredictionPayload } from '@/components/prediction/PredictionResult'
+import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
 import { LeagueBadge } from '@/components/match/LeagueBadge'
 import { SplitStatBar } from '@/components/match/SplitStatBar'
@@ -995,146 +999,200 @@ export default function MatchDetailPage() {
 
   const isTeamTracked = (teamName: string) => trackedNameSet.has(normalizeTeamName(teamName))
 
+  const aiPick: 'home' | 'draw' | 'away' | null = match.prediction
+    ? (match.prediction.home_win ?? 0) >= (match.prediction.draw ?? 0) &&
+      (match.prediction.home_win ?? 0) >= (match.prediction.away_win ?? 0)
+      ? 'home'
+      : (match.prediction.away_win ?? 0) >= (match.prediction.draw ?? 0)
+        ? 'away'
+        : 'draw'
+    : null
+  const aiPickLabel = aiPick === 'home' ? match.home_team : aiPick === 'away' ? match.away_team : 'Draw'
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Header */}
-      <div style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <div className="min-h-screen">
+      {/* Hero header — gradient backdrop, glass chips, refined typography */}
+      <section className="relative isolate overflow-hidden border-b border-[var(--border-color)]">
+        {/* Ambient gradient */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_55%_at_15%_20%,color-mix(in_srgb,var(--accent-ai)_22%,transparent),transparent_60%),radial-gradient(50%_50%_at_88%_25%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/40 to-transparent"
+        />
+
+        <div className="mx-auto w-full max-w-5xl px-4 pt-5 pb-6 md:px-8 md:pt-6 md:pb-8">
+          {/* Back link */}
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 hover:opacity-80 mb-4 transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
+            className="group mb-5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to {match.league || 'leagues'}
+            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+            <span>Back to {match.league || 'leagues'}</span>
           </button>
-          
-          {/* Match Header - FotMob-inspired */}
-          <div className="text-center">
-            <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-              <LeagueBadge league={match.leagueId ?? match.league} size="md" />
-              {match.prediction && (
-                <ConfidenceIndicator
-                  value={Math.max(
-                    Number(match.prediction.home_win) || 0,
-                    Number(match.prediction.draw) || 0,
-                    Number(match.prediction.away_win) || 0,
-                  )}
-                  pick={
-                    (match.prediction.home_win ?? 0) >= (match.prediction.draw ?? 0) &&
-                    (match.prediction.home_win ?? 0) >= (match.prediction.away_win ?? 0)
-                      ? match.home_team
-                      : (match.prediction.away_win ?? 0) >= (match.prediction.draw ?? 0)
-                      ? match.away_team
-                      : 'Draw'
-                  }
-                />
+
+          {/* Top chip row — league + status + (AI lean if available) */}
+          <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+            <LeagueBadge league={match.leagueId ?? match.league} size="md" />
+            {isLive && !isHalftime && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-loss)]/35 bg-[var(--accent-loss)]/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-loss)]">
+                <span className="relative inline-flex h-1.5 w-1.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-70" />
+                  <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
+                </span>
+                Live · {match.minute}&apos;
+              </span>
+            )}
+            {isHalftime && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-warn)]">
+                Half time
+                {halftimeCountdown && (
+                  <span className="font-mono normal-case text-[10px] text-[var(--accent-warn)]/80">{halftimeCountdown}</span>
+                )}
+              </span>
+            )}
+            {isFinished && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)]/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                Full time
+              </span>
+            )}
+            {isScheduled && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)]/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                Upcoming
+              </span>
+            )}
+            {match.prediction && aiPick && (
+              <ConfidenceIndicator
+                value={Math.max(
+                  Number(match.prediction.home_win) || 0,
+                  Number(match.prediction.draw) || 0,
+                  Number(match.prediction.away_win) || 0,
+                )}
+                pick={aiPickLabel}
+              />
+            )}
+          </div>
+
+          {/* Score block — three columns */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-6">
+            {/* Home team */}
+            <div className="min-w-0 text-right">
+              <p className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
+                {match.home_team}
+              </p>
+              {match.events.filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {match.events
+                    .filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal'))
+                    .map((e, i) => (
+                      <p key={i} className="text-[11px] text-[var(--text-tertiary)] truncate">
+                        {e.player} {e.minute}&apos;{e.addedTime ? `+${e.addedTime}` : ''}{e.type === 'own_goal' ? ' (OG)' : ''}
+                      </p>
+                    ))}
+                </div>
               )}
             </div>
-            
-            <div className="flex items-start justify-center gap-4 md:gap-8">
-              {/* Home team column */}
-              <div className="flex-1 text-right">
-                <p className="text-lg md:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{match.home_team}</p>
-                {/* Home goal scorers */}
-                {match.events.filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
-                  <div className="mt-1 space-y-0.5">
-                    {match.events
-                      .filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal'))
-                      .map((e, i) => (
-                        <p key={i} className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                          {e.player} {e.minute}&apos;{e.addedTime ? `+${e.addedTime}` : ''}{e.type === 'own_goal' ? ' (OG)' : ''}
-                        </p>
-                      ))}
-                  </div>
-                )}
-              </div>
-              
-              <div className="text-center px-4 md:px-8 flex-shrink-0">
-                {/* Live indicator */}
-                {isLive && !isHalftime && (
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-red-500 text-sm font-bold">LIVE</span>
-                    <span className="text-red-400 text-sm font-bold">{match.minute}&apos;</span>
-                  </div>
-                )}
-                
-                {isHalftime && (
-                  <div className="mb-2 space-y-1">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="px-2 py-1 bg-amber-500/20 text-amber-500 rounded text-sm font-bold">HALF TIME</span>
-                    </div>
-                    {halftimeCountdown && (
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        Resumes in: <span className="font-mono text-amber-400">{halftimeCountdown}</span>
-                      </p>
-                    )}
-                  </div>
-                )}
-                
-                <div className="text-4xl md:text-5xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {isScheduled ? 'vs' : `${match.home_score} - ${match.away_score}`}
+
+            {/* Score */}
+            <div className="flex-shrink-0 text-center px-2">
+              {isScheduled ? (
+                <p className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
+                  vs
+                </p>
+              ) : (
+                <div className="flex items-center gap-3 md:gap-5">
+                  <span className="font-display text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+                    {match.home_score}
+                  </span>
+                  <span className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-bold leading-none text-[var(--text-tertiary)]">
+                    –
+                  </span>
+                  <span className="font-display text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+                    {match.away_score}
+                  </span>
                 </div>
-                
-                {isFinished && (
-                  <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Full Time</p>
-                )}
-                {isScheduled && (
-                  <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Upcoming</p>
-                )}
-              </div>
-              
-              {/* Away team column */}
-              <div className="flex-1 text-left">
-                <p className="text-lg md:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{match.away_team}</p>
-                {/* Away goal scorers */}
-                {match.events.filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
-                  <div className="mt-1 space-y-0.5">
-                    {match.events
-                      .filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal'))
-                      .map((e, i) => (
-                        <p key={i} className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                          {e.player} {e.minute}&apos;{e.addedTime ? `+${e.addedTime}` : ''}{e.type === 'own_goal' ? ' (OG)' : ''}
-                        </p>
-                      ))}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-            
-            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-tertiary)' }}>{formatDate(match.date)}</p>
-            <div className="mt-3 flex justify-center">
-              <DataSourceBadge
-                provider={match.source || 'none'}
-                detail={match.sourceDetail || 'Match detail feed'}
-                refreshedAt={match.generatedAt}
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {[match.home_team, match.away_team].map((teamName) => {
-                const tracked = isTeamTracked(teamName)
-                return (
-                  <button
-                    key={teamName}
-                    onClick={() => trackTeam(teamName)}
-                    disabled={tracked}
-                    className={`max-w-[220px] truncate rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
-                      tracked
-                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-                        : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]'
-                    }`}
-                  >
-                    {tracked ? `Tracking ${teamName}` : `Track ${teamName}`}
-                  </button>
-                )
-              })}
+
+            {/* Away team */}
+            <div className="min-w-0 text-left">
+              <p className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
+                {match.away_team}
+              </p>
+              {match.events.filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {match.events
+                    .filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal'))
+                    .map((e, i) => (
+                      <p key={i} className="text-[11px] text-[var(--text-tertiary)] truncate">
+                        {e.player} {e.minute}&apos;{e.addedTime ? `+${e.addedTime}` : ''}{e.type === 'own_goal' ? ' (OG)' : ''}
+                      </p>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Meta row — date + data source */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-[11px] text-[var(--text-tertiary)]">
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+              {formatDate(match.date)}
+            </span>
+            {match.venue && (
+              <>
+                <span className="h-1 w-1 rounded-full bg-[var(--border-color)]" aria-hidden="true" />
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                  {match.venue}
+                </span>
+              </>
+            )}
+            <span className="h-1 w-1 rounded-full bg-[var(--border-color)]" aria-hidden="true" />
+            <DataSourceBadge
+              provider={match.source || 'none'}
+              detail={match.sourceDetail || 'Match detail feed'}
+              refreshedAt={match.generatedAt}
+              compact
+            />
+          </div>
+
+          {/* Track buttons — refined */}
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {[match.home_team, match.away_team].map((teamName) => {
+              const tracked = isTeamTracked(teamName)
+              return (
+                <button
+                  key={teamName}
+                  onClick={() => trackTeam(teamName)}
+                  disabled={tracked}
+                  className={cn(
+                    'inline-flex max-w-[220px] items-center gap-1.5 truncate rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all',
+                    tracked
+                      ? 'border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] cursor-default'
+                      : 'border-[var(--border-color)] bg-[var(--card-bg)]/60 text-[var(--text-secondary)] hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/50 hover:bg-[var(--card-bg)] hover:text-[var(--accent-primary)]'
+                  )}
+                >
+                  {tracked ? (
+                    <>
+                      <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                      Tracking {teamName}
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="h-3.5 w-3.5" aria-hidden="true" />
+                      Track {teamName}
+                    </>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Tabs — shadcn primitives for consistent styling with the rest of the app */}
       <div
@@ -1865,15 +1923,18 @@ export default function MatchDetailPage() {
         )}
 
         {activeTab === 'ai' && (
-          <div className="space-y-4">
-            {match.prediction ? (
-              <PredictionResultViz prediction={adaptMatchPrediction(match)} />
-            ) : (
-              <div className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-                The unified model has no prediction for this fixture yet. It will appear here once the next prediction-pipeline run picks it up.
-              </div>
-            )}
-          </div>
+          <AIPredictionTab
+            prediction={match.prediction ? adaptMatchPrediction(match) : null}
+            matchState={isFinished ? 'finished' : isLive ? 'live' : 'upcoming'}
+            retrospectiveContext={{
+              home_team: match.home_team,
+              away_team: match.away_team,
+              league: match.league,
+              leagueId: match.leagueId,
+              home_score: match.home_score,
+              away_score: match.away_score,
+            }}
+          />
         )}
       </div>
     </div>
