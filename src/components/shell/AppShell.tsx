@@ -2,6 +2,8 @@
 
 import { type ReactNode } from 'react'
 
+import { TooltipProvider } from '@/components/ui/tooltip'
+
 import { CommandPalette } from './CommandPalette'
 import { MobileBottomNav } from './MobileBottomNav'
 import { SidebarNav } from './SidebarNav'
@@ -26,7 +28,10 @@ export function AppShell({
   footer?: ReactNode
 }) {
   return (
-    <>
+    // Single app-wide TooltipProvider so any <Tooltip> downstream works
+    // without ceremony. Nested providers (CalibrationPlot, ConfidenceIndicator,
+    // FactorsPanel) are harmless per Radix docs.
+    <TooltipProvider delayDuration={200} skipDelayDuration={400}>
       <SidebarNav />
       <div
         className="ambient-bg flex min-h-screen flex-col md:pl-[var(--shell-sidebar-w)]"
@@ -39,6 +44,6 @@ export function AppShell({
       </div>
       <MobileBottomNav />
       <CommandPalette />
-    </>
+    </TooltipProvider>
   )
 }
