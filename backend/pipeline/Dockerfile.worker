@@ -1,0 +1,26 @@
+# Worker image: postgres_writer + prediction_recomputer + archiver.
+# Heavier than the gateway because it needs the prediction stack.
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+COPY backend/ /app/backend/
+COPY conftest.py /app/conftest.py
+
+# Override WORKER_TARGET to run a different worker, e.g.:
+#   docker run -e WORKER_TARGET=backend.pipeline.workers.prediction_recomputer ...
+ENV WORKER_TARGET=backend.pipeline.workers.postgres_writer
+
+CMD ["sh", "-c", "python -m $WORKER_TARGET"]

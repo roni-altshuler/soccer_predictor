@@ -1,0 +1,83 @@
+version: "3.9"
+
+# Local development stack for the data pipeline.
+# Mirrors the free-tier production topology:
+#   - Postgres = "Neon free" in prod
+#   - Redis    = self-hosted on Oracle Cloud Always Free in prod
+#   - worker   = pollers + APScheduler + Postgres writer
+#   - gateway  = FastAPI WebSocket fan-out (deployed to Fly.io in prod)
+#   - backend  = the existing FastAPI app (already runs on :8000 outside docker)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sp_postgres
+    environment:
+      POSTGRES_USER: soccer
+      POSTGRES_PASSWORD: soccer
+      POSTGRES_DB: soccer_predictor
+    ports:
+      - "5432:5432"
+    volumes:
+      - sp_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soccer -d soccer_predictor"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sp_redis
+    command: redis-server --appendonly yes --save 60 1000
+    ports:
+      - "6379:6379"
+    volumes:
+      - sp_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: only built when you `docker compose --profile workers up`.
+  # During Phase-1/2 development you can run workers on the host with
+  # `python -m backend.pipeline.workers.postgres_writer`.
+  worker:
+    profiles: ["workers"]
+    build:
+      context: .
+      dockerfile: backend/pipeline/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://soccer:soccer@postgres:5432/soccer_predictor
+      REDIS_URL: redis://redis:6379/0
+      PIPELINE_DUAL_WRITE: "true"
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    profiles: ["workers"]
+    build:
+      context: .
+      dockerfile: backend/pipeline/Dockerfile.gateway
+    environment:
+      DATABASE_URL: postgresql://soccer:soccer@postgres:5432/soccer_predictor
+      REDIS_URL: redis://redis:6379/0
+      GATEWAY_PORT: 8001
+      JWT_SECRET: dev-only-not-for-prod
+      LOG_LEVEL: INFO
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sp_pg_data:
+  sp_redis_data:
