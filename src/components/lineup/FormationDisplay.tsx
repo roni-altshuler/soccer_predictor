@@ -1,9 +1,14 @@
 'use client'
 
 import { useMemo } from 'react'
+import { CircleDot, Footprints } from 'lucide-react'
+
+import { PlayerAvatar, RatingPill } from '@/components/primitives'
 
 interface PlayerLineup {
   name: string
+  /** Stable player identifier — when paired with playerIds map, enables headshot lookup. */
+  id?: number | string
   position?: string
   jersey?: number
   isSubstitute?: boolean
@@ -22,8 +27,25 @@ interface FormationDisplayProps {
   players: PlayerLineup[]
   formation?: string
   teamName: string
+  /** Legacy palette key (kept for back-compat callers). When teamTint is set it wins. */
   teamColor?: 'blue' | 'orange' | 'red' | 'green'
   showStats?: boolean
+  /**
+   * v2 — single brand colour for the whole side; replaces the by-role palette.
+   * Reads as `--team-tint-home` or `--team-tint-away` if a parent wraps the
+   * pitch with an inline style — but this prop is explicit and wins regardless.
+   */
+  teamTint?: string
+  /**
+   * v2 — when set, the player node renders as PlayerAvatar (headshot ring tinted
+   * to teamTint, falls back to monogram). The shirt number sits below the name.
+   */
+  showAvatars?: boolean
+  /**
+   * v2 — 0–10 AI impact scores keyed by player.id (or player.name as fallback).
+   * When provided, each starter node gets a RatingPill in the top-right.
+   */
+  aiImpactScores?: Record<string, number>
 }
 
 // Comprehensive position mapping to formation roles
@@ -107,7 +129,14 @@ export default function FormationDisplay({
   teamName,
   teamColor = 'blue',
   showStats = true,
+  teamTint,
+  showAvatars,
+  aiImpactScores,
 }: FormationDisplayProps) {
+  // teamName is part of the public contract and may be surfaced by callers later
+  // (e.g. screen-reader labels). Reference it explicitly so the linter doesn't
+  // flag it as unused while still allowing callers to pass it.
+  void teamName
   const colors = TEAM_COLORS[teamColor]
   
   // Parse and organize players into formation rows
@@ -219,53 +248,74 @@ export default function FormationDisplay({
     }
   }, [players, formation, colors])
   
-  // Render a player node with jersey and name
+  // Render a player node with jersey and name. v2 layers: if showAvatars is
+  // set, use PlayerAvatar; if aiImpactScores is provided, surface a RatingPill.
   const renderPlayer = (player: PlayerLineup, idx: number, bgColor: string) => {
     const lastName = player.name.split(' ').pop() || player.name
     const hasEvents = player.events && (
-      player.events.goal || player.events.assist || 
+      player.events.goal || player.events.assist ||
       player.events.yellowCard || player.events.redCard
     )
-    
+
+    // Resolve AI impact score by id then by name.
+    const impactKey = player.id != null ? String(player.id) : player.name
+    const impactScore = aiImpactScores?.[impactKey]
+
     return (
       <div
         key={`${player.name}-${idx}`}
         className="flex flex-col items-center group relative"
       >
-        {/* Player circle */}
-        <div
-          className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-white/60 transition-transform group-hover:scale-110`}
-        >
-          {player.jersey || (idx + 1)}
-        </div>
-        
+        {/* Player avatar / circle */}
+        {showAvatars ? (
+          <PlayerAvatar
+            playerId={player.id}
+            name={player.name}
+            size={44}
+            ringColor={teamTint}
+          />
+        ) : (
+          <div
+            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full ${bgColor} flex items-center justify-center text-white font-bold text-sm shadow-lg border-2 border-white/60 transition-transform group-hover:scale-110`}
+            style={teamTint ? { background: teamTint, borderColor: 'var(--headshot-ring)' } : undefined}
+          >
+            {player.jersey || (idx + 1)}
+          </div>
+        )}
+
         {/* Player name */}
         <p className="text-[10px] sm:text-xs text-white mt-1 max-w-[60px] sm:max-w-[70px] truncate text-center drop-shadow-md font-medium">
           {lastName}
         </p>
-        
-        {/* Event indicators */}
-        {hasEvents && showStats && (
-          <div className="absolute -top-2 -right-1 flex gap-0.5">
-            {player.events?.goal && (
-              <span className="text-[10px] bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
-                ⚽
-              </span>
-            )}
-            {player.events?.assist && (
-              <span className="text-[10px] bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
-                👟
-              </span>
-            )}
-            {player.events?.yellowCard && (
-              <span className="w-2 h-3 bg-yellow-400 rounded-sm shadow" />
-            )}
-            {player.events?.redCard && (
-              <span className="w-2 h-3 bg-red-500 rounded-sm shadow" />
-            )}
+
+        {/* Top-right cluster: AI impact pill (priority) → event indicators */}
+        {impactScore != null ? (
+          <div className="absolute -top-1 -right-1">
+            <RatingPill value={impactScore} compact />
           </div>
+        ) : (
+          hasEvents && showStats && (
+            <div className="absolute -top-2 -right-1 flex gap-0.5">
+              {player.events?.goal && (
+                <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                  <CircleDot className="h-3 w-3 text-[var(--accent-primary)]" aria-hidden />
+                </span>
+              )}
+              {player.events?.assist && (
+                <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                  <Footprints className="h-3 w-3 text-[var(--text-secondary)]" aria-hidden />
+                </span>
+              )}
+              {player.events?.yellowCard && (
+                <span className="w-2 h-3 bg-yellow-400 rounded-sm shadow" />
+              )}
+              {player.events?.redCard && (
+                <span className="w-2 h-3 bg-red-500 rounded-sm shadow" />
+              )}
+            </div>
+          )
         )}
-        
+
         {/* Hover tooltip with full name */}
         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
           {player.name}
@@ -303,10 +353,20 @@ export default function FormationDisplay({
   )
 }
 
-// Separate component for the pitch background
+// Separate component for the pitch background. v2 reads `--pitch-bg` and
+// `--accent-pitch-line*` (Phase 0.A) instead of hardcoded green / white-40.
 export function PitchBackground({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative bg-gradient-to-b from-green-700 via-green-600 to-green-700 p-4 min-h-[350px] overflow-hidden">
+    <div
+      className="relative p-4 min-h-[350px] overflow-hidden"
+      style={{
+        background: `linear-gradient(to bottom,
+          var(--pitch-bg),
+          color-mix(in srgb, var(--pitch-bg) 88%, white 12%),
+          var(--pitch-bg)
+        )`,
+      }}
+    >
       {/* Pitch pattern stripes */}
       <div className="absolute inset-0 opacity-20">
         {[...Array(10)].map((_, i) => (
@@ -316,35 +376,64 @@ export function PitchBackground({ children }: { children: React.ReactNode }) {
           />
         ))}
       </div>
-      
-      {/* Pitch lines */}
-      <div className="absolute inset-4 border-2 border-white/40 rounded-lg">
-        {/* Center line */}
-        <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-white/40" />
-        
-        {/* Center circle */}
-        <div className="absolute left-1/2 top-1/2 w-20 h-20 -ml-10 -mt-10 rounded-full border-2 border-white/40" />
-        <div className="absolute left-1/2 top-1/2 w-2 h-2 -ml-1 -mt-1 rounded-full bg-white/40" />
-        
-        {/* Top goal area (18-yard box) */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-12 border-2 border-white/40 border-t-0" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 border-2 border-white/40 border-t-0" />
-        
-        {/* Bottom goal area */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-12 border-2 border-white/40 border-b-0" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-4 border-2 border-white/40 border-b-0" />
-        
+
+      {/* Pitch lines — strong tier for outer border + centre features */}
+      <div
+        className="absolute inset-4 rounded-lg border-2"
+        style={{ borderColor: 'var(--accent-pitch-line-strong)' }}
+      >
+        {/* Halfway line */}
+        <div className="absolute left-0 right-0 top-1/2 h-0.5" style={{ background: 'var(--accent-pitch-line-strong)' }} />
+
+        {/* Centre circle */}
+        <div
+          className="absolute left-1/2 top-1/2 w-20 h-20 -ml-10 -mt-10 rounded-full border-2"
+          style={{ borderColor: 'var(--accent-pitch-line-strong)' }}
+        />
+        <div
+          className="absolute left-1/2 top-1/2 w-2 h-2 -ml-1 -mt-1 rounded-full"
+          style={{ background: 'var(--accent-pitch-line-strong)' }}
+        />
+
+        {/* Goal areas — soft tier */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-12 border-2 border-t-0"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 border-2 border-t-0"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-12 border-2 border-b-0"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-4 border-2 border-b-0"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+
         {/* Corner arcs */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-b-2 border-r-2 border-white/40 rounded-br-full" />
-        <div className="absolute top-0 right-0 w-4 h-4 border-b-2 border-l-2 border-white/40 rounded-bl-full" />
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-t-2 border-r-2 border-white/40 rounded-tr-full" />
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-t-2 border-l-2 border-white/40 rounded-tl-full" />
+        <div
+          className="absolute top-0 left-0 w-4 h-4 border-b-2 border-r-2 rounded-br-full"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute top-0 right-0 w-4 h-4 border-b-2 border-l-2 rounded-bl-full"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-4 h-4 border-t-2 border-r-2 rounded-tr-full"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-4 h-4 border-t-2 border-l-2 rounded-tl-full"
+          style={{ borderColor: 'var(--accent-pitch-line)' }}
+        />
       </div>
-      
+
       {/* Content */}
-      <div className="relative z-10 h-full">
-        {children}
-      </div>
+      <div className="relative z-10 h-full">{children}</div>
     </div>
   )
 }

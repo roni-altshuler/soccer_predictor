@@ -1,4 +1,6 @@
 export { ConfidencePill } from './ConfidencePill'
 export { LiveBadge } from './LiveBadge'
+export { MetaChip } from './MetaChip'
 export { PlayerAvatar } from './PlayerAvatar'
+export { RatingPill } from './RatingPill'
 export { TeamBadge } from './TeamBadge'

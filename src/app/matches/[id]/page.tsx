@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleDot, CircleHelp, CheckCircle2, Clock, MapPin, RefreshCw, Square, Zap } from 'lucide-react'
+import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, CheckCircle2, Clock, MapPin, RefreshCw, Zap } from 'lucide-react'
+import { EventTimeline } from '@/components/match/EventTimeline'
+import { MetaChipRow } from '@/components/match/MetaChipRow'
+import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 
 import { cn } from '@/lib/utils'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
@@ -652,6 +655,9 @@ export default function MatchDetailPage() {
   // Derived state for live status - compute before hooks that depend on it
   const isLive = match?.status?.includes('IN_PROGRESS') || match?.status?.includes('HALF') || match?.status?.includes('LIVE') || false
   const isHalftime = match?.status?.toLowerCase().includes('half') && !match?.status?.toLowerCase().includes('first') && !match?.status?.toLowerCase().includes('second') || false
+  // Ref to the match hero <section>. StickyScoreBar uses an IntersectionObserver
+  // on this to know when to slide down into view.
+  const heroRef = useRef<HTMLElement | null>(null)
   const trackedNameSet = useMemo(
     () => new Set(trackedTeams.map((team) => normalizeTeamName(team.name))),
     [trackedTeams]
@@ -1010,10 +1016,26 @@ export default function MatchDetailPage() {
     : null
   const aiPickLabel = aiPick === 'home' ? match.home_team : aiPick === 'away' ? match.away_team : 'Draw'
 
+  // Live minute label for the StickyScoreBar — falls back to match.status.
+  const liveMinuteLabel = isLive ? (match.minute ?? match.status) : null
+
   return (
     <div className="min-h-screen">
+      <StickyScoreBar
+        heroRef={heroRef}
+        homeName={match.home_team}
+        awayName={match.away_team}
+        homeScore={match.home_score}
+        awayScore={match.away_score}
+        isLive={isLive}
+        liveMinute={liveMinuteLabel}
+        statusLabel={isFinished ? 'FT' : isScheduled ? 'Scheduled' : match.status}
+      />
       {/* Hero header — gradient backdrop, glass chips, refined typography */}
-      <section className="relative isolate overflow-hidden border-b border-[var(--border-color)]">
+      <section
+        ref={heroRef}
+        className="relative isolate overflow-hidden border-b border-[var(--border-color)]"
+      >
         {/* Ambient gradient */}
         <div
           aria-hidden="true"
@@ -1137,22 +1159,14 @@ export default function MatchDetailPage() {
             </div>
           </div>
 
-          {/* Meta row — date + data source */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-[11px] text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-              {formatDate(match.date)}
-            </span>
-            {match.venue && (
-              <>
-                <span className="h-1 w-1 rounded-full bg-[var(--border-color)]" aria-hidden="true" />
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                  {match.venue}
-                </span>
-              </>
-            )}
-            <span className="h-1 w-1 rounded-full bg-[var(--border-color)]" aria-hidden="true" />
+          {/* Meta row — FotMob-style chips + provenance badge */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <MetaChipRow
+              dateLabel={formatDate(match.date)}
+              venue={match.venue}
+              attendance={match.attendance ?? null}
+              capacity={match.capacity ?? null}
+            />
             <DataSourceBadge
               provider={match.source || 'none'}
               detail={match.sourceDetail || 'Match detail feed'}
@@ -1355,76 +1369,21 @@ export default function MatchDetailPage() {
                 <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)]">Events</h3>
                 </div>
-                <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-                  {match.events
-                    .filter(e => e.type !== 'substitution')
-                    .sort((a, b) => a.minute - b.minute)
-                    .map((event, idx) => {
-                      const isGoal = event.type === 'goal' || event.type === 'own_goal'
-                      const icon = isGoal
-                        ? <CircleDot className="inline h-3.5 w-3.5 text-[var(--accent-primary)] align-middle" aria-hidden />
-                        : event.type === 'yellow_card'
-                          ? <Square className="inline h-3 w-3 fill-yellow-400 text-yellow-400 align-middle" aria-hidden />
-                          : event.type === 'red_card'
-                            ? <Square className="inline h-3 w-3 fill-red-500 text-red-500 align-middle" aria-hidden />
-                            : <RefreshCw className="inline h-3 w-3 text-[var(--text-tertiary)] align-middle" aria-hidden />
-                      const isHome = event.team === 'home'
-                      return (
-                        <div key={idx} className="flex items-center px-4 py-2.5 hover:bg-[var(--muted-bg)] transition-colors" style={{ borderColor: 'var(--border-color)' }}>
-                          {/* Home side */}
-                          <div className="flex-1 text-right pr-3">
-                            {isHome && (
-                              <div>
-                                <span className={`text-sm ${isGoal ? 'font-semibold' : ''}`} style={{ color: 'var(--text-primary)' }}>
-                                  {icon} {event.player}
-                                </span>
-                                {event.relatedPlayer && isGoal && (
-                                  <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>assist by {event.relatedPlayer}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {/* Minute */}
-                          <div className="w-12 text-center flex-shrink-0">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isGoal ? 'bg-[var(--accent-primary)] text-white' : ''}`} style={!isGoal ? { color: 'var(--text-tertiary)' } : {}}>
-                              {event.minute}&apos;{event.addedTime ? `+${event.addedTime}` : ''}
-                            </span>
-                          </div>
-                          {/* Away side */}
-                          <div className="flex-1 text-left pl-3">
-                            {!isHome && (
-                              <div>
-                                <span className={`text-sm ${isGoal ? 'font-semibold' : ''}`} style={{ color: 'var(--text-primary)' }}>
-                                  {event.player} {icon}
-                                </span>
-                                {event.relatedPlayer && isGoal && (
-                                  <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>assist by {event.relatedPlayer}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  {/* Half time marker */}
-                  {match.events.some(e => e.minute > 45) && (
-                    <div className="flex items-center px-4 py-1.5" style={{ background: 'var(--muted-bg)' }}>
-                      <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-                      <span className="px-3 text-[10px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>HT</span>
-                      <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-                    </div>
-                  )}
-                  {/* Full Time marker */}
-                  {isFinished && (
-                    <div className="flex items-center px-4 py-2" style={{ background: 'var(--muted-bg)' }}>
-                      <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-                      <span className="px-3 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                        FT {match.home_score} - {match.away_score}
-                      </span>
-                      <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-                    </div>
-                  )}
-                </div>
+                <EventTimeline
+                  events={match.events.filter((e) => e.type !== 'substitution')}
+                  homeName={match.home_team}
+                  awayName={match.away_team}
+                  className="rounded-none border-0"
+                />
+                {isFinished && match.home_score !== null && match.away_score !== null && (
+                  <div className="flex items-center px-4 py-2" style={{ background: 'var(--muted-bg)' }}>
+                    <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                    <span className="px-3 text-meta font-semibold text-[var(--text-secondary)] font-numeric tabular-nums">
+                      FT {match.home_score} - {match.away_score}
+                    </span>
+                    <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                  </div>
+                )}
               </div>
             )}
 
