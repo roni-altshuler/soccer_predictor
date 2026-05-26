@@ -11,7 +11,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "a11y": "axe http://localhost:3000"
+    "a11y": "axe http://localhost:3000",
+    "shoot": "tsx scripts/screenshot.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -64,6 +65,8 @@
     "eslint": "^8.50.0",
     "eslint-config-next": "^15.0.5",
     "jest": "^30.2.0",
-    "jest-environment-jsdom": "^30.2.0"
+    "jest-environment-jsdom": "^30.2.0",
+    "playwright": "^1.60.0",
+    "tsx": "^4.22.3"
   }
 }

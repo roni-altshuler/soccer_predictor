@@ -82,6 +82,23 @@
   --glass-blur: saturate(160%) blur(14px);
   --bento-hl: color-mix(in srgb, var(--accent-ai) 16%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+
+  /* ────────────────────────────────────────────────────────────
+     FotMob-inspired redesign tokens (Phase 0.A — see docs/design-tokens.md)
+     ──────────────────────────────────────────────────────────── */
+  --accent-pitch-line: rgba(241, 245, 251, 0.18);
+  --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
+  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 22%, transparent);
+  --rating-bg-low: color-mix(in srgb, var(--muted-bg) 80%, var(--text-tertiary) 20%);
+  /* Per-match team tints — components override inline via
+     style={{ '--team-tint-home': brandColor }}. Defaults give a sensible
+     fallback when the league/club lookup hasn't resolved yet. */
+  --team-tint-home: var(--accent-primary);
+  --team-tint-away: var(--accent-loss);
+  --headshot-ring: rgba(15, 26, 44, 0.18);
+  --score-numeric-shadow: none;
+  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
 }
 
 .dark {
@@ -134,6 +151,15 @@
   --glass-border: rgba(52, 78, 117, 0.4);
   --bento-hl: color-mix(in srgb, var(--accent-ai) 22%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+
+  /* FotMob-redesign token overrides (Phase 0.A) — only the slots whose
+     dark-mode value differs from light. Pitch-line, ratings, and team-tints
+     work the same in both modes. */
+  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 28%, transparent);
+  --headshot-ring: rgba(241, 245, 251, 0.22);
+  --score-numeric-shadow: 0 0 22px color-mix(in srgb, var(--accent-primary) 38%, transparent);
+  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 60%, transparent);
 }
 
 /* ────────────────────────────────────────────────────────────

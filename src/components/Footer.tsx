@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { AlertTriangle } from 'lucide-react'
 
 export const Footer = () => {
   return (
@@ -9,9 +10,8 @@ export const Footer = () => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <span className="text-sm font-black text-[var(--accent-on-primary)]">⚽</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
             <div className="flex items-baseline gap-1.5">
               <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
               <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">AI</span>
@@ -46,8 +46,9 @@ export const Footer = () => {
             &copy; {new Date().getFullYear()} Ron Oshri Altshuler. All Rights Reserved.
             </p>
           </div>
-          <p className="text-[10px] text-[var(--text-tertiary)]">
-            ⚠️ For educational and entertainment purposes only.
+          <p className="text-[10px] text-[var(--text-tertiary)] flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" aria-hidden />
+            For educational and entertainment purposes only.
           </p>
         </div>
       </div>

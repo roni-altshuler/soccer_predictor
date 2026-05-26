@@ -71,6 +71,9 @@ backend/data/raw/
 # Agent worktrees
 .claude/worktrees/
 
+# screenshot harness (Playwright)
+/scripts/screenshots/
+
 # Gemini API Key
 gemini.md
 

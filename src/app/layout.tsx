@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import { AppShell } from '@/components/shell'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
@@ -17,6 +17,16 @@ const inter = Inter({
   variable: '--font-sans',
   display: 'swap',
   weight: ['400', '500', '600', '700', '800'],
+})
+
+// JetBrains Mono — used only for tabular scoreboard digits, minute counters,
+// and other monospaced numerics. Exposed as `--font-mono-numeric` and accessible
+// via the `font-numeric` Tailwind family (configured in tailwind.config.js).
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono-numeric',
+  display: 'swap',
+  weight: ['500', '700'],
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fotpredict.ai'
@@ -96,7 +106,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* Alias the legacy --font-body/--font-heading vars to Inter so any

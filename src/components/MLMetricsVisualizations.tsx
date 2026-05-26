@@ -1,5 +1,8 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 import { ImageModal } from './ImageModal';
+import { DotPattern } from './magicui';
+import { cn } from '@/lib/utils';
 
 interface MLMetricsVisualizationsProps {
   league: string;
@@ -93,24 +96,20 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
 
   return (
     <div className="space-y-16 glass-effect p-8 rounded-3xl relative overflow-hidden shadow-card-lg">
-      {/* Soccer-themed background pattern */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute top-10 left-10 text-8xl">⚽</div>
-        <div className="absolute top-40 right-20 text-6xl">🏆</div>
-        <div className="absolute bottom-20 left-1/4 text-7xl">⚽</div>
-        <div className="absolute top-1/3 right-1/3 text-9xl">⚽</div>
-        <div className="absolute bottom-10 right-10 text-6xl">🥅</div>
-        <div className="absolute top-1/2 left-10 text-5xl">🏟️</div>
-      </div>
+      {/* Subtle dot-pattern backdrop (replaces previous emoji watermark) */}
+      <DotPattern
+        className={cn(
+          'absolute inset-0 pointer-events-none opacity-40',
+          '[mask-image:radial-gradient(ellipse_at_center,white,transparent_75%)]'
+        )}
+      />
 
       {/* Header */}
       <div className="text-center relative z-10">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <span className="text-5xl">📊</span>
+        <div className="mb-4">
           <h2 className="text-5xl font-black text-primary">
             Model Performance Metrics
           </h2>
-          <span className="text-5xl">📊</span>
         </div>
         <p className="text-lg text-secondary max-w-3xl mx-auto font-medium">
           Comprehensive analysis of the machine learning model trained on <span className="font-bold text-brand-600 dark:text-brand-400">{league.replace('_', ' ').toUpperCase()}</span> match data. 
@@ -122,11 +121,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       {/* Main Performance Metrics */}
       <div className="relative z-10">
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-primary flex items-center justify-center gap-3">
-            <span className="text-4xl">🎯</span>
-            Model Performance Analysis
-            <span className="text-4xl">🎯</span>
-          </h3>
+          <h3 className="text-3xl font-bold text-primary">Model Performance Analysis</h3>
           <div className="w-32 h-1 bg-brand-500 mx-auto mt-3 rounded-full"></div>
         </div>
         
@@ -197,11 +192,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       {/* Classification Reports */}
       <div className="relative z-10">
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-primary flex items-center justify-center gap-3">
-            <span className="text-4xl">📈</span>
-            Detailed Classification Metrics
-            <span className="text-4xl">📈</span>
-          </h3>
+          <h3 className="text-3xl font-bold text-primary">Detailed Classification Metrics</h3>
           <div className="w-32 h-1 bg-brand-600 mx-auto mt-3 rounded-full"></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
@@ -244,7 +235,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
         </div>
         <div className="relative flex justify-center text-sm">
           <span className="px-6 py-2 bg-gradient-to-r from-brand-500 to-brand-700 text-white font-bold rounded-full shadow-lg">
-            🎚️ Confidence Threshold Analysis
+            Confidence Threshold Analysis
           </span>
         </div>
       </div>
@@ -252,11 +243,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       {/* Confidence Threshold Visualizations */}
       <div className="relative z-10">
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-primary flex items-center justify-center gap-3">
-            <span className="text-4xl">🎯</span>
-            Prediction Confidence Analysis
-            <span className="text-4xl">🎯</span>
-          </h3>
+          <h3 className="text-3xl font-bold text-primary">Prediction Confidence Analysis</h3>
           <p className="text-secondary mt-2 max-w-3xl mx-auto font-medium">
             These charts show how model performance (precision, recall, F1-score) changes at different confidence thresholds. 
             Higher confidence means more reliable predictions but fewer total predictions.
@@ -331,9 +318,10 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
 
       {/* Footer Note */}
       <div className="glass-effect border-2 border-primary rounded-xl p-6 text-center shadow-card-lg">
-        <p className="text-sm text-secondary">
-          <span className="font-semibold text-brand-600 dark:text-brand-400">⚽ Note:</span> These visualizations are generated during model training and updated with each retraining cycle. 
-          The model emphasizes data from the last 5 seasons with exponential weighting towards recent years for improved accuracy.
+        <p className="text-sm text-secondary inline-flex items-center justify-center gap-2">
+          <Info className="h-4 w-4 text-[var(--accent-ai)] flex-shrink-0" aria-hidden />
+          <span><span className="font-semibold text-brand-600 dark:text-brand-400">Note:</span> These visualizations are generated during model training and updated with each retraining cycle.
+          The model emphasizes data from the last 5 seasons with exponential weighting towards recent years for improved accuracy.</span>
         </p>
       </div>
     </div>

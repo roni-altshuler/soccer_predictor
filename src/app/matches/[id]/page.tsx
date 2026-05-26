@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, Clock, MapPin } from 'lucide-react'
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleDot, CircleHelp, CheckCircle2, Clock, MapPin, RefreshCw, Square, Zap } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
@@ -905,7 +905,7 @@ export default function MatchDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
         <div className="text-center max-w-md mx-auto px-4">
-          <span className="text-5xl mb-4 block">⚽</span>
+          <CircleHelp className="mx-auto mb-4 h-12 w-12 text-[var(--text-tertiary)]" aria-hidden />
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Match Not Available</h2>
           <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
             We couldn&apos;t load details for this match. This might be because:
@@ -936,10 +936,11 @@ export default function MatchDetailPage() {
                 setLoading(true)
                 setRetryCount(prev => prev + 1) // Trigger refetch without full page reload
               }}
-              className="px-6 py-3 rounded-xl border font-semibold transition-colors hover:bg-[var(--muted-bg)]"
+              className="px-6 py-3 rounded-xl border font-semibold transition-colors hover:bg-[var(--muted-bg)] inline-flex items-center justify-center gap-2"
               style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
             >
-              🔄 Try Again
+              <RefreshCw className="h-4 w-4" aria-hidden />
+              Try Again
             </button>
           </div>
         </div>
@@ -964,14 +965,14 @@ export default function MatchDetailPage() {
     
     // Exact score match
     if (predictedHome === actualHome && predictedAway === actualAway) {
-      return { type: 'exact', message: '✅ Exact prediction!' }
+      return { type: 'exact', message: 'Exact prediction' }
     }
-    
+
     // Close prediction: goal difference within 1
     const predictedDiff = predictedHome - predictedAway
     const actualDiff = actualHome - actualAway
     if (Math.abs(predictedDiff - actualDiff) <= 1) {
-      return { type: 'close', message: '⚡ Close prediction' }
+      return { type: 'close', message: 'Close prediction' }
     }
     
     return { type: 'miss', message: `Actual: ${actualHome} - ${actualAway}` }
@@ -1328,11 +1329,15 @@ export default function MatchDetailPage() {
                     const accuracy = getPredictionAccuracy()
                     return accuracy.message ? (
                       <div className="mt-3 pt-3 border-t border-[var(--accent-ai)]/20">
-                        <p className={`text-center text-xs font-semibold ${
-                          accuracy.type === 'exact' ? 'text-green-500' : 
-                          accuracy.type === 'close' ? 'text-amber-500' : 
+                        <p className={`text-center text-xs font-semibold inline-flex items-center justify-center gap-1.5 w-full ${
+                          accuracy.type === 'exact' ? 'text-[var(--accent-primary)]' :
+                          accuracy.type === 'close' ? 'text-[var(--accent-warn)]' :
                           'text-[var(--text-tertiary)]'
-                        }`}>{accuracy.message}</p>
+                        }`}>
+                          {accuracy.type === 'exact' && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
+                          {accuracy.type === 'close' && <Zap className="h-3.5 w-3.5" aria-hidden />}
+                          {accuracy.message}
+                        </p>
                       </div>
                     ) : null
                   })()}
@@ -1356,7 +1361,13 @@ export default function MatchDetailPage() {
                     .sort((a, b) => a.minute - b.minute)
                     .map((event, idx) => {
                       const isGoal = event.type === 'goal' || event.type === 'own_goal'
-                      const icon = isGoal ? '⚽' : event.type === 'yellow_card' ? '🟨' : event.type === 'red_card' ? '🟥' : '🔄'
+                      const icon = isGoal
+                        ? <CircleDot className="inline h-3.5 w-3.5 text-[var(--accent-primary)] align-middle" aria-hidden />
+                        : event.type === 'yellow_card'
+                          ? <Square className="inline h-3 w-3 fill-yellow-400 text-yellow-400 align-middle" aria-hidden />
+                          : event.type === 'red_card'
+                            ? <Square className="inline h-3 w-3 fill-red-500 text-red-500 align-middle" aria-hidden />
+                            : <RefreshCw className="inline h-3 w-3 text-[var(--text-tertiary)] align-middle" aria-hidden />
                       const isHome = event.team === 'home'
                       return (
                         <div key={idx} className="flex items-center px-4 py-2.5 hover:bg-[var(--muted-bg)] transition-colors" style={{ borderColor: 'var(--border-color)' }}>
@@ -1442,7 +1453,7 @@ export default function MatchDetailPage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--muted-bg)] transition-colors"
                   >
-                    <span className="text-xl">🏟️</span>
+                    <MapPin className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{match.venue}</p>
                       <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>View on map →</p>
@@ -1867,7 +1878,7 @@ export default function MatchDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 bg-[var(--muted-bg)] rounded-xl">
-                  <span className="text-3xl mb-3 block">📊</span>
+                  <CircleHelp className="mx-auto mb-3 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
                   <p className="text-[var(--text-secondary)]">League standings not available</p>
                 </div>
               )}

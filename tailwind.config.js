@@ -98,6 +98,9 @@ module.exports = {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // Tabular monospaced digits — scoreboards, minute counters. Wired
+        // via next/font (JetBrains Mono) in src/app/layout.tsx.
+        numeric: ['var(--font-mono-numeric)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         // Typography scale — every entry is [size, { lineHeight, letterSpacing, fontWeight? }]
@@ -108,6 +111,10 @@ module.exports = {
         h4: ['1.125rem', { lineHeight: '1.4', letterSpacing: '-0.015em', fontWeight: '600' }],
         body: ['0.9375rem', { lineHeight: '1.55', letterSpacing: '-0.005em' }],
         small: ['0.8125rem', { lineHeight: '1.5', letterSpacing: '0' }],
+        // `meta` — 13px non-uppercase. Use for chips, dates, venues, sources.
+        // Replaces the dense 10–11px uppercase tracking labels used today.
+        meta: ['0.8125rem', { lineHeight: '1.45', letterSpacing: '0', fontWeight: '500' }],
+        // `caption` — 11px uppercase tracking. Reserved for chip/badge labels only.
         caption: ['0.6875rem', { lineHeight: '1.4', letterSpacing: '0.06em' }],
       },
       keyframes: {
@@ -139,6 +146,41 @@ module.exports = {
           '0%, 100%': { boxShadow: '0 0 0 0 color-mix(in srgb, var(--accent-loss) 60%, transparent)' },
           '50%': { boxShadow: '0 0 0 6px color-mix(in srgb, var(--accent-loss) 0%, transparent)' },
         },
+        // magic-ui keyframes
+        'shimmer-slide': {
+          to: { transform: 'translate(calc(100cqw - 100%), 0)' },
+        },
+        'spin-around': {
+          '0%': { transform: 'translateZ(0) rotate(0)' },
+          '15%, 35%': { transform: 'translateZ(0) rotate(90deg)' },
+          '65%, 85%': { transform: 'translateZ(0) rotate(270deg)' },
+          '100%': { transform: 'translateZ(0) rotate(360deg)' },
+        },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(calc(-100% - var(--gap)))' },
+        },
+        'marquee-vertical': {
+          from: { transform: 'translateY(0)' },
+          to: { transform: 'translateY(calc(-100% - var(--gap)))' },
+        },
+        gradient: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        'neon-pulse': {
+          '0%, 100%': { backgroundPosition: '0% 0%' },
+          '50%': { backgroundPosition: '100% 100%' },
+        },
+        'pulse-ring': {
+          '0%': { transform: 'translate(-50%, -50%) scale(1)', opacity: '0.5' },
+          '80%, 100%': { transform: 'translate(-50%, -50%) scale(2.0)', opacity: '0' },
+        },
+        orbit: {
+          '0%': { transform: 'rotate(0deg) translateY(calc(var(--radius) * 1px)) rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg) translateY(calc(var(--radius) * 1px)) rotate(-360deg)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.5s ease-out',
@@ -148,6 +190,14 @@ module.exports = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         shimmer: 'shimmer 1.6s linear infinite',
         'live-pulse': 'live-pulse 1.6s ease-out infinite',
+        // magic-ui animations
+        'shimmer-slide': 'shimmer-slide var(--speed) ease-in-out infinite alternate',
+        'spin-around': 'spin-around calc(var(--speed) * 2) infinite linear',
+        marquee: 'marquee var(--duration) linear infinite',
+        'marquee-vertical': 'marquee-vertical var(--duration) linear infinite',
+        gradient: 'gradient 8s linear infinite',
+        'pulse-ring': 'pulse-ring var(--duration, 1.5s) ease-out infinite',
+        orbit: 'orbit calc(var(--duration) * 1s) linear infinite',
       },
     },
   },
