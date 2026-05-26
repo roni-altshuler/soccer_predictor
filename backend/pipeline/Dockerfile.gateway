@@ -1,0 +1,32 @@
+# WebSocket gateway image.
+# Built lean — only the packages needed for the gateway, no ML stack.
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /tmp/requirements.txt
+# Only install the runtime subset the gateway actually imports.
+RUN pip install \
+        "fastapi>=0.109.0" \
+        "uvicorn[standard]>=0.27.0" \
+        "pydantic>=2.5.0" \
+        "pydantic-settings>=2.1.0" \
+        "redis>=5.0.0" \
+        "PyJWT>=2.8.0"
+
+COPY backend/ /app/backend/
+COPY conftest.py /app/conftest.py
+
+EXPOSE 8001
+
+CMD ["sh", "-c", "uvicorn backend.pipeline.gateway.app:app --host 0.0.0.0 --port ${GATEWAY_PORT:-8001}"]
