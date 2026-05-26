@@ -15,7 +15,7 @@ import {
 import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
-import { GenderToggle } from '@/components/GenderToggle'
+import { HeroSpotlight } from '@/components/home/HeroSpotlight'
 import { LiveTickerBar } from '@/components/home/LiveTickerBar'
 import { NewsStrip } from '@/components/home/NewsStrip'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
@@ -156,6 +156,7 @@ export default function Home() {
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
   const [watchlistOnly, setWatchlistOnly] = useState(false)
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const [modelAccuracyPct, setModelAccuracyPct] = useState<number | undefined>(undefined)
 
   // Watchlist state — load from localStorage and react to cross-tab updates.
   useEffect(() => {
@@ -198,7 +199,29 @@ export default function Home() {
 
   // Today's matches — refetch every minute for live updates, and every
   // time the user toggles the men's/women's universe.
-  const { gender, asQueryParam } = useGenderQuery()
+  const { asQueryParam } = useGenderQuery()
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchAccuracy = async () => {
+      try {
+        const res = await fetch(`/api/v1/tracking/accuracy?gender=${asQueryParam}&days=30`, { cache: 'no-store' })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        const pct =
+          (typeof data?.accuracy === 'number' && data.accuracy * (data.accuracy <= 1 ? 100 : 1)) ||
+          (typeof data?.outcome_accuracy === 'number' && data.outcome_accuracy * (data.outcome_accuracy <= 1 ? 100 : 1)) ||
+          undefined
+        if (typeof pct === 'number' && !Number.isNaN(pct)) {
+          setModelAccuracyPct(pct)
+        }
+      } catch {
+        /* non-fatal — hero just hides the figure */
+      }
+    }
+    fetchAccuracy()
+    return () => { cancelled = true }
+  }, [asQueryParam])
   useEffect(() => {
     let cancelled = false
     const fetchMatches = async () => {
@@ -260,38 +283,14 @@ export default function Home() {
     dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      {/* Hero strip — anchors the gender toggle and the AI accuracy headline */}
-      <div
-        className={cn(
-          'border-b border-[var(--border-color)]',
-          gender === 'women'
-            ? 'bg-gradient-to-r from-pink-500/10 via-[var(--background)] to-violet-500/10'
-            : 'bg-gradient-to-r from-[var(--accent-ai)]/10 via-[var(--background)] to-[var(--accent-primary)]/10'
-        )}
-      >
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-              {gender === 'women' ? "Women's football" : "Men's football"} · Match Centre
-            </p>
-            <h1 className="text-h2 font-black leading-tight text-[var(--text-primary)]">
-              Watch live. See what the AI thinks.
-            </h1>
-            <p className="max-w-xl text-small text-[var(--text-tertiary)]">
-              Every fixture below is powered by our unified prediction model.
-              Switch universes to surface the {gender === 'women' ? 'top women\'s competitions' : "top men's competitions"} — and{' '}
-              <Link href="/accuracy" className="font-semibold text-[var(--accent-primary)] hover:underline">
-                see how accurate we've been
-              </Link>
-              .
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <GenderToggle size="hero" />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen">
+      <HeroSpotlight
+        liveCount={live.length}
+        upcomingCount={upcoming.length}
+        finishedCount={completed.length}
+        selectedDateLabel={selectedDateLabel}
+        modelAccuracyPct={modelAccuracyPct}
+      />
 
       <LiveTickerBar
         matches={live.map((m) => ({

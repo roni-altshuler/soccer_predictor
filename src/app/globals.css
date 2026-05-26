@@ -69,6 +69,36 @@
 
   /* shadcn radius tokens */
   --radius: 0.75rem;
+
+  /* App shell layout tokens (sidebar + topbar) */
+  --shell-sidebar-w: 68px;
+  --shell-sidebar-w-expanded: 232px;
+  --shell-topbar-h: 60px;
+  --shell-content-max: 1320px;
+
+  /* Glass / surface mix tokens used by the new shell */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(176, 192, 215, 0.42);
+  --glass-blur: saturate(160%) blur(14px);
+  --bento-hl: color-mix(in srgb, var(--accent-ai) 16%, transparent);
+  --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+
+  /* ────────────────────────────────────────────────────────────
+     FotMob-inspired redesign tokens (Phase 0.A — see docs/design-tokens.md)
+     ──────────────────────────────────────────────────────────── */
+  --accent-pitch-line: rgba(241, 245, 251, 0.18);
+  --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
+  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 22%, transparent);
+  --rating-bg-low: color-mix(in srgb, var(--muted-bg) 80%, var(--text-tertiary) 20%);
+  /* Per-match team tints — components override inline via
+     style={{ '--team-tint-home': brandColor }}. Defaults give a sensible
+     fallback when the league/club lookup hasn't resolved yet. */
+  --team-tint-home: var(--accent-primary);
+  --team-tint-away: var(--accent-loss);
+  --headshot-ring: rgba(15, 26, 44, 0.18);
+  --score-numeric-shadow: none;
+  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
 }
 
 .dark {
@@ -115,6 +145,21 @@
   --pitch-bg: #0a1e10;
   --pitch-text: #f1f5fb;
   --ticker-bg: linear-gradient(to right, #07101f, #14223a);
+
+  /* Dark-mode glass overrides */
+  --glass-bg: rgba(12, 24, 42, 0.62);
+  --glass-border: rgba(52, 78, 117, 0.4);
+  --bento-hl: color-mix(in srgb, var(--accent-ai) 22%, transparent);
+  --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+
+  /* FotMob-redesign token overrides (Phase 0.A) — only the slots whose
+     dark-mode value differs from light. Pitch-line, ratings, and team-tints
+     work the same in both modes. */
+  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 28%, transparent);
+  --headshot-ring: rgba(241, 245, 251, 0.22);
+  --score-numeric-shadow: 0 0 22px color-mix(in srgb, var(--accent-primary) 38%, transparent);
+  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 60%, transparent);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -387,4 +432,174 @@ h1, h2, h3, h4, h5, h6 {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ────────────────────────────────────────────────────────────
+   App shell — glass utilities, bento card, gradient ambient
+   ──────────────────────────────────────────────────────────── */
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--glass-bg) 92%, var(--card-bg));
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.bento-card {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 88%, white 12%), var(--card-bg));
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.2s, transform 0.18s;
+}
+.bento-card:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-hover));
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.bento-card.bento-ai:hover {
+  border-color: color-mix(in srgb, var(--accent-ai) 55%, var(--border-hover));
+}
+
+/* Faint gradient halo that sits behind a bento card to give it depth */
+.bento-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0% 0%, var(--bento-hl), transparent 55%),
+    radial-gradient(circle at 100% 100%, var(--bento-hl-primary), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.bento-card:hover::before { opacity: 1; }
+
+/* Conic gradient border (used on the hero AI card) */
+.gradient-border {
+  position: relative;
+  border-radius: 18px;
+  background: var(--card-bg);
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 140deg,
+    var(--accent-primary) 0deg,
+    var(--accent-ai) 120deg,
+    var(--accent-warn) 240deg,
+    var(--accent-primary) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Ambient page backdrop — soft accent washes for the main content column */
+.ambient-bg {
+  background:
+    radial-gradient(circle at 6% -8%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 42%),
+    radial-gradient(circle at 96% 2%, color-mix(in srgb, var(--accent-ai) 14%, transparent), transparent 42%);
+}
+
+/* Spotlight that follows the cursor on the hero card */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    480px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent-ai) 14%, transparent),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.spotlight:hover::after { opacity: 1; }
+
+/* Marquee for ticker-style strips */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee {
+  display: inline-flex;
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+.marquee:hover { animation-play-state: paused; }
+
+/* Sidebar item — base + active + hover */
+.shell-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  transition: background-color 0.16s, color 0.16s, transform 0.16s;
+  position: relative;
+}
+.shell-nav-item:hover {
+  background: var(--card-hover);
+  color: var(--text-primary);
+}
+.shell-nav-item[data-active='true'] {
+  color: var(--accent-primary);
+  background: var(--tab-active-bg);
+}
+.shell-nav-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+}
+.shell-nav-item[data-active='true'][data-accent='ai'] {
+  color: var(--accent-ai);
+  background: color-mix(in srgb, var(--accent-ai) 12%, transparent);
+}
+.shell-nav-item[data-active='true'][data-accent='ai']::before {
+  background: var(--accent-ai);
+}
+
+/* Kbd chip styling for the Cmd+K hint */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--card-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 600;
 }

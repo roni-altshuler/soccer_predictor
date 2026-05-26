@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ArrowRight, Brain, ShieldCheck, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
 
 import { GenderToggle } from '@/components/GenderToggle'
+import { AnimatedCounter } from '@/components/ui/animated-counter'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 /**
@@ -13,6 +14,10 @@ import { cn } from '@/lib/utils'
  * accuracy page. Pure presentational — accepts the live numbers from
  * the parent so it works for both the men's and women's universe via
  * the prominent gender toggle anchored top-right.
+ *
+ * Redesigned in Phase 2 to use the new shell tokens (.bento-card,
+ * .gradient-border, .ambient-bg) and the shared AnimatedCounter primitive
+ * for consistency with the home HeroSpotlight.
  */
 
 interface AccuracyHeroProps {
@@ -25,33 +30,6 @@ interface AccuracyHeroProps {
   className?: string
 }
 
-function AnimatedPercent({ value }: { value: number }) {
-  const [shown, setShown] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    const target = Math.round(value * 1000) / 10
-    let frame = 0
-    const max = 30
-    const start = performance.now()
-    const tick = () => {
-      const now = performance.now()
-      const t = Math.min(1, (now - start) / 700)
-      const eased = 1 - Math.pow(1 - t, 3)
-      setShown(target * eased)
-      if (t < 1) frame = requestAnimationFrame(tick)
-    }
-    tick()
-    return () => cancelAnimationFrame(frame)
-  }, [value])
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {shown.toFixed(1)}%
-    </span>
-  )
-}
-
 export function AccuracyHero({
   accuracyPct,
   completedPredictions,
@@ -61,100 +39,185 @@ export function AccuracyHero({
   gender,
   className,
 }: AccuracyHeroProps) {
+  const reduce = useReducedMotion()
   const universeLabel = gender === 'women' ? "women's universe" : "men's universe"
+  const accuracyPctScaled = accuracyPct * 100
+  const recentPctScaled = recentAccuracy * 100
+  const pendingCount = Math.max(0, totalPredictions - completedPredictions)
+  const hasData = completedPredictions > 0
 
   return (
-    <Card
+    <section
+      aria-label="AI model accuracy headline"
       className={cn(
-        'relative overflow-hidden border-[var(--accent-ai)]/25 bg-gradient-to-br',
-        gender === 'women'
-          ? 'from-pink-500/10 via-[var(--card-bg)] to-violet-500/10'
-          : 'from-[var(--accent-ai)]/10 via-[var(--card-bg)] to-[var(--accent-primary)]/10',
-        'p-6 md:p-8',
+        'relative isolate overflow-hidden rounded-3xl border border-[var(--border-color)]',
         className
       )}
     >
-      <div className="flex flex-col gap-6">
+      {/* Layered gradient + soft noise */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          'absolute inset-0 -z-10',
+          gender === 'women'
+            ? 'bg-[radial-gradient(60%_55%_at_15%_20%,rgba(236,72,153,0.20),transparent_60%),radial-gradient(50%_50%_at_88%_25%,rgba(139,92,246,0.20),transparent_60%)]'
+            : 'bg-[radial-gradient(60%_55%_at_15%_20%,color-mix(in_srgb,var(--accent-ai)_24%,transparent),transparent_60%),radial-gradient(50%_50%_at_88%_25%,color-mix(in_srgb,var(--accent-primary)_24%,transparent),transparent_60%)]'
+        )}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/40 to-transparent"
+      />
+
+      <div className="relative z-10 flex flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <Badge
               variant="outline"
               className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]"
             >
-              How accurate is our AI?
+              <ShieldCheck className="mr-1 h-3 w-3" aria-hidden="true" />
+              Audit · {universeLabel}
             </Badge>
-            <p className="text-sm text-[var(--text-tertiary)]">
-              Live audit of every prediction the unified multi-task model has made.
+            <p className="max-w-xl text-sm text-[var(--text-secondary)]">
+              Live audit of every prediction the unified multi-task model has made — the
+              same engine that powers the home Match Centre.
             </p>
           </div>
           <GenderToggle size="default" />
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={reduce ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="space-y-2"
+          className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto] md:items-end"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-            Outcome accuracy ({universeLabel})
-          </p>
-          {completedPredictions === 0 ? (
-            <>
-              <h1 className="text-display font-black leading-none text-[var(--text-primary)]">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+              Outcome accuracy
+            </p>
+            {hasData ? (
+              <h1 className="font-display text-[clamp(3rem,7vw,5.5rem)] font-extrabold leading-[0.95] tracking-tight">
+                <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-ai)] to-[var(--accent-primary)] bg-clip-text text-transparent">
+                  <AnimatedCounter value={accuracyPctScaled} digits={1} suffix="%" duration={1.2} />
+                </span>
+              </h1>
+            ) : (
+              <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-extrabold leading-tight text-[var(--text-primary)]">
                 Collecting…
               </h1>
-              <p className="max-w-2xl text-small text-[var(--text-secondary)]">
-                {totalPredictions > 0 ? (
-                  <>
-                    <span className="font-semibold text-[var(--text-primary)] tabular-nums">
-                      {totalPredictions.toLocaleString()}
-                    </span>{' '}
-                    prediction{totalPredictions === 1 ? '' : 's'} tracked — none with a final result yet.
-                    The accuracy number appears here once the outcome fetcher settles its first match.
-                  </>
-                ) : (
-                  <>
-                    The unified {universeLabel} model hasn&apos;t made any predictions yet.
-                  </>
-                )}
+            )}
+            <p className="max-w-2xl text-small text-[var(--text-secondary)]">
+              {hasData ? (
+                <>
+                  Across{' '}
+                  <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                    {completedPredictions.toLocaleString()}
+                  </span>{' '}
+                  completed predictions of the{' '}
+                  <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                    {totalPredictions.toLocaleString()}
+                  </span>{' '}
+                  we&apos;ve tracked. Recent 50 picks running at{' '}
+                  <span className="font-semibold tabular-nums text-[var(--accent-primary)]">
+                    {recentPctScaled.toFixed(1)}%
+                  </span>
+                  .
+                </>
+              ) : totalPredictions > 0 ? (
+                <>
+                  <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                    {totalPredictions.toLocaleString()}
+                  </span>{' '}
+                  predictions tracked — none with a final result yet. The headline number
+                  appears here once the outcome fetcher settles its first match.
+                </>
+              ) : (
+                <>The unified {universeLabel} model hasn&apos;t made any predictions yet.</>
+              )}
+            </p>
+          </div>
+
+          {/* CTA card — pull from the trust strip into a clickable AI promo */}
+          <Link
+            href="/predict"
+            className="gradient-border group flex items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-0.5 md:min-w-[260px]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10">
+              <Brain className="h-5 w-5 text-[var(--accent-ai)]" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Try it yourself
               </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-display font-black leading-none text-[var(--text-primary)]">
-                <AnimatedPercent value={accuracyPct} />
-              </h1>
-              <p className="max-w-2xl text-small text-[var(--text-secondary)]">
-                Across <span className="font-semibold text-[var(--text-primary)] tabular-nums">{completedPredictions.toLocaleString()}</span>{' '}
-                completed predictions of the{' '}
-                <span className="font-semibold text-[var(--text-primary)] tabular-nums">{totalPredictions.toLocaleString()}</span>{' '}
-                we&apos;ve tracked. Last 50 picks running at{' '}
-                <span className="font-semibold text-[var(--accent-primary)] tabular-nums">{(recentAccuracy * 100).toFixed(1)}%</span>.
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                Predict any matchup
               </p>
-            </>
-          )}
+            </div>
+            <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent-ai)]" />
+          </Link>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Brier score" value={brierScore.toFixed(3)} hint="Lower = better calibrated. Random guessing ≈ 0.66." />
-          <Stat label="Recent (last 50)" value={`${(recentAccuracy * 100).toFixed(1)}%`} hint="How the model is doing right now." />
-          <Stat label="Completed" value={completedPredictions.toLocaleString()} hint="Predictions whose result is in." />
-          <Stat label="Pending" value={(totalPredictions - completedPredictions).toLocaleString()} hint="Picks waiting on a final whistle." />
+          <BentoStat
+            label="Brier score"
+            value={brierScore.toFixed(3)}
+            hint="Lower = better calibrated. Random guessing ≈ 0.66."
+            tone="ai"
+          />
+          <BentoStat
+            label="Recent (last 50)"
+            value={`${recentPctScaled.toFixed(1)}%`}
+            hint="How the model is doing right now."
+            tone="primary"
+            icon={<TrendingUp className="h-3 w-3" />}
+          />
+          <BentoStat
+            label="Completed"
+            value={completedPredictions.toLocaleString()}
+            hint="Predictions whose result is in."
+            tone="muted"
+          />
+          <BentoStat
+            label="Pending"
+            value={pendingCount.toLocaleString()}
+            hint="Picks waiting on a final whistle."
+            tone="muted"
+          />
         </div>
       </div>
-    </Card>
+    </section>
   )
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
+function BentoStat({
+  label,
+  value,
+  hint,
+  tone,
+  icon,
+}: {
+  label: string
+  value: string
+  hint: string
+  tone: 'primary' | 'ai' | 'muted'
+  icon?: React.ReactNode
+}) {
+  const toneClasses =
+    tone === 'primary'
+      ? 'text-[var(--accent-primary)]'
+      : tone === 'ai'
+        ? 'text-[var(--accent-ai)]'
+        : 'text-[var(--text-primary)]'
+
   return (
-    <div
-      className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)]/60 p-3"
-      title={hint}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className="mt-1 text-xl font-black tabular-nums text-[var(--text-primary)]">{value}</p>
+    <div className="bento-card p-3" title={hint}>
+      <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {icon}
+        {label}
+      </p>
+      <p className={cn('mt-1.5 text-h3 font-black tabular-nums', toneClasses)}>{value}</p>
     </div>
   )
 }

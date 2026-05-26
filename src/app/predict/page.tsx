@@ -1,8 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
+import {
+  ArrowRight,
+  Brain,
+  Globe2,
+  Goal,
+  Home,
+  Loader2,
+  Plane,
+  Sparkles,
+  TrendingUp,
+  X,
+} from 'lucide-react'
+
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
-import { GenderToggle } from '@/components/GenderToggle'
+import { PredictHero } from '@/components/prediction/PredictHero'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 
 interface TeamSearchResult { name: string; league: string }
@@ -63,11 +76,11 @@ interface LeagueInsight {
 }
 
 function TeamSearchInput({
-  label, value, onSelect, placeholder, icon
+  label, value, onSelect, placeholder, Icon
 }: {
   label: string; value: { name: string; league: string } | null
   onSelect: (team: { name: string; league: string } | null) => void
-  placeholder: string; icon: string
+  placeholder: string; Icon: typeof Goal
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TeamSearchResult[]>([])
@@ -103,36 +116,40 @@ function TeamSearchInput({
     <div className="relative">
       <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">{label}</label>
       {value ? (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)]">
-          <span className="text-lg">{icon}</span>
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-sm">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-ai)]/12 text-[var(--accent-ai)]">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{value.name}</p>
             <p className="text-[10px] text-[var(--text-tertiary)]">{value.league}</p>
           </div>
-          <button onClick={() => { onSelect(null); setQuery(''); setResults([]) }} className="p-1 rounded hover:bg-[var(--card-hover)] text-[var(--text-tertiary)]">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button onClick={() => { onSelect(null); setQuery(''); setResults([]) }} className="p-1 rounded hover:bg-[var(--card-hover)] text-[var(--text-tertiary)]" aria-label={`Clear ${label}`}>
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ) : (
         <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-lg">{icon}</div>
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </div>
           <input
             ref={inputRef} type="text" value={query}
             onChange={(e) => { setQuery(e.target.value); setIsOpen(true) }}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ai)] focus:border-[var(--accent-ai)]"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ai)]/30 focus:border-[var(--accent-ai)]/70 transition-shadow shadow-sm"
           />
-          {loading && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[var(--accent-ai)] border-t-transparent rounded-full animate-spin" />}
+          {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--accent-ai)]" aria-hidden="true" />}
         </div>
       )}
       {isOpen && results.length > 0 && !value && (
-        <div ref={dropdownRef} className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] shadow-xl">
+        <div ref={dropdownRef} className="absolute z-50 w-full mt-1.5 max-h-56 overflow-y-auto rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-2xl">
           {results.map((team, idx) => (
             <button key={`${team.name}-${idx}`} onClick={() => { onSelect(team); setQuery(''); setResults([]); setIsOpen(false) }}
               className="w-full px-3 py-2 flex items-center gap-2 hover:bg-[var(--card-hover)] text-left text-sm">
-              <span className="text-xs">⚽</span>
-              <div><p className="text-[var(--text-primary)] font-medium">{team.name}</p><p className="text-[10px] text-[var(--text-tertiary)]">{team.league}</p></div>
+              <Goal className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" aria-hidden="true" />
+              <div className="min-w-0"><p className="text-[var(--text-primary)] font-medium truncate">{team.name}</p><p className="text-[10px] text-[var(--text-tertiary)] truncate">{team.league}</p></div>
             </button>
           ))}
         </div>
@@ -333,30 +350,25 @@ function PredictPageContent() {
   )
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="max-w-2xl mx-auto px-4 py-4">
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 md:px-8">
         <>
-            <div className="mb-4 fm-surface p-4 md:p-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Match Predictor</p>
-                  <h1 className="text-xl font-bold text-[var(--text-primary)]">Realistic match outcome forecasts</h1>
-                  <p className="text-sm text-[var(--text-secondary)] mt-1">
-                    Predictions blend team strength, recent form, league calibration, and scoreline realism. Toggle to women&apos;s to use the dedicated women&apos;s universe model.
-                  </p>
-                </div>
-                <GenderToggle size="default" />
-              </div>
-            </div>
+            <PredictHero />
             {/* Team Selection Card */}
-            <div className="fm-surface p-4 mb-4">
+            <div className="bento-card p-5">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                Step 1 · Pick two teams
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TeamSearchInput label="Home Team" value={homeTeam} onSelect={setHomeTeam} placeholder="Search home team..." icon="🏠" />
-                <TeamSearchInput label="Away Team" value={awayTeam} onSelect={setAwayTeam} placeholder="Search away team..." icon="✈️" />
+                <TeamSearchInput label="Home Team" value={homeTeam} onSelect={setHomeTeam} placeholder="Search home team…" Icon={Home} />
+                <TeamSearchInput label="Away Team" value={awayTeam} onSelect={setAwayTeam} placeholder="Search away team…" Icon={Plane} />
               </div>
 
               {homeTeam && awayTeam && homeTeam.league !== awayTeam.league && (
-                <div className="mt-3 text-center text-[10px] text-amber-500 font-semibold rounded-lg border border-amber-500/35 bg-amber-500/10 py-2">🌍 Cross-league: {homeTeam.league} vs {awayTeam.league}</div>
+                <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10 px-3 py-2 text-[11px] font-semibold text-[var(--accent-warn)]">
+                  <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Cross-league: {homeTeam.league} vs {awayTeam.league}
+                </div>
               )}
 
               {selectedLeagues.length > 0 && (
@@ -404,12 +416,22 @@ function PredictPageContent() {
                 </div>
               )}
 
-              <button onClick={handlePredict} disabled={loading || !canPredict}
-                className="w-full mt-4 py-3 rounded-xl font-semibold text-sm text-[#021320] bg-gradient-to-br from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-35 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20">
+              <button
+                onClick={handlePredict}
+                disabled={loading || !canPredict}
+                className="group mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] py-3.5 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+              >
                 {loading ? (
-                  <><div className="w-4 h-4 border-2 border-[#021320] border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Analyzing…
+                  </>
                 ) : (
-                  <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#021320" strokeWidth="2"><circle cx="12" cy="12" r="4" /><path d="M12 2v4" /><path d="M20 12h-4" /><path d="M12 18v4" /><path d="M4 12h4" /></svg> Get AI Prediction</>
+                  <>
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                    Get AI Prediction
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </>
                 )}
               </button>
             </div>
@@ -462,28 +484,58 @@ function PredictPageContent() {
             })()}
 
             {result?.error && (
-              <div className="bg-[var(--card-bg)] rounded-xl border border-red-500/30 p-4 flex items-center gap-3">
-                <span className="text-lg">❌</span>
-                <div><p className="text-sm font-semibold text-[var(--text-primary)]">Prediction Failed</p><p className="text-xs text-[var(--text-secondary)]">{result.error}</p></div>
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--accent-loss)]/30 bg-[var(--accent-loss)]/5 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]">
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Prediction Failed</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{result.error}</p>
+                </div>
               </div>
             )}
 
             {/* How It Works — only shown when no result */}
             {!result && (
-              <div className="mt-6">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 px-1">How It Works</p>
-                <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                  How it works
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {[
-                    { icon: '📈', title: 'ELO Ratings', desc: 'Dynamic ratings adjusted with league strength and home edge' },
-                    { icon: '⚽', title: 'Poisson Goals', desc: 'Realistic scoreline and goal-market probabilities' },
-                    { icon: '🌍', title: 'Cross-League', desc: 'League strength coefficients plus recent-form calibration' },
-                  ].map((item) => (
-                    <div key={item.title} className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] p-3 text-center shadow-[var(--shadow-sm)]">
-                      <span className="text-xl block mb-1">{item.icon}</span>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] mb-0.5">{item.title}</p>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">{item.desc}</p>
+                    {
+                      Icon: TrendingUp,
+                      tint: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/12',
+                      title: 'ELO ratings',
+                      desc: 'Dynamic team strength adjusted for league quality and home edge.',
+                    },
+                    {
+                      Icon: Goal,
+                      tint: 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/12',
+                      title: 'Poisson goals',
+                      desc: 'Bivariate-Poisson xG head returns a realistic scoreline distribution.',
+                    },
+                    {
+                      Icon: Globe2,
+                      tint: 'text-[var(--accent-warn)] bg-[var(--accent-warn)]/12',
+                      title: 'Cross-league',
+                      desc: 'Strength coefficients let you predict UCL vs MLS without breaking calibration.',
+                    },
+                  ].map(({ Icon: ItemIcon, tint, title, desc }) => (
+                    <div key={title} className="bento-card p-4">
+                      <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+                        <ItemIcon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+                      <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">{desc}</p>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--accent-ai)]/30 bg-[var(--accent-ai)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
+                  <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
+                  Pick two teams above to see calibrated probabilities, an xG breakdown, the
+                  most-likely scoreline, and the factors the model weighed most heavily.
                 </div>
               </div>
             )}

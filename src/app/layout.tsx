@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
-import { Navbar } from '@/components/Navbar'
+import { Inter, JetBrains_Mono } from 'next/font/google'
+import { AppShell } from '@/components/shell'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
 import { ThemeProvider } from '@/providers/ThemeProvider'
@@ -17,6 +17,16 @@ const inter = Inter({
   variable: '--font-sans',
   display: 'swap',
   weight: ['400', '500', '600', '700', '800'],
+})
+
+// JetBrains Mono — used only for tabular scoreboard digits, minute counters,
+// and other monospaced numerics. Exposed as `--font-mono-numeric` and accessible
+// via the `font-numeric` Tailwind family (configured in tailwind.config.js).
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono-numeric',
+  display: 'swap',
+  weight: ['500', '700'],
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fotpredict.ai'
@@ -96,7 +106,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* Alias the legacy --font-body/--font-heading vars to Inter so any
@@ -104,20 +114,20 @@ export default function RootLayout({
         <style>{`:root { --font-body: var(--font-sans); --font-heading: var(--font-sans); --font-display: var(--font-sans); }`}</style>
       </head>
       <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased font-sans">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-md focus:bg-[var(--card-bg)] focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           <AuthProvider>
             <Suspense fallback={null}>
               <PageLoader />
             </Suspense>
-            <div className="flex flex-col min-h-screen">
-              <Navbar />
-              <main className="flex-grow pb-20 md:pb-0">
-                {children}
-              </main>
-              <div className="hidden md:block">
-                <Footer />
-              </div>
-            </div>
+            <AppShell footer={<div className="hidden md:block"><Footer /></div>}>
+              {children}
+            </AppShell>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -109,8 +109,8 @@ export default function AccuracyPage() {
   const brier = metrics?.brier_score ?? 0
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="mx-auto w-full max-w-5xl space-y-4 px-4 py-6">
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
         <AccuracyHero
           accuracyPct={accuracyPct}
           completedPredictions={completed}

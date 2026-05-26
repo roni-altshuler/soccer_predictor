@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { CircleDot } from 'lucide-react'
 
 interface MatchEvent {
   type: string
@@ -123,7 +124,7 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
             return (
               <g key={i}>
                 <circle cx={x} cy={y} r="4" fill={evt.team === 'home' ? '#3b82f6' : '#f97316'} />
-                <text x={x} y={y + 1} textAnchor="middle" fill="white" fontSize="5" fontWeight="bold">⚽</text>
+                <circle cx={x} cy={y} r="1.5" fill="white" />
               </g>
             )
           })}
@@ -143,13 +144,14 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
           {goalMarkers.map((g, i) => (
             <span
               key={i}
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+              className="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
               style={{
                 background: g.team === 'home' ? 'rgba(59,130,246,0.15)' : 'rgba(249,115,22,0.15)',
                 color: g.team === 'home' ? '#3b82f6' : '#f97316',
               }}
             >
-              ⚽ {g.player} {g.minute}&apos;{g.addedTime ? `+${g.addedTime}` : ''}
+              <CircleDot className="h-3 w-3" aria-hidden />
+              {g.player} {g.minute}&apos;{g.addedTime ? `+${g.addedTime}` : ''}
             </span>
           ))}
         </div>
