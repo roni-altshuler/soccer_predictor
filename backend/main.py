@@ -814,7 +814,33 @@ async def predict_match(request: PredictionRequest):
         confidence_pct >= PREDICTION_POLICY_MIN_CONFIDENCE_PCT
         and edge_pct >= PREDICTION_POLICY_MIN_EDGE_PCT
     )
-    
+
+    # ── Derived markets (Over/Under, BTTS, Correct Score top-5) ──
+    # Reuses the same xG the response below exposes, fed through the
+    # Dixon-Coles corrected joint distribution with league-calibrated rho.
+    derived_markets: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services.prediction.probabilistic import PoissonModel, LEAGUE_PARAMS
+        league_params = LEAGUE_PARAMS.get(league_key) or LEAGUE_PARAMS.get(league_display) or {}
+        rho_for_markets = float(league_params.get("rho", -0.13))
+        clamped_home_xg = max(0.1, min(5.0, float(predicted_home_goals)))
+        clamped_away_xg = max(0.1, min(5.0, float(predicted_away_goals)))
+        _poisson_for_markets = PoissonModel()
+        derived_markets = {
+            "over_under": _poisson_for_markets.over_under_probabilities(
+                clamped_home_xg, clamped_away_xg, rho=rho_for_markets,
+            ),
+            "btts": _poisson_for_markets.btts_probability(
+                clamped_home_xg, clamped_away_xg, rho=rho_for_markets,
+            ),
+            "correct_score_top5": _poisson_for_markets.top_n_scorelines(
+                clamped_home_xg, clamped_away_xg, n=5, rho=rho_for_markets,
+            ),
+        }
+    except Exception as derived_err:
+        logger.debug(f"Derived markets unavailable for {league_key}: {derived_err}")
+        derived_markets = None
+
     return {
         "home_team": request.home_team,
         "away_team": request.away_team,
@@ -843,7 +869,8 @@ async def predict_match(request: PredictionRequest):
             "home_win": round(outcome["home_win"] * 100, 1),
             "draw": round(outcome["draw"] * 100, 1),
             "away_win": round(outcome["away_win"] * 100, 1),
-        }
+        },
+        "derived_markets": derived_markets,
     }
 
 

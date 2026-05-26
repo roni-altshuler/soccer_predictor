@@ -10,7 +10,7 @@ import numpy as np
 from pathlib import Path
 from scipy import stats
 from scipy.special import factorial
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 from dataclasses import dataclass
 import logging
 
@@ -349,6 +349,115 @@ class PoissonModel:
             ],
             "matrix": matrix,
         }
+
+    # ──────────────────────────────────────────────────────────────────
+    # Derived-market helpers (idempotent; no side effects on the instance)
+    #
+    # All three methods rebuild a fresh Dixon-Coles-corrected joint matrix
+    # capped at 6 goals per side (covers >99.5% of mass for typical
+    # λ ≈ 1.3), then re-normalise so probabilities sum to 1.
+    # ──────────────────────────────────────────────────────────────────
+
+    def _derived_matrix(
+        self,
+        home_xG: float,
+        away_xG: float,
+        rho: float = -0.13,
+        max_goals: int = 6,
+    ) -> np.ndarray:
+        """Build a Dixon-Coles-corrected joint distribution at the given cap."""
+        h_probs = np.array([stats.poisson.pmf(k, home_xG) for k in range(max_goals + 1)])
+        a_probs = np.array([stats.poisson.pmf(k, away_xG) for k in range(max_goals + 1)])
+        if h_probs.sum() > 0:
+            h_probs = h_probs / h_probs.sum()
+        if a_probs.sum() > 0:
+            a_probs = a_probs / a_probs.sum()
+
+        matrix = np.outer(h_probs, a_probs)
+        # Dixon-Coles correction for low scores
+        matrix[0, 0] *= max(0.0, 1.0 - home_xG * away_xG * rho)
+        matrix[0, 1] *= max(0.0, 1.0 + home_xG * rho)
+        matrix[1, 0] *= max(0.0, 1.0 + away_xG * rho)
+        matrix[1, 1] *= max(0.0, 1.0 - rho)
+
+        total = matrix.sum()
+        if total > 0:
+            matrix = matrix / total
+        return matrix
+
+    def over_under_probabilities(
+        self,
+        home_xG: float,
+        away_xG: float,
+        thresholds: Tuple[float, ...] = (0.5, 1.5, 2.5, 3.5),
+        rho: float = -0.13,
+    ) -> Dict[str, Dict[str, float]]:
+        """
+        Return Over/Under probabilities at the supplied thresholds.
+
+        For each line ``t`` (e.g. ``2.5``) returns
+        ``{"over": P(total > t), "under": P(total <= t)}``. Each pair sums
+        to 1.0 ± 1e-6.
+        """
+        matrix = self._derived_matrix(home_xG, away_xG, rho=rho, max_goals=6)
+        result: Dict[str, Dict[str, float]] = {}
+        size = matrix.shape[0]
+        for threshold in thresholds:
+            over = 0.0
+            for h in range(size):
+                for a in range(size):
+                    if h + a > threshold:
+                        over += float(matrix[h, a])
+            over = min(1.0, max(0.0, over))
+            under = 1.0 - over
+            key = f"{threshold}" if threshold != int(threshold) else f"{threshold:.1f}"
+            result[key] = {"over": round(over, 4), "under": round(under, 4)}
+        return result
+
+    def btts_probability(
+        self,
+        home_xG: float,
+        away_xG: float,
+        rho: float = -0.13,
+    ) -> Dict[str, float]:
+        """
+        Return ``{"yes": P(both teams score), "no": 1 - P(both teams score)}``.
+
+        Computed off the Dixon-Coles-corrected joint matrix so the
+        low-score correlation is reflected in the BTTS=No mass.
+        """
+        matrix = self._derived_matrix(home_xG, away_xG, rho=rho, max_goals=6)
+        size = matrix.shape[0]
+        yes = 0.0
+        for h in range(1, size):
+            for a in range(1, size):
+                yes += float(matrix[h, a])
+        yes = min(1.0, max(0.0, yes))
+        return {"yes": round(yes, 4), "no": round(1.0 - yes, 4)}
+
+    def top_n_scorelines(
+        self,
+        home_xG: float,
+        away_xG: float,
+        n: int = 5,
+        rho: float = -0.13,
+    ) -> List[Dict[str, Any]]:
+        """
+        Return the ``n`` most likely correct scores from the Dixon-Coles
+        corrected joint distribution (not the outer product of marginals —
+        the correction noticeably re-weights 0-0, 1-0, 0-1 and 1-1).
+        """
+        matrix = self._derived_matrix(home_xG, away_xG, rho=rho, max_goals=6)
+        size = matrix.shape[0]
+        candidates: List[Tuple[int, int, float]] = []
+        for h in range(size):
+            for a in range(size):
+                candidates.append((h, a, float(matrix[h, a])))
+        candidates.sort(key=lambda item: item[2], reverse=True)
+        return [
+            {"home": int(h), "away": int(a), "probability": round(p, 4)}
+            for h, a, p in candidates[:n]
+        ]
 
 
 class HybridPredictionModel:

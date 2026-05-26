@@ -1,0 +1,71 @@
+name: Scrape Lineups & Injuries
+
+on:
+  schedule:
+    # Hourly hit to pick up team-sheet announcements (~1h pre-kickoff).
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-lineups:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install httpx pydantic pydantic-settings email-validator
+
+      - name: Cache scraped lineup & injury data
+        uses: actions/cache@v4
+        with:
+          path: |
+            backend/data/lineups
+            backend/data/injuries
+          key: lineups-injuries-${{ github.run_id }}
+          restore-keys: |
+            lineups-injuries-
+
+      - name: Scrape upcoming lineups
+        run: python -m backend.services.data.lineup_scraper --all-leagues --days-ahead 1
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
+        timeout-minutes: 4
+
+      - name: Refresh stale injury reports
+        run: python -m backend.services.data.injury_tracker --refresh-stale
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
+        timeout-minutes: 2
+
+      - name: Commit updated scrape data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add backend/data/lineups/ backend/data/injuries/ || true
+
+          if git diff --cached --quiet; then
+            echo "No lineup/injury changes to commit"
+          else
+            STATS=$(git diff --cached --stat | tail -1)
+            MSG="chore: refresh lineups & injuries [automated]"
+            MSG="$MSG"$'\n\n'"Hourly scrape of free-source lineup and injury data."
+            MSG="$MSG"$'\n'"$STATS"
+            git commit -m "$MSG"
+            git push
+          fi

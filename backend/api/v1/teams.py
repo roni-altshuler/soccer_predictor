@@ -2,12 +2,44 @@
 Team-related API endpoints.
 """
 
+import asyncio
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
+
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.services.fotmob import get_fotmob_client
 from backend.services.ratings import get_elo_system
+from backend.services.espn.client import ESPN_LEAGUE_IDS, get_espn_client
+from backend.services.data.injury_tracker import get_injury_tracker
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/teams", tags=["teams"])
+
+# Simple in-process cache for team overview payloads.
+_OVERVIEW_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_OVERVIEW_TTL = 300  # 5 minutes
+
+# Display names for the leagues we know about.
+_LEAGUE_DISPLAY_NAMES: Dict[str, str] = {
+    "premier_league": "Premier League",
+    "la_liga": "La Liga",
+    "bundesliga": "Bundesliga",
+    "serie_a": "Serie A",
+    "ligue_1": "Ligue 1",
+    "eredivisie": "Eredivisie",
+    "primeira_liga": "Primeira Liga",
+    "mls": "MLS",
+    "champions_league": "UEFA Champions League",
+    "europa_league": "UEFA Europa League",
+    "conference_league": "UEFA Conference League",
+    "world_cup": "FIFA World Cup",
+    "euro": "UEFA European Championship",
+    "copa_america": "Copa America",
+}
 
 
 @router.get("/search")
@@ -26,15 +58,297 @@ async def search_teams(q: str = Query(..., min_length=2)):
     }
 
 
+async def _resolve_team_via_standings(
+    team_id: str,
+    league_key: Optional[str],
+) -> Optional[Tuple[str, Dict[str, Any]]]:
+    """Locate a team by walking ESPN standings caches.
+
+    Returns (league_key, standing_row) on success, or None if the team isn't
+    present in any cached/known league.
+    """
+    espn = get_espn_client()
+    league_keys = [league_key] if league_key else list(ESPN_LEAGUE_IDS.keys())
+    for lk in league_keys:
+        if lk not in ESPN_LEAGUE_IDS:
+            continue
+        try:
+            standings = await espn.get_standings(lk)
+        except Exception as e:
+            logger.debug(f"standings fetch failed for {lk}: {e}")
+            continue
+        if not standings:
+            continue
+        for row in standings:
+            if str(row.get("team_id")) == str(team_id):
+                return lk, row
+    return None
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+async def _fetch_team_meta(league_key: str, team_id: str) -> Dict[str, Any]:
+    espn = get_espn_client()
+    try:
+        data = await espn.get_team(league_key, team_id)
+    except Exception as e:
+        logger.debug(f"ESPN team fetch failed {league_key}/{team_id}: {e}")
+        return {}
+    if not data:
+        return {}
+    # ESPN response: {"team": {...}}
+    return data.get("team") or {}
+
+
+async def _fetch_team_roster(league_key: str, team_id: str) -> List[Dict[str, Any]]:
+    """Pull the ESPN team roster via the shared HTTP layer.
+
+    Endpoint shape: /{leagueKey}/teams/{teamId}/roster
+    Returns a normalized list. Empty on any failure/missing data.
+    """
+    espn_league_id = ESPN_LEAGUE_IDS.get(league_key)
+    if not espn_league_id:
+        return []
+    espn = get_espn_client()
+    endpoint = f"{espn_league_id}/teams/{team_id}/roster"
+    cache_key = f"espn_team_roster_{team_id}"
+    try:
+        data = await espn._request(endpoint, cache_key=cache_key)  # noqa: SLF001
+    except Exception as e:
+        logger.debug(f"ESPN roster fetch failed {league_key}/{team_id}: {e}")
+        return []
+    if not data:
+        return []
+
+    squad: List[Dict[str, Any]] = []
+    athletes = data.get("athletes") or []
+    # ESPN nests athletes either as a flat list of players or as groups
+    # keyed by position. Handle both.
+    if athletes and isinstance(athletes[0], dict) and "items" in athletes[0]:
+        for group in athletes:
+            for player in group.get("items", []) or []:
+                squad.append(_transform_roster_player(player))
+    else:
+        for player in athletes:
+            if isinstance(player, dict):
+                squad.append(_transform_roster_player(player))
+    return [p for p in squad if p.get("name")]
+
+
+def _transform_roster_player(player: Dict[str, Any]) -> Dict[str, Any]:
+    position = player.get("position") or {}
+    citizenship = (
+        player.get("citizenship")
+        or (player.get("birthPlace") or {}).get("country")
+        or ""
+    )
+    return {
+        "player_id": str(player.get("id") or ""),
+        "name": player.get("displayName") or player.get("fullName") or "",
+        "position": (position.get("abbreviation") or position.get("name") or "") if isinstance(position, dict) else "",
+        "number": _safe_int(player.get("jersey")) or None,
+        "nationality": citizenship,
+    }
+
+
+def _transform_event_to_match(event: Dict[str, Any], team_id: str) -> Dict[str, Any]:
+    competitions = event.get("competitions") or [{}]
+    comp = competitions[0] if competitions else {}
+    competitors = comp.get("competitors") or []
+    home = next((c for c in competitors if c.get("homeAway") == "home"), {})
+    away = next((c for c in competitors if c.get("homeAway") == "away"), {})
+    self_side = home if str((home.get("team") or {}).get("id")) == str(team_id) else away
+    opp_side = away if self_side is home else home
+
+    status = (event.get("status") or {}).get("type") or {}
+    return {
+        "match_id": str(event.get("id") or ""),
+        "kickoff": event.get("date"),
+        "venue": (comp.get("venue") or {}).get("fullName"),
+        "is_home": self_side is home,
+        "opponent": {
+            "id": str((opp_side.get("team") or {}).get("id") or ""),
+            "name": (opp_side.get("team") or {}).get("displayName") or "",
+        },
+        "self_score": _safe_int(self_side.get("score")) if self_side.get("score") is not None else None,
+        "opponent_score": _safe_int(opp_side.get("score")) if opp_side.get("score") is not None else None,
+        "status": status.get("state") or "pre",
+        "status_detail": status.get("detail"),
+        "completed": bool(status.get("completed")),
+    }
+
+
+def _build_form_string(recent: List[Dict[str, Any]]) -> str:
+    """Build a W/D/L form string from the most-recent completed matches first."""
+    form = []
+    for m in recent:
+        if not m.get("completed"):
+            continue
+        sf = m.get("self_score")
+        so = m.get("opponent_score")
+        if sf is None or so is None:
+            continue
+        if sf > so:
+            form.append("W")
+        elif sf < so:
+            form.append("L")
+        else:
+            form.append("D")
+        if len(form) >= 5:
+            break
+    return "".join(form)
+
+
+@router.get("/{team_id}/overview")
+async def get_team_overview(
+    team_id: str,
+    league: Optional[str] = Query(default=None),
+):
+    """Aggregate team detail payload used by the team detail page.
+
+    Powered by ESPN (standings, schedule, roster, team meta) plus the
+    in-repo InjuryTracker. Falls back gracefully whenever an upstream
+    section is missing.
+    """
+    cache_key = f"{team_id}|{league or '*'}"
+    cached = _OVERVIEW_CACHE.get(cache_key)
+    if cached and (time.time() - cached[0]) < _OVERVIEW_TTL:
+        return cached[1]
+
+    # 1. Resolve the league + standing row.
+    resolved = await _resolve_team_via_standings(team_id, league)
+    if not resolved:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Team {team_id} not found in any cached league",
+        )
+    league_key, standing_row = resolved
+
+    espn = get_espn_client()
+
+    # 2. Fetch team meta + schedule in parallel.
+    meta_task = asyncio.create_task(_fetch_team_meta(league_key, team_id))
+    schedule_task = asyncio.create_task(espn.get_team_schedule(league_key, team_id))
+    roster_task = asyncio.create_task(_fetch_team_roster(league_key, team_id))
+    meta_raw, schedule_events, squad = await asyncio.gather(
+        meta_task, schedule_task, roster_task, return_exceptions=False
+    )
+
+    # 3. Injuries - hard 5s budget; empty on timeout / failure.
+    injuries: List[Dict[str, Any]] = []
+    try:
+        tracker = get_injury_tracker()
+        injuries = await asyncio.wait_for(
+            tracker.fetch_team_injuries(str(team_id), league_key=league_key),
+            timeout=5.0,
+        )
+    except asyncio.TimeoutError:
+        logger.info(f"Injury fetch timeout for team {team_id}")
+        injuries = []
+    except Exception as e:
+        logger.debug(f"Injury fetch failed for team {team_id}: {e}")
+        injuries = []
+
+    # 4. Split schedule into past / upcoming.
+    schedule_events = schedule_events or []
+    completed_matches: List[Dict[str, Any]] = []
+    upcoming_matches: List[Dict[str, Any]] = []
+    for event in schedule_events:
+        transformed = _transform_event_to_match(event, team_id)
+        if transformed.get("completed"):
+            completed_matches.append(transformed)
+        else:
+            upcoming_matches.append(transformed)
+
+    # Most recent first; nearest fixture first.
+    completed_matches.sort(key=lambda m: m.get("kickoff") or "", reverse=True)
+    upcoming_matches.sort(key=lambda m: m.get("kickoff") or "")
+
+    recent_results = completed_matches[:5]
+    upcoming_fixtures = upcoming_matches[:5]
+    next_fixture = upcoming_fixtures[0] if upcoming_fixtures else None
+
+    # 5. Build form string from recent completed matches.
+    form_string = _build_form_string(recent_results)
+
+    # 6. Stats computed from standings (no extra calls).
+    played = _safe_int(standing_row.get("played"))
+    gf = _safe_int(standing_row.get("goals_for"))
+    ga = _safe_int(standing_row.get("goals_against"))
+    stats = {
+        "goals_per_match": round(gf / played, 2) if played else 0.0,
+        "conceded_per_match": round(ga / played, 2) if played else 0.0,
+        "clean_sheets": None,  # not directly available in ESPN standings
+        "possession_avg": None,
+    }
+
+    # 7. Team identity.
+    team_block = {
+        "id": str(team_id),
+        "name": meta_raw.get("displayName") or standing_row.get("team_name") or "",
+        "abbreviation": meta_raw.get("abbreviation") or standing_row.get("team_short_name") or "",
+        "logo": (meta_raw.get("logos") or [{}])[0].get("href") if meta_raw.get("logos") else standing_row.get("logo"),
+        "venue": (meta_raw.get("venue") or {}).get("fullName"),
+        "founded": None,  # ESPN site API does not expose this consistently
+    }
+
+    league_block = {
+        "id": league_key,
+        "name": _LEAGUE_DISPLAY_NAMES.get(league_key, league_key.replace("_", " ").title()),
+        "season": _current_season_string(),
+    }
+
+    standing_block = {
+        "position": _safe_int(standing_row.get("position")),
+        "played": played,
+        "won": _safe_int(standing_row.get("won")),
+        "drawn": _safe_int(standing_row.get("drawn")),
+        "lost": _safe_int(standing_row.get("lost")),
+        "gf": gf,
+        "ga": ga,
+        "points": _safe_int(standing_row.get("points")),
+        "form_string": form_string,
+    }
+
+    payload = {
+        "team": team_block,
+        "league": league_block,
+        "standing": standing_block,
+        "next_fixture": next_fixture,
+        "recent_results": recent_results,
+        "upcoming_fixtures": upcoming_fixtures,
+        "squad": squad or [],
+        "stats": stats,
+        "injuries": injuries or [],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    _OVERVIEW_CACHE[cache_key] = (time.time(), payload)
+    return payload
+
+
+def _current_season_string() -> str:
+    """Return e.g. '2025-2026' for European-style seasons starting in Aug."""
+    now = datetime.now(timezone.utc)
+    if now.month >= 7:
+        return f"{now.year}-{now.year + 1}"
+    return f"{now.year - 1}-{now.year}"
+
+
 @router.get("/{team_id}")
 async def get_team(team_id: int):
     """Get team information."""
     client = get_fotmob_client()
     data = await client.get_team(team_id)
-    
+
     if not data:
         raise HTTPException(status_code=404, detail=f"Team {team_id} not found")
-    
+
     return data
 
 

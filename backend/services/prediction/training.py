@@ -40,7 +40,9 @@ from sklearn.ensemble import (
     GradientBoostingClassifier,
     VotingClassifier,
     RandomForestClassifier,
+    StackingClassifier,
 )
+from sklearn.linear_model import LogisticRegression
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +60,31 @@ try:
 except ImportError:
     HAS_LIGHTGBM = False
 
+try:
+    from catboost import CatBoostClassifier
+    HAS_CATBOOST = True
+except ImportError:
+    HAS_CATBOOST = False
+
 
 # Total feature count for the enhanced model
-N_FEATURES = 66
+N_FEATURES = 72
+
+# Leagues played at neutral venues throughout (national-team tournaments).
+NEUTRAL_VENUE_LEAGUES = {"world_cup", "euro", "copa_america"}
+
+# Leagues whose knockout stages are two-legged ties (excluding the final).
+TWO_LEG_KNOCKOUT_LEAGUES = {"champions_league", "europa_league"}
+
+# Phase / round string → ordinal tournament_phase mapping.
+# 0=league, 1=group_stage, 2=R16, 3=QF, 4=SF, 5=F.
+TOURNAMENT_PHASE_MAP = {
+    "group-stage": 1, "group_stage": 1, "group": 1, "groups": 1,
+    "round-of-16": 2, "round_of_16": 2, "r16": 2, "last-16": 2, "last_16": 2,
+    "quarterfinals": 3, "quarter-finals": 3, "quarterfinal": 3, "qf": 3,
+    "semifinals": 4, "semi-finals": 4, "semifinal": 4, "sf": 4,
+    "final": 5, "f": 5,
+}
 
 # Module-level league characteristics (also available as FeatureBuilder class attrs)
 LEAGUE_DRAW_RATES = {
@@ -112,6 +136,11 @@ class FeatureBuilder:
     [57-61] Key interactions (5): elo*form, elo*h2h, implied*form, etc.
     [62-63] Goal consistency (2): scoring variance (lower = more predictable)
     [64-65] Strength of schedule (2): avg opponent ELO in recent matches
+    [66-71] Tournament-state (6): knockout-leg flags, aggregate diff, neutral
+            venue, phase ordinal, group-stage pressure. Fallback policy: when
+            the `phase`/`round`/`stage` metadata is absent (older historical
+            records), all six default to league-play values (0). See
+            `_get_tournament_state` for details.
     """
 
     LEAGUE_COEFFICIENTS = {
@@ -227,6 +256,9 @@ class FeatureBuilder:
         "home_goals_consistency", "away_goals_consistency",
         # Strength of schedule (2) — avg opponent ELO in recent matches
         "home_sos", "away_sos",
+        # Tournament-state (6) — knockout/group context, neutral venue
+        "is_knockout_leg", "leg_index", "aggregate_diff_pre_match",
+        "is_neutral_venue", "tournament_phase", "group_stage_pressure",
     ]
 
     def __init__(self):
@@ -235,6 +267,10 @@ class FeatureBuilder:
         self.h2h_cache: Dict[str, List[Dict]] = {}
         # Track rolling tactical stats per team
         self.team_tactical: Dict[str, List[Dict]] = {}
+        # Two-leg knockout-tie state: pair_key → first-leg meta (score, date,
+        # which side was home in leg 1). Used to compute leg_index and
+        # aggregate_diff_pre_match for the return leg.
+        self.leg_cache: Dict[str, Dict[str, Any]] = {}
 
     def _get_elo(self, team: str) -> float:
         return self.elo_ratings.get(team, 1500.0)
@@ -446,6 +482,87 @@ class FeatureBuilder:
         opp_elos = [self._get_elo(m["opponent"]) for m in history]
         return sum(opp_elos) / len(opp_elos)
 
+    # ── Tournament-state helpers ──
+
+    @staticmethod
+    def _parse_phase(match: Dict) -> int:
+        """Map free-form `phase`/`round`/`stage` strings to ordinal 0..5.
+
+        Defaults to 0 (league play) when the field is missing — this is the
+        documented fallback for older historical records that lack phase info.
+        """
+        raw = match.get("phase") or match.get("round") or match.get("stage")
+        if not raw:
+            return 0
+        key = str(raw).strip().lower().replace(" ", "-")
+        return TOURNAMENT_PHASE_MAP.get(key, 0)
+
+    @staticmethod
+    def _pair_key(team_a: str, team_b: str, season: Any) -> str:
+        a, b = sorted([team_a or "", team_b or ""])
+        return f"{a}__vs__{b}__{season}"
+
+    def _get_tournament_state(self, match: Dict) -> Tuple[float, float, float, float, float, float]:
+        """Compute the 6 tournament-state features for a match.
+
+        Returns (is_knockout_leg, leg_index, aggregate_diff_pre_match,
+                 is_neutral_venue, tournament_phase, group_stage_pressure).
+        All default safely to league-play values (0) when metadata is missing.
+        """
+        league = match.get("league", "") or ""
+        phase_ord = self._parse_phase(match)
+
+        is_neutral = 1.0 if league in NEUTRAL_VENUE_LEAGUES else 0.0
+
+        # Two-leg knockout detection: UCL/UEL knockout rounds before the
+        # one-off final (phase ord 2..4). Final (5) is single-leg.
+        is_two_leg = (
+            league in TWO_LEG_KNOCKOUT_LEAGUES and phase_ord in (2, 3, 4)
+        )
+        is_knockout_leg = 1.0 if is_two_leg else 0.0
+
+        leg_index = 1.0
+        agg_diff = 0.0
+        if is_two_leg:
+            home = match.get("home_team", "")
+            away = match.get("away_team", "")
+            key = self._pair_key(home, away, match.get("season"))
+            prior = self.leg_cache.get(key)
+            if prior is not None:
+                leg_index = 2.0
+                # Aggregate from home (current match) perspective: prior leg
+                # the current home team was the away side.
+                prior_home = prior.get("home_team")
+                prior_hs = prior.get("home_score", 0) or 0
+                prior_as = prior.get("away_score", 0) or 0
+                if prior_home == home:
+                    # Same orientation (rare in 2-leg ties, treat as best-effort)
+                    agg_diff = float(prior_hs - prior_as)
+                else:
+                    # Current home team was away in leg 1 → invert.
+                    agg_diff = float(prior_as - prior_hs)
+
+        # Group-stage pressure: best-effort heuristic. Without standings, we
+        # fall back to 0 and only apply a mild matchday-based proxy when
+        # matchday is known. Keep simple — fail safely to 0.
+        gs_pressure = 0.0
+        if phase_ord == 1:
+            md = match.get("matchday")
+            if isinstance(md, (int, float)) and md > 0:
+                # Group stages are typically 3–6 matchdays. Pressure rises as
+                # matchday increases (later matches = more decisive). Mapped
+                # to [-1, 1] with a centred origin at MD3.
+                gs_pressure = max(-1.0, min(1.0, (float(md) - 3.0) / 3.0))
+
+        return (
+            is_knockout_leg,
+            leg_index,
+            agg_diff,
+            is_neutral,
+            float(phase_ord),
+            gs_pressure,
+        )
+
     @staticmethod
     def _odds_to_implied_probs(odds_h: Optional[float], odds_d: Optional[float],
                                 odds_a: Optional[float]) -> Tuple[float, float, float, float]:
@@ -469,7 +586,7 @@ class FeatureBuilder:
         return 0.0, 0.0, 0.0, 0.0
 
     def build_features_for_match(self, match: Dict) -> Optional[np.ndarray]:
-        """Build 55-dimensional feature vector for a single match."""
+        """Build N_FEATURES-dimensional feature vector for a single match."""
         home = match["home_team"]
         away = match["away_team"]
         league = match.get("league", "")
@@ -561,6 +678,8 @@ class FeatureBuilder:
             # Strength of schedule (2) [64-65]
             self._get_strength_of_schedule(home),
             self._get_strength_of_schedule(away),
+            # Tournament-state (6) [66-71]
+            *self._get_tournament_state(match),
         ], dtype=np.float64)
 
         return features
@@ -635,6 +754,19 @@ class FeatureBuilder:
         # Update ELO
         self._update_elo(home, away, home_score, away_score, league)
 
+        # Cache first-leg result so the return leg can compute aggregate_diff.
+        phase_ord = self._parse_phase(match)
+        if league in TWO_LEG_KNOCKOUT_LEAGUES and phase_ord in (2, 3, 4):
+            key = self._pair_key(home, away, match.get("season"))
+            if key not in self.leg_cache:
+                self.leg_cache[key] = {
+                    "home_team": home,
+                    "away_team": away,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "date": date,
+                }
+
 
 class ModelTrainer:
     """
@@ -642,7 +774,7 @@ class ModelTrainer:
     Uses class-balanced weighting to fix draw under-prediction.
     """
 
-    def __init__(self, model_dir: Optional[Path] = None):
+    def __init__(self, model_dir: Optional[Path] = None, use_stacking: bool = True):
         self.model_dir = model_dir or MODEL_DIR
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.scaler = StandardScaler()
@@ -651,14 +783,30 @@ class ModelTrainer:
         self.feature_names = FeatureBuilder.FEATURE_NAMES
         self.training_metadata: Dict[str, Any] = {}
         self.objective_weights = {"log_loss": 0.65, "brier": 0.35}
+        # When True (default), the base learners feed a LogisticRegression
+        # meta-learner trained with recency-weighted sample weights. When
+        # False, fall back to the legacy soft-voting ensemble for backward
+        # compatibility.
+        self.use_stacking = use_stacking
+        # Per-league post-hoc calibration buckets (populated on demand).
+        self.calibration_buckets: Optional[Dict[str, Any]] = None
 
-    def prepare_training_data(self, matches: List[Dict]) -> Tuple[np.ndarray, np.ndarray]:
-        """Process raw matches into feature matrix and labels."""
+    def prepare_training_data(
+        self, matches: List[Dict], return_meta: bool = False
+    ):
+        """Process raw matches into feature matrix and labels.
+
+        When `return_meta=True`, also returns parallel lists of (date, league)
+        for each retained row — used downstream for recency weighting and
+        per-league bucketed calibration. Default behavior is unchanged.
+        """
         builder = FeatureBuilder()
         sorted_matches = sorted(matches, key=lambda m: m.get("date", ""))
 
         X_list = []
         y_list = []
+        dates: List[str] = []
+        leagues: List[str] = []
 
         for match in sorted_matches:
             if match.get("home_score") is None or match.get("away_score") is None:
@@ -681,6 +829,8 @@ class ModelTrainer:
 
             X_list.append(features)
             y_list.append(label)
+            dates.append(match.get("date", ""))
+            leagues.append(match.get("league", ""))
 
         X = np.array(X_list, dtype=np.float64)
         y = np.array(y_list, dtype=np.int32)
@@ -690,6 +840,8 @@ class ModelTrainer:
             f"Prepared {len(X)} training samples. "
             f"Distribution: H={sum(y==0)}, D={sum(y==1)}, A={sum(y==2)}"
         )
+        if return_meta:
+            return X, y, dates, leagues
         return X, y
 
     @staticmethod
@@ -758,7 +910,7 @@ class ModelTrainer:
             X_train_fold = scaler_fold.fit_transform(X[train_idx])
             X_val_fold = scaler_fold.transform(X[val_idx])
 
-            fold_model = self._build_ensemble(class_weights)
+            fold_model = self._build_ensemble(class_weights, n_samples=len(train_idx))
             fold_weights = np.array([class_weights[int(label)] for label in y_train_fold], dtype=np.float64)
 
             try:
@@ -808,7 +960,13 @@ class ModelTrainer:
             "folds": folds,
         }
 
-    def _build_ensemble(self, class_weights: Optional[Dict] = None) -> Any:
+    # Corpus-size thresholds. CatBoost overfits on small leagues (MLS held-out
+    # accuracy dropped to 30% with CV at 50% in the May 19 retrain) and
+    # StackingClassifier's meta-learner needs enough data to generalize.
+    SMALL_CORPUS_THRESHOLD = 1500   # below this: drop CatBoost
+    TINY_CORPUS_THRESHOLD = 300     # below this: drop CatBoost AND stacking
+
+    def _build_ensemble(self, class_weights: Optional[Dict] = None, n_samples: Optional[int] = None) -> Any:
         estimators = []
 
         cw = class_weights or {0: 1.0, 1: 1.2, 2: 1.0}
@@ -816,14 +974,23 @@ class ModelTrainer:
         # Convert class_weight dict to sklearn format
         sklearn_cw = cw
 
+        is_tiny = n_samples is not None and n_samples < self.TINY_CORPUS_THRESHOLD
+        is_small = n_samples is not None and n_samples < self.SMALL_CORPUS_THRESHOLD
+
+        # Shrink base-learner complexity for small corpora to fight overfit.
+        small_depth = 4 if is_small else 5
+        small_estimators = 300 if is_small else 400
+
         gb = GradientBoostingClassifier(
-            n_estimators=400, max_depth=5, learning_rate=0.04,
-            subsample=0.8, min_samples_leaf=15, random_state=42,
+            n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+            subsample=0.8, min_samples_leaf=15 if not is_small else 25, random_state=42,
         )
         estimators.append(("gb", gb))
 
         rf = RandomForestClassifier(
-            n_estimators=300, max_depth=10, min_samples_leaf=10,
+            n_estimators=300 if not is_small else 250,
+            max_depth=10 if not is_small else 8,
+            min_samples_leaf=10 if not is_small else 20,
             class_weight=sklearn_cw, random_state=42, n_jobs=-1,
         )
         estimators.append(("rf", rf))
@@ -831,8 +998,10 @@ class ModelTrainer:
         if HAS_XGBOOST:
             # XGBoost doesn't take class_weight dict — use sample_weight in fit
             xgb = XGBClassifier(
-                n_estimators=400, max_depth=5, learning_rate=0.04,
-                subsample=0.8, colsample_bytree=0.8, min_child_weight=8,
+                n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+                subsample=0.8, colsample_bytree=0.8,
+                min_child_weight=8 if not is_small else 16,
+                reg_lambda=1.0 if not is_small else 3.0,
                 eval_metric="mlogloss", random_state=42,
                 use_label_encoder=False, verbosity=0,
             )
@@ -840,24 +1009,232 @@ class ModelTrainer:
 
         if HAS_LIGHTGBM:
             lgb = LGBMClassifier(
-                n_estimators=400, max_depth=5, learning_rate=0.04,
-                subsample=0.8, colsample_bytree=0.8, min_child_samples=12,
+                n_estimators=small_estimators, max_depth=small_depth, learning_rate=0.04,
+                subsample=0.8, colsample_bytree=0.8,
+                min_child_samples=12 if not is_small else 25,
+                reg_lambda=0.0 if not is_small else 1.0,
                 class_weight=sklearn_cw, random_state=42, verbose=-1,
             )
             estimators.append(("lgb", lgb))
+
+        # CatBoost dropped entirely for small corpora — it dominates the
+        # ensemble vote and overfits per the May-19 MLS/World-Cup numbers.
+        catboost_active = HAS_CATBOOST and not is_small
+        if catboost_active:
+            cb = CatBoostClassifier(
+                iterations=400, depth=5, learning_rate=0.04,
+                l2_leaf_reg=3, random_seed=42, verbose=False,
+                allow_writing_files=False, loss_function="MultiClass",
+            )
+            estimators.append(("cb", cb))
 
         weights_list = [1.0, 0.8]
         if HAS_XGBOOST:
             weights_list.append(1.2)
         if HAS_LIGHTGBM:
             weights_list.append(1.1)
+        if catboost_active:
+            weights_list.append(1.1)
 
-        ensemble = VotingClassifier(
+        # Tiny corpora can't support a logistic meta-learner — fall back to
+        # voting regardless of self.use_stacking.
+        use_stacking_effective = bool(getattr(self, "use_stacking", True)) and not is_tiny
+
+        if use_stacking_effective:
+            meta = LogisticRegression(max_iter=2000, C=1.0)
+            return StackingClassifier(
+                estimators=estimators,
+                final_estimator=meta,
+                stack_method="predict_proba",
+                passthrough=False,
+                n_jobs=1,
+            )
+
+        return VotingClassifier(
             estimators=estimators, voting="soft", weights=weights_list,
         )
-        return ensemble
 
-    def train(self, X: np.ndarray, y: np.ndarray, test_size: float = 0.15) -> Dict[str, Any]:
+    # ── Per-league bucketed calibration ──
+
+    @staticmethod
+    def _fit_bucket_calibration(
+        proba: np.ndarray,
+        y: np.ndarray,
+        leagues: List[str],
+        n_bins: int = 6,
+    ) -> Dict[str, Any]:
+        """Fit per-league reliability buckets on validation predictions.
+
+        For each league, bin samples by max-class confidence; per bin learn
+        an additive offset = (observed_accuracy - mean_predicted_confidence).
+        """
+        edges = np.linspace(0.34, 1.0, n_bins + 1).tolist()
+        out: Dict[str, Any] = {"n_bins": n_bins, "edges": edges, "leagues": {}}
+        proba = np.asarray(proba)
+        y = np.asarray(y).astype(int)
+        confidences = proba.max(axis=1)
+        preds = proba.argmax(axis=1)
+        leagues_arr = np.array(leagues)
+        for lg in np.unique(leagues_arr):
+            mask = leagues_arr == lg
+            if mask.sum() < 20:
+                continue
+            lg_conf = confidences[mask]
+            lg_correct = (preds[mask] == y[mask]).astype(float)
+            offsets: List[float] = []
+            for b in range(n_bins):
+                lo, hi = edges[b], edges[b + 1]
+                bin_mask = (lg_conf >= lo) & (lg_conf < hi if b < n_bins - 1 else lg_conf <= hi)
+                if bin_mask.sum() < 5:
+                    offsets.append(0.0)
+                    continue
+                mean_conf = float(lg_conf[bin_mask].mean())
+                obs_acc = float(lg_correct[bin_mask].mean())
+                offsets.append(obs_acc - mean_conf)
+            out["leagues"][str(lg)] = {
+                "offsets": offsets,
+                "enabled": True,
+                "sample_count": int(mask.sum()),
+            }
+        return out
+
+    @staticmethod
+    def _bucket_index(confidence: float, edges: List[float]) -> int:
+        for i in range(len(edges) - 1):
+            if confidence < edges[i + 1] or i == len(edges) - 2:
+                return i
+        return len(edges) - 2
+
+    @classmethod
+    def _apply_bucket_offset_row(
+        cls, row: np.ndarray, league: str, buckets: Dict[str, Any]
+    ) -> np.ndarray:
+        lg_data = buckets.get("leagues", {}).get(str(league))
+        if not lg_data or not lg_data.get("enabled", False):
+            return row
+        edges = buckets.get("edges", [])
+        offsets = lg_data.get("offsets", [])
+        if not edges or not offsets:
+            return row
+        conf = float(np.max(row))
+        idx = cls._bucket_index(conf, edges)
+        if idx >= len(offsets):
+            return row
+        # Apply offset to the argmax class only, preserving argmax order, then
+        # renormalize. A small offset preserves ranking when |offset| < margin.
+        out = row.copy().astype(np.float64)
+        argmax = int(np.argmax(out))
+        out[argmax] = max(1e-9, out[argmax] + float(offsets[idx]))
+        s = out.sum()
+        if s <= 0:
+            return row
+        return out / s
+
+    def _apply_bucket_calibration_array(
+        self, proba: np.ndarray, leagues: List[str]
+    ) -> np.ndarray:
+        if not self.calibration_buckets:
+            return proba
+        out = np.empty_like(proba)
+        for i in range(proba.shape[0]):
+            out[i] = self._apply_bucket_offset_row(
+                proba[i], leagues[i], self.calibration_buckets
+            )
+        return out
+
+    def apply_bucket_calibration(
+        self, proba: np.ndarray, league: str
+    ) -> np.ndarray:
+        """Public inference-time hook: apply per-league bucketed offsets.
+
+        Loads buckets lazily if not in memory. Preserves argmax ordering and
+        renormalizes. Returns input unchanged if no buckets exist for league.
+        """
+        if self.calibration_buckets is None:
+            self._load_calibration_buckets()
+        if not self.calibration_buckets:
+            return proba
+        proba = np.atleast_2d(np.asarray(proba, dtype=np.float64))
+        out = np.empty_like(proba)
+        for i in range(proba.shape[0]):
+            out[i] = self._apply_bucket_offset_row(
+                proba[i], league, self.calibration_buckets
+            )
+        return out
+
+    def _load_calibration_buckets(self) -> None:
+        path = self.model_dir / "calibration_buckets.json"
+        if not path.exists():
+            return
+        try:
+            with open(path, "r") as f:
+                self.calibration_buckets = json.load(f)
+        except Exception as e:
+            logger.warning("Could not load calibration_buckets.json: %s", e)
+            self.calibration_buckets = None
+
+    @staticmethod
+    def _ece_by_league(
+        proba: np.ndarray, y: np.ndarray, leagues: List[str], n_bins: int = 10
+    ) -> Dict[str, float]:
+        """Expected Calibration Error grouped by league."""
+        proba = np.asarray(proba)
+        y = np.asarray(y).astype(int)
+        confidences = proba.max(axis=1)
+        preds = proba.argmax(axis=1)
+        leagues_arr = np.array(leagues)
+        result: Dict[str, float] = {}
+        edges = np.linspace(0.0, 1.0, n_bins + 1)
+        for lg in np.unique(leagues_arr):
+            mask = leagues_arr == lg
+            if mask.sum() < 10:
+                continue
+            ece = 0.0
+            n = int(mask.sum())
+            for b in range(n_bins):
+                bmask = mask & (confidences >= edges[b]) & (confidences < edges[b + 1])
+                if bmask.sum() == 0:
+                    continue
+                acc = float((preds[bmask] == y[bmask]).mean())
+                conf = float(confidences[bmask].mean())
+                ece += (bmask.sum() / n) * abs(acc - conf)
+            result[str(lg)] = round(float(ece), 4)
+        return result
+
+    @staticmethod
+    def _compute_recency_weights(
+        dates: Optional[List[str]], half_life_years: float = 3.0
+    ) -> Optional[np.ndarray]:
+        """Compute exp(-age_years / half_life) recency weights, anchored on
+        the most recent match. Returns None if dates are missing/unparseable."""
+        if not dates:
+            return None
+        parsed: List[Optional[datetime]] = []
+        for d in dates:
+            try:
+                parsed.append(datetime.fromisoformat(str(d).replace("Z", "+00:00")))
+            except Exception:
+                parsed.append(None)
+        valid = [p for p in parsed if p is not None]
+        if not valid:
+            return None
+        latest = max(valid)
+        weights = np.ones(len(dates), dtype=np.float64)
+        for i, p in enumerate(parsed):
+            if p is None:
+                continue
+            age_years = max(0.0, (latest - p).total_seconds() / (365.25 * 86400.0))
+            weights[i] = float(np.exp(-age_years / max(half_life_years, 1e-6)))
+        return weights
+
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        test_size: float = 0.15,
+        train_dates: Optional[List[str]] = None,
+        train_leagues: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """Train with class-balanced weights, walk-forward audit, and probability calibration."""
         n_samples = len(X)
         split_idx = int(n_samples * (1 - test_size))
@@ -891,8 +1268,27 @@ class ModelTrainer:
             X_cal = None
             y_cal = None
 
-        self.model = self._build_ensemble(class_weights)
+        self.model = self._build_ensemble(class_weights, n_samples=len(X_fit))
         self.model.fit(X_fit, y_fit, sample_weight=fit_weights)
+
+        # Recency-weighted meta-learner refit (stacking only). Re-fits the
+        # final LogisticRegression on the stacked out-of-fold predictions
+        # with weight = class_weight × exp(-age_years / 3). Base learners are
+        # left untouched.
+        meta_refit_status = "skipped"
+        if self.use_stacking and isinstance(self.model, StackingClassifier) and train_dates is not None:
+            try:
+                fit_dates = train_dates[:len(y_fit)] if len(train_dates) >= len(y_fit) else None
+                recency = self._compute_recency_weights(fit_dates) if fit_dates else None
+                if recency is not None and len(recency) == len(y_fit):
+                    meta_w = fit_weights * recency
+                    # Use the trained stacker's transform to get base preds.
+                    stacked = self.model.transform(X_fit)
+                    final_est = self.model.final_estimator_
+                    final_est.fit(stacked, y_fit, sample_weight=meta_w)
+                    meta_refit_status = "recency_weighted"
+            except Exception as e:
+                meta_refit_status = f"failed: {e.__class__.__name__}"
 
         self.calibrator = None
         calibration_status = "disabled"
@@ -915,6 +1311,44 @@ class ModelTrainer:
         else:
             y_proba = y_proba_raw
 
+        # Per-league bucketed calibration: learn confidence-bin offsets on the
+        # held-out calibration slice (if present), keyed by league. Persisted
+        # to disk and gated behind `bucket_calibration: true` per league.
+        bucket_metrics: Dict[str, Any] = {}
+        if (
+            X_cal is not None and y_cal is not None
+            and self.calibrator is not None
+            and train_leagues is not None
+        ):
+            try:
+                cal_leagues = train_leagues[-cal_size:] if cal_size > 0 else []
+                if len(cal_leagues) == len(y_cal):
+                    cal_proba = self._normalize_probabilities(
+                        self.calibrator.predict_proba(X_cal)
+                    )
+                    self.calibration_buckets = self._fit_bucket_calibration(
+                        cal_proba, y_cal, cal_leagues
+                    )
+                    # Surface bucket-calibrated metrics on the test slice when
+                    # leagues are also available for test rows.
+                    test_leagues = train_leagues[split_idx:] if len(train_leagues) >= n_samples else None
+                    if test_leagues is not None and len(test_leagues) == len(y_test):
+                        y_proba_bc = self._apply_bucket_calibration_array(
+                            y_proba, test_leagues
+                        )
+                        y_pred_bc = np.argmax(y_proba_bc, axis=1)
+                        bucket_metrics = {
+                            "accuracy_bucket_calibrated": float(accuracy_score(y_test, y_pred_bc)),
+                            "log_loss_bucket_calibrated": float(log_loss(y_test, y_proba_bc, labels=[0, 1, 2])),
+                            "brier_score_bucket_calibrated": self._multiclass_brier(y_test, y_proba_bc),
+                            "ece_bucket_calibrated_by_league": self._ece_by_league(
+                                y_proba_bc, y_test, test_leagues
+                            ),
+                        }
+            except Exception as bucket_err:
+                logger.warning("Bucket calibration failed: %s", bucket_err)
+                self.calibration_buckets = None
+
         y_pred = np.argmax(y_proba, axis=1)
         accuracy = accuracy_score(y_test, y_pred)
         logloss = log_loss(y_test, y_proba, labels=[0, 1, 2])
@@ -931,7 +1365,7 @@ class ModelTrainer:
 
         tscv = TimeSeriesSplit(n_splits=5)
         cv_scores = cross_val_score(
-            self._build_ensemble(class_weights),
+            self._build_ensemble(class_weights, n_samples=len(X_train_scaled)),
             X_train_scaled,
             y_train,
             cv=tscv,
@@ -961,7 +1395,12 @@ class ModelTrainer:
             "class_weights": {str(k): round(v, 3) for k, v in class_weights.items()},
             "feature_count": X.shape[1],
             "objective_weights": self.objective_weights,
+            "use_stacking": bool(self.use_stacking),
+            "meta_refit": meta_refit_status if self.use_stacking else "n/a",
+            "bucket_calibration": bool(self.calibration_buckets),
         }
+        if bucket_metrics:
+            metrics.update(bucket_metrics)
 
         try:
             gb_model = self.model.named_estimators_.get("gb")
@@ -1011,6 +1450,13 @@ class ModelTrainer:
             calibrator_path.unlink()
         with open(meta_path, "w") as f:
             json.dump(self.training_metadata, f, indent=2)
+        # Persist per-league bucketed calibration alongside the model.
+        buckets_path = self.model_dir / "calibration_buckets.json"
+        if self.calibration_buckets:
+            with open(buckets_path, "w") as f:
+                json.dump(self.calibration_buckets, f, indent=2)
+        elif buckets_path.exists():
+            buckets_path.unlink()
         logger.info(f"Model saved to {model_path}")
 
     def load_model(self, name: str = "match_predictor") -> bool:
@@ -1032,21 +1478,32 @@ class ModelTrainer:
             if meta_path.exists():
                 with open(meta_path, "r") as f:
                     self.training_metadata = json.load(f)
+            self._load_calibration_buckets()
             return True
         except Exception as e:
             logger.error(f"Error loading model: {e}")
             return False
 
-    def predict_proba(self, features: np.ndarray) -> np.ndarray:
+    def predict_proba(
+        self, features: np.ndarray, league: Optional[str] = None
+    ) -> np.ndarray:
         if self.model is None:
             raise ValueError("No model loaded")
         scaled = self.scaler.transform(features.reshape(1, -1) if features.ndim == 1 else features)
         if self.calibrator is not None:
             try:
-                return self._normalize_probabilities(self.calibrator.predict_proba(scaled))
+                proba = self._normalize_probabilities(self.calibrator.predict_proba(scaled))
+            except Exception:
+                proba = self._normalize_probabilities(self.model.predict_proba(scaled))
+        else:
+            proba = self._normalize_probabilities(self.model.predict_proba(scaled))
+        # Optional per-league bucketed calibration (no-op if buckets absent).
+        if league is not None:
+            try:
+                proba = self.apply_bucket_calibration(proba, league)
             except Exception:
                 pass
-        return self._normalize_probabilities(self.model.predict_proba(scaled))
+        return proba
 
     def predict(self, features: np.ndarray) -> np.ndarray:
         return self.predict_proba(features)
@@ -1077,13 +1534,13 @@ async def train_model_pipeline(
     logger.info(f"Step 2/4: Building {N_FEATURES}-feature vectors from {len(all_matches)} matches...")
 
     trainer = ModelTrainer()
-    X, y = trainer.prepare_training_data(all_matches)
+    X, y, dates, leagues = trainer.prepare_training_data(all_matches, return_meta=True)
 
     if len(X) < 50:
         return {"error": "Insufficient valid samples", "sample_count": len(X)}
 
     logger.info("Step 3/4: Training ensemble model (class-balanced)...")
-    metrics = trainer.train(X, y)
+    metrics = trainer.train(X, y, train_dates=dates, train_leagues=leagues)
 
     logger.info("Step 4/4: Saving model artifacts...")
     trainer.save_model()

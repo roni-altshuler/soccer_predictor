@@ -95,19 +95,23 @@ class MatchPrediction(BaseModel):
     away_team: str
     league: str
     kickoff_time: datetime
-    
+
     # Core predictions
     outcome: OutcomeProbabilities
     goals: GoalsPrediction
     most_likely_score: ScorelinePrediction
     alternative_scores: List[ScorelinePrediction] = []
-    
+
     # Context and explanation
     factors: PredictionFactors
     confidence: ConfidenceBreakdown
     home_context: Optional[TeamPredictionContext] = None
     away_context: Optional[TeamPredictionContext] = None
-    
+
+    # Derived betting markets (Over/Under, BTTS, Correct Score top-5).
+    # Sourced from the Dixon-Coles corrected joint distribution.
+    derived_markets: Optional[Dict] = None
+
     # Metadata
     model_version: str = "2.0.0"
     generated_at: datetime = Field(default_factory=datetime.utcnow)

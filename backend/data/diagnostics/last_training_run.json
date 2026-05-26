@@ -1,0 +1,10 @@
+{
+  "ran_at": "2026-05-19T17:32:35.004570Z",
+  "status": "ok",
+  "summary_path": "/home/roaltshu/code/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
+  "drift_report_path": "/home/roaltshu/code/soccer_predictor/backend/data/diagnostics/training_drift_2026-05-19.json",
+  "retrained_leagues": [],
+  "n_wins": 0,
+  "n_regressions": 0,
+  "n_held_back": 0
+}
