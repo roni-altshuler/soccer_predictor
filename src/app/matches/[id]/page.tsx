@@ -16,7 +16,6 @@ import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
-import EventTimeline from '@/components/match/EventTimeline'
 import LiveProbabilityBar from '@/components/match/LiveProbabilityBar'
 import DerivedMarkets from '@/components/match/DerivedMarkets'
 import BettingIntelligence from '@/components/match/BettingIntelligence'
@@ -1252,15 +1251,6 @@ export default function MatchDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {activeTab === 'summary' && (
           <div className="space-y-6">
-            {/* ── Live Event Timeline ── */}
-            <EventTimeline
-              matchId={match.id}
-              homeTeam={match.home_team}
-              awayTeam={match.away_team}
-              status={match.status}
-              league={match.leagueId}
-            />
-
             {/* ── Momentum Chart (FotMob-style) ── */}
             {match.events.length > 0 && (
               <MatchMomentum

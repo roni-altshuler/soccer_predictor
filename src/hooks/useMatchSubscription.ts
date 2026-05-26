@@ -76,7 +76,7 @@ export function useMatchSubscription(matchId: string | null | undefined): MatchS
     let ws: WebSocket;
     try {
       ws = new WebSocket(`${GATEWAY_URL}/ws/match/${encodeURIComponent(matchId)}`);
-    } catch (err) {
+    } catch {
       setStatus("error");
       scheduleReconnect();
       return;
