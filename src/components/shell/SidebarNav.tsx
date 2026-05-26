@@ -7,12 +7,17 @@ import {
   Brain,
   Calculator,
   Gauge,
+  History,
   Info,
+  Medal,
   Newspaper,
+  Sparkles,
   TrendingUp,
   Trophy,
 } from 'lucide-react'
 
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 import { cn } from '@/lib/utils'
 
 type NavItem = {
@@ -26,10 +31,13 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: '/', label: 'Match Centre', icon: Activity },
   { href: '/matches', label: 'Leagues', icon: Trophy },
+  { href: '/tournaments', label: 'Tournaments', icon: Medal },
+  { href: '/ai', label: 'AI Dashboard', icon: Sparkles, accent: 'ai' },
   { href: '/predict', label: 'AI Predict', icon: Brain, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-  { href: '/news', label: 'News', icon: Newspaper },
+  { href: '/history', label: 'History', icon: History },
   { href: '/simulator', label: 'Simulator', icon: Calculator },
+  { href: '/news', label: 'News', icon: Newspaper },
 ]
 
 const SECONDARY: NavItem[] = [
@@ -61,19 +69,27 @@ export function SidebarNav() {
         'flex-col py-3'
       )}
     >
-      {/* Brand mark */}
+      {/* Brand mark with traced border-beam */}
       <Link
         href="/"
         aria-label="FotPredict AI home"
-        className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--accent-ai)]/14 to-[var(--accent-primary)]/14 ring-1 ring-[var(--border-color)] transition-transform hover:scale-105"
+        className="relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[var(--accent-ai)]/14 to-[var(--accent-primary)]/14 ring-1 ring-[var(--border-color)] transition-transform hover:scale-105"
       >
-        <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
+        <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="relative z-10 h-7 w-7" />
+        <BorderBeam size={1} duration={8} borderRadius={12} colorFrom="var(--accent-ai)" colorTo="var(--accent-primary)" />
       </Link>
 
       {/* Wordmark — only visible when expanded */}
       <div className="mt-3 px-3 opacity-0 group-hover/shell:opacity-100 group-focus-within/shell:opacity-100 transition-opacity duration-150 overflow-hidden whitespace-nowrap">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight">FotPredict</span>
+          <AnimatedGradientText
+            speed={10}
+            colorFrom="var(--accent-primary)"
+            colorTo="var(--accent-ai)"
+            className="text-sm font-bold tracking-tight"
+          >
+            FotPredict
+          </AnimatedGradientText>
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">
             AI
           </span>

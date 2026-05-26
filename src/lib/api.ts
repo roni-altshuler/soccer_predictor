@@ -233,6 +233,85 @@ export const leaguesApi = {
     apiRequest<{ title_probabilities: Record<string, number>; most_likely_champion: string }>(`/leagues/${leagueId}/title-race`),
 };
 
+// ==================== PLAYERS API ====================
+
+export interface PlayerProfile {
+  id: number
+  name: string
+  position?: string
+  shirtNumber?: number
+  teamId?: number
+  teamName?: string
+  teamColor?: string
+  imageUrl?: string
+  nationality?: string
+  age?: number
+  height?: number
+}
+
+export interface PlayerStats {
+  player_id: number
+  season: string
+  appearances?: number
+  goals?: number
+  assists?: number
+  minutes?: number
+  rating?: number
+  xG?: number
+  xA?: number
+  form?: number[]
+}
+
+export const playersApi = {
+  get: (playerId: number) => apiRequest<PlayerProfile>(`/teams/players/${playerId}`),
+  getStats: (playerId: number) => apiRequest<PlayerStats>(`/teams/players/${playerId}/stats`),
+}
+
+// ==================== TOURNAMENTS API ====================
+
+export interface TournamentSummary {
+  id: number | string
+  name: string
+  gender?: 'M' | 'F'
+  season?: string
+  stage?: string
+  format?: 'group_knockout' | 'league' | 'knockout'
+}
+
+export const tournamentsApi = {
+  get: (tournamentId: number | string) =>
+    apiRequest<TournamentSummary & { rounds?: unknown[] }>(`/knockout/${tournamentId}`),
+  getBracket: (tournamentId: number | string) =>
+    apiRequest<unknown>(`/knockout/${tournamentId}/bracket`),
+}
+
+// ==================== TRACKING API ====================
+
+export interface PredictionHistoryItem {
+  match_id: number
+  match_date: string
+  home_team: string
+  away_team: string
+  league?: string
+  predicted_outcome: 'H' | 'D' | 'A'
+  predicted_scoreline?: string
+  predicted_confidence?: number
+  actual_outcome?: 'H' | 'D' | 'A'
+  actual_scoreline?: string
+  is_correct?: boolean
+  gender?: 'M' | 'F'
+}
+
+export const trackingApi = {
+  getHistory: (limit = 100) =>
+    apiRequest<{ predictions: PredictionHistoryItem[]; total: number }>(
+      `/tracking/recent?limit=${limit}`
+    ),
+  getMomentum: (matchId: number) => apiRequest<unknown>(`/matches/${matchId}/momentum`),
+  getSimulation: (matchId: number, n = 2000) =>
+    apiRequest<unknown>(`/predictions/simulation/${matchId}?n=${n}`),
+}
+
 // ==================== AUTH API ====================
 
 export interface UserPrediction {
@@ -259,6 +338,8 @@ export interface UserStats {
   current_streak: number;
   best_streak: number;
 }
+
+// ==================== AUTH API ====================
 
 export const authApi = {
   // Predictions

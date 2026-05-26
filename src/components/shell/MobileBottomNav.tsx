@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Activity,
-  Brain,
-  Newspaper,
   Search,
+  Sparkles,
   TrendingUp,
+  Trophy,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -23,10 +23,10 @@ type Item = {
 
 const ITEMS: Item[] = [
   { href: '/', label: 'Matches', icon: Activity },
-  { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
+  { href: '/matches', label: 'Leagues', icon: Trophy },
   { action: 'palette', label: 'Search', icon: Search },
+  { href: '/ai', label: 'AI', icon: Sparkles, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-  { href: '/news', label: 'News', icon: Newspaper },
 ]
 
 function isActive(pathname: string, href?: string) {

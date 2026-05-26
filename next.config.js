@@ -26,6 +26,16 @@ const nextConfig = {
         hostname: 'flagcdn.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.fotmob.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'a.espncdn.com',
+        pathname: '/**',
+      },
     ],
   },
   // Include prediction data files in serverless function bundles
