@@ -272,7 +272,7 @@ export default function FormationDisplay({
             playerId={player.id}
             name={player.name}
             size={44}
-            ringColor={teamTint}
+            teamColor={teamTint}
           />
         ) : (
           <div
