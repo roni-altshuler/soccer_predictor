@@ -16,6 +16,7 @@ import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { HeroSpotlight } from '@/components/home/HeroSpotlight'
+import { HomeBentoStrip } from '@/components/home/HomeBentoStrip'
 import { LiveTickerBar } from '@/components/home/LiveTickerBar'
 import { NewsStrip } from '@/components/home/NewsStrip'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
@@ -304,6 +305,16 @@ export default function Home() {
           leagueId: m.leagueId,
         }))}
       />
+
+      <div className="mx-auto w-full max-w-5xl px-4 pt-4">
+        <HomeBentoStrip
+          liveCount={live.length}
+          todayPredictionsCount={live.length + upcoming.length}
+          topLeagueLabel={sortedLeagueNames[0]}
+          topLeagueAccuracyPct={modelAccuracyPct}
+          modelVersion="unified v2.3"
+        />
+      </div>
 
       <MatchCenterHeader
         dateOptions={dateOptions}

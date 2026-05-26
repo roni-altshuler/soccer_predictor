@@ -1,11 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Brain, Radio, Sparkles } from 'lucide-react'
 
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import { GenderToggle } from '@/components/GenderToggle'
+import { DotPattern } from '@/components/magicui/dot-pattern'
+import { NumberTicker } from '@/components/magicui/number-ticker'
+import { ShimmerButton } from '@/components/magicui/shimmer-button'
+import { Spotlight } from '@/components/magicui/spotlight'
 import { useGenderPreference } from '@/hooks/useGenderPreference'
 import { cn } from '@/lib/utils'
 
@@ -38,8 +43,14 @@ export function HeroSpotlight({
 }: HeroSpotlightProps) {
   const { gender } = useGenderPreference()
   const reduce = useReducedMotion()
+  const router = useRouter()
 
   return (
+    <Spotlight
+      className="group block"
+      size={520}
+      color="color-mix(in srgb, var(--accent-ai) 12%, transparent)"
+    >
     <section
       aria-label="FotPredict AI Match Centre hero"
       className="relative isolate overflow-hidden border-b border-[var(--border-color)]"
@@ -53,6 +64,12 @@ export function HeroSpotlight({
             ? 'bg-[radial-gradient(60%_55%_at_15%_20%,rgba(236,72,153,0.18),transparent_60%),radial-gradient(45%_45%_at_85%_30%,rgba(139,92,246,0.18),transparent_60%)]'
             : 'bg-[radial-gradient(60%_55%_at_15%_20%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%),radial-gradient(50%_50%_at_88%_25%,color-mix(in_srgb,var(--accent-ai)_24%,transparent),transparent_60%)]'
         )}
+      />
+      <DotPattern
+        className="-z-10 opacity-30 [mask-image:radial-gradient(ellipse_at_top_right,white,transparent_70%)]"
+        width={18}
+        height={18}
+        cr={0.9}
       />
       <div
         aria-hidden="true"
@@ -96,13 +113,16 @@ export function HeroSpotlight({
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <GenderToggle size="hero" />
-            <Link
-              href="/predict"
-              className="group inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-transform hover:-translate-y-0.5"
+            <ShimmerButton
+              onClick={() => router.push('/predict')}
+              background="linear-gradient(135deg, var(--accent-ai), var(--accent-primary))"
+              shimmerColor="rgba(255,255,255,0.75)"
+              borderRadius="0.75rem"
+              className="text-sm shadow-lg shadow-[var(--accent-ai)]/25 transition-transform hover:-translate-y-0.5"
             >
               Run a prediction
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
+            </ShimmerButton>
           </div>
         </motion.div>
 
@@ -145,9 +165,9 @@ export function HeroSpotlight({
                 Unified model · 30-day accuracy
               </p>
               <p className="flex items-baseline gap-1.5 text-[var(--text-primary)]">
-                <AnimatedCounter
+                <NumberTicker
                   value={modelAccuracyPct ?? 0}
-                  digits={1}
+                  decimalPlaces={1}
                   suffix="%"
                   className="text-h3 font-bold tabular-nums"
                 />
@@ -161,6 +181,7 @@ export function HeroSpotlight({
         </motion.div>
       </div>
     </section>
+    </Spotlight>
   )
 }
 
