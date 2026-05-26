@@ -1,0 +1,38 @@
+[project]
+name = "fotpredict-v2"
+version = "0.1.0"
+description = "FotPredict v2 — production-SaaS AI football prediction platform (workspace root)"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = [
+    "apps/api-gateway-svc",
+    "apps/prediction-svc",
+    "apps/simulation-svc",
+    "apps/realtime-svc",
+    "apps/ingestion-svc",
+    "apps/admin-svc",
+    "apps/training-jobs",
+    "packages/fotpredict-core",
+    "packages/fotpredict-db",
+    "packages/fotpredict-ml",
+    "packages/fotpredict-clients",
+    "packages/fotpredict-observability",
+    "packages/fotpredict-testing",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["apps", "packages"]
+asyncio_mode = "auto"
+# --import-mode=importlib lets many service `tests/` directories coexist
+# (multiple test_smoke.py files would otherwise collide on the `tests.test_smoke`
+# module path under the default `prepend` import mode).
+addopts = "-ra --strict-markers --import-mode=importlib"

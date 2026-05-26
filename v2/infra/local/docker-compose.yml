@@ -1,0 +1,62 @@
+# Local-dev stack — matches the §13 production posture for the components a
+# developer needs to exercise FE/BE flow end-to-end. NOT FOR PRODUCTION.
+#
+#   make dev      # boots this
+#   make migrate  # applies the Alembic baseline against postgres
+#
+# Production replacements:
+#   postgres   -> AWS Aurora PostgreSQL 16 + TimescaleDB
+#   redis      -> AWS ElastiCache Redis 7 (cluster mode)
+#   minio      -> AWS S3 (+ Cloudflare R2 for public crests)
+#   centrifugo -> Centrifugo on EKS (Redis engine)
+services:
+  postgres:
+    image: timescale/timescaledb:2.17.0-pg16
+    container_name: fotpredict_pg
+    environment:
+      POSTGRES_USER: fotpredict
+      POSTGRES_PASSWORD: fotpredict
+      POSTGRES_DB: fotpredict
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./local_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fotpredict -d fotpredict"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: fotpredict_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: fotpredict_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: fotpredict
+      MINIO_ROOT_PASSWORD: fotpredict
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./local_minio_data:/data
+
+  centrifugo:
+    image: centrifugo/centrifugo:v5
+    container_name: fotpredict_centrifugo
+    command: centrifugo --config=/etc/centrifugo/config.json --admin
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./centrifugo.json:/etc/centrifugo/config.json:ro
+    depends_on:
+      redis:
+        condition: service_healthy
