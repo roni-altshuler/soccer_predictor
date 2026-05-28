@@ -12,6 +12,8 @@ export type {
   AccuracyPolicy,
   RecentPredictionSummary,
 } from './types/accuracy';
+import type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
+export type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_V1 = `${API_BASE}/api/v1`;
@@ -196,7 +198,7 @@ export interface LeagueSimulationResult {
   fixture_source?: string;
   what_if?: {
     fixture_key: string;
-    outcome: 'home' | 'draw' | 'away';
+    outcome: WhatIfOutcome;
     applied: boolean;
   } | null;
   upcoming_fixtures?: Array<{
@@ -210,20 +212,7 @@ export interface LeagueSimulationResult {
   champion_probability: number;
   likely_top_4: string[];
   relegation_candidates: string[];
-  standings: Array<{
-    team_name: string;
-    team_id: number | null;
-    current_position: number;
-    current_points: number;
-    matches_played: number;
-    avg_final_position: number;
-    avg_final_points: number;
-    title_probability: number;
-    top_4_probability: number;
-    europa_probability: number;
-    relegation_probability: number;
-    position_distribution: Record<number, number>;
-  }>;
+  standings: Standing[];
 }
 
 export const leaguesApi = {

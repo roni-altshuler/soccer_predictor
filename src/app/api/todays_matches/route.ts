@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getLeagueAccent } from '@/lib/leagueAccents'
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -154,18 +156,13 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
   const matches: Match[] = []
   const targetDateStr = `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}-${String(targetDate.getUTCDate()).padStart(2, '0')}`.replace(/-/g, '')
   
-  // Map FotMob league names to ESPN league IDs
-  const FOTMOB_LEAGUE_MAPPING: Record<string, string> = {
-    'Premier League': 'eng.1',
-    'La Liga': 'esp.1',
-    'Serie A': 'ita.1',
-    'Bundesliga': 'ger.1',
-    'Ligue 1': 'fra.1',
-    'MLS': 'usa.1',
-    'Champions League': 'uefa.champions',
-    'UEFA Champions League': 'uefa.champions',
-    'Europa League': 'uefa.europa',
-    'UEFA Europa League': 'uefa.europa',
+  // League name → ESPN competition ID is resolved via the canonical
+  // registry (getLeagueAccent handles aliases like 'la liga', 'champions
+  // league', etc.). Returns '' for unknown leagues to preserve the
+  // previous contract with downstream match-row consumers.
+  const resolveLeagueId = (leagueName: string): string => {
+    const accent = getLeagueAccent(leagueName)
+    return accent.competitionId !== 'unknown' ? accent.competitionId : ''
   }
   
   try {
@@ -188,7 +185,7 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
     if (data.leagues && Array.isArray(data.leagues)) {
       for (const league of data.leagues) {
         const leagueName = league.name || 'Unknown'
-        const leagueId = FOTMOB_LEAGUE_MAPPING[leagueName] || ''
+        const leagueId = resolveLeagueId(leagueName)
         
         for (const match of league.matches || []) {
           const isFinished = match.status?.finished === true
