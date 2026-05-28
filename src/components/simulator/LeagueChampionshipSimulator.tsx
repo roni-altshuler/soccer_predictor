@@ -18,7 +18,7 @@ const SIMULATION_LEAGUES = [
   { id: 130, name: 'MLS', flagCode: 'US' },
 ];
 
-interface TitleRaceRow {
+export interface TitleRaceRow {
   team_name: string;
   current_points: number;
   matches_played: number;
@@ -42,7 +42,7 @@ interface TitleRaceRow {
  * - min_wins_to_catch = ⌈(leader.current - team.current) / 3⌉ assuming every
  *   win earns 3 pts and the leader gets no further points. Capped at remaining.
  */
-function buildTitleRace(result: LeagueSimulationResult): TitleRaceRow[] {
+export function buildTitleRace(result: LeagueSimulationResult): TitleRaceRow[] {
   const byCurrent = [...result.standings].sort((a, b) => b.current_points - a.current_points);
   const leader = byCurrent[0];
   if (!leader) return [];

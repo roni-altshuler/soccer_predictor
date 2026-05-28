@@ -399,6 +399,15 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   // of truth used across MatchRow/LeagueSection/LeagueBadge.
   const leagueAccent = getLeagueAccent(leagueId)
 
+  // State-safety fix: when the user changes gender, league, or season, any
+  // previously-run Monte Carlo simulation results are now stale (they
+  // describe the *previous* universe). Clear them so the user re-runs
+  // against the fresh context rather than seeing mismatched cards.
+  useEffect(() => {
+    setSimulationResults(null)
+    setExpandedSimTeam(null)
+  }, [leagueId, selectedSeason, genderParam])
+
   // Helper to get ESPN league ID
   // League ID mapping for cleaner code
   const LEAGUE_ID_MAPPING: Record<string, string> = {
