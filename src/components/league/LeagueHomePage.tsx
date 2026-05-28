@@ -2,11 +2,17 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
+import { ArrowLeft } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
 
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { Spotlight } from '@/components/magicui/spotlight'
+import { NumberTicker } from '@/components/magicui/number-ticker'
 import { GenderToggle } from '@/components/GenderToggle'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
+import { getLeagueAccent } from '@/lib/leagueAccents'
 
 interface Standing {
   position: number
@@ -252,10 +258,13 @@ const formatShortDate = (value: string) => {
 }
 
 function LeagueFact({ label, value, note }: { label: string; value: string | number; note: string }) {
+  const isNumeric = typeof value === 'number'
   return (
-    <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+    <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm transition-colors hover:bg-white/15">
       <p className="text-[10px] uppercase tracking-wider text-white/65 font-semibold">{label}</p>
-      <p className="mt-1 truncate text-sm md:text-base font-bold text-white">{value}</p>
+      <p className="mt-1 truncate text-sm md:text-base font-bold text-white tabular-nums">
+        {isNumeric ? <NumberTicker value={value as number} className="text-white" /> : value}
+      </p>
       <p className="text-[11px] text-white/70 truncate">{note}</p>
     </div>
   )
@@ -385,6 +394,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
   const config = LEAGUE_CONFIGS[leagueId] || LEAGUE_CONFIGS['premier_league']
   const leagueLogo = LEAGUE_LOGOS[leagueId]
+  // Canonical brand mark for this competition. The legacy LEAGUE_CONFIGS map
+  // above is FotMob-era hex strings; getLeagueAccent() is the single source
+  // of truth used across MatchRow/LeagueSection/LeagueBadge.
+  const leagueAccent = getLeagueAccent(leagueId)
 
   // Helper to get ESPN league ID
   // League ID mapping for cleaner code
@@ -810,37 +823,46 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
   return (
     <div className="flex-1" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Hero Header - compact soccer-reporting style */}
+      {/* Hero Header — accent-driven, with magicui Spotlight + BorderBeam polish */}
+      <Spotlight
+        className="relative block border-b border-white/10"
+        size={620}
+        color="color-mix(in srgb, var(--league-accent, #22c55e) 26%, transparent)"
+      >
       <div
-        className="border-b border-white/10 px-4 py-5 md:py-6"
+        className="relative overflow-hidden px-4 py-5 md:py-6"
         style={{
-          background: `linear-gradient(135deg, ${config.color} 0%, #111827 72%)`,
+          // Use the league brand from leagueAccents.ts (single source of truth)
+          // and fall back to the legacy `config.color` map when unknown.
+          background: `linear-gradient(135deg, ${leagueAccent.accent} 0%, #0a0e1c 78%)`,
+          // Expose the accent as a CSS var for any nested CSS color-mix() callers.
+          ['--league-accent' as string]: leagueAccent.accent,
         }}
       >
-        <div className="max-w-6xl mx-auto">
+        <BorderBeam size={1} duration={14} borderRadius={0} colorFrom={leagueAccent.accent} colorTo="rgba(255,255,255,0.7)" />
+        <div className="relative z-10 max-w-6xl mx-auto">
           <Link
             href="/matches"
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/70 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70 hover:text-white transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Leagues
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            All leagues
           </Link>
-          
+
           <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="flex items-center gap-4 min-w-0">
               {leagueLogo ? (
-                <img 
-                  src={leagueLogo} 
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={leagueLogo}
                   alt={leagueName}
-                  className="h-16 w-16 rounded-lg bg-white object-contain p-1.5 shadow-lg"
+                  className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-lg ring-1 ring-white/20"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/12 text-3xl">{config.flag}</span>
+                <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/12 text-3xl ring-1 ring-white/15">{config.flag}</span>
               )}
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">{country}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">{country} · {leagueAccent.shortName}</p>
                 <h1 className="truncate text-3xl md:text-4xl font-black text-white">{leagueName}</h1>
                 <p className="mt-1 text-sm text-white/75">
                   {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} season
@@ -913,22 +935,40 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           </div>
         </div>
       </div>
+      </Spotlight>
 
       <div className="sticky top-0 z-20 border-b border-[var(--border-color)] bg-[var(--background)]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto px-4 py-3">
-          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
-                activeTab === tab
-                  ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {TAB_LABELS[tab] || tab}
-            </button>
-          ))}
+        <div
+          role="tablist"
+          aria-label="League sections"
+          className="max-w-6xl mx-auto flex gap-1 overflow-x-auto px-4 py-3"
+        >
+          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => {
+            const active = activeTab === tab
+            return (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(tab)}
+                className={`relative rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
+                  active
+                    ? 'text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="league-tab-pill"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    className="absolute inset-0 -z-[1] rounded-lg bg-[var(--card-bg)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--border-color)]"
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="relative z-[1]">{TAB_LABELS[tab] || tab}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -1217,10 +1257,18 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                             <td className="py-3 px-2 text-center text-green-500">{team.won}</td>
                             <td className="py-3 px-2 text-center text-[var(--text-tertiary)]">{team.drawn}</td>
                             <td className="py-3 px-2 text-center text-red-400">{team.lost}</td>
-                            <td className="py-3 px-2 text-center text-[var(--text-secondary)]">
+                            <td
+                              className={`py-3 px-2 text-center font-semibold tabular-nums ${
+                                team.goalDiff > 0
+                                  ? 'text-[var(--accent-primary)]'
+                                  : team.goalDiff < 0
+                                    ? 'text-[var(--accent-loss)]'
+                                    : 'text-[var(--text-secondary)]'
+                              }`}
+                            >
                               {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
                             </td>
-                            <td className="py-3 px-4 text-center font-bold text-[var(--text-primary)]">{team.points}</td>
+                            <td className="py-3 px-4 text-center font-extrabold text-[var(--text-primary)] tabular-nums">{team.points}</td>
                             <td className="py-3 px-2 text-center hidden sm:table-cell">
                               <div className="flex justify-center gap-0.5">
                                 {team.form && team.form.length > 0 ? (
