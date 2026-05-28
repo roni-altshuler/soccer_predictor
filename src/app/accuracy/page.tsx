@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { AccuracyHero } from '@/components/accuracy/AccuracyHero'
 import { CalibrationPlot, type CalibrationBin } from '@/components/accuracy/CalibrationPlot'
 import { ConfusionHeatmap, type ConfusionRow, type OutcomeKey } from '@/components/accuracy/ConfusionHeatmap'
+import { LeaguePerformanceBreakdown } from '@/components/accuracy/LeaguePerformanceBreakdown'
 import { ModelExplainer } from '@/components/accuracy/ModelExplainer'
-import { RecentPicksFeed, type RecentPick } from '@/components/accuracy/RecentPicksFeed'
+import { type RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 
 /**
@@ -150,7 +151,7 @@ export default function AccuracyPage() {
               <ConfusionHeatmap rows={confusion} className="lg:col-span-2" />
             </div>
 
-            <RecentPicksFeed picks={picks} />
+            <LeaguePerformanceBreakdown picks={picks} />
           </>
         )}
 
