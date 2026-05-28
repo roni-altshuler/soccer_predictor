@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Trophy, Skull } from 'lucide-react';
 import { LeagueSimulationResult } from '@/lib/api';
 import { leagueFlagUrls } from '@/data/leagues';
+import { BorderBeam } from '@/components/magicui/border-beam';
 
 // League options for simulation with flag codes
 const SIMULATION_LEAGUES = [
@@ -16,7 +18,59 @@ const SIMULATION_LEAGUES = [
   { id: 130, name: 'MLS', flagCode: 'US' },
 ];
 
-export default function SeasonSimulator() {
+interface TitleRaceRow {
+  team_name: string;
+  current_points: number;
+  matches_played: number;
+  matches_remaining: number;
+  max_possible_points: number;
+  points_behind_leader: number;
+  title_probability: number;
+  mathematically_eliminated: boolean;
+  /** Min wins-of-remaining required to even theoretically catch leader's current points. */
+  min_wins_to_catch: number;
+}
+
+/**
+ * Compute "who can still win the title" math from a simulation result.
+ *
+ * Definitions:
+ * - Leader = team currently top of the table by points.
+ * - mathematically_eliminated = even winning every remaining match, the team's
+ *   max possible final total is below the leader's CURRENT points (i.e. the
+ *   leader could lose every remaining match and still finish ahead).
+ * - min_wins_to_catch = ⌈(leader.current - team.current) / 3⌉ assuming every
+ *   win earns 3 pts and the leader gets no further points. Capped at remaining.
+ */
+function buildTitleRace(result: LeagueSimulationResult): TitleRaceRow[] {
+  const byCurrent = [...result.standings].sort((a, b) => b.current_points - a.current_points);
+  const leader = byCurrent[0];
+  if (!leader) return [];
+
+  return result.standings.map((team) => {
+    const matches_remaining = Math.max(0, result.matches_per_season - team.matches_played);
+    const max_possible_points = team.current_points + matches_remaining * 3;
+    const points_behind_leader = Math.max(0, leader.current_points - team.current_points);
+    const mathematically_eliminated = max_possible_points < leader.current_points;
+    const min_wins_to_catch =
+      matches_remaining === 0
+        ? Infinity
+        : Math.min(matches_remaining, Math.ceil(points_behind_leader / 3));
+    return {
+      team_name: team.team_name,
+      current_points: team.current_points,
+      matches_played: team.matches_played,
+      matches_remaining,
+      max_possible_points,
+      points_behind_leader,
+      title_probability: team.title_probability,
+      mathematically_eliminated,
+      min_wins_to_catch,
+    };
+  });
+}
+
+export default function LeagueChampionshipSimulator() {
   const [selectedLeague, setSelectedLeague] = useState<typeof SIMULATION_LEAGUES[0] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +79,15 @@ export default function SeasonSimulator() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [whatIfFixtureKey, setWhatIfFixtureKey] = useState('');
   const [whatIfOutcome, setWhatIfOutcome] = useState<'home' | 'draw' | 'away'>('home');
+
+  // "Who can still win" math derived from current result. Memoised so the
+  // table re-sort doesn't recompute on every render.
+  const titleRace = useMemo<TitleRaceRow[]>(
+    () => (result ? buildTitleRace(result) : []),
+    [result]
+  );
+  const alive = titleRace.filter((row) => !row.mathematically_eliminated);
+  const eliminated = titleRace.filter((row) => row.mathematically_eliminated);
 
   const runSimulation = async () => {
     if (!selectedLeague) return;
@@ -259,6 +322,120 @@ export default function SeasonSimulator() {
             </div>
           </div>
 
+          {/* Title Race — "who can still win" math (independent of simulation) */}
+          <div className="relative bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
+            <BorderBeam size={1} duration={12} borderRadius={24} colorFrom="#f59e0b" colorTo="var(--accent-primary)" />
+            <div className="p-4 md:p-5 border-b border-[var(--border-color)] flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] font-semibold">Title Race</p>
+                <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                  Who can still win?
+                </h3>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                  Mathematical contention vs the current leader · Monte Carlo title probability shown alongside.
+                </p>
+              </div>
+              <div className="flex gap-2 text-[11px]">
+                <span className="rounded-full bg-emerald-500/15 text-emerald-300 px-2.5 py-1 font-semibold">
+                  {alive.length} alive
+                </span>
+                {eliminated.length > 0 && (
+                  <span className="rounded-full bg-rose-500/15 text-rose-300 px-2.5 py-1 font-semibold">
+                    {eliminated.length} eliminated
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
+                    <th className="text-left py-2.5 px-4">Team</th>
+                    <th className="text-right py-2.5 px-3">Pts</th>
+                    <th className="text-right py-2.5 px-3">Behind</th>
+                    <th className="text-right py-2.5 px-3">Max</th>
+                    <th className="text-right py-2.5 px-3 hidden md:table-cell">Min wins to catch</th>
+                    <th className="text-right py-2.5 px-4">Title %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {titleRace
+                    .slice()
+                    .sort((a, b) => {
+                      // Live contenders first, then by title probability desc.
+                      if (a.mathematically_eliminated !== b.mathematically_eliminated) {
+                        return a.mathematically_eliminated ? 1 : -1;
+                      }
+                      return b.title_probability - a.title_probability;
+                    })
+                    .map((row) => {
+                      const eliminated = row.mathematically_eliminated;
+                      const titlePct = row.title_probability * 100;
+                      return (
+                        <tr
+                          key={row.team_name}
+                          className={`border-b border-[var(--border-color)]/60 ${
+                            eliminated ? 'opacity-55' : 'hover:bg-[var(--background-secondary)]'
+                          }`}
+                        >
+                          <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
+                            <span className="inline-flex items-center gap-1.5">
+                              {row.team_name}
+                              {eliminated && (
+                                <Skull className="h-3 w-3 text-rose-400" aria-label="Mathematically eliminated" />
+                              )}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
+                            {row.current_points}
+                          </td>
+                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
+                            {row.points_behind_leader === 0 ? (
+                              <span className="text-amber-400 font-semibold">Leader</span>
+                            ) : (
+                              `−${row.points_behind_leader}`
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-primary)] font-semibold">
+                            {row.max_possible_points}
+                          </td>
+                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-tertiary)] hidden md:table-cell">
+                            {eliminated || row.min_wins_to_catch === Infinity
+                              ? '—'
+                              : `${row.min_wins_to_catch} / ${row.matches_remaining}`}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            {/* Probability bar inline */}
+                            <div className="inline-flex items-center gap-2 justify-end">
+                              <span
+                                className="hidden sm:inline-block h-1 w-16 overflow-hidden rounded-full bg-[var(--border-color)]/50"
+                                aria-hidden="true"
+                              >
+                                <span
+                                  className="block h-full rounded-full bg-amber-400"
+                                  style={{ width: `${Math.max(2, Math.min(100, titlePct))}%` }}
+                                />
+                              </span>
+                              <span className="tabular-nums font-semibold text-amber-400 w-12 text-right">
+                                {titlePct >= 0.05 ? `${titlePct.toFixed(1)}%` : '<0.1%'}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-3 border-t border-[var(--border-color)] text-[11px] text-[var(--text-tertiary)] leading-snug">
+              <span className="font-semibold text-[var(--text-secondary)]">Behind</span> = points behind current leader ·{' '}
+              <span className="font-semibold text-[var(--text-secondary)]">Max</span> = current + remaining × 3 ·{' '}
+              <span className="font-semibold text-[var(--text-secondary)]">Min wins to catch</span> = wins needed if leader drops 0 more points ·{' '}
+              <span className="font-semibold text-[var(--text-secondary)]">Eliminated</span> = even running the table leaves you behind the leader&apos;s current total.
+            </div>
+          </div>
+
           {/* Full Standings Table */}
           <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
             <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
@@ -389,11 +566,12 @@ export default function SeasonSimulator() {
       {/* Initial State - No selection */}
       {!result && !loading && !error && (
         <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
-          <span className="text-6xl mb-4 block">🔮</span>
-          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Season Simulation</h3>
+          <Trophy className="mx-auto mb-4 h-12 w-12 text-amber-400" aria-hidden="true" />
+          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Championship contention simulator</h3>
           <p className="text-[var(--text-secondary)] max-w-md mx-auto">
-            Select a league and run the Monte Carlo simulation to predict final standings, 
-            title probabilities, and relegation risks based on remaining fixtures.
+            Pick a league and run the Monte Carlo to see who can still mathematically
+            win the title, what points are needed to catch the leader, and how the
+            top-four / relegation races shake out across thousands of seasons.
           </p>
         </div>
       )}
