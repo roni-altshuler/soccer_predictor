@@ -29,10 +29,27 @@ export function useGenderPreference(): {
   const [gender, setGenderState] = useState<GenderPreference>(DEFAULT)
 
   useEffect(() => {
+    // A `?gender=` URL parameter takes precedence on initial load so deep
+    // links and the screenshot harness render the correct universe even
+    // when localStorage hasn't been seeded yet. Accepted values:
+    //   ?gender=women | ?gender=F | ?gender=men | ?gender=M
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (stored === 'men' || stored === 'women') {
-        setGenderState(stored)
+      const params = new URLSearchParams(window.location.search)
+      const raw = params.get('gender')?.toLowerCase()
+      const fromUrl: GenderPreference | null =
+        raw === 'women' || raw === 'f'
+          ? 'women'
+          : raw === 'men' || raw === 'm'
+            ? 'men'
+            : null
+      if (fromUrl) {
+        setGenderState(fromUrl)
+        window.localStorage.setItem(STORAGE_KEY, fromUrl)
+      } else {
+        const stored = window.localStorage.getItem(STORAGE_KEY)
+        if (stored === 'men' || stored === 'women') {
+          setGenderState(stored)
+        }
       }
     } catch {
       /* localStorage unavailable in SSR or some private modes — fine */

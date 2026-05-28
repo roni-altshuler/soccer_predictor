@@ -6,15 +6,14 @@ import { useEffect, useState } from 'react'
 
 import { AuthModal } from '@/components/AuthModal'
 import { GenderToggle } from '@/components/GenderToggle'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
 /**
  * Glass topbar that sits above the main content column. Renders the brand
  * mark on mobile (sidebar is hidden there), a global search trigger that
- * opens the Cmd+K palette, the gender + theme toggles, and the auth
- * button / user menu. Stays sticky on scroll.
+ * opens the Cmd+K palette, the gender toggle, and the auth button / user
+ * menu. Stays sticky on scroll.
  */
 export function TopBar() {
   const setPaletteOpen = useCommandPalette((s) => s.setOpen)
@@ -63,7 +62,6 @@ export function TopBar() {
         {/* Right cluster */}
         <div className="ml-auto flex items-center gap-2 md:ml-3">
           <GenderToggle size="default" className="hidden sm:inline-flex" />
-          <ThemeToggle />
           {isAuthenticated && user ? (
             <div className="relative">
               <button

@@ -63,6 +63,8 @@ const ROUTES: Route[] = [
   { url: "/simulator", slug: "simulator", gendered: true },
   { url: "/upcoming", slug: "upcoming", gendered: true },
   { url: "/news", slug: "news", gendered: true },
+  { url: "/history", slug: "history", gendered: true },
+  { url: "/diagnostics", slug: "diagnostics", gendered: true },
   { url: "/design-system", slug: "design-system", gendered: false },
   { url: "/about", slug: "about", gendered: false },
 ];

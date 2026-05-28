@@ -5,7 +5,6 @@ import { AppShell } from '@/components/shell'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
 import { StatusBanner } from '@/components/StatusBanner'
-import { ThemeProvider } from '@/providers/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
@@ -83,23 +82,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#16a34a' },
-    { media: '(prefers-color-scheme: dark)', color: '#22c55e' },
-  ],
+  themeColor: '#0d1421',
 }
-
-// Script to prevent flash of wrong theme - default to dark like Fotmob
-const themeScript = `
-  (function() {
-    const stored = localStorage.getItem('theme');
-    if (stored === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-  })();
-`;
 
 export default function RootLayout({
   children,
@@ -107,9 +91,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* Alias the legacy --font-body/--font-heading vars to Inter so any
             older inline styles or third-party CSS keeps working. */}
         <style>{`:root { --font-body: var(--font-sans); --font-heading: var(--font-sans); --font-display: var(--font-sans); }`}</style>
@@ -121,17 +108,15 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <ThemeProvider>
-          <AuthProvider>
-            <StatusBanner />
-            <Suspense fallback={null}>
-              <PageLoader />
-            </Suspense>
-            <AppShell footer={<div className="hidden md:block"><Footer /></div>}>
-              {children}
-            </AppShell>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <StatusBanner />
+          <Suspense fallback={null}>
+            <PageLoader />
+          </Suspense>
+          <AppShell footer={<div className="hidden md:block"><Footer /></div>}>
+            {children}
+          </AppShell>
+        </AuthProvider>
       </body>
     </html>
   )

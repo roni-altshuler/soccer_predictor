@@ -13,6 +13,7 @@ import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { usePredictionHistory, type PredictionHistoryRow } from '@/hooks/usePredictionHistory'
 
 type Filter = 'all' | 'correct' | 'incorrect' | 'pending'
@@ -64,12 +65,13 @@ function downloadCSV(rows: PredictionHistoryRow[]) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `fotpredict-history-${new Date().toISOString().slice(0, 10)}.csv`
+  a.download = `pitchwise-history-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
 
 export default function HistoryPage() {
+  const { gender } = useGenderQuery()
   const [filter, setFilter] = useState<Filter>('all')
   const [limit] = useState(100)
   const { data, isLoading } = usePredictionHistory(limit)
@@ -119,9 +121,21 @@ export default function HistoryPage() {
           <BorderBeam size={1} duration={11} borderRadius={16} />
           <div className="relative z-10 flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-caption font-mono uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                Audit
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-caption font-mono uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+                  Audit
+                </p>
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1',
+                    gender === 'women'
+                      ? 'bg-pink-500/12 text-pink-300 ring-pink-500/30'
+                      : 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
+                  )}
+                >
+                  {gender === 'women' ? "Women's football" : "Men's football"}
+                </span>
+              </div>
               <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
                 Prediction history
               </h1>

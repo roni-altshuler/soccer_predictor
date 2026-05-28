@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import AccuracyDashboard from './AccuracyDashboard'
 import DiagnosticsDashboard from './DiagnosticsDashboard'
 import FanTrackingPanel from './FanTrackingPanel'
+import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AccuracySummaryResponse } from '@/lib/types/accuracy'
 
 type TrackingView = 'overview' | 'diagnostics' | 'learning' | 'fan'
@@ -60,6 +61,7 @@ function severityCount(alerts: Array<{ severity: AlertSeverity }>, severity: Ale
 }
 
 export default function TrackingCenter({ initialView = 'overview' }: { initialView?: TrackingView }) {
+  const { gender, withParam } = useGenderQuery()
   const [activeView, setActiveView] = useState<TrackingView>(initialView)
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<AccuracySummarySnapshot | null>(null)
@@ -72,14 +74,21 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
   }, [initialView])
 
   useEffect(() => {
+    // Clear stale state on gender flip so the previous universe's numbers
+    // don't flash through while the fresh snapshot is in flight.
+    setSummary(null)
+    setDiagnostics(null)
+    setStatus(null)
+    setModelInfo(null)
+
     async function loadSnapshot() {
       setLoading(true)
       try {
         const [summaryRes, diagnosticsRes, statusRes, modelRes] = await Promise.all([
-          fetch('/api/v1/tracking/accuracy/summary'),
-          fetch('/api/v1/tracking/diagnostics'),
-          fetch('/api/v1/tracking/outcome-status'),
-          fetch('/api/v1/tracking/model-info'),
+          fetch(withParam('/api/v1/tracking/accuracy/summary')),
+          fetch(withParam('/api/v1/tracking/diagnostics')),
+          fetch(withParam('/api/v1/tracking/outcome-status')),
+          fetch(withParam('/api/v1/tracking/model-info')),
         ])
 
         if (summaryRes.ok) setSummary((await summaryRes.json()) as AccuracySummarySnapshot)
@@ -94,7 +103,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
     }
 
     loadSnapshot()
-  }, [])
+  }, [gender, withParam])
 
   const retrainThreshold = status?.retrain_threshold ?? 50
   const outcomesSinceRetrain = status?.outcomes_since_retrain ?? 0
@@ -134,7 +143,18 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
       <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Unified Intelligence Hub</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Unified Intelligence Hub</p>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1 ${
+                  gender === 'women'
+                    ? 'bg-pink-500/12 text-pink-300 ring-pink-500/30'
+                    : 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
+                }`}
+              >
+                {gender === 'women' ? "Women's universe" : "Men's universe"}
+              </span>
+            </div>
             <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Accuracy, Diagnostics, and Learning in one loop</h2>
             <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-3xl">
               Completed matches feed league-specific diagnostics, tuning updates adjust model blending, and the next predictions reflect learned behavior.
@@ -208,13 +228,15 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
 
       {activeView === 'overview' && (
         <div role="tabpanel" id="tracking-panel-overview">
-          <AccuracyDashboard />
+          {/* key={gender} remounts the dashboard on gender switch so cached
+              state from the previous universe is fully discarded. */}
+          <AccuracyDashboard key={gender} />
         </div>
       )}
 
       {activeView === 'diagnostics' && (
         <div role="tabpanel" id="tracking-panel-diagnostics">
-          <DiagnosticsDashboard />
+          <DiagnosticsDashboard key={gender} />
         </div>
       )}
 

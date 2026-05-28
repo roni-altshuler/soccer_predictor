@@ -264,8 +264,8 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             color: COLORS.textMuted,
           }}
         >
-          <span>fotpredict.ai</span>
-          <span>Neural ensemble v5.1 · 66 features</span>
+          <span>pitchwise.app</span>
+          <span>Calibrated football intelligence</span>
         </div>
       </div>
     ),

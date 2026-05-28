@@ -10,10 +10,8 @@ import {
   History,
   Info,
   Medal,
-  Moon,
   Newspaper,
   Sparkles,
-  Sun,
   TrendingUp,
   Trophy,
   UserRound,
@@ -30,7 +28,6 @@ import {
   CommandShortcut,
 } from '@/components/ui/command'
 import { useGenderPreference } from '@/hooks/useGenderPreference'
-import { useTheme } from '@/providers/ThemeProvider'
 import { leaguesForGender } from '@/lib/leagueAccents'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
@@ -54,7 +51,6 @@ export function CommandPalette() {
   const setOpen = useCommandPalette((s) => s.setOpen)
   const toggle = useCommandPalette((s) => s.toggle)
   const { gender, setGender } = useGenderPreference()
-  const { theme, toggleTheme } = useTheme()
 
   const leagues = leaguesForGender(gender === 'women' ? 'F' : 'M')
 
@@ -137,21 +133,6 @@ export function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Quick actions">
-          <CommandItem
-            value="theme toggle dark mode light"
-            onSelect={() => {
-              toggleTheme()
-              setOpen(false)
-            }}
-          >
-            {theme === 'dark' ? (
-              <Sun className="mr-2 h-4 w-4 text-[var(--accent-warn)]" />
-            ) : (
-              <Moon className="mr-2 h-4 w-4 text-[var(--text-secondary)]" />
-            )}
-            <span>Switch to {theme === 'dark' ? 'light' : 'dark'} mode</span>
-            <CommandShortcut>theme</CommandShortcut>
-          </CommandItem>
           <CommandItem
             value="gender toggle men women universe"
             onSelect={() => {

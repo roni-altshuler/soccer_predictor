@@ -1,142 +1,331 @@
-'use client'
+import Link from 'next/link'
+import {
+  ArrowRight,
+  BarChart3,
+  Brain,
+  Database,
+  Eye,
+  Gauge,
+  History as HistoryIcon,
+  LineChart,
+  ShieldAlert,
+  Sparkles,
+  Target,
+  Zap,
+} from 'lucide-react'
 
-import { useState } from 'react'
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { Spotlight } from '@/components/magicui/spotlight'
+import { Card } from '@/components/ui/card'
 
-interface AccordionItemProps {
-  title: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void; icon?: string
+export const metadata = {
+  title: 'About · Pitchwise',
+  description:
+    'Pitchwise turns live football coverage into calibrated predictions — a unified neural model, honest accuracy tracking, and a single dashboard for every league.',
 }
 
-const AccordionItem = ({ title, children, isOpen, onToggle, icon }: AccordionItemProps) => (
-  <div className="border-b border-[var(--border-color)] last:border-b-0">
-    <button className="w-full py-3 text-left flex justify-between items-center focus:outline-none hover:bg-[var(--card-hover)] transition-colors px-4" onClick={onToggle}>
-      <span className="flex items-center gap-2">
-        {icon && <span className="text-base">{icon}</span>}
-        <span className="text-sm font-semibold text-[var(--text-primary)]">{title}</span>
-      </span>
-      <svg className={`w-4 h-4 text-[var(--accent-primary)] transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-    {isOpen && <div className="pb-3 px-4 text-[var(--text-secondary)] text-xs leading-relaxed">{children}</div>}
-  </div>
-)
+const PRINCIPLES = [
+  {
+    Icon: Target,
+    title: 'Calibration over hype',
+    body: 'A 60% pick should win 60% of the time. We publish Brier score and ECE on every model so confidence is grounded in math, not vibes.',
+  },
+  {
+    Icon: Eye,
+    title: 'Honest by default',
+    body: 'Every prediction is logged, every outcome is settled, every miss is visible on /history. No retroactive cherry-picking.',
+  },
+  {
+    Icon: ShieldAlert,
+    title: 'Educational only',
+    body: 'Pitchwise is a research and visualisation tool. It is not a betting product. We do not optimise for odds.',
+  },
+]
+
+const PIPELINE = [
+  {
+    Icon: Database,
+    step: '01',
+    title: 'Ingest',
+    body: 'ESPN scoreboard, league standings, top scorers, and historical match records feed a unified SQLite warehouse.',
+  },
+  {
+    Icon: Brain,
+    step: '02',
+    title: 'Predict',
+    body: 'A per-gender unified neural model (men + women) blends with a Bradley-Terry baseline to produce home/draw/away probabilities and expected scorelines.',
+  },
+  {
+    Icon: LineChart,
+    step: '03',
+    title: 'Audit',
+    body: 'Every settled match updates accuracy, calibration, and per-league drift signals. The model is held to a sportsbook-style quality gate.',
+  },
+  {
+    Icon: Zap,
+    step: '04',
+    title: 'Adapt',
+    body: 'Three times a day, the online-learning pipeline retunes blend weights and draw thresholds per league, then rolls forward.',
+  },
+]
+
+const FEATURES = [
+  {
+    href: '/predict',
+    Icon: Brain,
+    title: 'AI Predict',
+    desc: 'Run a fixture through the unified model. Outcome probabilities, expected goals, and most-likely scoreline with calibrated confidence.',
+  },
+  {
+    href: '/accuracy',
+    Icon: BarChart3,
+    title: 'Accuracy',
+    desc: 'Public-facing model performance — Brier, calibration plot, confusion matrix, and the running win rate against the 33% random baseline.',
+  },
+  {
+    href: '/diagnostics',
+    Icon: Gauge,
+    title: 'Diagnostics',
+    desc: 'Engineer-facing quality gates, drift detection, league-by-league audit, and the continuous-learning loop.',
+  },
+  {
+    href: '/simulator',
+    Icon: Sparkles,
+    title: 'Championship Simulator',
+    desc: 'Monte Carlo league simulation with what-if fixture overrides. Watch how a single result reshapes the title race.',
+  },
+  {
+    href: '/history',
+    Icon: HistoryIcon,
+    title: 'Prediction History',
+    desc: 'Every pick the model has ever made. Filter by correct, incorrect, or pending. Export to CSV.',
+  },
+]
 
 export default function AboutPage() {
-  const [openSections, setOpenSections] = useState<Set<number>>(new Set([0]))
-  const toggleSection = (i: number) => setOpenSections(prev => prev.has(i) ? new Set() : new Set([i]))
-
-  const sections = [
-    {
-      title: "What is Pitchwise?", icon: "⚽",
-      content: `<p>Pitchwise is a live soccer tracking platform enhanced with <strong class="text-[var(--text-primary)]">AI/ML match predictions</strong> — combining the real-time scores and league coverage of apps like FotMob with a <strong class="text-[var(--text-primary)]">66-feature neural ensemble (v5.1)</strong> prediction engine. It covers <strong class="text-[var(--text-primary)]">11 leagues and competitions</strong> including the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Primeira Liga, MLS, Champions League, Europa League, and Conference League.</p><p class="mt-2">The unique value: FotMob tracks matches but doesn't predict them. Betting sites predict but aren't designed for fans. Pitchwise bridges both — live tracking + AI predictions in one place.</p>`
-    },
-    {
-      title: "Neural Ensemble Architecture (v5.1)", icon: "🧠",
-      content: `<p>Each league has its own trained 7-model ensemble:</p>
-        <ul class="list-disc pl-5 space-y-1 mt-2">
-          <li><strong class="text-[var(--text-primary)]">MLP Outcome (35%):</strong> 128→64→32 neurons, ReLU, Adam optimizer</li>
-          <li><strong class="text-[var(--text-primary)]">MLP Goals:</strong> 64→32→16 neurons for expected goals regression</li>
-          <li><strong class="text-[var(--text-primary)]">XGBoost (25%):</strong> 200 estimators, max depth 6</li>
-          <li><strong class="text-[var(--text-primary)]">LightGBM (20%):</strong> 200 estimators, 31 leaves</li>
-          <li><strong class="text-[var(--text-primary)]">GradientBoosting (10%):</strong> 150 estimators, max depth 5</li>
-          <li><strong class="text-[var(--text-primary)]">RandomForest (10%):</strong> 200 trees, max depth 12</li>
-        </ul>
-        <p class="mt-2">Final blend: <strong class="text-[var(--text-primary)]">65% Neural Ensemble + 35% ELO-Poisson Baseline</strong>. Each model ingests a <strong class="text-[var(--text-primary)]">66-dimensional feature vector</strong> including ELO, form momentum, attack/defense strength, H2H, venue, referee, market-implied probabilities, tactical stats, and league characteristics.</p>`
-    },
-    {
-      title: "66-Feature Pipeline", icon: "📊",
-      content: `<p>The feature pipeline extracts 66 features per match:</p>
-        <ul class="list-disc pl-5 space-y-1 mt-2">
-          <li>ELO ratings (home, away, difference, normalized)</li>
-          <li>Attack &amp; defense strength indices per team</li>
-          <li>Form momentum (last 5 matches: W/D/L streaks, goals scored/conceded)</li>
-          <li>Head-to-head historical record</li>
-          <li>Home advantage factors (venue, crowd)</li>
-          <li>League characteristics (draw rate, competitiveness, avg goals)</li>
-          <li>Market-implied probabilities (when available)</li>
-          <li>Tactical statistics (shots, xG proxies, possession indicators)</li>
-          <li>Cross-league strength coefficients</li>
-        </ul>`
-    },
-    {
-      title: "Dixon-Coles Poisson Model", icon: "📐",
-      content: `<p>Baseline scoreline predictions use Dixon-Coles — a bivariate Poisson with correlation correction for low-scoring matches (0-0, 0-1, 1-0, 1-1). Per-league calibrated parameters:</p>
-        <ul class="list-disc pl-5 space-y-1 mt-2">
-          <li><strong class="text-[var(--text-primary)]">λ (avg goals):</strong> 1.28–1.55 per team per match</li>
-          <li><strong class="text-[var(--text-primary)]">Home advantage:</strong> xG multiplier 0.20–0.30</li>
-          <li><strong class="text-[var(--text-primary)]">Draw rate:</strong> 0.20–0.27 base probability</li>
-          <li><strong class="text-[var(--text-primary)]">ρ (correlation):</strong> −0.10 to −0.14</li>
-        </ul>`
-    },
-    {
-      title: "ELO Rating System", icon: "📈",
-      content: `<ul class="list-disc pl-5 space-y-1">
-          <li>15 league coefficients scaled 0.75–1.25</li>
-          <li>Goal-difference multiplier for rating changes</li>
-          <li>Upset bonus amplification</li>
-          <li>Form momentum ±7.5% xG adjustment</li>
-          <li>Gaussian draw model: <code class="text-[10px] bg-[var(--muted-bg)] px-1 rounded">draw = base × (0.6 + 0.8 × exp(−diff²/(2×250²)))</code></li>
-        </ul>`
-    },
-    {
-      title: "Training & Automated Pipeline", icon: "🔄",
-      content: `<ul class="list-disc pl-5 space-y-1">
-          <li>Multi-season data from 2003+ (ESPN)</li>
-          <li>Season weighting: current 1.0×, −1yr 0.85×, −2yr 0.72×, −3yr 0.61×</li>
-          <li>Online learning via <code class="text-[10px] bg-[var(--muted-bg)] px-1 rounded">partial_fit()</code></li>
-          <li>GitHub Actions pipeline runs 3× daily (6AM/2PM/10PM UTC)</li>
-          <li>Pipeline: fetch outcomes → predict upcoming → train feedback</li>
-          <li>Adapts draw rate, home advantage, goals scale each cycle</li>
-        </ul>`
-    },
-    {
-      title: "Technology Stack", icon: "🛠️",
-      content: `<ul class="list-disc pl-5 space-y-1">
-          <li><strong class="text-[var(--text-primary)]">Frontend:</strong> Next.js 15, TypeScript, Tailwind CSS, PWA</li>
-          <li><strong class="text-[var(--text-primary)]">Backend:</strong> Python 3.12, FastAPI</li>
-          <li><strong class="text-[var(--text-primary)]">ML:</strong> scikit-learn, XGBoost, LightGBM</li>
-          <li><strong class="text-[var(--text-primary)]">Data:</strong> ESPN API, FotMob (referee data)</li>
-          <li><strong class="text-[var(--text-primary)]">Infra:</strong> Vercel hosting, GitHub Actions CI/CD</li>
-        </ul>`
-    },
-    {
-      title: "Disclaimer", icon: "⚠️",
-      content: `<p>This tool is for <strong class="text-[var(--text-primary)]">educational and entertainment purposes only</strong>. Predictions cannot account for injuries, weather, tactical changes, or red cards. Do not use predictions for betting or financial decisions.</p>`
-    },
-  ]
-
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-lg font-bold text-[var(--text-primary)]">About Pitchwise</h1>
-          <p className="text-xs text-[var(--text-tertiary)]">AI/ML models, architecture, and methodology</p>
-        </div>
-
-        {/* Stat chips */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          {[
-            { val: '66', label: 'Features' },
-            { val: '7', label: 'Models' },
-            { val: '11', label: 'Leagues' },
-            { val: '3x', label: 'Daily' },
-          ].map((s) => (
-            <div key={s.label} className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-lg p-2.5 text-center">
-              <p className="text-lg font-bold text-[var(--accent-ai)]">{s.val}</p>
-              <p className="text-[10px] text-[var(--text-tertiary)]">{s.label}</p>
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-8 px-4 py-6 md:px-8">
+        {/* Hero */}
+        <Spotlight
+          className="relative block rounded-3xl"
+          size={520}
+          color="color-mix(in srgb, var(--accent-primary) 18%, transparent)"
+        >
+          <section className="relative isolate overflow-hidden rounded-3xl border border-[var(--border-color)]">
+            <BorderBeam size={1} duration={14} borderRadius={24} colorFrom="var(--accent-primary)" colorTo="var(--accent-ai)" />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -z-10 bg-[radial-gradient(55%_55%_at_15%_15%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%),radial-gradient(45%_45%_at_85%_25%,color-mix(in_srgb,var(--accent-ai)_18%,transparent),transparent_60%)]"
+            />
+            <div className="relative z-10 flex flex-col gap-6 p-6 md:p-10">
+              <div className="space-y-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  Calibrated football intelligence
+                </span>
+                <h1 className="font-display text-[clamp(2rem,5vw,3.4rem)] font-extrabold leading-[1.02] tracking-tight text-[var(--text-primary)]">
+                  Pitchwise turns live football <br className="hidden md:block" />
+                  into{' '}
+                  <span className="bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-ai)] bg-clip-text text-transparent">
+                    honest probabilities
+                  </span>
+                  .
+                </h1>
+                <p className="max-w-2xl text-base leading-relaxed text-[var(--text-secondary)] md:text-lg">
+                  One dashboard. Every major league. A unified model that publishes its
+                  confidence, tracks every miss, and re-trains on outcomes — three times a day,
+                  for both the men&apos;s and women&apos;s game.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/predict"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-on-primary)] shadow-md shadow-emerald-500/20 transition-all hover:translate-y-[-1px] hover:shadow-lg"
+                >
+                  Run a prediction <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/accuracy"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]"
+                >
+                  See accuracy <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
-          ))}
-        </div>
+          </section>
+        </Spotlight>
 
-        {/* Accordion */}
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] overflow-hidden">
-          {sections.map((section, index) => (
-            <AccordionItem key={index} title={section.title} icon={section.icon} isOpen={openSections.has(index)} onToggle={() => toggleSection(index)}>
-              <div dangerouslySetInnerHTML={{ __html: section.content }} />
-            </AccordionItem>
-          ))}
-        </div>
+        {/* Principles row */}
+        <section>
+          <header className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                What we stand for
+              </p>
+              <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                Three principles
+              </h2>
+            </div>
+          </header>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {PRINCIPLES.map(({ Icon, title, body }) => (
+              <Card key={title} className="relative overflow-hidden p-5">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  {body}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Pipeline */}
+        <section>
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                How the AI works
+              </p>
+              <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                Observe → Predict → Audit → Adapt
+              </h2>
+            </div>
+            <span className="hidden text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-tertiary)] md:inline">
+              Loop runs 3× daily
+            </span>
+          </header>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {PIPELINE.map(({ Icon, step, title, body }, idx) => (
+              <Card key={title} className="relative overflow-hidden p-5">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-semibold text-[var(--text-tertiary)]">
+                    {step}
+                  </span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-ai)]/12 text-[var(--accent-ai)]">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                </div>
+                <h3 className="mt-3 text-base font-bold text-[var(--text-primary)]">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  {body}
+                </p>
+                {idx < PIPELINE.length - 1 && (
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="absolute -right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)] lg:block"
+                  />
+                )}
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Surfaces */}
+        <section>
+          <header className="mb-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              The product
+            </p>
+            <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              Five surfaces, one model
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
+              The same unified prediction engine powers every page. Toggle between the
+              men&apos;s and women&apos;s universes from the top bar at any time.
+            </p>
+          </header>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({ href, Icon, title, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group relative block overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/45 hover:shadow-lg"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--muted-bg)] text-[var(--accent-primary)] transition-colors group-hover:bg-[var(--accent-primary)]/15">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent-primary)]"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--text-tertiary)]">
+                      {desc}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Tech credits */}
+        <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5 md:p-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                Frontend
+              </p>
+              <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">
+                Next.js 15 · React 18 · Tailwind
+              </p>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                App Router, server components for data routes, client components for
+                interactive surfaces. Magic UI primitives for hero polish.
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                Backend
+              </p>
+              <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">
+                FastAPI · PyTorch · SQLite warehouse
+              </p>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                Unified per-gender neural model, Bradley-Terry baseline, league-specific
+                draw calibration, and a seeded Monte Carlo engine for league simulation.
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                Pipeline
+              </p>
+              <p className="mt-1.5 text-sm font-semibold text-[var(--text-primary)]">
+                GitHub Actions · 3× daily online learning
+              </p>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                Settles outcomes, generates next-7-day picks, retunes blend weights per
+                league, and auto-commits the predictions JSON back to main.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Disclaimer */}
+        <section className="rounded-2xl border border-[var(--accent-warn)]/30 bg-[var(--accent-warn)]/8 p-5 md:p-6">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent-warn)]" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                Educational only — not a betting product
+              </p>
+              <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[var(--text-secondary)]">
+                Pitchwise is a personal research project for visualising calibrated football
+                probabilities. It cannot model injuries, weather, red cards, or tactical
+                changes — and even a well-calibrated model loses regularly. Do not use these
+                outputs for betting or any financial decision.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )
