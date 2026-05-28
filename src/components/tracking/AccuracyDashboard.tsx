@@ -2,9 +2,25 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+import type {
+  AccuracyMetrics,
+  AccuracyPolicy,
+  AccuracySummaryResponse,
+  LeagueAccuracySummary,
+  RecentPredictionSummary,
+} from '@/lib/types/accuracy'
+
 /* ──────────────────────────────────────────────────────────────────────
    Types
    ────────────────────────────────────────────────────────────────────── */
+
+// Aliases keep the existing local identifiers (OverallMetrics, etc.) so
+// the rest of the file is untouched; the underlying shapes now come from
+// the canonical accuracy module shared with the route emitters.
+type OverallMetrics = AccuracyMetrics
+type TrackingPolicy = AccuracyPolicy
+type LeagueSummaryItem = LeagueAccuracySummary
+type PredSummary = RecentPredictionSummary
 
 interface TrendPoint {
   index: number
@@ -13,83 +29,6 @@ interface TrendPoint {
   correct: number
   total: number
   sample_match: string
-}
-
-interface PredSummary {
-  match_id: string
-  home_team: string
-  away_team: string
-  league: string
-  match_date: string
-  predicted_winner: string
-  predicted_scoreline: string
-  actual_scoreline: string | null
-  actual_winner: string | null
-  winner_correct: boolean | null
-  scoreline_correct: boolean | null
-  confidence: number
-  home_win_prob: number
-  draw_prob: number
-  away_win_prob: number
-}
-
-interface CalibrationBin {
-  bucket: string
-  count: number
-  avg_confidence: number
-  accuracy: number
-}
-
-interface OverallMetrics {
-  total_predictions: number
-  completed_predictions: number
-  pending_predictions?: number
-  winner_correct_count: number
-  winner_accuracy: number
-  avg_confidence?: number
-  exact_scoreline_count: number
-  exact_scoreline_rate: number
-  weighted_accuracy_score?: number
-  brier_score: number
-  log_loss?: number
-  expected_calibration_error?: number
-  high_confidence_accuracy: number
-  medium_confidence_accuracy: number
-  low_confidence_accuracy: number
-  threshold_qualified_predictions?: number
-  threshold_qualified_accuracy?: number
-  threshold_qualification_rate?: number
-  threshold_lift?: number
-  recent_accuracy: number
-  avg_goals_difference: number
-  within_1_goal_rate: number
-  home_win_predicted?: number
-  home_win_correct?: number
-  draw_predicted?: number
-  draw_correct?: number
-  away_win_predicted?: number
-  away_win_correct?: number
-  calibration_bins?: CalibrationBin[]
-}
-
-interface TrackingPolicy {
-  min_confidence: number
-  min_edge: number
-}
-
-interface LeagueSummaryItem {
-  league: string
-  total: number
-  predictions: number
-  pending: number
-  accuracy: number
-  weighted_accuracy: number
-  weightedAccuracy?: number
-  correct: number
-  scoreline_accuracy: number
-  brier_score: number
-  log_loss: number
-  expected_calibration_error: number
 }
 
 interface ModelInfoResponse {
@@ -155,15 +94,7 @@ interface FetcherStatusResponse {
   retrain_threshold?: number
 }
 
-interface AccuracySummary {
-  overall: OverallMetrics
-  last_30_days: OverallMetrics
-  by_league: Record<string, LeagueSummaryItem>
-  policy?: TrackingPolicy
-  recent_form: string[]
-  current_streak: { type: string; count: number }
-  recent_predictions: PredSummary[]
-}
+type AccuracySummary = AccuracySummaryResponse
 
 interface TrendData {
   window: number
@@ -979,7 +910,7 @@ function LeagueBreakdown({ data }: { data: Record<string, LeagueSummaryItem> }) 
       <div className="space-y-3">
         {leagues.map(([league, stats]) => {
           const acc = stats.accuracy ?? 0
-          const weighted = stats.weighted_accuracy ?? stats.weightedAccuracy ?? acc
+          const weighted = stats.weighted_accuracy ?? acc
           return (
             <div key={league} className="flex items-center gap-3">
               <span className="text-xs text-[var(--text-primary)] font-medium w-32 truncate capitalize">

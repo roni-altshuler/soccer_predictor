@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { AccuracyHero } from '@/components/accuracy/AccuracyHero'
-import { CalibrationPlot, type CalibrationBin } from '@/components/accuracy/CalibrationPlot'
+import { CalibrationPlot } from '@/components/accuracy/CalibrationPlot'
 import { ConfusionHeatmap, type ConfusionRow, type OutcomeKey } from '@/components/accuracy/ConfusionHeatmap'
 import { LeaguePerformanceBreakdown } from '@/components/accuracy/LeaguePerformanceBreakdown'
 import { ModelExplainer } from '@/components/accuracy/ModelExplainer'
 import { type RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
+import type { FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 /**
  * Public-facing accuracy page — the one users land on when they click
@@ -20,21 +21,7 @@ import { useGenderQuery } from '@/hooks/useGenderQuery'
  * content (model quality gates, league-by-league audit, drift charts).
  */
 
-interface AccuracyResponse {
-  total_predictions: number
-  completed_predictions: number
-  pending_predictions: number
-  winner_accuracy: number
-  recent_accuracy: number
-  brier_score: number
-  home_win_predicted: number
-  home_win_correct: number
-  draw_predicted: number
-  draw_correct: number
-  away_win_predicted: number
-  away_win_correct: number
-  calibration_bins?: CalibrationBin[]
-}
+type AccuracyResponse = FlatAccuracyResponse
 
 function buildConfusion(metrics: AccuracyResponse): ConfusionRow[] {
   // The tracker exposes "predicted → outcome" counts; we re-shape into

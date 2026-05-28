@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+import type { CalibrationDotPoint, FlatAccuracyResponse } from '@/lib/types/accuracy'
+
 interface CompletedPrediction {
   league: string
   match_date: string
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
 
   const total = completed.length
   if (total === 0) {
-    return NextResponse.json({
+    const empty: FlatAccuracyResponse = {
       // legacy field names the older tracking-summary surfaces expected:
       total_predictions: totalPredictions,
       correct_predictions: 0,
@@ -88,11 +90,21 @@ export async function GET(request: NextRequest) {
       // canonical AccuracyResponse field names consumed by /accuracy:
       completed_predictions: 0,
       pending_predictions: pendingPredictions,
+      winner_correct_count: 0,
       winner_accuracy: 0,
+      avg_confidence: 0,
+      exact_scoreline_count: 0,
+      exact_scoreline_rate: 0,
+      weighted_accuracy_score: 0,
+      avg_goals_difference: 0,
+      within_1_goal_rate: 0,
       recent_accuracy: 0,
       brier_score: 0,
       log_loss: 0,
       expected_calibration_error: 0,
+      high_confidence_accuracy: 0,
+      medium_confidence_accuracy: 0,
+      low_confidence_accuracy: 0,
       home_win_predicted: 0,
       home_win_correct: 0,
       draw_predicted: 0,
@@ -106,7 +118,8 @@ export async function GET(request: NextRequest) {
         low: { total: 0, correct: 0, accuracy: 0 },
       },
       recent_form: [],
-    })
+    }
+    return NextResponse.json(empty)
   }
 
   const correct = completed.filter((p) => p.winner_correct).length
@@ -183,7 +196,7 @@ export async function GET(request: NextRequest) {
     : 0
 
   // Calibration bins for the dot-plot.
-  const calibrationBins = []
+  const calibrationBins: CalibrationDotPoint[] = []
   for (let i = 0; i < 10; i++) {
     if (binCounts[i] === 0) continue
     calibrationBins.push({
@@ -195,7 +208,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  return NextResponse.json({
+  const response: FlatAccuracyResponse = {
     // Legacy field names retained for old summary surfaces:
     total_predictions: totalPredictions,
     correct_predictions: correct,
@@ -234,5 +247,6 @@ export async function GET(request: NextRequest) {
       low: { total: low.length, correct: low.filter((p) => p.winner_correct).length, accuracy: Math.round(acc(low) * 1000) / 1000 },
     },
     recent_form: form,
-  })
+  }
+  return NextResponse.json(response)
 }

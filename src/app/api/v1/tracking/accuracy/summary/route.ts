@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+import type {
+  AccuracyMetrics,
+  AccuracySummaryResponse,
+  CalibrationHistogramBin,
+  LeagueAccuracySummary,
+} from '@/lib/types/accuracy'
+
 interface Prediction {
   match_id: string
   home_team: string
@@ -28,59 +35,6 @@ interface Prediction {
   goals_diff: number | null
   prediction_timestamp: string
   outcome_timestamp: string | null
-}
-
-interface CalibrationBin {
-  bucket: string
-  count: number
-  avg_confidence: number
-  accuracy: number
-}
-
-interface MetricBlock {
-  total_predictions: number
-  completed_predictions: number
-  pending_predictions: number
-  winner_correct_count: number
-  winner_accuracy: number
-  avg_confidence: number
-  exact_scoreline_count: number
-  exact_scoreline_rate: number
-  weighted_accuracy_score: number
-  avg_goals_difference: number
-  within_1_goal_rate: number
-  brier_score: number
-  log_loss: number
-  expected_calibration_error: number
-  high_confidence_accuracy: number
-  medium_confidence_accuracy: number
-  low_confidence_accuracy: number
-  threshold_qualified_predictions: number
-  threshold_qualified_accuracy: number
-  threshold_qualification_rate: number
-  threshold_lift: number
-  recent_accuracy: number
-  home_win_predicted: number
-  home_win_correct: number
-  draw_predicted: number
-  draw_correct: number
-  away_win_predicted: number
-  away_win_correct: number
-  calibration_bins: CalibrationBin[]
-}
-
-interface LeagueSummary {
-  league: string
-  total: number
-  predictions: number
-  pending: number
-  accuracy: number
-  weighted_accuracy: number
-  correct: number
-  scoreline_accuracy: number
-  brier_score: number
-  log_loss: number
-  expected_calibration_error: number
 }
 
 function readPolicyThreshold(name: string, fallback: number): number {
@@ -121,7 +75,7 @@ function winnerIndex(winner: string | null): number {
   return 2
 }
 
-function emptyCalibrationBins(): CalibrationBin[] {
+function emptyCalibrationBins(): CalibrationHistogramBin[] {
   return Array.from({ length: 10 }, (_, i) => ({
     bucket: `${(i / 10).toFixed(1)}-${((i + 1) / 10).toFixed(1)}`,
     count: 0,
@@ -130,7 +84,7 @@ function emptyCalibrationBins(): CalibrationBin[] {
   }))
 }
 
-function computeMetricBlock(completed: Prediction[], totalPredictions: number): MetricBlock {
+function computeMetricBlock(completed: Prediction[], totalPredictions: number): AccuracyMetrics {
   const count = completed.length
 
   if (count === 0) {
@@ -202,7 +156,7 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
   }
 
   let ece = 0
-  const calibrationBins: CalibrationBin[] = Array.from({ length: 10 }, (_, i) => {
+  const calibrationBins: CalibrationHistogramBin[] = Array.from({ length: 10 }, (_, i) => {
     const n = binCounts[i]
     if (n === 0) {
       return {
@@ -301,7 +255,7 @@ export async function GET() {
   const overall = computeMetricBlock(completed, predictions.length)
 
   const leagues = Array.from(new Set(completed.map(p => p.league)))
-  const byLeague: Record<string, LeagueSummary> = {}
+  const byLeague: Record<string, LeagueAccuracySummary> = {}
   for (const league of leagues) {
     const completedLeague = completed.filter(p => p.league === league)
     const leagueTotal = predictions.filter(p => p.league === league).length
@@ -343,7 +297,7 @@ export async function GET() {
   const last30 = completed.filter(p => new Date(p.match_date) >= cutoff30)
   const last30Metrics = computeMetricBlock(last30, last30.length)
 
-  return NextResponse.json({
+  const response: AccuracySummaryResponse = {
     overall,
     last_30_days: last30Metrics,
     by_league: byLeague,
@@ -370,5 +324,6 @@ export async function GET() {
       draw_prob: p.predicted_draw,
       away_win_prob: p.predicted_away_win,
     })),
-  })
+  }
+  return NextResponse.json(response)
 }

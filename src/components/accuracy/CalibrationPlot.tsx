@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import type { CalibrationDotPoint } from '@/lib/types/accuracy'
 import { cn, clamp, formatPct } from '@/lib/utils'
 
 /**
@@ -16,13 +17,10 @@ import { cn, clamp, formatPct } from '@/lib/utils'
  * with how many predictions landed in the bucket.
  */
 
-export interface CalibrationBin {
-  bin_lower: number       // 0..1
-  bin_upper: number       // 0..1
-  avg_predicted: number   // mean predicted prob within the bin
-  avg_actual: number      // observed frequency of the predicted class
-  count: number           // number of predictions in the bin
-}
+// Backwards-compat alias for the dot-plot bin shape. Canonical definition
+// lives in src/lib/types/accuracy.ts so the route emitter and the
+// component stay in lockstep.
+export type CalibrationBin = CalibrationDotPoint
 
 interface CalibrationPlotProps {
   bins: CalibrationBin[]

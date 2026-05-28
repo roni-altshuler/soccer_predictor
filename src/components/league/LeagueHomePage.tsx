@@ -88,27 +88,6 @@ interface LeagueHomePageProps {
   country: string
 }
 
-// Official league logo URLs (similar to FotMob style)
-const LEAGUE_LOGOS: Record<string, string> = {
-  'premier_league': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/23.png',
-  'la_liga': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/15.png',
-  'bundesliga': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/10.png',
-  'serie_a': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/12.png',
-  'ligue_1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/9.png',
-  'mls': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/19.png',
-  'eredivisie': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/11.png',
-  'primeira_liga': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/14.png',
-  // ESPN-style IDs
-  'eng.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/23.png',
-  'esp.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/15.png',
-  'ger.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/10.png',
-  'ita.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/12.png',
-  'fra.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/9.png',
-  'usa.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/19.png',
-  'ned.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/11.png',
-  'por.1': 'https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500/14.png',
-}
-
 // Available seasons for dropdown
 const AVAILABLE_SEASONS = [
   { value: '2025', label: '2025-26' },
@@ -129,43 +108,6 @@ const MLS_SEASONS = [
 
 // Calendar-year league IDs
 const CALENDAR_YEAR_LEAGUE_IDS = new Set(['usa.1', 'mls'])
-
-const LEAGUE_CONFIGS: Record<string, { color: string; gradient: string; flag: string }> = {
-  // Main leagues
-  'premier_league': { color: '#3D195B', gradient: 'from-purple-900 to-purple-700', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  'la_liga': { color: '#EE8707', gradient: 'from-orange-600 to-red-600', flag: '🇪🇸' },
-  'bundesliga': { color: '#D20515', gradient: 'from-red-700 to-red-500', flag: '🇩🇪' },
-  'serie_a': { color: '#008FD7', gradient: 'from-blue-700 to-blue-500', flag: '🇮🇹' },
-  'ligue_1': { color: '#091C3E', gradient: 'from-blue-900 to-blue-700', flag: '🇫🇷' },
-  'champions_league': { color: '#1A428A', gradient: 'from-blue-800 to-indigo-600', flag: '🇪🇺' },
-  'europa_league': { color: '#F26F21', gradient: 'from-orange-500 to-amber-500', flag: '🇪🇺' },
-  'conference_league': { color: '#19A974', gradient: 'from-green-600 to-teal-500', flag: '🇪🇺' },
-  'mls': { color: '#00245D', gradient: 'from-blue-900 to-red-600', flag: '🇺🇸' },
-  'world_cup': { color: '#56042C', gradient: 'from-purple-900 to-red-800', flag: '🌍' },
-  // Additional leagues
-  'eredivisie': { color: '#E70012', gradient: 'from-orange-500 to-red-600', flag: '🇳🇱' },
-  'primeira_liga': { color: '#004D25', gradient: 'from-green-800 to-green-600', flag: '🇵🇹' },
-  'scottish_premiership': { color: '#003087', gradient: 'from-blue-800 to-blue-600', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
-  'belgian_pro_league': { color: '#000000', gradient: 'from-yellow-500 to-red-600', flag: '🇧🇪' },
-  'super_lig': { color: '#E30A17', gradient: 'from-red-700 to-red-500', flag: '🇹🇷' },
-  'brasileirao': { color: '#009739', gradient: 'from-green-600 to-yellow-500', flag: '🇧🇷' },
-  'liga_mx': { color: '#006847', gradient: 'from-green-700 to-red-600', flag: '🇲🇽' },
-  // ESPN-style IDs
-  'eng.1': { color: '#3D195B', gradient: 'from-purple-900 to-purple-700', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  'esp.1': { color: '#EE8707', gradient: 'from-orange-600 to-red-600', flag: '🇪🇸' },
-  'ger.1': { color: '#D20515', gradient: 'from-red-700 to-red-500', flag: '🇩🇪' },
-  'ita.1': { color: '#008FD7', gradient: 'from-blue-700 to-blue-500', flag: '🇮🇹' },
-  'fra.1': { color: '#091C3E', gradient: 'from-blue-900 to-blue-700', flag: '🇫🇷' },
-  'ned.1': { color: '#E70012', gradient: 'from-orange-500 to-red-600', flag: '🇳🇱' },
-  'por.1': { color: '#004D25', gradient: 'from-green-800 to-green-600', flag: '🇵🇹' },
-  'usa.1': { color: '#00245D', gradient: 'from-blue-900 to-red-600', flag: '🇺🇸' },
-  // FotMob numeric IDs
-  '47': { color: '#3D195B', gradient: 'from-purple-900 to-purple-700', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  '87': { color: '#EE8707', gradient: 'from-orange-600 to-red-600', flag: '🇪🇸' },
-  '54': { color: '#D20515', gradient: 'from-red-700 to-red-500', flag: '🇩🇪' },
-  '55': { color: '#008FD7', gradient: 'from-blue-700 to-blue-500', flag: '🇮🇹' },
-  '53': { color: '#091C3E', gradient: 'from-blue-900 to-blue-700', flag: '🇫🇷' },
-}
 
 // Table column counts for colSpan calculations
 const MLS_CONFERENCE_TABLE_COLUMNS = 5  // #, Team, P, Pts, Form
@@ -392,12 +334,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     }>
   } | null>(null)
 
-  const config = LEAGUE_CONFIGS[leagueId] || LEAGUE_CONFIGS['premier_league']
-  const leagueLogo = LEAGUE_LOGOS[leagueId]
-  // Canonical brand mark for this competition. The legacy LEAGUE_CONFIGS map
-  // above is FotMob-era hex strings; getLeagueAccent() is the single source
-  // of truth used across MatchRow/LeagueSection/LeagueBadge.
+  // Single source of truth for league brand: getLeagueAccent() resolves
+  // ESPN-style IDs, underscore IDs, FotMob numeric IDs, and display names
+  // to a unified LeagueAccent record (accent colour, flag, logo, etc.).
   const leagueAccent = getLeagueAccent(leagueId)
+  const leagueLogo = leagueAccent.logoUrl
 
   // State-safety fix: when the user changes gender, league, or season, any
   // previously-run Monte Carlo simulation results are now stale (they
@@ -841,8 +782,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       <div
         className="relative overflow-hidden px-4 py-5 md:py-6"
         style={{
-          // Use the league brand from leagueAccents.ts (single source of truth)
-          // and fall back to the legacy `config.color` map when unknown.
+          // Use the league brand from leagueAccents.ts (single source of truth).
           background: `linear-gradient(135deg, ${leagueAccent.accent} 0%, #0a0e1c 78%)`,
           // Expose the accent as a CSS var for any nested CSS color-mix() callers.
           ['--league-accent' as string]: leagueAccent.accent,
@@ -868,7 +808,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-lg ring-1 ring-white/20"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/12 text-3xl ring-1 ring-white/15">{config.flag}</span>
+                <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/12 text-3xl ring-1 ring-white/15">{leagueAccent.flag}</span>
               )}
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">{country} · {leagueAccent.shortName}</p>

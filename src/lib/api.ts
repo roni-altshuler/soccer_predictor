@@ -2,6 +2,17 @@
  * API client for Soccer Predictor backend
  */
 
+export type {
+  AccuracyMetrics,
+  AccuracySummaryResponse,
+  CalibrationDotPoint,
+  CalibrationHistogramBin,
+  FlatAccuracyResponse,
+  LeagueAccuracySummary,
+  AccuracyPolicy,
+  RecentPredictionSummary,
+} from './types/accuracy';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_V1 = `${API_BASE}/api/v1`;
 

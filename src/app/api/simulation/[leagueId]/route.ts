@@ -1,39 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getLeagueAccent } from '@/lib/leagueAccents'
+import {
+  logProbabilityAnomaly,
+  logSimulationRun,
+} from '@/lib/observability/simulationLogger'
+import { PROBABILITY_SUM_TOLERANCE } from '@/lib/probabilityValidation'
 import {
   runMonteCarloSimulation,
-  type FixtureOverride,
   type SimulationFixture,
+  type Standing,
   type TeamData,
   type WhatIfOutcome,
 } from '@/lib/simulation/leagueMonteCarlo'
 
-// League ID mapping for ESPN
-const LEAGUE_MAPPING: Record<number, string> = {
-  47: 'eng.1',  // Premier League
-  87: 'esp.1',  // La Liga
-  55: 'ita.1',  // Serie A
-  54: 'ger.1',  // Bundesliga
-  53: 'fra.1',  // Ligue 1
-  130: 'usa.1', // MLS
-  57: 'ned.1',  // Eredivisie
-  61: 'por.1',  // Primeira Liga
-}
+/**
+ * Audit the standings array for the well-known probability invariants:
+ *   - Σ title_probability  ≈ 1
+ *   - Σ top_4_probability  ≈ 4
+ *   - Σ relegation_probability ≈ 3
+ *   - every probability is finite and non-negative
+ *
+ * Anomalies are reported via the observability sink. Outputs are NOT
+ * modified — this is purely an audit, not a corrector.
+ */
+function auditProbabilities(standings: Standing[], leagueId: number): void {
+  if (standings.length === 0) return
 
-const LEAGUE_NAMES: Record<number, string> = {
-  47: 'Premier League',
-  87: 'La Liga',
-  55: 'Serie A',
-  54: 'Bundesliga',
-  53: 'Ligue 1',
-  130: 'MLS',
-  57: 'Eredivisie',
-  61: 'Primeira Liga',
-}
+  const sumTitle = standings.reduce((s, row) => s + row.title_probability, 0)
+  const sumTop4 = standings.reduce((s, row) => s + row.top_4_probability, 0)
+  const sumRel = standings.reduce((s, row) => s + row.relegation_probability, 0)
 
-// League configuration - total matches per season
-const LEAGUE_MATCH_CONFIG: Record<number, number> = {
-  47: 38, 87: 38, 55: 38, 54: 34, 53: 34, 130: 34, 57: 34, 61: 34,
+  const tolTitle = PROBABILITY_SUM_TOLERANCE          // 1.0 ± 0.01
+  const tolSlots = 0.05                                // wider for 4-slot/3-slot sums
+
+  if (Math.abs(sumTitle - 1) > tolTitle) {
+    logProbabilityAnomaly({
+      source: 'monte_carlo_title_probabilities',
+      reason: 'sum_off_tolerance',
+      details: { leagueId, sum: sumTitle, expected: 1 },
+    })
+  }
+  if (Math.abs(sumTop4 - 4) > tolSlots) {
+    logProbabilityAnomaly({
+      source: 'monte_carlo_top4_probabilities',
+      reason: 'sum_off_tolerance',
+      details: { leagueId, sum: sumTop4, expected: 4 },
+    })
+  }
+  if (Math.abs(sumRel - 3) > tolSlots) {
+    logProbabilityAnomaly({
+      source: 'monte_carlo_relegation_probabilities',
+      reason: 'sum_off_tolerance',
+      details: { leagueId, sum: sumRel, expected: 3 },
+    })
+  }
+
+  for (const row of standings) {
+    const fields: Array<[string, number]> = [
+      ['title_probability', row.title_probability],
+      ['top_4_probability', row.top_4_probability],
+      ['europa_probability', row.europa_probability],
+      ['relegation_probability', row.relegation_probability],
+    ]
+    for (const [key, value] of fields) {
+      if (!Number.isFinite(value) || value < 0 || value > 1) {
+        logProbabilityAnomaly({
+          source: 'monte_carlo_probability_field',
+          reason: 'out_of_range_or_nan',
+          details: { leagueId, team: row.team_name, field: key, value },
+        })
+      }
+    }
+  }
 }
 
 
@@ -145,8 +184,11 @@ export async function GET(
 ) {
   const { leagueId: leagueIdStr } = await params
   const leagueId = parseInt(leagueIdStr, 10)
-  const espnLeagueId = LEAGUE_MAPPING[leagueId]
-  const leagueName = LEAGUE_NAMES[leagueId] || 'Unknown League'
+  // Resolve the league via the single canonical registry. Passing the
+  // raw FotMob numeric ID hits the nameAliases map in leagueAccents.ts.
+  const accent = getLeagueAccent(String(leagueId))
+  const espnLeagueId = accent.competitionId !== 'unknown' ? accent.competitionId : undefined
+  const leagueName = accent.displayName !== 'Match' ? accent.displayName : 'Unknown League'
 
   const searchParams = request.nextUrl.searchParams
   const nSimulations = Math.min(50000, Math.max(100, parseInt(searchParams.get('n_simulations') || '10000', 10)))
@@ -161,7 +203,7 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid league ID' }, { status: 400 })
   }
 
-  const totalMatchesPerSeason = LEAGUE_MATCH_CONFIG[leagueId] || 38
+  const totalMatchesPerSeason = accent.matchesPerSeason ?? 38
 
   try {
     // Fetch current standings from ESPN
@@ -223,6 +265,8 @@ export async function GET(
     const fixtureOverride = whatIfFixture && whatIfOutcome
       ? { fixtureKey: whatIfFixture, outcome: whatIfOutcome }
       : null
+
+    const simStart = Date.now()
     const standings = runMonteCarloSimulation(
       teams,
       totalMatchesPerSeason,
@@ -231,6 +275,22 @@ export async function GET(
       remainingFixtures,
       fixtureOverride,
     )
+    const simDurationMs = Date.now() - simStart
+
+    // Observability — record the run + audit probability invariants.
+    // Pure observation; outputs are NOT mutated.
+    logSimulationRun({
+      leagueId,
+      leagueName,
+      espnLeagueId,
+      nSimulations,
+      numTeams: teams.length,
+      fixtureSource: remainingFixtures.length > 0 ? 'espn_live' : 'generated_fallback',
+      remainingFixtures: remainingFixtures.length,
+      durationMs: simDurationMs,
+      hasWhatIfOverride: fixtureOverride !== null,
+    })
+    auditProbabilities(standings, leagueId)
 
     const generatedRemainingMatches = Math.max(
       0,

@@ -4,20 +4,15 @@ import { useEffect, useMemo, useState } from 'react'
 import AccuracyDashboard from './AccuracyDashboard'
 import DiagnosticsDashboard from './DiagnosticsDashboard'
 import FanTrackingPanel from './FanTrackingPanel'
+import type { AccuracySummaryResponse } from '@/lib/types/accuracy'
 
 type TrackingView = 'overview' | 'diagnostics' | 'learning' | 'fan'
 
 type AlertSeverity = 'high' | 'medium' | 'low'
 
-interface AccuracySummarySnapshot {
-  overall: {
-    winner_accuracy: number
-    brier_score: number
-    expected_calibration_error?: number
-    completed_predictions: number
-    pending_predictions?: number
-  }
-}
+// TrackingCenter only reads `overall` headline metrics from the summary —
+// alias keeps the local name stable while sharing the canonical shape.
+type AccuracySummarySnapshot = Pick<AccuracySummaryResponse, 'overall'>
 
 interface DiagnosticsLeague {
   sample_size: number
