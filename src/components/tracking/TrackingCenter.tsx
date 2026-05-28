@@ -173,21 +173,31 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          {viewTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveView(tab.key)}
-              className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
-                activeView === tab.key
-                  ? 'bg-[var(--accent-primary)] text-white border-transparent'
-                  : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] text-[var(--text-primary)]'
-              }`}
-            >
-              <p className="text-xs font-semibold">{tab.label}</p>
-              <p className={`text-[10px] mt-0.5 ${activeView === tab.key ? 'text-white/80' : 'text-[var(--text-tertiary)]'}`}>{tab.hint}</p>
-            </button>
-          ))}
+        <div
+          role="tablist"
+          aria-label="Diagnostics views"
+          className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3"
+        >
+          {viewTabs.map((tab) => {
+            const active = activeView === tab.key
+            return (
+              <button
+                key={tab.key}
+                role="tab"
+                aria-selected={active}
+                aria-controls={`tracking-panel-${tab.key}`}
+                onClick={() => setActiveView(tab.key)}
+                className={`text-left rounded-xl border px-3 py-2.5 transition-all ${
+                  active
+                    ? 'bg-[var(--accent-primary)] text-white border-transparent shadow-md shadow-emerald-500/15 ring-2 ring-[var(--accent-primary)]/40'
+                    : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] hover:border-[var(--accent-primary)]/40 text-[var(--text-primary)]'
+                }`}
+              >
+                <p className="text-xs font-semibold">{tab.label}</p>
+                <p className={`text-[10px] mt-0.5 ${active ? 'text-white/80' : 'text-[var(--text-tertiary)]'}`}>{tab.hint}</p>
+              </button>
+            )
+          })}
         </div>
 
         <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
@@ -201,12 +211,20 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
         </div>
       </section>
 
-      {activeView === 'overview' && <AccuracyDashboard />}
+      {activeView === 'overview' && (
+        <div role="tabpanel" id="tracking-panel-overview">
+          <AccuracyDashboard />
+        </div>
+      )}
 
-      {activeView === 'diagnostics' && <DiagnosticsDashboard />}
+      {activeView === 'diagnostics' && (
+        <div role="tabpanel" id="tracking-panel-diagnostics">
+          <DiagnosticsDashboard />
+        </div>
+      )}
 
       {activeView === 'learning' && (
-        <section className="space-y-4">
+        <section role="tabpanel" id="tracking-panel-learning" className="space-y-4">
           <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
             <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">League Adaptation Table</h3>
             {loading ? (
@@ -262,7 +280,11 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
         </section>
       )}
 
-      {activeView === 'fan' && <FanTrackingPanel />}
+      {activeView === 'fan' && (
+        <div role="tabpanel" id="tracking-panel-fan">
+          <FanTrackingPanel />
+        </div>
+      )}
     </div>
   )
 }
