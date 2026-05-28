@@ -1,6 +1,6 @@
-# FotPredict v2
+# Pitchwise v2
 
-Production-SaaS rebuild of FotPredict AI. Lives in the same repo as v1 (one directory up: [../backend/](../backend/), [../src/](../src/)) so the redesign can land incrementally without a fork. FotMob-class live football tracking layered with a deep predictive-analytics product (match outcomes, scorelines, league/bracket Monte Carlo simulations, season-progression forecasts, AI confidence, dynamic in-play updates).
+Production-SaaS rebuild of Pitchwise (formerly FotPredict AI; renamed 2026-05-28). Lives in the same repo as v1 (one directory up: [../backend/](../backend/), [../src/](../src/)) so the redesign can land incrementally without a fork. FotMob-class live football tracking layered with a deep predictive-analytics product (match outcomes, scorelines, league/bracket Monte Carlo simulations, season-progression forecasts, AI confidence, dynamic in-play updates).
 
 **Status:** scaffolding — see [`docs/STATUS.md`](docs/STATUS.md) for what's wired vs stubbed.
 

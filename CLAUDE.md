@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this app is
 
-FotPredict AI is a Next.js 15 + FastAPI app that combines FotMob-style live scores with a custom ML prediction engine. The frontend is deployed on Vercel; the backend is a Python service. Two ML models ship: `unified_men.pt` (60.56% test accuracy across 13 men's competitions, 11,661-match holdout) and `unified_women.pt` (51.45% across 5 women's competitions). Personal/educational project — no license, not for betting.
+Pitchwise (rebranded from "FotPredict AI" on 2026-05-28) is a Next.js 15 + FastAPI app that combines FotMob-style live scores with a custom ML prediction engine. The frontend is deployed on Vercel; the backend is a Python service. Two ML models ship: `unified_men.pt` (60.56% test accuracy across 13 men's competitions, 11,661-match holdout) and `unified_women.pt` (51.45% across 5 women's competitions). Personal/educational project — no license, not for betting. Tagline: "Calibrated football intelligence." Note that localStorage keys still use the `fotpredict.*` prefix to preserve existing users' preferences across the rebrand.
 
 ## Common commands
 
