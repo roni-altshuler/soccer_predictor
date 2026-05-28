@@ -24,5 +24,5 @@ export default function TrackingRedirect({
 }
 
 export const metadata = {
-  title: 'Tracking | FotPredict AI',
+  title: 'Tracking | Pitchwise',
 }

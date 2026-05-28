@@ -12,9 +12,9 @@ export const Footer = () => {
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
-              <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">AI</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-[var(--text-primary)]">Pitchwise</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">Calibrated football intelligence</span>
             </div>
           </div>
 

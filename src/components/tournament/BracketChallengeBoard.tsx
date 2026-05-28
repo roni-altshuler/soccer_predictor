@@ -511,7 +511,7 @@ export default function BracketChallengeBoard({
       tournamentId,
       season,
       name: `${tournamentName} AI Bracket Room`,
-      ownerName: 'FotPredict AI',
+      ownerName: 'Pitchwise AI',
       inviteCode: buildInviteCode(),
       createdAt: now,
       scoring: DEFAULT_ROUND_WEIGHTS,
@@ -521,7 +521,7 @@ export default function BracketChallengeBoard({
     const existingModelEntry = targetGroup.entries.find((entry) => entry.source === 'model')
     const nextEntry: BracketChallengeEntry = {
       id: existingModelEntry?.id || createId('entry'),
-      userName: 'FotPredict AI Bracket',
+      userName: 'Pitchwise AI Bracket',
       createdAt: existingModelEntry?.createdAt || now,
       updatedAt: now,
       picks: modelPickSummary.picks,
@@ -795,7 +795,7 @@ export default function BracketChallengeBoard({
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">AI Bracket</p>
               <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">Model-backed personal entry</h3>
               <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-                Generate a FotPredict entry from the current simulation probability table. Locked real results are kept, and unknown matchups stay unpicked.
+                Generate a Pitchwise entry from the current simulation probability table. Locked real results are kept, and unknown matchups stay unpicked.
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="rounded-xl bg-[var(--background-secondary)] p-3">

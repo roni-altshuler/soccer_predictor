@@ -1,7 +1,7 @@
 {
-  "name": "FotPredict AI",
-  "short_name": "FotPredict",
-  "description": "AI-powered match predictions across the world's leagues. Live scores, calibrated probabilities, and accuracy tracking.",
+  "name": "Pitchwise",
+  "short_name": "Pitchwise",
+  "description": "Calibrated football intelligence across the world's leagues. Live scores, AI match probabilities, and accuracy tracking.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07101f",

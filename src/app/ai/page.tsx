@@ -95,7 +95,7 @@ export default function AiDashboardPage() {
           <div className="relative z-10 flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-caption font-mono uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                FotPredict AI
+                Pitchwise
               </p>
               <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
                 AI Dashboard

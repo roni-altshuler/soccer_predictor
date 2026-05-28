@@ -143,6 +143,6 @@ function DomainChip({
 }
 
 export const metadata = {
-  title: 'Model Diagnostics | FotPredict AI',
+  title: 'Model Diagnostics | Pitchwise',
   description: 'Engineer-facing view of the unified prediction model: quality gates, calibration drift, confusion matrices, and the continuous learning loop.',
 }

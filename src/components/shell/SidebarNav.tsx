@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useCallback, useState } from 'react'
 import {
   Activity,
   Brain,
@@ -51,19 +52,35 @@ function isActive(pathname: string, href: string) {
 }
 
 /**
- * Desktop sidebar — fixed icon rail (68px) that expands to 232px on hover/focus.
- * The expanded panel is positioned over the main content (does not push layout),
- * so cursor movements never cause reflow. Hidden on mobile (bottom nav takes over).
+ * Desktop sidebar — fixed icon rail (68px) that expands to 232px on hover or
+ * keyboard focus. The expansion is controlled by React state rather than
+ * pure CSS `:hover` / `:focus-within` because a clicked link retains focus
+ * after navigation, which kept the rail stuck open under the CSS-only
+ * approach. We blur links on click to release focus, and use focus capture
+ * on the aside so keyboard tabbing still expands it for screen readers.
  */
 export function SidebarNav() {
   const pathname = usePathname()
+  const [expanded, setExpanded] = useState(false)
+
+  const handleFocusCapture = useCallback(() => setExpanded(true), [])
+  const handleBlurCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setExpanded(false)
+    }
+  }, [])
 
   return (
     <aside
       aria-label="Primary"
+      data-expanded={expanded ? 'true' : undefined}
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      onFocusCapture={handleFocusCapture}
+      onBlurCapture={handleBlurCapture}
       className={cn(
         'hidden md:flex group/shell fixed inset-y-0 left-0 z-40',
-        'w-[68px] hover:w-[232px] focus-within:w-[232px]',
+        expanded ? 'w-[232px]' : 'w-[68px]',
         'transition-[width] duration-200 ease-out',
         'border-r border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-xl',
         'flex-col py-3'
@@ -72,15 +89,17 @@ export function SidebarNav() {
       {/* Brand mark with traced border-beam */}
       <Link
         href="/"
-        aria-label="FotPredict AI home"
+        aria-label="Pitchwise home"
+        onClick={(e) => (e.currentTarget as HTMLAnchorElement).blur()}
         className="relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[var(--accent-ai)]/14 to-[var(--accent-primary)]/14 ring-1 ring-[var(--border-color)] transition-transform hover:scale-105"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="relative z-10 h-7 w-7" />
         <BorderBeam size={1} duration={8} borderRadius={12} colorFrom="var(--accent-ai)" colorTo="var(--accent-primary)" />
       </Link>
 
       {/* Wordmark — only visible when expanded */}
-      <div className="mt-3 px-3 opacity-0 group-hover/shell:opacity-100 group-focus-within/shell:opacity-100 transition-opacity duration-150 overflow-hidden whitespace-nowrap">
+      <div className="mt-3 px-3 opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 overflow-hidden whitespace-nowrap">
         <div className="flex items-baseline gap-1.5">
           <AnimatedGradientText
             speed={10}
@@ -88,13 +107,10 @@ export function SidebarNav() {
             colorTo="var(--accent-ai)"
             className="text-sm font-bold tracking-tight"
           >
-            FotPredict
+            Pitchwise
           </AnimatedGradientText>
-          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-ai)]/18 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30">
-            AI
-          </span>
         </div>
-        <p className="mt-0.5 text-[10px] text-[var(--text-tertiary)]">Match Centre · Predictions</p>
+        <p className="mt-0.5 text-[10px] text-[var(--text-tertiary)]">Calibrated football intelligence</p>
       </div>
 
       {/* Primary nav */}
@@ -131,7 +147,7 @@ export function SidebarNav() {
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)] animate-pulse" />
           </span>
-          <span className="opacity-0 group-hover/shell:opacity-100 group-focus-within/shell:opacity-100 transition-opacity whitespace-nowrap text-[11px] font-medium text-[var(--text-tertiary)]">
+          <span className="opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity whitespace-nowrap text-[11px] font-medium text-[var(--text-tertiary)]">
             Models live · v2.3
           </span>
         </div>
@@ -148,6 +164,7 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
         href={item.href}
         data-active={active ? 'true' : 'false'}
         data-accent={item.accent ?? undefined}
+        onClick={(e) => (e.currentTarget as HTMLAnchorElement).blur()}
         className="shell-nav-item"
         title={item.label}
       >
@@ -163,7 +180,7 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
           strokeWidth={2.1}
           aria-hidden="true"
         />
-        <span className="opacity-0 group-hover/shell:opacity-100 group-focus-within/shell:opacity-100 transition-opacity duration-150 whitespace-nowrap">
+        <span className="opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 whitespace-nowrap">
           {item.label}
         </span>
       </Link>

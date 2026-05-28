@@ -27,8 +27,8 @@ export default function AboutPage() {
 
   const sections = [
     {
-      title: "What is FotPredict AI?", icon: "⚽",
-      content: `<p>FotPredict AI is a live soccer tracking platform enhanced with <strong class="text-[var(--text-primary)]">AI/ML match predictions</strong> — combining the real-time scores and league coverage of apps like FotMob with a <strong class="text-[var(--text-primary)]">66-feature neural ensemble (v5.1)</strong> prediction engine. It covers <strong class="text-[var(--text-primary)]">11 leagues and competitions</strong> including the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Primeira Liga, MLS, Champions League, Europa League, and Conference League.</p><p class="mt-2">The unique value: FotMob tracks matches but doesn't predict them. Betting sites predict but aren't designed for fans. FotPredict AI bridges both — live tracking + AI predictions in one place.</p>`
+      title: "What is Pitchwise?", icon: "⚽",
+      content: `<p>Pitchwise is a live soccer tracking platform enhanced with <strong class="text-[var(--text-primary)]">AI/ML match predictions</strong> — combining the real-time scores and league coverage of apps like FotMob with a <strong class="text-[var(--text-primary)]">66-feature neural ensemble (v5.1)</strong> prediction engine. It covers <strong class="text-[var(--text-primary)]">11 leagues and competitions</strong> including the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Primeira Liga, MLS, Champions League, Europa League, and Conference League.</p><p class="mt-2">The unique value: FotMob tracks matches but doesn't predict them. Betting sites predict but aren't designed for fans. Pitchwise bridges both — live tracking + AI predictions in one place.</p>`
     },
     {
       title: "Neural Ensemble Architecture (v5.1)", icon: "🧠",
@@ -110,7 +110,7 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-lg font-bold text-[var(--text-primary)]">About FotPredict AI</h1>
+          <h1 className="text-lg font-bold text-[var(--text-primary)]">About Pitchwise</h1>
           <p className="text-xs text-[var(--text-tertiary)]">AI/ML models, architecture, and methodology</p>
         </div>
 

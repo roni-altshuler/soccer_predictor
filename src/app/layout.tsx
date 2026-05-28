@@ -4,7 +4,6 @@ import { Inter, JetBrains_Mono } from 'next/font/google'
 import { AppShell } from '@/components/shell'
 import { Footer } from '@/components/Footer'
 import { PageLoader } from '@/components/PageLoader'
-import { StatusBanner } from '@/components/StatusBanner'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
@@ -30,21 +29,21 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['500', '700'],
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fotpredict.ai'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchwise.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'FotPredict AI — AI-Powered Match Predictions',
-    template: '%s · FotPredict AI',
+    default: 'Pitchwise — Calibrated football intelligence',
+    template: '%s · Pitchwise',
   },
   description:
-    'AI-powered match predictions across the world\'s leagues. Live scores, calibrated probabilities, and accuracy tracking you can verify.',
+    'Calibrated football intelligence across the world\'s leagues. Live scores, AI match probabilities, and accuracy tracking you can verify.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'FotPredict AI',
+    title: 'Pitchwise',
   },
   icons: {
     icon: [
@@ -57,24 +56,24 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    siteName: 'FotPredict AI',
-    title: 'FotPredict AI — AI-Powered Match Predictions',
+    siteName: 'Pitchwise',
+    title: 'Pitchwise — Calibrated football intelligence',
     description:
-      'AI-powered match predictions across the world\'s leagues. Calibrated probabilities, live scores, and accuracy tracking.',
+      'Calibrated football intelligence across the world\'s leagues. Live scores, AI match probabilities, and accuracy tracking.',
     url: siteUrl,
     images: [
       {
         url: '/brand/og-default.png',
         width: 1200,
         height: 630,
-        alt: 'FotPredict AI',
+        alt: 'Pitchwise',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FotPredict AI — AI-Powered Match Predictions',
-    description: 'Calibrated AI predictions for the world\'s top leagues.',
+    title: 'Pitchwise — Calibrated football intelligence',
+    description: 'Calibrated AI football predictions for the world\'s top leagues.',
     images: ['/brand/og-default.png'],
   },
 }
@@ -123,7 +122,6 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <AuthProvider>
-            <StatusBanner />
             <Suspense fallback={null}>
               <PageLoader />
             </Suspense>

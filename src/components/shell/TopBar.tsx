@@ -38,14 +38,12 @@ export function TopBar() {
         {/* Brand mark — only visible on mobile (sidebar is hidden there) */}
         <Link
           href="/"
-          aria-label="FotPredict AI home"
+          aria-label="Pitchwise home"
           className="md:hidden flex items-center gap-2"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">FotPredict</span>
-          <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[var(--accent-ai)]/16 text-[var(--accent-ai)] border border-[var(--accent-ai)]/25">
-            AI
-          </span>
+          <span className="text-sm font-bold text-[var(--text-primary)]">Pitchwise</span>
         </Link>
 
         {/* Global search trigger -> opens command palette */}

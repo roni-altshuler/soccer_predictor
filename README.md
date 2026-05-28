@@ -1,8 +1,8 @@
-# ⚽ FotPredict AI
+# ⚽ Pitchwise
 
 **Live scores, league tracking, and AI-powered match predictions — all in one app.**
 
-FotPredict AI combines the real-time match experience of apps like FotMob with a custom-built machine learning prediction engine. It's designed for football fans who want both live data and data-driven insights in a single interface.
+Pitchwise combines the real-time match experience of apps like FotMob with a custom-built machine learning prediction engine. It's designed for football fans who want both live data and data-driven insights in a single interface.
 
 > **This is a personal/educational project. There is no license attached — all rights reserved. Not intended for commercial use, redistribution, or betting.**
 
@@ -42,7 +42,7 @@ The remaining roadmap is now mostly production hardening: native Web Push delive
 
 ## The AI/ML Prediction Engine
 
-This is what differentiates FotPredict from standard live-score apps. The prediction layer now serves through `/api/predict/unified`, which tries the neural ensemble first and falls back to the calibrated ELO-Poisson model only when a neural artifact is unavailable.
+This is what differentiates Pitchwise from standard live-score apps. The prediction layer now serves through `/api/predict/unified`, which tries the neural ensemble first and falls back to the calibrated ELO-Poisson model only when a neural artifact is unavailable.
 
 ### Model Architecture (v5.1.x)
 
@@ -451,7 +451,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - Match detail pages can add either team directly to the local watchlist.
 - Live win probability is returned and visualized only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
-- Tournament challenge pages can generate a FotPredict AI bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
+- Tournament challenge pages can generate a Pitchwise bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
 - Synced bracket rooms and alert queues use managed Postgres when `DATABASE_URL` or `POSTGRES_URL` is configured. `FOTPREDICT_STORE_DIR` and temp-file storage are local/staging fallbacks only.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 

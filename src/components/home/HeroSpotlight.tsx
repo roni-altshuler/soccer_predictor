@@ -52,7 +52,7 @@ export function HeroSpotlight({
       color="color-mix(in srgb, var(--accent-ai) 12%, transparent)"
     >
     <section
-      aria-label="FotPredict AI Match Centre hero"
+      aria-label="Pitchwise Match Centre hero"
       className="relative isolate overflow-hidden border-b border-[var(--border-color)]"
     >
       {/* Layered gradient backdrop */}

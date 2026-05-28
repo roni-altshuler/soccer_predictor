@@ -4,8 +4,8 @@ import { Footer } from '@/components/Footer'
 describe('Footer', () => {
   it('renders the soccer predictor branding', () => {
     render(<Footer />)
-    expect(screen.getByText('FotPredict')).toBeInTheDocument()
-    expect(screen.getByText('AI')).toBeInTheDocument()
+    expect(screen.getByText('Pitchwise')).toBeInTheDocument()
+    expect(screen.getByText(/Calibrated football intelligence/i)).toBeInTheDocument()
   })
 
   it('renders all navigation links', () => {

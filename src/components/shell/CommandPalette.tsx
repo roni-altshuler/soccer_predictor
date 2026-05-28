@@ -45,7 +45,7 @@ const PAGES = [
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
   { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
   { href: '/diagnostics', label: 'Diagnostics', icon: Gauge, hint: 'Pipeline + model health' },
-  { href: '/about', label: 'About', icon: Info, hint: 'How FotPredict works' },
+  { href: '/about', label: 'About', icon: Info, hint: 'How Pitchwise works' },
 ]
 
 export function CommandPalette() {
