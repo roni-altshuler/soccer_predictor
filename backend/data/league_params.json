@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-05-30T22:56:57.798073",
+  "updated_at": "2026-05-31T09:16:27.280518",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -42,7 +42,7 @@
     "ita.1": {
       "display_name": "Serie A",
       "country": "Italy",
-      "avg_goals": 0.7591,
+      "avg_goals": 0.752,
       "home_adv": 0.26,
       "rho": -0.14,
       "draw_rate": 0.08,
@@ -90,7 +90,7 @@
     "usa.1": {
       "display_name": "MLS",
       "country": "USA",
-      "avg_goals": 2.2005,
+      "avg_goals": 2.21,
       "home_adv": 0.45,
       "rho": -0.1,
       "draw_rate": 0.08,
@@ -102,7 +102,7 @@
     "uefa.champions": {
       "display_name": "Champions League",
       "country": "Europe",
-      "avg_goals": 2.0214,
+      "avg_goals": 2.028,
       "home_adv": 0.45,
       "rho": -0.12,
       "draw_rate": 0.08,
