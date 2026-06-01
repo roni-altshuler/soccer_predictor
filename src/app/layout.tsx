@@ -1,10 +1,5 @@
-import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
-import { AppShell } from '@/components/shell'
-import { Footer } from '@/components/Footer'
-import { PageLoader } from '@/components/PageLoader'
-import { StatusBanner } from '@/components/StatusBanner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
@@ -108,15 +103,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <AuthProvider>
-          <StatusBanner />
-          <Suspense fallback={null}>
-            <PageLoader />
-          </Suspense>
-          <AppShell footer={<div className="hidden md:block"><Footer /></div>}>
-            {children}
-          </AppShell>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )
