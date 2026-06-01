@@ -57,9 +57,13 @@ jobs:
             ARGS="$ARGS --force"
           fi
           echo "Running: python -m backend.scripts.continuous_training $ARGS"
-          python -m backend.scripts.continuous_training $ARGS
-          RC=$?
+          # Tee stdout so we can grep the structured CONTINUOUS_TRAINING_SUMMARY
+          # line and distinguish a genuine regression from a crash/error.
+          python -m backend.scripts.continuous_training $ARGS 2>&1 | tee /tmp/ct_output.log
+          RC=${PIPESTATUS[0]}
           echo "exit_code=$RC" >> "$GITHUB_OUTPUT"
+          SUMMARY=$(grep "^CONTINUOUS_TRAINING_SUMMARY:" /tmp/ct_output.log | tail -1 || true)
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
           exit 0
         working-directory: ${{ github.workspace }}
 
@@ -87,12 +91,27 @@ jobs:
             git push
           fi
 
-      - name: Fail job on regression
+      - name: Fail job with accurate status
         if: always()
         run: |
           RC="${{ steps.orchestrator.outputs.exit_code }}"
+          SUMMARY="${{ steps.orchestrator.outputs.summary }}"
           echo "Orchestrator exit code: $RC"
-          if [ "$RC" != "0" ]; then
-            echo "::warning::Continuous training detected a regression — see training_drift_<date>.json."
-            exit 1
+          echo "Orchestrator summary : $SUMMARY"
+          if [ "$RC" = "0" ]; then
+            exit 0
           fi
+          # The orchestrator emits a structured summary line that distinguishes
+          # an actual regression (n_reg > 0) from a crash during retrain
+          # (e.g. an sklearn API break). Surface the real cause in the
+          # warning/error so log readers don't chase a phantom regression.
+          if echo "$SUMMARY" | grep -q "status=error"; then
+            STAGE=$(echo "$SUMMARY" | grep -oE "stage=[^ ]+" | head -1)
+            MSG=$(echo "$SUMMARY" | sed -E 's/.*msg=//' | head -1)
+            echo "::error::Continuous training crashed during ${STAGE:-unknown}: ${MSG:-no message}"
+          elif echo "$SUMMARY" | grep -q "regressions=[^0]"; then
+            echo "::warning::Continuous training detected a model regression — see backend/data/diagnostics/training_drift_*.json."
+          else
+            echo "::error::Continuous training failed with RC=$RC and no structured summary. Check the orchestrator output above."
+          fi
+          exit 1

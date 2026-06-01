@@ -134,11 +134,13 @@ class PerLeagueNeuralModel:
             class_weight='balanced', random_state=42, n_jobs=-1,
         )
 
-        # AdaBoost: Szita 2024 — adds diversity via boosting weak learners
+        # AdaBoost: Szita 2024 — adds diversity via boosting weak learners.
+        # `algorithm='SAMME'` was deprecated in scikit-learn 1.4 and removed
+        # in 1.6+. SAMME is now the only behavior, so the kwarg is dropped.
         self.ensemble_models['ada'] = AdaBoostClassifier(
             estimator=DecisionTreeClassifier(max_depth=4),
             n_estimators=300, learning_rate=0.05,
-            algorithm='SAMME', random_state=42,
+            random_state=42,
         )
 
         try:
