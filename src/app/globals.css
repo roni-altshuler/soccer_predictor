@@ -99,6 +99,15 @@
   --headshot-ring: rgba(15, 26, 44, 0.18);
   --score-numeric-shadow: none;
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
+
+  /* ────────────────────────────────────────────────────────────
+     Marketing landing tokens (used by /welcome). Spacing rhythm is
+     deliberately roomier than the dense app surfaces; widths reuse
+     the existing shell scale so the two experiences feel related.
+     ──────────────────────────────────────────────────────────── */
+  --mkt-section-y: clamp(4rem, 9vw, 8rem);
+  --mkt-section-gap: clamp(1.5rem, 3vw, 3rem);
+  --mkt-prose-max: 720px;
 }
 
 .dark {
@@ -651,4 +660,48 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 11px;
   color: var(--text-tertiary);
   font-weight: 600;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Marketing landing (/welcome) — utilities scoped to the flagship
+   page. Composes existing accent tokens so light/dark just work.
+   ──────────────────────────────────────────────────────────── */
+
+/* Gradient headline text — the accent-primary → accent-ai sweep used
+   across the marketing hero and section titles. */
+.mkt-headline-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--accent-primary) 0%,
+    var(--accent-ai) 55%,
+    var(--accent-primary-soft) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Eyebrow label — small uppercase tracking-wide kicker above section titles. */
+.mkt-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Soft grid/radial backdrop for marketing sections that want depth without
+   the full ambient-bg wash. */
+.mkt-section-glow {
+  position: relative;
+  isolation: isolate;
+}
+.mkt-section-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent-ai) 10%, transparent), transparent 70%);
 }

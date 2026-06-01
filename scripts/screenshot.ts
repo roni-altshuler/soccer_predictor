@@ -53,6 +53,7 @@ type Route = {
 };
 
 const ROUTES: Route[] = [
+  { url: "/welcome", slug: "welcome", gendered: false },
   { url: "/", slug: "home", gendered: true },
   { url: "/matches", slug: "matches", gendered: true },
   { url: `/matches/${STABLE_MATCH_ID}`, slug: "match-detail", gendered: false },
