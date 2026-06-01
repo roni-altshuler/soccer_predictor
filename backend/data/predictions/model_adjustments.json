@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T22:58:46.640181",
+  "generated_at": "2026-06-01T11:51:48.626330",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -420,13 +420,13 @@
     },
     "MLS": {
       "current": {
-        "avg_goals": 2.2195,
+        "avg_goals": 2.229,
         "home_adv": 0.45,
         "rho": -0.1,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 2.229,
+        "avg_goals": 2.238,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.1
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 2.0346,
+        "avg_goals": 2.0412,
         "home_adv": 0.45,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 2.041,
+        "avg_goals": 2.048,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.12
