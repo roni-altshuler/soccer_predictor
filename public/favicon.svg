@@ -1,13 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Pitchwise">
+  <title>Pitchwise</title>
   <defs>
     <linearGradient id="fv-grad" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#22c55e"/>
       <stop offset="0.55" stop-color="#10b981"/>
       <stop offset="1" stop-color="#06b6d4"/>
     </linearGradient>
+    <linearGradient id="fv-stroke" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
   </defs>
   <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#fv-grad)"/>
   <path d="M14 13.5v21M14 13.5h12M14 23.5h12" stroke="#02180c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M26 13.5a5 5 0 0 1 0 10" stroke="#02180c" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+  <path d="M30.5 31.5c0-4.4 3.6-8 8-8" stroke="#02180c" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.55"/>
   <circle cx="38.5" cy="23.5" r="2.4" fill="#02180c"/>
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="none" stroke="url(#fv-stroke)" stroke-opacity="0.45" stroke-width="0.8"/>
 </svg>

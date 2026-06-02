@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
-import SimulatorPage from '@/app/simulator/page'
+import SimulatorPage from '@/app/(app)/simulator/page'
 
 /**
  * Smoke tests for /simulator. Verifies the mode toggle wires up correctly

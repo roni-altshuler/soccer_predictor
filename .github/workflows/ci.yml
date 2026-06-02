@@ -1,0 +1,49 @@
+name: CI
+
+# Frontend validation for every PR and push to main. Backend tests run in a
+# separate workflow (test_backend.yml). Together they gate all changes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Lint · Typecheck · Build · Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Mirrors local `next lint`. Errors fail the build; the project carries
+      # some pre-existing `no-explicit-any` warnings tracked for cleanup in
+      # docs/REPOSITORY_AUDIT_2026-06-02.md, so warnings are not yet a hard gate.
+      - name: Lint
+        run: npx next lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test -- --ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
