@@ -1,10 +1,28 @@
-# ⚽ Pitchwise
+<div align="center">
 
-**Live scores, league tracking, and AI-powered match predictions — all in one app.**
+<img src="public/brand/pitchwise-logo.png" alt="Pitchwise — Calibrated football intelligence" width="760" />
 
-Pitchwise combines the real-time match experience of apps like FotMob with a custom-built machine learning prediction engine. It's designed for football fans who want both live data and data-driven insights in a single interface.
+# Pitchwise
 
-> **This is a personal/educational project. There is no license attached — all rights reserved. Not intended for commercial use, redistribution, or betting.**
+**Calibrated football intelligence — live scores, AI match predictions, and accuracy you can verify.**
+
+Pitchwise combines the real-time match experience of apps like FotMob with a custom-built machine
+learning prediction engine, for both the men's and women's game. It's built for football fans who
+want live data *and* honest, data-driven insight in one interface.
+
+[![CI](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml)
+[![Backend tests](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](LICENSE)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=next.js)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi)
+
+</div>
+
+> [!IMPORTANT]
+> **Educational project — not a betting product.** Predictions are for research and visualisation
+> only and must not be used for betting or any financial decision. Even a well-calibrated model
+> loses regularly. Licensed under [MIT](LICENSE); see [SECURITY.md](SECURITY.md) and
+> [CONTRIBUTING.md](CONTRIBUTING.md) before contributing.
 
 ---
 
@@ -465,9 +483,18 @@ Match data is sourced from ESPN and FotMob public endpoints where available. Thi
 
 ---
 
-## No License
+## License
 
-This project does **not** include an open-source license. All rights are reserved by the author. You may not copy, distribute, or create derivative works without explicit permission.
+Released under the [MIT License](LICENSE) — you may use, modify, and distribute the source with
+attribution. Note that the educational/no-betting disclaimer above still applies to how the
+*predictions* are used, and trained model artifacts (`*.pt`) and third-party data are **not**
+covered by this license (see [Disclaimer](#disclaimer)).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow,
+branch strategy, and commit conventions, and [SECURITY.md](SECURITY.md) to report a vulnerability.
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

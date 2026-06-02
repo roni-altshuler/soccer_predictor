@@ -53,17 +53,17 @@
   <!-- bottom info chips -->
   <g font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="600">
     <g transform="translate(86 520)">
-      <rect width="240" height="58" rx="14" fill="#111e36" stroke="#243954"/>
+      <rect width="360" height="58" rx="14" fill="#111e36" stroke="#243954"/>
       <circle cx="34" cy="29" r="7" fill="#22c55e"/>
       <text x="58" y="37" fill="#f1f5fb">Calibrated probabilities</text>
     </g>
-    <g transform="translate(346 520)">
-      <rect width="240" height="58" rx="14" fill="#111e36" stroke="#243954"/>
+    <g transform="translate(468 520)">
+      <rect width="312" height="58" rx="14" fill="#111e36" stroke="#243954"/>
       <circle cx="34" cy="29" r="7" fill="#22d3ee"/>
-      <text x="58" y="37" fill="#f1f5fb">Neural ensemble v5.1</text>
+      <text x="58" y="37" fill="#f1f5fb">Unified neural model</text>
     </g>
-    <g transform="translate(606 520)">
-      <rect width="220" height="58" rx="14" fill="#111e36" stroke="#243954"/>
+    <g transform="translate(802 520)">
+      <rect width="266" height="58" rx="14" fill="#111e36" stroke="#243954"/>
       <circle cx="34" cy="29" r="7" fill="#f59e0b"/>
       <text x="58" y="37" fill="#f1f5fb">Accuracy tracked</text>
     </g>
