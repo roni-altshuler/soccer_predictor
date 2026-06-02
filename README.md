@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/brand/pitchwise-logo.png" alt="Pitchwise — Calibrated football intelligence" width="760" />
+<img src="public/brand/pitchwise-logo-dark.png" alt="Pitchwise — Calibrated football intelligence" width="380" />
 
 # Pitchwise
 
