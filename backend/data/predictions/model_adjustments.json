@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-06T15:18:01.928489",
+  "generated_at": "2026-06-06T23:02:26.051972",
   "total_predictions_analyzed": 1399,
   "overall_accuracy": 0.4339,
   "by_league": {
@@ -435,13 +435,13 @@
     },
     "Champions League": {
       "current": {
-        "avg_goals": 2.1468,
+        "avg_goals": 2.1534,
         "home_adv": 0.45,
         "rho": -0.12,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 2.153,
+        "avg_goals": 2.16,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.12
