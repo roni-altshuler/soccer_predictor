@@ -1,3 +1,4 @@
 {"date": "2026-05-18", "generated_at": "2026-05-18T21:10:17.950841Z", "retrained_leagues": [], "n_wins": 0, "n_regressions": 0, "n_held_back": 0, "accuracy_mean_global": 0.4291, "ece_mean_global": 0.2043}
 {"date": "2026-05-19", "generated_at": "2026-05-19T17:25:52.387911Z", "retrained_leagues": [], "n_wins": 1, "n_regressions": 6, "n_held_back": 0, "accuracy_mean_global": 0.4271, "ece_mean_global": 0.2547}
 {"date": "2026-05-19", "generated_at": "2026-05-19T17:32:34.971991Z", "retrained_leagues": [], "n_wins": 0, "n_regressions": 0, "n_held_back": 0, "accuracy_mean_global": 0.4271, "ece_mean_global": 0.2547}
+{"date": "2026-06-07", "generated_at": "2026-06-07T08:26:40.870940Z", "retrained_leagues": ["eng.1", "esp.1", "ger.1", "ita.1", "fra.1", "ned.1", "por.1", "usa.1", "uefa.champions", "uefa.europa", "fifa.world", "uefa.euro", "conmebol.america", "global"], "n_wins": 6, "n_regressions": 3, "n_held_back": 0, "accuracy_mean_global": 0.4286, "ece_mean_global": 0.2601}

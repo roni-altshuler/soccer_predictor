@@ -1,25 +1,27 @@
 {
   "league": "mls",
-  "generated_at": "2026-05-19T17:30:38.405633Z",
+  "generated_at": "2026-06-07T08:26:29.863903Z",
   "partial": false,
+  "eval_mode": "fresh_fast_lgbm",
+  "leakage_warning": null,
   "warmup_seasons": 2,
   "n_test_seasons": 6,
   "aggregate": {
-    "accuracy_mean": 0.3794,
-    "accuracy_std": 0.0435,
-    "log_loss_mean": 1.3961,
-    "brier_mean": 0.7956,
-    "ece_mean": 0.2876
+    "accuracy_mean": 0.3962,
+    "accuracy_std": 0.0612,
+    "log_loss_mean": 1.3192,
+    "brier_mean": 0.7599,
+    "ece_mean": 0.2934
   },
   "seasons": [
     {
       "season": "2015_2016",
-      "train_samples": 334,
+      "train_samples": 231,
       "test_samples": 84,
-      "accuracy": 0.4524,
-      "log_loss": 1.3796,
-      "brier_score": 0.7579,
-      "ece": 0.2122,
+      "accuracy": 0.4048,
+      "log_loss": 1.3069,
+      "brier_score": 0.7826,
+      "ece": 0.3075,
       "class_distribution": {
         "H": 52,
         "D": 15,
@@ -28,49 +30,49 @@
       "buckets": [
         {
           "bucket": "0.00-0.40",
-          "count": 1,
-          "coverage": 0.0119,
+          "count": 2,
+          "coverage": 0.0238,
           "accuracy": 0.0,
-          "mean_confidence": 0.3681
+          "mean_confidence": 0.3648
         },
         {
           "bucket": "0.40-0.50",
-          "count": 11,
-          "coverage": 0.131,
-          "accuracy": 0.1818,
-          "mean_confidence": 0.4589
+          "count": 10,
+          "coverage": 0.119,
+          "accuracy": 0.5,
+          "mean_confidence": 0.4642
         },
         {
           "bucket": "0.50-0.60",
-          "count": 23,
-          "coverage": 0.2738,
-          "accuracy": 0.5217,
-          "mean_confidence": 0.5387
+          "count": 17,
+          "coverage": 0.2024,
+          "accuracy": 0.4118,
+          "mean_confidence": 0.5482
         },
         {
           "bucket": "0.60-0.70",
-          "count": 11,
-          "coverage": 0.131,
-          "accuracy": 0.6364,
-          "mean_confidence": 0.654
+          "count": 13,
+          "coverage": 0.1548,
+          "accuracy": 0.2308,
+          "mean_confidence": 0.6715
         },
         {
           "bucket": "0.70-1.01",
-          "count": 38,
-          "coverage": 0.4524,
-          "accuracy": 0.4474,
-          "mean_confidence": 0.8111
+          "count": 42,
+          "coverage": 0.5,
+          "accuracy": 0.4524,
+          "mean_confidence": 0.8498
         }
       ]
     },
     {
       "season": "2017_2018",
-      "train_samples": 421,
+      "train_samples": 318,
       "test_samples": 49,
-      "accuracy": 0.4082,
-      "log_loss": 1.2427,
-      "brier_score": 0.7282,
-      "ece": 0.2478,
+      "accuracy": 0.5102,
+      "log_loss": 1.1403,
+      "brier_score": 0.6352,
+      "ece": 0.2568,
       "class_distribution": {
         "H": 29,
         "D": 10,
@@ -79,49 +81,49 @@
       "buckets": [
         {
           "bucket": "0.00-0.40",
-          "count": 2,
-          "coverage": 0.0408,
+          "count": 1,
+          "coverage": 0.0204,
           "accuracy": 0.0,
-          "mean_confidence": 0.3776
+          "mean_confidence": 0.3673
         },
         {
           "bucket": "0.40-0.50",
-          "count": 10,
-          "coverage": 0.2041,
-          "accuracy": 0.3,
-          "mean_confidence": 0.4576
+          "count": 3,
+          "coverage": 0.0612,
+          "accuracy": 0.6667,
+          "mean_confidence": 0.454
         },
         {
           "bucket": "0.50-0.60",
-          "count": 9,
-          "coverage": 0.1837,
-          "accuracy": 0.4444,
-          "mean_confidence": 0.5438
+          "count": 10,
+          "coverage": 0.2041,
+          "accuracy": 0.2,
+          "mean_confidence": 0.5532
         },
         {
           "bucket": "0.60-0.70",
-          "count": 7,
-          "coverage": 0.1429,
-          "accuracy": 0.4286,
-          "mean_confidence": 0.658
+          "count": 6,
+          "coverage": 0.1224,
+          "accuracy": 0.3333,
+          "mean_confidence": 0.6497
         },
         {
           "bucket": "0.70-1.01",
-          "count": 21,
-          "coverage": 0.4286,
-          "accuracy": 0.4762,
-          "mean_confidence": 0.8243
+          "count": 29,
+          "coverage": 0.5918,
+          "accuracy": 0.6552,
+          "mean_confidence": 0.8418
         }
       ]
     },
     {
       "season": "2019_2020",
-      "train_samples": 478,
+      "train_samples": 375,
       "test_samples": 21,
-      "accuracy": 0.381,
-      "log_loss": 1.464,
-      "brier_score": 0.795,
-      "ece": 0.3943,
+      "accuracy": 0.4286,
+      "log_loss": 1.1496,
+      "brier_score": 0.6943,
+      "ece": 0.2396,
       "class_distribution": {
         "H": 10,
         "D": 4,
@@ -133,46 +135,46 @@
           "count": 1,
           "coverage": 0.0476,
           "accuracy": 0.0,
-          "mean_confidence": 0.395
+          "mean_confidence": 0.3658
         },
         {
           "bucket": "0.40-0.50",
-          "count": 3,
-          "coverage": 0.1429,
-          "accuracy": 0.0,
-          "mean_confidence": 0.4767
+          "count": 2,
+          "coverage": 0.0952,
+          "accuracy": 0.5,
+          "mean_confidence": 0.4538
         },
         {
           "bucket": "0.50-0.60",
-          "count": 3,
-          "coverage": 0.1429,
-          "accuracy": 0.6667,
-          "mean_confidence": 0.5596
+          "count": 7,
+          "coverage": 0.3333,
+          "accuracy": 0.2857,
+          "mean_confidence": 0.5548
         },
         {
           "bucket": "0.60-0.70",
-          "count": 3,
-          "coverage": 0.1429,
-          "accuracy": 0.0,
-          "mean_confidence": 0.6559
+          "count": 5,
+          "coverage": 0.2381,
+          "accuracy": 0.4,
+          "mean_confidence": 0.6486
         },
         {
           "bucket": "0.70-1.01",
-          "count": 11,
-          "coverage": 0.5238,
-          "accuracy": 0.5455,
-          "mean_confidence": 0.8012
+          "count": 6,
+          "coverage": 0.2857,
+          "accuracy": 0.6667,
+          "mean_confidence": 0.871
         }
       ]
     },
     {
       "season": "2020_2021",
-      "train_samples": 499,
+      "train_samples": 396,
       "test_samples": 88,
-      "accuracy": 0.375,
-      "log_loss": 1.5272,
-      "brier_score": 0.8569,
-      "ece": 0.3069,
+      "accuracy": 0.3523,
+      "log_loss": 1.7039,
+      "brier_score": 0.9294,
+      "ece": 0.3968,
       "class_distribution": {
         "H": 37,
         "D": 27,
@@ -181,49 +183,49 @@
       "buckets": [
         {
           "bucket": "0.00-0.40",
-          "count": 1,
-          "coverage": 0.0114,
-          "accuracy": 1.0,
-          "mean_confidence": 0.3913
+          "count": 2,
+          "coverage": 0.0227,
+          "accuracy": 0.0,
+          "mean_confidence": 0.3712
         },
         {
           "bucket": "0.40-0.50",
           "count": 8,
           "coverage": 0.0909,
-          "accuracy": 0.375,
-          "mean_confidence": 0.4814
+          "accuracy": 0.625,
+          "mean_confidence": 0.4469
         },
         {
           "bucket": "0.50-0.60",
-          "count": 27,
-          "coverage": 0.3068,
-          "accuracy": 0.3704,
-          "mean_confidence": 0.5523
+          "count": 12,
+          "coverage": 0.1364,
+          "accuracy": 0.4167,
+          "mean_confidence": 0.5584
         },
         {
           "bucket": "0.60-0.70",
           "count": 16,
           "coverage": 0.1818,
-          "accuracy": 0.3125,
-          "mean_confidence": 0.6463
+          "accuracy": 0.25,
+          "mean_confidence": 0.6585
         },
         {
           "bucket": "0.70-1.01",
-          "count": 36,
-          "coverage": 0.4091,
-          "accuracy": 0.3889,
-          "mean_confidence": 0.8138
+          "count": 50,
+          "coverage": 0.5682,
+          "accuracy": 0.34,
+          "mean_confidence": 0.8303
         }
       ]
     },
     {
       "season": "2023_2024",
-      "train_samples": 598,
+      "train_samples": 495,
       "test_samples": 88,
-      "accuracy": 0.3182,
-      "log_loss": 1.465,
-      "brier_score": 0.8522,
-      "ece": 0.3102,
+      "accuracy": 0.3295,
+      "log_loss": 1.3078,
+      "brier_score": 0.7423,
+      "ece": 0.3057,
       "class_distribution": {
         "H": 41,
         "D": 27,
@@ -232,49 +234,49 @@
       "buckets": [
         {
           "bucket": "0.00-0.40",
-          "count": 2,
-          "coverage": 0.0227,
-          "accuracy": 0.5,
-          "mean_confidence": 0.3613
+          "count": 3,
+          "coverage": 0.0341,
+          "accuracy": 0.0,
+          "mean_confidence": 0.3635
         },
         {
           "bucket": "0.40-0.50",
-          "count": 19,
-          "coverage": 0.2159,
-          "accuracy": 0.2105,
-          "mean_confidence": 0.4546
+          "count": 20,
+          "coverage": 0.2273,
+          "accuracy": 0.15,
+          "mean_confidence": 0.4658
         },
         {
           "bucket": "0.50-0.60",
-          "count": 15,
-          "coverage": 0.1705,
-          "accuracy": 0.4,
-          "mean_confidence": 0.5541
+          "count": 20,
+          "coverage": 0.2273,
+          "accuracy": 0.2,
+          "mean_confidence": 0.5485
         },
         {
           "bucket": "0.60-0.70",
-          "count": 29,
-          "coverage": 0.3295,
-          "accuracy": 0.4138,
-          "mean_confidence": 0.6451
+          "count": 12,
+          "coverage": 0.1364,
+          "accuracy": 0.4167,
+          "mean_confidence": 0.6416
         },
         {
           "bucket": "0.70-1.01",
-          "count": 23,
-          "coverage": 0.2614,
-          "accuracy": 0.2174,
-          "mean_confidence": 0.7984
+          "count": 33,
+          "coverage": 0.375,
+          "accuracy": 0.5152,
+          "mean_confidence": 0.8128
         }
       ]
     },
     {
       "season": "2025_2026",
-      "train_samples": 689,
+      "train_samples": 586,
       "test_samples": 392,
-      "accuracy": 0.3418,
-      "log_loss": 1.2983,
-      "brier_score": 0.7834,
-      "ece": 0.2543,
+      "accuracy": 0.352,
+      "log_loss": 1.3068,
+      "brier_score": 0.7756,
+      "ece": 0.254,
       "class_distribution": {
         "H": 176,
         "D": 104,
@@ -283,38 +285,38 @@
       "buckets": [
         {
           "bucket": "0.00-0.40",
-          "count": 27,
-          "coverage": 0.0689,
-          "accuracy": 0.4074,
-          "mean_confidence": 0.3797
+          "count": 16,
+          "coverage": 0.0408,
+          "accuracy": 0.25,
+          "mean_confidence": 0.3806
         },
         {
           "bucket": "0.40-0.50",
-          "count": 101,
-          "coverage": 0.2577,
-          "accuracy": 0.2871,
-          "mean_confidence": 0.4563
+          "count": 88,
+          "coverage": 0.2245,
+          "accuracy": 0.2955,
+          "mean_confidence": 0.4536
         },
         {
           "bucket": "0.50-0.60",
-          "count": 89,
-          "coverage": 0.227,
-          "accuracy": 0.3483,
-          "mean_confidence": 0.5415
+          "count": 105,
+          "coverage": 0.2679,
+          "accuracy": 0.3619,
+          "mean_confidence": 0.5483
         },
         {
           "bucket": "0.60-0.70",
-          "count": 82,
-          "coverage": 0.2092,
-          "accuracy": 0.3415,
-          "mean_confidence": 0.6494
+          "count": 83,
+          "coverage": 0.2117,
+          "accuracy": 0.3735,
+          "mean_confidence": 0.6475
         },
         {
           "bucket": "0.70-1.01",
-          "count": 93,
-          "coverage": 0.2372,
-          "accuracy": 0.3763,
-          "mean_confidence": 0.8001
+          "count": 100,
+          "coverage": 0.2551,
+          "accuracy": 0.39,
+          "mean_confidence": 0.8026
         }
       ]
     }

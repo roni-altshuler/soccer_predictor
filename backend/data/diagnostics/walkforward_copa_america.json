@@ -1,5 +1,6 @@
 {
   "league": "copa_america",
   "error": "no_eligible_seasons",
-  "seasons": []
+  "seasons": [],
+  "eval_mode": "fresh_fast_lgbm"
 }

@@ -1,5 +1,25 @@
 {
-  "ran_at": "2026-05-31T08:18:02.039331Z",
-  "status": "error",
-  "error": "AdaBoostClassifier.__init__() got an unexpected keyword argument 'algorithm'"
+  "ran_at": "2026-06-07T08:26:40.882595Z",
+  "status": "regression",
+  "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
+  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-06-07.json",
+  "retrained_leagues": [
+    "eng.1",
+    "esp.1",
+    "ger.1",
+    "ita.1",
+    "fra.1",
+    "ned.1",
+    "por.1",
+    "usa.1",
+    "uefa.champions",
+    "uefa.europa",
+    "fifa.world",
+    "uefa.euro",
+    "conmebol.america",
+    "global"
+  ],
+  "n_wins": 6,
+  "n_regressions": 3,
+  "n_held_back": 0
 }
