@@ -17,7 +17,10 @@ Pipeline:
     8. Baseline rotate  : replace the baseline only on a no-regression run.
     9. Run record       : update last_training_run.json.
 
-Exit code: 0 on no regression, 1 if any regression detected.
+Exit code: 0 on a clean or auto-handled run; 1 only when a candidate is held
+back (a true regression that failed the promotion gates) or the run errors. A
+regression that still passes the gates is promoted *with caution* (compensating
+metrics improved) — that's the guardrail working, not a CI failure.
 
 Usage:
     python -m backend.scripts.continuous_training
@@ -516,7 +519,15 @@ async def run_pipeline(args: argparse.Namespace) -> int:
     n_wins = overall.get("n_wins", 0)
     n_reg = overall.get("n_regressions", 0)
     n_held = overall.get("n_held_back", 0)
-    status = "ok" if n_reg == 0 else "regression"
+    # Distinguish a regression that was rejected (held back — production kept the
+    # prior model) from one that was promoted with caution because compensating
+    # metrics improved. Only the former is an actionable failure.
+    if n_held > 0:
+        status = "regression_held_back"
+    elif n_reg > 0:
+        status = "regression_handled"
+    else:
+        status = "ok"
 
     # ── (i) run record ──
     _atomic_write_json(LAST_RUN_PATH, {
@@ -531,7 +542,9 @@ async def run_pipeline(args: argparse.Namespace) -> int:
     })
 
     print(f"CONTINUOUS_TRAINING_SUMMARY: status={status} wins={n_wins} regressions={n_reg} held_back={n_held}")
-    return 0 if n_reg == 0 else 1
+    # Fail only on an actionable outcome (a held-back candidate). Auto-handled
+    # regressions (promoted with caution) are a normal, healthy result.
+    return 1 if n_held > 0 else 0
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:

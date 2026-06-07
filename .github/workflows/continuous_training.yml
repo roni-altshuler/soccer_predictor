@@ -98,20 +98,33 @@ jobs:
           SUMMARY="${{ steps.orchestrator.outputs.summary }}"
           echo "Orchestrator exit code: $RC"
           echo "Orchestrator summary : $SUMMARY"
-          if [ "$RC" = "0" ]; then
-            exit 0
-          fi
-          # The orchestrator emits a structured summary line that distinguishes
-          # an actual regression (n_reg > 0) from a crash during retrain
-          # (e.g. an sklearn API break). Surface the real cause in the
-          # warning/error so log readers don't chase a phantom regression.
+
+          HELD=$(echo "$SUMMARY" | grep -oE "held_back=[0-9]+" | cut -d= -f2 | head -1)
+          REG=$(echo "$SUMMARY" | grep -oE "regressions=[0-9]+" | cut -d= -f2 | head -1)
+
+          # A crash during retrain (e.g. an sklearn API break) is always a failure.
           if echo "$SUMMARY" | grep -q "status=error"; then
             STAGE=$(echo "$SUMMARY" | grep -oE "stage=[^ ]+" | head -1)
             MSG=$(echo "$SUMMARY" | sed -E 's/.*msg=//' | head -1)
             echo "::error::Continuous training crashed during ${STAGE:-unknown}: ${MSG:-no message}"
-          elif echo "$SUMMARY" | grep -q "regressions=[^0]"; then
-            echo "::warning::Continuous training detected a model regression — see backend/data/diagnostics/training_drift_*.json."
-          else
-            echo "::error::Continuous training failed with RC=$RC and no structured summary. Check the orchestrator output above."
+            exit 1
           fi
+
+          # A held-back candidate is a true regression that failed the gates —
+          # production kept the prior model. That's the actionable case.
+          if [ "${HELD:-0}" -gt 0 ]; then
+            echo "::error::Continuous training held back ${HELD} regressed model(s) — see backend/data/diagnostics/training_drift_*.json."
+            exit 1
+          fi
+
+          # A regression that still passed the gates was promoted with caution
+          # (compensating metrics improved). Surface it as a non-failing warning.
+          if [ "${REG:-0}" -gt 0 ]; then
+            echo "::warning::Continuous training auto-handled ${REG} regression(s) (promoted with caution). No action required — see backend/data/diagnostics/training_drift_*.json."
+          fi
+
+          if [ "${RC:-1}" = "0" ]; then
+            exit 0
+          fi
+          echo "::error::Continuous training failed with RC=$RC and no structured summary. Check the orchestrator output above."
           exit 1
