@@ -335,7 +335,15 @@ pip install -r requirements.txt
 
 # Node dependencies
 npm install
+
+# Environment variables (all optional for local dev)
+cp .env.example .env   # then fill in what you need
 ```
+
+Every variable is documented in [.env.example](.env.example). Nothing is
+required for basic local development; in production the backend refuses to
+start without `JWT_SECRET_KEY` when `ENVIRONMENT=production`. API requests
+are rate-limited per IP (`RATE_LIMIT_PER_MINUTE`, default 120; `0` disables).
 
 ### Train Models
 
@@ -431,6 +439,13 @@ Use `GET /api/launch-readiness` after deployment to verify that public sync feat
 | GET/POST | `/api/bracket-rooms` and `/api/bracket-rooms/[roomCode]` | Server-backed tournament bracket room sync with commissioner PIN-protected writes |
 | GET/POST | `/api/watchlist-alerts` | Server-backed watchlist alert queue sync by code |
 | GET | `/api/launch-readiness` | Public-launch health check for managed sync storage |
+
+### Teams & Players
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/v1/teams/{id}/overview` | Team profile: standings, form, squad, fixtures, results, and reported absences |
+| GET | `/api/v1/teams/players/{id}` | Player profile (ESPN-backed: position, shirt number, team, headshot) |
+| GET | `/api/v1/teams/players/{id}/stats` | Season stat splits + recent match log |
 
 ### AI Tracking
 | Method | Route | Description |

@@ -66,7 +66,7 @@ export function StatusBanner() {
   if (status === 'degraded' && dismissed) return null
 
   const isDown = status === 'down'
-  const background = isDown ? '#ef4444' : '#f59e0b'
+  const background = isDown ? 'var(--accent-loss)' : 'var(--accent-warn)'
   const message = isDown
     ? 'Service is temporarily unavailable — some features may not work.'
     : 'Live predictions are catching up...'

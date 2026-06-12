@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useTeamBadgeManifest } from '@/hooks/useHeadshotManifest'
 import { cn } from '@/lib/utils'
@@ -45,12 +45,19 @@ export function TeamBadge({
   className,
 }: TeamBadgeProps) {
   const { resolve } = useTeamBadgeManifest()
-  const resolvedUrl = useMemo(
-    () => imageUrl ?? (teamId != null ? resolve(String(teamId)) : undefined),
-    [imageUrl, teamId, resolve]
-  )
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const resolvedUrl = useMemo(() => {
+    if (imageUrl) return imageUrl
+    if (teamId == null) return undefined
+    // Manifest override first, then ESPN's public crest CDN. A 404 from
+    // the CDN drops to the initials chip via the onError guard below.
+    return (
+      resolve(String(teamId)) ??
+      `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png`
+    )
+  }, [imageUrl, teamId, resolve])
 
-  if (resolvedUrl) {
+  if (resolvedUrl && resolvedUrl !== failedUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -61,6 +68,7 @@ export function TeamBadge({
         className={cn('shrink-0 rounded-md object-contain', className)}
         style={{ width: size, height: size }}
         loading="lazy"
+        onError={() => setFailedUrl(resolvedUrl)}
       />
     )
   }

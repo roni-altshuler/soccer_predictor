@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { Calendar, ChevronLeft, MapPin, Shield, Trophy, Users } from 'lucide-react'
+import { Activity, Calendar, ChevronLeft, MapPin, Shield, Trophy, Users } from 'lucide-react'
 
 import { BentoCard, BentoGrid } from '@/components/magicui/bento-grid'
 import { BorderBeam } from '@/components/magicui/border-beam'
@@ -15,7 +15,68 @@ import { MatchCardSkeleton } from '@/components/skeletons/MatchCardSkeleton'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/EmptyState'
-import { useTeam } from '@/hooks/useTeam'
+import { useTeam, type TeamFixture } from '@/hooks/useTeam'
+
+const FORM_ACCENTS: Record<string, string> = {
+  W: 'var(--accent-primary)',
+  D: 'var(--accent-warn)',
+  L: 'var(--accent-loss)',
+}
+
+function FormPips({ form }: { form: string }) {
+  return (
+    <span className="inline-flex items-center gap-1" aria-label={`Recent form ${form}`}>
+      {form.split('').map((result, index) => {
+        const accent = FORM_ACCENTS[result] ?? 'var(--text-tertiary)'
+        return (
+          <span
+            key={`${result}-${index}`}
+            className="inline-flex h-5 w-5 items-center justify-center rounded-md font-mono text-[10px] font-bold"
+            style={{
+              color: accent,
+              backgroundColor: `color-mix(in srgb, ${accent} 16%, transparent)`,
+            }}
+          >
+            {result}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
+const INJURY_STATUS_ACCENTS: Record<string, string> = {
+  out: 'var(--accent-loss)',
+  doubtful: 'var(--accent-warn)',
+  questionable: 'var(--accent-warn)',
+}
+
+function formatFixtureDate(iso?: string): string {
+  if (!iso) return '—'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function FixtureRow({ fixture }: { fixture: TeamFixture }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-[var(--border-color)] px-4 py-2.5 text-small last:border-b-0">
+      <span className="w-14 shrink-0 tabular-nums text-[var(--text-tertiary)]">
+        {formatFixtureDate(fixture.date)}
+      </span>
+      <TeamBadge teamId={fixture.opponentId} name={fixture.opponent} size={20} />
+      <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{fixture.opponent}</span>
+      <span className="shrink-0 text-caption text-[var(--text-tertiary)]">
+        {fixture.home ? '(H)' : '(A)'}
+      </span>
+      {fixture.score ? (
+        <span className="shrink-0 tabular-nums font-semibold text-[var(--text-secondary)]">
+          {fixture.score}
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
 export default function TeamPage() {
   const routeParams = useParams<{ id: string }>()
@@ -96,6 +157,7 @@ export default function TeamPage() {
                 ) : null}
                 {team?.founded ? <span>Est. {team.founded}</span> : null}
                 {team?.stadium ? <span>· {team.stadium}</span> : null}
+                {team?.form ? <FormPips form={team.form} /> : null}
               </div>
             </div>
             {typeof team?.stats?.position === 'number' ? (
@@ -221,23 +283,99 @@ export default function TeamPage() {
         )}
       </div>
 
-      {/* Upcoming fixtures */}
+      {/* Fixtures + results + availability */}
+      <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-h3 text-[var(--text-primary)]">Upcoming fixtures</h2>
+          </div>
+          {isLoading ? (
+            <MatchCardSkeleton count={3} />
+          ) : team?.fixtures && team.fixtures.length > 0 ? (
+            <Card className="overflow-hidden p-0">
+              {team.fixtures.map((fixture) => (
+                <FixtureRow key={fixture.matchId} fixture={fixture} />
+              ))}
+            </Card>
+          ) : (
+            <EmptyState
+              illustration="no-matches"
+              title="No upcoming fixtures"
+              description="No scheduled matches were found for this team."
+            />
+          )}
+        </div>
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-h3 text-[var(--text-primary)]">Recent results</h2>
+          </div>
+          {isLoading ? (
+            <MatchCardSkeleton count={3} />
+          ) : team?.recentResults && team.recentResults.length > 0 ? (
+            <Card className="overflow-hidden p-0">
+              {team.recentResults.map((fixture) => (
+                <FixtureRow key={fixture.matchId} fixture={fixture} />
+              ))}
+            </Card>
+          ) : (
+            <EmptyState
+              illustration="no-matches"
+              title="No recent results"
+              description="No completed matches were found for this team."
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Availability — absences feed the prediction model's injury_impact factor */}
       <div className="mt-7">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-h3 text-[var(--text-primary)]">Upcoming fixtures</h2>
+          <h2 className="inline-flex items-center gap-2 text-h3 text-[var(--text-primary)]">
+            <Activity className="h-4 w-4 text-[var(--accent-warn)]" /> Availability
+          </h2>
+          <span className="text-caption uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+            absences factor into AI predictions
+          </span>
         </div>
         {isLoading ? (
-          <MatchCardSkeleton count={3} />
-        ) : team?.fixtures && team.fixtures.length > 0 ? (
-          <Card className="overflow-hidden">
-            <TableSkeleton rows={Math.min(team.fixtures.length, 5)} columns={3} />
+          <TableSkeleton rows={2} columns={3} />
+        ) : team?.injuries && team.injuries.length > 0 ? (
+          <Card className="overflow-hidden p-0">
+            {team.injuries.map((injury, index) => {
+              const accent =
+                INJURY_STATUS_ACCENTS[injury.status] ?? 'var(--text-tertiary)'
+              return (
+                <div
+                  key={`${injury.playerId ?? injury.name}-${index}`}
+                  className="flex items-center gap-3 border-b border-[var(--border-color)] px-4 py-2.5 text-small last:border-b-0"
+                >
+                  <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">
+                    {injury.name}
+                  </span>
+                  {injury.reason ? (
+                    <span className="hidden truncate text-caption text-[var(--text-tertiary)] sm:inline">
+                      {injury.reason}
+                    </span>
+                  ) : null}
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                    style={{
+                      color: accent,
+                      backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                    }}
+                  >
+                    {injury.status}
+                  </span>
+                </div>
+              )
+            })}
           </Card>
         ) : (
-          <EmptyState
-            illustration="no-matches"
-            title="No upcoming fixtures"
-            description="The fixtures endpoint will surface scheduled matches here once available."
-          />
+          <Card className="p-4">
+            <p className="text-small text-[var(--text-secondary)]">
+              No reported absences for this squad right now.
+            </p>
+          </Card>
         )}
       </div>
     </div>

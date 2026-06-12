@@ -249,17 +249,35 @@ export interface PlayerProfile {
   height?: number
 }
 
+export interface PlayerMatchLogEntry {
+  id: string
+  date: string
+  opponent: { id?: string; name: string }
+  score?: string
+  result?: 'W' | 'D' | 'L'
+  isHome?: boolean
+  goals?: number
+  assists?: number
+}
+
 export interface PlayerStats {
   player_id: number
   season: string
+  competition?: string
   appearances?: number
+  starts?: number
   goals?: number
   assists?: number
+  shots?: number
+  shotsOnTarget?: number
+  yellowCards?: number
+  redCards?: number
   minutes?: number
   rating?: number
   xG?: number
   xA?: number
   form?: number[]
+  matches?: PlayerMatchLogEntry[]
 }
 
 export const playersApi = {

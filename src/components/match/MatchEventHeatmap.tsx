@@ -133,7 +133,7 @@ export default function MatchEventHeatmap({
     )
   }
 
-  const baseColor = focusTeam === 'home' ? '#3b82f6' : '#f97316'
+  const baseColor = focusTeam === 'home' ? 'var(--team-tint-home)' : 'var(--team-tint-away)'
   const maxWeight = Math.max(...focused.map((point) => point.weight), 1)
   const totalWeight = focused.reduce((sum, point) => sum + point.weight, 0)
 

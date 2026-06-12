@@ -27,6 +27,9 @@ from pathlib import Path
 # Import v1 API router
 from backend.api.v1 import router as v1_router
 
+# Import middleware
+from backend.middleware import RateLimitMiddleware
+
 # Import services
 from backend.services.fotmob import get_fotmob_client, cleanup_fotmob_client
 from backend.services.espn import get_espn_client, cleanup_espn_client
@@ -89,6 +92,9 @@ app = FastAPI(
     version="3.0.0",
     lifespan=lifespan,
 )
+
+# Per-IP rate limiting (RATE_LIMIT_PER_MINUTE env var; 0 disables)
+app.add_middleware(RateLimitMiddleware)
 
 # Enable CORS
 app.add_middleware(
