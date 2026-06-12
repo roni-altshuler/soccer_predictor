@@ -52,9 +52,9 @@ function classifyEdge(edgePp: number): EdgeLabel {
 }
 
 function edgeStyle(label: EdgeLabel): { color: string; background: string; border: string } {
-  if (label === 'value') return { color: '#c4b5fd', background: 'color-mix(in srgb, #7c3aed 18%, transparent)', border: 'color-mix(in srgb, #7c3aed 55%, transparent)' }
-  if (label === 'lean') return { color: '#cbd5e1', background: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.35)' }
-  return { color: '#9ca3af', background: 'rgba(156,163,175,0.08)', border: 'rgba(156,163,175,0.22)' }
+  if (label === 'value') return { color: 'var(--accent-market-soft)', background: 'color-mix(in srgb, var(--accent-market) 18%, transparent)', border: 'color-mix(in srgb, var(--accent-market) 55%, transparent)' }
+  if (label === 'lean') return { color: 'var(--text-secondary)', background: 'color-mix(in srgb, var(--text-tertiary) 12%, transparent)', border: 'color-mix(in srgb, var(--text-tertiary) 35%, transparent)' }
+  return { color: 'var(--text-tertiary)', background: 'color-mix(in srgb, var(--text-tertiary) 8%, transparent)', border: 'color-mix(in srgb, var(--text-tertiary) 22%, transparent)' }
 }
 
 function isFinalStatus(status: string): boolean {
@@ -136,24 +136,24 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
   return (
     <section
       className="fm-card overflow-hidden"
-      style={{ background: '#0d1117', borderColor: 'color-mix(in srgb, #7c3aed 32%, var(--border-color))' }}
+      style={{ background: 'var(--card-bg)', borderColor: 'color-mix(in srgb, var(--accent-market) 32%, var(--border-color))' }}
       aria-label="Betting intelligence"
     >
       <header className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <span className="h-2 w-2 rounded-full" style={{ background: '#7c3aed' }} />
+        <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent-market)' }} />
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Betting Intelligence</h3>
         <span className="text-[10px] text-[var(--text-tertiary)] ml-auto">model vs market (no-vig)</span>
       </header>
 
-      <div className="p-4 space-y-3" style={{ background: '#0d1117' }}>
+      <div className="p-4 space-y-3" style={{ background: 'var(--card-bg)' }}>
         {loading && <p className="text-xs text-[var(--text-tertiary)]">Loading market data…</p>}
 
         {!loading && showFallback && (
-          <div className="rounded-xl p-3" style={{ background: '#161b22', border: '1px dashed var(--border-color)' }}>
+          <div className="rounded-xl p-3" style={{ background: 'var(--muted-bg)', border: '1px dashed var(--border-color)' }}>
             <p className="text-xs text-[var(--text-secondary)]">Live odds unavailable. Showing model probabilities only.</p>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px]">
               {rows.map((row) => (
-                <div key={row.key} className="rounded-lg py-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div key={row.key} className="rounded-lg py-2" style={{ background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }}>
                   <p className="text-[10px] text-[var(--text-tertiary)] uppercase">{row.label}</p>
                   <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{pctString(normalizedModel[row.key], 1)}</p>
                 </div>
@@ -163,7 +163,7 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
         )}
 
         {!loading && payload && (
-          <div className="rounded-xl overflow-hidden" style={{ background: '#161b22', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: 'var(--muted-bg)', border: '1px solid var(--border-color)' }}>
             <div className={`${gridCols} px-3 py-2 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)] border-b`} style={{ borderColor: 'var(--border-color)' }}>
               <span>Outcome</span>
               <span className="text-right">Model</span>
@@ -202,7 +202,7 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
                   <span className="flex justify-end">
                     <span
                       className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
-                      style={{ color: '#c4b5fd', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)' }}
+                      style={{ color: 'var(--accent-market-soft)', background: 'color-mix(in srgb, var(--accent-market) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-market) 35%, transparent)' }}
                     >
                       {kelly.toFixed(2)}u
                     </span>

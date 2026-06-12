@@ -33,6 +33,8 @@
   --accent-warn-soft: #fbbf24;
   --accent-loss: #ef4444;             /* red for losses */
   --accent-loss-soft: #f87171;
+  --accent-market: #6d28d9;           /* purple for market / betting intelligence */
+  --accent-market-soft: #8b5cf6;
 
   /* Borders & shadows */
   --border-color: #d8e0ee;
@@ -133,6 +135,8 @@
   --accent-warn-soft: #fde047;
   --accent-loss: #f87171;
   --accent-loss-soft: #fca5a5;
+  --accent-market: #7c3aed;
+  --accent-market-soft: #c4b5fd;
 
   --border-color: #243954;
   --border-hover: #38567e;
