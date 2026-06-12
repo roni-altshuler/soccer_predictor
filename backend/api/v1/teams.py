@@ -382,6 +382,130 @@ def _build_form_string(recent: List[Dict[str, Any]]) -> str:
     return "".join(form)
 
 
+def _record_stat(record: Dict[str, Any], name: str) -> int:
+    """Pull one named stat from an ESPN team record block."""
+    items = record.get("items") or []
+    total = next((i for i in items if i.get("type") == "total"), items[0] if items else {})
+    for stat in total.get("stats") or []:
+        if stat.get("name") == name and isinstance(stat.get("value"), (int, float)):
+            return int(stat["value"])
+    return 0
+
+
+def _position_from_summary(summary: Any) -> int:
+    """Parse the leading ordinal out of e.g. '5th in English Premier League'."""
+    if not isinstance(summary, str):
+        return 0
+    head = summary.split(" ", 1)[0]
+    digits = "".join(ch for ch in head if ch.isdigit())
+    return int(digits) if digits else 0
+
+
+async def _overview_via_team_meta(team_id: str) -> Optional[Dict[str, Any]]:
+    """Overview built from ESPN's slug-free team endpoint.
+
+    Used when standings resolution fails (ESPN standings are empty between
+    seasons). Mirrors the Next.js /api/v1/teams/[id]/overview route.
+    """
+    espn = get_espn_client()
+    data = await espn._request(  # noqa: SLF001
+        f"all/teams/{team_id}", cache_key=f"espn_team_all_{team_id}"
+    )
+    meta = (data or {}).get("team") or {}
+    if not meta.get("displayName"):
+        return None
+
+    default_league = meta.get("defaultLeague") or {}
+    slug = default_league.get("slug")
+    # Map the ESPN slug back to our internal league key when we know it.
+    league_key = next((k for k, v in ESPN_LEAGUE_IDS.items() if v == slug), None)
+
+    schedule_events: List[Dict[str, Any]] = []
+    squad: List[Dict[str, Any]] = []
+    if slug:
+        schedule_data, roster_data = await asyncio.gather(
+            espn._request(  # noqa: SLF001
+                f"{slug}/teams/{team_id}/schedule", cache_key=f"espn_team_schedule_{team_id}"
+            ),
+            espn._request(  # noqa: SLF001
+                f"{slug}/teams/{team_id}/roster", cache_key=f"espn_team_roster_{team_id}"
+            ),
+        )
+        schedule_events = (schedule_data or {}).get("events") or []
+        athletes = (roster_data or {}).get("athletes") or []
+        if athletes and isinstance(athletes[0], dict) and "items" in athletes[0]:
+            athletes = [p for group in athletes for p in (group.get("items") or [])]
+        squad = [
+            p for p in (_transform_roster_player(a) for a in athletes if isinstance(a, dict))
+            if p.get("name")
+        ]
+
+    injuries: List[Dict[str, Any]] = []
+    try:
+        tracker = get_injury_tracker()
+        injuries = await asyncio.wait_for(
+            tracker.fetch_team_injuries(str(team_id), league_key=league_key),
+            timeout=5.0,
+        )
+    except Exception:
+        injuries = []
+
+    completed = []
+    upcoming = []
+    for event in schedule_events:
+        transformed = _transform_event_to_match(event, team_id)
+        (completed if transformed.get("completed") else upcoming).append(transformed)
+    completed.sort(key=lambda m: m.get("kickoff") or "", reverse=True)
+    upcoming.sort(key=lambda m: m.get("kickoff") or "")
+    recent_results = completed[:5]
+    upcoming_fixtures = upcoming[:5]
+
+    record = meta.get("record") or {}
+    played = _record_stat(record, "gamesPlayed")
+    gf = _record_stat(record, "pointsFor")
+    ga = _record_stat(record, "pointsAgainst")
+
+    return {
+        "team": {
+            "id": str(team_id),
+            "name": meta.get("displayName") or "",
+            "abbreviation": meta.get("abbreviation") or "",
+            "logo": (meta.get("logos") or [{}])[0].get("href"),
+            "venue": None,
+            "color": f"#{meta['color']}" if meta.get("color") else None,
+            "founded": None,
+        },
+        "league": {
+            "id": league_key or slug,
+            "name": default_league.get("name") or "",
+            "season": None,
+        },
+        "standing": {
+            "position": _position_from_summary(meta.get("standingSummary")),
+            "played": played,
+            "won": _record_stat(record, "wins"),
+            "drawn": _record_stat(record, "ties"),
+            "lost": _record_stat(record, "losses"),
+            "gf": gf,
+            "ga": ga,
+            "points": _record_stat(record, "points"),
+            "form_string": _build_form_string(recent_results),
+        },
+        "next_fixture": upcoming_fixtures[0] if upcoming_fixtures else None,
+        "recent_results": recent_results,
+        "upcoming_fixtures": upcoming_fixtures,
+        "squad": squad,
+        "stats": {
+            "goals_per_match": round(gf / played, 2) if played else 0.0,
+            "conceded_per_match": round(ga / played, 2) if played else 0.0,
+            "clean_sheets": None,
+            "possession_avg": None,
+        },
+        "injuries": injuries or [],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @router.get("/{team_id}/overview")
 async def get_team_overview(
     team_id: str,
@@ -398,13 +522,19 @@ async def get_team_overview(
     if cached and (time.time() - cached[0]) < _OVERVIEW_TTL:
         return cached[1]
 
-    # 1. Resolve the league + standing row.
+    # 1. Resolve the league + standing row. Standings are empty between
+    #    seasons, so fall back to ESPN's slug-free team endpoint which works
+    #    year-round (same source the Next.js mirror route uses).
     resolved = await _resolve_team_via_standings(team_id, league)
     if not resolved:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Team {team_id} not found in any cached league",
-        )
+        payload = await _overview_via_team_meta(str(team_id))
+        if payload is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Team {team_id} not found in any cached league",
+            )
+        _OVERVIEW_CACHE[cache_key] = (time.time(), payload)
+        return payload
     league_key, standing_row = resolved
 
     espn = get_espn_client()
