@@ -37,7 +37,7 @@ from backend.services.prediction.probabilistic import (
     LEAGUE_PARAMS,
     PoissonModel,
 )
-from backend.services.ratings import get_elo_system
+from backend.services.ratings.national_elo import national_elo_for
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,6 @@ def _load_group_data(group_id: str) -> Tuple[List[_GroupTeam], List[_Match]]:
 
     # Build team list — filter ESPN standings to the requested group.
     teams: List[_GroupTeam] = []
-    elo = get_elo_system()
     group_label = group_id.strip().upper()
     desired_group_name = f"Group {group_label}".lower()
 
@@ -134,12 +133,7 @@ def _load_group_data(group_id: str) -> Tuple[List[_GroupTeam], List[_Match]]:
     raw_children = []
     try:
         loop = asyncio.new_event_loop()
-        raw = loop.run_until_complete(
-            client._request(  # type: ignore[attr-defined]
-                f"{ESPN_LEAGUE_ID}/standings",
-                cache_key="espn_standings_world_cup_raw",
-            )
-        )
+        raw = loop.run_until_complete(client.get_standings_raw("world_cup"))
         loop.close()
         if raw:
             raw_children = raw.get("children", [])
@@ -162,7 +156,9 @@ def _load_group_data(group_id: str) -> Tuple[List[_GroupTeam], List[_Match]]:
                 _GroupTeam(
                     team_id=int(team_id) if team_id and str(team_id).isdigit() else None,
                     name=display,
-                    elo=float(elo.get_elo(display)),
+                    # National-team ELO from the committed tournament corpus —
+                    # the club ELO system defaults every national side to 1500.
+                    elo=float(national_elo_for(display)),
                     points=int(stats.get("points", 0) or 0),
                     gf=int(stats.get("pointsFor", 0) or 0),
                     ga=int(stats.get("pointsAgainst", 0) or 0),

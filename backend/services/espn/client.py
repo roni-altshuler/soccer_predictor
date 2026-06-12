@@ -113,13 +113,25 @@ class ESPNClient:
         self._client: Optional[httpx.AsyncClient] = None
     
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get or create HTTP client."""
-        if self._client is None or self._client.is_closed:
+        """Get or create HTTP client.
+
+        Recreated when the running event loop changes: sync entry points
+        (simulators, CLI scripts) each spin up their own short-lived loop,
+        and an AsyncClient bound to a closed loop fails every request with
+        "Event loop is closed" without ever reporting itself as closed.
+        """
+        loop = asyncio.get_running_loop()
+        if (
+            self._client is None
+            or self._client.is_closed
+            or getattr(self, "_client_loop", None) is not loop
+        ):
             self._client = httpx.AsyncClient(
                 headers=self.HEADERS,
                 timeout=30.0,
                 follow_redirects=True
             )
+            self._client_loop = loop
         return self._client
     
     async def close(self):
@@ -274,27 +286,40 @@ class ESPNClient:
     
     # ==================== STANDINGS ====================
     
-    async def get_standings(self, league_key: str) -> Optional[List[Dict]]:
-        """
-        Get league standings.
-        
-        Args:
-            league_key: Internal league key
-        
-        Returns:
-            List of team standings
-        """
+    # ESPN quietly emptied the site/v2 standings endpoint (returns "{}");
+    # the apis/v2 host serves the same children/entries/stats structure.
+    V2_STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/{espn_id}/standings"
+
+    async def get_standings_raw(self, league_key: str) -> Optional[Dict]:
+        """Raw standings payload with `children` groups (keeps group names)."""
         espn_id = self._get_espn_league_id(league_key)
         if not espn_id:
             return None
-        
-        endpoint = f"{espn_id}/standings"
-        cache_key = f"espn_standings_{league_key}"
-        
-        data = await self._request(endpoint, cache_key=cache_key)
+
+        data = await self._request(
+            f"{espn_id}/standings", cache_key=f"espn_standings_{league_key}"
+        )
+        if data and data.get("children"):
+            return data
+        return await self._request(
+            self.V2_STANDINGS_URL.format(espn_id=espn_id),
+            cache_key=f"espn_standings_v2_{league_key}",
+        )
+
+    async def get_standings(self, league_key: str) -> Optional[List[Dict]]:
+        """
+        Get league standings.
+
+        Args:
+            league_key: Internal league key
+
+        Returns:
+            List of team standings
+        """
+        data = await self.get_standings_raw(league_key)
         if not data:
             return None
-        
+
         standings = []
         children = data.get("children", [])
         
@@ -303,12 +328,13 @@ class ESPNClient:
                 team = standing.get("team", {})
                 stats = {s.get("name"): s.get("value") for s in standing.get("stats", [])}
                 
+                logo = team.get("logo") or ((team.get("logos") or [{}])[0] or {}).get("href")
                 standings.append({
                     "position": int(stats.get("rank", 0)),
                     "team_id": team.get("id"),
                     "team_name": team.get("displayName"),
                     "team_short_name": team.get("abbreviation"),
-                    "logo": team.get("logo"),
+                    "logo": logo,
                     "played": int(stats.get("gamesPlayed", 0)),
                     "won": int(stats.get("wins", 0)),
                     "drawn": int(stats.get("ties", 0)),
