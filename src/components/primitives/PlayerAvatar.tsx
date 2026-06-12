@@ -28,10 +28,16 @@ function initialsFor(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+// ESPN's public headshot CDN — 404s for less-prominent players, which the
+// Radix Avatar handles by never rendering the image (initials show instead).
+function espnHeadshotUrl(playerId: number | string): string {
+  return `https://a.espncdn.com/i/headshots/soccer/players/full/${playerId}.png`
+}
+
 /**
- * Player headshot with graceful initials fallback. Looks up the player's
- * image from the headshot manifest (cached SWR) and falls back to a
- * team-tinted initials avatar when no image is available.
+ * Player headshot with graceful initials fallback. Resolution order:
+ * explicit imageUrl → headshot-manifest override → ESPN headshot CDN →
+ * team-tinted initials avatar.
  */
 export function PlayerAvatar({
   playerId,
@@ -42,10 +48,11 @@ export function PlayerAvatar({
   className,
 }: PlayerAvatarProps) {
   const { resolve } = useHeadshotManifest()
-  const resolvedUrl = useMemo(
-    () => imageUrl ?? (playerId != null ? resolve(String(playerId)) : undefined),
-    [imageUrl, playerId, resolve]
-  )
+  const resolvedUrl = useMemo(() => {
+    if (imageUrl) return imageUrl
+    if (playerId == null) return undefined
+    return resolve(String(playerId)) ?? espnHeadshotUrl(playerId)
+  }, [imageUrl, playerId, resolve])
 
   const ringStyle = teamColor
     ? { boxShadow: `0 0 0 2px ${teamColor}, 0 0 0 4px var(--background)` }

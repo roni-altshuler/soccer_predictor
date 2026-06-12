@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useMemo } from 'react'
-import { ChevronLeft, Footprints, Star, Target, Timer, Trophy } from 'lucide-react'
+import { ChevronLeft, Crosshair, Footprints, Star, Target, Timer, Trophy } from 'lucide-react'
 
 import { FormSparkline } from '@/components/charts/FormSparkline'
 import { BentoCard, BentoGrid } from '@/components/magicui/bento-grid'
@@ -19,6 +19,33 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/EmptyState'
 import { usePlayer, usePlayerStats } from '@/hooks/usePlayer'
 
+const RESULT_ACCENTS: Record<'W' | 'D' | 'L', string> = {
+  W: 'var(--accent-primary)',
+  D: 'var(--accent-warn)',
+  L: 'var(--accent-loss)',
+}
+
+function ResultChip({ result }: { result: 'W' | 'D' | 'L' }) {
+  const accent = RESULT_ACCENTS[result]
+  return (
+    <span
+      className="inline-flex h-5 w-5 items-center justify-center rounded-md font-mono text-[10px] font-bold"
+      style={{
+        color: accent,
+        backgroundColor: `color-mix(in srgb, ${accent} 16%, transparent)`,
+      }}
+    >
+      {result}
+    </span>
+  )
+}
+
+function formatMatchDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export default function PlayerPage() {
   const routeParams = useParams<{ id: string }>()
   const id = Number(routeParams?.id ?? '')
@@ -27,6 +54,7 @@ export default function PlayerPage() {
   const { data: stats, isLoading: statsLoading } = usePlayerStats(Number.isFinite(id) ? id : null)
 
   const formValues = useMemo<number[] | undefined>(() => stats?.form ?? undefined, [stats])
+  const matchLog = useMemo(() => stats?.matches ?? [], [stats])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 pb-12">
@@ -94,13 +122,16 @@ export default function PlayerPage() {
         <BentoCard className="col-span-3 md:col-span-1">
           <div className="flex h-full flex-col justify-between p-5">
             <div className="flex items-center gap-2 text-caption uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-              <Footprints className="h-3.5 w-3.5 text-[var(--accent-primary)]" /> Appearances
+              <Footprints className="h-3.5 w-3.5 text-[var(--accent-primary)]" />{' '}
+              {stats?.appearances != null ? 'Appearances' : 'Starts'}
             </div>
             <NumberTicker
-              value={stats?.appearances ?? 0}
+              value={stats?.appearances ?? stats?.starts ?? 0}
               className="text-h1 font-extrabold tabular-nums text-[var(--text-primary)]"
             />
-            <span className="text-caption text-[var(--text-tertiary)]">this season</span>
+            <span className="truncate text-caption text-[var(--text-tertiary)]">
+              {stats?.competition || 'this season'}
+            </span>
           </div>
         </BentoCard>
         <BentoCard className="col-span-3 md:col-span-1">
@@ -156,30 +187,87 @@ export default function PlayerPage() {
             )}
           </div>
         </Card>
-        <StatCard
-          label="Minutes played"
-          value={stats?.minutes ?? 0}
-          caption={`${stats?.appearances ?? 0} appearances`}
-          Icon={Timer}
-          accent="primary"
-        />
+        {stats?.minutes != null ? (
+          <StatCard
+            label="Minutes played"
+            value={stats.minutes}
+            caption={`${stats?.appearances ?? stats?.starts ?? 0} matches`}
+            Icon={Timer}
+            accent="primary"
+          />
+        ) : (
+          <StatCard
+            label="Shots"
+            value={stats?.shots ?? 0}
+            caption={`${stats?.shotsOnTarget ?? 0} on target`}
+            Icon={Crosshair}
+            accent="primary"
+          />
+        )}
       </div>
 
-      {/* Match log placeholder */}
+      {/* Match log */}
       <div className="mt-5">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-h3 text-[var(--text-primary)]">Recent matches</h2>
           <span className="text-caption uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-            last 5
+            last {matchLog.length || 10}
           </span>
         </div>
         {statsLoading ? (
           <TableSkeleton rows={5} columns={5} />
+        ) : matchLog.length > 0 ? (
+          <Card className="overflow-hidden p-0">
+            <table className="w-full text-small">
+              <thead>
+                <tr className="border-b border-[var(--border-color)] text-left text-caption uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                  <th className="px-4 py-2.5 font-semibold">Date</th>
+                  <th className="px-4 py-2.5 font-semibold">Opponent</th>
+                  <th className="px-2 py-2.5 text-center font-semibold">Score</th>
+                  <th className="px-2 py-2.5 text-center font-semibold">G</th>
+                  <th className="px-2 py-2.5 text-center font-semibold">A</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matchLog.map((match) => (
+                  <tr
+                    key={match.id}
+                    className="border-b border-[var(--border-color)] last:border-b-0"
+                  >
+                    <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-[var(--text-secondary)]">
+                      {formatMatchDate(match.date)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="inline-flex items-center gap-2 text-[var(--text-primary)]">
+                        <TeamBadge teamId={match.opponent.id} name={match.opponent.name} size={20} />
+                        <span className="truncate">{match.opponent.name}</span>
+                        <span className="text-caption text-[var(--text-tertiary)]">
+                          {match.isHome === false ? '(A)' : '(H)'}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-2.5 text-center tabular-nums">
+                      <span className="inline-flex items-center gap-1.5">
+                        {match.result ? <ResultChip result={match.result} /> : null}
+                        <span className="text-[var(--text-secondary)]">{match.score ?? '—'}</span>
+                      </span>
+                    </td>
+                    <td className="px-2 py-2.5 text-center tabular-nums text-[var(--text-primary)]">
+                      {match.goals ?? '—'}
+                    </td>
+                    <td className="px-2 py-2.5 text-center tabular-nums text-[var(--text-primary)]">
+                      {match.assists ?? '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
         ) : (
           <EmptyState
             illustration="no-matches"
-            title="Match log not available yet"
-            description="The player match log endpoint will populate this section once the backend route lands."
+            title="No recent matches"
+            description="No game log is available for this player yet."
           />
         )}
       </div>
