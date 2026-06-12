@@ -41,6 +41,8 @@ const nextConfig = {
   // Include prediction data files in serverless function bundles
   outputFileTracingIncludes: {
     '/api/v1/tracking/*': ['./backend/data/predictions/**'],
+    '/api/world-cup/*': ['./backend/data/worldcup/**'],
+    '/world-cup': ['./backend/data/worldcup/**'],
   },
 }
 

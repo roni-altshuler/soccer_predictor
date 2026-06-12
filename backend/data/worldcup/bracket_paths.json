@@ -1,0 +1,895 @@
+{
+ "tournament": "world_cup",
+ "generated_at": "2026-06-12T16:12:03.395529+00:00",
+ "n_simulations": 20000,
+ "bracket_set": false,
+ "teams": [
+  {
+   "team_id": null,
+   "name": "Spain",
+   "p_champion": 0.0519,
+   "p_final": 0.0903,
+   "p_semi": 0.1628,
+   "p_quarter": 0.2825,
+   "p_r16": 0.4934,
+   "p_r32": 0.8817,
+   "most_likely_round_reached": "Round of 32",
+   "group": "H"
+  },
+  {
+   "team_id": null,
+   "name": "Argentina",
+   "p_champion": 0.0502,
+   "p_final": 0.0863,
+   "p_semi": 0.1588,
+   "p_quarter": 0.2789,
+   "p_r16": 0.4872,
+   "p_r32": 0.8851,
+   "most_likely_round_reached": "Round of 32",
+   "group": "J"
+  },
+  {
+   "team_id": null,
+   "name": "Brazil",
+   "p_champion": 0.0446,
+   "p_final": 0.0837,
+   "p_semi": 0.1484,
+   "p_quarter": 0.2646,
+   "p_r16": 0.4708,
+   "p_r32": 0.8752,
+   "most_likely_round_reached": "Round of 32",
+   "group": "C"
+  },
+  {
+   "team_id": null,
+   "name": "Netherlands",
+   "p_champion": 0.0376,
+   "p_final": 0.071,
+   "p_semi": 0.1306,
+   "p_quarter": 0.2478,
+   "p_r16": 0.4471,
+   "p_r32": 0.8555,
+   "most_likely_round_reached": "Round of 32",
+   "group": "F"
+  },
+  {
+   "team_id": null,
+   "name": "England",
+   "p_champion": 0.0373,
+   "p_final": 0.0683,
+   "p_semi": 0.1254,
+   "p_quarter": 0.2419,
+   "p_r16": 0.4652,
+   "p_r32": 0.8703,
+   "most_likely_round_reached": "Round of 32",
+   "group": "L"
+  },
+  {
+   "team_id": null,
+   "name": "Germany",
+   "p_champion": 0.0372,
+   "p_final": 0.068,
+   "p_semi": 0.1241,
+   "p_quarter": 0.2362,
+   "p_r16": 0.4728,
+   "p_r32": 0.8645,
+   "most_likely_round_reached": "Round of 32",
+   "group": "E"
+  },
+  {
+   "team_id": null,
+   "name": "France",
+   "p_champion": 0.0365,
+   "p_final": 0.0738,
+   "p_semi": 0.1293,
+   "p_quarter": 0.2408,
+   "p_r16": 0.4574,
+   "p_r32": 0.8541,
+   "most_likely_round_reached": "Round of 32",
+   "group": "I"
+  },
+  {
+   "team_id": null,
+   "name": "Colombia",
+   "p_champion": 0.0352,
+   "p_final": 0.0672,
+   "p_semi": 0.1303,
+   "p_quarter": 0.2342,
+   "p_r16": 0.4591,
+   "p_r32": 0.8155,
+   "most_likely_round_reached": "Round of 32",
+   "group": "K"
+  },
+  {
+   "team_id": null,
+   "name": "Switzerland",
+   "p_champion": 0.0285,
+   "p_final": 0.0542,
+   "p_semi": 0.1099,
+   "p_quarter": 0.2184,
+   "p_r16": 0.4138,
+   "p_r32": 0.8007,
+   "most_likely_round_reached": "Round of 32",
+   "group": "B"
+  },
+  {
+   "team_id": null,
+   "name": "Uruguay",
+   "p_champion": 0.0279,
+   "p_final": 0.055,
+   "p_semi": 0.1065,
+   "p_quarter": 0.2064,
+   "p_r16": 0.396,
+   "p_r32": 0.7933,
+   "most_likely_round_reached": "Round of 32",
+   "group": "H"
+  },
+  {
+   "team_id": null,
+   "name": "Belgium",
+   "p_champion": 0.0278,
+   "p_final": 0.0536,
+   "p_semi": 0.1172,
+   "p_quarter": 0.2389,
+   "p_r16": 0.4396,
+   "p_r32": 0.8569,
+   "most_likely_round_reached": "Round of 32",
+   "group": "G"
+  },
+  {
+   "team_id": null,
+   "name": "Mexico",
+   "p_champion": 0.0272,
+   "p_final": 0.0556,
+   "p_semi": 0.109,
+   "p_quarter": 0.229,
+   "p_r16": 0.4491,
+   "p_r32": 0.875,
+   "most_likely_round_reached": "Round of 32",
+   "group": "A"
+  },
+  {
+   "team_id": null,
+   "name": "South Korea",
+   "p_champion": 0.0269,
+   "p_final": 0.0531,
+   "p_semi": 0.1045,
+   "p_quarter": 0.2204,
+   "p_r16": 0.4376,
+   "p_r32": 0.8385,
+   "most_likely_round_reached": "Round of 32",
+   "group": "A"
+  },
+  {
+   "team_id": null,
+   "name": "Portugal",
+   "p_champion": 0.0267,
+   "p_final": 0.0536,
+   "p_semi": 0.1138,
+   "p_quarter": 0.2071,
+   "p_r16": 0.4435,
+   "p_r32": 0.8286,
+   "most_likely_round_reached": "Round of 32",
+   "group": "K"
+  },
+  {
+   "team_id": null,
+   "name": "Morocco",
+   "p_champion": 0.023,
+   "p_final": 0.0481,
+   "p_semi": 0.0959,
+   "p_quarter": 0.1913,
+   "p_r16": 0.3762,
+   "p_r32": 0.7772,
+   "most_likely_round_reached": "Round of 32",
+   "group": "C"
+  },
+  {
+   "team_id": null,
+   "name": "Sweden",
+   "p_champion": 0.0219,
+   "p_final": 0.0434,
+   "p_semi": 0.0848,
+   "p_quarter": 0.1705,
+   "p_r16": 0.3337,
+   "p_r32": 0.6838,
+   "most_likely_round_reached": "Round of 32",
+   "group": "F"
+  },
+  {
+   "team_id": null,
+   "name": "Ecuador",
+   "p_champion": 0.0208,
+   "p_final": 0.0439,
+   "p_semi": 0.0854,
+   "p_quarter": 0.1753,
+   "p_r16": 0.3708,
+   "p_r32": 0.7374,
+   "most_likely_round_reached": "Round of 32",
+   "group": "E"
+  },
+  {
+   "team_id": null,
+   "name": "New Zealand",
+   "p_champion": 0.0192,
+   "p_final": 0.0377,
+   "p_semi": 0.0848,
+   "p_quarter": 0.183,
+   "p_r16": 0.3479,
+   "p_r32": 0.7045,
+   "most_likely_round_reached": "Round of 32",
+   "group": "G"
+  },
+  {
+   "team_id": null,
+   "name": "Norway",
+   "p_champion": 0.0188,
+   "p_final": 0.0393,
+   "p_semi": 0.079,
+   "p_quarter": 0.1633,
+   "p_r16": 0.3512,
+   "p_r32": 0.7262,
+   "most_likely_round_reached": "Round of 32",
+   "group": "I"
+  },
+  {
+   "team_id": null,
+   "name": "Tunisia",
+   "p_champion": 0.0186,
+   "p_final": 0.0413,
+   "p_semi": 0.0828,
+   "p_quarter": 0.1661,
+   "p_r16": 0.336,
+   "p_r32": 0.6986,
+   "most_likely_round_reached": "Round of 32",
+   "group": "F"
+  },
+  {
+   "team_id": null,
+   "name": "Canada",
+   "p_champion": 0.0186,
+   "p_final": 0.0387,
+   "p_semi": 0.0788,
+   "p_quarter": 0.1646,
+   "p_r16": 0.3353,
+   "p_r32": 0.7007,
+   "most_likely_round_reached": "Round of 32",
+   "group": "B"
+  },
+  {
+   "team_id": null,
+   "name": "Bosnia-Herzegovina",
+   "p_champion": 0.0184,
+   "p_final": 0.0352,
+   "p_semi": 0.0732,
+   "p_quarter": 0.1537,
+   "p_r16": 0.314,
+   "p_r32": 0.6401,
+   "most_likely_round_reached": "Round of 32",
+   "group": "B"
+  },
+  {
+   "team_id": null,
+   "name": "Austria",
+   "p_champion": 0.0182,
+   "p_final": 0.0377,
+   "p_semi": 0.0814,
+   "p_quarter": 0.1676,
+   "p_r16": 0.3315,
+   "p_r32": 0.7278,
+   "most_likely_round_reached": "Round of 32",
+   "group": "J"
+  },
+  {
+   "team_id": null,
+   "name": "Japan",
+   "p_champion": 0.0181,
+   "p_final": 0.0391,
+   "p_semi": 0.0761,
+   "p_quarter": 0.153,
+   "p_r16": 0.3097,
+   "p_r32": 0.6383,
+   "most_likely_round_reached": "Round of 32",
+   "group": "F"
+  },
+  {
+   "team_id": null,
+   "name": "Cura\u00e7ao",
+   "p_champion": 0.0175,
+   "p_final": 0.0365,
+   "p_semi": 0.073,
+   "p_quarter": 0.154,
+   "p_r16": 0.3244,
+   "p_r32": 0.6325,
+   "most_likely_round_reached": "Round of 32",
+   "group": "E"
+  },
+  {
+   "team_id": null,
+   "name": "T\u00fcrkiye",
+   "p_champion": 0.0172,
+   "p_final": 0.0364,
+   "p_semi": 0.0769,
+   "p_quarter": 0.1596,
+   "p_r16": 0.3418,
+   "p_r32": 0.6814,
+   "most_likely_round_reached": "Round of 32",
+   "group": "D"
+  },
+  {
+   "team_id": null,
+   "name": "Croatia",
+   "p_champion": 0.0169,
+   "p_final": 0.0359,
+   "p_semi": 0.0738,
+   "p_quarter": 0.1472,
+   "p_r16": 0.3151,
+   "p_r32": 0.6681,
+   "most_likely_round_reached": "Round of 32",
+   "group": "L"
+  },
+  {
+   "team_id": null,
+   "name": "Cape Verde",
+   "p_champion": 0.0164,
+   "p_final": 0.033,
+   "p_semi": 0.0698,
+   "p_quarter": 0.1466,
+   "p_r16": 0.2981,
+   "p_r32": 0.6409,
+   "most_likely_round_reached": "Round of 32",
+   "group": "H"
+  },
+  {
+   "team_id": null,
+   "name": "Iraq",
+   "p_champion": 0.0163,
+   "p_final": 0.0331,
+   "p_semi": 0.0682,
+   "p_quarter": 0.1442,
+   "p_r16": 0.3045,
+   "p_r32": 0.6431,
+   "most_likely_round_reached": "Round of 32",
+   "group": "I"
+  },
+  {
+   "team_id": null,
+   "name": "Congo DR",
+   "p_champion": 0.0161,
+   "p_final": 0.0341,
+   "p_semi": 0.0733,
+   "p_quarter": 0.1436,
+   "p_r16": 0.3021,
+   "p_r32": 0.6143,
+   "most_likely_round_reached": "Round of 32",
+   "group": "K"
+  },
+  {
+   "team_id": null,
+   "name": "Jordan",
+   "p_champion": 0.0158,
+   "p_final": 0.0332,
+   "p_semi": 0.0709,
+   "p_quarter": 0.1489,
+   "p_r16": 0.3086,
+   "p_r32": 0.6588,
+   "most_likely_round_reached": "Round of 32",
+   "group": "J"
+  },
+  {
+   "team_id": null,
+   "name": "Australia",
+   "p_champion": 0.0157,
+   "p_final": 0.0379,
+   "p_semi": 0.0834,
+   "p_quarter": 0.1757,
+   "p_r16": 0.3672,
+   "p_r32": 0.7226,
+   "most_likely_round_reached": "Round of 32",
+   "group": "D"
+  },
+  {
+   "team_id": null,
+   "name": "Ivory Coast",
+   "p_champion": 0.0154,
+   "p_final": 0.0299,
+   "p_semi": 0.0612,
+   "p_quarter": 0.1335,
+   "p_r16": 0.2759,
+   "p_r32": 0.5558,
+   "most_likely_round_reached": "Round of 32",
+   "group": "E"
+  },
+  {
+   "team_id": null,
+   "name": "Iran",
+   "p_champion": 0.0152,
+   "p_final": 0.0324,
+   "p_semi": 0.0726,
+   "p_quarter": 0.1565,
+   "p_r16": 0.3034,
+   "p_r32": 0.6286,
+   "most_likely_round_reached": "Round of 32",
+   "group": "G"
+  },
+  {
+   "team_id": null,
+   "name": "Senegal",
+   "p_champion": 0.0152,
+   "p_final": 0.0319,
+   "p_semi": 0.0668,
+   "p_quarter": 0.1403,
+   "p_r16": 0.2984,
+   "p_r32": 0.6269,
+   "most_likely_round_reached": "Round of 32",
+   "group": "I"
+  },
+  {
+   "team_id": null,
+   "name": "Uzbekistan",
+   "p_champion": 0.0149,
+   "p_final": 0.0343,
+   "p_semi": 0.074,
+   "p_quarter": 0.1401,
+   "p_r16": 0.313,
+   "p_r32": 0.6364,
+   "most_likely_round_reached": "Round of 32",
+   "group": "K"
+  },
+  {
+   "team_id": null,
+   "name": "United States",
+   "p_champion": 0.0142,
+   "p_final": 0.0303,
+   "p_semi": 0.0664,
+   "p_quarter": 0.1439,
+   "p_r16": 0.3076,
+   "p_r32": 0.6149,
+   "most_likely_round_reached": "Round of 32",
+   "group": "D"
+  },
+  {
+   "team_id": null,
+   "name": "South Africa",
+   "p_champion": 0.0121,
+   "p_final": 0.0254,
+   "p_semi": 0.0515,
+   "p_quarter": 0.1022,
+   "p_r16": 0.2054,
+   "p_r32": 0.4173,
+   "most_likely_round_reached": "Round of 32",
+   "group": "A"
+  },
+  {
+   "team_id": null,
+   "name": "Algeria",
+   "p_champion": 0.011,
+   "p_final": 0.0233,
+   "p_semi": 0.0549,
+   "p_quarter": 0.1167,
+   "p_r16": 0.2443,
+   "p_r32": 0.5311,
+   "most_likely_round_reached": "Round of 32",
+   "group": "J"
+  },
+  {
+   "team_id": null,
+   "name": "Czechia",
+   "p_champion": 0.011,
+   "p_final": 0.0232,
+   "p_semi": 0.0452,
+   "p_quarter": 0.0935,
+   "p_r16": 0.1883,
+   "p_r32": 0.3841,
+   "most_likely_round_reached": "Round of 32",
+   "group": "A"
+  },
+  {
+   "team_id": null,
+   "name": "Panama",
+   "p_champion": 0.0103,
+   "p_final": 0.0242,
+   "p_semi": 0.0509,
+   "p_quarter": 0.112,
+   "p_r16": 0.2646,
+   "p_r32": 0.584,
+   "most_likely_round_reached": "Round of 32",
+   "group": "L"
+  },
+  {
+   "team_id": null,
+   "name": "Ghana",
+   "p_champion": 0.0103,
+   "p_final": 0.0232,
+   "p_semi": 0.0481,
+   "p_quarter": 0.1037,
+   "p_r16": 0.2318,
+   "p_r32": 0.4993,
+   "most_likely_round_reached": "Round of 32",
+   "group": "L"
+  },
+  {
+   "team_id": null,
+   "name": "Scotland",
+   "p_champion": 0.0086,
+   "p_final": 0.0191,
+   "p_semi": 0.0403,
+   "p_quarter": 0.0885,
+   "p_r16": 0.1817,
+   "p_r32": 0.4005,
+   "most_likely_round_reached": "Round of 32",
+   "group": "C"
+  },
+  {
+   "team_id": null,
+   "name": "Haiti",
+   "p_champion": 0.0086,
+   "p_final": 0.0186,
+   "p_semi": 0.0359,
+   "p_quarter": 0.0746,
+   "p_r16": 0.1568,
+   "p_r32": 0.3572,
+   "most_likely_round_reached": "Round of 32",
+   "group": "C"
+  },
+  {
+   "team_id": null,
+   "name": "Paraguay",
+   "p_champion": 0.0083,
+   "p_final": 0.0174,
+   "p_semi": 0.0403,
+   "p_quarter": 0.0926,
+   "p_r16": 0.2051,
+   "p_r32": 0.4194,
+   "most_likely_round_reached": "Round of 32",
+   "group": "D"
+  },
+  {
+   "team_id": null,
+   "name": "Saudi Arabia",
+   "p_champion": 0.0076,
+   "p_final": 0.0174,
+   "p_semi": 0.0367,
+   "p_quarter": 0.0799,
+   "p_r16": 0.1762,
+   "p_r32": 0.3981,
+   "most_likely_round_reached": "Round of 32",
+   "group": "H"
+  },
+  {
+   "team_id": null,
+   "name": "Egypt",
+   "p_champion": 0.0073,
+   "p_final": 0.0159,
+   "p_semi": 0.0383,
+   "p_quarter": 0.0883,
+   "p_r16": 0.1773,
+   "p_r32": 0.3853,
+   "most_likely_round_reached": "Round of 32",
+   "group": "G"
+  },
+  {
+   "team_id": null,
+   "name": "Qatar",
+   "p_champion": 0.0066,
+   "p_final": 0.0152,
+   "p_semi": 0.0349,
+   "p_quarter": 0.0781,
+   "p_r16": 0.1698,
+   "p_r32": 0.3695,
+   "most_likely_round_reached": "Round of 32",
+   "group": "B"
+  }
+ ],
+ "round_matchups": [
+  {
+   "round": "R32",
+   "label": "Round of 32",
+   "matches": [
+    {
+     "match_id": "760486",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-28T19:00Z"
+    },
+    {
+     "match_id": "760487",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-29T17:00Z"
+    },
+    {
+     "match_id": "760489",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-29T20:30Z"
+    },
+    {
+     "match_id": "760488",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-30T01:00Z"
+    },
+    {
+     "match_id": "760490",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-30T17:00Z"
+    },
+    {
+     "match_id": "760492",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-06-30T21:00Z"
+    },
+    {
+     "match_id": "760491",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-01T01:00Z"
+    },
+    {
+     "match_id": "760495",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-01T16:00Z"
+    },
+    {
+     "match_id": "760493",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-01T20:00Z"
+    },
+    {
+     "match_id": "760494",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-02T00:00Z"
+    },
+    {
+     "match_id": "760497",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-02T19:00Z"
+    },
+    {
+     "match_id": "760496",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-02T23:00Z"
+    },
+    {
+     "match_id": "760498",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-03T03:00Z"
+    },
+    {
+     "match_id": "760499",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-03T18:00Z"
+    },
+    {
+     "match_id": "760500",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-03T22:00Z"
+    },
+    {
+     "match_id": "760501",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-04T01:30Z"
+    }
+   ]
+  },
+  {
+   "round": "R16",
+   "label": "Round of 16",
+   "matches": [
+    {
+     "match_id": "760502",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-04T17:00Z"
+    },
+    {
+     "match_id": "760503",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-04T21:00Z"
+    },
+    {
+     "match_id": "760504",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-05T20:00Z"
+    },
+    {
+     "match_id": "760505",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-06T00:00Z"
+    },
+    {
+     "match_id": "760506",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-06T19:00Z"
+    },
+    {
+     "match_id": "760507",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-07T00:00Z"
+    },
+    {
+     "match_id": "760509",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-07T16:00Z"
+    },
+    {
+     "match_id": "760508",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-07T20:00Z"
+    }
+   ]
+  },
+  {
+   "round": "QF",
+   "label": "Quarter-Finals",
+   "matches": [
+    {
+     "match_id": "760510",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-09T20:00Z"
+    },
+    {
+     "match_id": "760511",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-10T19:00Z"
+    },
+    {
+     "match_id": "760512",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-11T21:00Z"
+    },
+    {
+     "match_id": "760513",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-12T01:00Z"
+    }
+   ]
+  },
+  {
+   "round": "SF",
+   "label": "Semi-Finals",
+   "matches": [
+    {
+     "match_id": "760514",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-14T19:00Z"
+    },
+    {
+     "match_id": "760515",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-15T19:00Z"
+    }
+   ]
+  },
+  {
+   "round": "F",
+   "label": "Final",
+   "matches": [
+    {
+     "match_id": "760517",
+     "home": null,
+     "away": null,
+     "home_score": null,
+     "away_score": null,
+     "winner": null,
+     "date": "2026-07-19T19:00Z"
+    }
+   ]
+  }
+ ]
+}
