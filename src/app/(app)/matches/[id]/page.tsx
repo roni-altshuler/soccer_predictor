@@ -7,6 +7,7 @@ import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, CheckCircle2, Clock, 
 import { EventTimeline } from '@/components/match/EventTimeline'
 import { MetaChipRow } from '@/components/match/MetaChipRow'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
+import { TeamBadge } from '@/components/primitives/TeamBadge'
 
 import { cn } from '@/lib/utils'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
@@ -63,6 +64,9 @@ interface MatchDetails {
   generatedAt?: string
   home_team: string
   away_team: string
+  /** ESPN team ids — absent for FotMob-sourced matches (different id namespace). */
+  home_team_id?: string
+  away_team_id?: string
   home_score: number | null
   away_score: number | null
   status: string
@@ -219,6 +223,40 @@ const DETAIL_TAB_LABELS: Record<DetailTab, string> = {
 }
 
 type MatchStats = MatchDetails['stats']
+
+function TeamNameWithCrest({
+  name,
+  teamId,
+  align,
+}: {
+  name: string
+  teamId?: string
+  align: 'left' | 'right'
+}) {
+  const content = (
+    <span
+      className={cn(
+        'flex items-center gap-2.5 min-w-0',
+        align === 'right' ? 'flex-row-reverse justify-start' : 'justify-start',
+      )}
+    >
+      <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
+      <span className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
+        {name}
+      </span>
+    </span>
+  )
+  if (!teamId) return content
+  return (
+    <Link
+      href={`/teams/${teamId}`}
+      className="block transition-opacity hover:opacity-80"
+      aria-label={`${name} team page`}
+    >
+      {content}
+    </Link>
+  )
+}
 
 function formatStatValue(value: number, suffix?: string, decimals = 0): string {
   const printed = decimals > 0 ? value.toFixed(decimals) : String(value)
@@ -1033,6 +1071,8 @@ export default function MatchDetailPage() {
         heroRef={heroRef}
         homeName={match.home_team}
         awayName={match.away_team}
+        homeTeamId={match.home_team_id}
+        awayTeamId={match.away_team_id}
         homeScore={match.home_score}
         awayScore={match.away_score}
         isLive={isLive}
@@ -1111,9 +1151,11 @@ export default function MatchDetailPage() {
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-6">
             {/* Home team */}
             <div className="min-w-0 text-right">
-              <p className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
-                {match.home_team}
-              </p>
+              <TeamNameWithCrest
+                name={match.home_team}
+                teamId={match.home_team_id}
+                align="right"
+              />
               {match.events.filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
                   {match.events
@@ -1150,9 +1192,11 @@ export default function MatchDetailPage() {
 
             {/* Away team */}
             <div className="min-w-0 text-left">
-              <p className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
-                {match.away_team}
-              </p>
+              <TeamNameWithCrest
+                name={match.away_team}
+                teamId={match.away_team_id}
+                align="left"
+              />
               {match.events.filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
                   {match.events

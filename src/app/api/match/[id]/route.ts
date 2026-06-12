@@ -188,6 +188,9 @@ interface MatchDetailsResponse {
   generatedAt?: string
   home_team: string
   away_team: string
+  /** ESPN team ids — omitted for FotMob-sourced payloads (different id namespace). */
+  home_team_id?: string
+  away_team_id?: string
   home_score: number | null
   away_score: number | null
   status: string
@@ -442,6 +445,11 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
         generatedAt: new Date().toISOString(),
         home_team: homeTeam.team?.displayName || homeTeam.team?.name || '',
         away_team: awayTeam.team?.displayName || awayTeam.team?.name || '',
+        // ESPN team ids — power crest CDN lookups and /teams/{id} links.
+        // The FotMob response shape deliberately omits these: FotMob ids are
+        // a different namespace and must not be confused with ESPN ids.
+        home_team_id: homeTeamId || undefined,
+        away_team_id: awayTeamId || undefined,
         home_score: status !== 'scheduled' ? parseInt(homeTeam.score || '0') : null,
         away_score: status !== 'scheduled' ? parseInt(awayTeam.score || '0') : null,
         status,

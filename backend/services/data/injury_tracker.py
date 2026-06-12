@@ -200,18 +200,15 @@ class InjuryTracker:
         if cached and self._is_fresh(cached):
             return cached.get("injuries", [])
 
+        # No cross-source fallback: ESPN and FotMob team ids are different
+        # namespaces, so retrying the other provider with the same id can
+        # attach another club's injury list (data-provenance violation).
         injuries: List[Dict[str, Any]] = []
-        if source == "espn":
-            injuries = await self._fetch_espn_injuries(str(team_id), league_key)
-            if not injuries:
-                # Fallback to FotMob if ESPN is empty/blocked.
-                injuries = await self._fetch_fotmob_injuries(str(team_id))
-        elif source == "fotmob":
+        if source == "fotmob":
             injuries = await self._fetch_fotmob_injuries(str(team_id))
-            if not injuries:
-                injuries = await self._fetch_espn_injuries(str(team_id), league_key)
         else:
-            logger.warning(f"Unknown injury source {source}; defaulting to espn")
+            if source != "espn":
+                logger.warning(f"Unknown injury source {source}; defaulting to espn")
             injuries = await self._fetch_espn_injuries(str(team_id), league_key)
 
         payload = {
