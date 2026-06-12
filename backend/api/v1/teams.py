@@ -472,6 +472,7 @@ async def get_team_overview(
         "abbreviation": meta_raw.get("abbreviation") or standing_row.get("team_short_name") or "",
         "logo": (meta_raw.get("logos") or [{}])[0].get("href") if meta_raw.get("logos") else standing_row.get("logo"),
         "venue": (meta_raw.get("venue") or {}).get("fullName"),
+        "color": f"#{meta_raw['color']}" if meta_raw.get("color") else None,
         "founded": None,  # ESPN site API does not expose this consistently
     }
 
