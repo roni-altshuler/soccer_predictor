@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Activity,
+  Globe,
   Search,
   Sparkles,
   TrendingUp,
-  Trophy,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -23,7 +23,9 @@ type Item = {
 
 const ITEMS: Item[] = [
   { href: '/', label: 'Matches', icon: Activity },
-  { href: '/matches', label: 'Leagues', icon: Trophy },
+  // Tournament-period slot — swap back to { href: '/matches', label:
+  // 'Leagues', icon: Trophy } after the 2026 final on July 19.
+  { href: '/world-cup', label: 'World Cup', icon: Globe },
   { action: 'palette', label: 'Search', icon: Search },
   { href: '/ai', label: 'AI', icon: Sparkles, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },

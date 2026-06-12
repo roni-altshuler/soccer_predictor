@@ -8,6 +8,7 @@ import {
   Brain,
   Calculator,
   Gauge,
+  Globe,
   History,
   Info,
   Medal,
@@ -31,6 +32,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: '/', label: 'Match Centre', icon: Activity },
+  { href: '/world-cup', label: 'World Cup', icon: Globe },
   { href: '/matches', label: 'Leagues', icon: Trophy },
   { href: '/tournaments', label: 'Tournaments', icon: Medal },
   { href: '/ai', label: 'AI Dashboard', icon: Sparkles, accent: 'ai' },

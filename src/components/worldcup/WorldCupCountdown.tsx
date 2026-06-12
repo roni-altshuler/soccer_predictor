@@ -49,7 +49,7 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
   const statusText = timeLeft.finished
     ? 'Tournament complete'
     : timeLeft.started
-      ? 'Final countdown'
+      ? 'Live now · Countdown to the final'
       : 'Opening day countdown'
 
   return (
@@ -58,10 +58,17 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
         <div className="border-b border-[var(--border-color)] px-4 py-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)] font-semibold">{statusText}</p>
+              <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-normal text-[var(--text-tertiary)] font-semibold">
+                {timeLeft.started && !timeLeft.finished ? (
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-loss)]" />
+                ) : null}
+                {statusText}
+              </p>
               <h2 className="mt-1 text-lg md:text-xl font-black text-[var(--text-primary)]">FIFA World Cup 2026</h2>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                Opens Jun 11, 2026. Final on Jul 19, 2026.
+                {timeLeft.started && !timeLeft.finished
+                  ? 'AI winner projections, group advancement odds, and a prediction for every match.'
+                  : 'Opens Jun 11, 2026. Final on Jul 19, 2026.'}
               </p>
             </div>
             <div className="flex gap-2">
@@ -84,10 +91,10 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
               World Cup fixtures use the `fifa.world` pipeline and the global fallback when tournament sample size is limited.
             </p>
             <Link
-              href="/leagues/fifa.world"
+              href="/world-cup"
               className="inline-flex items-center justify-center rounded-lg border border-[var(--accent-primary)]/40 px-3 py-2 text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10"
             >
-              View World Cup hub
+              Open the World Cup hub
             </Link>
           </div>
         </div>

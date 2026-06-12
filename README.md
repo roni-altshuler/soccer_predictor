@@ -39,7 +39,7 @@ want live data *and* honest, data-driven insight in one interface.
 - **Market Intelligence Guardrails** — User-supplied decimal odds or configured licensed-provider odds can be converted into no-vig probabilities and compared with model probabilities for audit-only edge review
 - **Personal Team Tracking** — Team watchlists with live-match monitoring, tracked prediction queues, server-synced alert queues, and home-feed filtering for followed clubs
 - **News Feed** — Aggregated soccer news from ESPN
-- **World Cup 2026 Hub** — FIFA World Cup command center, countdown, readiness panel, tournament page, fixtures, saved scenario simulator cards with export, and `fifa.world` prediction support
+- **World Cup 2026 Hub** — dedicated `/world-cup` dashboard with AI tournament-winner projections (Monte Carlo over the official 48-team bracket), all 12 groups at a glance with advancement odds, today's fixtures, plus the FIFA World Cup command center, readiness panel, tournament page, saved scenario simulator cards with export, and `fifa.world` prediction support. Winner projections ship as a committed snapshot (`backend/data/worldcup/`, refreshed 3×/day by the prediction pipeline) so they work on Vercel without the Python backend; national-team strength comes from an ELO computed over the committed World Cup/Euro/Copa América corpus since 1998
 - **Tournament Bracket Challenge** — Knockout pick'em groups for World Cup, Champions League, Europa League, Conference League, Euros, and Copa America with saved entries, model-backed AI bracket entries, commissioner scoring rules, live leaderboard scoring, synced room codes, invite-link import, and JSON import/export
 - **Progressive Web App** — Installable on desktop/mobile with offline support
 
