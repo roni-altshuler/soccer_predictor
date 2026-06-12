@@ -19,8 +19,29 @@ import json
 
 logger = logging.getLogger(__name__)
 
+def _resolve_secret_key() -> str:
+    """Resolve the JWT signing secret.
+
+    Production refuses to start without an explicit JWT_SECRET_KEY;
+    development falls back to an ephemeral per-process secret so tokens
+    never validate against a publicly known string.
+    """
+    configured = os.getenv("JWT_SECRET_KEY")
+    if configured:
+        return configured
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        raise RuntimeError("JWT_SECRET_KEY must be set when ENVIRONMENT=production")
+    import secrets
+
+    logger.warning(
+        "JWT_SECRET_KEY not set — using an ephemeral secret; "
+        "issued tokens will not survive a process restart."
+    )
+    return secrets.token_urlsafe(64)
+
+
 # Security configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-super-secret-key-change-in-production")
+SECRET_KEY = _resolve_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
