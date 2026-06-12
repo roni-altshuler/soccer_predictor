@@ -145,7 +145,10 @@ class ESPNClient:
         
         try:
             client = await self._get_client()
-            url = f"{self.BASE_URL}/{endpoint}"
+            # Absolute URLs pass through unchanged so callers can reach ESPN's
+            # other hosts (sports.core.api / site.web.api) via the same
+            # rate-limited, cached layer.
+            url = endpoint if endpoint.startswith("http") else f"{self.BASE_URL}/{endpoint}"
             response = await client.get(url, params=params)
             response.raise_for_status()
             data = response.json()
@@ -362,9 +365,37 @@ class ESPNClient:
         data = await self._request(endpoint, cache_key=cache_key)
         if not data:
             return None
-        
+
         return data.get("events", [])
-    
+
+    # ==================== ATHLETES ====================
+
+    # Athlete endpoints live on ESPN's core/web hosts rather than BASE_URL.
+    # The league slug in the URL is non-binding — any valid slug resolves
+    # any athlete id — so a default of eng.1 works globally.
+    CORE_ATHLETE_URL = (
+        "https://sports.core.api.espn.com/v2/sports/soccer/leagues/{slug}/athletes/{athlete_id}"
+    )
+    ATHLETE_OVERVIEW_URL = (
+        "https://site.web.api.espn.com/apis/common/v3/sports/soccer/{slug}/athletes/{athlete_id}/overview"
+    )
+
+    async def get_athlete(self, athlete_id: str, league_slug: str = "eng.1") -> Optional[Dict]:
+        """Get an athlete's profile (name, position, jersey, headshot, team ref)."""
+        url = self.CORE_ATHLETE_URL.format(slug=league_slug, athlete_id=athlete_id)
+        return await self._request(url, cache_key=f"espn_athlete_{athlete_id}")
+
+    async def get_athlete_overview(self, athlete_id: str, league_slug: str = "eng.1") -> Optional[Dict]:
+        """Get an athlete's season stat splits and recent game log."""
+        url = self.ATHLETE_OVERVIEW_URL.format(slug=league_slug, athlete_id=athlete_id)
+        return await self._request(url, cache_key=f"espn_athlete_overview_{athlete_id}")
+
+    async def resolve_ref(self, ref_url: str, cache_key: Optional[str] = None) -> Optional[Dict]:
+        """Follow an ESPN `$ref` URL (e.g. an athlete's defaultTeam)."""
+        if not ref_url.startswith("http"):
+            return None
+        return await self._request(ref_url, cache_key=cache_key)
+
     # ==================== NEWS ====================
     
     async def get_league_news(self, league_key: str, limit: int = 10) -> List[Dict]:

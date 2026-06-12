@@ -58,6 +58,184 @@ async def search_teams(q: str = Query(..., min_length=2)):
     }
 
 
+# ==================== PLAYERS ====================
+# Declared before the /{team_id}/* routes so the literal "players" segment
+# can never be captured as a team id.
+
+_GENDER_DEFAULT_SLUGS = {"M": "eng.1", "F": "eng.w.1"}
+
+
+def _player_slug(gender: Optional[str]) -> str:
+    return _GENDER_DEFAULT_SLUGS.get((gender or "M").upper(), "eng.1")
+
+
+def _extract_ref_id(ref: Any) -> Optional[int]:
+    """Pull the trailing numeric id out of an ESPN `$ref` URL."""
+    if isinstance(ref, dict):
+        ref = ref.get("$ref")
+    if not isinstance(ref, str):
+        return None
+    tail = ref.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
+    return int(tail) if tail.isdigit() else None
+
+
+def _stat_value(names: List[str], stats: List[Any], name: str) -> Optional[int]:
+    """Look up one stat by name from ESPN's parallel names/stats arrays."""
+    try:
+        raw = stats[names.index(name)]
+    except (ValueError, IndexError):
+        return None
+    try:
+        return int(float(raw))
+    except (TypeError, ValueError):
+        return None
+
+
+@router.get("/players/{player_id}")
+async def get_player_profile(
+    player_id: int,
+    gender: Optional[str] = Query(default=None),
+    league: Optional[str] = Query(default=None),
+):
+    """Player profile normalized to the frontend `PlayerProfile` shape.
+
+    Backed by ESPN's core athlete API. Every field except id/name is
+    optional — absent provider data stays absent (no placeholders).
+    """
+    espn = get_espn_client()
+    slug = ESPN_LEAGUE_IDS.get(league or "", None) or _player_slug(gender)
+    athlete = await espn.get_athlete(str(player_id), league_slug=slug)
+    if not athlete or not (athlete.get("displayName") or athlete.get("fullName")):
+        raise HTTPException(status_code=404, detail=f"Player {player_id} not found")
+
+    position = athlete.get("position") or {}
+    headshot = athlete.get("headshot") or {}
+    profile: Dict[str, Any] = {
+        "id": player_id,
+        "name": athlete.get("displayName") or athlete.get("fullName"),
+    }
+    if isinstance(position, dict) and (position.get("displayName") or position.get("name")):
+        profile["position"] = position.get("displayName") or position.get("name")
+    if athlete.get("jersey") and str(athlete["jersey"]).isdigit():
+        profile["shirtNumber"] = int(athlete["jersey"])
+    if athlete.get("citizenship"):
+        profile["nationality"] = athlete["citizenship"]
+    if isinstance(athlete.get("age"), int):
+        profile["age"] = athlete["age"]
+    if isinstance(athlete.get("height"), (int, float)) and athlete["height"]:
+        profile["height"] = round(athlete["height"] * 2.54)  # ESPN sends inches
+    if isinstance(headshot, dict) and headshot.get("href"):
+        profile["imageUrl"] = headshot["href"]
+
+    team_id = _extract_ref_id(athlete.get("defaultTeam") or athlete.get("team"))
+    if team_id is not None:
+        profile["teamId"] = team_id
+        team = await espn.resolve_ref(
+            f"https://sports.core.api.espn.com/v2/sports/soccer/teams/{team_id}",
+            cache_key=f"espn_team_ref_{team_id}",
+        )
+        if team:
+            if team.get("displayName"):
+                profile["teamName"] = team["displayName"]
+            if team.get("color"):
+                profile["teamColor"] = f"#{team['color']}"
+
+    return profile
+
+
+@router.get("/players/{player_id}/stats")
+async def get_player_stats(
+    player_id: int,
+    gender: Optional[str] = Query(default=None),
+    league: Optional[str] = Query(default=None),
+):
+    """Season stats + recent match log, normalized to `PlayerStats`.
+
+    ESPN's overview payload carries starts/goals/assists/shots/cards per
+    competition split plus a per-event game log. It has no minutes, xG,
+    xA, or ratings — those fields are deliberately omitted rather than
+    fabricated.
+    """
+    espn = get_espn_client()
+    slug = ESPN_LEAGUE_IDS.get(league or "", None) or _player_slug(gender)
+    overview = await espn.get_athlete_overview(str(player_id), league_slug=slug)
+    if overview is None:
+        raise HTTPException(status_code=404, detail=f"Player {player_id} not found")
+
+    result: Dict[str, Any] = {"player_id": player_id, "season": ""}
+
+    # --- Season splits: pick the primary competition (most starts). ---
+    statistics = overview.get("statistics") or {}
+    names = statistics.get("names") or []
+    splits = statistics.get("splits") or []
+    primary = None
+    primary_starts = -1
+    for split in splits:
+        starts = _stat_value(names, split.get("stats") or [], "starts") or 0
+        if starts > primary_starts:
+            primary, primary_starts = split, starts
+    if primary is not None:
+        stats_row = primary.get("stats") or []
+        result["season"] = primary.get("displayName") or ""
+        result["competition"] = primary.get("displayName") or ""
+        for out_key, espn_name in (
+            ("starts", "starts"),
+            ("goals", "totalGoals"),
+            ("assists", "goalAssists"),
+            ("shots", "totalShots"),
+            ("shotsOnTarget", "shotsOnTarget"),
+            ("yellowCards", "yellowCards"),
+            ("redCards", "redCards"),
+        ):
+            value = _stat_value(names, stats_row, espn_name)
+            if value is not None:
+                result[out_key] = value
+
+    # --- Recent match log: join gameLog.events with its per-event stats. ---
+    game_log = overview.get("gameLog") or {}
+    events = game_log.get("events") or {}
+    per_event_stats: Dict[str, Dict[str, Optional[int]]] = {}
+    for block in game_log.get("statistics") or []:
+        block_names = block.get("names") or []
+        for entry in block.get("events") or []:
+            event_id = str(entry.get("eventId") or "")
+            stats_row = entry.get("stats") or []
+            if event_id:
+                per_event_stats[event_id] = {
+                    "goals": _stat_value(block_names, stats_row, "totalGoals"),
+                    "assists": _stat_value(block_names, stats_row, "goalAssists"),
+                }
+
+    matches: List[Dict[str, Any]] = []
+    if isinstance(events, dict):
+        for event_id, event in events.items():
+            if not isinstance(event, dict) or not event.get("gameDate"):
+                continue
+            opponent = event.get("opponent") or {}
+            entry: Dict[str, Any] = {
+                "id": str(event_id),
+                "date": event.get("gameDate"),
+                "opponent": {
+                    "id": opponent.get("id"),
+                    "name": opponent.get("displayName") or opponent.get("abbreviation") or "",
+                },
+                "score": event.get("score"),
+                "result": event.get("gameResult"),
+                "isHome": event.get("atVs") == "vs",
+            }
+            joined = per_event_stats.get(str(event_id))
+            if joined:
+                if joined.get("goals") is not None:
+                    entry["goals"] = joined["goals"]
+                if joined.get("assists") is not None:
+                    entry["assists"] = joined["assists"]
+            matches.append(entry)
+    matches.sort(key=lambda m: m["date"], reverse=True)
+    result["matches"] = matches[:10]
+
+    return result
+
+
 async def _resolve_team_via_standings(
     team_id: str,
     league_key: Optional[str],
