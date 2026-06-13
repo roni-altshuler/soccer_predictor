@@ -66,7 +66,7 @@ export const ImageModal = ({ src, alt, title, description }: ImageModalProps) =>
             {/* Close button - Prominent X in top-right corner */}
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 bg-red-500/90 hover:bg-red-600 text-white rounded-full p-3 transition-all duration-200 shadow-lg hover:scale-110 z-10"
+              className="absolute top-4 right-4 bg-[color-mix(in_srgb,var(--accent-loss)_90%,transparent)] hover:bg-[var(--accent-loss)] text-white rounded-full p-3 transition-all duration-200 shadow-lg hover:scale-110 z-10"
               aria-label="Close modal"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ export const ImageModal = ({ src, alt, title, description }: ImageModalProps) =>
 
             {/* Modal content */}
             <div 
-              className="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-gray-300 max-w-full max-h-full flex flex-col"
+              className="bg-[var(--card-bg)] rounded-2xl shadow-2xl overflow-hidden border-2 border-[var(--border-color)] max-w-full max-h-full flex flex-col"
               onClick={(e) => e.stopPropagation()}
               style={{ maxHeight: 'calc(90vh - 80px)', maxWidth: '95vw' }}
             >

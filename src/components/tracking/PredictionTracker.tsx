@@ -160,9 +160,9 @@ export default function PredictionTracker() {
   }, [timeRange])
 
   const getAccuracyColor = (accuracy: number): string => {
-    if (accuracy >= 0.6) return 'text-green-500'
-    if (accuracy >= 0.45) return 'text-amber-500'
-    return 'text-red-400'
+    if (accuracy >= 0.6) return 'text-[var(--accent-primary)]'
+    if (accuracy >= 0.45) return 'text-[var(--accent-warn)]'
+    return 'text-[var(--accent-loss)]'
   }
 
   const filteredPredictions = predictions.filter(p => {
@@ -244,8 +244,8 @@ export default function PredictionTracker() {
                   />
                   <defs>
                     <linearGradient id="accuracyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={metrics.accuracy >= 0.6 ? '#22c55e' : metrics.accuracy >= 0.45 ? '#f59e0b' : '#ef4444'} />
-                      <stop offset="100%" stopColor={metrics.accuracy >= 0.6 ? '#10b981' : metrics.accuracy >= 0.45 ? '#fbbf24' : '#f97316'} />
+                      <stop offset="0%" stopColor={metrics.accuracy >= 0.6 ? 'var(--accent-primary)' : metrics.accuracy >= 0.45 ? 'var(--accent-warn)' : 'var(--accent-loss)'} />
+                      <stop offset="100%" stopColor={metrics.accuracy >= 0.6 ? 'var(--accent-primary-soft)' : metrics.accuracy >= 0.45 ? 'var(--accent-warn-soft)' : 'var(--accent-loss-soft)'} />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -269,7 +269,7 @@ export default function PredictionTracker() {
                   <div
                     key={idx}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-sm animate-scaleIn ${
-                      result === 'W' ? 'bg-green-500' : 'bg-red-400'
+                      result === 'W' ? 'bg-[var(--accent-primary)]' : 'bg-[var(--accent-loss)]'
                     }`}
                     style={{ animationDelay: `${idx * 50}ms` }}
                   >
@@ -289,9 +289,9 @@ export default function PredictionTracker() {
                 {(['high', 'medium', 'low'] as const).map((level) => {
                   const data = metrics.byConfidence[level]
                   const colors = {
-                    high: 'bg-green-500',
-                    medium: 'bg-amber-500',
-                    low: 'bg-red-400'
+                    high: 'bg-[var(--accent-primary)]',
+                    medium: 'bg-[var(--accent-warn)]',
+                    low: 'bg-[var(--accent-loss)]'
                   }
                   return (
                     <div key={level}>
@@ -383,8 +383,8 @@ function PredictionRow({ prediction, index }: { prediction: PredictionResult; in
             {prediction.wasPlayed && (
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 prediction.isCorrect
-                  ? 'bg-green-500/20 text-green-500'
-                  : 'bg-red-500/20 text-red-400'
+                  ? 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-[var(--accent-primary)]'
+                  : 'bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)] text-[var(--accent-loss)]'
               }`}>
                 {prediction.isCorrect ? '✓ Correct' : '✗ Incorrect'}
               </span>
@@ -412,7 +412,7 @@ function PredictionRow({ prediction, index }: { prediction: PredictionResult; in
             </div>
           )}
           {!prediction.wasPlayed && (
-            <span className="text-xs px-2 py-1 bg-amber-500/20 text-amber-500 rounded-full">
+            <span className="text-xs px-2 py-1 bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] text-[var(--accent-warn)] rounded-full">
               Pending
             </span>
           )}
@@ -421,17 +421,17 @@ function PredictionRow({ prediction, index }: { prediction: PredictionResult; in
       {/* Probability Bar */}
       <div className="mt-2 flex h-2 rounded-full overflow-hidden bg-[var(--muted-bg)]">
         <div
-          className="bg-green-500"
+          className="bg-[var(--accent-primary)]"
           style={{ width: `${prediction.prediction.homeWinProb * 100}%` }}
           title={`Home: ${(prediction.prediction.homeWinProb * 100).toFixed(0)}%`}
         />
         <div
-          className="bg-gray-400"
+          className="bg-[var(--text-tertiary)]"
           style={{ width: `${prediction.prediction.drawProb * 100}%` }}
           title={`Draw: ${(prediction.prediction.drawProb * 100).toFixed(0)}%`}
         />
         <div
-          className="bg-blue-500"
+          className="bg-[var(--accent-info)]"
           style={{ width: `${prediction.prediction.awayWinProb * 100}%` }}
           title={`Away: ${(prediction.prediction.awayWinProb * 100).toFixed(0)}%`}
         />

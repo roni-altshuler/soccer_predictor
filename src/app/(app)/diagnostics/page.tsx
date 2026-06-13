@@ -154,7 +154,7 @@ function DomainChip({
       ? 'border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
       : tone === 'ai'
         ? 'border-[var(--accent-ai)]/30 bg-[var(--accent-ai)]/12 text-[var(--accent-ai)]'
-        : 'border-violet-500/30 bg-violet-500/12 text-violet-300'
+        : 'border-[var(--accent-market)]/30 bg-[var(--accent-market)]/12 text-[var(--accent-market)]'
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${cls}`}

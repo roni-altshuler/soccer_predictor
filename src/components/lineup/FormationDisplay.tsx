@@ -98,28 +98,28 @@ const FORMATION_CONFIGS: Record<string, number[][]> = {
 // Color schemes for teams
 const TEAM_COLORS = {
   blue: {
-    gk: 'bg-yellow-500',
-    def: 'bg-blue-700',
-    mid: 'bg-blue-500',
-    fwd: 'bg-blue-400',
+    gk: 'bg-[var(--accent-warn)]',
+    def: 'bg-[var(--accent-info)]',
+    mid: 'bg-[var(--accent-info)]',
+    fwd: 'bg-[var(--accent-info)]',
   },
   orange: {
-    gk: 'bg-yellow-500',
-    def: 'bg-orange-700',
-    mid: 'bg-orange-500',
-    fwd: 'bg-red-500',
+    gk: 'bg-[var(--accent-warn)]',
+    def: 'bg-[var(--accent-warn)]',
+    mid: 'bg-[var(--accent-warn)]',
+    fwd: 'bg-[var(--accent-loss)]',
   },
   red: {
-    gk: 'bg-yellow-500',
-    def: 'bg-red-800',
-    mid: 'bg-red-600',
-    fwd: 'bg-red-500',
+    gk: 'bg-[var(--accent-warn)]',
+    def: 'bg-[var(--accent-loss)]',
+    mid: 'bg-[var(--accent-loss)]',
+    fwd: 'bg-[var(--accent-loss)]',
   },
   green: {
-    gk: 'bg-yellow-500',
-    def: 'bg-green-700',
-    mid: 'bg-green-500',
-    fwd: 'bg-green-400',
+    gk: 'bg-[var(--accent-warn)]',
+    def: 'bg-[var(--accent-primary)]',
+    mid: 'bg-[var(--accent-primary)]',
+    fwd: 'bg-[var(--accent-primary)]',
   },
 }
 
@@ -307,10 +307,10 @@ export default function FormationDisplay({
                 </span>
               )}
               {player.events?.yellowCard && (
-                <span className="w-2 h-3 bg-yellow-400 rounded-sm shadow" />
+                <span className="w-2 h-3 bg-[var(--accent-warn)] rounded-sm shadow" />
               )}
               {player.events?.redCard && (
-                <span className="w-2 h-3 bg-red-500 rounded-sm shadow" />
+                <span className="w-2 h-3 bg-[var(--accent-loss)] rounded-sm shadow" />
               )}
             </div>
           )
@@ -451,7 +451,7 @@ export function SubstitutesBench({ players }: { players: PlayerLineup[] }) {
             key={idx}
             className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[var(--muted-bg)]"
           >
-            <span className="w-5 h-5 rounded-full bg-gray-500 text-white text-[10px] flex items-center justify-center">
+            <span className="w-5 h-5 rounded-full bg-[var(--text-tertiary)] text-white text-[10px] flex items-center justify-center">
               {player.jersey || (idx + 12)}
             </span>
             <span className="text-xs text-[var(--text-primary)]">

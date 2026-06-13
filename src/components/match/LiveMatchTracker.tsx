@@ -34,15 +34,15 @@ interface LiveMatchTrackerProps {
 }
 
 const STATUS_DISPLAY: Record<string, { label: string; color: string; bg: string }> = {
-  first_half: { label: '1st Half', color: 'text-green-500', bg: 'bg-green-500/20' },
-  halftime: { label: 'Half Time', color: 'text-amber-500', bg: 'bg-amber-500/20' },
-  second_half: { label: '2nd Half', color: 'text-green-500', bg: 'bg-green-500/20' },
-  extra_time_first: { label: 'Extra Time 1st', color: 'text-purple-500', bg: 'bg-purple-500/20' },
-  extra_time_halftime: { label: 'ET Half Time', color: 'text-amber-500', bg: 'bg-amber-500/20' },
-  extra_time_second: { label: 'Extra Time 2nd', color: 'text-purple-500', bg: 'bg-purple-500/20' },
-  penalties: { label: 'Penalties', color: 'text-red-500', bg: 'bg-red-500/20' },
-  full_time: { label: 'Full Time', color: 'text-gray-500', bg: 'bg-gray-500/20' },
-  not_started: { label: 'Not Started', color: 'text-blue-500', bg: 'bg-blue-500/20' },
+  first_half: { label: '1st Half', color: 'text-[var(--accent-primary)]', bg: 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]' },
+  halftime: { label: 'Half Time', color: 'text-[var(--accent-warn)]', bg: 'bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]' },
+  second_half: { label: '2nd Half', color: 'text-[var(--accent-primary)]', bg: 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]' },
+  extra_time_first: { label: 'Extra Time 1st', color: 'text-[var(--accent-market)]', bg: 'bg-[color-mix(in_srgb,var(--accent-market)_20%,transparent)]' },
+  extra_time_halftime: { label: 'ET Half Time', color: 'text-[var(--accent-warn)]', bg: 'bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]' },
+  extra_time_second: { label: 'Extra Time 2nd', color: 'text-[var(--accent-market)]', bg: 'bg-[color-mix(in_srgb,var(--accent-market)_20%,transparent)]' },
+  penalties: { label: 'Penalties', color: 'text-[var(--accent-loss)]', bg: 'bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]' },
+  full_time: { label: 'Full Time', color: 'text-[var(--text-secondary)]', bg: 'bg-[var(--muted-bg)]' },
+  not_started: { label: 'Not Started', color: 'text-[var(--accent-info)]', bg: 'bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)]' },
 }
 
 const EVENT_ICONS: Record<string, string> = {
@@ -203,8 +203,8 @@ export default function LiveMatchTracker({
         <div className="flex items-center gap-3">
           {isLive && (
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-red-500 font-bold text-sm">LIVE</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-loss)] animate-pulse" />
+              <span className="text-[var(--live-text)] font-bold text-sm">LIVE</span>
             </div>
           )}
           <span className={`font-semibold ${statusInfo.color}`}>{statusInfo.label}</span>
@@ -220,7 +220,7 @@ export default function LiveMatchTracker({
         {isPaused && countdown && (
           <div className="flex items-center gap-2">
             <span className="text-[var(--text-secondary)] text-sm">Resumes in:</span>
-            <span className="font-mono font-bold text-amber-500 bg-amber-500/20 px-2 py-1 rounded">
+            <span className="font-mono font-bold text-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] px-2 py-1 rounded">
               {countdown}
             </span>
           </div>

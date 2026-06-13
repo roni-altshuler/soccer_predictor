@@ -402,7 +402,7 @@ function PredictPageContent() {
                               <span className="px-2 py-1 rounded bg-[var(--card-bg)] col-span-2">
                                 Season {insight.latestTrend.season}: {insight.latestTrend.avg_goals.toFixed(2)} goals/match
                                 {trendDelta !== null && (
-                                  <span className={trendDelta >= 0 ? 'text-emerald-400' : 'text-amber-400'}>
+                                  <span className={trendDelta >= 0 ? 'text-[var(--accent-primary)]' : 'text-[var(--accent-warn)]'}>
                                     {' '}({trendDelta >= 0 ? '+' : ''}{trendDelta.toFixed(2)} vs prior season)
                                   </span>
                                 )}
@@ -452,11 +452,11 @@ function PredictPageContent() {
                   <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Policy & cross-league context</p>
                     {result.verdict && (
-                      <div className={`mt-3 rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-amber-500/35 bg-amber-500/10'}`}>
+                      <div className={`mt-3 rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10' : 'border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10'}`}>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
                             <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Policy Decision</p>
-                            <p className={`text-sm font-semibold ${result.verdict.recommended_action === 'play' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            <p className={`text-sm font-semibold ${result.verdict.recommended_action === 'play' ? 'text-[var(--accent-primary)]' : 'text-[var(--accent-warn)]'}`}>
                               {result.verdict.recommended_action === 'play' ? 'Play' : 'Pass'}
                               {result.verdict.recommended_pick ? ` · ${result.verdict.recommended_pick}` : ''}
                             </p>

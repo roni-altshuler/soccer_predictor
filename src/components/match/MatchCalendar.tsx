@@ -234,15 +234,15 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
                 onClick={() => day && setSelectedDate(new Date(year, month, day))}
                 className={`
                   min-h-[70px] p-2 border-b border-r cursor-pointer transition-colors
-                  ${day ? 'hover:bg-indigo-500/10' : ''}
-                  ${isSelected(day || 0) ? 'bg-indigo-500/20' : ''}
-                  ${isToday(day || 0) ? 'bg-amber-500/10' : ''}
+                  ${day ? 'hover:bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)]' : ''}
+                  ${isSelected(day || 0) ? 'bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)]' : ''}
+                  ${isToday(day || 0) ? 'bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]' : ''}
                 `}
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 {day && (
                   <>
-                    <div className={`text-sm font-medium mb-1 ${isToday(day) ? 'text-amber-500' : ''}`} style={{ color: isToday(day) ? undefined : 'var(--text-primary)' }}>
+                    <div className={`text-sm font-medium mb-1 ${isToday(day) ? 'text-[var(--accent-warn)]' : ''}`} style={{ color: isToday(day) ? undefined : 'var(--text-primary)' }}>
                       {day}
                     </div>
                     {hasMatches(day) && (
@@ -251,9 +251,9 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
                           <div
                             key={idx}
                             className={`w-2 h-2 rounded-full ${
-                              match.status === 'live' ? 'bg-red-500 animate-pulse' :
-                              match.status === 'completed' ? 'bg-slate-500' :
-                              'bg-indigo-500'
+                              match.status === 'live' ? 'bg-[var(--accent-loss)] animate-pulse' :
+                              match.status === 'completed' ? 'bg-[var(--text-tertiary)]' :
+                              'bg-[var(--accent-info)]'
                             }`}
                             title={`${match.home_team} vs ${match.away_team}`}
                           />
@@ -272,15 +272,15 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
           {/* Legend */}
           <div className="p-3 flex items-center gap-4 text-xs border-t" style={{ borderColor: 'var(--border-color)', color: 'var(--text-tertiary)' }}>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-indigo-500" />
+              <div className="w-2 h-2 rounded-full bg-[var(--accent-info)]" />
               <span>Upcoming</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <div className="w-2 h-2 rounded-full bg-[var(--accent-loss)]" />
               <span>Live</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-slate-500" />
+              <div className="w-2 h-2 rounded-full bg-[var(--text-tertiary)]" />
               <span>Completed</span>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
           <div className="max-h-[500px] overflow-y-auto">
             {loading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-info)] mx-auto" />
               </div>
             ) : selectedDayMatches.length > 0 ? (
               <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
@@ -318,15 +318,15 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
                   <Link
                     key={match.id}
                     href={`/matches/${match.id}?league=${leagueId}`}
-                    className="block p-4 hover:bg-indigo-500/10 transition-colors"
+                    className="block p-4 hover:bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] transition-colors"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       {match.status === 'live' ? (
-                        <span className="text-xs font-bold text-red-400 animate-pulse">LIVE</span>
+                        <span className="text-xs font-bold text-[var(--live-text)] animate-pulse">LIVE</span>
                       ) : match.status === 'completed' ? (
-                        <span className="text-xs text-slate-500">FT</span>
+                        <span className="text-xs text-[var(--text-tertiary)]">FT</span>
                       ) : (
-                        <span className="text-xs text-indigo-400">{formatMatchTime(match.time)}</span>
+                        <span className="text-xs text-[var(--accent-info)]">{formatMatchTime(match.time)}</span>
                       )}
                     </div>
                     

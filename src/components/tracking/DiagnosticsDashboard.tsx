@@ -93,9 +93,9 @@ function metricColor(value: number): string {
 }
 
 function severityBadge(severity: AlertSeverity): string {
-  if (severity === 'high') return 'bg-red-500/15 text-red-300 border border-red-500/30'
-  if (severity === 'medium') return 'bg-amber-500/15 text-amber-200 border border-amber-500/30'
-  return 'bg-cyan-500/15 text-cyan-200 border border-cyan-500/30'
+  if (severity === 'high') return 'bg-[var(--accent-loss)]/15 text-[var(--accent-loss)] border border-[var(--accent-loss)]/30'
+  if (severity === 'medium') return 'bg-[var(--accent-warn)]/15 text-[var(--accent-warn)] border border-[var(--accent-warn)]/30'
+  return 'bg-[var(--accent-ai)]/15 text-[var(--accent-ai)] border border-[var(--accent-ai)]/30'
 }
 
 function WalkForwardChart({ folds }: { folds: WalkForwardFold[] }) {
@@ -315,8 +315,8 @@ export default function DiagnosticsDashboard() {
                   <span className="text-[10px] text-[var(--text-tertiary)]">{bin.bucket}</span>
                   <div>
                     <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden relative">
-                      <div className="h-full bg-cyan-500/70" style={{ width: `${confWidth}%` }} />
-                      <div className="h-full absolute left-0 top-0 bg-emerald-500/85" style={{ width: `${accWidth}%` }} />
+                      <div className="h-full bg-[var(--accent-ai)]/70" style={{ width: `${confWidth}%` }} />
+                      <div className="h-full absolute left-0 top-0 bg-[var(--accent-primary)]/85" style={{ width: `${accWidth}%` }} />
                     </div>
                     <div className="flex items-center justify-between mt-1 text-[10px] text-[var(--text-tertiary)]">
                       <span>n={bin.sample_size}</span>

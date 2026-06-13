@@ -40,13 +40,13 @@ type WhatIfResponse = {
 type ScoreInput = { home: string; away: string }
 
 const COLORS = {
-  bg: '#0d1117',
-  card: '#161b22',
-  border: '#1f242c',
-  accent: '#7c3aed',
-  positive: '#00c853',
-  negative: '#ef4444',
-  muted: '#9ca3af',
+  bg: 'var(--background)',
+  card: 'var(--card-bg)',
+  border: 'var(--border-color)',
+  accent: 'var(--accent-market)',
+  positive: 'var(--accent-primary)',
+  negative: 'var(--accent-loss)',
+  muted: 'var(--text-tertiary)',
 }
 
 function parseGoal(value: string): number | null {
@@ -155,11 +155,11 @@ export default function GroupWhatIfExplorer({
 
   if (remainingMatches.length === 0) {
     return (
-      <section className="rounded-lg border border-white/10 bg-[#161b22] p-4">
-        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+      <section className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
           Scenario explorer
         </h2>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-[var(--text-tertiary)]">
           All group matches have been played — nothing left to simulate.
         </p>
       </section>
@@ -167,17 +167,17 @@ export default function GroupWhatIfExplorer({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#161b22] p-4">
+    <section className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Scenario explorer
           </h2>
-          <p className="mt-1 text-[11px] text-gray-500">
+          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
             Lock in hypothetical scorelines for any remaining match and re-run the simulator.
           </p>
         </div>
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#7c3aed]">
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--accent-market)]">
           What-if · AI
         </span>
       </div>
@@ -188,13 +188,13 @@ export default function GroupWhatIfExplorer({
           return (
             <div
               key={m.matchId}
-              className="flex flex-col gap-2 rounded-md border border-white/10 bg-[#0d1117] p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background)] p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-bold text-gray-200">
-                  {m.homeTeam.name} <span className="text-gray-500">vs</span> {m.awayTeam.name}
+                <p className="font-bold text-[var(--text-primary)]">
+                  {m.homeTeam.name} <span className="text-[var(--text-tertiary)]">vs</span> {m.awayTeam.name}
                 </p>
-                <p className="mt-0.5 text-[11px] text-gray-500">
+                <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
                   {m.kickoff ? new Date(m.kickoff).toLocaleString() : 'TBD'}
                 </p>
               </div>
@@ -207,10 +207,10 @@ export default function GroupWhatIfExplorer({
                   placeholder="H"
                   value={row.home}
                   onChange={(e) => setField(m.matchId, 'home', e.target.value)}
-                  className="w-14 rounded-md border border-white/10 bg-[#161b22] px-2 py-1.5 text-center font-mono text-sm text-white outline-none focus:border-[#7c3aed]"
+                  className="w-14 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] px-2 py-1.5 text-center font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-market)]"
                   aria-label={`${m.homeTeam.name} goals`}
                 />
-                <span className="text-gray-500">–</span>
+                <span className="text-[var(--text-tertiary)]">–</span>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -219,13 +219,13 @@ export default function GroupWhatIfExplorer({
                   placeholder="A"
                   value={row.away}
                   onChange={(e) => setField(m.matchId, 'away', e.target.value)}
-                  className="w-14 rounded-md border border-white/10 bg-[#161b22] px-2 py-1.5 text-center font-mono text-sm text-white outline-none focus:border-[#7c3aed]"
+                  className="w-14 rounded-md border border-[var(--border-color)] bg-[var(--input-bg)] px-2 py-1.5 text-center font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-market)]"
                   aria-label={`${m.awayTeam.name} goals`}
                 />
                 <button
                   type="button"
                   onClick={() => clearRow(m.matchId)}
-                  className="rounded-md border border-white/10 px-2 py-1 text-[11px] font-bold text-gray-400 transition-colors hover:border-white/20 hover:text-white"
+                  className="rounded-md border border-[var(--border-color)] px-2 py-1 text-[11px] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
                 >
                   Clear
                 </button>
@@ -235,8 +235,8 @@ export default function GroupWhatIfExplorer({
         })}
       </div>
 
-      <div className="sticky bottom-2 z-10 mt-4 flex flex-col gap-2 rounded-md border border-white/10 bg-[#0d1117]/95 p-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[11px] text-gray-400">
+      <div className="sticky bottom-2 z-10 mt-4 flex flex-col gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background)]/95 p-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[11px] text-[var(--text-secondary)]">
           {forcedReady} match{forcedReady === 1 ? '' : 'es'} forced
           {loading ? ' · running simulation…' : ''}
         </p>
@@ -245,7 +245,7 @@ export default function GroupWhatIfExplorer({
             type="button"
             onClick={resetAll}
             disabled={loading}
-            className="rounded-md border border-white/10 px-3 py-1.5 text-xs font-bold text-gray-300 transition-colors hover:border-white/20 hover:text-white disabled:opacity-50"
+            className="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
           >
             Reset
           </button>
@@ -253,7 +253,7 @@ export default function GroupWhatIfExplorer({
             type="button"
             onClick={runScenario}
             disabled={loading || forcedReady === 0}
-            className="flex items-center gap-2 rounded-md bg-[#7c3aed] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#6d28d9] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-[var(--accent-market)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -271,18 +271,18 @@ export default function GroupWhatIfExplorer({
       </div>
 
       {error ? (
-        <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
+        <div className="mt-3 rounded-md border border-[var(--accent-loss)]/40 bg-[var(--accent-loss)]/10 p-3 text-xs text-[var(--accent-loss)]">
           {error}
         </div>
       ) : null}
 
       {result && !error ? (
-        <div className="mt-4 rounded-md border border-white/10 bg-[#0d1117] p-3">
+        <div className="mt-4 rounded-md border border-[var(--border-color)] bg-[var(--background)] p-3">
           <div className="flex items-baseline justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-gray-400">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               Advancement Δ vs baseline
             </h3>
-            <span className="text-[11px] text-gray-500">
+            <span className="text-[11px] text-[var(--text-tertiary)]">
               {result.n_simulations.toLocaleString()} sims
             </span>
           </div>
@@ -293,10 +293,10 @@ export default function GroupWhatIfExplorer({
               return (
                 <li key={d.name} className="text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-200">{d.name}</span>
-                    <span className="font-mono text-gray-400">
+                    <span className="font-bold text-[var(--text-primary)]">{d.name}</span>
+                    <span className="font-mono text-[var(--text-secondary)]">
                       {(d.baseline * 100).toFixed(1)}% →{' '}
-                      <span className="text-white">{(d.scenario * 100).toFixed(1)}%</span>
+                      <span className="text-[var(--text-primary)]">{(d.scenario * 100).toFixed(1)}%</span>
                       <span
                         className="ml-2 font-bold"
                         style={{ color: positive ? COLORS.positive : COLORS.negative }}
@@ -306,7 +306,7 @@ export default function GroupWhatIfExplorer({
                       </span>
                     </span>
                   </div>
-                  <div className="mt-1 flex h-2 w-full overflow-hidden rounded-sm bg-[#161b22]">
+                  <div className="mt-1 flex h-2 w-full overflow-hidden rounded-sm bg-[var(--card-bg)]">
                     <div className="flex w-1/2 justify-end">
                       {!positive ? (
                         <div
@@ -315,7 +315,7 @@ export default function GroupWhatIfExplorer({
                         />
                       ) : null}
                     </div>
-                    <div className="w-px bg-white/20" />
+                    <div className="w-px bg-[var(--border-color)]" />
                     <div className="flex w-1/2 justify-start">
                       {positive ? (
                         <div

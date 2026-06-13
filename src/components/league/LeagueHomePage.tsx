@@ -844,14 +844,14 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             <div className="mt-5 rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-warn)]">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
                   <p className="text-white font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
                   <p className="text-white/70 text-sm mt-1">
                     Top 4: {simulationResults.likely_top_4.join(', ')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-amber-400">
+                  <p className="text-2xl font-bold text-[var(--accent-warn)]">
                     {(simulationResults.champion_probability * 100).toFixed(1)}%
                   </p>
                   <p className="text-white/60 text-xs">title probability</p>
@@ -1001,7 +1001,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   {data?.standings.slice(0, 5).map((team, idx) => (
                     <div key={team.teamName} className="flex justify-between items-center p-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className={`w-1 h-9 rounded-full ${idx < 4 ? 'bg-emerald-400' : idx < 6 ? 'bg-sky-400' : 'bg-transparent'}`} />
+                        <span className={`w-1 h-9 rounded-full ${idx < 4 ? 'bg-[var(--accent-primary)]' : idx < 6 ? 'bg-[var(--accent-info)]' : 'bg-transparent'}`} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="w-5 text-center text-sm text-[var(--text-tertiary)]">{idx + 1}</span>
@@ -1012,9 +1012,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                               <span
                                 key={`${team.teamName}-preview-${formIndex}`}
                                 className={`w-4 h-4 rounded-md text-[9px] font-bold flex items-center justify-center ${
-                                  result === 'W' ? 'bg-emerald-500 text-white' :
-                                  result === 'D' ? 'bg-amber-400 text-slate-950' :
-                                  'bg-rose-500 text-white'
+                                  result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
+                                  result === 'D' ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' :
+                                  'bg-[var(--accent-loss)] text-white'
                                 }`}
                               >
                                 {result}
@@ -1086,7 +1086,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   
                   return (
                     <div key={conference} className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                      <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-blue-600/20 to-cyan-600/20' : 'from-orange-600/20 to-red-600/20'}`} style={{ borderColor: 'var(--border-color)' }}>
+                      <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)]' : 'from-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]'}`} style={{ borderColor: 'var(--border-color)' }}>
                         <h2 className="text-lg font-semibold text-[var(--text-primary)]">{conference}</h2>
                       </div>
                       <div className="overflow-x-auto">
@@ -1103,8 +1103,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                           <tbody>
                             {conferenceTeams.length > 0 ? conferenceTeams.map((team, idx) => {
                               let zoneClass = ''
-                              if (idx < 7) zoneClass = 'border-l-4 border-l-green-400 bg-green-500/20'  // Playoff spots
-                              else if (idx < 9) zoneClass = 'border-l-4 border-l-amber-400 bg-amber-500/20'  // Wild card
+                              if (idx < 7) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]'  // Playoff spots
+                              else if (idx < 9) zoneClass = 'border-l-4 border-l-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]'  // Wild card
 
                               return (
                                 <tr key={team.teamName} className={`border-b hover:bg-[var(--muted-bg)] ${zoneClass}`} style={{ borderColor: 'var(--border-color)' }}>
@@ -1119,9 +1119,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                           <span
                                             key={i}
                                             className={`w-4 h-4 flex items-center justify-center text-[9px] font-bold rounded ${
-                                              result === 'W' ? 'bg-green-500 text-white' :
-                                              result === 'D' ? 'bg-gray-400 text-white' :
-                                              'bg-red-500 text-white'
+                                              result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
+                                              result === 'D' ? 'bg-[var(--text-tertiary)] text-white' :
+                                              'bg-[var(--accent-loss)] text-white'
                                             }`}
                                           >
                                             {result}
@@ -1141,8 +1141,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         </table>
                       </div>
                       <div className="p-3 border-t text-xs text-[var(--text-tertiary)] flex gap-3" style={{ borderColor: 'var(--border-color)' }}>
-                        <span><span className="inline-block w-2 h-2 rounded-sm bg-green-400 mr-1"></span> Playoff</span>
-                        <span><span className="inline-block w-2 h-2 rounded-sm bg-amber-400 mr-1"></span> Wild Card</span>
+                        <span><span className="inline-block w-2 h-2 rounded-sm bg-[var(--accent-primary)] mr-1"></span> Playoff</span>
+                        <span><span className="inline-block w-2 h-2 rounded-sm bg-[var(--accent-warn)] mr-1"></span> Wild Card</span>
                       </div>
                     </div>
                   )
@@ -1161,9 +1161,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </p>
                   </div>
                   <div className="hidden md:flex items-center gap-2 text-[10px]">
-                    <span className="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400">UCL</span>
-                    <span className="px-2 py-1 rounded-full bg-sky-500/15 text-sky-400">Europe</span>
-                    <span className="px-2 py-1 rounded-full bg-rose-500/15 text-rose-400">Relegation</span>
+                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]">UCL</span>
+                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-info)_15%,transparent)] text-[var(--accent-info)]">Europe</span>
+                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]">Relegation</span>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -1185,9 +1185,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       {data.standings.map((team, idx) => {
                         // Determine zone coloring with improved visibility
                         let zoneClass = ''
-                        if (idx < 4) zoneClass = 'border-l-4 border-l-green-400 bg-green-500/20'
-                        else if (idx >= data.standings.length - 3) zoneClass = 'border-l-4 border-l-red-400 bg-red-500/20'
-                        else if (idx < 6) zoneClass = 'border-l-4 border-l-blue-400 bg-blue-500/20'
+                        if (idx < 4) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]'
+                        else if (idx >= data.standings.length - 3) zoneClass = 'border-l-4 border-l-[var(--accent-loss)] bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]'
+                        else if (idx < 6) zoneClass = 'border-l-4 border-l-[var(--accent-info)] bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)]'
 
                         return (
                           <tr
@@ -1203,9 +1203,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                               </div>
                             </td>
                             <td className="py-3 px-2 text-center text-[var(--text-secondary)]">{team.played}</td>
-                            <td className="py-3 px-2 text-center text-green-500">{team.won}</td>
+                            <td className="py-3 px-2 text-center text-[var(--accent-primary)]">{team.won}</td>
                             <td className="py-3 px-2 text-center text-[var(--text-tertiary)]">{team.drawn}</td>
-                            <td className="py-3 px-2 text-center text-red-400">{team.lost}</td>
+                            <td className="py-3 px-2 text-center text-[var(--accent-loss)]">{team.lost}</td>
                             <td
                               className={`py-3 px-2 text-center font-semibold tabular-nums ${
                                 team.goalDiff > 0
@@ -1225,9 +1225,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                     <span
                                       key={i}
                                       className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-md ${
-                                        result === 'W' ? 'bg-emerald-500 text-white' :
-                                        result === 'D' ? 'bg-amber-400 text-slate-950' :
-                                        'bg-rose-500 text-white'
+                                        result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
+                                        result === 'D' ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' :
+                                        'bg-[var(--accent-loss)] text-white'
                                       }`}
                                     >
                                       {result}
@@ -1247,15 +1247,15 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 {/* Legend */}
                 <div className="p-4 border-t flex flex-wrap gap-4 text-xs" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-400 rounded" />
+                    <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
                     <span className="text-[var(--text-tertiary)]">Champions League</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-400 rounded" />
+                    <div className="w-3 h-3 bg-[var(--accent-info)] rounded" />
                     <span className="text-[var(--text-tertiary)]">Europa League</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-400 rounded" />
+                    <div className="w-3 h-3 bg-[var(--accent-loss)] rounded" />
                     <span className="text-[var(--text-tertiary)]">Relegation</span>
                   </div>
                 </div>
@@ -1278,7 +1278,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   <div key={scorer.name} className="flex items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
                     <div className="flex items-center gap-4">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        scorer.rank <= 3 ? 'bg-amber-500 text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
+                        scorer.rank <= 3 ? 'bg-[var(--accent-warn)] text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
                       }`}>
                         {scorer.rank}
                       </span>
@@ -1340,7 +1340,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   <button
                     onClick={runSeasonSimulation}
                     disabled={runningSimulation}
-                    className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[var(--accent-ai)]/25 flex items-center gap-2"
                   >
                     {runningSimulation ? (
                       <>
@@ -1373,8 +1373,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-[var(--text-secondary)]">Most Likely Champion</p>
-                        <p className="text-xl font-bold text-amber-400">{simulationResults.most_likely_champion}</p>
-                        <p className="text-sm text-amber-400/80">{(simulationResults.champion_probability * 100).toFixed(1)}% probability</p>
+                        <p className="text-xl font-bold text-[var(--accent-warn)]">{simulationResults.most_likely_champion}</p>
+                        <p className="text-sm text-[var(--accent-warn)]/80">{(simulationResults.champion_probability * 100).toFixed(1)}% probability</p>
                       </div>
                     </div>
                   </div>
@@ -1391,7 +1391,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                           .map((team) => (
                             <div key={team.team_name} className="flex justify-between text-sm">
                               <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                              <span className="text-amber-400">{(team.title_probability * 100).toFixed(1)}%</span>
+                              <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
                             </div>
                           ))}
                       </div>
@@ -1402,7 +1402,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       <div className="space-y-1">
                         {simulationResults.likely_top_4?.slice(0, 4).map((team, idx) => (
                           <div key={team} className="flex items-center gap-2 text-sm">
-                            <span className="w-5 text-center text-emerald-400">{idx + 1}</span>
+                            <span className="w-5 text-center text-[var(--accent-primary)]">{idx + 1}</span>
                             <span className="text-[var(--text-primary)]">{team}</span>
                           </div>
                         ))}
@@ -1414,7 +1414,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       <div className="space-y-1">
                         {simulationResults.relegation_candidates?.slice(0, 3).map((team) => (
                           <div key={team} className="flex items-center gap-2 text-sm">
-                            <span className="w-5 text-center text-red-400">↓</span>
+                            <span className="w-5 text-center text-[var(--accent-loss)]">↓</span>
                             <span className="text-[var(--text-primary)]">{team}</span>
                           </div>
                         ))}
@@ -1472,21 +1472,21 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.title_probability > 0.01 ? (
-                                  <span className="text-amber-400">{(team.title_probability * 100).toFixed(1)}%</span>
+                                  <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.top_4_probability > 0.01 ? (
-                                  <span className="text-emerald-400">{(team.top_4_probability * 100).toFixed(0)}%</span>
+                                  <span className="text-[var(--accent-primary)]">{(team.top_4_probability * 100).toFixed(0)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.relegation_probability > 0.01 ? (
-                                  <span className="text-red-400">{(team.relegation_probability * 100).toFixed(0)}%</span>
+                                  <span className="text-[var(--accent-loss)]">{(team.relegation_probability * 100).toFixed(0)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
@@ -1503,8 +1503,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                       .sort(([a], [b]) => Number(a) - Number(b))
                                       .map(([pos, prob]) => {
                                         const pct = (prob as number) * 100;
-                                        const bg = Number(pos) <= 4 ? 'bg-emerald-500' :
-                                                   Number(pos) > simulationResults.standings.length - 3 ? 'bg-red-500' :
+                                        const bg = Number(pos) <= 4 ? 'bg-[var(--accent-primary)]' :
+                                                   Number(pos) > simulationResults.standings.length - 3 ? 'bg-[var(--accent-loss)]' :
                                                    'bg-[var(--accent-ai)]';
                                         return (
                                           <div key={pos} className="text-center min-w-[36px]">
@@ -1530,19 +1530,19 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   {/* Legend */}
                   <div className="p-4 flex gap-6 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-emerald-500 rounded" />
+                      <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
                       <span>Champions League</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-500 rounded" />
+                      <div className="w-3 h-3 bg-[var(--accent-loss)] rounded" />
                       <span>Relegation Zone</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Disclaimer */}
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
+                <div className="p-4 rounded-xl bg-[var(--accent-warn)]/10 border border-[var(--accent-warn)]/20">
+                  <p className="text-sm text-[var(--accent-warn)] text-center">
                     <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, provider fixtures when available, and team ratings.
                     Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                   </p>

@@ -276,7 +276,7 @@ function BracketMatchCard({
           </span>
         )}
         <span className={`text-[11px] tabular-nums min-w-[16px] text-right font-bold ${
-          isLive ? 'text-red-400'
+          isLive ? 'text-[var(--live-text)]'
           : isWinner ? 'text-[var(--text-primary)]'
           : 'text-[var(--text-tertiary)]'
         }`}>
@@ -288,7 +288,7 @@ function BracketMatchCard({
 
   return (
     <div className={`rounded-xl border overflow-hidden transition-all w-full shadow-sm ${
-      isLive ? 'ring-1 ring-red-500/60 border-red-500/40' : 'border-[var(--border-color)]'
+      isLive ? 'ring-1 ring-[var(--live-border)]/60 border-[var(--live-border)]/40' : 'border-[var(--border-color)]'
     }`}
     style={{ background: 'linear-gradient(180deg, var(--muted-bg), color-mix(in srgb, var(--muted-bg) 82%, black 18%))' }}
     >

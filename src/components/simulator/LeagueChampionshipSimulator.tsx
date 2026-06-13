@@ -136,8 +136,8 @@ export default function LeagueChampionshipSimulator() {
               }}
               className={`p-4 rounded-xl border transition-all text-center ${
                 selectedLeague?.id === league.id
-                  ? 'bg-indigo-600/20 border-indigo-500/50'
-                  : 'bg-[var(--background-secondary)] border-[var(--border-color)] hover:border-indigo-500/30'
+                  ? 'bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] border-[color-mix(in_srgb,var(--accent-info)_50%,transparent)]'
+                  : 'bg-[var(--background-secondary)] border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-info)_30%,transparent)]'
               }`}
             >
               {leagueFlagUrls[league.flagCode] ? (
@@ -175,7 +175,7 @@ export default function LeagueChampionshipSimulator() {
           <button
             onClick={runSimulation}
             disabled={loading || !selectedLeague}
-            className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+            className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--accent-info)] to-[var(--accent-market)] hover:from-[var(--accent-info-soft)] hover:to-[var(--accent-market-soft)] disabled:from-[var(--text-tertiary)] disabled:to-[var(--text-tertiary)] disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[color:color-mix(in_srgb,var(--accent-info)_25%,transparent)] flex items-center gap-2"
           >
             {loading ? (
               <>
@@ -207,7 +207,7 @@ export default function LeagueChampionshipSimulator() {
               </p>
             </div>
             {result.what_if && (
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${result.what_if.applied ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${result.what_if.applied ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]' : 'bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]'}`}>
                 {result.what_if.applied ? 'What-if applied' : 'What-if not applied'}
               </span>
             )}
@@ -239,7 +239,7 @@ export default function LeagueChampionshipSimulator() {
             <button
               onClick={runSimulation}
               disabled={loading || !selectedLeague}
-              className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-5 py-3 text-sm font-bold text-indigo-300 transition-colors hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-[color-mix(in_srgb,var(--accent-info)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] px-5 py-3 text-sm font-bold text-[var(--accent-info)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Rerun What-If
             </button>
@@ -252,8 +252,8 @@ export default function LeagueChampionshipSimulator() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-          <p className="text-red-400">❌ {error}</p>
+        <div className="bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] rounded-xl p-4">
+          <p className="text-[var(--accent-loss)]">❌ {error}</p>
         </div>
       )}
 
@@ -262,7 +262,7 @@ export default function LeagueChampionshipSimulator() {
         <div className="space-y-6 animate-fade-in">
           {/* Summary Card */}
           <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-            <div className="p-6 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-[var(--border-color)]">
+            <div className="p-6 bg-gradient-to-r from-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-market)_20%,transparent)] border-b border-[var(--border-color)]">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h3 className="text-2xl font-bold text-[var(--text-primary)]">{result.league_name}</h3>
@@ -272,8 +272,8 @@ export default function LeagueChampionshipSimulator() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-[var(--text-secondary)]">Most Likely Champion</p>
-                  <p className="text-xl font-bold text-amber-400">{result.most_likely_champion}</p>
-                  <p className="text-sm text-amber-400/80">{(result.champion_probability * 100).toFixed(1)}% probability</p>
+                  <p className="text-xl font-bold text-[var(--accent-warn)]">{result.most_likely_champion}</p>
+                  <p className="text-sm text-[color-mix(in_srgb,var(--accent-warn)_80%,transparent)]">{(result.champion_probability * 100).toFixed(1)}% probability</p>
                 </div>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function LeagueChampionshipSimulator() {
                     .map((team, idx) => (
                       <div key={team.team_name} className="flex justify-between text-sm">
                         <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                        <span className="text-amber-400">{(team.title_probability * 100).toFixed(1)}%</span>
+                        <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                 </div>
@@ -301,7 +301,7 @@ export default function LeagueChampionshipSimulator() {
                 <div className="space-y-1">
                   {result.likely_top_4?.slice(0, 4).map((team, idx) => (
                     <div key={team} className="flex items-center gap-2 text-sm">
-                      <span className="w-5 text-center text-emerald-400">{idx + 1}</span>
+                      <span className="w-5 text-center text-[var(--accent-primary)]">{idx + 1}</span>
                       <span className="text-[var(--text-primary)]">{team}</span>
                     </div>
                   ))}
@@ -313,7 +313,7 @@ export default function LeagueChampionshipSimulator() {
                 <div className="space-y-1">
                   {result.relegation_candidates?.slice(0, 3).map((team, idx) => (
                     <div key={team} className="flex items-center gap-2 text-sm">
-                      <span className="w-5 text-center text-red-400">↓</span>
+                      <span className="w-5 text-center text-[var(--accent-loss)]">↓</span>
                       <span className="text-[var(--text-primary)]">{team}</span>
                     </div>
                   ))}
@@ -324,12 +324,12 @@ export default function LeagueChampionshipSimulator() {
 
           {/* Title Race — "who can still win" math (independent of simulation) */}
           <div className="relative bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-            <BorderBeam size={1} duration={12} borderRadius={24} colorFrom="#f59e0b" colorTo="var(--accent-primary)" />
+            <BorderBeam size={1} duration={12} borderRadius={24} colorFrom="var(--accent-warn)" colorTo="var(--accent-primary)" />
             <div className="p-4 md:p-5 border-b border-[var(--border-color)] flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] font-semibold">Title Race</p>
                 <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                  <Trophy className="h-4 w-4 text-[var(--accent-warn)]" aria-hidden="true" />
                   Who can still win?
                 </h3>
                 <p className="mt-1 text-xs text-[var(--text-tertiary)]">
@@ -337,11 +337,11 @@ export default function LeagueChampionshipSimulator() {
                 </p>
               </div>
               <div className="flex gap-2 text-[11px]">
-                <span className="rounded-full bg-emerald-500/15 text-emerald-300 px-2.5 py-1 font-semibold">
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)] px-2.5 py-1 font-semibold">
                   {alive.length} alive
                 </span>
                 {eliminated.length > 0 && (
-                  <span className="rounded-full bg-rose-500/15 text-rose-300 px-2.5 py-1 font-semibold">
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)] px-2.5 py-1 font-semibold">
                     {eliminated.length} eliminated
                   </span>
                 )}
@@ -383,7 +383,7 @@ export default function LeagueChampionshipSimulator() {
                             <span className="inline-flex items-center gap-1.5">
                               {row.team_name}
                               {eliminated && (
-                                <Skull className="h-3 w-3 text-rose-400" aria-label="Mathematically eliminated" />
+                                <Skull className="h-3 w-3 text-[var(--accent-loss)]" aria-label="Mathematically eliminated" />
                               )}
                             </span>
                           </td>
@@ -392,7 +392,7 @@ export default function LeagueChampionshipSimulator() {
                           </td>
                           <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
                             {row.points_behind_leader === 0 ? (
-                              <span className="text-amber-400 font-semibold">Leader</span>
+                              <span className="text-[var(--accent-warn)] font-semibold">Leader</span>
                             ) : (
                               `−${row.points_behind_leader}`
                             )}
@@ -413,11 +413,11 @@ export default function LeagueChampionshipSimulator() {
                                 aria-hidden="true"
                               >
                                 <span
-                                  className="block h-full rounded-full bg-amber-400"
+                                  className="block h-full rounded-full bg-[var(--accent-warn)]"
                                   style={{ width: `${Math.max(2, Math.min(100, titlePct))}%` }}
                                 />
                               </span>
-                              <span className="tabular-nums font-semibold text-amber-400 w-12 text-right">
+                              <span className="tabular-nums font-semibold text-[var(--accent-warn)] w-12 text-right">
                                 {titlePct >= 0.05 ? `${titlePct.toFixed(1)}%` : '<0.1%'}
                               </span>
                             </div>
@@ -467,8 +467,8 @@ export default function LeagueChampionshipSimulator() {
                       <tr
                         onClick={() => setExpandedTeam(expandedTeam === team.team_name ? null : team.team_name)}
                         className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${
-                          idx < 4 ? 'border-l-2 border-l-emerald-500' : 
-                          idx >= result.standings.length - 3 ? 'border-l-2 border-l-red-500' : ''
+                          idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' :
+                          idx >= result.standings.length - 3 ? 'border-l-2 border-l-[var(--accent-loss)]' : ''
                         }`}
                       >
                         <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
@@ -485,21 +485,21 @@ export default function LeagueChampionshipSimulator() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           {team.title_probability > 0.01 ? (
-                            <span className="text-amber-400">{(team.title_probability * 100).toFixed(1)}%</span>
+                            <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
                           ) : (
                             <span className="text-[var(--text-tertiary)]">-</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {team.top_4_probability > 0.01 ? (
-                            <span className="text-emerald-400">{(team.top_4_probability * 100).toFixed(0)}%</span>
+                            <span className="text-[var(--accent-primary)]">{(team.top_4_probability * 100).toFixed(0)}%</span>
                           ) : (
                             <span className="text-[var(--text-tertiary)]">-</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {team.relegation_probability > 0.01 ? (
-                            <span className="text-red-400">{(team.relegation_probability * 100).toFixed(0)}%</span>
+                            <span className="text-[var(--accent-loss)]">{(team.relegation_probability * 100).toFixed(0)}%</span>
                           ) : (
                             <span className="text-[var(--text-tertiary)]">-</span>
                           )}
@@ -516,9 +516,9 @@ export default function LeagueChampionshipSimulator() {
                                 .sort(([a], [b]) => Number(a) - Number(b))
                                 .map(([pos, prob]) => {
                                   const pct = (prob as number) * 100;
-                                  const bg = Number(pos) <= 4 ? 'bg-emerald-500' :
-                                             Number(pos) > result.standings.length - 3 ? 'bg-red-500' :
-                                             'bg-indigo-500';
+                                  const bg = Number(pos) <= 4 ? 'bg-[var(--accent-primary)]' :
+                                             Number(pos) > result.standings.length - 3 ? 'bg-[var(--accent-loss)]' :
+                                             'bg-[var(--accent-info)]';
                                   return (
                                     <div key={pos} className="text-center min-w-[36px]">
                                       <div
@@ -543,19 +543,19 @@ export default function LeagueChampionshipSimulator() {
             {/* Legend */}
             <div className="p-4 flex gap-6 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-color)]">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-emerald-500 rounded" />
+                <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
                 <span>Champions League</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded" />
+                <div className="w-3 h-3 bg-[var(--accent-loss)] rounded" />
                 <span>Relegation Zone</span>
               </div>
             </div>
           </div>
 
           {/* Disclaimer */}
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
+          <div className="p-4 rounded-xl bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]">
+            <p className="text-sm text-[var(--accent-warn)] text-center">
               <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
               Actual results may vary significantly due to injuries, transfers, and unpredictable events.
             </p>
@@ -566,7 +566,7 @@ export default function LeagueChampionshipSimulator() {
       {/* Initial State - No selection */}
       {!result && !loading && !error && (
         <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
-          <Trophy className="mx-auto mb-4 h-12 w-12 text-amber-400" aria-hidden="true" />
+          <Trophy className="mx-auto mb-4 h-12 w-12 text-[var(--accent-warn)]" aria-hidden="true" />
           <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Championship contention simulator</h3>
           <p className="text-[var(--text-secondary)] max-w-md mx-auto">
             Pick a league and run the Monte Carlo to see who can still mathematically

@@ -82,7 +82,7 @@ export default function LiveProbabilityBar({
     return (
       <div
         className="rounded-2xl border px-4 py-3 text-sm text-[var(--text-tertiary)]"
-        style={{ backgroundColor: '#161b22', borderColor: 'var(--border-color)' }}
+        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
       >
         Loading live probability…
       </div>
@@ -92,8 +92,8 @@ export default function LiveProbabilityBar({
   if (error && !data) {
     return (
       <div
-        className="rounded-2xl border px-4 py-3 text-sm text-red-400"
-        style={{ backgroundColor: '#161b22', borderColor: 'var(--border-color)' }}
+        className="rounded-2xl border px-4 py-3 text-sm text-[var(--accent-loss)]"
+        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
       >
         Live probability unavailable ({error})
       </div>
@@ -115,11 +115,11 @@ export default function LiveProbabilityBar({
   return (
     <div
       className="rounded-2xl border overflow-hidden"
-      style={{ backgroundColor: '#161b22', borderColor: 'var(--border-color)' }}
+      style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
     >
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#00c853' }} />
+          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent-primary)' }} />
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-primary)]">
             Live win probability
           </span>
@@ -136,27 +136,27 @@ export default function LiveProbabilityBar({
         <div className="flex h-3 w-full overflow-hidden rounded-full" role="img" aria-label="Live win probability">
           <div
             className="transition-all"
-            style={{ width: `${homePct}%`, backgroundColor: '#3b82f6' }}
+            style={{ width: `${homePct}%`, backgroundColor: 'var(--team-tint-home)' }}
             title={`${homeTeam} ${homePct}%`}
           />
           <div
             className="transition-all"
-            style={{ width: `${drawPct}%`, backgroundColor: '#6b7280' }}
+            style={{ width: `${drawPct}%`, backgroundColor: 'var(--accent-warn)' }}
             title={`Draw ${drawPct}%`}
           />
           <div
             className="transition-all"
-            style={{ width: `${awayPct}%`, backgroundColor: '#f97316' }}
+            style={{ width: `${awayPct}%`, backgroundColor: 'var(--team-tint-away)' }}
             title={`${awayTeam} ${awayPct}%`}
           />
         </div>
 
         <div className="mt-2 flex justify-between text-[11px] text-[var(--text-secondary)]">
-          <span className="font-semibold" style={{ color: '#3b82f6' }}>
+          <span className="font-semibold" style={{ color: 'var(--team-tint-home)' }}>
             {homeTeam} {homePct}%
           </span>
           <span className="font-semibold text-[var(--text-secondary)]">Draw {drawPct}%</span>
-          <span className="font-semibold" style={{ color: '#f97316' }}>
+          <span className="font-semibold" style={{ color: 'var(--team-tint-away)' }}>
             {awayTeam} {awayPct}%
           </span>
         </div>

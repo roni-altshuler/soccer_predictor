@@ -29,7 +29,7 @@ export function ConfidenceThresholdPlots({
             alt={`${league} ${set_name} ${cls} confidence metrics`}
             className="w-full h-auto"
           />
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-sm text-[var(--text-secondary)] mt-2">
             This graph shows the Precision, Recall, and F1-Score for the "{cls}" class at different confidence thresholds. Precision indicates the accuracy of positive predictions, Recall measures the ability to find all positive samples, and F1-Score is the harmonic mean of precision and recall. A higher score generally means better performance. Observe how these metrics change as the model becomes more confident in its predictions.
           </p>
         </Fragment>
@@ -41,7 +41,7 @@ export function ConfidenceThresholdPlots({
         alt={`${league} ${set_name} overall accuracy confidence`}
         className="w-full h-auto"
       />
-      <p className="text-sm text-gray-400 mt-2">
+      <p className="text-sm text-[var(--text-secondary)] mt-2">
         This graph displays the overall accuracy of the model's predictions at various confidence thresholds. It shows how many of the predictions made (where the model was confident enough) were correct. As the confidence threshold increases, the number of predictions made might decrease, but their accuracy should ideally increase.
       </p>
     </div>

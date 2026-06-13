@@ -105,7 +105,7 @@ export default async function WorldCupGroupPage({
               World Cup 2026 · Group Stage Simulator
             </p>
             <h1 className="mt-1 text-2xl font-black sm:text-3xl">Group {groupLabel}</h1>
-            <p className="mt-1 text-xs leading-5 text-gray-400">
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
               Live Monte Carlo advancement probabilities. {nSims > 0 ? `${nSims.toLocaleString()} simulations` : 'No simulations available yet'}
               {generatedAt ? ` · generated ${new Date(generatedAt).toLocaleString()}` : ''}.
             </p>
@@ -119,19 +119,19 @@ export default async function WorldCupGroupPage({
         </div>
 
         {hasError ? (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+          <div className="rounded-lg border border-[var(--accent-warn)]/40 bg-[var(--accent-warn)]/10 p-4 text-sm text-[var(--accent-warn)]">
             {(data as { error: string }).error}
           </div>
         ) : (
           <>
             <section className="mb-4 rounded-lg border border-white/10 bg-[#161b22] p-4">
-              <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+              <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Standings to date
               </h2>
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead>
-                    <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
+                    <tr className="text-left text-[11px] uppercase tracking-wider text-[var(--text-tertiary)]">
                       <th className="px-2 py-2">Team</th>
                       <th className="px-2 py-2 text-right">P</th>
                       <th className="px-2 py-2 text-right">Pts</th>
@@ -159,10 +159,10 @@ export default async function WorldCupGroupPage({
             </section>
 
             <section className="mb-4 rounded-lg border border-white/10 bg-[#161b22] p-4">
-              <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+              <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 Advancement probability
               </h2>
-              <p className="mt-1 text-[11px] text-gray-500">
+              <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
                 Darker bar = group winner. Lighter bar = runner-up. Both stack to the total advancement probability.
               </p>
               <div className="mt-3">
@@ -172,11 +172,11 @@ export default async function WorldCupGroupPage({
 
             <section className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="rounded-lg border border-white/10 bg-[#161b22] p-4">
-                <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+                <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   Most likely final standings
                 </h2>
                 {mostLikely.length === 0 ? (
-                  <p className="mt-3 text-xs text-gray-500">No completed simulations yet.</p>
+                  <p className="mt-3 text-xs text-[var(--text-tertiary)]">No completed simulations yet.</p>
                 ) : (
                   <ol className="mt-3 space-y-2">
                     {mostLikely.map((s, idx) => (
@@ -185,14 +185,14 @@ export default async function WorldCupGroupPage({
                         className="rounded-md border border-white/5 bg-[#0d1117] px-3 py-2 text-xs"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-gray-400">
+                          <span className="font-bold text-[var(--text-secondary)]">
                             Scenario {idx + 1}
                           </span>
                           <span className="font-mono text-[#00c853]">
                             {pct(s.probability)}
                           </span>
                         </div>
-                        <ol className="mt-1 list-decimal pl-5 text-gray-200">
+                        <ol className="mt-1 list-decimal pl-5 text-[var(--text-secondary)]">
                           {s.order.map((team, i) => (
                             <li key={team + i}>{team}</li>
                           ))}
@@ -204,12 +204,12 @@ export default async function WorldCupGroupPage({
               </div>
 
               <div className="rounded-lg border border-white/10 bg-[#161b22] p-4">
-                <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-gray-400">
+                <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   Matches
                 </h2>
                 <div className="mt-3 space-y-2">
                   {playedMatches.length === 0 && remainingMatches.length === 0 ? (
-                    <p className="text-xs text-gray-500">No group fixtures available yet.</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">No group fixtures available yet.</p>
                   ) : null}
                   {playedMatches.map((m) => (
                     <div
@@ -228,12 +228,12 @@ export default async function WorldCupGroupPage({
                   {remainingMatches.map((m) => (
                     <div
                       key={m.match_id}
-                      className="flex items-center justify-between rounded-md border border-white/10 bg-[#0d1117] px-3 py-2 text-xs text-gray-300"
+                      className="flex items-center justify-between rounded-md border border-white/10 bg-[#0d1117] px-3 py-2 text-xs text-[var(--text-secondary)]"
                     >
                       <span>
                         {m.home} vs {m.away}
                       </span>
-                      <span className="text-gray-500">
+                      <span className="text-[var(--text-tertiary)]">
                         {m.date ? new Date(m.date).toLocaleString() : 'TBD'}
                       </span>
                     </div>

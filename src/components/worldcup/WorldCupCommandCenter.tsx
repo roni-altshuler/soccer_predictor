@@ -72,9 +72,9 @@ function MetricTile({
   tone?: 'neutral' | 'good' | 'watch'
 }) {
   const toneClass = tone === 'good'
-    ? 'border-emerald-500/25 bg-emerald-500/10'
+    ? 'border-[var(--accent-primary)]/25 bg-[var(--accent-primary)]/10'
     : tone === 'watch'
-      ? 'border-amber-500/25 bg-amber-500/10'
+      ? 'border-[var(--accent-warn)]/25 bg-[var(--accent-warn)]/10'
       : 'border-[var(--border-color)] bg-[var(--muted-bg)]'
 
   return (

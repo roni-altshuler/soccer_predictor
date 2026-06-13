@@ -749,24 +749,24 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
               if (isInternationalTournament) {
                 // International tournaments: top 2 qualify, 3rd can matter in expanded formats.
                 if (team.position <= 2) {
-                  statusBadge = <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Qualified</span>
-                  bgClass = 'bg-green-500/20 border-l-4 border-l-green-400'
+                  statusBadge = <span className="text-xs bg-[var(--accent-primary)] text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Qualified</span>
+                  bgClass = 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] border-l-4 border-l-[var(--accent-primary)]'
                 } else if (team.position === 3) {
-                  statusBadge = <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Possible</span>
-                  bgClass = 'bg-amber-500/20 border-l-4 border-l-amber-400'
+                  statusBadge = <span className="text-xs bg-[var(--accent-warn)] text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Possible</span>
+                  bgClass = 'bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] border-l-4 border-l-[var(--accent-warn)]'
                 }
               } else {
                 // Champions League / Europa League: New league format
                 // Top 8 overall = Direct R16, 9-24 = R16 Playoff, 25+ = Eliminated
                 if (overallPos <= 8) {
-                  statusBadge = <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">R16</span>
-                  bgClass = 'bg-green-500/20 border-l-4 border-l-green-400'
+                  statusBadge = <span className="text-xs bg-[var(--accent-primary)] text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">R16</span>
+                  bgClass = 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] border-l-4 border-l-[var(--accent-primary)]'
                 } else if (overallPos <= 24) {
-                  statusBadge = <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">R16 Playoff</span>
-                  bgClass = 'bg-blue-500/20 border-l-4 border-l-blue-400'
+                  statusBadge = <span className="text-xs bg-[var(--accent-info)] text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">R16 Playoff</span>
+                  bgClass = 'bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] border-l-4 border-l-[var(--accent-info)]'
                 } else {
-                  statusBadge = <span className="text-xs bg-red-500/80 text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Eliminated</span>
-                  bgClass = 'bg-red-500/10 border-l-4 border-l-red-400'
+                  statusBadge = <span className="text-xs bg-[color-mix(in_srgb,var(--accent-loss)_80%,transparent)] text-white px-2 py-0.5 rounded whitespace-nowrap font-medium">Eliminated</span>
+                  bgClass = 'bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] border-l-4 border-l-[var(--accent-loss)]'
                 }
               }
               
@@ -802,14 +802,14 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       <div className="px-4 py-2 text-xs text-[var(--text-tertiary)] border-t flex flex-wrap gap-3" style={{ borderColor: 'var(--border-color)' }}>
         {isInternationalTournament ? (
           <>
-            <span><span className="inline-block w-3 h-3 rounded-sm bg-green-400 mr-1"></span> Qualified for knockout</span>
-            <span><span className="inline-block w-3 h-3 rounded-sm bg-amber-400 mr-1"></span> Possible qualification</span>
+            <span><span className="inline-block w-3 h-3 rounded-sm bg-[var(--accent-primary)] mr-1"></span> Qualified for knockout</span>
+            <span><span className="inline-block w-3 h-3 rounded-sm bg-[var(--accent-warn)] mr-1"></span> Possible qualification</span>
           </>
         ) : (
           <>
-            <span><span className="inline-block w-3 h-3 rounded-sm bg-green-400 mr-1"></span> Round of 16 (Top 8)</span>
-            <span><span className="inline-block w-3 h-3 rounded-sm bg-blue-400 mr-1"></span> R16 Playoff (9-24)</span>
-            <span><span className="inline-block w-3 h-3 rounded-sm bg-red-400 mr-1"></span> Eliminated (25+)</span>
+            <span><span className="inline-block w-3 h-3 rounded-sm bg-[var(--accent-primary)] mr-1"></span> Round of 16 (Top 8)</span>
+            <span><span className="inline-block w-3 h-3 rounded-sm bg-[var(--accent-info)] mr-1"></span> R16 Playoff (9-24)</span>
+            <span><span className="inline-block w-3 h-3 rounded-sm bg-[var(--accent-loss)] mr-1"></span> Eliminated (25+)</span>
           </>
         )}
       </div>
@@ -833,10 +833,10 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
       >
         <div className="flex justify-between items-center">
           <div className="flex-1">
-            <p className={`font-medium ${homeWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+            <p className={`font-medium ${homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
               {match.homeTeam}
             </p>
-            <p className={`font-medium ${awayWon ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>
+            <p className={`font-medium ${awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
               {match.awayTeam}
             </p>
           </div>
@@ -856,8 +856,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
           <p className="text-xs text-[var(--text-tertiary)] mt-1">{match.round}</p>
         )}
         {match.status === 'live' && (
-          <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--live-bg)] text-[var(--live-text)] text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--live-text)] animate-pulse"></span>
             LIVE
           </span>
         )}
@@ -913,7 +913,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
         {/* AI Model Accuracy Card */}
         <Link
           href="/tracking"
-          className="block bg-gradient-to-br from-emerald-600/20 to-teal-600/20 rounded-xl p-6 hover:from-emerald-600/30 hover:to-teal-600/30 transition-all border border-emerald-500/30 hover:scale-[1.02] hover:shadow-lg"
+          className="block bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)] rounded-xl p-6 hover:from-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)] hover:to-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)] transition-all border border-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)] hover:scale-[1.02] hover:shadow-lg"
         >
           <div className="text-4xl mb-3">📊</div>
           <h3 className="text-lg font-semibold text-[var(--text-primary)]">AI Model Accuracy</h3>
@@ -1069,14 +1069,14 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-amber-300 text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-[var(--accent-warn-soft)] text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
                   <p className="text-white font-bold text-lg">{simulationResults.most_likely_winner} to win the tournament</p>
                   <p className="text-white/70 text-sm mt-1">
                     Top contenders: {simulationResults.teams.slice(0, 3).map(t => `${t.team_name} (${(t.win_probability * 100).toFixed(1)}%)`).join(', ')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-amber-400">
+                  <p className="text-2xl font-bold text-[var(--accent-warn-soft)]">
                     {(simulationResults.winner_probability * 100).toFixed(1)}%
                   </p>
                   <p className="text-white/60 text-xs">win probability</p>
@@ -1210,7 +1210,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     <div key={scorer.name} className="flex items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
                       <div className="flex items-center gap-4">
                         <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          scorer.rank <= 3 ? 'bg-amber-500 text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
+                          scorer.rank <= 3 ? 'bg-[var(--accent-warn)] text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
                         }`}>
                           {scorer.rank}
                         </span>
@@ -1265,11 +1265,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     <button
                       onClick={runTournamentSimulation}
                       disabled={runningSimulation || (tournamentId !== 'champions_league' && data.groups.length === 0)}
-                      className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2"
+                      className="px-6 py-3 rounded-xl font-semibold text-[var(--accent-on-primary)] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[color:color-mix(in_srgb,var(--accent-ai)_25%,transparent)] flex items-center gap-2"
                     >
                       {runningSimulation ? (
                         <>
-                          <div className="w-5 h-5 border-2 border-[#041320] border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-[var(--accent-on-primary)] border-t-transparent rounded-full animate-spin" />
                           <span>Simulating...</span>
                         </>
                       ) : (
@@ -1315,7 +1315,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                           title={option.detail}
                           className={`rounded-md px-2 py-1.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                             scenarioMode === option.value
-                              ? 'bg-[var(--accent-primary)] text-[#04120a]'
+                              ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
                               : 'text-[var(--text-secondary)] hover:bg-[var(--card-hover)]'
                           }`}
                         >
@@ -1364,7 +1364,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     </div>
                   </div>
                   {scenarioShareMessage && (
-                    <div className="border-b border-[var(--border-color)] px-4 py-3 text-xs text-emerald-300">
+                    <div className="border-b border-[var(--border-color)] px-4 py-3 text-xs text-[var(--accent-primary)]">
                       {scenarioShareMessage}
                     </div>
                   )}
@@ -1374,11 +1374,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-bold text-[var(--text-primary)]">{card.winner}</p>
-                            <p className="mt-1 text-xs text-amber-400">{(card.winnerProbability * 100).toFixed(1)}% title probability</p>
+                            <p className="mt-1 text-xs text-[var(--accent-warn)]">{(card.winnerProbability * 100).toFixed(1)}% title probability</p>
                           </div>
                           <button
                             onClick={() => removeScenarioCard(card.id)}
-                            className="rounded-md border border-[var(--border-color)] px-2 py-1 text-[10px] font-bold text-[var(--text-tertiary)] hover:border-red-400 hover:text-red-400"
+                            className="rounded-md border border-[var(--border-color)] px-2 py-1 text-[10px] font-bold text-[var(--text-tertiary)] hover:border-[var(--accent-loss)] hover:text-[var(--accent-loss)]"
                           >
                             Remove
                           </button>
@@ -1427,11 +1427,11 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-[var(--text-secondary)]">Most Likely Winner</p>
-                          <p className="text-xl font-bold text-amber-400">{simulationResults.most_likely_winner}</p>
-                          <p className="text-sm text-amber-400/80">{(simulationResults.winner_probability * 100).toFixed(1)}% probability</p>
+                          <p className="text-xl font-bold text-[var(--accent-warn)]">{simulationResults.most_likely_winner}</p>
+                          <p className="text-sm text-[color-mix(in_srgb,var(--accent-warn)_80%,transparent)]">{(simulationResults.winner_probability * 100).toFixed(1)}% probability</p>
                           <button
                             onClick={saveScenarioCard}
-                            className="mt-3 rounded-lg border border-amber-400/40 px-3 py-2 text-xs font-bold text-amber-400 transition-colors hover:bg-amber-400/10"
+                            className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--accent-warn)_40%,transparent)] px-3 py-2 text-xs font-bold text-[var(--accent-warn)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]"
                           >
                             Save Scenario
                           </button>
@@ -1450,7 +1450,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             .map((team) => (
                               <div key={team.team_name} className="flex justify-between text-sm">
                                 <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                                <span className="text-amber-400">{(team.win_probability * 100).toFixed(1)}%</span>
+                                <span className="text-[var(--accent-warn)]">{(team.win_probability * 100).toFixed(1)}%</span>
                               </div>
                             ))}
                         </div>
@@ -1465,7 +1465,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             .map((team) => (
                               <div key={team.team_name} className="flex justify-between text-sm">
                                 <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                                <span className="text-blue-400">{(team.final_probability * 100).toFixed(0)}%</span>
+                                <span className="text-[var(--accent-info)]">{(team.final_probability * 100).toFixed(0)}%</span>
                               </div>
                             ))}
                         </div>
@@ -1480,7 +1480,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             .map((team) => (
                               <div key={team.team_name} className="flex justify-between text-sm">
                                 <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                                <span className="text-emerald-400">{(team.semi_final_probability * 100).toFixed(0)}%</span>
+                                <span className="text-[var(--accent-primary)]">{(team.semi_final_probability * 100).toFixed(0)}%</span>
                               </div>
                             ))}
                         </div>
@@ -1515,8 +1515,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                             <tr
                               key={team.team_name}
                               className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors ${
-                                idx < 1 ? 'border-l-2 border-l-amber-500' : 
-                                idx < 4 ? 'border-l-2 border-l-emerald-500' : ''
+                                idx < 1 ? 'border-l-2 border-l-[var(--accent-warn)]' : 
+                                idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' : ''
                               }`}
                             >
                               <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
@@ -1524,21 +1524,21 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                               <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{tournamentId === 'champions_league' ? 'SF' : team.current_points}</td>
                               <td className="py-3 px-4 text-center">
                                 {team.win_probability > 0.001 ? (
-                                  <span className="text-amber-400 font-semibold">{(team.win_probability * 100).toFixed(1)}%</span>
+                                  <span className="text-[var(--accent-warn)] font-semibold">{(team.win_probability * 100).toFixed(1)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.final_probability > 0.01 ? (
-                                  <span className="text-blue-400">{(team.final_probability * 100).toFixed(0)}%</span>
+                                  <span className="text-[var(--accent-info)]">{(team.final_probability * 100).toFixed(0)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
                               </td>
                               <td className="py-3 px-4 text-center">
                                 {team.semi_final_probability > 0.01 ? (
-                                  <span className="text-emerald-400">{(team.semi_final_probability * 100).toFixed(0)}%</span>
+                                  <span className="text-[var(--accent-primary)]">{(team.semi_final_probability * 100).toFixed(0)}%</span>
                                 ) : (
                                   <span className="text-[var(--text-tertiary)]">-</span>
                                 )}
@@ -1559,19 +1559,19 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     {/* Legend */}
                     <div className="p-4 flex gap-6 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-color)]">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-amber-500 rounded" />
+                        <div className="w-3 h-3 bg-[var(--accent-warn)] rounded" />
                         <span>Winner</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-emerald-500 rounded" />
+                        <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
                         <span>Top Contenders</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Disclaimer */}
-                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <p className="text-sm text-amber-800 dark:text-amber-200/80 text-center">
+                  <div className="p-4 rounded-xl bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]">
+                    <p className="text-sm text-[var(--accent-warn)] text-center">
                       <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, bracket state, and team ratings.
                       Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                     </p>

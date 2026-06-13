@@ -66,7 +66,7 @@ export function TopBar() {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-emerald-500/20"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-primary)]/20"
                 aria-label="Account menu"
               >
                 {user.avatar_url ? (
@@ -98,7 +98,7 @@ export function TopBar() {
           ) : (
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] shadow-lg shadow-emerald-500/20"
+              className="rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-primary)]/20"
             >
               Sign In
             </button>

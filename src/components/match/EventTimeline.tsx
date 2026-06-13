@@ -45,10 +45,10 @@ function eventIcon(type: EventType) {
     return <CircleDot className="h-4 w-4 text-[var(--accent-primary)]" aria-hidden />
   }
   if (t === 'yellow_card') {
-    return <Square className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" aria-hidden />
+    return <Square className="h-3.5 w-3.5 fill-[var(--accent-warn)] text-[var(--accent-warn)]" aria-hidden />
   }
   if (t === 'red_card') {
-    return <Square className="h-3.5 w-3.5 fill-red-500 text-red-500" aria-hidden />
+    return <Square className="h-3.5 w-3.5 fill-[var(--accent-loss)] text-[var(--accent-loss)]" aria-hidden />
   }
   if (t === 'penalty_missed') {
     return <ShieldOff className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />

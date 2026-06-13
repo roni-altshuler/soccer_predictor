@@ -174,10 +174,10 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
   }, [matchId, homeTeam, awayTeam, refereeName])
 
   const getCardTendencyColor = (yellowPerMatch: number): string => {
-    if (yellowPerMatch < 2.5) return 'text-green-500'
-    if (yellowPerMatch < 3.5) return 'text-amber-500'
-    if (yellowPerMatch < 4.5) return 'text-orange-500'
-    return 'text-red-500'
+    if (yellowPerMatch < 2.5) return 'text-[var(--accent-primary)]'
+    if (yellowPerMatch < 3.5) return 'text-[var(--accent-warn)]'
+    if (yellowPerMatch < 4.5) return 'text-[var(--accent-warn)]'
+    return 'text-[var(--accent-loss)]'
   }
 
   const getCardTendencyLabel = (yellowPerMatch: number): string => {
@@ -225,7 +225,7 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
               </p>
             )}
             {referee.isLeagueAverage && (
-              <p className="text-xs text-amber-500 mt-1">
+              <p className="text-xs text-[var(--accent-warn)] mt-1">
                 Showing league-average statistics
               </p>
             )}
@@ -317,17 +317,17 @@ export default function RefereeInfo({ matchId, homeTeam, awayTeam, refereeName }
               <p className="text-sm font-medium text-[var(--text-secondary)] mb-2">Result Distribution</p>
               <div className="h-3 rounded-full overflow-hidden flex bg-[var(--muted-bg)]">
                 <div
-                  className="bg-green-500 h-full"
+                  className="bg-[var(--accent-primary)] h-full"
                   style={{ width: `${referee.homeWinRate * 100}%` }}
                   title={`Home Wins: ${(referee.homeWinRate * 100).toFixed(0)}%`}
                 />
                 <div
-                  className="bg-gray-400 h-full"
+                  className="bg-[var(--accent-warn)] h-full"
                   style={{ width: `${referee.drawRate * 100}%` }}
                   title={`Draws: ${(referee.drawRate * 100).toFixed(0)}%`}
                 />
                 <div
-                  className="bg-red-500 h-full"
+                  className="bg-[var(--accent-loss)] h-full"
                   style={{ width: `${referee.awayWinRate * 100}%` }}
                   title={`Away Wins: ${(referee.awayWinRate * 100).toFixed(0)}%`}
                 />
@@ -400,7 +400,7 @@ function TeamHistoryCard({ history, isHome }: { history: TeamRefereeHistory; isH
   const winRate = history.matches > 0 ? (history.wins / history.matches * 100) : 0
   
   return (
-    <div className={`rounded-lg p-4 ${isHome ? 'bg-green-500/10 border-l-4 border-green-500' : 'bg-blue-500/10 border-l-4 border-blue-500'}`}>
+    <div className={`rounded-lg p-4 ${isHome ? 'bg-[var(--accent-primary)]/10 border-l-4 border-[var(--accent-primary)]' : 'bg-[var(--accent-info)]/10 border-l-4 border-[var(--accent-info)]'}`}>
       <h5 className="font-semibold text-[var(--text-primary)] mb-3">{history.team}</h5>
       <div className="grid grid-cols-4 gap-2 text-center mb-3">
         <div>
@@ -408,7 +408,7 @@ function TeamHistoryCard({ history, isHome }: { history: TeamRefereeHistory; isH
           <p className="text-xs text-[var(--text-tertiary)]">Matches</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-green-500">{history.wins}</p>
+          <p className="text-lg font-bold text-[var(--accent-primary)]">{history.wins}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Wins</p>
         </div>
         <div>
@@ -416,7 +416,7 @@ function TeamHistoryCard({ history, isHome }: { history: TeamRefereeHistory; isH
           <p className="text-xs text-[var(--text-tertiary)]">Draws</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-red-400">{history.losses}</p>
+          <p className="text-lg font-bold text-[var(--accent-loss)]">{history.losses}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Losses</p>
         </div>
       </div>

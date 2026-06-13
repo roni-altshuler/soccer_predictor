@@ -54,9 +54,9 @@ function CountChip({
   tone: 'live' | 'upcoming' | 'finished'
 }) {
   const styles: Record<typeof tone, string> = {
-    live: 'border-red-500/40 bg-red-500/10 text-red-400',
-    upcoming: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400',
-    finished: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
+    live: 'border-[var(--accent-loss)]/40 bg-[var(--accent-loss)]/10 text-[var(--accent-loss)]',
+    upcoming: 'border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]',
+    finished: 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]',
   }
   return (
     <div

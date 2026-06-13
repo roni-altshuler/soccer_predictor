@@ -44,24 +44,24 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
   };
   
   const pred = getPrediction();
-  const confidenceColor = outcome.confidence > 0.7 ? 'text-green-500' : outcome.confidence > 0.5 ? 'text-yellow-500' : 'text-red-500';
+  const confidenceColor = outcome.confidence > 0.7 ? 'text-[var(--accent-primary)]' : outcome.confidence > 0.5 ? 'text-[var(--accent-warn)]' : 'text-[var(--accent-loss)]';
 
   return (
     <div 
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      className="bg-[var(--card-bg)] rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2">
-        <span className="text-white text-xs font-medium">{prediction.league}</span>
+      <div className="bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-ai)] px-4 py-2">
+        <span className="text-[var(--accent-on-primary)] text-xs font-medium">{prediction.league}</span>
       </div>
       
       {/* Teams */}
-      <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+      <div className="p-4 border-b border-[var(--border-color)]">
         <div className="flex justify-between items-center">
-          <span className="font-medium text-gray-900 dark:text-white">{prediction.home_team}</span>
-          <span className="text-gray-400 text-sm">vs</span>
-          <span className="font-medium text-gray-900 dark:text-white">{prediction.away_team}</span>
+          <span className="font-medium text-[var(--text-primary)]">{prediction.home_team}</span>
+          <span className="text-[var(--text-tertiary)] text-sm">vs</span>
+          <span className="font-medium text-[var(--text-primary)]">{prediction.away_team}</span>
         </div>
       </div>
       
@@ -74,17 +74,17 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
         </div>
         
         {/* Prediction Summary */}
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-4">
+        <div className="bg-[var(--muted-bg)] rounded-lg p-3 mb-4">
           <div className="flex justify-between items-center">
             <div>
               <span className="text-xs text-[var(--text-tertiary)]">Prediction</span>
-              <p className="font-semibold text-gray-900 dark:text-white">
+              <p className="font-semibold text-[var(--text-primary)]">
                 {pred.winner} {pred.type !== 'draw' ? 'Win' : ''}
               </p>
             </div>
             <div className="text-right">
               <span className="text-xs text-[var(--text-tertiary)]">Score</span>
-              <p className="font-semibold text-gray-900 dark:text-white">{most_likely_score.score}</p>
+              <p className="font-semibold text-[var(--text-primary)]">{most_likely_score.score}</p>
             </div>
           </div>
         </div>
@@ -111,13 +111,13 @@ export default function PredictionCard({ prediction, onClick }: PredictionCardPr
 
 function ProbabilityBar({ label, value, isHighest }: { label: string; value: number; isHighest: boolean }) {
   const percentage = (value * 100).toFixed(0);
-  const bgColor = isHighest ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-600';
-  const textColor = isHighest ? 'text-emerald-500' : 'text-[var(--text-tertiary)]';
-  
+  const bgColor = isHighest ? 'bg-[var(--accent-primary)]' : 'bg-[var(--muted-bg)]';
+  const textColor = isHighest ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)]';
+
   return (
     <div className="flex-1">
       <div className={`text-center text-xs font-medium ${textColor} mb-1`}>{label}</div>
-      <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+      <div className="h-2 bg-[var(--muted-bg)] rounded-full overflow-hidden">
         <div 
           className={`h-full ${bgColor} transition-all duration-500`}
           style={{ width: `${percentage}%` }}
@@ -130,9 +130,9 @@ function ProbabilityBar({ label, value, isHighest }: { label: string; value: num
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2">
+    <div className="bg-[var(--muted-bg)] rounded-lg p-2">
       <div className="text-xs text-[var(--text-tertiary)]">{label}</div>
-      <div className="font-semibold text-gray-900 dark:text-white text-sm">{value}</div>
+      <div className="font-semibold text-[var(--text-primary)] text-sm">{value}</div>
     </div>
   );
 }

@@ -75,8 +75,8 @@ function PredictionBadge({ correct }: { correct?: boolean }) {
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
       correct 
-        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+        ? 'bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-[var(--accent-primary)] border border-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
+        : 'bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)] text-[var(--accent-loss)] border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)]'
     }`}>
       {correct ? '✓ Correct' : '✗ Wrong'}
     </span>
@@ -127,7 +127,7 @@ function ScoreDisplay({
     }`}>
       {label && (
         <span className={`text-[10px] font-bold uppercase tracking-wider ${
-          isActual ? 'text-emerald-400' : 'text-[var(--text-tertiary)]'
+          isActual ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)]'
         }`}>
           {label}
         </span>
@@ -170,7 +170,7 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
   return (
     <div className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
       isLive
-        ? 'bg-[var(--live-bg)] border-[var(--live-border)] ring-1 ring-red-500/30'
+        ? 'bg-[var(--live-bg)] border-[var(--live-border)] ring-1 ring-[var(--live-border)]'
         : isPlayed 
           ? 'bg-[var(--card-bg)] border-[var(--border-color)]' 
           : 'bg-[var(--card-bg)] border-[var(--border-color)]'
@@ -178,16 +178,16 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
       
       {/* Status indicator line */}
       <div className={`absolute top-0 left-0 right-0 h-0.5 ${
-        isLive ? 'bg-gradient-to-r from-red-500 via-red-400 to-red-500 animate-pulse' :
-        isPlayed ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500' :
-        'bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500'
+        isLive ? 'bg-gradient-to-r from-[var(--accent-loss)] via-[var(--accent-loss-soft)] to-[var(--accent-loss)] animate-pulse' :
+        isPlayed ? 'bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-primary-soft)] to-[var(--accent-primary)]' :
+        'bg-gradient-to-r from-[var(--accent-info)] via-[var(--accent-info-soft)] to-[var(--accent-info)]'
       }`} />
       
       <div className="p-4">
         {/* Teams */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex-1 text-right pr-4">
-            <span className={`font-semibold text-sm ${homeWon ? 'text-emerald-400' : 'text-[var(--text-primary)]'}`}>
+            <span className={`font-semibold text-sm ${homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
               {match.home_team}
             </span>
           </div>
@@ -196,8 +196,8 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
             {isLive ? (
               <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-red-400 text-[10px] font-bold uppercase tracking-wider">Live</span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--live-text)] animate-pulse" />
+                  <span className="text-[var(--live-text)] text-[10px] font-bold uppercase tracking-wider">Live</span>
                 </div>
                 <ScoreDisplay 
                   homeScore={match.actual_home_goals ?? 0} 
@@ -219,7 +219,7 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
           </div>
           
           <div className="flex-1 text-left pl-4">
-            <span className={`font-semibold text-sm ${awayWon ? 'text-emerald-400' : 'text-[var(--text-primary)]'}`}>
+            <span className={`font-semibold text-sm ${awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
               {match.away_team}
             </span>
           </div>
@@ -256,13 +256,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                 <div className="flex-1">
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Home</span>
-                    <span className="text-emerald-400 font-bold">
+                    <span className="text-[var(--accent-primary)] font-bold">
                       {formatProbability(homeProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-soft)] rounded-full"
                       style={{ width: `${clampPct(homeProb)}%` }}
                     />
                   </div>
@@ -270,13 +270,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                 <div className="flex-1">
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Draw</span>
-                    <span className="text-amber-400 font-bold">
+                    <span className="text-[var(--accent-warn)] font-bold">
                       {formatProbability(drawProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-[var(--accent-warn)] to-[var(--accent-warn-soft)] rounded-full"
                       style={{ width: `${clampPct(drawProb)}%` }}
                     />
                   </div>
@@ -284,13 +284,13 @@ function MatchCard({ match, expanded = false }: { match: MatchData; expanded?: b
                 <div className="flex-1">
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-[var(--text-tertiary)]">Away</span>
-                    <span className="text-rose-400 font-bold">
+                    <span className="text-[var(--accent-loss)] font-bold">
                       {formatProbability(awayProb)}
                     </span>
                   </div>
                   <div className="h-1 bg-[var(--muted-bg)] rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-rose-600 to-rose-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-[var(--accent-loss)] to-[var(--accent-loss-soft)] rounded-full"
                       style={{ width: `${clampPct(awayProb)}%` }}
                     />
                   </div>
@@ -353,7 +353,7 @@ function CalendarCell({
         isSelected
           ? 'bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] ring-2 ring-[var(--accent-ai-light)] ring-offset-2 ring-offset-[var(--background)]'
           : day.is_today
-          ? 'bg-gradient-to-br from-emerald-500/18 to-emerald-600/10 border-2 border-emerald-500/50 hover:border-emerald-400'
+          ? 'bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-primary)_18%,transparent)] to-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] border-2 border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)] hover:border-[var(--accent-primary)]'
           : hasMatches
           ? 'bg-[var(--card-bg)] hover:bg-[var(--card-hover)] border border-[var(--border-color)] hover:border-[var(--border-hover)]'
           : 'bg-[var(--background-secondary)] hover:bg-[var(--muted-bg)] border border-transparent'
@@ -362,7 +362,7 @@ function CalendarCell({
       <div className="flex flex-col h-full">
         <span className={`text-sm font-bold ${
           isSelected ? 'text-white' :
-          day.is_today ? 'text-emerald-400' :
+          day.is_today ? 'text-[var(--accent-primary)]' :
           hasMatches ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'
         }`}>
           {day.day}
@@ -372,10 +372,10 @@ function CalendarCell({
           <div className="flex-1 flex flex-col justify-end">
             <div className="flex items-center gap-1 mt-1">
               {hasPlayedMatches && (
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Completed" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" title="Completed" />
               )}
               {hasUpcomingMatches && (
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="Upcoming" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-info)]" title="Upcoming" />
               )}
             </div>
             <span className={`text-[10px] font-medium mt-0.5 ${
@@ -423,23 +423,23 @@ function LiveScoreBanner({ league }: { league: string }) {
   if (liveMatches.length === 0) return null
   
   return (
-    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-red-600/20 via-red-500/10 to-red-600/20 border border-red-500/30 animate-pulse">
+    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)] via-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] to-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)] border border-[var(--live-border)] animate-pulse">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-          <span className="text-red-400 font-bold text-sm uppercase tracking-wider">Live Now</span>
+          <div className="w-2 h-2 rounded-full bg-[var(--live-text)] animate-ping" />
+          <span className="text-[var(--live-text)] font-bold text-sm uppercase tracking-wider">Live Now</span>
         </div>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-2">
         {liveMatches.map((match, idx) => (
-          <div key={idx} className="flex-shrink-0 bg-slate-900/80 rounded-xl px-4 py-2 border border-red-500/20">
+          <div key={idx} className="flex-shrink-0 bg-[var(--card-bg)] rounded-xl px-4 py-2 border border-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]">
             <div className="flex items-center gap-3">
-              <span className="text-white font-medium text-sm">{match.home_team}</span>
-              <span className="text-2xl font-bold text-white">{match.home_score}</span>
-              <span className="text-slate-500">-</span>
-              <span className="text-2xl font-bold text-white">{match.away_score}</span>
-              <span className="text-white font-medium text-sm">{match.away_team}</span>
-              <span className="text-red-400 text-xs font-medium">{match.minute}&apos;</span>
+              <span className="text-[var(--text-primary)] font-medium text-sm">{match.home_team}</span>
+              <span className="text-2xl font-bold text-[var(--text-primary)]">{match.home_score}</span>
+              <span className="text-[var(--text-tertiary)]">-</span>
+              <span className="text-2xl font-bold text-[var(--text-primary)]">{match.away_score}</span>
+              <span className="text-[var(--text-primary)] font-medium text-sm">{match.away_team}</span>
+              <span className="text-[var(--live-text)] text-xs font-medium">{match.minute}&apos;</span>
             </div>
           </div>
         ))}
@@ -536,7 +536,7 @@ export default function MatchesPage() {
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] flex items-center justify-center shadow-xl shadow-cyan-500/20">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] flex items-center justify-center shadow-xl shadow-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)]">
               <span className="text-3xl">📅</span>
             </div>
             <div>
@@ -559,7 +559,7 @@ export default function MatchesPage() {
                 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   selectedLeague === league
-                    ? 'bg-gradient-to-r from-[var(--accent-ai)] to-[var(--accent-primary)] text-[#04120a] shadow-lg shadow-cyan-500/25'
+                    ? 'bg-gradient-to-r from-[var(--accent-ai)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-lg shadow-[color-mix(in_srgb,var(--accent-ai)_25%,transparent)]'
                     : 'bg-[var(--card-bg)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)]'
                 }`}
               >
@@ -649,15 +649,15 @@ export default function MatchesPage() {
               {/* Legend */}
               <div className="px-6 py-4 bg-[var(--background-secondary)] border-t border-[var(--border-color)] flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--accent-primary)]" />
                   <span className="text-xs text-[var(--text-secondary)]">Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--accent-info)]" />
                   <span className="text-xs text-[var(--text-secondary)]">Scheduled</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded border-2 border-emerald-500/50" />
+                  <div className="w-3 h-3 rounded border-2 border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]" />
                   <span className="text-xs text-[var(--text-secondary)]">Today</span>
                 </div>
               </div>

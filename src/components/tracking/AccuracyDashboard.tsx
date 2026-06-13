@@ -138,9 +138,9 @@ function pp(n: number): string {
 }
 
 function accuracyColor(a: number): string {
-  if (a >= 0.6) return '#22c55e'
-  if (a >= 0.45) return '#f59e0b'
-  return '#ef4444'
+  if (a >= 0.6) return 'var(--accent-primary)'
+  if (a >= 0.45) return 'var(--accent-warn)'
+  return 'var(--accent-loss)'
 }
 
 function winnerLabel(w: string): string {
@@ -279,13 +279,13 @@ function BettingEdgeDesk({
     {
       label: 'Model Edge vs Random',
       value: pp(metrics.winner_accuracy - baseline),
-      tone: metrics.winner_accuracy - baseline >= 0.08 ? '#22c55e' : metrics.winner_accuracy - baseline >= 0.03 ? '#f59e0b' : '#ef4444',
+      tone: metrics.winner_accuracy - baseline >= 0.08 ? 'var(--accent-primary)' : metrics.winner_accuracy - baseline >= 0.03 ? 'var(--accent-warn)' : 'var(--accent-loss)',
       note: '1X2 hit rate over 33.3% random baseline',
     },
     {
       label: 'Policy Pick Accuracy',
       value: qualified > 0 ? pct(qualifiedAcc) : 'N/A',
-      tone: qualified === 0 ? '#94a3b8' : accuracyColor(qualifiedAcc),
+      tone: qualified === 0 ? 'var(--text-tertiary)' : accuracyColor(qualifiedAcc),
       note: qualified > 0
         ? `${qualified} picks (${pct(qualificationRate)} of settled picks)`
         : `Need picks above ${policyConf}% confidence and ${policyEdge}pp edge`,
@@ -293,19 +293,19 @@ function BettingEdgeDesk({
     {
       label: 'Policy Lift',
       value: qualified > 0 ? pp(thresholdLift) : 'N/A',
-      tone: qualified === 0 ? '#94a3b8' : thresholdLift >= 0.03 ? '#22c55e' : thresholdLift >= 0 ? '#f59e0b' : '#ef4444',
+      tone: qualified === 0 ? 'var(--text-tertiary)' : thresholdLift >= 0.03 ? 'var(--accent-primary)' : thresholdLift >= 0 ? 'var(--accent-warn)' : 'var(--accent-loss)',
       note: 'Difference between filtered picks and all settled picks',
     },
     {
       label: 'High vs Low Conf Gap',
       value: pp(confidenceGap),
-      tone: confidenceGap >= 0.1 ? '#22c55e' : confidenceGap >= 0.04 ? '#f59e0b' : '#ef4444',
+      tone: confidenceGap >= 0.1 ? 'var(--accent-primary)' : confidenceGap >= 0.04 ? 'var(--accent-warn)' : 'var(--accent-loss)',
       note: `${pct(metrics.high_confidence_accuracy)} (high) vs ${pct(metrics.low_confidence_accuracy)} (low)`,
     },
     {
       label: 'Recent Momentum',
       value: last30.completed_predictions > 0 ? pp(recentDelta) : 'N/A',
-      tone: last30.completed_predictions === 0 ? '#94a3b8' : recentDelta >= 0.03 ? '#22c55e' : recentDelta >= -0.03 ? '#f59e0b' : '#ef4444',
+      tone: last30.completed_predictions === 0 ? 'var(--text-tertiary)' : recentDelta >= 0.03 ? 'var(--accent-primary)' : recentDelta >= -0.03 ? 'var(--accent-warn)' : 'var(--accent-loss)',
       note: last30.completed_predictions > 0
         ? `Last 30 days (${last30.completed_predictions} settled picks)`
         : 'Need more recent settled picks for momentum',
@@ -335,9 +335,9 @@ function BettingEdgeDesk({
 }
 
 function gateTone(status: 'pass' | 'monitor' | 'fail'): string {
-  if (status === 'pass') return '#22c55e'
-  if (status === 'monitor') return '#f59e0b'
-  return '#ef4444'
+  if (status === 'pass') return 'var(--accent-primary)'
+  if (status === 'monitor') return 'var(--accent-warn)'
+  return 'var(--accent-loss)'
 }
 
 function gateLabel(status: 'pass' | 'monitor' | 'fail'): string {
@@ -374,7 +374,7 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
         </div>
         <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-4 py-3 min-w-[170px]">
           <p className="text-[10px] uppercase text-[var(--text-tertiary)]">Overall Gate</p>
-          <p className="mt-1 text-2xl font-black" style={{ color: gate ? gateTone(gate.overall_status) : '#94a3b8' }}>
+          <p className="mt-1 text-2xl font-black" style={{ color: gate ? gateTone(gate.overall_status) : 'var(--text-tertiary)' }}>
             {gate ? gateLabel(gate.overall_status) : 'N/A'}
           </p>
           <p className="text-[10px] text-[var(--text-tertiary)]">
@@ -469,12 +469,12 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
                           <p className="text-[10px] text-[var(--text-tertiary)]">{item.notes[0] || 'Quality gate evaluated'}</p>
                         </td>
                         <td className="px-3 py-2.5">
-                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ color: gateTone(item.status), backgroundColor: gateTone(item.status) + '1A' }}>
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ color: gateTone(item.status), backgroundColor: `color-mix(in srgb, ${gateTone(item.status)} 10%, transparent)` }}>
                             {gateLabel(item.status)}
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.samples.toLocaleString()}</td>
-                        <td className="px-3 py-2.5 text-right font-semibold" style={{ color: item.accuracy != null ? accuracyColor(item.accuracy) : '#94a3b8' }}>
+                        <td className="px-3 py-2.5 text-right font-semibold" style={{ color: item.accuracy != null ? accuracyColor(item.accuracy) : 'var(--text-tertiary)' }}>
                           {item.accuracy != null ? pct(item.accuracy) : 'N/A'}
                         </td>
                         <td className="px-3 py-2.5 text-right text-[var(--text-secondary)]">{item.f1_macro != null ? pct(item.f1_macro) : 'N/A'}</td>
@@ -595,8 +595,8 @@ function HeroMetrics({
                   key={i}
                   className={`h-7 rounded flex items-center justify-center text-[10px] font-bold ${
                     r === 'W'
-                      ? 'bg-emerald-500/18 text-emerald-300'
-                      : 'bg-red-500/18 text-red-300'
+                      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_18%,transparent)] text-[var(--accent-primary)]'
+                      : 'bg-[color-mix(in_srgb,var(--accent-loss)_18%,transparent)] text-[var(--accent-loss)]'
                   }`}
                 >
                   {r === 'W' ? '✓' : '×'}
@@ -682,8 +682,8 @@ function CalibrationPanel({ metrics }: { metrics: OverallMetrics }) {
                 <span className="text-[10px] text-[var(--text-tertiary)]">{bin.bucket}</span>
                 <div className="space-y-1">
                   <div className="h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden relative">
-                    <div className="h-full bg-cyan-500/70" style={{ width: `${confidenceWidth}%` }} />
-                    <div className="h-full bg-emerald-500 absolute left-0 top-0" style={{ width: `${accuracyWidth}%`, opacity: 0.8 }} />
+                    <div className="h-full bg-[color-mix(in_srgb,var(--accent-ai)_70%,transparent)]" style={{ width: `${confidenceWidth}%` }} />
+                    <div className="h-full bg-[var(--accent-primary)] absolute left-0 top-0" style={{ width: `${accuracyWidth}%`, opacity: 0.8 }} />
                   </div>
                   <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
                     <span>n={bin.count}</span>
@@ -722,10 +722,10 @@ function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }
   const brierPath = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${xFor(index).toFixed(1)},${yFor(point.brier_score / 2).toFixed(1)}`).join(' ')
   const latest = data.latest
   const statusColor = latest.expected_calibration_error <= 0.06
-    ? '#22c55e'
+    ? 'var(--accent-primary)'
     : latest.expected_calibration_error <= 0.1
-      ? '#f59e0b'
-      : '#ef4444'
+      ? 'var(--accent-warn)'
+      : 'var(--accent-loss)'
 
   return (
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
@@ -756,7 +756,7 @@ function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }
               </g>
             )
           })}
-          <path d={brierPath} fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.75} />
+          <path d={brierPath} fill="none" stroke="var(--accent-info)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.75} />
           <path d={ecePath} fill="none" stroke={statusColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           {points.map((point, index) => (
             <circle key={`${point.index}-${point.date}`} cx={xFor(index)} cy={yFor(point.expected_calibration_error)} r="2.2" fill={statusColor} />
@@ -764,7 +764,7 @@ function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }
         </svg>
         <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
           <span><span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />ECE</span>
-          <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-400" />Brier / 2</span>
+          <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-[var(--accent-info)]" />Brier / 2</span>
           <span>{data.data_points} rolling windows · step {data.step}</span>
         </div>
       </div>
@@ -778,9 +778,9 @@ function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }
 
 function OutcomeAccuracy({ metrics }: { metrics: OverallMetrics }) {
   const outcomes = [
-    { label: 'Home Win', predicted: metrics.home_win_predicted ?? 0, correct: metrics.home_win_correct ?? 0, color: '#22c55e' },
-    { label: 'Draw', predicted: metrics.draw_predicted ?? 0, correct: metrics.draw_correct ?? 0, color: '#f59e0b' },
-    { label: 'Away Win', predicted: metrics.away_win_predicted ?? 0, correct: metrics.away_win_correct ?? 0, color: '#6366f1' },
+    { label: 'Home Win', predicted: metrics.home_win_predicted ?? 0, correct: metrics.home_win_correct ?? 0, color: 'var(--accent-primary)' },
+    { label: 'Draw', predicted: metrics.draw_predicted ?? 0, correct: metrics.draw_correct ?? 0, color: 'var(--accent-warn)' },
+    { label: 'Away Win', predicted: metrics.away_win_predicted ?? 0, correct: metrics.away_win_correct ?? 0, color: 'var(--accent-info)' },
   ]
 
   const totalPredicted = outcomes.reduce((s, o) => s + o.predicted, 0) || 1
@@ -872,18 +872,18 @@ function TrendChart({
         {(() => {
           const y50 = PAD + (1 - (0.5 - minA) / (maxA - minA)) * (H - 2 * PAD)
           return y50 >= PAD && y50 <= H - PAD ? (
-            <line x1={PAD} y1={y50} x2={W - PAD} y2={y50} stroke="#f59e0b" strokeDasharray="6 3" opacity={0.4} />
+            <line x1={PAD} y1={y50} x2={W - PAD} y2={y50} stroke="var(--accent-warn)" strokeDasharray="6 3" opacity={0.4} />
           ) : null
         })()}
         <path d={areaD} fill="url(#trendGrad)" opacity={0.15} />
-        <path d={pathD} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={pathD} fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p: TrendPoint, i: number) => (
           <circle key={i} cx={xs[i]} cy={ys[i]} r="2.5" fill={accuracyColor(p.accuracy)} />
         ))}
         <defs>
           <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--accent-primary)" />
+            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
@@ -1061,18 +1061,18 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
                         </span>
                       </>
                     ) : (
-                      <span className="text-amber-500 text-[10px]">Pending</span>
+                      <span className="text-[var(--accent-warn)] text-[10px]">Pending</span>
                     )}
                   </td>
                   {/* Outcome (win/draw/loss correct?) */}
                   <td className="px-3 py-2.5 text-center">
                     {p.winner_correct === true && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)] font-semibold">
                         {'\u2713'}
                       </span>
                     )}
                     {p.winner_correct === false && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)] font-semibold">
                         {'\u2717'}
                       </span>
                     )}
@@ -1081,12 +1081,12 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
                   {/* Scoreline (exact match?) */}
                   <td className="px-3 py-2.5 text-center">
                     {p.scoreline_correct === true && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)] font-semibold">
                         {'\u2713'}
                       </span>
                     )}
                     {p.scoreline_correct === false && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)] font-semibold">
                         {'\u2717'}
                       </span>
                     )}
@@ -1097,7 +1097,7 @@ function PredictionHistory({ initialPredictions }: { initialPredictions: PredSum
                     {(() => {
                       const maxProb = Math.max(p.home_win_prob ?? 0, p.draw_prob ?? 0, p.away_win_prob ?? 0)
                       const edge = maxProb - (1 / 3)
-                      const tone = edge >= 0.12 ? 'text-emerald-400' : edge >= 0.06 ? 'text-amber-400' : 'text-slate-400'
+                      const tone = edge >= 0.12 ? 'text-[var(--accent-primary)]' : edge >= 0.06 ? 'text-[var(--accent-warn)]' : 'text-[var(--text-tertiary)]'
                       const sign = edge > 0 ? '+' : ''
                       return (
                         <span className={`text-[10px] font-semibold ${tone}`}>
@@ -1183,10 +1183,10 @@ function ModelCard({ modelInfo }: { modelInfo: ModelInfoResponse | null }) {
 
 function ModelPolicyCard({ policy }: { policy: ModelInfoResponse['model_selection'] | null }) {
   const decisionTone: Record<string, string> = {
-    global: '#22c55e',
-    blend: '#38bdf8',
-    league: '#f59e0b',
-    global_fallback: '#a78bfa',
+    global: 'var(--accent-primary)',
+    blend: 'var(--accent-info)',
+    league: 'var(--accent-warn)',
+    global_fallback: 'var(--accent-market-soft)',
   }
   const topDecisions = (policy?.decisions || [])
     .filter(d => d.decision !== 'global_fallback')

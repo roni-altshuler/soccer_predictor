@@ -23,36 +23,36 @@ const PROVIDER_LABEL: Record<DataProvider, string> = {
 
 const PROVIDER_STYLE: Record<DataProvider, { shell: string; dot: string }> = {
   espn: {
-    shell: 'border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300',
-    dot: 'bg-blue-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-info)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] text-[var(--accent-info)]',
+    dot: 'bg-[var(--accent-info)]',
   },
   fotmob: {
-    shell: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    dot: 'bg-emerald-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-primary)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--accent-primary)]',
+    dot: 'bg-[var(--accent-primary)]',
   },
   guardian: {
-    shell: 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-    dot: 'bg-sky-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-info)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] text-[var(--accent-info)]',
+    dot: 'bg-[var(--accent-info)]',
   },
   uefa: {
-    shell: 'border-indigo-500/25 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300',
-    dot: 'bg-indigo-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-info)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] text-[var(--accent-info)]',
+    dot: 'bg-[var(--accent-info)]',
   },
   model: {
-    shell: 'border-cyan-500/25 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
-    dot: 'bg-cyan-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-ai)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]',
+    dot: 'bg-[var(--accent-ai)]',
   },
   internal: {
-    shell: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300',
-    dot: 'bg-violet-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-market)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-market)_10%,transparent)] text-[var(--accent-market)]',
+    dot: 'bg-[var(--accent-market)]',
   },
   none: {
-    shell: 'border-slate-400/25 bg-slate-400/10 text-slate-600 dark:text-slate-300',
-    dot: 'bg-slate-400',
+    shell: 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-secondary)]',
+    dot: 'bg-[var(--text-tertiary)]',
   },
   error: {
-    shell: 'border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300',
-    dot: 'bg-red-500',
+    shell: 'border-[color-mix(in_srgb,var(--accent-loss)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] text-[var(--accent-loss)]',
+    dot: 'bg-[var(--accent-loss)]',
   },
 }
 

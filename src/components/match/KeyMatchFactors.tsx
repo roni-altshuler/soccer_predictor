@@ -62,11 +62,11 @@ function StatBar({ label, homeVal, awayVal, unit, higherIsBetter = true }: {
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-        <span className={homeIsBetter ? 'font-semibold text-green-500' : ''}>
+        <span className={homeIsBetter ? 'font-semibold text-[var(--accent-primary)]' : ''}>
           {homeVal.toFixed(2)}{unit}
         </span>
         <span className="text-[10px] uppercase tracking-wider">{label}</span>
-        <span className={awayIsBetter ? 'font-semibold text-green-500' : ''}>
+        <span className={awayIsBetter ? 'font-semibold text-[var(--accent-primary)]' : ''}>
           {awayVal.toFixed(2)}{unit}
         </span>
       </div>
@@ -437,9 +437,9 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
             <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Avg goals {factors.h2h_avg_goals.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="font-semibold text-blue-500">{factors.h2h_breakdown.homeWins}W</span>
+            <span className="font-semibold text-[var(--team-tint-home)]">{factors.h2h_breakdown.homeWins}W</span>
             <span style={{ color: 'var(--text-tertiary)' }}>{factors.h2h_breakdown.draws}D</span>
-            <span className="font-semibold text-orange-500">{factors.h2h_breakdown.awayWins}W</span>
+            <span className="font-semibold text-[var(--team-tint-away)]">{factors.h2h_breakdown.awayWins}W</span>
           </div>
           <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{factors.venue_factor}</p>
         </div>
@@ -454,10 +454,10 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
               </div>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
                 edge.lean === 'home'
-                  ? 'bg-blue-500/20 text-blue-500'
+                  ? 'bg-[color-mix(in_srgb,var(--team-tint-home)_20%,transparent)] text-[var(--team-tint-home)]'
                   : edge.lean === 'away'
-                    ? 'bg-orange-500/20 text-orange-500'
-                    : 'bg-slate-500/20 text-slate-300'
+                    ? 'bg-[color-mix(in_srgb,var(--team-tint-away)_20%,transparent)] text-[var(--team-tint-away)]'
+                    : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
               }`}>
                 {edge.lean === 'home' ? 'Home lean' : edge.lean === 'away' ? 'Away lean' : 'Even'}
               </span>

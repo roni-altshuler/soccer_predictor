@@ -25,13 +25,13 @@ export default function TeamForm({ form, showLabels = false, size = 'md', matchD
   const getResultColor = (result: string) => {
     switch (result.toUpperCase()) {
       case 'W':
-        return 'bg-emerald-500 text-white';
+        return 'bg-[var(--accent-primary)] text-white';
       case 'D':
-        return 'bg-amber-400 text-slate-950';
+        return 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]';
       case 'L':
-        return 'bg-rose-500 text-white';
+        return 'bg-[var(--accent-loss)] text-white';
       default:
-        return 'bg-gray-200 text-gray-600';
+        return 'bg-[var(--muted-bg)] text-[var(--text-secondary)]';
     }
   };
 
@@ -81,20 +81,20 @@ export default function TeamForm({ form, showLabels = false, size = 'md', matchD
           {matchDetails.slice(0, form.length).map((match, index) => (
             <div
               key={`${match.opponent || 'opponent'}-${index}`}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/70"
+              className="rounded-xl border border-[var(--border-color)] px-3 py-2 bg-[color-mix(in_srgb,var(--muted-bg)_80%,transparent)]"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${getResultColor(form[index] || '')}`}>
                   {(form[index] || '-').toUpperCase()}
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <span className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
                   {match.venue === 'home' ? 'Home' : match.venue === 'away' ? 'Away' : 'Match'}
                 </span>
               </div>
-              <div className="mt-2 text-sm font-semibold text-gray-900 dark:text-white truncate">
+              <div className="mt-2 text-sm font-semibold text-[var(--text-primary)] truncate">
                 {match.opponent || 'Opponent'}
               </div>
-              <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <div className="mt-1 flex items-center justify-between text-xs text-[var(--text-tertiary)]">
                 <span>
                   {Number.isFinite(match.goals_for) && Number.isFinite(match.goals_against)
                     ? `${match.goals_for}-${match.goals_against}`
@@ -107,7 +107,7 @@ export default function TeamForm({ form, showLabels = false, size = 'md', matchD
         </div>
       )}
       {showLabels && (
-        <div className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="text-xs text-[var(--text-tertiary)]">
           {formPoints} pts from last {form.length}
         </div>
       )}
@@ -146,10 +146,10 @@ export function TeamFormDetailed({ teamName, form, stats, recentMatches = [] }: 
   const losses = stats?.losses ?? form.filter(r => r.toUpperCase() === 'L').length;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+    <div className="bg-[var(--card-bg)] rounded-xl p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white">{teamName}</h3>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <h3 className="font-semibold text-[var(--text-primary)]">{teamName}</h3>
+        <span className="text-sm text-[var(--text-tertiary)]">
           Last {form.length} matches
         </span>
       </div>
@@ -159,29 +159,29 @@ export function TeamFormDetailed({ teamName, form, stats, recentMatches = [] }: 
       </div>
       
       <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{formPoints}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Points</div>
+        <div className="bg-[var(--muted-bg)] rounded-lg p-2">
+          <div className="text-2xl font-bold text-[var(--text-primary)]">{formPoints}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Points</div>
         </div>
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2">
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">{wins}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Wins</div>
+        <div className="bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] rounded-lg p-2">
+          <div className="text-2xl font-bold text-[var(--accent-primary)]">{wins}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Wins</div>
         </div>
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
-          <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{draws}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Draws</div>
+        <div className="bg-[var(--muted-bg)] rounded-lg p-2">
+          <div className="text-2xl font-bold text-[var(--text-secondary)]">{draws}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Draws</div>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{losses}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Losses</div>
+        <div className="bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] rounded-lg p-2">
+          <div className="text-2xl font-bold text-[var(--accent-loss)]">{losses}</div>
+          <div className="text-xs text-[var(--text-tertiary)]">Losses</div>
         </div>
       </div>
       
       {stats && (
-        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">Goals</span>
-            <span className="font-medium text-gray-900 dark:text-white">
+            <span className="text-[var(--text-tertiary)]">Goals</span>
+            <span className="font-medium text-[var(--text-primary)]">
               {stats.goalsScored} scored, {stats.goalsConceded} conceded
             </span>
           </div>

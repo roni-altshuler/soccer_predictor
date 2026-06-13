@@ -63,7 +63,7 @@ export default function NewsPage() {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-red-400 mb-3">{error}</p>
+          <p className="text-sm text-[var(--accent-loss)] mb-3">{error}</p>
           <button onClick={() => window.location.reload()} className="px-3 py-1.5 bg-[var(--accent-primary)] text-black text-xs font-semibold rounded-lg">Retry</button>
         </div>
       </div>

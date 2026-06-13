@@ -95,9 +95,9 @@ export function LeagueSection({
           {liveCount > 0 && (
             <Badge
               variant="outline"
-              className="border-red-500/40 bg-red-500/10 px-1.5 py-0 text-[10px] font-semibold text-red-400"
+              className="border-[var(--live-border)] bg-[var(--live-bg)] px-1.5 py-0 text-[10px] font-semibold text-[var(--live-text)]"
             >
-              <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+              <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-loss)]" />
               {liveCount} LIVE
             </Badge>
           )}
