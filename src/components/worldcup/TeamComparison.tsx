@@ -126,12 +126,12 @@ export default function TeamComparison({ teams }: { teams: BracketTeam[] }) {
           return (
             <div
               key={r.label}
-              className={`grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2.5 ${
+              className={`grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 ${
                 i > 0 ? 'border-t border-[var(--border-color)]' : ''
               }`}
             >
               {/* A side */}
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex min-w-0 items-center justify-end gap-2">
                 <span
                   className={`text-[13px] font-bold tabular-nums ${
                     aBetter ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'
@@ -139,7 +139,7 @@ export default function TeamComparison({ teams }: { teams: BracketTeam[] }) {
                 >
                   {r.format(r.a)}
                 </span>
-                <div className="h-1.5 w-14 overflow-hidden rounded-full bg-[var(--muted-bg)]">
+                <div className="hidden h-1.5 w-14 overflow-hidden rounded-full bg-[var(--muted-bg)] sm:block">
                   <div
                     className="ml-auto h-full rounded-full"
                     style={{
@@ -149,12 +149,12 @@ export default function TeamComparison({ teams }: { teams: BracketTeam[] }) {
                   />
                 </div>
               </div>
-              <span className="w-36 text-center text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <span className="w-[88px] text-center text-[10px] font-semibold uppercase leading-tight tracking-wider text-[var(--text-tertiary)] sm:w-36 sm:text-[11px]">
                 {r.label}
               </span>
               {/* B side */}
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-14 overflow-hidden rounded-full bg-[var(--muted-bg)]">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="hidden h-1.5 w-14 overflow-hidden rounded-full bg-[var(--muted-bg)] sm:block">
                   <div
                     className="h-full rounded-full"
                     style={{
