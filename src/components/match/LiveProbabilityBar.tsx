@@ -133,20 +133,24 @@ export default function LiveProbabilityBar({
       </div>
 
       <div className="px-4">
-        <div className="flex h-3 w-full overflow-hidden rounded-full" role="img" aria-label="Live win probability">
+        <div
+          className="flex h-3.5 w-full overflow-hidden rounded-full ring-1 ring-[var(--border-color)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]"
+          role="img"
+          aria-label="Live win probability"
+        >
           <div
-            className="transition-all"
-            style={{ width: `${homePct}%`, backgroundColor: 'var(--team-tint-home)' }}
+            className="prob-segment"
+            style={{ width: `${homePct}%`, background: 'linear-gradient(90deg, color-mix(in srgb, var(--team-tint-home) 70%, transparent), var(--team-tint-home))' }}
             title={`${homeTeam} ${homePct}%`}
           />
           <div
-            className="transition-all"
-            style={{ width: `${drawPct}%`, backgroundColor: 'var(--accent-warn)' }}
+            className="prob-segment"
+            style={{ width: `${drawPct}%`, background: 'linear-gradient(90deg, color-mix(in srgb, var(--accent-warn) 70%, transparent), var(--accent-warn))' }}
             title={`Draw ${drawPct}%`}
           />
           <div
-            className="transition-all"
-            style={{ width: `${awayPct}%`, backgroundColor: 'var(--team-tint-away)' }}
+            className="prob-segment"
+            style={{ width: `${awayPct}%`, background: 'linear-gradient(90deg, var(--team-tint-away), color-mix(in srgb, var(--team-tint-away) 70%, transparent))' }}
             title={`${awayTeam} ${awayPct}%`}
           />
         </div>

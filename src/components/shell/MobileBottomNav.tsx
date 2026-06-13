@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import {
   Activity,
   Globe,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { springSnappy } from '@/lib/motion'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
 type Item = {
@@ -44,27 +46,42 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="md:hidden fixed bottom-2 left-2.5 right-2.5 z-40 glass rounded-2xl shadow-[var(--shadow-lg)] flex justify-around py-1.5 pb-[calc(env(safe-area-inset-bottom,0.5rem)+0.4rem)]"
+      className="md:hidden fixed bottom-2 left-2.5 right-2.5 z-40 glass-strong rounded-2xl shadow-[var(--shadow-lg)] flex justify-around py-1.5 pb-[calc(env(safe-area-inset-bottom,0.5rem)+0.4rem)]"
     >
+      {/* top hairline so the floating bar reads as a lit surface */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--hairline-bright)] to-transparent"
+      />
       {ITEMS.map((item) => {
         const active = isActive(pathname, item.href)
         const Icon = item.icon
+        const accentColor = item.accent === 'ai' ? 'var(--accent-ai)' : 'var(--accent-primary)'
         const inner = (
           <span
             className={cn(
-              'relative flex flex-col items-center gap-0.5 px-2 py-1 min-w-[54px] rounded-xl transition-colors',
-              active
-                ? item.accent === 'ai'
-                  ? 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/10'
-                  : 'text-[var(--accent-primary)] bg-[var(--tab-active-bg)]'
-                : 'text-[var(--text-tertiary)]'
+              'relative flex flex-col items-center gap-0.5 px-2 py-1 min-w-[54px] rounded-xl transition-colors duration-200',
+              active ? '' : 'text-[var(--text-tertiary)]'
             )}
+            style={active ? { color: accentColor } : undefined}
           >
-            <Icon className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
-            <span className="text-[10px] font-semibold">{item.label}</span>
             {active && (
-              <span className="absolute -bottom-0.5 h-[2px] w-5 rounded-full bg-current" />
+              <motion.span
+                layoutId="bottomnav-active"
+                transition={springSnappy}
+                className="absolute inset-0 rounded-xl"
+                style={{
+                  background: `color-mix(in srgb, ${accentColor} 14%, transparent)`,
+                  boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accentColor} 30%, transparent)`,
+                }}
+              />
             )}
+            <Icon
+              className={cn('relative h-[18px] w-[18px] transition-transform', active && '-translate-y-px')}
+              strokeWidth={2.2}
+              aria-hidden="true"
+            />
+            <span className="relative text-[10px] font-semibold">{item.label}</span>
           </span>
         )
 

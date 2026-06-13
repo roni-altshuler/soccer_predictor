@@ -3,6 +3,7 @@
 import { type ReactNode } from 'react'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { PageTransition } from '@/components/motion'
 
 import { CommandPalette } from './CommandPalette'
 import { MobileBottomNav } from './MobileBottomNav'
@@ -38,7 +39,7 @@ export function AppShell({
       >
         <TopBar />
         <main id="main" className="flex-1 pb-24 md:pb-0">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
         {footer}
       </div>

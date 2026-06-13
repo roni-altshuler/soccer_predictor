@@ -123,16 +123,29 @@ function ConfidenceGauge({ value, label }: { value: number; label?: string }) {
       ? 'var(--accent-ai)'
       : 'var(--accent-warn)'
 
+  const gaugeId = `gauge-${Math.round(pct * 1000)}`
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
+          <defs>
+            <linearGradient id={gaugeId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={colour} stopOpacity="0.7" />
+              <stop offset="100%" stopColor={colour} />
+            </linearGradient>
+            <filter id={`${gaugeId}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="var(--surface-muted)"
-            strokeOpacity={0.25}
+            stroke="var(--muted-bg)"
             strokeWidth={stroke}
             fill="none"
           />
@@ -140,13 +153,14 @@ function ConfidenceGauge({ value, label }: { value: number; label?: string }) {
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={colour}
+            stroke={`url(#${gaugeId})`}
             strokeWidth={stroke}
             strokeLinecap="round"
             fill="none"
+            filter={`url(#${gaugeId}-glow)`}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             style={{ strokeDasharray: circumference }}
           />
         </svg>
@@ -177,18 +191,20 @@ function XGCompare({ home, away, homeTeam, awayTeam }: { home: number; away: num
           {home.toFixed(2)} <span className="text-[var(--text-tertiary)]">vs</span> {away.toFixed(2)}
         </span>
       </div>
-      <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]/30">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--muted-bg)] ring-1 ring-[var(--border-color)]">
         <motion.div
-          className="h-full bg-[var(--accent-primary)]"
+          className="h-full"
+          style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 55%, transparent), var(--accent-primary))', boxShadow: '0 0 16px color-mix(in srgb, var(--accent-primary) 45%, transparent)' }}
           initial={{ width: 0 }}
           animate={{ width: `${homePct}%` }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />
         <motion.div
-          className="h-full bg-[var(--accent-loss)]"
+          className="h-full"
+          style={{ background: 'linear-gradient(90deg, var(--accent-loss), color-mix(in srgb, var(--accent-loss) 55%, transparent))', boxShadow: '0 0 16px color-mix(in srgb, var(--accent-loss) 45%, transparent)' }}
           initial={{ width: 0 }}
           animate={{ width: `${awayPct}%` }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
       <div className="mt-1 flex justify-between text-[10px] text-[var(--text-tertiary)]">
@@ -427,7 +443,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className={cn('flex flex-col gap-4', className)}
     >
-      <Card className="p-4 md:p-5">
+      <Card variant="ai" className="p-4 md:p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Brain className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
@@ -445,10 +461,10 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
       </Card>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="flex flex-col items-center justify-center gap-2 p-4 md:p-5">
+        <Card variant="ai" className="flex flex-col items-center justify-center gap-2 p-4 md:p-5">
           <ConfidenceGauge value={prediction.confidence.overall} label="Confidence" />
         </Card>
-        <Card className="col-span-1 flex flex-col justify-between gap-3 p-4 md:col-span-2 md:p-5">
+        <Card variant="elevated" className="col-span-1 flex flex-col justify-between gap-3 p-4 md:col-span-2 md:p-5">
           <div className="flex items-center gap-2">
             <Goal className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
             <h3 className="text-h4 font-bold text-[var(--text-primary)]">Goals & markets</h3>

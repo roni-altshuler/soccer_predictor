@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback, useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   Activity,
   Brain,
@@ -22,6 +23,7 @@ import {
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 import { cn } from '@/lib/utils'
+import { springSnappy } from '@/lib/motion'
 
 type NavItem = {
   href: string
@@ -162,6 +164,7 @@ export function SidebarNav() {
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon
+  const accentColor = item.accent === 'ai' ? 'var(--accent-ai)' : 'var(--accent-primary)'
   return (
     <li>
       <Link
@@ -172,9 +175,28 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
         className="shell-nav-item"
         title={item.label}
       >
+        {active && (
+          <>
+            {/* Sliding active highlight — animates between items on navigation. */}
+            <motion.span
+              layoutId="sidebar-active"
+              transition={springSnappy}
+              className="absolute inset-0 rounded-xl"
+              style={{ background: `color-mix(in srgb, ${accentColor} 14%, transparent)` }}
+              aria-hidden
+            />
+            <motion.span
+              layoutId="sidebar-rail"
+              transition={springSnappy}
+              className="absolute left-[-4px] top-2 bottom-2 w-[3px] rounded-full"
+              style={{ background: accentColor, boxShadow: `0 0 12px ${accentColor}` }}
+              aria-hidden
+            />
+          </>
+        )}
         <Icon
           className={cn(
-            'h-[18px] w-[18px] shrink-0 transition-colors',
+            'relative z-10 h-[18px] w-[18px] shrink-0 transition-colors',
             active
               ? item.accent === 'ai'
                 ? 'text-[var(--accent-ai)]'
@@ -184,7 +206,7 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
           strokeWidth={2.1}
           aria-hidden="true"
         />
-        <span className="opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 whitespace-nowrap">
+        <span className="relative z-10 opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 whitespace-nowrap">
           {item.label}
         </span>
       </Link>

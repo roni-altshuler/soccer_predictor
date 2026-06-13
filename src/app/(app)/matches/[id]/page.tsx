@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, CheckCircle2, Clock, MapPin, RefreshCw, Zap } from 'lucide-react'
 import { EventTimeline } from '@/components/match/EventTimeline'
@@ -10,6 +11,7 @@ import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { TeamBadge } from '@/components/primitives/TeamBadge'
 
 import { cn } from '@/lib/utils'
+import { getLeagueAccent } from '@/lib/leagueAccents'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { HeadToHeadDisplay } from '@/components/match'
@@ -691,6 +693,7 @@ export default function MatchDetailPage() {
   const leagueId = searchParams.get('league') || ''
   
   const { asQueryParam: genderParam } = useGenderQuery()
+  const reduceMotion = useReducedMotion()
   const [match, setMatch] = useState<MatchDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<DetailTab>('summary')
@@ -1079,19 +1082,23 @@ export default function MatchDetailPage() {
         liveMinute={liveMinuteLabel}
         statusLabel={isFinished ? 'FT' : isScheduled ? 'Scheduled' : match.status}
       />
-      {/* Hero header — gradient backdrop, glass chips, refined typography */}
+      {/* Hero header — cinematic team-tinted broadcast backdrop */}
       <section
         ref={heroRef}
-        className="relative isolate overflow-hidden border-b border-[var(--border-color)]"
+        className="team-header relative isolate overflow-hidden border-b border-[var(--border-color)]"
+        style={{
+          // Tint the broadcast gradient with the league's brand colour, split
+          // green (home) → blue (away) so the header reads like a TV bug.
+          ['--team-tint-home' as string]: 'var(--accent-primary)',
+          ['--team-tint-away' as string]: getLeagueAccent(match.leagueId ?? match.league)?.accent || 'var(--accent-info)',
+        }}
       >
-        {/* Ambient gradient */}
+        {/* drifting aurora + fine grain for depth */}
+        <div className="aurora-bg" aria-hidden />
+        <div className="grain" aria-hidden />
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_55%_at_15%_20%,color-mix(in_srgb,var(--accent-ai)_22%,transparent),transparent_60%),radial-gradient(50%_50%_at_88%_25%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%)]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/40 to-transparent"
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/50 to-transparent"
         />
 
         <div className="mx-auto w-full max-w-5xl px-4 pt-5 pb-6 md:px-8 md:pt-6 md:pb-8">
@@ -1176,17 +1183,32 @@ export default function MatchDetailPage() {
                   vs
                 </p>
               ) : (
-                <div className="flex items-center gap-3 md:gap-5">
-                  <span className="font-display text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+                <motion.div
+                  className="flex items-center gap-3 md:gap-5"
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                >
+                  <span
+                    className={cn(
+                      'font-numeric text-[clamp(2.6rem,6.5vw,4.2rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]',
+                      isLive && 'glow-text-primary'
+                    )}
+                  >
                     {match.home_score}
                   </span>
                   <span className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-bold leading-none text-[var(--text-tertiary)]">
                     –
                   </span>
-                  <span className="font-display text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+                  <span
+                    className={cn(
+                      'font-numeric text-[clamp(2.6rem,6.5vw,4.2rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]',
+                      isLive && 'glow-text-primary'
+                    )}
+                  >
                     {match.away_score}
                   </span>
-                </div>
+                </motion.div>
               )}
             </div>
 

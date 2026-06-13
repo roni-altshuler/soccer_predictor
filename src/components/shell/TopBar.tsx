@@ -34,6 +34,11 @@ export function TopBar() {
         className="sticky top-0 z-30 flex h-[var(--shell-topbar-h)] items-center gap-3 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] px-4 backdrop-blur-xl md:px-6"
         role="banner"
       >
+        {/* glowing bottom hairline for depth */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)] to-transparent"
+        />
         {/* Brand mark — only visible on mobile (sidebar is hidden there) */}
         <Link
           href="/"

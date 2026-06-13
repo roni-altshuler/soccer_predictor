@@ -59,6 +59,7 @@
   /* Backwards-compat token aliases (existing components depend on these) */
   --accent-secondary: var(--accent-primary-soft);
   --accent-ai-light: var(--accent-ai-soft);
+  --surface-muted: var(--muted-bg);
   --match-card-bg: var(--card-bg);
   --tab-active-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
   --surface-highlight: color-mix(in srgb, var(--accent-ai) 10%, transparent);
@@ -107,6 +108,30 @@
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
 
   /* ────────────────────────────────────────────────────────────
+     Cinematic layer (whole-site redesign) — coloured glows, aurora
+     mesh stops, elevated surface gradients, and team-tinted hero
+     gradients. Light-mode values stay restrained; .dark turns them up.
+     ──────────────────────────────────────────────────────────── */
+  --glow-ai: 0 0 0 1px color-mix(in srgb, var(--accent-ai) 22%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--accent-ai) 32%, transparent);
+  --glow-primary: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--accent-primary) 32%, transparent);
+  --glow-loss: 0 0 0 1px color-mix(in srgb, var(--accent-loss) 26%, transparent), 0 8px 36px -8px color-mix(in srgb, var(--accent-loss) 34%, transparent);
+  --aurora-1: color-mix(in srgb, var(--accent-primary) 28%, transparent);
+  --aurora-2: color-mix(in srgb, var(--accent-ai) 28%, transparent);
+  --aurora-3: color-mix(in srgb, var(--accent-market) 22%, transparent);
+  --elev-1: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 86%, white 14%), var(--card-bg));
+  --elev-2: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 78%, white 22%), var(--card-bg));
+  --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
+  --hairline-bright: color-mix(in srgb, white 14%, transparent);
+  /* Team-tint hero gradient — match-detail / cards override --team-tint-home
+     & --team-tint-away inline to paint a broadcast-style header. */
+  --team-header-gradient: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--team-tint-home) 30%, var(--background-tertiary)) 0%,
+    var(--background-tertiary) 50%,
+    color-mix(in srgb, var(--team-tint-away) 30%, var(--background-tertiary)) 100%
+  );
+
+  /* ────────────────────────────────────────────────────────────
      Marketing landing tokens (used by /welcome). Spacing rhythm is
      deliberately roomier than the dense app surfaces; widths reuse
      the existing shell scale so the two experiences feel related.
@@ -117,40 +142,43 @@
 }
 
 .dark {
-  --background: #07101f;
-  --background-secondary: #0c182a;
-  --background-tertiary: #14223a;
-  --card-bg: #111e36;
-  --card-hover: #182944;
-  --input-bg: #0d1a30;
-  --muted-bg: #182944;
-  --nav-bg: rgba(11, 22, 39, 0.82);
-  --nav-border: rgba(52, 78, 117, 0.5);
+  /* Cinematic dark-first surfaces — deeper near-black navy with a cool blue
+     undertone so accent glows read as light emitted in a dark room. */
+  --background: #05070f;
+  --background-secondary: #090d1a;
+  --background-tertiary: #111a30;
+  --card-bg: #0d1424;
+  --card-hover: #141f38;
+  --input-bg: #0a1120;
+  --muted-bg: #151f38;
+  --nav-bg: rgba(7, 11, 22, 0.72);
+  --nav-border: rgba(64, 92, 140, 0.42);
 
-  --text-primary: #f1f5fb;
-  --text-secondary: #a8bcdb;
-  --text-tertiary: #7d92b3;
+  --text-primary: #f3f6fc;
+  --text-secondary: #aebfdc;
+  --text-tertiary: #7e93b6;
 
-  --accent-primary: #22c55e;
-  --accent-primary-soft: #4ade80;
-  --accent-ai: #22d3ee;
-  --accent-ai-soft: #67e8f9;
+  --accent-primary: #2ee46a;
+  --accent-primary-soft: #5cf08e;
+  --accent-ai: #2ad4f2;
+  --accent-ai-soft: #79e6fb;
   --accent-warn: #fbbf24;
   --accent-warn-soft: #fde047;
-  --accent-loss: #f87171;
+  --accent-loss: #fb6f6f;
   --accent-loss-soft: #fca5a5;
-  --accent-market: #7c3aed;
+  --accent-market: #9b6bff;
   --accent-market-soft: #c4b5fd;
-  --accent-info: #60a5fa;
+  --accent-info: #5aa6ff;
   --accent-info-soft: #93c5fd;
-  --accent-women: #f472b6;
+  --accent-women: #f86fb6;
   --accent-women-soft: #f9a8d4;
 
-  --border-color: #243954;
+  --border-color: #1f2e49;
   --border-hover: #38567e;
-  --shadow-sm: 0 1px 2px rgba(2, 7, 16, 0.55);
-  --shadow-md: 0 10px 22px rgba(2, 7, 16, 0.5);
-  --shadow-lg: 0 24px 44px rgba(2, 7, 16, 0.62);
+  /* Shadows carry a faint cool tint + deeper falloff for the cinematic feel. */
+  --shadow-sm: 0 1px 2px rgba(2, 5, 12, 0.6);
+  --shadow-md: 0 14px 30px rgba(2, 5, 12, 0.6);
+  --shadow-lg: 0 30px 60px -12px rgba(2, 5, 12, 0.78);
 
   --live-bg: rgba(248, 113, 113, 0.12);
   --live-border: rgba(248, 113, 113, 0.32);
@@ -181,6 +209,18 @@
   --headshot-ring: rgba(241, 245, 251, 0.22);
   --score-numeric-shadow: 0 0 22px color-mix(in srgb, var(--accent-primary) 38%, transparent);
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 60%, transparent);
+
+  /* Cinematic layer — turned up for the dark showpiece. */
+  --glow-ai: 0 0 0 1px color-mix(in srgb, var(--accent-ai) 35%, transparent), 0 12px 60px -10px color-mix(in srgb, var(--accent-ai) 55%, transparent);
+  --glow-primary: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent), 0 12px 60px -10px color-mix(in srgb, var(--accent-primary) 50%, transparent);
+  --glow-loss: 0 0 0 1px color-mix(in srgb, var(--accent-loss) 40%, transparent), 0 12px 56px -10px color-mix(in srgb, var(--accent-loss) 50%, transparent);
+  --aurora-1: color-mix(in srgb, var(--accent-primary) 42%, transparent);
+  --aurora-2: color-mix(in srgb, var(--accent-ai) 42%, transparent);
+  --aurora-3: color-mix(in srgb, var(--accent-market) 34%, transparent);
+  --elev-1: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 82%, #2a3f63 18%), var(--card-bg));
+  --elev-2: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 70%, #2f4a73 30%), var(--card-bg));
+  --hairline: color-mix(in srgb, var(--border-color) 80%, transparent);
+  --hairline-bright: color-mix(in srgb, white 9%, transparent);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -190,9 +230,11 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--background);
   background-image:
-    radial-gradient(circle at 12% -4%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 38%),
-    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--accent-ai) 14%, transparent), transparent 36%),
-    linear-gradient(170deg, rgba(255, 255, 255, 0.04), transparent 24%);
+    radial-gradient(60% 50% at 8% -6%, var(--aurora-1), transparent 60%),
+    radial-gradient(55% 45% at 96% 2%, var(--aurora-2), transparent 58%),
+    radial-gradient(50% 60% at 50% 110%, var(--aurora-3), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, white 3%, transparent), transparent 22%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
@@ -638,24 +680,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 .shell-nav-item[data-active='true'] {
   color: var(--accent-primary);
-  background: var(--tab-active-bg);
-}
-.shell-nav-item[data-active='true']::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 2px;
-  background: var(--accent-primary);
 }
 .shell-nav-item[data-active='true'][data-accent='ai'] {
   color: var(--accent-ai);
-  background: color-mix(in srgb, var(--accent-ai) 12%, transparent);
-}
-.shell-nav-item[data-active='true'][data-accent='ai']::before {
-  background: var(--accent-ai);
 }
 
 /* Kbd chip styling for the Cmd+K hint */
@@ -716,4 +743,207 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   background:
     radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent-ai) 10%, transparent), transparent 70%);
+}
+
+/* ────────────────────────────────────────────────────────────
+   CINEMATIC LAYER (whole-site redesign)
+   Reusable surfaces, glows, aurora backdrops, and motion that any
+   page or component can opt into. Built entirely on the design
+   tokens above, so light/dark + reduced-motion all just work.
+   ──────────────────────────────────────────────────────────── */
+
+/* Elevated cinematic card — layered gradient, hairline top highlight,
+   hover lift + soft accent glow. The workhorse surface for the refresh. */
+.cine-card {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--elev-1);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease, border-color 0.25s ease;
+}
+/* Crisp top hairline that reads as a light catching the card's edge. */
+.cine-card::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline-bright), transparent);
+  pointer-events: none;
+}
+.cine-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-hover));
+  box-shadow: var(--shadow-lg);
+}
+.cine-card.is-ai:hover {
+  border-color: color-mix(in srgb, var(--accent-ai) 55%, var(--border-hover));
+  box-shadow: var(--shadow-lg), var(--glow-ai);
+}
+
+/* Persistent neon glow rings (no hover required) — for hero/AI surfaces. */
+.glow-ai { box-shadow: var(--glow-ai); }
+.glow-primary { box-shadow: var(--glow-primary); }
+.glow-loss { box-shadow: var(--glow-loss); }
+
+/* Neon text — accent fill + soft halo. Use sparingly on big numerals. */
+.glow-text-ai {
+  color: var(--accent-ai);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--accent-ai) 55%, transparent);
+}
+.glow-text-primary {
+  color: var(--accent-primary);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--accent-primary) 55%, transparent);
+}
+
+/* Animated aurora backdrop for hero sections — three drifting blobs.
+   Sits in an absolutely-positioned layer; parent should be `relative`. */
+.aurora-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.7;
+  will-change: transform;
+}
+.aurora-bg::before {
+  top: -28vmax;
+  left: -14vmax;
+  background: radial-gradient(circle, var(--aurora-2), transparent 62%);
+  animation: aurora-drift-a 22s ease-in-out infinite alternate;
+}
+.aurora-bg::after {
+  top: -20vmax;
+  right: -16vmax;
+  left: auto;
+  background: radial-gradient(circle, var(--aurora-1), transparent 62%);
+  animation: aurora-drift-b 26s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(12vmax, 8vmax, 0) scale(1.18); }
+}
+@keyframes aurora-drift-b {
+  0% { transform: translate3d(0, 0, 0) scale(1.1); }
+  100% { transform: translate3d(-10vmax, 6vmax, 0) scale(0.9); }
+}
+
+/* Fine grain/noise overlay — kills banding on big gradients, adds texture.
+   Apply to a hero's `::after`-free child or use the utility directly. */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Broadcast-style team-tinted header — paint --team-tint-home / -away inline. */
+.team-header {
+  position: relative;
+  background: var(--team-header-gradient);
+  isolation: isolate;
+}
+
+/* Animated sheen sweep — for buttons / chips / live badges on hover. */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, white 28%, transparent), transparent);
+  pointer-events: none;
+}
+.sheen:hover::before {
+  animation: sheen-sweep 0.85s ease;
+}
+@keyframes sheen-sweep {
+  to { transform: translateX(120%) skewX(-18deg); }
+}
+
+/* Score pop — trigger by toggling the class when a goal lands. */
+@keyframes score-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+.animate-score-pop { animation: score-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Soft pulsing glow ring — for AI/live emphasis. */
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-ai) 0%, transparent); }
+  50% { box-shadow: 0 0 28px 2px color-mix(in srgb, var(--accent-ai) 32%, transparent); }
+}
+.animate-glow-breathe { animation: glow-breathe 3.2s ease-in-out infinite; }
+
+/* Reusable live dot (pulse ring) — replaces ad-hoc copies across components. */
+.live-dot {
+  position: relative;
+  display: inline-flex;
+  height: 0.5rem;
+  width: 0.5rem;
+  flex: none;
+}
+.live-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--accent-loss);
+  opacity: 0.75;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.live-dot::after {
+  content: '';
+  position: relative;
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent-loss);
+}
+@keyframes ping {
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Scroll-reveal base — paired with the <Reveal> component / IntersectionObserver. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Animated segmented win-probability bar — used by match rows / detail. */
+.prob-segment {
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-bg::before,
+  .aurora-bg::after,
+  .animate-glow-breathe,
+  .live-dot::before { animation: none !important; }
+  .reveal { opacity: 1; transform: none; transition: none; }
 }

@@ -59,14 +59,14 @@ export function LiveTickerBar({ matches, className }: LiveTickerBarProps) {
           {matches.map((m, idx) => {
             const href = m.id ? `/matches/${m.id}${m.leagueId ? `?league=${encodeURIComponent(m.leagueId)}` : ''}` : undefined
             const tile = (
-              <div className="flex w-[220px] shrink-0 flex-col rounded-md border border-[var(--border-color)] bg-[var(--card-bg)]/85 px-3 py-1.5 backdrop-blur-sm transition-colors hover:border-[var(--accent-loss)]/50">
+              <div className="group/tile flex w-[220px] shrink-0 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]/80 px-3 py-2 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--accent-loss)]/55 hover:shadow-[var(--glow-loss)]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{m.home_team}</span>
-                  <span className="text-base font-black tabular-nums text-[var(--text-primary)]">{m.home_score ?? 0}</span>
+                  <span className="font-numeric text-base font-black tabular-nums text-[var(--text-primary)]">{m.home_score ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{m.away_team}</span>
-                  <span className="text-base font-black tabular-nums text-[var(--text-primary)]">{m.away_score ?? 0}</span>
+                  <span className="font-numeric text-base font-black tabular-nums text-[var(--text-primary)]">{m.away_score ?? 0}</span>
                 </div>
                 <div className="mt-1 flex items-center justify-between">
                   {m.league ? (

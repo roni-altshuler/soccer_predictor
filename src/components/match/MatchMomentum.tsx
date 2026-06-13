@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { CircleDot } from 'lucide-react'
 
 interface MatchEvent {
@@ -20,134 +21,136 @@ interface MatchMomentumProps {
   possession?: [number, number]
 }
 
-/** Momentum chart inspired by FotMob — shows event flow across match timeline */
+const HOME_COLOR = 'var(--team-tint-home, var(--accent-primary))'
+const AWAY_COLOR = 'var(--team-tint-away, var(--accent-info))'
+
+/**
+ * Momentum graph inspired by FotMob — pressure flowing toward each team across
+ * the match timeline. Bars grow out from a centre line (home above, away below),
+ * animating in with a stagger, with goal markers pulsing on the timeline.
+ */
 export default function MatchMomentum({ events, homeTeam, awayTeam, status, possession }: MatchMomentumProps) {
+  const reduce = useReducedMotion()
   const isFinished = status === 'STATUS_FINAL'
-  const maxMinute = isFinished ? 90 : Math.max(90, ...events.map(e => e.minute + (e.addedTime || 0)))
+  const maxMinute = isFinished ? 90 : Math.max(90, ...events.map((e) => e.minute + (e.addedTime || 0)))
 
-  // Build momentum data: positive = home dominance, negative = away dominance
   const momentumData = useMemo(() => {
-    const segments = 18 // Every 5 minutes
+    const segments = 18 // every 5 minutes
     const data: number[] = new Array(segments).fill(0)
-
     for (const evt of events) {
       const min = evt.minute + (evt.addedTime || 0)
       const idx = Math.min(Math.floor(min / 5), segments - 1)
-      const weight = evt.type === 'goal' ? 5 : evt.type === 'own_goal' ? 4 :
-                     evt.type === 'red_card' ? 3 : evt.type === 'yellow_card' ? 1 :
-                     evt.type === 'substitution' ? 0.5 : 0
-
-      if (evt.team === 'home') {
-        data[idx] += weight
-      } else {
-        data[idx] -= weight
-      }
+      const weight =
+        evt.type === 'goal' ? 5 : evt.type === 'own_goal' ? 4 :
+        evt.type === 'red_card' ? 3 : evt.type === 'yellow_card' ? 1 :
+        evt.type === 'substitution' ? 0.5 : 0
+      data[idx] += evt.team === 'home' ? weight : -weight
     }
-
-    // Apply possession bias if available
     if (possession) {
-      const bias = (possession[0] - possession[1]) / 100 // e.g., 60-40 → 0.2
-      for (let i = 0; i < segments; i++) {
-        data[i] += bias * 1.5
-      }
+      const bias = (possession[0] - possession[1]) / 100
+      for (let i = 0; i < segments; i++) data[i] += bias * 1.5
     }
-
-    // Smooth data with neighbors
     const smoothed: number[] = []
     for (let i = 0; i < segments; i++) {
       const prev = data[i - 1] || 0
       const next = data[i + 1] || 0
       smoothed.push(data[i] * 0.6 + prev * 0.2 + next * 0.2)
     }
-
     return smoothed
   }, [events, possession])
 
   const maxVal = Math.max(3, ...momentumData.map(Math.abs))
-  const chartH = 80
+  const chartH = 96
   const midY = chartH / 2
-
-  // Event markers for goals
-  const goalMarkers = events.filter(e => e.type === 'goal' || e.type === 'own_goal')
+  const goalMarkers = events.filter((e) => e.type === 'goal' || e.type === 'own_goal')
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'var(--muted-bg)' }}>
-      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
-        Momentum
-      </h3>
-
-      {/* Team labels */}
-      <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
-        <span className="font-medium" style={{ color: '#3b82f6' }}>{homeTeam}</span>
-        <span className="font-medium" style={{ color: '#f97316' }}>{awayTeam}</span>
+    <div className="cine-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Momentum</h3>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+          Pressure flow
+        </span>
       </div>
 
-      {/* SVG Chart */}
+      <div className="mb-1 flex justify-between text-xs">
+        <span className="font-semibold" style={{ color: HOME_COLOR }}>{homeTeam}</span>
+        <span className="font-semibold" style={{ color: AWAY_COLOR }}>{awayTeam}</span>
+      </div>
+
       <div className="relative">
-        <svg viewBox={`0 0 360 ${chartH}`} className="w-full" style={{ height: chartH }}>
-          {/* Background */}
-          <rect x="0" y="0" width="360" height={chartH} rx="4" fill="var(--bg)" opacity="0.3" />
+        <svg viewBox={`0 0 360 ${chartH}`} className="w-full" style={{ height: chartH }} role="img" aria-label="Match momentum">
+          <defs>
+            <linearGradient id="momentum-home" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor={HOME_COLOR} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={HOME_COLOR} stopOpacity="1" />
+            </linearGradient>
+            <linearGradient id="momentum-away" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={AWAY_COLOR} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={AWAY_COLOR} stopOpacity="1" />
+            </linearGradient>
+          </defs>
 
-          {/* Center line */}
-          <line x1="0" y1={midY} x2="360" y2={midY} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="2,2" />
+          <line x1="0" y1={midY} x2="360" y2={midY} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="3,3" />
+          <line x1="180" y1="0" x2="180" y2={chartH} stroke="var(--border-color)" strokeWidth="0.75" />
+          <text x="183" y={chartH - 3} fill="var(--text-tertiary)" fontSize="7">HT</text>
 
-          {/* Half time line */}
-          <line x1="180" y1="0" x2="180" y2={chartH} stroke="var(--border)" strokeWidth="0.5" />
-          <text x="180" y={chartH - 2} textAnchor="middle" fill="var(--text-tertiary)" fontSize="7">HT</text>
-
-          {/* Momentum bars */}
           {momentumData.map((val, i) => {
-            const x = (i / 18) * 360
-            const barW = 360 / 18 - 1
+            const barW = 360 / 18 - 2
+            const x = (i / 18) * 360 + 1
             const normalized = (val / maxVal) * (midY - 4)
             const isHome = val >= 0
-
+            const h = Math.max(1, Math.abs(normalized))
+            const y = isHome ? midY - h : midY
             return (
-              <rect
+              <motion.rect
                 key={i}
-                x={x + 0.5}
-                y={isHome ? midY - normalized : midY}
+                x={x}
                 width={barW}
-                height={Math.abs(normalized)}
-                rx="1"
-                fill={isHome ? '#3b82f6' : '#f97316'}
-                opacity={0.6 + Math.abs(val / maxVal) * 0.4}
+                rx="2"
+                fill={isHome ? 'url(#momentum-home)' : 'url(#momentum-away)'}
+                initial={reduce ? false : { height: 0, y: midY }}
+                animate={{ height: h, y }}
+                transition={{ duration: 0.5, delay: reduce ? 0 : i * 0.025, ease: [0.22, 1, 0.36, 1] }}
               />
             )
           })}
 
-          {/* Goal markers */}
           {goalMarkers.map((evt, i) => {
             const min = evt.minute + (evt.addedTime || 0)
             const x = (min / maxMinute) * 360
-            const y = evt.team === 'home' ? 6 : chartH - 6
+            const y = evt.team === 'home' ? 8 : chartH - 8
+            const color = evt.team === 'home' ? HOME_COLOR : AWAY_COLOR
             return (
               <g key={i}>
-                <circle cx={x} cy={y} r="4" fill={evt.team === 'home' ? '#3b82f6' : '#f97316'} />
-                <circle cx={x} cy={y} r="1.5" fill="white" />
+                <circle cx={x} cy={y} r="6" fill={color} opacity="0.25">
+                  {!reduce && (
+                    <animate attributeName="r" values="5;9;5" dur="2.4s" repeatCount="indefinite" />
+                  )}
+                </circle>
+                <circle cx={x} cy={y} r="3.5" fill={color} />
+                <circle cx={x} cy={y} r="1.4" fill="var(--card-bg)" />
               </g>
             )
           })}
         </svg>
 
-        {/* Minute labels */}
-        <div className="flex justify-between text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="mt-0.5 flex justify-between text-[10px] text-[var(--text-tertiary)]">
           <span>0&apos;</span>
           <span>45&apos;</span>
           <span>90&apos;</span>
         </div>
       </div>
 
-      {/* Goal timeline summary */}
       {goalMarkers.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {goalMarkers.map((g, i) => (
             <span
               key={i}
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
               style={{
-                background: g.team === 'home' ? 'rgba(59,130,246,0.15)' : 'rgba(249,115,22,0.15)',
-                color: g.team === 'home' ? '#3b82f6' : '#f97316',
+                background: `color-mix(in srgb, ${g.team === 'home' ? HOME_COLOR : AWAY_COLOR} 15%, transparent)`,
+                color: g.team === 'home' ? HOME_COLOR : AWAY_COLOR,
               }}
             >
               <CircleDot className="h-3 w-3" aria-hidden />
