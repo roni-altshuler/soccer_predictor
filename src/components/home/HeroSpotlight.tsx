@@ -123,6 +123,13 @@ export function HeroSpotlight({
               Run a prediction
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </ShimmerButton>
+            <Link
+              href="/welcome"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)] underline-offset-4 transition-colors hover:text-[var(--accent-primary)] hover:underline"
+            >
+              How it works
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
           </div>
         </motion.div>
 

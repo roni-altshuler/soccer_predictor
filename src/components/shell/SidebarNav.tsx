@@ -7,6 +7,7 @@ import {
   Activity,
   Brain,
   Calculator,
+  Compass,
   Gauge,
   Globe,
   History,
@@ -44,6 +45,7 @@ const NAV: NavItem[] = [
 ]
 
 const SECONDARY: NavItem[] = [
+  { href: '/welcome', label: 'Overview', icon: Compass },
   { href: '/diagnostics', label: 'Diagnostics', icon: Gauge },
   { href: '/about', label: 'About', icon: Info },
 ]

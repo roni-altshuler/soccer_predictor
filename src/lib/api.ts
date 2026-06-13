@@ -1,5 +1,5 @@
 /**
- * API client for Soccer Predictor backend
+ * API client for Pitchwise backend
  */
 
 export type {
