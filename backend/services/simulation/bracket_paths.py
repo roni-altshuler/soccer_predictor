@@ -52,6 +52,7 @@ from backend.services.prediction.probabilistic import (
     LEAGUE_PARAMS,
     PoissonModel,
 )
+from backend.services.ratings.elo_goals import expected_goals as elo_expected_goals
 from backend.services.ratings.national_elo import national_elo_for
 
 logger = logging.getLogger(__name__)
@@ -337,10 +338,11 @@ def _expected_goals(home_elo: float, away_elo: float) -> Tuple[float, float]:
     params = LEAGUE_PARAMS.get(WORLD_CUP_LEAGUE_KEY, {})
     avg_goals = float(params.get("avg_goals", 1.30))
     home_adv = float(params.get("home_adv", 0.15))
-    elo_diff = (home_elo - away_elo) / 400.0
-    home_xg = avg_goals * (1.0 + 0.30 * elo_diff) + home_adv
-    away_xg = avg_goals * (1.0 - 0.30 * elo_diff)
-    return max(0.25, min(4.5, home_xg)), max(0.20, min(4.0, away_xg))
+    # Calibrated Elo->xG coupling shared across all simulators.
+    return elo_expected_goals(
+        home_elo, away_elo, avg_goals=avg_goals, home_adv=home_adv,
+        home_clamp=(0.25, 4.5), away_clamp=(0.20, 4.0),
+    )
 
 
 def _build_pair_table(

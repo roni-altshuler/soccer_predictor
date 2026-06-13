@@ -15,6 +15,7 @@ from collections import Counter
 import logging
 
 from backend.services.ratings import get_elo_system
+from backend.services.ratings.elo_goals import expected_goals as elo_expected_goals
 from backend.services.prediction.probabilistic import PoissonModel
 
 logger = logging.getLogger(__name__)
@@ -101,16 +102,11 @@ class LeagueSimulator:
         
         Uses Poisson distribution with ELO-adjusted expected goals.
         """
-        # Calculate expected goals based on ELO difference
-        elo_diff = (home_elo - away_elo) / 400
-        
-        # Base expected goals adjusted by ELO
-        home_xG = 1.35 * (1 + elo_diff * 0.3) + self.home_advantage
-        away_xG = 1.35 * (1 - elo_diff * 0.3)
-        
-        # Clamp to reasonable range
-        home_xG = max(0.5, min(4.0, home_xG))
-        away_xG = max(0.3, min(3.5, away_xG))
+        # Calibrated Elo->xG coupling shared across all simulators.
+        home_xG, away_xG = elo_expected_goals(
+            home_elo, away_elo, avg_goals=1.35, home_adv=self.home_advantage,
+            home_clamp=(0.5, 4.0), away_clamp=(0.3, 3.5),
+        )
         
         # Simulate goals using Poisson distribution
         home_goals = np.random.poisson(home_xG)
