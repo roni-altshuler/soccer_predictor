@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
+import SeasonProjections from '@/components/league/SeasonProjections'
 
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { Spotlight } from '@/components/magicui/spotlight'
@@ -441,6 +442,20 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       setRunningSimulation(false)
     }
   }
+
+  // Auto-run the season simulation once per league/season so the Overview
+  // tab shows live title / European / relegation projections without the user
+  // having to open the Simulator tab first. Guarded by a ref so a failed run
+  // (which leaves simulationResults null) doesn't retrigger in a loop.
+  const autoSimKey = `${leagueId}:${selectedSeason}:${genderParam}`
+  const autoSimAttempted = useRef<string | null>(null)
+  useEffect(() => {
+    if (autoSimAttempted.current === autoSimKey) return
+    if (simulationResults || runningSimulation) return
+    autoSimAttempted.current = autoSimKey
+    runSeasonSimulation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSimKey, simulationResults, runningSimulation])
 
   useEffect(() => {
     const fetchLeagueData = async () => {
@@ -927,6 +942,18 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              {simulationResults && simulationResults.standings.length > 0 ? (
+                <SeasonProjections
+                  teams={simulationResults.standings}
+                  nSimulations={simulationResults.n_simulations}
+                />
+              ) : runningSimulation ? (
+                <div className="flex items-center gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-5 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-sm)]">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent-primary)] border-t-transparent" />
+                  Simulating the rest of the season…
+                </div>
+              ) : null}
+
               <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
                 <div className="flex items-center justify-between border-b border-[var(--border-color)] px-4 py-3">
                   <div>
