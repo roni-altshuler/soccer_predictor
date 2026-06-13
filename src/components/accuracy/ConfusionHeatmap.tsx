@@ -101,7 +101,7 @@ function RowGroup({ row, rowTotal, idx }: { row: ConfusionRow; rowTotal: number;
       </div>
       {cells.map((cell) => {
         const alpha = Math.max(0.08, cell.share)
-        const colour = cell.correct ? '34, 197, 94' : '244, 63, 94'
+        const token = cell.correct ? 'var(--accent-primary)' : 'var(--accent-loss)'
         return (
           <motion.div
             key={`cell-${row.actual}-${cell.key}`}
@@ -109,13 +109,13 @@ function RowGroup({ row, rowTotal, idx }: { row: ConfusionRow; rowTotal: number;
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25, delay: idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-center justify-center rounded-md border border-[var(--border-color)] px-2 py-3 text-center"
-            style={{ background: `rgba(${colour}, ${alpha})` }}
+            style={{ background: `color-mix(in srgb, ${token} ${(alpha * 100).toFixed(1)}%, transparent)` }}
             title={`${row.actual} → ${cell.key}: ${cell.count} (${formatPct(cell.share)})`}
           >
             <p
               className={cn(
                 'text-base font-black tabular-nums',
-                cell.correct ? 'text-emerald-200' : 'text-[var(--text-primary)]'
+                cell.correct ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'
               )}
             >
               {cell.count}

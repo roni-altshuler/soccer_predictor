@@ -35,6 +35,10 @@
   --accent-loss-soft: #f87171;
   --accent-market: #6d28d9;           /* purple for market / betting intelligence */
   --accent-market-soft: #8b5cf6;
+  --accent-info: #2563eb;             /* blue for draws-in-form-legends / H2H / informational */
+  --accent-info-soft: #3b82f6;
+  --accent-women: #db2777;            /* pink for women's-universe brand signal */
+  --accent-women-soft: #ec4899;
 
   /* Borders & shadows */
   --border-color: #d8e0ee;
@@ -137,6 +141,10 @@
   --accent-loss-soft: #fca5a5;
   --accent-market: #7c3aed;
   --accent-market-soft: #c4b5fd;
+  --accent-info: #60a5fa;
+  --accent-info-soft: #93c5fd;
+  --accent-women: #f472b6;
+  --accent-women-soft: #f9a8d4;
 
   --border-color: #243954;
   --border-hover: #38567e;

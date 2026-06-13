@@ -739,7 +739,7 @@ export default function BracketChallengeBoard({
                 />
                 <button
                   onClick={handleCreateGroup}
-                  className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95"
+                  className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-95"
                 >
                   Create Challenge Group
                 </button>
@@ -770,13 +770,13 @@ export default function BracketChallengeBoard({
                           <p className="mt-1 text-xs text-[var(--text-secondary)]">
                             {group.entries.length} entries · Commissioner: {group.ownerName}
                           </p>
-                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-400">
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--accent-warn)]">
                             Invite code {group.inviteCode}
                           </p>
                         </button>
                         <button
                           onClick={() => handleDeleteGroup(group.id)}
-                          className="rounded-lg border border-[var(--border-color)] px-2 py-1 text-[10px] font-bold text-[var(--text-tertiary)] hover:border-red-400 hover:text-red-400"
+                          className="rounded-lg border border-[var(--border-color)] px-2 py-1 text-[10px] font-bold text-[var(--text-tertiary)] hover:border-[var(--accent-loss)] hover:text-[var(--accent-loss)]"
                         >
                           Delete
                         </button>
@@ -816,7 +816,7 @@ export default function BracketChallengeBoard({
               <button
                 onClick={handleGenerateModelEntry}
                 disabled={modelPickSummary.generatedPicks === 0}
-                className="mt-3 w-full rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Generate AI Bracket Entry
               </button>
@@ -884,7 +884,7 @@ export default function BracketChallengeBoard({
                   <button
                     onClick={syncActiveGroup}
                     disabled={!activeGroup || syncingRoom}
-                    className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {syncingRoom ? 'Syncing...' : 'Sync Room'}
                   </button>
@@ -931,7 +931,7 @@ export default function BracketChallengeBoard({
             </div>
 
             {statusMessage && (
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+              <div className="rounded-2xl border border-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] px-4 py-3 text-sm text-[var(--accent-primary)]">
                 {statusMessage}
               </div>
             )}
@@ -946,7 +946,7 @@ export default function BracketChallengeBoard({
                 </div>
                 {activeGroup && (
                   <div className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 py-2 text-xs text-[var(--text-secondary)]">
-                    Invite code <span className="font-bold text-amber-400">{activeGroup.inviteCode}</span>
+                    Invite code <span className="font-bold text-[var(--accent-warn)]">{activeGroup.inviteCode}</span>
                   </div>
                 )}
               </div>
@@ -971,7 +971,7 @@ export default function BracketChallengeBoard({
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-black text-amber-400">{summary.score}</p>
+                          <p className="text-lg font-black text-[var(--accent-warn)]">{summary.score}</p>
                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">points</p>
                         </div>
                       </div>
@@ -984,7 +984,7 @@ export default function BracketChallengeBoard({
                         </button>
                         <button
                           onClick={() => handleDeleteEntry(entry.id)}
-                          className="rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-[11px] font-bold text-[var(--text-tertiary)] hover:border-red-400 hover:text-red-400"
+                          className="rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-[11px] font-bold text-[var(--text-tertiary)] hover:border-[var(--accent-loss)] hover:text-[var(--accent-loss)]"
                         >
                           Remove Entry
                         </button>
@@ -1044,7 +1044,7 @@ export default function BracketChallengeBoard({
                                   {match.date || 'TBD'}{match.time ? ` · ${match.time}` : ''}
                                 </p>
                                 {actualWinner && (
-                                  <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300">
+                                  <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent-primary)]">
                                     Result locked
                                   </span>
                                 )}
@@ -1097,7 +1097,7 @@ export default function BracketChallengeBoard({
                 <button
                   onClick={handleSaveEntry}
                   disabled={!activeGroup}
-                  className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[#04120a] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Save Entry
                 </button>

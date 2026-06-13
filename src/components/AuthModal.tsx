@@ -155,7 +155,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
 
         {/* Error message */}
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="mb-4 p-3 bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)] border border-[color-mix(in_srgb,var(--accent-loss)_45%,transparent)] rounded-lg text-[var(--accent-loss)] text-sm">
             {error}
           </div>
         )}

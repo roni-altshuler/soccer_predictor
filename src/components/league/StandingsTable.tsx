@@ -65,27 +65,27 @@ function zoneForPosition(position: number, total: number, showEuropeanZones: boo
 
 const zoneStyles: Record<NonNullable<Zone>, { bg: string; bar: string; chip: string; label: string }> = {
   ucl: {
-    bg: 'bg-[var(--accent-ai)]/8',
+    bg: 'bg-[color-mix(in_srgb,var(--accent-ai)_8%,transparent)]',
     bar: 'border-l-2 border-[var(--accent-ai)]',
-    chip: 'bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]',
+    chip: 'bg-[color-mix(in_srgb,var(--accent-ai)_15%,transparent)] text-[var(--accent-ai)]',
     label: 'Champions League',
   },
   europa: {
-    bg: 'bg-amber-500/8',
-    bar: 'border-l-2 border-amber-500',
-    chip: 'bg-amber-500/15 text-amber-400',
+    bg: 'bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)]',
+    bar: 'border-l-2 border-[var(--accent-warn)]',
+    chip: 'bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]',
     label: 'Europa League',
   },
   conference: {
-    bg: 'bg-emerald-500/8',
-    bar: 'border-l-2 border-emerald-500',
-    chip: 'bg-emerald-500/15 text-emerald-400',
+    bg: 'bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]',
+    bar: 'border-l-2 border-[var(--accent-primary)]',
+    chip: 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]',
     label: 'Conference League',
   },
   relegation: {
-    bg: 'bg-red-500/8',
-    bar: 'border-l-2 border-red-500',
-    chip: 'bg-red-500/15 text-red-400',
+    bg: 'bg-[color-mix(in_srgb,var(--accent-loss)_8%,transparent)]',
+    bar: 'border-l-2 border-[var(--accent-loss)]',
+    chip: 'bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]',
     label: 'Relegation',
   },
 }
@@ -143,7 +143,7 @@ export default function StandingsTable({
                     'border-b border-[var(--border-color)]/40 transition-colors hover:bg-[var(--card-hover)]',
                     styles?.bg,
                     styles?.bar,
-                    highlighted && 'bg-amber-500/10'
+                    highlighted && 'bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]'
                   )}
                 >
                   <td className="px-3 py-2.5 text-center text-xs font-semibold tabular-nums text-[var(--text-secondary)]">
@@ -183,7 +183,7 @@ export default function StandingsTable({
                   <td
                     className={cn(
                       'px-2 py-2.5 text-center text-[12px] font-semibold tabular-nums',
-                      row.goal_difference > 0 ? 'text-emerald-400' : row.goal_difference < 0 ? 'text-red-400' : 'text-[var(--text-secondary)]'
+                      row.goal_difference > 0 ? 'text-[var(--accent-primary)]' : row.goal_difference < 0 ? 'text-[var(--accent-loss)]' : 'text-[var(--text-secondary)]'
                     )}
                   >
                     {row.goal_difference > 0 ? '+' : ''}{row.goal_difference}

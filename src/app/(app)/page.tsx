@@ -346,8 +346,8 @@ export default function Home() {
                 >
                   {t === 'live' && live.length > 0 && (
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+                      <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
                     </span>
                   )}
                   <span className="uppercase tracking-wide">{t}</span>
@@ -361,7 +361,7 @@ export default function Home() {
                 variant={watchlistOnly ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setWatchlistOnly((v) => !v)}
-                className={cn('ml-auto gap-1.5', watchlistOnly && 'bg-violet-500/90 hover:bg-violet-500')}
+                className={cn('ml-auto gap-1.5', watchlistOnly && 'bg-[var(--accent-market)]/90 hover:bg-[var(--accent-market)]')}
               >
                 {watchlistOnly ? (
                   <BookmarkCheck className="h-3.5 w-3.5" />

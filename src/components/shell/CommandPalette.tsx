@@ -142,7 +142,7 @@ export function CommandPalette() {
           >
             <UserRound
               className={`mr-2 h-4 w-4 ${
-                gender === 'women' ? 'text-[var(--accent-ai)]' : 'text-pink-500'
+                gender === 'women' ? 'text-[var(--accent-ai)]' : 'text-[var(--accent-women)]'
               }`}
             />
             <span>Switch to {gender === 'women' ? "men's" : "women's"} football</span>

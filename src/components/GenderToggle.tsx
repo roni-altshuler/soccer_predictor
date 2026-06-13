@@ -132,7 +132,7 @@ export function GenderToggle({
                   styles.pill,
                   opt.value === 'men'
                     ? 'from-[var(--accent-ai)] to-[var(--accent-primary)]'
-                    : 'from-pink-500 to-violet-500'
+                    : 'from-[var(--accent-women)] to-[var(--accent-market)]'
                 )}
               />
             )}

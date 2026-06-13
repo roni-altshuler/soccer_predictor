@@ -38,16 +38,16 @@ export function LiveTickerBar({ matches, className }: LiveTickerBarProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        'border-y border-red-500/30',
+        'border-y border-[var(--accent-loss)]/30',
         className
       )}
       style={{ background: 'linear-gradient(to right, var(--card-bg), color-mix(in srgb, var(--accent-loss) 8%, var(--card-bg)))' }}
     >
       <div className="mx-auto flex w-full max-w-5xl items-center gap-2 px-4 py-2">
-        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400">
+        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent-loss)]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-loss)]">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
           </span>
           {matches.length} live
         </span>
@@ -59,7 +59,7 @@ export function LiveTickerBar({ matches, className }: LiveTickerBarProps) {
           {matches.map((m, idx) => {
             const href = m.id ? `/matches/${m.id}${m.leagueId ? `?league=${encodeURIComponent(m.leagueId)}` : ''}` : undefined
             const tile = (
-              <div className="flex w-[220px] shrink-0 flex-col rounded-md border border-[var(--border-color)] bg-[var(--card-bg)]/85 px-3 py-1.5 backdrop-blur-sm transition-colors hover:border-red-500/50">
+              <div className="flex w-[220px] shrink-0 flex-col rounded-md border border-[var(--border-color)] bg-[var(--card-bg)]/85 px-3 py-1.5 backdrop-blur-sm transition-colors hover:border-[var(--accent-loss)]/50">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{m.home_team}</span>
                   <span className="text-base font-black tabular-nums text-[var(--text-primary)]">{m.home_score ?? 0}</span>
@@ -74,7 +74,7 @@ export function LiveTickerBar({ matches, className }: LiveTickerBarProps) {
                   ) : (
                     <span />
                   )}
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent-loss)]">
                     {m.minute ? `${m.minute}'` : 'LIVE'}
                   </span>
                 </div>

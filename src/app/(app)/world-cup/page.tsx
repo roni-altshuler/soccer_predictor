@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BarChart3, GitBranch, Sparkles } from 'lucide-react'
+import { ArrowRight, BarChart3, GitBranch, Scale, Sparkles } from 'lucide-react'
 
 import GroupsGlance, { type GlanceGroup } from '@/components/worldcup/GroupsGlance'
 import TodayAtTheCup, { type CupMatch } from '@/components/worldcup/TodayAtTheCup'
@@ -188,6 +188,12 @@ export default async function WorldCupHubPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-5 py-2.5 text-small font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
             >
               <BarChart3 className="h-4 w-4" /> Run your own simulation
+            </Link>
+            <Link
+              href="/world-cup/compare"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-5 py-2.5 text-small font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
+            >
+              <Scale className="h-4 w-4" /> Compare teams
             </Link>
             <Link
               href="/accuracy"

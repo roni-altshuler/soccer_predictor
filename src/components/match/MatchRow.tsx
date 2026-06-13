@@ -126,10 +126,10 @@ function StatusBlock({ match }: { match: MatchRowMatch }) {
         </div>
         <div className="mt-0.5 flex items-center gap-1">
           <span className="relative inline-flex h-1.5 w-1.5">
-            <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-red-400">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--live-text)]">
             {match.minute ? `${match.minute}'` : 'LIVE'}
           </span>
         </div>
@@ -252,8 +252,8 @@ export function MatchRow({
           }}
           className={cn(
             'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-            'text-[var(--text-tertiary)] hover:text-amber-400',
-            isFavorite && 'text-amber-400'
+            'text-[var(--text-tertiary)] hover:text-[var(--accent-warn)]',
+            isFavorite && 'text-[var(--accent-warn)]'
           )}
           aria-label={isFavorite ? 'Unfollow match' : 'Follow match'}
         >
@@ -387,9 +387,9 @@ export function StatusPill({
   tone?: 'live' | 'upcoming' | 'finished' | 'neutral'
 }) {
   const toneStyles: Record<string, string> = {
-    live: 'border-red-500/40 bg-red-500/10 text-red-400',
-    upcoming: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400',
-    finished: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
+    live: 'border-[var(--live-border)] bg-[var(--live-bg)] text-[var(--live-text)]',
+    upcoming: 'border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]',
+    finished: 'border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--accent-primary)]',
     neutral: 'border-[var(--border-color)] text-[var(--text-secondary)]',
   }
   return (

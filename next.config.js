@@ -43,6 +43,7 @@ const nextConfig = {
     '/api/v1/tracking/*': ['./backend/data/predictions/**'],
     '/api/world-cup/*': ['./backend/data/worldcup/**'],
     '/world-cup': ['./backend/data/worldcup/**'],
+    '/world-cup/compare': ['./backend/data/worldcup/**'],
   },
 }
 

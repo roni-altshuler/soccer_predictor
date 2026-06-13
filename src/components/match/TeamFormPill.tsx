@@ -28,9 +28,9 @@ export interface TeamFormPillProps {
 }
 
 const toneByResult: Record<FormChar, string> = {
-  W: 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300',
-  D: 'border-amber-500/60 bg-amber-500/15 text-amber-200',
-  L: 'border-red-500/60 bg-red-500/15 text-red-300',
+  W: 'border-[var(--accent-primary)]/60 bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]',
+  D: 'border-[var(--accent-warn)]/60 bg-[var(--accent-warn)]/15 text-[var(--accent-warn)]',
+  L: 'border-[var(--accent-loss)]/60 bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]',
   '-': 'border-[var(--border-color)] bg-[var(--surface-muted)]/40 text-[var(--text-tertiary)]',
 }
 

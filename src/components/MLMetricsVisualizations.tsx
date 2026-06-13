@@ -112,17 +112,17 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
           </h2>
         </div>
         <p className="text-lg text-secondary max-w-3xl mx-auto font-medium">
-          Comprehensive analysis of the machine learning model trained on <span className="font-bold text-brand-600 dark:text-brand-400">{league.replace('_', ' ').toUpperCase()}</span> match data. 
+          Comprehensive analysis of the machine learning model trained on <span className="font-bold text-[var(--accent-primary)]">{league.replace('_', ' ').toUpperCase()}</span> match data. 
           These visualizations show prediction accuracy, feature importance, and model confidence levels.
         </p>
-        <div className="w-48 h-1.5 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-500 mx-auto mt-4 rounded-full"></div>
+        <div className="w-48 h-1.5 bg-gradient-to-r from-[var(--accent-primary)] via-[color-mix(in_srgb,var(--accent-primary)_80%,black)] to-[var(--accent-primary)] mx-auto mt-4 rounded-full"></div>
       </div>
 
       {/* Main Performance Metrics */}
       <div className="relative z-10">
         <div className="text-center mb-8">
           <h3 className="text-3xl font-bold text-primary">Model Performance Analysis</h3>
-          <div className="w-32 h-1 bg-brand-500 mx-auto mt-3 rounded-full"></div>
+          <div className="w-32 h-1 bg-[var(--accent-primary)] mx-auto mt-3 rounded-full"></div>
         </div>
         
         {/* First Row: Confusion Matrix and Feature Importance */}
@@ -180,10 +180,10 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       {/* Divider */}
       <div className="relative z-10">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t-2 border-brand-300 dark:border-brand-700"></div>
+          <div className="w-full border-t-2 border-[color-mix(in_srgb,var(--accent-primary)_35%,transparent)]"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-6 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold rounded-full shadow-lg">
+          <span className="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[color-mix(in_srgb,var(--accent-primary)_80%,black)] text-white font-bold rounded-full shadow-lg">
             📋 Classification Reports
           </span>
         </div>
@@ -193,14 +193,14 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       <div className="relative z-10">
         <div className="text-center mb-8">
           <h3 className="text-3xl font-bold text-primary">Detailed Classification Metrics</h3>
-          <div className="w-32 h-1 bg-brand-600 mx-auto mt-3 rounded-full"></div>
+          <div className="w-32 h-1 bg-[var(--accent-primary)] mx-auto mt-3 rounded-full"></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
           {classificationReportImages.map((image) => {
             const imageUrl = `/api/visualizations/${league}/${image.name}`;
             const badgeColor = image.category === 'train'
-              ? 'bg-brand-500 text-white'
-              : 'bg-blue-500 text-white';
+              ? 'bg-[var(--accent-primary)] text-white'
+              : 'bg-[var(--accent-info)] text-white';
             
             return (
               <div 
@@ -231,10 +231,10 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       {/* Divider */}
       <div className="relative z-10">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t-2 border-brand-300 dark:border-brand-700"></div>
+          <div className="w-full border-t-2 border-[color-mix(in_srgb,var(--accent-primary)_35%,transparent)]"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-6 py-2 bg-gradient-to-r from-brand-500 to-brand-700 text-white font-bold rounded-full shadow-lg">
+          <span className="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[color-mix(in_srgb,var(--accent-primary)_70%,black)] text-white font-bold rounded-full shadow-lg">
             Confidence Threshold Analysis
           </span>
         </div>
@@ -248,12 +248,12 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
             These charts show how model performance (precision, recall, F1-score) changes at different confidence thresholds. 
             Higher confidence means more reliable predictions but fewer total predictions.
           </p>
-          <div className="w-32 h-1 bg-purple-500 mx-auto mt-3 rounded-full"></div>
+          <div className="w-32 h-1 bg-[var(--accent-market)] mx-auto mt-3 rounded-full"></div>
         </div>
         
         {/* Training Set Confidence */}
         <div className="mb-12">
-          <h4 className="text-2xl font-bold text-brand-600 dark:text-brand-400 text-center mb-6 flex items-center justify-center gap-2">
+          <h4 className="text-2xl font-bold text-[var(--accent-primary)] text-center mb-6 flex items-center justify-center gap-2">
             <span className="text-3xl">🏋️</span>
             Training Set Confidence Metrics
           </h4>
@@ -285,7 +285,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
 
         {/* Test Set Confidence */}
         <div>
-          <h4 className="text-2xl font-bold text-blue-600 dark:text-blue-400 text-center mb-6 flex items-center justify-center gap-2">
+          <h4 className="text-2xl font-bold text-[var(--accent-info)] text-center mb-6 flex items-center justify-center gap-2">
             <span className="text-3xl">🧪</span>
             Test Set Confidence Metrics (Real-World Performance)
           </h4>
@@ -320,7 +320,7 @@ const MLMetricsVisualizations: React.FC<MLMetricsVisualizationsProps> = ({ leagu
       <div className="glass-effect border-2 border-primary rounded-xl p-6 text-center shadow-card-lg">
         <p className="text-sm text-secondary inline-flex items-center justify-center gap-2">
           <Info className="h-4 w-4 text-[var(--accent-ai)] flex-shrink-0" aria-hidden />
-          <span><span className="font-semibold text-brand-600 dark:text-brand-400">Note:</span> These visualizations are generated during model training and updated with each retraining cycle.
+          <span><span className="font-semibold text-[var(--accent-primary)]">Note:</span> These visualizations are generated during model training and updated with each retraining cycle.
           The model emphasizes data from the last 5 seasons with exponential weighting towards recent years for improved accuracy.</span>
         </p>
       </div>

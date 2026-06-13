@@ -26,8 +26,8 @@ type Tier = { dot: string; chip: string; label: string }
 const tiers = (v: number): Tier => {
   if (v >= 0.7) {
     return {
-      dot: 'bg-emerald-400',
-      chip: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+      dot: 'bg-[var(--accent-primary)]',
+      chip: 'border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--accent-primary)]',
       label: 'High',
     }
   }
@@ -40,14 +40,14 @@ const tiers = (v: number): Tier => {
   }
   if (v >= 0.4) {
     return {
-      dot: 'bg-amber-400',
-      chip: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+      dot: 'bg-[var(--accent-warn)]',
+      chip: 'border-[color-mix(in_srgb,var(--accent-warn)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] text-[var(--accent-warn)]',
       label: 'Mixed',
     }
   }
   return {
-    dot: 'bg-red-400',
-    chip: 'border-red-500/40 bg-red-500/10 text-red-300',
+    dot: 'bg-[var(--accent-loss)]',
+    chip: 'border-[color-mix(in_srgb,var(--accent-loss)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] text-[var(--accent-loss)]',
     label: 'Low',
   }
 }

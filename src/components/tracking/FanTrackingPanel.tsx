@@ -311,7 +311,7 @@ export default function FanTrackingPanel() {
           type: 'kickoff',
           title: `${match.home_team} vs ${match.away_team}`,
           detail: `Kickoff ${timeUntilLabel(minutes)} · ${match.league}`,
-          tone: '#38bdf8',
+          tone: 'var(--accent-info)',
         })
       }
     }
@@ -325,7 +325,7 @@ export default function FanTrackingPanel() {
           type: 'confidence',
           title: `${prediction.home_team} vs ${prediction.away_team}`,
           detail: `${predictedOutcomeLabel(prediction)} at ${(confidence * 100).toFixed(1)}% · ${prediction.league}`,
-          tone: '#22c55e',
+          tone: 'var(--accent-primary)',
         })
       }
     }
@@ -482,10 +482,10 @@ export default function FanTrackingPanel() {
               <button
                 key={`${team.name}-${team.league}`}
                 onClick={() => removeTrackedTeam(team.name)}
-                className="inline-flex items-center gap-1 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--accent-primary)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] px-2.5 py-1 text-[11px] text-[var(--accent-primary)] hover:bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] transition-colors"
               >
                 <span>{team.name}</span>
-                <span className="text-emerald-200/80">×</span>
+                <span className="text-[color-mix(in_srgb,var(--accent-primary)_80%,transparent)]">×</span>
               </button>
             ))
           )}
@@ -498,25 +498,25 @@ export default function FanTrackingPanel() {
             <MetricCard
               label="Tracked Teams"
               value={String(trackedTeams.length)}
-              tone="#38bdf8"
+              tone="var(--accent-info)"
               sub="watchlist size"
             />
             <MetricCard
               label="Live Now"
               value={String(liveMatches.length)}
-              tone={liveMatches.length > 0 ? '#ef4444' : '#94a3b8'}
+              tone={liveMatches.length > 0 ? 'var(--accent-loss)' : 'var(--text-tertiary)'}
               sub="matches in progress"
             />
             <MetricCard
               label="Upcoming Today"
               value={String(upcomingMatches.length)}
-              tone="#22c55e"
+              tone="var(--accent-primary)"
               sub="scheduled fixtures"
             />
             <MetricCard
               label="Prediction Hit Rate"
               value={resolvedPredictions.length > 0 ? `${(resolvedAccuracy * 100).toFixed(1)}%` : 'N/A'}
-              tone={resolvedAccuracy >= 0.6 ? '#22c55e' : resolvedAccuracy >= 0.5 ? '#f59e0b' : '#ef4444'}
+              tone={resolvedAccuracy >= 0.6 ? 'var(--accent-primary)' : resolvedAccuracy >= 0.5 ? 'var(--accent-warn)' : 'var(--accent-loss)'}
               sub={resolvedPredictions.length > 0 ? `${resolvedPredictions.length} resolved` : 'awaiting outcomes'}
             />
           </section>
@@ -533,13 +533,13 @@ export default function FanTrackingPanel() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => updateAlertSettings({ kickoffReminders: !alertSettings.kickoffReminders })}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.kickoffReminders ? 'border-cyan-500/45 bg-cyan-500/10 text-cyan-300' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.kickoffReminders ? 'border-[color-mix(in_srgb,var(--accent-ai)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
                 >
                   Kickoffs {alertSettings.kickoffReminders ? 'On' : 'Off'}
                 </button>
                 <button
                   onClick={() => updateAlertSettings({ confidenceAlerts: !alertSettings.confidenceAlerts })}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.confidenceAlerts ? 'border-emerald-500/45 bg-emerald-500/10 text-emerald-300' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${alertSettings.confidenceAlerts ? 'border-[color-mix(in_srgb,var(--accent-primary)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--accent-primary)]' : 'border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-tertiary)]'}`}
                 >
                   Confidence {alertSettings.confidenceAlerts ? 'On' : 'Off'}
                 </button>
@@ -624,7 +624,7 @@ export default function FanTrackingPanel() {
                   <button
                     onClick={syncAlertQueue}
                     disabled={syncingCloudAlerts}
-                    className="rounded-lg border border-emerald-500/45 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg border border-[color-mix(in_srgb,var(--accent-primary)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] px-3 py-2 text-xs font-bold text-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {syncingCloudAlerts ? 'Syncing' : 'Sync'}
                   </button>
@@ -665,10 +665,10 @@ export default function FanTrackingPanel() {
                         <p className="text-sm font-medium text-[var(--text-primary)] truncate">{match.home_team} vs {match.away_team}</p>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           match.status === 'live'
-                            ? 'bg-red-500/15 text-red-300'
+                            ? 'bg-[var(--live-bg)] text-[var(--live-text)]'
                             : match.status === 'completed' || match.status === 'finished'
-                              ? 'bg-emerald-500/15 text-emerald-300'
-                              : 'bg-cyan-500/15 text-cyan-300'
+                              ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]'
+                              : 'bg-[color-mix(in_srgb,var(--accent-ai)_15%,transparent)] text-[var(--accent-ai)]'
                         }`}>
                           {statusLabel(match)}
                         </span>
@@ -742,8 +742,8 @@ export default function FanTrackingPanel() {
                         <td className="py-2 px-2">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             prediction.winner_correct
-                              ? 'bg-emerald-500/15 text-emerald-300'
-                              : 'bg-red-500/15 text-red-300'
+                              ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]'
+                              : 'bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]'
                           }`}>
                             {prediction.winner_correct ? 'Correct' : 'Miss'}
                           </span>

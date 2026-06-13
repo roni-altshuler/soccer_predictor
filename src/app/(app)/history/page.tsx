@@ -129,7 +129,7 @@ export default function HistoryPage() {
                   className={cn(
                     'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1',
                     gender === 'women'
-                      ? 'bg-pink-500/12 text-pink-300 ring-pink-500/30'
+                      ? 'bg-[var(--accent-women)]/12 text-[var(--accent-women)] ring-[var(--accent-women)]/30'
                       : 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
                   )}
                 >

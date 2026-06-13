@@ -43,6 +43,7 @@ export default function AiDashboardPage() {
   const [picks, setPicks] = useState<TodayPick[] | null>(null)
   const [accuracy, setAccuracy] = useState<AccuracySummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -61,6 +62,9 @@ export default function AiDashboardPage() {
         if (accRes.ok && !cancelled) {
           const data = await accRes.json()
           setAccuracy(data)
+        }
+        if (!cancelled) {
+          setUpdatedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
         }
       } catch {
         // non-fatal — empty state will render
@@ -107,6 +111,11 @@ export default function AiDashboardPage() {
             </div>
             <div className="flex flex-col items-end gap-2">
               <PulsatingButton pulseColor="var(--accent-primary)">Live</PulsatingButton>
+              {updatedAt ? (
+                <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Updated {updatedAt}
+                </span>
+              ) : null}
               <Link href="/predict">
                 <ShimmerButton
                   background="linear-gradient(135deg, var(--accent-ai), var(--accent-primary))"

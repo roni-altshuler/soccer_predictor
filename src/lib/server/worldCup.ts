@@ -17,6 +17,7 @@ const SNAPSHOT_PATH = path.join(process.cwd(), 'backend', 'data', 'worldcup', 'b
 export interface BracketTeam {
   team_id: number | null
   name: string
+  elo?: number
   group?: string
   p_champion: number
   p_final: number

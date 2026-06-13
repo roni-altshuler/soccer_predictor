@@ -116,22 +116,22 @@ export default function MatchWeather({ venue, kickoffTime, homeTeam }: MatchWeat
 
   const getImpactColor = (level: string): string => {
     switch (level) {
-      case 'none': return 'text-green-500'
-      case 'low': return 'text-blue-500'
-      case 'moderate': return 'text-amber-500'
-      case 'high': return 'text-orange-500'
-      case 'severe': return 'text-red-500'
+      case 'none': return 'text-[var(--accent-primary)]'
+      case 'low': return 'text-[var(--accent-info)]'
+      case 'moderate': return 'text-[var(--accent-warn)]'
+      case 'high': return 'text-[var(--accent-warn)]'
+      case 'severe': return 'text-[var(--accent-loss)]'
       default: return 'text-[var(--text-secondary)]'
     }
   }
 
   const getImpactBg = (level: string): string => {
     switch (level) {
-      case 'none': return 'bg-green-500/10 border-green-500/30'
-      case 'low': return 'bg-blue-500/10 border-blue-500/30'
-      case 'moderate': return 'bg-amber-500/10 border-amber-500/30'
-      case 'high': return 'bg-orange-500/10 border-orange-500/30'
-      case 'severe': return 'bg-red-500/10 border-red-500/30'
+      case 'none': return 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30'
+      case 'low': return 'bg-[var(--accent-info)]/10 border-[var(--accent-info)]/30'
+      case 'moderate': return 'bg-[var(--accent-warn)]/10 border-[var(--accent-warn)]/30'
+      case 'high': return 'bg-[var(--accent-warn)]/10 border-[var(--accent-warn)]/30'
+      case 'severe': return 'bg-[var(--accent-loss)]/10 border-[var(--accent-loss)]/30'
       default: return 'bg-[var(--muted-bg)]'
     }
   }

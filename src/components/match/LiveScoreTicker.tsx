@@ -21,7 +21,7 @@ export default function LiveScoreTicker({ matches }: LiveScoreTickerProps) {
     <div className="overflow-hidden" style={{ background: 'var(--ticker-bg)' }}>
       <div className="relative flex items-center h-10">
         {/* Live indicator */}
-        <div className="flex items-center gap-2 px-4 bg-red-600 h-full shrink-0">
+        <div className="flex items-center gap-2 px-4 bg-[var(--accent-loss)] h-full shrink-0">
           <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
           <span className="text-white text-sm font-semibold">LIVE</span>
         </div>
@@ -39,7 +39,7 @@ export default function LiveScoreTicker({ matches }: LiveScoreTickerProps) {
                   {match.result?.home ?? 0} - {match.result?.away ?? 0}
                 </span>
                 <span className="font-medium">{match.away.shortName || match.away.name}</span>
-                <span className="text-green-400 text-xs">
+                <span className="text-[var(--accent-primary)] text-xs">
                   {match.status.liveTime?.short || ''}
                 </span>
               </div>
@@ -55,7 +55,7 @@ export default function LiveScoreTicker({ matches }: LiveScoreTickerProps) {
                   {match.result?.home ?? 0} - {match.result?.away ?? 0}
                 </span>
                 <span className="font-medium">{match.away.shortName || match.away.name}</span>
-                <span className="text-green-400 text-xs">
+                <span className="text-[var(--accent-primary)] text-xs">
                   {match.status.liveTime?.short || ''}
                 </span>
               </div>

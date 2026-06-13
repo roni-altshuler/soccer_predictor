@@ -7,6 +7,7 @@
   {
    "team_id": null,
    "name": "Spain",
+   "elo": 1697,
    "p_champion": 0.0495,
    "p_final": 0.0871,
    "p_semi": 0.1547,
@@ -19,6 +20,7 @@
   {
    "team_id": null,
    "name": "Argentina",
+   "elo": 1699,
    "p_champion": 0.0454,
    "p_final": 0.0798,
    "p_semi": 0.1504,
@@ -31,6 +33,7 @@
   {
    "team_id": null,
    "name": "Brazil",
+   "elo": 1629,
    "p_champion": 0.0442,
    "p_final": 0.0833,
    "p_semi": 0.1474,
@@ -43,6 +46,7 @@
   {
    "team_id": null,
    "name": "Colombia",
+   "elo": 1622,
    "p_champion": 0.0394,
    "p_final": 0.0732,
    "p_semi": 0.1412,
@@ -55,6 +59,7 @@
   {
    "team_id": null,
    "name": "Germany",
+   "elo": 1578,
    "p_champion": 0.0364,
    "p_final": 0.0668,
    "p_semi": 0.1205,
@@ -67,6 +72,7 @@
   {
    "team_id": null,
    "name": "England",
+   "elo": 1619,
    "p_champion": 0.0321,
    "p_final": 0.0595,
    "p_semi": 0.1159,
@@ -79,6 +85,7 @@
   {
    "team_id": null,
    "name": "Netherlands",
+   "elo": 1602,
    "p_champion": 0.0318,
    "p_final": 0.0621,
    "p_semi": 0.1167,
@@ -91,6 +98,7 @@
   {
    "team_id": null,
    "name": "Switzerland",
+   "elo": 1562,
    "p_champion": 0.029,
    "p_final": 0.0566,
    "p_semi": 0.1096,
@@ -103,6 +111,7 @@
   {
    "team_id": null,
    "name": "South Korea",
+   "elo": 1477,
    "p_champion": 0.0289,
    "p_final": 0.0599,
    "p_semi": 0.1168,
@@ -115,6 +124,7 @@
   {
    "team_id": null,
    "name": "Mexico",
+   "elo": 1490,
    "p_champion": 0.0279,
    "p_final": 0.0577,
    "p_semi": 0.1126,
@@ -127,6 +137,7 @@
   {
    "team_id": null,
    "name": "Uruguay",
+   "elo": 1577,
    "p_champion": 0.0274,
    "p_final": 0.0556,
    "p_semi": 0.1155,
@@ -139,6 +150,7 @@
   {
    "team_id": null,
    "name": "France",
+   "elo": 1622,
    "p_champion": 0.0271,
    "p_final": 0.0529,
    "p_semi": 0.1001,
@@ -151,6 +163,7 @@
   {
    "team_id": null,
    "name": "Belgium",
+   "elo": 1545,
    "p_champion": 0.0264,
    "p_final": 0.052,
    "p_semi": 0.1105,
@@ -163,6 +176,7 @@
   {
    "team_id": null,
    "name": "Australia",
+   "elo": 1477,
    "p_champion": 0.0234,
    "p_final": 0.0469,
    "p_semi": 0.0998,
@@ -175,6 +189,7 @@
   {
    "team_id": null,
    "name": "Portugal",
+   "elo": 1554,
    "p_champion": 0.0231,
    "p_final": 0.0443,
    "p_semi": 0.094,
@@ -187,6 +202,7 @@
   {
    "team_id": null,
    "name": "Tunisia",
+   "elo": 1492,
    "p_champion": 0.0217,
    "p_final": 0.0462,
    "p_semi": 0.0891,
@@ -199,6 +215,7 @@
   {
    "team_id": null,
    "name": "Canada",
+   "elo": 1460,
    "p_champion": 0.0209,
    "p_final": 0.0429,
    "p_semi": 0.0892,
@@ -211,6 +228,7 @@
   {
    "team_id": null,
    "name": "Morocco",
+   "elo": 1523,
    "p_champion": 0.0205,
    "p_final": 0.0425,
    "p_semi": 0.0852,
@@ -223,6 +241,7 @@
   {
    "team_id": null,
    "name": "Cura\u00e7ao",
+   "elo": 1500,
    "p_champion": 0.0199,
    "p_final": 0.0394,
    "p_semi": 0.0763,
@@ -235,6 +254,7 @@
   {
    "team_id": null,
    "name": "Bosnia-Herzegovina",
+   "elo": 1496,
    "p_champion": 0.0197,
    "p_final": 0.0404,
    "p_semi": 0.0785,
@@ -247,6 +267,7 @@
   {
    "team_id": null,
    "name": "Norway",
+   "elo": 1501,
    "p_champion": 0.0192,
    "p_final": 0.0411,
    "p_semi": 0.0772,
@@ -259,6 +280,7 @@
   {
    "team_id": null,
    "name": "Sweden",
+   "elo": 1519,
    "p_champion": 0.0189,
    "p_final": 0.0394,
    "p_semi": 0.0785,
@@ -271,6 +293,7 @@
   {
    "team_id": null,
    "name": "Ivory Coast",
+   "elo": 1482,
    "p_champion": 0.0189,
    "p_final": 0.0372,
    "p_semi": 0.072,
@@ -283,6 +306,7 @@
   {
    "team_id": null,
    "name": "Egypt",
+   "elo": 1430,
    "p_champion": 0.0174,
    "p_final": 0.0355,
    "p_semi": 0.0756,
@@ -295,6 +319,7 @@
   {
    "team_id": null,
    "name": "Senegal",
+   "elo": 1499,
    "p_champion": 0.0172,
    "p_final": 0.035,
    "p_semi": 0.0688,
@@ -307,6 +332,7 @@
   {
    "team_id": null,
    "name": "Ecuador",
+   "elo": 1500,
    "p_champion": 0.0171,
    "p_final": 0.0352,
    "p_semi": 0.0695,
@@ -319,6 +345,7 @@
   {
    "team_id": null,
    "name": "Iraq",
+   "elo": 1500,
    "p_champion": 0.0167,
    "p_final": 0.0336,
    "p_semi": 0.0704,
@@ -331,6 +358,7 @@
   {
    "team_id": null,
    "name": "Iran",
+   "elo": 1479,
    "p_champion": 0.0165,
    "p_final": 0.0358,
    "p_semi": 0.0763,
@@ -343,6 +371,7 @@
   {
    "team_id": null,
    "name": "Jordan",
+   "elo": 1500,
    "p_champion": 0.0163,
    "p_final": 0.0347,
    "p_semi": 0.0773,
@@ -355,6 +384,7 @@
   {
    "team_id": null,
    "name": "New Zealand",
+   "elo": 1506,
    "p_champion": 0.0163,
    "p_final": 0.0343,
    "p_semi": 0.0749,
@@ -367,6 +397,7 @@
   {
    "team_id": null,
    "name": "Austria",
+   "elo": 1511,
    "p_champion": 0.0159,
    "p_final": 0.0312,
    "p_semi": 0.0627,
@@ -379,6 +410,7 @@
   {
    "team_id": null,
    "name": "Algeria",
+   "elo": 1481,
    "p_champion": 0.0159,
    "p_final": 0.0309,
    "p_semi": 0.0654,
@@ -391,6 +423,7 @@
   {
    "team_id": null,
    "name": "Ghana",
+   "elo": 1470,
    "p_champion": 0.0156,
    "p_final": 0.0299,
    "p_semi": 0.0643,
@@ -403,6 +436,7 @@
   {
    "team_id": null,
    "name": "Saudi Arabia",
+   "elo": 1450,
    "p_champion": 0.0152,
    "p_final": 0.0314,
    "p_semi": 0.0657,
@@ -415,6 +449,7 @@
   {
    "team_id": null,
    "name": "Congo DR",
+   "elo": 1500,
    "p_champion": 0.0151,
    "p_final": 0.035,
    "p_semi": 0.0745,
@@ -427,6 +462,7 @@
   {
    "team_id": null,
    "name": "T\u00fcrkiye",
+   "elo": 1486,
    "p_champion": 0.0147,
    "p_final": 0.0322,
    "p_semi": 0.0688,
@@ -439,6 +475,7 @@
   {
    "team_id": null,
    "name": "Panama",
+   "elo": 1457,
    "p_champion": 0.0146,
    "p_final": 0.0306,
    "p_semi": 0.0613,
@@ -451,6 +488,7 @@
   {
    "team_id": null,
    "name": "South Africa",
+   "elo": 1488,
    "p_champion": 0.0143,
    "p_final": 0.0288,
    "p_semi": 0.0566,
@@ -463,6 +501,7 @@
   {
    "team_id": null,
    "name": "Uzbekistan",
+   "elo": 1500,
    "p_champion": 0.014,
    "p_final": 0.0312,
    "p_semi": 0.0718,
@@ -475,6 +514,7 @@
   {
    "team_id": null,
    "name": "Cape Verde",
+   "elo": 1500,
    "p_champion": 0.0138,
    "p_final": 0.0316,
    "p_semi": 0.0631,
@@ -487,6 +527,7 @@
   {
    "team_id": null,
    "name": "United States",
+   "elo": 1483,
    "p_champion": 0.013,
    "p_final": 0.0273,
    "p_semi": 0.0635,
@@ -499,6 +540,7 @@
   {
    "team_id": null,
    "name": "Japan",
+   "elo": 1504,
    "p_champion": 0.0127,
    "p_final": 0.03,
    "p_semi": 0.0583,
@@ -511,6 +553,7 @@
   {
    "team_id": null,
    "name": "Croatia",
+   "elo": 1508,
    "p_champion": 0.0109,
    "p_final": 0.0226,
    "p_semi": 0.0486,
@@ -523,6 +566,7 @@
   {
    "team_id": null,
    "name": "Qatar",
+   "elo": 1401,
    "p_champion": 0.0107,
    "p_final": 0.0221,
    "p_semi": 0.0496,
@@ -535,6 +579,7 @@
   {
    "team_id": null,
    "name": "Czechia",
+   "elo": 1464,
    "p_champion": 0.01,
    "p_final": 0.0195,
    "p_semi": 0.0394,
@@ -547,6 +592,7 @@
   {
    "team_id": null,
    "name": "Scotland",
+   "elo": 1420,
    "p_champion": 0.0089,
    "p_final": 0.0202,
    "p_semi": 0.042,
@@ -559,6 +605,7 @@
   {
    "team_id": null,
    "name": "Paraguay",
+   "elo": 1443,
    "p_champion": 0.0079,
    "p_final": 0.0179,
    "p_semi": 0.0432,
@@ -571,6 +618,7 @@
   {
    "team_id": null,
    "name": "Haiti",
+   "elo": 1413,
    "p_champion": 0.0076,
    "p_final": 0.0167,
    "p_semi": 0.0365,

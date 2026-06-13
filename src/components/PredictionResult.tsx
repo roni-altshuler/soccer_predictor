@@ -27,7 +27,7 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
   // Defensive null checks
   if (!result || !result.predictions) {
     return (
-      <div className="text-center p-8 text-gray-600 dark:text-gray-400">
+      <div className="text-center p-8 text-[var(--text-secondary)]">
         <p>Unable to load prediction data</p>
       </div>
     );
@@ -54,7 +54,7 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
 
   if (!hasValidPredictions) {
     return (
-      <div className="text-center p-8 text-gray-600 dark:text-gray-400">
+      <div className="text-center p-8 text-[var(--text-secondary)]">
         <p>Prediction data is not available for this match</p>
       </div>
     );
@@ -72,11 +72,11 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
 
   const getOutcome = () => {
     if (winProb > drawProb && winProb > lossProb) {
-      return { outcome: homeTeamName, probability: winProb, color: 'from-green-500 to-emerald-600' };
+      return { outcome: homeTeamName, probability: winProb, color: 'from-[var(--accent-primary)] to-[color-mix(in_srgb,var(--accent-primary)_80%,black)]' };
     } else if (lossProb > winProb && lossProb > drawProb) {
-      return { outcome: awayTeamName, probability: lossProb, color: 'from-red-500 to-rose-600' };
+      return { outcome: awayTeamName, probability: lossProb, color: 'from-[var(--accent-loss)] to-[color-mix(in_srgb,var(--accent-loss)_80%,black)]' };
     } else {
-      return { outcome: 'Draw', probability: drawProb, color: 'from-yellow-500 to-amber-600' };
+      return { outcome: 'Draw', probability: drawProb, color: 'from-[var(--accent-warn)] to-[color-mix(in_srgb,var(--accent-warn)_80%,black)]' };
     }
   };
 
@@ -85,25 +85,25 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
   return (
     <div className="relative overflow-hidden">
       {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-blue-50 to-white dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 opacity-50"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-primary)_8%,var(--background))] via-[color-mix(in_srgb,var(--accent-info)_8%,var(--background))] to-[var(--background)] opacity-50"></div>
       
       <div className="relative z-10 p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-            {homeTeamName} <span className="text-gray-500 dark:text-gray-400">vs</span> {awayTeamName}
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)] bg-clip-text text-transparent">
+            {homeTeamName} <span className="text-[var(--text-tertiary)]">vs</span> {awayTeamName}
           </h2>
           {mode === 'cross-league' && (
-            <div className="flex justify-center gap-4 text-sm text-gray-700 dark:text-gray-300 font-medium">
-              <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700">{league_a?.replace('_', ' ').toUpperCase()}</span>
-              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full border border-blue-300 dark:border-blue-700">{league_b?.replace('_', ' ').toUpperCase()}</span>
+            <div className="flex justify-center gap-4 text-sm text-[var(--text-secondary)] font-medium">
+              <span className="px-3 py-1 bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] rounded-full border border-[color-mix(in_srgb,var(--accent-primary)_35%,transparent)]">{league_a?.replace('_', ' ').toUpperCase()}</span>
+              <span className="px-3 py-1 bg-[color-mix(in_srgb,var(--accent-info)_15%,transparent)] rounded-full border border-[color-mix(in_srgb,var(--accent-info)_35%,transparent)]">{league_b?.replace('_', ' ').toUpperCase()}</span>
             </div>
           )}
         </div>
 
         {/* Most Likely Outcome Card */}
         <div className="mb-10 text-center">
-          <p className="text-sm uppercase font-bold tracking-wider text-gray-600 dark:text-gray-400 mb-4">Most Likely Outcome</p>
+          <p className="text-sm uppercase font-bold tracking-wider text-[var(--text-secondary)] mb-4">Most Likely Outcome</p>
           <div className={`inline-block px-8 py-6 rounded-2xl bg-gradient-to-br ${mostLikelyOutcome.color} shadow-2xl transform hover:scale-105 transition-transform duration-300`}>
             <p className="text-5xl md:text-6xl font-black text-white mb-2 drop-shadow-lg">
               {mostLikelyOutcome.outcome}
@@ -117,16 +117,16 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
         {/* Scoreline Prediction */}
         {homeGoals !== undefined && awayGoals !== undefined && (
           <div className="mb-10 text-center animate-fade-in">
-            <p className="text-sm uppercase font-bold tracking-wider text-gray-600 dark:text-gray-400 mb-4">Predicted Scoreline</p>
-            <div className="inline-flex items-center gap-6 px-8 py-6 bg-gradient-to-r from-white via-gray-50 to-white dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-2xl shadow-xl border-2 border-gray-300 dark:border-gray-600">
+            <p className="text-sm uppercase font-bold tracking-wider text-[var(--text-secondary)] mb-4">Predicted Scoreline</p>
+            <div className="inline-flex items-center gap-6 px-8 py-6 bg-gradient-to-r from-[var(--card-bg)] via-[var(--muted-bg)] to-[var(--card-bg)] rounded-2xl shadow-xl border-2 border-[var(--border-color)]">
               <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{homeTeamName}</p>
-                <p className="text-6xl font-black text-green-600 dark:text-green-400">{typeof homeGoals === 'number' ? homeGoals.toFixed(1) : homeGoals}</p>
+                <p className="text-sm text-[var(--text-secondary)] mb-1">{homeTeamName}</p>
+                <p className="text-6xl font-black text-[var(--accent-primary)]">{typeof homeGoals === 'number' ? homeGoals.toFixed(1) : homeGoals}</p>
               </div>
-              <span className="text-4xl font-bold text-gray-400 dark:text-gray-500">-</span>
+              <span className="text-4xl font-bold text-[var(--text-tertiary)]">-</span>
               <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{awayTeamName}</p>
-                <p className="text-6xl font-black text-green-600 dark:text-green-400">{typeof awayGoals === 'number' ? awayGoals.toFixed(1) : awayGoals}</p>
+                <p className="text-sm text-[var(--text-secondary)] mb-1">{awayTeamName}</p>
+                <p className="text-6xl font-black text-[var(--accent-primary)]">{typeof awayGoals === 'number' ? awayGoals.toFixed(1) : awayGoals}</p>
               </div>
             </div>
           </div>
@@ -137,12 +137,12 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
           {/* Home/Team A Win */}
           <div className="group">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">{homeTeamName} Win</span>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">{(winProb * 100).toFixed(1)}%</span>
+              <span className="text-lg font-semibold text-[var(--text-primary)]">{homeTeamName} Win</span>
+              <span className="text-2xl font-bold text-[var(--accent-primary)]">{(winProb * 100).toFixed(1)}%</span>
             </div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden shadow-inner">
+            <div className="h-4 bg-[var(--muted-bg)] rounded-full overflow-hidden shadow-inner">
               <div 
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-green-500/50"
+                className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-soft)] rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-[color:color-mix(in_srgb,var(--accent-primary)_50%,transparent)]"
                 style={{ width: `${winProb * 100}%` }}
               ></div>
             </div>
@@ -151,12 +151,12 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
           {/* Draw */}
           <div className="group">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Draw</span>
-              <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{(drawProb * 100).toFixed(1)}%</span>
+              <span className="text-lg font-semibold text-[var(--text-primary)]">Draw</span>
+              <span className="text-2xl font-bold text-[var(--accent-warn)]">{(drawProb * 100).toFixed(1)}%</span>
             </div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden shadow-inner">
+            <div className="h-4 bg-[var(--muted-bg)] rounded-full overflow-hidden shadow-inner">
               <div 
-                className="h-full bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-yellow-500/50"
+                className="h-full bg-gradient-to-r from-[var(--accent-warn)] to-[var(--accent-warn-soft)] rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-[color:color-mix(in_srgb,var(--accent-warn)_50%,transparent)]"
                 style={{ width: `${drawProb * 100}%` }}
               ></div>
             </div>
@@ -165,12 +165,12 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
           {/* Away/Team B Win */}
           <div className="group">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">{awayTeamName} Win</span>
-              <span className="text-2xl font-bold text-red-600 dark:text-red-400">{(lossProb * 100).toFixed(1)}%</span>
+              <span className="text-lg font-semibold text-[var(--text-primary)]">{awayTeamName} Win</span>
+              <span className="text-2xl font-bold text-[var(--accent-loss)]">{(lossProb * 100).toFixed(1)}%</span>
             </div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden shadow-inner">
+            <div className="h-4 bg-[var(--muted-bg)] rounded-full overflow-hidden shadow-inner">
               <div 
-                className="h-full bg-gradient-to-r from-red-500 to-rose-500 rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-red-500/50"
+                className="h-full bg-gradient-to-r from-[var(--accent-loss)] to-[var(--accent-loss-soft)] rounded-full shadow-lg transition-all duration-1000 ease-out group-hover:shadow-[color:color-mix(in_srgb,var(--accent-loss)_50%,transparent)]"
                 style={{ width: `${lossProb * 100}%` }}
               ></div>
             </div>
@@ -178,9 +178,9 @@ export const PredictionResult = ({ result, mode }: PredictionResultProps) => {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-300 dark:border-gray-600 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
-            <span className="text-yellow-600">⚠️</span>
+        <div className="mt-8 pt-6 border-t border-[var(--border-color)] text-center">
+          <p className="text-sm text-[var(--text-secondary)] flex items-center justify-center gap-2">
+            <span className="text-[var(--accent-warn)]">⚠️</span>
             Predictions are for educational and entertainment purposes only
           </p>
         </div>

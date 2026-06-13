@@ -231,9 +231,9 @@ function normalizeTeamForm(raw: TeamFormResponse | null): TeamFormSnapshot | nul
 }
 
 function formTokenClass(result: 'W' | 'D' | 'L'): string {
-  if (result === 'W') return 'bg-emerald-500 text-white'
-  if (result === 'D') return 'bg-amber-500 text-white'
-  return 'bg-rose-500 text-white'
+  if (result === 'W') return 'bg-[var(--accent-primary)] text-white'
+  if (result === 'D') return 'bg-[var(--accent-warn)] text-white'
+  return 'bg-[var(--accent-loss)] text-white'
 }
 
 export default function HeadToHeadDisplay({
@@ -402,14 +402,14 @@ export default function HeadToHeadDisplay({
               <>
                 <div className="rounded-xl border p-3" style={{ borderColor: 'var(--border-color)', background: 'var(--muted-bg)' }}>
                   <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-semibold text-blue-500">{h2h.homeWins}W</span>
+                    <span className="font-semibold text-[var(--team-tint-home)]">{h2h.homeWins}W</span>
                     <span className="text-[var(--text-tertiary)]">{h2h.draws}D</span>
-                    <span className="font-semibold text-orange-500">{h2h.awayWins}W</span>
+                    <span className="font-semibold text-[var(--team-tint-away)]">{h2h.awayWins}W</span>
                   </div>
                   <div className="h-3 rounded-full overflow-hidden flex bg-[var(--card-bg)]">
-                    <div className="bg-blue-500" style={{ width: `${homeShare}%` }} />
-                    <div className="bg-slate-400" style={{ width: `${drawShare}%` }} />
-                    <div className="bg-orange-500" style={{ width: `${awayShare}%` }} />
+                    <div className="bg-[var(--team-tint-home)]" style={{ width: `${homeShare}%` }} />
+                    <div className="bg-[var(--text-tertiary)]" style={{ width: `${drawShare}%` }} />
+                    <div className="bg-[var(--team-tint-away)]" style={{ width: `${awayShare}%` }} />
                   </div>
                   <div className="grid grid-cols-3 text-center mt-2 text-[10px] text-[var(--text-tertiary)]">
                     <span>{homeTeam}</span>
@@ -498,7 +498,7 @@ function TeamFormCard({
   accent: 'blue' | 'orange'
   form: TeamFormSnapshot | null
 }) {
-  const accentText = accent === 'blue' ? 'text-blue-500' : 'text-orange-500'
+  const accentText = accent === 'blue' ? 'text-[var(--team-tint-home)]' : 'text-[var(--team-tint-away)]'
 
   if (!form) {
     return (

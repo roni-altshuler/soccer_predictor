@@ -148,7 +148,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1 ${
                   gender === 'women'
-                    ? 'bg-pink-500/12 text-pink-300 ring-pink-500/30'
+                    ? 'bg-[var(--accent-women)]/12 text-[var(--accent-women)] ring-[var(--accent-women)]/30'
                     : 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
                 }`}
               >
@@ -204,7 +204,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
                 onClick={() => setActiveView(tab.key)}
                 className={`text-left rounded-xl border px-3 py-2.5 transition-all ${
                   active
-                    ? 'bg-[var(--accent-primary)] text-white border-transparent shadow-md shadow-emerald-500/15 ring-2 ring-[var(--accent-primary)]/40'
+                    ? 'bg-[var(--accent-primary)] text-white border-transparent shadow-md shadow-[var(--accent-primary)]/15 ring-2 ring-[var(--accent-primary)]/40'
                     : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] hover:border-[var(--accent-primary)]/40 text-[var(--text-primary)]'
                 }`}
               >
@@ -221,7 +221,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
             <span className="text-[var(--text-primary)] font-semibold">{outcomesSinceRetrain}/{retrainThreshold} outcomes toward next tuning cycle</span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-[var(--card-bg)] overflow-hidden">
-            <div className="h-full bg-emerald-500 transition-all duration-700" style={{ width: `${Math.max(2, retrainProgress * 100)}%` }} />
+            <div className="h-full bg-[var(--accent-primary)] transition-all duration-700" style={{ width: `${Math.max(2, retrainProgress * 100)}%` }} />
           </div>
         </div>
       </section>

@@ -12,6 +12,8 @@ import {
   Legend,
 } from 'recharts'
 
+import { useChartTheme } from '@/components/charts/theme'
+
 type TeamRow = {
   name: string
   p_advance_first: number
@@ -21,13 +23,6 @@ type TeamRow = {
 
 type Props = {
   teams: TeamRow[]
-}
-
-const COLORS = {
-  first: '#7c3aed', // darker accent (AI prediction)
-  second: '#b58dfb', // lighter accent
-  axis: '#3f4753',
-  text: '#9ca3af',
 }
 
 /**
@@ -40,9 +35,16 @@ const COLORS = {
  * X axis).  Recharts handles responsiveness via ResponsiveContainer.
  */
 export default function GroupAdvancementChart({ teams }: Props) {
+  const theme = useChartTheme()
+  const COLORS = {
+    first: theme.ai, // darker accent (AI prediction)
+    second: theme.aiSoft, // lighter accent
+    axis: theme.border,
+    text: theme.textMuted,
+  }
   if (!teams || teams.length === 0) {
     return (
-      <p className="text-xs text-gray-500">No advancement data available yet.</p>
+      <p className="text-xs text-[var(--text-tertiary)]">No advancement data available yet.</p>
     )
   }
 
@@ -63,7 +65,7 @@ export default function GroupAdvancementChart({ teams }: Props) {
           layout="vertical"
           margin={{ top: 10, right: 24, bottom: 10, left: 12 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#1f242c" />
+          <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
           <XAxis
             type="number"
             domain={[0, 100]}
@@ -79,12 +81,12 @@ export default function GroupAdvancementChart({ teams }: Props) {
             width={110}
           />
           <Tooltip
-            cursor={{ fill: '#1f242c' }}
+            cursor={{ fill: theme.border }}
             contentStyle={{
-              backgroundColor: '#0d1117',
-              border: '1px solid #2d3340',
+              backgroundColor: theme.cardBg,
+              border: `1px solid ${theme.border}`,
               borderRadius: 6,
-              color: '#f5f5f5',
+              color: theme.text,
               fontSize: 12,
             }}
             formatter={(value: number, name: string) => {

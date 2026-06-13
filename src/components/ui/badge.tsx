@@ -19,7 +19,7 @@ const badgeVariants = cva(
         outline:
           'border-[var(--border-color)] text-[var(--text-secondary)] bg-transparent',
         live:
-          'border-transparent bg-red-500/15 text-red-500',
+          'border-transparent bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]',
       },
     },
     defaultVariants: {

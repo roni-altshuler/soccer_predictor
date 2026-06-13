@@ -163,11 +163,11 @@ export default function KnockoutSimulator({ tournament, initialTeams }: Knockout
   }
 
   const getProbabilityColor = (probability: number): string => {
-    if (probability >= 0.25) return 'bg-green-500'
-    if (probability >= 0.15) return 'bg-emerald-400'
-    if (probability >= 0.10) return 'bg-blue-500'
-    if (probability >= 0.05) return 'bg-blue-400'
-    return 'bg-gray-400'
+    if (probability >= 0.25) return 'bg-[var(--accent-primary)]'
+    if (probability >= 0.15) return 'bg-[var(--accent-primary)]'
+    if (probability >= 0.10) return 'bg-[var(--accent-info)]'
+    if (probability >= 0.05) return 'bg-[var(--accent-info)]'
+    return 'bg-[var(--text-tertiary)]'
   }
 
   const formatProbability = (prob: number): string => {
@@ -224,7 +224,7 @@ export default function KnockoutSimulator({ tournament, initialTeams }: Knockout
                       {team}
                       <button
                         onClick={() => setTeams(teams.filter((_, i) => i !== idx))}
-                        className="text-[var(--text-tertiary)] hover:text-red-400"
+                        className="text-[var(--text-tertiary)] hover:text-[var(--accent-loss)]"
                       >
                         ×
                       </button>
@@ -238,7 +238,7 @@ export default function KnockoutSimulator({ tournament, initialTeams }: Knockout
                 disabled={loading || teams.length < 2}
                 className={`w-full py-3 rounded-xl font-semibold transition-all ${
                   loading || teams.length < 2
-                    ? 'bg-gray-400 cursor-not-allowed'
+                    ? 'bg-[var(--muted-bg)] cursor-not-allowed'
                     : 'bg-gradient-to-r ' + config.gradient + ' text-white hover:opacity-90'
                 }`}
               >
@@ -263,14 +263,14 @@ export default function KnockoutSimulator({ tournament, initialTeams }: Knockout
         <div className="p-6">
           {/* Winner Banner */}
           <div
-            className="mb-6 p-6 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 animate-fadeIn"
+            className="mb-6 p-6 rounded-xl bg-gradient-to-r from-[var(--accent-warn)]/20 to-[var(--accent-warn)]/20 border border-[var(--accent-warn)]/30 animate-fadeIn"
           >
             <div className="text-center">
-              <p className="text-amber-600 dark:text-amber-400 text-sm font-medium mb-1">Most Likely Champion</p>
+              <p className="text-[var(--accent-warn)] text-sm font-medium mb-1">Most Likely Champion</p>
               <h3 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
                 🏆 {results.winner.team}
               </h3>
-              <p className="text-lg text-amber-600 dark:text-amber-400">
+              <p className="text-lg text-[var(--accent-warn)]">
                 {formatProbability(results.winner.probability)} chance to win
               </p>
               <p className="text-sm text-[var(--text-tertiary)] mt-2">
@@ -299,7 +299,7 @@ export default function KnockoutSimulator({ tournament, initialTeams }: Knockout
                   onClick={() => setActiveRound(round)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeRound === round
-                      ? 'bg-[var(--accent-primary)] text-white'
+                      ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
                       : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >

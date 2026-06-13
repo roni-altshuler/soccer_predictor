@@ -270,7 +270,7 @@ function MatchesContent() {
                   </thead>
                   <tbody>
                     {group.teams.map((team, idx) => (
-                      <tr key={team.team} className={`border-b border-[var(--border-color)] hover:bg-[var(--card-hover)] ${idx < 2 ? 'border-l-2 border-l-green-500' : ''}`}>
+                      <tr key={team.team} className={`border-b border-[var(--border-color)] hover:bg-[var(--card-hover)] ${idx < 2 ? 'border-l-2 border-l-[var(--accent-primary)]' : ''}`}>
                         <td className="py-1.5 px-2 text-[var(--text-tertiary)]">{idx + 1}</td>
                         <td className="py-1.5 px-2 text-[var(--text-primary)] font-medium truncate max-w-[100px]">{team.team}</td>
                         <td className="py-1.5 px-1 text-center text-[var(--text-secondary)]">{team.played}</td>
@@ -300,7 +300,7 @@ function MatchesContent() {
               </thead>
               <tbody>
                 {standings.map((team, idx) => (
-                  <tr key={team.team} className={`border-b border-[var(--border-color)] hover:bg-[var(--card-hover)] transition-colors ${idx < 4 ? 'border-l-2 border-l-green-500' : idx >= standings.length - 3 ? 'border-l-2 border-l-red-500' : ''}`}>
+                  <tr key={team.team} className={`border-b border-[var(--border-color)] hover:bg-[var(--card-hover)] transition-colors ${idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' : idx >= standings.length - 3 ? 'border-l-2 border-l-[var(--accent-loss)]' : ''}`}>
                     <td className="py-2 px-2 text-[var(--text-tertiary)]">{team.position}</td>
                     <td className="py-2 px-2 text-[var(--text-primary)] font-medium">{team.team}</td>
                     <td className="py-2 px-1 text-center text-[var(--text-secondary)]">{team.played}</td>
@@ -314,8 +314,8 @@ function MatchesContent() {
               </tbody>
             </table>
             <div className="px-3 py-2 flex gap-4 text-[10px] text-[var(--text-tertiary)] bg-[var(--muted-bg)] border-t border-[var(--border-color)]">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-green-500 rounded-sm" /><span>Champions League</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-red-500 rounded-sm" /><span>Relegation</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-[var(--accent-primary)] rounded-sm" /><span>Champions League</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-[var(--accent-loss)] rounded-sm" /><span>Relegation</span></div>
             </div>
           </div>
         ) : (

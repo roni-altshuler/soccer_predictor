@@ -69,9 +69,9 @@ interface MatchCardProps {
 }
 
 const formColors: Record<string, string> = {
-  W: 'bg-green-500',
-  D: 'bg-amber-500',
-  L: 'bg-red-400',
+  W: 'bg-[var(--accent-primary)]',
+  D: 'bg-[var(--accent-warn)]',
+  L: 'bg-[var(--accent-loss)]',
 };
 
 function FormBadges({ form, align = 'right' }: { form: FormResult[]; align?: 'left' | 'right' }) {
@@ -80,7 +80,7 @@ function FormBadges({ form, align = 'right' }: { form: FormResult[]; align?: 'le
       {form.slice(0, 5).map((f, i) => (
         <span
           key={i}
-          className={`w-5 h-5 rounded text-[10px] font-bold text-white flex items-center justify-center ${formColors[f.result] || 'bg-gray-400'}`}
+          className={`w-5 h-5 rounded text-[10px] font-bold text-white flex items-center justify-center ${formColors[f.result] || 'bg-[var(--text-tertiary)]'}`}
           title={f.score ? `${f.result} (${f.score})` : f.result}
         >
           {f.result}
@@ -127,7 +127,7 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
         bg-[var(--card-bg)] rounded-xl shadow-sm hover:shadow-md 
         transition-all duration-200 cursor-pointer overflow-hidden
         border
-        ${isLive ? 'ring-2 ring-green-500' : ''}
+        ${isLive ? 'ring-2 ring-[var(--accent-primary)]' : ''}
       `}
       style={{ borderColor: 'var(--border-color)' }}
       onClick={onClick}
@@ -183,7 +183,7 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
                   </span>
                 </div>
                 {isLive && (
-                  <span className="text-xs text-green-500 font-semibold animate-pulse mt-1">
+                  <span className="text-xs text-[var(--accent-primary)] font-semibold animate-pulse mt-1">
                     {liveMinute}
                   </span>
                 )}
@@ -230,15 +230,15 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
                 <p className="text-[10px] text-[var(--text-tertiary)]">Home</p>
-                <p className="text-sm font-bold text-emerald-400">{pct(homePrediction)}</p>
+                <p className="text-sm font-bold text-[var(--accent-primary)]">{pct(homePrediction)}</p>
               </div>
               <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
                 <p className="text-[10px] text-[var(--text-tertiary)]">Draw</p>
-                <p className="text-sm font-bold text-amber-400">{pct(drawPrediction)}</p>
+                <p className="text-sm font-bold text-[var(--accent-warn)]">{pct(drawPrediction)}</p>
               </div>
               <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
                 <p className="text-[10px] text-[var(--text-tertiary)]">Away</p>
-                <p className="text-sm font-bold text-blue-400">{pct(awayPrediction)}</p>
+                <p className="text-sm font-bold text-[var(--accent-info)]">{pct(awayPrediction)}</p>
               </div>
             </div>
             {prediction.model && (
@@ -263,11 +263,11 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             {hasH2H && h2h && (
               <span className="flex items-center gap-1">
                 <span>H2H: </span>
-                <span className="text-green-500 font-semibold">{h2h.homeWins}W</span>
+                <span className="text-[var(--accent-primary)] font-semibold">{h2h.homeWins}W</span>
                 <span>-</span>
-                <span className="text-amber-500 font-semibold">{h2h.draws}D</span>
+                <span className="text-[var(--accent-warn)] font-semibold">{h2h.draws}D</span>
                 <span>-</span>
-                <span className="text-blue-500 font-semibold">{h2h.awayWins}W</span>
+                <span className="text-[var(--accent-info)] font-semibold">{h2h.awayWins}W</span>
                 <span className="text-[var(--text-tertiary)]">({h2h.totalMatches})</span>
               </span>
             )}

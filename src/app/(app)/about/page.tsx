@@ -141,7 +141,7 @@ export default function AboutPage() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/predict"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-on-primary)] shadow-md shadow-emerald-500/20 transition-all hover:translate-y-[-1px] hover:shadow-lg"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-on-primary)] shadow-md shadow-[var(--accent-primary)]/20 transition-all hover:translate-y-[-1px] hover:shadow-lg"
                 >
                   Run a prediction <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>

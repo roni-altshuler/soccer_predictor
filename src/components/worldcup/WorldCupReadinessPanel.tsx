@@ -73,8 +73,8 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-normal ${
       ok
-        ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300'
-        : 'border-amber-500/35 bg-amber-500/10 text-amber-300'
+        ? 'border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
+        : 'border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10 text-[var(--accent-warn)]'
     }`}>
       {label}
     </span>
@@ -93,9 +93,9 @@ function ReadinessCard({
   tone?: 'neutral' | 'good' | 'watch'
 }) {
   const toneClass = tone === 'good'
-    ? 'border-emerald-500/25 bg-emerald-500/10'
+    ? 'border-[var(--accent-primary)]/25 bg-[var(--accent-primary)]/10'
     : tone === 'watch'
-      ? 'border-amber-500/25 bg-amber-500/10'
+      ? 'border-[var(--accent-warn)]/25 bg-[var(--accent-warn)]/10'
       : 'border-[var(--border-color)] bg-[var(--muted-bg)]'
 
   return (
