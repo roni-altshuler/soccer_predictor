@@ -29,28 +29,38 @@ function getTimeLeft(now = Date.now()): TimeLeft {
   }
 }
 
-function CountdownTile({ label, value }: { label: string; value: number }) {
+function CountdownTile({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="min-w-[64px] rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-3 py-2 text-center">
-      <p className="text-xl font-black tabular-nums text-[var(--text-primary)]">{String(value).padStart(2, '0')}</p>
+      <p className="text-xl font-black tabular-nums text-[var(--text-primary)]">
+        {value === null ? '--' : String(value).padStart(2, '0')}
+      </p>
       <p className="text-[9px] uppercase tracking-normal text-[var(--text-tertiary)]">{label}</p>
     </div>
   )
 }
 
 export default function WorldCupCountdown({ compact = false }: { compact?: boolean }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft())
+  // Start as null so the server-rendered HTML and the first client render are
+  // identical ('--' tiles). Computing getTimeLeft() during render would seed
+  // the SSR pass and the hydration pass with different second values, which
+  // tripped a React #418 text-content hydration mismatch on the home page.
+  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null)
 
   useEffect(() => {
+    setTimeLeft(getTimeLeft())
     const interval = window.setInterval(() => setTimeLeft(getTimeLeft()), 1000)
     return () => window.clearInterval(interval)
   }, [])
 
-  const statusText = timeLeft.finished
-    ? 'Tournament complete'
-    : timeLeft.started
-      ? 'Live now · Countdown to the final'
-      : 'Opening day countdown'
+  const live = timeLeft?.started && !timeLeft.finished
+  const statusText = !timeLeft
+    ? 'Tournament countdown'
+    : timeLeft.finished
+      ? 'Tournament complete'
+      : timeLeft.started
+        ? 'Live now · Countdown to the final'
+        : 'Opening day countdown'
 
   return (
     <section className={`${compact ? '' : 'max-w-3xl mx-auto px-4 pt-3 pb-2'}`}>
@@ -59,14 +69,14 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-normal text-[var(--text-tertiary)] font-semibold">
-                {timeLeft.started && !timeLeft.finished ? (
+                {live ? (
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-loss)]" />
                 ) : null}
                 {statusText}
               </p>
               <h2 className="mt-1 text-lg md:text-xl font-black text-[var(--text-primary)]">FIFA World Cup 2026</h2>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                {timeLeft.started && !timeLeft.finished
+                {live
                   ? 'AI winner projections, group advancement odds, and a prediction for every match.'
                   : 'Opens Jun 11, 2026. Final on Jul 19, 2026.'}
               </p>
@@ -81,10 +91,10 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
 
         <div className="px-4 py-4">
           <div className="grid grid-cols-4 gap-2">
-            <CountdownTile label="Days" value={timeLeft.days} />
-            <CountdownTile label="Hours" value={timeLeft.hours} />
-            <CountdownTile label="Min" value={timeLeft.minutes} />
-            <CountdownTile label="Sec" value={timeLeft.seconds} />
+            <CountdownTile label="Days" value={timeLeft ? timeLeft.days : null} />
+            <CountdownTile label="Hours" value={timeLeft ? timeLeft.hours : null} />
+            <CountdownTile label="Min" value={timeLeft ? timeLeft.minutes : null} />
+            <CountdownTile label="Sec" value={timeLeft ? timeLeft.seconds : null} />
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-[var(--text-tertiary)]">
