@@ -55,9 +55,13 @@ async function fromBackend(nSimulations: number, seed?: string | null, fresh?: b
     const qs = new URLSearchParams({ n_simulations: String(nSimulations) })
     if (seed) qs.set('seed', seed)
     if (fresh) qs.set('fresh', 'true')
+    // Hard timeout so a slow/cold backend (a live 20k-sim Monte Carlo can take
+    // tens of seconds) never stalls page prerender or ISR revalidation — we
+    // fall back to the committed snapshot instead.
     const res = await fetch(`${BACKEND_URL}/api/v1/world-cup/bracket/paths?${qs.toString()}`, {
       headers: { Accept: 'application/json' },
       next: { revalidate: 900 },
+      signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return null
     const data = (await res.json()) as BracketPathsPayload
