@@ -6,7 +6,7 @@ import { Activity, Brain, Trophy, Goal, ShieldAlert, Sparkles } from 'lucide-rea
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn, clamp, formatPct } from '@/lib/utils'
 
 /**
@@ -275,76 +275,144 @@ function MarketsStrip({ goals }: { goals: PredictionPayload['goals'] }) {
   )
 }
 
-function FactorsPanel({ factors }: { factors: PredictionPayload['factors'] }) {
-  const items: { label: string; value: number; hint: string; tone: 'primary' | 'ai' | 'warn' | 'loss' }[] = [
+/**
+ * Key drivers — an honest directional read of the factors the unified model
+ * consumed. Each driver maps a published factor onto a signed lean in
+ * [-1, 1] (positive = favours the home side) and a magnitude. These are the
+ * model's *inputs*, ordered by how strongly each leans; they are deliberately
+ * NOT presented as an exact per-factor split of the win probability — the
+ * neural model does not expose a SHAP-style decomposition, so claiming
+ * "ELO = +8.2% of the home win" would be fabricated. Direction + relative
+ * strength is what the data honestly supports.
+ */
+type Driver = {
+  label: string
+  lean: number // signed, + favours home
+  detail: string
+}
+
+function buildDrivers(
+  factors: PredictionPayload['factors'],
+  homeTeam: string,
+  awayTeam: string,
+): Driver[] {
+  const fmtElo = (n: number) => n.toFixed(0)
+  const drivers: Driver[] = [
     {
-      label: 'ELO advantage',
-      value: clamp((factors.elo_difference + 200) / 400),
-      hint: `${factors.home_elo.toFixed(0)} vs ${factors.away_elo.toFixed(0)} (Δ ${factors.elo_difference >= 0 ? '+' : ''}${factors.elo_difference.toFixed(0)})`,
-      tone: factors.elo_difference >= 0 ? 'primary' : 'loss',
+      label: 'Rating edge',
+      lean: Math.tanh(factors.elo_difference / 200),
+      detail: `${fmtElo(factors.home_elo)} vs ${fmtElo(factors.away_elo)} · Δ ${factors.elo_difference >= 0 ? '+' : ''}${fmtElo(factors.elo_difference)} Elo`,
     },
     {
-      label: 'Form (home)',
-      value: clamp(factors.home_form_score),
-      hint: 'Weighted last-5 result share for the home side',
-      tone: 'primary',
+      label: 'Recent form',
+      lean: clamp(factors.home_form_score - factors.away_form_score, -1, 1),
+      detail: `Last 5: ${homeTeam} ${Math.round(factors.home_form_score * 15)}/15 · ${awayTeam} ${Math.round(factors.away_form_score * 15)}/15 pts`,
     },
     {
-      label: 'Form (away)',
-      value: clamp(factors.away_form_score),
-      hint: 'Weighted last-5 result share for the away side',
-      tone: 'loss',
+      label: 'Head-to-head',
+      lean: clamp(factors.h2h_advantage, -1, 1),
+      detail:
+        Math.abs(factors.h2h_advantage) < 0.05
+          ? 'Past meetings split evenly'
+          : `Recent meetings favour ${factors.h2h_advantage >= 0 ? homeTeam : awayTeam}`,
     },
     {
-      label: 'H2H lean',
-      value: clamp((factors.h2h_advantage + 1) / 2),
-      hint: 'Historical head-to-head advantage (positive = home)',
-      tone: factors.h2h_advantage >= 0 ? 'primary' : 'loss',
+      label: 'Home advantage',
+      lean: clamp(factors.home_advantage, 0, 1),
+      detail: `Venue edge for ${homeTeam}`,
     },
     {
       label: 'Squad availability',
-      value: clamp(1 - Math.abs(factors.injury_impact)),
-      hint: factors.injury_impact >= 0 ? 'Away squad more affected' : 'Home squad more affected',
-      tone: 'warn',
+      lean: clamp(factors.injury_impact * 3, -1, 1),
+      detail:
+        Math.abs(factors.injury_impact) < 0.03
+          ? 'Both squads near full strength'
+          : `${factors.injury_impact >= 0 ? awayTeam : homeTeam} carrying more absences`,
     },
     {
-      label: 'Rest advantage',
-      value: clamp((factors.rest_days_diff + 7) / 14),
-      hint: `${factors.rest_days_diff >= 0 ? '+' : ''}${factors.rest_days_diff} days more rest for home`,
-      tone: 'ai',
+      label: 'Rest & freshness',
+      lean: clamp(factors.rest_days_diff / 4, -1, 1),
+      detail:
+        factors.rest_days_diff === 0
+          ? 'Both sides equally rested'
+          : `${Math.abs(factors.rest_days_diff)} day${Math.abs(factors.rest_days_diff) === 1 ? '' : 's'} more rest for ${factors.rest_days_diff > 0 ? homeTeam : awayTeam}`,
     },
   ]
-  const toneClass: Record<string, string> = {
-    primary: 'bg-[var(--accent-primary)]',
-    ai: 'bg-[var(--accent-ai)]',
-    warn: 'bg-[var(--accent-warn)]',
-    loss: 'bg-[var(--accent-loss)]',
-  }
+  return drivers.sort((a, b) => Math.abs(b.lean) - Math.abs(a.lean))
+}
+
+function strengthLabel(mag: number): string {
+  if (mag < 0.1) return 'Even'
+  if (mag < 0.32) return 'Slight'
+  if (mag < 0.6) return 'Moderate'
+  return 'Strong'
+}
+
+function KeyDriversPanel({
+  factors,
+  homeTeam,
+  awayTeam,
+}: {
+  factors: PredictionPayload['factors']
+  homeTeam: string
+  awayTeam: string
+}) {
+  const drivers = buildDrivers(factors, homeTeam, awayTeam)
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {items.map((item) => (
-          <Tooltip key={item.label}>
-            <TooltipTrigger asChild>
-              <div className="cursor-help rounded-md border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">{item.label}</span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]/20">
-                  <motion.div
-                    className={cn('h-full rounded-full', toneClass[item.tone])}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${item.value * 100}%` }}
-                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                  />
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>{item.hint}</TooltipContent>
-          </Tooltip>
-        ))}
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center justify-between px-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="inline-flex items-center gap-1 text-[var(--accent-loss)]">{awayTeam}</span>
+        <span>Favours →</span>
+        <span className="inline-flex items-center gap-1 text-[var(--accent-primary)]">{homeTeam}</span>
       </div>
-    </TooltipProvider>
+      {drivers.map((d, i) => {
+        const mag = Math.abs(d.lean)
+        const favoursHome = d.lean >= 0
+        const direction =
+          mag < 0.1 ? 'Even' : `${strengthLabel(mag)} · ${favoursHome ? homeTeam : awayTeam}`
+        return (
+          <motion.div
+            key={d.label}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2.5"
+          >
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="text-[13px] font-semibold text-[var(--text-primary)]">{d.label}</span>
+              <span
+                className={cn(
+                  'text-[11px] font-semibold tabular-nums',
+                  mag < 0.1
+                    ? 'text-[var(--text-tertiary)]'
+                    : favoursHome
+                      ? 'text-[var(--accent-primary)]'
+                      : 'text-[var(--accent-loss)]',
+                )}
+              >
+                {direction}
+              </span>
+            </div>
+            {/* diverging bar: centre line, fill grows toward the favoured side */}
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-[var(--muted-bg)]">
+              <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[var(--border-hover)]" />
+              <motion.div
+                className={cn(
+                  'absolute top-0 h-full',
+                  favoursHome
+                    ? 'left-1/2 rounded-r-full bg-[var(--accent-primary)]'
+                    : 'right-1/2 rounded-l-full bg-[var(--accent-loss)]',
+                )}
+                initial={{ width: 0 }}
+                animate={{ width: `${mag * 50}%` }}
+                transition={{ duration: 0.55, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-[var(--text-secondary)]">{d.detail}</p>
+          </motion.div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -412,7 +480,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
       <Card className="p-4 md:p-5">
         <div className="mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
-          <h3 className="text-h4 font-bold text-[var(--text-primary)]">Key factors</h3>
+          <h3 className="text-h4 font-bold text-[var(--text-primary)]">Key drivers</h3>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -423,12 +491,18 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
                 <ShieldAlert className="h-3.5 w-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              Inputs the unified model relied on most. Hover any tile for the raw value.
+            <TooltipContent className="max-w-[260px]">
+              The signals the unified model weighed, ordered by how strongly each
+              leans. Bars show <em>which side</em> a factor favours and its relative
+              strength — not an exact split of the win probability.
             </TooltipContent>
           </Tooltip>
         </div>
-        <FactorsPanel factors={prediction.factors} />
+        <KeyDriversPanel
+          factors={prediction.factors}
+          homeTeam={prediction.home_team}
+          awayTeam={prediction.away_team}
+        />
       </Card>
 
       <Separator className="opacity-50" />
