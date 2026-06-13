@@ -763,6 +763,7 @@ def _finalise(
         row = {
             "team_id": None,
             "name": t,
+            "elo": round(national_elo_for(t)),
             "p_champion": round(probs["p_champion"], 4),
             "p_final": round(probs["p_final"], 4),
             "p_semi": round(probs["p_semi"], 4),
