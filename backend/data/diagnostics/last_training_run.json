@@ -1,8 +1,8 @@
 {
-  "ran_at": "2026-06-07T08:26:40.882595Z",
-  "status": "regression",
+  "ran_at": "2026-06-14T09:00:04.923853Z",
+  "status": "regression_handled",
   "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
-  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-06-07.json",
+  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-06-14.json",
   "retrained_leagues": [
     "eng.1",
     "esp.1",
@@ -19,7 +19,7 @@
     "conmebol.america",
     "global"
   ],
-  "n_wins": 6,
-  "n_regressions": 3,
+  "n_wins": 7,
+  "n_regressions": 4,
   "n_held_back": 0
 }
