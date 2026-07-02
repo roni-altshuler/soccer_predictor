@@ -1,0 +1,157 @@
+name: Train Unified Models
+
+# Weekly retrain of the unified multi-task PyTorch models (men's + women's)
+# on the committed warehouse. Artifacts that pass the promotion gate are
+# published to the `models-latest` GitHub Release, which the 3x-daily
+# prediction pipeline downloads before generating picks. Holdout summaries
+# (metrics only, no binaries) are committed to diagnostics/ so the /ai
+# transparency dashboard stays honest on Vercel.
+
+on:
+  schedule:
+    # Sundays 02:00 UTC — before continuous_training (04:00) and well before
+    # the 06:00 prediction pipeline picks the fresh artifacts up.
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: train-unified
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install CPU-only PyTorch + requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.2.0'
+          grep -v '^torch' requirements.txt > /tmp/req-no-torch.txt
+          pip install -r /tmp/req-no-torch.txt
+
+      - name: Download warehouse from previous release
+        # warehouse.sqlite is gitignored; the rolling release is its home.
+        # First-ever run: fall back to building from scratch (slow).
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest --pattern 'warehouse.sqlite.gz' --dir /tmp && \
+            gunzip -f /tmp/warehouse.sqlite.gz && \
+            mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite && \
+            echo "warehouse restored from release"
+
+      - name: Refresh warehouse sources
+        run: |
+          if [ -f backend/data/warehouse.sqlite ]; then
+            # Incremental: recent seasons + xG enrichment.
+            python -m backend.scripts.build_warehouse --espn --football-data --clubelo --min-season 2025 --max-season 2026
+            python -m backend.scripts.build_warehouse --understat --min-season 2024 --max-season 2026
+          else
+            echo "No warehouse from release — full build (slow first run)."
+            python -m backend.scripts.build_warehouse --full --max-season 2026
+          fi
+          python -m backend.scripts.build_warehouse --stats
+
+      - name: Train men's model
+        run: python -m backend.scripts.train_unified --gender M --device cpu
+
+      - name: Train women's model
+        run: python -m backend.scripts.train_unified --gender F --device cpu
+
+      - name: Promotion gate (men)
+        id: gate_men
+        continue-on-error: true
+        run: python -m backend.scripts.gate_unified_release --gender M --baseline-ref HEAD
+
+      - name: Promotion gate (women)
+        id: gate_women
+        continue-on-error: true
+        run: python -m backend.scripts.gate_unified_release --gender F --baseline-ref HEAD
+
+      - name: Ensure models-latest release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view models-latest >/dev/null 2>&1 || \
+            gh release create models-latest \
+              --title "Unified model artifacts (rolling)" \
+              --notes "Rolling release: latest unified model artifacts published by the weekly training workflow. Downloaded by the prediction pipeline." \
+              --latest=false
+
+      - name: Publish men's artifacts
+        if: steps.gate_men.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload models-latest --clobber \
+            backend/data/models/unified_men.pt \
+            backend/data/models/unified_men_scaler.pkl \
+            backend/data/models/unified_men_calibrator.pkl \
+            backend/data/models/unified_men_metadata.json \
+            backend/data/models/unified_men_holdout.json
+
+      - name: Publish women's artifacts
+        if: steps.gate_women.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload models-latest --clobber \
+            backend/data/models/unified_women.pt \
+            backend/data/models/unified_women_scaler.pkl \
+            backend/data/models/unified_women_calibrator.pkl \
+            backend/data/models/unified_women_metadata.json \
+            backend/data/models/unified_women_holdout.json
+
+      - name: Publish refreshed warehouse
+        # The prediction pipeline needs the warehouse for feature building;
+        # publish it regardless of the model gates so features stay fresh.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gzip -c backend/data/warehouse.sqlite > /tmp/warehouse.sqlite.gz
+          gh release upload models-latest --clobber /tmp/warehouse.sqlite.gz
+
+      - name: Commit holdout summaries
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Only commit summaries for genders that were promoted — a held-back
+          # model's committed summary must keep describing the served model.
+          if [ "${{ steps.gate_men.outcome }}" = "success" ]; then
+            git add backend/data/diagnostics/unified_men_summary.json || true
+          else
+            git checkout -- backend/data/diagnostics/unified_men_summary.json 2>/dev/null || true
+          fi
+          if [ "${{ steps.gate_women.outcome }}" = "success" ]; then
+            git add backend/data/diagnostics/unified_women_summary.json || true
+          else
+            git checkout -- backend/data/diagnostics/unified_women_summary.json 2>/dev/null || true
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No summary changes to commit"
+          else
+            git pull --rebase origin main
+            git commit \
+              -m "chore: weekly unified model training [automated]" \
+              -m "Retrained unified models; published gated artifacts to models-latest. Gates — men: ${{ steps.gate_men.outcome }}, women: ${{ steps.gate_women.outcome }}."
+            git push
+          fi

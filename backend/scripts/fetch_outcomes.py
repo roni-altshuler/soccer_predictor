@@ -40,6 +40,12 @@ LEAGUE_TO_ESPN: Dict[str, str] = {
     "FIFA World Cup": "fifa.world",
     "UEFA European Championship": "uefa.euro",
     "Copa America": "conmebol.america",
+    # Women's universe
+    "NWSL": "usa.nwsl",
+    "FA Women's Super League": "eng.w.1",
+    "UEFA Women's Champions League": "uefa.wchampions",
+    "FIFA Women's World Cup": "fifa.wwc",
+    "UEFA Women's European Championship": "uefa.weuro",
 }
 
 
@@ -162,10 +168,16 @@ def fetch_outcomes() -> int:
                             predicted_winner = "draw"
                         pred["predicted_winner"] = predicted_winner
 
+                    actual_scoreline = f"{home_goals}-{away_goals}"
                     pred["winner_correct"] = predicted_winner == actual_winner
                     pred["scoreline_correct"] = (
-                        pred["predicted_scoreline"] == f"{home_goals}-{away_goals}"
+                        pred["predicted_scoreline"] == actual_scoreline
                     )
+                    top_scorelines = pred.get("top_scorelines")
+                    if top_scorelines:
+                        pred["scoreline_in_top5"] = any(
+                            s.get("score") == actual_scoreline for s in top_scorelines
+                        )
                     predicted_total = pred["predicted_home_goals"] + pred["predicted_away_goals"]
                     pred["goals_diff"] = round(abs((home_goals + away_goals) - predicted_total))
                     pred["outcome_timestamp"] = datetime.now().isoformat()
