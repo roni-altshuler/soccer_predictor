@@ -1127,7 +1127,7 @@ async def predict_upcoming(days_ahead: int = 14):
             "weather_factor": 1.0,
             "referee_factor": 1.0,
             "venue": m.get("venue", ""),
-            "feature_vector": [round(float(v), 6) for v in features.tolist()],
+            "feature_vector": [round(float(v), 6) for v in features.ravel().tolist()],
             # Neural model raw probs (if available)
             "nn_home_win": round(nn_probs["home_win"], 4) if nn_probs else None,
             "nn_draw": round(nn_probs["draw"], 4) if nn_probs else None,
