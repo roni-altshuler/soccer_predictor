@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   Globe,
@@ -42,6 +42,7 @@ function isActive(pathname: string, href?: string) {
 export function MobileBottomNav() {
   const pathname = usePathname() || '/'
   const setPaletteOpen = useCommandPalette((s) => s.setOpen)
+  const reduceMotion = useReducedMotion()
 
   return (
     <nav
@@ -60,15 +61,19 @@ export function MobileBottomNav() {
         const inner = (
           <span
             className={cn(
-              'relative flex flex-col items-center gap-0.5 px-2 py-1 min-w-[54px] rounded-xl transition-colors duration-200',
+              'relative flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-w-[54px] min-h-[44px] rounded-xl transition-colors duration-200',
               active ? '' : 'text-[var(--text-tertiary)]'
             )}
             style={active ? { color: accentColor } : undefined}
           >
             {active && (
+              // Shared-layout slide is disabled under prefers-reduced-motion:
+              // the highlight simply appears on the active tab instead of
+              // animating between tabs.
               <motion.span
-                layoutId="bottomnav-active"
-                transition={springSnappy}
+                {...(reduceMotion
+                  ? {}
+                  : { layoutId: 'bottomnav-active', transition: springSnappy })}
                 className="absolute inset-0 rounded-xl"
                 style={{
                   background: `color-mix(in srgb, ${accentColor} 14%, transparent)`,

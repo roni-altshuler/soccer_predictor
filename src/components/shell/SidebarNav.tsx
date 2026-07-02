@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   Brain,
@@ -164,6 +164,7 @@ export function SidebarNav() {
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon
+  const reduceMotion = useReducedMotion()
   const accentColor = item.accent === 'ai' ? 'var(--accent-ai)' : 'var(--accent-primary)'
   return (
     <li>
@@ -177,17 +178,17 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
       >
         {active && (
           <>
-            {/* Sliding active highlight — animates between items on navigation. */}
+            {/* Sliding active highlight — animates between items on navigation.
+                Under prefers-reduced-motion the shared-layout slide is dropped
+                so the highlight simply appears on the active item. */}
             <motion.span
-              layoutId="sidebar-active"
-              transition={springSnappy}
+              {...(reduceMotion ? {} : { layoutId: 'sidebar-active', transition: springSnappy })}
               className="absolute inset-0 rounded-xl"
               style={{ background: `color-mix(in srgb, ${accentColor} 14%, transparent)` }}
               aria-hidden
             />
             <motion.span
-              layoutId="sidebar-rail"
-              transition={springSnappy}
+              {...(reduceMotion ? {} : { layoutId: 'sidebar-rail', transition: springSnappy })}
               className="absolute left-[-4px] top-2 bottom-2 w-[3px] rounded-full"
               style={{ background: accentColor, boxShadow: `0 0 12px ${accentColor}` }}
               aria-hidden
