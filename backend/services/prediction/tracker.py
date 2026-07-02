@@ -57,6 +57,17 @@ class PredictionRecord:
     confidence: float
     edge_score: Optional[float] = None
     threshold_qualified: Optional[bool] = None
+
+    # Scoreline product: the model's top-K most likely scorelines, each
+    # {"score": "2-1", "probability": 0.09}. Written by the unified model;
+    # legacy records leave this None.
+    top_scorelines: Optional[List[Dict[str, Any]]] = None
+
+    # "Why this prediction": top per-feature contributions to the served
+    # pick, each {"feature", "value", "contribution"} (logit units).
+    # Persisted so the explanation panel works on Vercel, where committed
+    # JSON is the only transport. None for legacy-model records.
+    attribution: Optional[List[Dict[str, Any]]] = None
     
     # Gender universe: 'M' (men's) or 'F' (women's). Records written before
     # the gender field existed default to 'M' on read — see from_dict below.
@@ -85,6 +96,7 @@ class PredictionRecord:
     # Accuracy flags (populated after match)
     winner_correct: Optional[bool] = None
     scoreline_correct: Optional[bool] = None
+    scoreline_in_top5: Optional[bool] = None  # actual score in top_scorelines
     goals_diff: Optional[int] = None  # Difference from predicted total
     
     # Timestamps
@@ -183,6 +195,11 @@ class ModelAccuracyMetrics:
     # Scoreline accuracy
     exact_scoreline_count: int = 0
     exact_scoreline_rate: float = 0.0
+    # Top-5 scoreline coverage — computed only over records that stored a
+    # top_scorelines list, so legacy records don't dilute the rate.
+    scoreline_top5_count: int = 0
+    scoreline_top5_eligible: int = 0
+    scoreline_top5_rate: float = 0.0
     weighted_accuracy_score: float = 0.0
     
     # Goals accuracy
@@ -319,10 +336,17 @@ class PredictionTracker:
         weather_factor: float = 1.0,
         referee_factor: float = 1.0,
         gender: str = "M",
+        predicted_scoreline: Optional[str] = None,
+        top_scorelines: Optional[List[Dict[str, Any]]] = None,
+        attribution: Optional[List[Dict[str, Any]]] = None,
     ) -> PredictionRecord:
         """
         Store a prediction before a match.
-        
+
+        `predicted_scoreline` / `top_scorelines` come from the model's
+        scoreline PMF when available; older callers omit them and get the
+        rounded-xG fallback that legacy records always used.
+
         Returns the created PredictionRecord.
         """
         home_win_prob, draw_prob, away_win_prob = self._normalize_probabilities(
@@ -331,8 +355,9 @@ class PredictionTracker:
             away_win_prob,
         )
 
-        # Most likely scoreline (rounded xG)
-        predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
+        if predicted_scoreline is None:
+            # Most likely scoreline (rounded xG) — legacy fallback.
+            predicted_scoreline = f"{round(home_xG)}-{round(away_xG)}"
         
         # Use the highest outcome probability as the audited match result pick.
         # The scoreline remains a separate, stricter prediction target.
@@ -355,6 +380,8 @@ class PredictionTracker:
             predicted_home_goals=home_xG,
             predicted_away_goals=away_xG,
             predicted_scoreline=predicted_scoreline,
+            top_scorelines=top_scorelines,
+            attribution=attribution,
             predicted_winner=predicted_winner,
             confidence=normalized_confidence,
             edge_score=edge_score,
@@ -420,8 +447,13 @@ class PredictionTracker:
             )
         
         # Calculate accuracy flags
+        actual_scoreline = f"{home_goals}-{away_goals}"
         record.winner_correct = record.predicted_winner == actual_winner
-        record.scoreline_correct = record.predicted_scoreline == f"{home_goals}-{away_goals}"
+        record.scoreline_correct = record.predicted_scoreline == actual_scoreline
+        if record.top_scorelines:
+            record.scoreline_in_top5 = any(
+                s.get("score") == actual_scoreline for s in record.top_scorelines
+            )
         
         predicted_total = record.predicted_home_goals + record.predicted_away_goals
         actual_total = home_goals + away_goals
@@ -532,6 +564,13 @@ class PredictionTracker:
         exact_count = sum(1 for p in completed if p.scoreline_correct)
         metrics.exact_scoreline_count = exact_count
         metrics.exact_scoreline_rate = exact_count / len(completed)
+
+        # Top-5 scoreline coverage over records that carry the PMF list.
+        top5_eligible = [p for p in completed if p.scoreline_in_top5 is not None]
+        metrics.scoreline_top5_eligible = len(top5_eligible)
+        metrics.scoreline_top5_count = sum(1 for p in top5_eligible if p.scoreline_in_top5)
+        if top5_eligible:
+            metrics.scoreline_top5_rate = metrics.scoreline_top5_count / len(top5_eligible)
         metrics.weighted_accuracy_score = (
             (0.65 * correct_count) + (0.35 * exact_count)
         ) / len(completed)

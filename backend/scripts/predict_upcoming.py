@@ -162,7 +162,7 @@ def _predict_neural_with_policy(registry, league_key: str, features: np.ndarray)
 
     return None, None, "elo_poisson", None
 
-# Same leagues as the seed script
+# Same leagues as the seed script. Keys are ESPN scoreboard league IDs.
 LEAGUES = {
     "eng.1": "Premier League",
     "esp.1": "La Liga",
@@ -178,6 +178,32 @@ LEAGUES = {
     "fifa.world": "FIFA World Cup",
     "uefa.euro": "UEFA European Championship",
     "conmebol.america": "Copa America",
+    # Women's universe — first-class in the live pipeline. ESPN IDs from
+    # WOMEN_COMPETITIONS in backend/services/data/espn_loader.py.
+    "usa.nwsl": "NWSL",
+    "eng.w.1": "FA Women's Super League",
+    "uefa.wchampions": "UEFA Women's Champions League",
+    "fifa.wwc": "FIFA Women's World Cup",
+    "uefa.weuro": "UEFA Women's European Championship",
+}
+
+# ESPN scoreboard ID → gender universe ('M' default).
+LEAGUE_GENDER = {
+    "usa.nwsl": "F",
+    "eng.w.1": "F",
+    "uefa.wchampions": "F",
+    "fifa.wwc": "F",
+    "uefa.weuro": "F",
+}
+
+# ESPN scoreboard ID → warehouse competition_id (for the unified model).
+# Men's IDs are identical; women's differ.
+ESPN_TO_COMPETITION_ID = {
+    "usa.nwsl": "usa.1.w",
+    "eng.w.1": "eng.1.w",
+    "uefa.wchampions": "uefa.champions.w",
+    "fifa.wwc": "fifa.world.w",
+    "uefa.weuro": "uefa.euro.w",
 }
 
 LEAGUE_DRAW_RATES = {
@@ -185,6 +211,9 @@ LEAGUE_DRAW_RATES = {
     "Serie A": 0.26, "Ligue 1": 0.23, "MLS": 0.21,
     "Champions League": 0.20, "Europa League": 0.22, "Conference League": 0.22,
     "Eredivisie": 0.23, "Primeira Liga": 0.24, "FIFA World Cup": 0.18,
+    "NWSL": 0.22, "FA Women's Super League": 0.20,
+    "UEFA Women's Champions League": 0.18,
+    "FIFA Women's World Cup": 0.17, "UEFA Women's European Championship": 0.18,
 }
 
 LEAGUE_AVG_GOALS = {
@@ -192,6 +221,9 @@ LEAGUE_AVG_GOALS = {
     "Serie A": 1.32, "Ligue 1": 1.30, "MLS": 1.45,
     "Champions League": 1.50, "Europa League": 1.42, "Conference League": 1.38,
     "Eredivisie": 1.45, "Primeira Liga": 1.28, "FIFA World Cup": 1.35,
+    "NWSL": 1.40, "FA Women's Super League": 1.55,
+    "UEFA Women's Champions League": 1.60,
+    "FIFA Women's World Cup": 1.45, "UEFA Women's European Championship": 1.50,
 }
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"
@@ -233,6 +265,79 @@ def get_league_param(league_key: str, param: str, fallback=None):
 
 # Reverse map: display name → ESPN key
 DISPLAY_TO_KEY = {v: k for k, v in LEAGUES.items()}
+
+
+# ── Unified multi-task model (preferred engine when artifacts exist) ──
+#
+# The pipeline runner may lack torch or the trained artifacts; every
+# failure path returns None so the legacy neural-registry → Dixon-Coles
+# chain below keeps predictions flowing regardless.
+
+_UNIFIED_IMPORT_FAILED = False
+
+
+def _predict_unified(match: dict, espn_key: str, gender: str) -> Optional[Dict]:
+    """Try the unified model for one fixture. None on any failure."""
+    global _UNIFIED_IMPORT_FAILED
+    if _UNIFIED_IMPORT_FAILED:
+        return None
+    try:
+        from backend.services.prediction.unified_inference import predict_for_fixture
+    except Exception as exc:
+        logger.info("Unified model unavailable (%s); using legacy engines.", exc)
+        _UNIFIED_IMPORT_FAILED = True
+        return None
+
+    try:
+        kickoff = datetime.fromisoformat(match["date"].replace("Z", "+00:00"))
+    except (ValueError, KeyError):
+        return None
+    competition_id = ESPN_TO_COMPETITION_ID.get(espn_key, espn_key)
+
+    try:
+        pred = predict_for_fixture(
+            match["home_team"], match["away_team"],
+            competition_id, LEAGUES.get(espn_key, espn_key),
+            kickoff, gender=gender, explain=True,
+        )
+    except Exception as exc:
+        logger.warning(
+            "Unified prediction failed for %s vs %s (%s): %s",
+            match["home_team"], match["away_team"], espn_key, exc,
+        )
+        return None
+    if pred is None:
+        return None
+
+    top_scorelines = [
+        {"score": s.score, "probability": round(float(s.probability), 4)}
+        for s in [pred.most_likely_score, *pred.alternative_scores]
+    ]
+    attribution = None
+    if pred.attribution:
+        attribution = [
+            {
+                "feature": a.feature,
+                "value": round(float(a.value), 4),
+                "contribution": round(float(a.contribution), 4),
+            }
+            for a in pred.attribution[:8]
+        ]
+    return {
+        "probs": {
+            "home_win": round(pred.outcome.home_win, 4),
+            "draw": round(pred.outcome.draw, 4),
+            "away_win": round(pred.outcome.away_win, 4),
+        },
+        "home_xg": float(pred.goals.home_expected_goals),
+        "away_xg": float(pred.goals.away_expected_goals),
+        "predicted_scoreline": pred.most_likely_score.score,
+        "top_scorelines": top_scorelines,
+        "attribution": attribution,
+        "model_used": pred.model_version,
+        "home_elo": float(pred.factors.home_elo),
+        "away_elo": float(pred.factors.away_elo),
+    }
 
 
 _DERBY_GRAPH_CACHE: Optional[Dict[str, set[str]]] = None
@@ -1003,6 +1108,7 @@ async def predict_upcoming(days_ahead: int = 14):
     # Try to load neural models
     registry = _get_registry()
     nn_leagues_used = set()
+    unified_leagues_used = set()
 
     # Generate predictions
     predictions_by_month: Dict[str, list] = {}
@@ -1013,6 +1119,7 @@ async def predict_upcoming(days_ahead: int = 14):
         league = m["league"]
         league_key = DISPLAY_TO_KEY.get(league, "")
         espn_id = m.get("espn_id", "")
+        gender = LEAGUE_GENDER.get(espn_id, "M")
         league_tuning = _get_league_tuning(league_key, league)
 
         # Get league results for real features
@@ -1030,7 +1137,12 @@ async def predict_upcoming(days_ahead: int = 14):
             match_date=m.get("date", ""),
         )
 
-        # ── Neural model prediction (when available) ──
+        # ── Unified multi-task model (preferred engine) ──
+        unified = _predict_unified(m, espn_id, gender)
+        if unified is not None:
+            unified_leagues_used.add(league)
+
+        # ── Neural model prediction (legacy fallback, when available) ──
         nn_probs = None
         nn_goals = None
         blend_entropy = None
@@ -1039,7 +1151,7 @@ async def predict_upcoming(days_ahead: int = 14):
         model_selection_meta = None
         model_used = "elo_poisson"
 
-        if registry and league_key:
+        if unified is None and registry and league_key:
             nn_probs, nn_goals, model_used, model_selection_meta = _predict_neural_with_policy(
                 registry,
                 league_key,
@@ -1049,7 +1161,10 @@ async def predict_upcoming(days_ahead: int = 14):
                 nn_leagues_used.add(league)
 
         # ── Blend predictions ──
-        if nn_probs is not None:
+        if unified is not None:
+            probs = unified["probs"]
+            model_used = unified["model_used"]
+        elif nn_probs is not None:
             # Confidence-aware blend: trust NN more when entropy is low.
             entropy = -sum(max(p, 1e-12) * math.log(max(p, 1e-12)) for p in nn_probs.values())
             entropy_norm = min(1.0, entropy / math.log(3.0))
@@ -1076,7 +1191,10 @@ async def predict_upcoming(days_ahead: int = 14):
         else:
             probs = elo_probs
 
-        if nn_goals is not None:
+        if unified is not None:
+            final_home_xg = unified["home_xg"]
+            final_away_xg = unified["away_xg"]
+        elif nn_goals is not None:
             # Blend goals: 75% neural, 25% ELO
             final_home_xg = 0.75 * nn_goals[0] + 0.25 * pred_home_xg
             final_away_xg = 0.75 * nn_goals[1] + 0.25 * pred_away_xg
@@ -1084,7 +1202,11 @@ async def predict_upcoming(days_ahead: int = 14):
             final_home_xg = pred_home_xg
             final_away_xg = pred_away_xg
 
-        pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
+        if unified is not None:
+            # PMF argmax, not rounded xG — the real scoreline product.
+            pred_scoreline = unified["predicted_scoreline"]
+        else:
+            pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
 
         # Tuned draw decision: predict draw when draw probability is both
         # materially high and close to the strongest win probability.
@@ -1107,16 +1229,19 @@ async def predict_upcoming(days_ahead: int = 14):
             "away_team": m["away_team"],
             "league": league,
             "match_date": match_date_str,
+            "gender": gender,
             "predicted_home_win": probs["home_win"],
             "predicted_draw": probs["draw"],
             "predicted_away_win": probs["away_win"],
             "predicted_home_goals": round(final_home_xg, 2),
             "predicted_away_goals": round(final_away_xg, 2),
             "predicted_scoreline": pred_scoreline,
+            "top_scorelines": unified["top_scorelines"] if unified else None,
+            "attribution": unified["attribution"] if unified else None,
             "predicted_winner": pred_winner,
             "confidence": round(max(probs.values()) * 100, 1),
-            "home_elo": round(elo.get(m["home_team"]), 1),
-            "away_elo": round(elo.get(m["away_team"]), 1),
+            "home_elo": round(unified["home_elo"] if unified else elo.get(m["home_team"]), 1),
+            "away_elo": round(unified["away_elo"] if unified else elo.get(m["away_team"]), 1),
             "model_used": model_used,
             "model_selection": model_selection_meta,
             "blend_nn_weight": round(blend_nn_weight, 4) if blend_nn_weight is not None else None,
@@ -1138,6 +1263,7 @@ async def predict_upcoming(days_ahead: int = 14):
             "actual_winner": None,
             "winner_correct": None,
             "scoreline_correct": None,
+            "scoreline_in_top5": None,
             "goals_diff": None,
             "prediction_timestamp": datetime.now().isoformat(),
             "outcome_timestamp": None,
@@ -1180,12 +1306,14 @@ async def predict_upcoming(days_ahead: int = 14):
     logger.info(f"\n{'='*60}")
     logger.info("UPCOMING MATCH PREDICTIONS COMPLETE")
     logger.info(f"  New predictions stored: {new_count}")
+    if unified_leagues_used:
+        logger.info(f"  Unified model used for: {', '.join(sorted(unified_leagues_used))}")
     if nn_leagues_used:
-        logger.info(f"  Neural model used for: {', '.join(sorted(nn_leagues_used))}")
-    else:
+        logger.info(f"  Legacy neural model used for: {', '.join(sorted(nn_leagues_used))}")
+    if not unified_leagues_used and not nn_leagues_used:
         logger.info("  Neural models: not available (using ELO + Poisson baseline)")
     for lg, count in sorted(by_league.items()):
-        model_tag = " [NN]" if lg in nn_leagues_used else ""
+        model_tag = " [unified]" if lg in unified_leagues_used else (" [NN]" if lg in nn_leagues_used else "")
         logger.info(f"    {lg}: {count} matches{model_tag}")
     logger.info(f"  Stored in: {DATA_DIR}")
     logger.info(f"{'='*60}")

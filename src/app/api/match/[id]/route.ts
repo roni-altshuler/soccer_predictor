@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
+import type { AttributionItem } from '@/lib/types/attribution'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -141,6 +142,8 @@ interface PredictionData {
   model_version?: string
   confidence_band?: 'Low' | 'Medium' | 'High'
   derived_markets?: DerivedMarkets | null
+  /** "Why this prediction" per-feature attribution (unified engine only). */
+  attribution?: AttributionItem[] | null
 }
 
 interface ShotMapPoint {
@@ -669,6 +672,79 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
   }
 }
 
+/**
+ * Try the FastAPI v1 unified prediction endpoint with `explain=true` so the
+ * payload carries "why this prediction" attribution. The endpoint resolves
+ * the fixture from FotMob by numeric match id, so we verify the returned
+ * team names against the match we're serving — ESPN ids live in a different
+ * namespace and must not silently surface another fixture's prediction.
+ */
+async function fetchUnifiedV1Prediction(
+  matchId: string,
+  homeTeam: string,
+  awayTeam: string,
+  gender: 'M' | 'F'
+): Promise<PredictionData | null> {
+  if (!/^\d+$/.test(matchId) || !homeTeam || !awayTeam) return null
+
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/v1/predictions/match/${matchId}?gender=${gender}&explain=true`,
+      { headers: { Accept: 'application/json' }, cache: 'no-store' }
+    )
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const outcome = data?.outcome
+    if (
+      typeof outcome?.home_win !== 'number' ||
+      typeof outcome?.draw !== 'number' ||
+      typeof outcome?.away_win !== 'number'
+    ) {
+      return null
+    }
+    // Wrong-fixture guard: the id namespaces (ESPN vs FotMob) differ.
+    if (!teamNamesMatch(String(data.home_team || ''), homeTeam) || !teamNamesMatch(String(data.away_team || ''), awayTeam)) {
+      return null
+    }
+
+    const overall = Number(data?.confidence?.overall)
+    const confidencePct = Number.isFinite(overall) ? Math.round(overall * 100) : Math.round(Number(outcome.confidence ?? 0) * 100)
+    const homeXg = Number(data?.goals?.home_expected_goals)
+    const awayXg = Number(data?.goals?.away_expected_goals)
+
+    return {
+      home_win: outcome.home_win,
+      draw: outcome.draw,
+      away_win: outcome.away_win,
+      predicted_score: {
+        home: Number(data?.most_likely_score?.home_goals ?? Math.round(homeXg)) || 0,
+        away: Number(data?.most_likely_score?.away_goals ?? Math.round(awayXg)) || 0,
+      },
+      confidence: confidencePct,
+      total_goals: Number.isFinite(Number(data?.goals?.total_expected_goals))
+        ? Number(data.goals.total_expected_goals)
+        : undefined,
+      over_2_5: Number.isFinite(Number(data?.goals?.over_2_5)) ? Number(data.goals.over_2_5) : undefined,
+      btts_yes: Number.isFinite(Number(data?.goals?.btts_yes)) ? Number(data.goals.btts_yes) : undefined,
+      most_likely_score: typeof data?.most_likely_score?.score === 'string' ? data.most_likely_score.score : undefined,
+      model_version: typeof data?.model_version === 'string' ? data.model_version : undefined,
+      confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
+      derived_markets:
+        data?.derived_markets && typeof data.derived_markets === 'object'
+          ? (data.derived_markets as DerivedMarkets)
+          : null,
+      attribution:
+        Array.isArray(data?.attribution) && data.attribution.length > 0
+          ? (data.attribution as AttributionItem[])
+          : null,
+    }
+  } catch (error) {
+    console.error('Unified v1 prediction fetch failed:', error)
+    return null
+  }
+}
+
 async function fetchBackendPrediction(homeTeam: string, awayTeam: string, leagueId?: string): Promise<PredictionData | null> {
   if (!homeTeam || !awayTeam) return null
 
@@ -868,11 +944,17 @@ export async function GET(
     )
   }
   
-  // Fetch additional data: H2H and predictions
-  const [h2h, backendPrediction] = await Promise.all([
+  // Fetch additional data: H2H and predictions. The v1 unified endpoint is
+  // tried first (it can explain its pick via `explain=true`); the legacy
+  // POST endpoint remains the fallback.
+  const gender: 'M' | 'F' = request.nextUrl.searchParams.get('gender') === 'F' ? 'F' : 'M'
+  const [h2h, unifiedPrediction] = await Promise.all([
     fetchH2H(matchData.home_team, matchData.away_team, matchData.leagueId),
-    fetchBackendPrediction(matchData.home_team, matchData.away_team, matchData.leagueId)
+    fetchUnifiedV1Prediction(matchId, matchData.home_team, matchData.away_team, gender),
   ])
+  const backendPrediction =
+    unifiedPrediction ??
+    (await fetchBackendPrediction(matchData.home_team, matchData.away_team, matchData.leagueId))
   
   // Add H2H and prediction to response
   matchData.h2h = h2h || {

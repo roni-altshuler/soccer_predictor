@@ -25,5 +25,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "backend", ".venv", "src/__tests__"]
+  "exclude": ["node_modules", "backend", ".venv", "src/__tests__", "src/**/__tests__"]
 }

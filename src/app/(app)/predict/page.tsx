@@ -17,6 +17,7 @@ import {
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { PredictHero } from '@/components/prediction/PredictHero'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
+import type { AttributionItem } from '@/lib/types/attribution'
 
 interface TeamSearchResult { name: string; league: string }
 
@@ -46,6 +47,7 @@ interface PredictionResult {
   }
   form?: { home_form?: number; away_form?: number; home_form_label?: string; away_form_label?: string }
   ratings?: { home_elo: number; away_elo: number; elo_difference: number }
+  attribution?: AttributionItem[] | null
   analysis?: { predicted_winner: string; home_advantage_applied: boolean; factors_considered: string[]; note: string }
   error?: string
 }
@@ -340,6 +342,10 @@ function PredictPageContent() {
         historical_accuracy: 0.5,
         overall: confOverall,
       },
+      // Real per-feature attribution when the unified backend supplied it;
+      // never fabricated for legacy heuristic responses.
+      attribution:
+        Array.isArray(r.attribution) && r.attribution.length > 0 ? r.attribution : null,
       model_version: 'legacy-elo-poisson',
     }
   }, [])

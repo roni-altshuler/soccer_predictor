@@ -65,6 +65,7 @@ def _try_unified_prediction(
     kickoff_time: datetime,
     gender: str,
     match_id: int,
+    explain: bool = False,
 ) -> Optional[MatchPrediction]:
     """Try the unified model. Returns None on any failure so caller can fall back."""
     try:
@@ -81,7 +82,7 @@ def _try_unified_prediction(
     try:
         pred = predict_for_fixture(
             home_team, away_team, comp_id, league_name,
-            kickoff_time, gender=gender,
+            kickoff_time, gender=gender, explain=explain,
         )
     except Exception as exc:
         logger.warning("Unified prediction errored for %s vs %s: %s", home_team, away_team, exc)
@@ -101,6 +102,10 @@ async def predict_match(
     engine: Literal["auto", "unified", "legacy"] = Query(
         "auto",
         description="Which prediction engine to use. 'auto' tries the unified model first and falls back to legacy.",
+    ),
+    explain: bool = Query(
+        False,
+        description="Include per-feature attribution ('why this prediction') in the payload. Unified engine only.",
     ),
 ):
     """
@@ -222,12 +227,16 @@ async def predict_match(
         unified = _try_unified_prediction(
             home_team=home_name, away_team=away_name,
             league_name=league, kickoff_time=kickoff_time,
-            gender=gender, match_id=match_id,
+            gender=gender, match_id=match_id, explain=explain,
         )
         if unified is not None:
             try:
                 from backend.services.prediction.tracker import get_prediction_tracker
                 tracker = get_prediction_tracker()
+                top_scorelines = [
+                    {"score": s.score, "probability": s.probability}
+                    for s in [unified.most_likely_score, *unified.alternative_scores]
+                ]
                 tracker.store_prediction(
                     match_id=str(match_id),
                     home_team=home_name,
@@ -243,6 +252,8 @@ async def predict_match(
                     home_elo=unified.factors.home_elo,
                     away_elo=unified.factors.away_elo,
                     gender=gender,
+                    predicted_scoreline=unified.most_likely_score.score,
+                    top_scorelines=top_scorelines,
                 )
             except Exception as exc:
                 logger.warning("Auto-store unified prediction failed: %s", exc)

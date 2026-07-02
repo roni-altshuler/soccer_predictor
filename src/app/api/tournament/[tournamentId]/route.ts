@@ -9,17 +9,50 @@ const TOURNAMENT_ESPN_IDS: Record<string, string> = {
   copa_america: 'conmebol.america',
 }
 
+// Women's counterparts. Keyed by the men's slug plus the women's ESPN id
+// itself (the /tournaments listing surfaces those directly). IDs verified
+// against backend/services/data/espn_loader.py WOMEN_COMPETITIONS.
+const WOMENS_TOURNAMENT_ESPN_IDS: Record<string, string> = {
+  champions_league: 'uefa.wchampions',
+  world_cup: 'fifa.wwc',
+  euro: 'uefa.weuro',
+  'uefa.wchampions': 'uefa.wchampions',
+  'fifa.wwc': 'fifa.wwc',
+  'uefa.weuro': 'uefa.weuro',
+}
+
+// Empty (but well-formed) tournament payload so the women's toggle never
+// serves men's data for a competition with no women's counterpart.
+const EMPTY_TOURNAMENT = {
+  groups: [],
+  knockoutMatches: [],
+  upcomingMatches: [],
+  recentResults: [],
+  news: [],
+  topScorers: [],
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tournamentId: string }> }
 ) {
   const { tournamentId } = await params
-  const espnId = TOURNAMENT_ESPN_IDS[tournamentId]
+  const { searchParams } = new URL(request.url)
+  const gender = (searchParams.get('gender') || 'M').toUpperCase() === 'F' ? 'F' : 'M'
+
+  const espnId = gender === 'F'
+    ? WOMENS_TOURNAMENT_ESPN_IDS[tournamentId]
+    : TOURNAMENT_ESPN_IDS[tournamentId]
+
   if (!espnId) {
+    // For the women's universe an unmapped tournament returns an explicit
+    // empty result (data honesty); an unknown men's tournament is a 404.
+    if (gender === 'F') {
+      return NextResponse.json(EMPTY_TOURNAMENT)
+    }
     return NextResponse.json({ error: 'Unknown tournament' }, { status: 404 })
   }
 
-  const { searchParams } = new URL(request.url)
   const season = searchParams.get('season') || ''
 
   const seasonParam = season ? `?season=${season}` : ''

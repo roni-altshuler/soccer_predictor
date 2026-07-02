@@ -88,6 +88,19 @@ class TeamPredictionContext(BaseModel):
     days_since_last_match: int
 
 
+class AttributionItem(BaseModel):
+    """One feature's contribution to the served pick, in logit units.
+
+    Positive pushes toward the predicted outcome, negative against it.
+    Dense features come from integrated gradients; the grouped
+    categorical identities (e.g. `home_team_identity`) from embedding
+    occlusion. See `backend/services/prediction/attribution.py`.
+    """
+    feature: str
+    value: float
+    contribution: float
+
+
 class MatchPrediction(BaseModel):
     """Complete match prediction."""
     match_id: int
@@ -111,6 +124,11 @@ class MatchPrediction(BaseModel):
     # Derived betting markets (Over/Under, BTTS, Correct Score top-5).
     # Sourced from the Dixon-Coles corrected joint distribution.
     derived_markets: Optional[Dict] = None
+
+    # "Why this prediction": per-feature contributions to the served pick
+    # (top entries by |contribution|). Populated only when the caller asks
+    # for an explanation (`?explain=true`) — None otherwise.
+    attribution: Optional[List[AttributionItem]] = None
 
     # Metadata
     model_version: str = "2.0.0"

@@ -5,16 +5,21 @@ model trained on a public corpus of shot-level data. They cover the top
 5 European leagues (Premier League, La Liga, Bundesliga, Serie A,
 Ligue 1) plus the Russian Premier League.
 
-Understat embeds match data inside `<script>` tags on their HTML pages
-as a JS variable like:
+Understat historically embedded match data inside `<script>` tags as
+`var datesData = JSON.parse('...')`; sometime in 2026 the league pages
+became empty SPA shells and the data moved to a JSON endpoint:
 
-    var matchesData = JSON.parse('<...escaped JSON...>');
+    GET https://understat.com/getLeagueData/{league}/{season}
+    → {"teams": ..., "players": ..., "dates": [match, ...]}
+
+Each match in `dates` has the same shape the embedded blob used
+(`isResult`, `h.title`, `a.title`, `datetime`, `xG.h`, `xG.a`).
 
 We:
-1. Fetch the league season page (`https://understat.com/league/EPL/2018`).
-2. Pull the `datesData` variable from the embedded script.
-3. Walk each match's `h.xG` and `a.xG` numbers.
-4. Match against the warehouse and UPDATE `matches.home_xg` / `away_xg`
+1. Fetch the JSON endpoint (falling back to scraping the legacy HTML
+   embed if the endpoint ever disappears again).
+2. Walk each match's `h.xG` and `a.xG` numbers.
+3. Match against the warehouse and UPDATE `matches.home_xg` / `away_xg`
    where the values are NULL or where Understat is preferred over FBref
    (config flag).
 
@@ -71,6 +76,75 @@ class LoadStats:
 
 def _cache_path(slug: str, season: int) -> Path:
     return CACHE_DIR / f"{slug}_{season}.html"
+
+
+def _json_cache_path(slug: str, season: int) -> Path:
+    return CACHE_DIR / f"{slug}_{season}.json"
+
+
+def _read_json_cache(slug: str, season: int, max_age_days: int = 30) -> Optional[List[Dict]]:
+    p = _json_cache_path(slug, season)
+    if not p.exists():
+        return None
+    if time.time() - p.stat().st_mtime > max_age_days * 86400:
+        return None
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return None
+
+
+def _write_json_cache(slug: str, season: int, matches: List[Dict]) -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        _json_cache_path(slug, season).write_text(json.dumps(matches))
+    except Exception as exc:
+        logger.debug("Failed to cache Understat JSON %s: %s", slug, exc)
+
+
+async def _fetch_league_matches(
+    client: httpx.AsyncClient, slug: str, season: int
+) -> Tuple[Optional[List[Dict]], Optional[str]]:
+    """Fetch the season's match list, JSON endpoint first, HTML fallback.
+
+    Returns (matches, error) — exactly one is non-None (an empty list is
+    a valid result for a season with no data).
+    """
+    cached = _read_json_cache(slug, season)
+    if cached is not None:
+        return cached, None
+
+    # Primary: the JSON endpoint the SPA itself calls. It 404s without
+    # the XHR marker header.
+    url = f"https://understat.com/getLeagueData/{slug}/{season}"
+    try:
+        resp = await client.get(
+            url, timeout=30, headers={"X-Requested-With": "XMLHttpRequest"}
+        )
+        if resp.status_code == 200:
+            payload = resp.json()
+            matches = payload.get("dates") or payload.get("datesData") or []
+            if matches:
+                _write_json_cache(slug, season, matches)
+                return matches, None
+    except Exception as exc:
+        logger.debug("Understat JSON endpoint failed for %s/%s: %s", slug, season, exc)
+
+    # Fallback: legacy HTML embed (pre-2026 site layout).
+    body = _read_cache(slug, season)
+    if body is None:
+        try:
+            resp = await client.get(f"{UNDERSTAT_BASE}/{slug}/{season}", timeout=30)
+        except Exception as exc:
+            return None, str(exc)
+        if resp.status_code != 200:
+            return None, f"http {resp.status_code}"
+        body = resp.text
+        _write_cache(slug, season, body)
+    matches = _extract_matches(body)
+    if matches:
+        return matches, None
+    return None, "no match data in JSON endpoint or HTML embed"
 
 
 def _read_cache(slug: str, season: int, max_age_days: int = 30) -> Optional[str]:
@@ -186,21 +260,10 @@ async def _load_one(
     competition_id = league["competition_id"]
     stat = LoadStats(competition_id=competition_id, season=season)
 
-    body = _read_cache(league["slug"], season)
-    if body is None:
-        url = f"{UNDERSTAT_BASE}/{league['slug']}/{season}"
-        try:
-            resp = await client.get(url, timeout=30)
-        except Exception as exc:
-            stat.error = str(exc)
-            return stat
-        if resp.status_code != 200:
-            stat.error = f"http {resp.status_code}"
-            return stat
-        body = resp.text
-        _write_cache(league["slug"], season, body)
-
-    matches = _extract_matches(body)
+    matches, error = await _fetch_league_matches(client, league["slug"], season)
+    if matches is None:
+        stat.error = error
+        return stat
     stat.fetched = len(matches)
     if not matches:
         return stat

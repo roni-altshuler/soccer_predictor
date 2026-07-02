@@ -1,6 +1,5 @@
 'use client'
 
-import { useStore } from '@/store/store'
 import { leagueNames as leagues, teams } from '@/data/leagues'
 
 interface TeamSelectorProps {
@@ -21,7 +20,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
             <select
               value={formData.league}
               onChange={(e) => setFormData({ ...formData, league: e.target.value, home_team: '', away_team: '' })}
-              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--accent-primary)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--accent-primary)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
             >
               <option value="">Select League</option>
               {leagues.map(league => (
@@ -42,7 +41,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
               <select
                 value={formData.home_team}
                 onChange={(e) => setFormData({ ...formData, home_team: e.target.value })}
-                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
                 disabled={!formData.league}
               >
                 <option value="">Select Home Team</option>
@@ -62,7 +61,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
               <select
                 value={formData.away_team}
                 onChange={(e) => setFormData({ ...formData, away_team: e.target.value })}
-                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
                 disabled={!formData.league}
               >
                 <option value="">Select Away Team</option>
@@ -90,7 +89,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
             <select
               value={formData.league_a}
               onChange={(e) => setFormData({ ...formData, league_a: e.target.value, team_a: '' })}
-              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
             >
               <option value="">Select League</option>
               {leagues.map(league => (
@@ -108,7 +107,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
               <select
                 value={formData.team_a}
                 onChange={(e) => setFormData({ ...formData, team_a: e.target.value })}
-                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
                 disabled={!formData.league_a}
               >
                 <option value="">Select Team</option>
@@ -129,7 +128,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
             <select
               value={formData.league_b}
               onChange={(e) => setFormData({ ...formData, league_b: e.target.value, team_b: '' })}
-              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+              className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
             >
               <option value="">Select League</option>
               {leagues.map(league => (
@@ -147,7 +146,7 @@ export const TeamSelector = ({ type, formData, setFormData }: TeamSelectorProps)
               <select
                 value={formData.team_b}
                 onChange={(e) => setFormData({ ...formData, team_b: e.target.value })}
-                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
+                className="appearance-none w-full bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-primary)] text-lg rounded-lg py-3 px-5 pr-10 min-h-[44px] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] transition duration-300 ease-in-out shadow-sm"
                 disabled={!formData.league_b}
               >
                 <option value="">Select Team</option>

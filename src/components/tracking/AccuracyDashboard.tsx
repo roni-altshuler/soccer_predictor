@@ -557,6 +557,15 @@ function HeroMetrics({
               width={scoreBar}
               color={accuracyColor(scoreAcc)}
             />
+            {(metrics.scoreline_top5_eligible ?? 0) > 0 && (
+              <MetricRail
+                label="Score in model top 5"
+                value={pct(metrics.scoreline_top5_rate ?? 0)}
+                detail={`${metrics.scoreline_top5_count ?? 0}/${metrics.scoreline_top5_eligible} settled picks with a stored top-5`}
+                width={Math.min(100, Math.max(2, (metrics.scoreline_top5_rate ?? 0) * 100))}
+                color={accuracyColor(metrics.scoreline_top5_rate ?? 0)}
+              />
+            )}
             <MetricRail
               label="Weighted audit score"
               value={pct(weightedAcc)}

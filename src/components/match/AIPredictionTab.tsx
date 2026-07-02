@@ -18,6 +18,7 @@ import {
 } from '@/components/prediction/PredictionResult'
 import { Badge } from '@/components/ui/badge'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
+import type { AttributionItem } from '@/lib/types/attribution'
 import { cn } from '@/lib/utils'
 
 type MatchState = 'live' | 'finished' | 'upcoming'
@@ -267,6 +268,7 @@ interface LegacyPrediction {
   scoreline_probabilities?: Array<{ score: string; probability: number }>
   form?: { home_form?: number; away_form?: number }
   ratings?: { home_elo: number; away_elo: number; elo_difference: number }
+  attribution?: AttributionItem[] | null
 }
 
 function parseScore(s: string): { home_goals: number; away_goals: number } {
@@ -337,6 +339,9 @@ function adaptLegacyPrediction(
       historical_accuracy: 0.5,
       overall: conf,
     },
+    // Only real backend attribution is forwarded — nothing is fabricated
+    // for legacy heuristic responses.
+    attribution: Array.isArray(r.attribution) && r.attribution.length > 0 ? r.attribution : null,
     model_version: 'retrospective-legacy',
   }
 }

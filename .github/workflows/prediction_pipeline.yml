@@ -17,7 +17,7 @@ permissions:
 jobs:
   prediction-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repository
@@ -33,7 +33,40 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install httpx scipy numpy scikit-learn xgboost lightgbm pydantic pydantic-settings email-validator
+          pip install httpx scipy numpy scikit-learn xgboost lightgbm pydantic pydantic-settings email-validator pyyaml beautifulsoup4
+
+      - name: Install CPU-only PyTorch (unified model engine)
+        # If this fails, predict_upcoming falls back to the legacy
+        # neural-registry / Dixon-Coles chain — predictions keep flowing.
+        continue-on-error: true
+        run: pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.2.0'
+
+      - name: Download unified model artifacts + warehouse
+        # Published weekly by train_unified.yml to the models-latest release.
+        # The warehouse (gitignored) feeds the unified model's feature
+        # builder. A failed download must never kill the 3x-daily run —
+        # predict_upcoming falls back to the legacy engines without them.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest \
+            --dir backend/data/models \
+            --pattern 'unified_*' \
+            --clobber
+          gh release download models-latest --pattern 'warehouse.sqlite.gz' --dir /tmp --clobber
+          gunzip -f /tmp/warehouse.sqlite.gz
+          mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite
+          ls -la backend/data/models/ || true
+
+      - name: Refresh current-season results in warehouse
+        # Keeps rolling-form features fresh between weekly warehouse
+        # publishes (matters most for daily tournaments like the World Cup).
+        continue-on-error: true
+        run: |
+          if [ -f backend/data/warehouse.sqlite ]; then
+            python -m backend.scripts.build_warehouse --espn --min-season 2026 --max-season 2026
+          fi
 
       - name: Fetch match outcomes
         run: python -m backend.scripts.fetch_outcomes

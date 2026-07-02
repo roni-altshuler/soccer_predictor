@@ -46,6 +46,11 @@ export interface AccuracyMetrics {
   avg_confidence: number
   exact_scoreline_count: number
   exact_scoreline_rate: number
+  /** Actual score appeared in the model's stored top-5 scorelines. Only
+   * records written by the PMF-backed pipeline are eligible. */
+  scoreline_top5_count?: number
+  scoreline_top5_eligible?: number
+  scoreline_top5_rate?: number
   weighted_accuracy_score: number
   avg_goals_difference: number
   within_1_goal_rate: number

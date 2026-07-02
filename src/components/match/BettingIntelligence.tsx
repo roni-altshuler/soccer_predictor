@@ -125,12 +125,18 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
 
   if (skip) return null
 
+  // When the odds provider is disabled (501 / provider_disabled) there is no
+  // market to show, so the whole card disappears rather than rendering an empty
+  // shell. The parent match-detail layout is a vertical stack, so the removed
+  // card flows away without leaving a gap.
+  if (providerDisabled) return null
+
   const rows: Array<{ key: RowKey; label: string }> = [
     { key: 'home_win', label: 'Home' },
     { key: 'draw', label: 'Draw' },
     { key: 'away_win', label: 'Away' },
   ]
-  const showFallback = providerDisabled || (!loading && !payload && !!errorMessage)
+  const showFallback = !loading && !payload && !!errorMessage
   const gridCols = 'grid grid-cols-[1fr_minmax(60px,auto)_minmax(60px,auto)_minmax(72px,auto)_minmax(70px,auto)] items-center gap-2'
 
   return (

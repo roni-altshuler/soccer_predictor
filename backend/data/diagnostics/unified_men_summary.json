@@ -1,0 +1,51 @@
+{
+  "gender": "M",
+  "model_version": "unified-multitask-1.0-men",
+  "trained_at": "2026-07-02T11:36:58.445008+00:00",
+  "n_parameters": 120650,
+  "n_features": 87,
+  "vocab_sizes": {
+    "leagues": 19,
+    "teams": 968,
+    "referees": 119,
+    "phases": 7
+  },
+  "calibration": {
+    "kind": "temp_blend_v2",
+    "temperature": 0.705,
+    "alpha": 0.63,
+    "isotonic_kept": true,
+    "val_metrics": {
+      "nll_blend": 0.841335,
+      "ece_blend": 0.035175,
+      "nll_isotonic": 0.820979,
+      "ece_isotonic": 0.014218,
+      "isotonic_kept": true
+    }
+  },
+  "holdout": {
+    "accuracy": 0.6046651230597719,
+    "log_loss": 0.8555612747055724,
+    "brier": 0.5008961279817169,
+    "ece": 0.014691145739601053,
+    "draw_recall": 0.18739352640545145,
+    "scoreline_exact_rate": 0.1428693937055141,
+    "scoreline_top5_rate": 0.5209673269873939,
+    "goals_mae": 0.8851801688457734,
+    "calibrated": true,
+    "n": 11661,
+    "uncalibrated": {
+      "accuracy": 0.6000343023754395,
+      "log_loss": 0.8727811277332288,
+      "brier": 0.5116467402395246,
+      "ece": 0.05073712456063818,
+      "draw_recall": 0.16218057921635434
+    },
+    "calibration": {
+      "kind": "temp_blend_v2",
+      "temperature": 0.705,
+      "alpha": 0.63,
+      "isotonic_kept": true
+    }
+  }
+}

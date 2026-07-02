@@ -102,6 +102,14 @@ FEATURE_NAMES: Tuple[str, ...] = (
     "is_knockout", "is_2leg_aggregate", "home_motivation", "away_motivation",
     # --- interactions (3) ---
     "elo_x_form_diff", "elo_x_h2h", "implied_home_x_form",
+    # --- expected goals (7) — Understat/FBref via warehouse matches.home_xg ---
+    # Coverage is partial (top European leagues + enriched women's data), so
+    # every xG feature defaults to 0 and `has_xg_data` tells the model when
+    # the block is trustworthy. Appended last to keep earlier indices stable.
+    "home_xg_for_avg5", "away_xg_for_avg5",
+    "home_xg_against_avg5", "away_xg_against_avg5",
+    "home_xg_overperformance", "away_xg_overperformance",
+    "has_xg_data",
 )
 
 assert len(FEATURE_NAMES) == len(set(FEATURE_NAMES)), "duplicate feature names"
@@ -216,6 +224,12 @@ class TeamRecentStats:
     sot_ratio: float = 0.5
     discipline: float = 0.0
     corner_dom: float = 0.5
+    # Expected-goals rolling stats. `xg_games` counts how many recent
+    # matches actually had xG data — 0 means the block is all defaults.
+    xg_games: int = 0
+    xg_for_5: float = 0.0
+    xg_against_5: float = 0.0
+    xg_overperformance: float = 0.0  # (goals − xG) per game, recent window
 
 
 def _fetch_team_history(
@@ -263,6 +277,9 @@ def _compute_team_stats(
     points_last_n: List[int] = []
     goals_for_n: List[int] = []
     goals_against_n: List[int] = []
+    xg_for_n: List[float] = []
+    xg_against_n: List[float] = []
+    xg_goal_delta: List[float] = []
     clean_sheets = 0
     home_games = away_games = 0
     home_wins = away_wins = 0
@@ -297,6 +314,12 @@ def _compute_team_stats(
         points_last_n.append(_points_for_result(team_goals, opp_goals))
         goals_for_n.append(team_goals)
         goals_against_n.append(opp_goals)
+        team_xg = row["home_xg"] if is_home else row["away_xg"]
+        opp_xg = row["away_xg"] if is_home else row["home_xg"]
+        if team_xg is not None and opp_xg is not None:
+            xg_for_n.append(float(team_xg))
+            xg_against_n.append(float(opp_xg))
+            xg_goal_delta.append(float(team_goals) - float(team_xg))
         if opp_goals == 0:
             clean_sheets += 1
         if is_home:
@@ -382,6 +405,13 @@ def _compute_team_stats(
         s.sot_ratio = sot_for / games_with_stats
         s.corner_dom = corners_for / games_with_stats
         s.discipline = cards / games_with_stats
+
+    # xG rolling stats over matches that carry xG (most-recent-first lists).
+    s.xg_games = len(xg_for_n)
+    if xg_for_n:
+        s.xg_for_5 = sum(xg_for_n[:5]) / len(xg_for_n[:5])
+        s.xg_against_5 = sum(xg_against_n[:5]) / len(xg_against_n[:5])
+        s.xg_overperformance = sum(xg_goal_delta[:10]) / len(xg_goal_delta[:10])
 
     return s
 
@@ -711,6 +741,15 @@ class FeatureBuilderV2:
             "elo_x_form_diff": elo_diff * (home_stats.points_5 - away_stats.points_5),
             "elo_x_h2h": elo_diff * h2h["h2h_home_advantage"],
             "implied_home_x_form": market["implied_home_prob"] * home_stats.points_5,
+
+            "home_xg_for_avg5": home_stats.xg_for_5,
+            "away_xg_for_avg5": away_stats.xg_for_5,
+            "home_xg_against_avg5": home_stats.xg_against_5,
+            "away_xg_against_avg5": away_stats.xg_against_5,
+            "home_xg_overperformance": home_stats.xg_overperformance,
+            "away_xg_overperformance": away_stats.xg_overperformance,
+            # Trustworthy only when both sides have a real xG sample.
+            "has_xg_data": 1.0 if min(home_stats.xg_games, away_stats.xg_games) >= 3 else 0.0,
         }
 
         # Final fixed-order vector.

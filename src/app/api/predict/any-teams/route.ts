@@ -438,6 +438,9 @@ export async function POST(request: NextRequest) {
     let backendProbs: { home: number; draw: number; away: number } | null = null
     let backendGoals: { home: number; away: number } | null = null
     let backendModelUsed: string | null = null
+    // "Why this prediction" attribution — only forwarded when the backend
+    // actually produced one (unified engine); never synthesised here.
+    let backendAttribution: Array<{ feature: string; value: number; contribution: number }> | null = null
     
     // Try to get prediction from backend first
     try {
@@ -484,6 +487,9 @@ export async function POST(request: NextRequest) {
         }
         backendModelUsed = typeof backendPrediction.model_used === 'string'
           ? backendPrediction.model_used
+          : null
+        backendAttribution = Array.isArray(backendPrediction.attribution) && backendPrediction.attribution.length > 0
+          ? backendPrediction.attribution
           : null
         backendAvailable = true
       } else {
@@ -564,6 +570,7 @@ export async function POST(request: NextRequest) {
         probability: Math.round(entry.probability * 1000) / 1000,
       })),
       confidence: Math.round(confidence),
+      attribution: backendAttribution,
       verdict: {
         edge: edge >= 52 ? 'Strong edge' : edge >= 42 ? 'Playable edge' : 'Thin edge',
         risk,

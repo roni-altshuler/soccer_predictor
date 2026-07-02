@@ -27,7 +27,7 @@ interface LeagueStandings {
   simulationsRun: number
 }
 
-// ESPN league ID mapping
+// ESPN league ID mapping (men's)
 const LEAGUE_ESPN_MAP: Record<string, string> = {
   premier_league: 'eng.1',
   la_liga: 'esp.1',
@@ -39,7 +39,21 @@ const LEAGUE_ESPN_MAP: Record<string, string> = {
   primeira_liga: 'por.1',
 }
 
-// Leagues that use calendar-year seasons (e.g. 2026 = March–November 2026)
+// Women's ESPN counterparts. Only competitions with reliable ESPN women's
+// coverage (see backend/services/data/espn_loader.py WOMEN_COMPETITIONS) are
+// mapped; anything else resolves to undefined and returns an explicit empty
+// result instead of silently serving men's standings (data-honesty rule).
+const WOMENS_LEAGUE_ESPN_MAP: Record<string, string> = {
+  premier_league: 'eng.w.1', // FA Women's Super League
+  'eng.1': 'eng.w.1',
+  'eng.w.1': 'eng.w.1',
+  mls: 'usa.nwsl', // NWSL
+  'usa.1': 'usa.nwsl',
+  'usa.nwsl': 'usa.nwsl',
+}
+
+// Leagues that use calendar-year seasons (e.g. 2026 = March–November 2026).
+// NWSL (mapped from the `mls` slug in the women's universe) is calendar-year.
 const CALENDAR_YEAR_LEAGUES = new Set(['mls'])
 
 // Total matches per league (season length varies)
@@ -52,6 +66,12 @@ const LEAGUE_TOTAL_MATCHES: Record<string, number> = {
   mls: 34,
   eredivisie: 34,
   primeira_liga: 34,
+}
+
+// Women's season lengths (WSL 12 teams = 22 games; NWSL regular season ≈ 26).
+const WOMENS_TOTAL_MATCHES: Record<string, number> = {
+  premier_league: 22,
+  mls: 26,
 }
 
 /**
@@ -190,12 +210,29 @@ function simulateSeason(standings: TeamStanding[], remainingMatches: number, sim
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const league = searchParams.get('league') || 'premier_league'
+  const gender = (searchParams.get('gender') || 'M').toUpperCase() === 'F' ? 'F' : 'M'
   const simulations = parseInt(searchParams.get('simulations') || '1000')
 
+  const prettyName = league.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+
   try {
-    const espnId = LEAGUE_ESPN_MAP[league]
+    const espnId = gender === 'F' ? WOMENS_LEAGUE_ESPN_MAP[league] : LEAGUE_ESPN_MAP[league]
     const seasonYear = getCurrentSeason(league)
     const seasonLabel = getSeasonLabel(league, seasonYear)
+
+    // Women's universe with no ESPN counterpart: honest empty result rather
+    // than falling back to the men's league standings.
+    if (gender === 'F' && !espnId) {
+      return NextResponse.json({
+        league: prettyName,
+        season: seasonLabel,
+        standings: [],
+        remainingMatches: 0,
+        simulationsRun: 0,
+        gender,
+      })
+    }
+
     let standings: TeamStanding[] = []
 
     // Always fetch live from ESPN with correct season
@@ -209,16 +246,19 @@ export async function GET(request: NextRequest) {
 
     if (standings.length === 0) {
       return NextResponse.json({
-        league: league.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        league: prettyName,
         season: seasonLabel,
         standings: [],
         remainingMatches: 0,
         simulationsRun: 0,
+        gender,
       })
     }
 
-    // Use league-specific season length
-    const totalMatches = LEAGUE_TOTAL_MATCHES[league] ?? 38
+    // Use league-specific season length (gender-aware)
+    const totalMatches = gender === 'F'
+      ? (WOMENS_TOTAL_MATCHES[league] ?? 22)
+      : (LEAGUE_TOTAL_MATCHES[league] ?? 38)
     const playedMatches = standings[0]?.played || 0
     const remainingMatches = Math.max(0, totalMatches - playedMatches)
 
@@ -226,7 +266,7 @@ export async function GET(request: NextRequest) {
     const simulatedStandings = simulateSeason(standings, remainingMatches, simulations)
 
     return NextResponse.json({
-      league: league.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      league: prettyName,
       season: seasonLabel,
       standings: simulatedStandings,
       remainingMatches,

@@ -1,3 +1,5 @@
+export { AsyncSection } from './AsyncSection'
+export { SectionErrorBoundary } from './SectionErrorBoundary'
 export { ConfidencePill } from './ConfidencePill'
 export { LiveBadge } from './LiveBadge'
 export { MetaChip } from './MetaChip'
