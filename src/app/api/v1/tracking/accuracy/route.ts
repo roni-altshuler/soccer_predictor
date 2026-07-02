@@ -16,6 +16,7 @@ interface CompletedPrediction {
   actual_winner: string | null
   winner_correct: boolean | null
   scoreline_correct: boolean | null
+  scoreline_in_top5?: boolean | null
 }
 
 interface PredictionFile {
@@ -95,6 +96,9 @@ export async function GET(request: NextRequest) {
       avg_confidence: 0,
       exact_scoreline_count: 0,
       exact_scoreline_rate: 0,
+      scoreline_top5_count: 0,
+      scoreline_top5_eligible: 0,
+      scoreline_top5_rate: 0,
       weighted_accuracy_score: 0,
       avg_goals_difference: 0,
       within_1_goal_rate: 0,
@@ -125,6 +129,11 @@ export async function GET(request: NextRequest) {
   const correct = completed.filter((p) => p.winner_correct).length
   const scoreCorrect = completed.filter((p) => p.scoreline_correct).length
   const weightedAccuracy = total > 0 ? ((correct * 0.65) + (scoreCorrect * 0.35)) / total : 0
+
+  // Top-5 scoreline coverage — only records that stored the PMF top-5 list
+  // count toward the rate, so legacy rounded-xG records don't dilute it.
+  const top5Eligible = completed.filter((p) => p.scoreline_in_top5 !== null && p.scoreline_in_top5 !== undefined)
+  const top5Hits = top5Eligible.filter((p) => p.scoreline_in_top5).length
 
   // Probability quality metrics
   let brier = 0
@@ -225,6 +234,9 @@ export async function GET(request: NextRequest) {
     avg_confidence: 0,
     exact_scoreline_count: scoreCorrect,
     exact_scoreline_rate: Math.round((scoreCorrect / total) * 1000) / 1000,
+    scoreline_top5_count: top5Hits,
+    scoreline_top5_eligible: top5Eligible.length,
+    scoreline_top5_rate: top5Eligible.length > 0 ? Math.round((top5Hits / top5Eligible.length) * 1000) / 1000 : 0,
     weighted_accuracy_score: Math.round(weightedAccuracy * 1000) / 1000,
     avg_goals_difference: 0,
     within_1_goal_rate: 0,
