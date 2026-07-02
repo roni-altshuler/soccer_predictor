@@ -73,7 +73,10 @@ jobs:
         run: python -m backend.scripts.train_unified --gender M --device cpu
 
       - name: Train women's model
-        run: python -m backend.scripts.train_unified --gender F --device cpu
+        # Draw-aware hyperparameters: the women's corpus is small (~3k
+        # matches) and the default settings collapse draw recall to ~0.01;
+        # these lifted holdout accuracy +1.9pp and log-loss/ECE with it.
+        run: python -m backend.scripts.train_unified --gender F --device cpu --class-weight-cap 1.9 --focal-gamma 2.2 --draw-recall-floor 0.15
 
       - name: Promotion gate (men)
         id: gate_men

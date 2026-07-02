@@ -1,7 +1,7 @@
 {
   "gender": "F",
   "model_version": "unified-multitask-1.0-women",
-  "trained_at": "2026-07-02T11:36:39.235196+00:00",
+  "trained_at": "2026-07-02T12:23:38.811478+00:00",
   "n_parameters": 93210,
   "n_features": 87,
   "vocab_sizes": {
@@ -12,39 +12,39 @@
   },
   "calibration": {
     "kind": "temp_blend_v2",
-    "temperature": 1.3850000000000002,
-    "alpha": 0.31,
+    "temperature": 1.3050000000000002,
+    "alpha": 0.17,
     "isotonic_kept": false,
     "val_metrics": {
-      "nll_blend": 0.913675,
-      "ece_blend": 0.035772,
-      "nll_isotonic": 0.913675,
-      "ece_isotonic": 0.035772,
+      "nll_blend": 0.923433,
+      "ece_blend": 0.033441,
+      "nll_isotonic": 0.923433,
+      "ece_isotonic": 0.033441,
       "isotonic_kept": false
     }
   },
   "holdout": {
-    "accuracy": 0.516597510373444,
-    "log_loss": 1.0005541814254113,
-    "brier": 0.5895154906597034,
-    "ece": 0.0880527993272805,
+    "accuracy": 0.5352697095435685,
+    "log_loss": 0.9850749932921374,
+    "brier": 0.5792523526671763,
+    "ece": 0.06553276092034133,
     "draw_recall": 0.0,
-    "scoreline_exact_rate": 0.12448132780082988,
-    "scoreline_top5_rate": 0.43983402489626555,
-    "goals_mae": 1.0646501691215884,
+    "scoreline_exact_rate": 0.13070539419087138,
+    "scoreline_top5_rate": 0.46265560165975106,
+    "goals_mae": 0.9897296414923124,
     "calibrated": true,
     "n": 482,
     "uncalibrated": {
-      "accuracy": 0.5145228215767634,
-      "log_loss": 1.0222835959178433,
-      "brier": 0.6018397552835972,
-      "ece": 0.07733787924487441,
-      "draw_recall": 0.0660377358490566
+      "accuracy": 0.533195020746888,
+      "log_loss": 1.0004351807571013,
+      "brier": 0.5895143747813034,
+      "ece": 0.030952062418028652,
+      "draw_recall": 0.09433962264150944
     },
     "calibration": {
       "kind": "temp_blend_v2",
-      "temperature": 1.3850000000000002,
-      "alpha": 0.31,
+      "temperature": 1.3050000000000002,
+      "alpha": 0.17,
       "isotonic_kept": false
     }
   }
