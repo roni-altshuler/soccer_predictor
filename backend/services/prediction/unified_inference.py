@@ -29,6 +29,7 @@ unified pipeline is bootstrapping.
 from __future__ import annotations
 
 import logging
+import os
 import pickle
 import sqlite3
 from datetime import datetime, timezone
@@ -37,10 +38,10 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import torch
-from sklearn.isotonic import IsotonicRegression
 from sklearn.preprocessing import StandardScaler
 
 from backend.models.prediction import (
+    AttributionItem,
     ConfidenceBreakdown,
     GoalsPrediction,
     MatchPrediction,
@@ -49,6 +50,7 @@ from backend.models.prediction import (
     ScorelinePrediction,
 )
 from backend.services.data.warehouse import Warehouse, open_warehouse
+from backend.services.prediction.calibration import apply_calibration
 from backend.services.prediction.feature_builder_v2 import (
     FEATURE_NAMES,
     FeatureBuilderV2,
@@ -67,7 +69,10 @@ from backend.services.prediction.unified_model import (
 
 logger = logging.getLogger(__name__)
 
-MODEL_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "models"
+MODEL_DIR = Path(
+    os.getenv("UNIFIED_MODEL_DIR")
+    or Path(__file__).resolve().parent.parent.parent / "data" / "models"
+)
 MODEL_VERSION = "unified-multitask-1.0"
 
 
@@ -82,7 +87,9 @@ class UnifiedModelStore:
 
         self._model: Optional[UnifiedMatchModel] = None
         self._scaler: Optional[StandardScaler] = None
-        self._calibrators: Optional[Dict[str, IsotonicRegression]] = None
+        # Legacy per-class-isotonic dict OR the `temp_blend_v2` dict —
+        # `calibration.apply_calibration` handles both formats.
+        self._calibrators: Optional[Dict[str, Any]] = None
         self._vocab: Optional[Dict] = None
         self._loaded = False
 
@@ -108,6 +115,20 @@ class UnifiedModelStore:
         blob = torch.load(paths["model"], map_location="cpu", weights_only=False)
         model = UnifiedMatchModel.from_state_blob(blob)
         model.eval()
+
+        # Feature-schema guard: an artifact trained on a different feature
+        # vector must never serve — scaled inputs would silently land on
+        # the wrong columns. Refusing here lets callers fall back to the
+        # legacy model until a retrain with the new schema completes.
+        trained_features = list(getattr(model.config, "feature_names", []) or [])
+        if trained_features and trained_features != list(FEATURE_NAMES):
+            logger.warning(
+                "Unified %s artifact was trained on %d features but the live "
+                "FeatureBuilderV2 produces %d; refusing to load (retrain needed).",
+                self.suffix, len(trained_features), len(FEATURE_NAMES),
+            )
+            return False
+
         self._model = model
         self._vocab = blob.get("vocab", {})
 
@@ -139,7 +160,7 @@ class UnifiedModelStore:
         return self._scaler  # type: ignore[return-value]
 
     @property
-    def calibrators(self) -> Dict[str, IsotonicRegression]:
+    def calibrators(self) -> Dict[str, Any]:
         if not self._loaded:
             raise RuntimeError("UnifiedModelStore.load() must be called first")
         return self._calibrators  # type: ignore[return-value]
@@ -222,18 +243,6 @@ def _synthetic_match_row(
     return cur.fetchone()
 
 
-def _calibrated_outcome(
-    outcome: torch.Tensor, calibrators: Dict[str, IsotonicRegression]
-) -> np.ndarray:
-    """Apply the per-class isotonic mapping and renormalise."""
-    probs = outcome.cpu().numpy()
-    home = calibrators["home_win"].predict(probs[:, 0])
-    draw = calibrators["draw"].predict(probs[:, 1])
-    away = calibrators["away_win"].predict(probs[:, 2])
-    stacked = np.stack([home, draw, away], axis=-1)
-    return stacked / stacked.sum(axis=-1, keepdims=True).clip(1e-9)
-
-
 def predict_one(
     *,
     warehouse: Warehouse,
@@ -248,8 +257,13 @@ def predict_one(
     phase: Optional[str] = None,
     referee_id: Optional[int] = None,
     match_id: int = 0,
+    explain: bool = False,
 ) -> Optional[MatchPrediction]:
     """Run the unified model end-to-end for one fixture.
+
+    With ``explain=True`` the payload also carries per-feature
+    attributions (integrated gradients + embedding occlusion) — a few
+    extra forward/backward passes, so off by default on hot paths.
 
     Returns a `MatchPrediction` payload, or ``None`` if the artifact for
     the requested gender hasn't been trained yet (caller should fall
@@ -289,10 +303,10 @@ def predict_one(
         )
 
     hw_pmf, dr_pmf, aw_pmf = outcome_probabilities_from_pmf(pmf)
-    head_softmax = torch.softmax(out.outcome_logits, dim=-1)
-    blended = 0.5 * head_softmax + 0.5 * torch.stack([hw_pmf, dr_pmf, aw_pmf], dim=-1)
-    blended = blended / blended.sum(dim=-1, keepdim=True).clamp(min=1e-12)
-    calibrated = _calibrated_outcome(blended, store.calibrators)[0]  # (3,)
+    pmf_probs = torch.stack([hw_pmf, dr_pmf, aw_pmf], dim=-1).cpu().numpy()
+    calibrated = apply_calibration(
+        out.outcome_logits.cpu().numpy(), pmf_probs, store.calibrators
+    )[0]  # (3,)
 
     lam_home = float(out.lam_home.item())
     lam_away = float(out.lam_away.item())
@@ -315,6 +329,22 @@ def predict_one(
 
     confidence = 1.0 - float(_entropy(calibrated)) / float(np.log(3))
     confidence = float(np.clip(confidence, 0.0, 1.0))
+
+    attribution: Optional[list] = None
+    if explain:
+        from backend.services.prediction.attribution import explain_prediction
+
+        try:
+            items = explain_prediction(
+                store.model,
+                tensor_in,
+                raw_dense=built.dense,
+                feature_names=FEATURE_NAMES,
+                target_class=int(np.argmax(calibrated)),
+            )
+            attribution = [AttributionItem(**item) for item in items[:12]]
+        except Exception:
+            logger.exception("Attribution failed for match %s; serving without it.", match_id)
 
     # Pull a handful of named features for the `factors` panel.
     feat_by_name = dict(zip(FEATURE_NAMES, built.dense))
@@ -368,6 +398,7 @@ def predict_one(
         confidence=conf_breakdown,
         home_context=None,
         away_context=None,
+        attribution=attribution,
         model_version=f"{MODEL_VERSION}-{store.suffix}",
     )
 
@@ -389,6 +420,7 @@ def predict_for_fixture(
     kickoff_utc: datetime,
     *,
     gender: str = "M",
+    explain: bool = False,
 ) -> Optional[MatchPrediction]:
     """High-level entry point: name-based lookup, opens its own warehouse."""
     with open_warehouse() as wh:
@@ -406,5 +438,5 @@ def predict_for_fixture(
             home_team_id=home_id, away_team_id=away_id,
             home_team_name=home_team_name, away_team_name=away_team_name,
             competition_id=competition_id, competition_name=competition_name,
-            kickoff_utc=kickoff_utc, gender=gender,
+            kickoff_utc=kickoff_utc, gender=gender, explain=explain,
         )

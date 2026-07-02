@@ -9,8 +9,9 @@ End-to-end pipeline
 4. StandardScaler on dense features (fitted on train only, persisted).
 5. Train `UnifiedMatchModel` with AdamW, focal loss + bivariate Poisson
    NLL + xG MSE, early stopping on val NLL.
-6. Fit an isotonic calibrator on the val set's outcome head.
-7. Walk-forward evaluation on the test set; write metrics JSON.
+6. Fit `temp_blend_v2` calibration on the val set (temperature on the
+   outcome head, learned head/PMF blend weight, optional isotonic).
+7. Evaluate the served distribution on the test set; write metrics JSON.
 
 Run
 ---
@@ -26,7 +27,7 @@ Run
 Artifacts (under `backend/data/models/`):
     unified_<gender>.pt              torch state blob (model + config + vocab maps)
     unified_<gender>_scaler.pkl      sklearn StandardScaler
-    unified_<gender>_calibrator.pkl  per-class isotonic regressors
+    unified_<gender>_calibrator.pkl  temp_blend_v2 calibration dict
     unified_<gender>_metadata.json   feature names, vocab sizes, training metrics
     unified_<gender>_holdout.json    test-set metrics for the audit dashboard
 """
@@ -37,25 +38,34 @@ import argparse
 import json
 import logging
 import math
+import os
 import pickle
 import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
-from sklearn.isotonic import IsotonicRegression
 from sklearn.preprocessing import StandardScaler
 
 from backend.services.data import open_warehouse
+from backend.services.prediction.calibration import (
+    apply_calibration,
+    ece_10bin,
+    fit_calibration,
+)
 from backend.services.prediction.feature_builder_v2 import (
     FEATURE_NAMES,
     FeatureBuilderV2,
 )
-from backend.services.prediction.losses import outcome_probabilities_from_pmf, scoreline_distribution
+from backend.services.prediction.losses import (
+    outcome_probabilities_from_pmf,
+    scoreline_distribution,
+    top_k_scorelines,
+)
 from backend.services.prediction.unified_model import (
     PHASE_VOCAB,
     UnifiedMatchModel,
@@ -65,7 +75,10 @@ from backend.services.prediction.unified_model import (
 
 logger = logging.getLogger(__name__)
 
-MODEL_DIR = Path(__file__).resolve().parent.parent / "data" / "models"
+MODEL_DIR = Path(
+    os.getenv("UNIFIED_MODEL_DIR")
+    or Path(__file__).resolve().parent.parent / "data" / "models"
+)
 
 
 # ---------- dataset assembly ----------
@@ -215,21 +228,19 @@ def _train_one_epoch(
 
 
 @torch.no_grad()
-def _evaluate(
+def _collect_outputs(
     model: UnifiedMatchModel,
     tensors: Dict[str, torch.Tensor],
     *,
     batch_size: int = 1024,
-) -> Dict[str, float]:
-    """Compute outcome accuracy, log-loss, Brier, draw recall on the whole split."""
+    top_k: int = 5,
+) -> Dict[str, np.ndarray]:
+    """Forward a whole split and gather everything evaluation needs."""
     model.eval()
-    correct = 0
-    total = 0
-    nll_sum = 0.0
-    brier_sum = 0.0
-    draw_correct = 0
-    draw_total = 0
-    confusion = np.zeros((3, 3), dtype=np.int64)
+    logits, pmf_probs, targets = [], [], []
+    lam_h, lam_a = [], []
+    top_h, top_a = [], []
+    home_goals, away_goals = [], []
 
     for batch in _iterate_batches(tensors, batch_size, shuffle=False):
         out = model(
@@ -239,62 +250,99 @@ def _evaluate(
         )
         pmf = scoreline_distribution(out.lam_home, out.lam_away, out.lam_corr, max_goals=model.config.max_goals)
         hw, dr, aw = outcome_probabilities_from_pmf(pmf)
-        # Reported outcome: blend of head softmax and pmf-derived (start at 0.5).
-        head = torch.softmax(out.outcome_logits, dim=-1)
-        outcome = 0.5 * head + 0.5 * torch.stack([hw, dr, aw], dim=-1)
-        outcome = outcome / outcome.sum(dim=-1, keepdim=True).clamp(min=1e-12)
+        th, ta, _ = top_k_scorelines(pmf, k=top_k)
 
-        preds = outcome.argmax(dim=-1)
-        target = batch["outcome_target"]
-        correct += int((preds == target).sum().item())
-        total += int(target.numel())
-        target_oh = torch.nn.functional.one_hot(target, num_classes=3).float()
-        nll_sum += -(target_oh * outcome.clamp(min=1e-9, max=1.0).log()).sum(dim=-1).sum().item()
-        brier_sum += ((outcome - target_oh) ** 2).sum(dim=-1).sum().item()
-        draw_mask = target == 1
-        draw_total += int(draw_mask.sum().item())
-        draw_correct += int(((preds == 1) & draw_mask).sum().item())
-        for t, p in zip(target.tolist(), preds.tolist()):
-            confusion[t, p] += 1
+        logits.append(out.outcome_logits.cpu().numpy())
+        pmf_probs.append(torch.stack([hw, dr, aw], dim=-1).cpu().numpy())
+        targets.append(batch["outcome_target"].cpu().numpy())
+        lam_h.append(out.lam_home.cpu().numpy())
+        lam_a.append(out.lam_away.cpu().numpy())
+        top_h.append(th.cpu().numpy())
+        top_a.append(ta.cpu().numpy())
+        home_goals.append(batch["home_goals"].cpu().numpy())
+        away_goals.append(batch["away_goals"].cpu().numpy())
 
     return {
-        "accuracy": correct / max(1, total),
-        "log_loss": nll_sum / max(1, total),
-        "brier": brier_sum / max(1, total),
+        "logits": np.concatenate(logits),
+        "pmf_probs": np.concatenate(pmf_probs),
+        "targets": np.concatenate(targets),
+        "lam_home": np.concatenate(lam_h),
+        "lam_away": np.concatenate(lam_a),
+        "top_home": np.concatenate(top_h),
+        "top_away": np.concatenate(top_a),
+        "home_goals": np.concatenate(home_goals),
+        "away_goals": np.concatenate(away_goals),
+    }
+
+
+def _evaluate(
+    model: UnifiedMatchModel,
+    tensors: Dict[str, torch.Tensor],
+    *,
+    batch_size: int = 1024,
+    calibration: Optional[Dict[str, Any]] = None,
+) -> Dict[str, float]:
+    """Evaluate the *served* outcome distribution on a whole split.
+
+    With ``calibration=None`` this scores the legacy 50/50 blend (what the
+    model reports during training epochs); passing a fitted calibration
+    dict scores exactly what `unified_inference.predict_one` would serve.
+    Adds calibration (ECE) and scoreline-product metrics alongside the
+    original accuracy/log-loss/Brier/draw-recall.
+    """
+    collected = _collect_outputs(model, tensors, batch_size=batch_size)
+    outcome = apply_calibration(collected["logits"], collected["pmf_probs"], calibration)
+    targets = collected["targets"]
+    n = len(targets)
+
+    preds = outcome.argmax(axis=-1)
+    correct = int((preds == targets).sum())
+    target_oh = np.eye(3)[targets]
+    nll = float(-(target_oh * np.log(outcome.clip(1e-9, 1.0))).sum(axis=-1).mean()) if n else 0.0
+    brier = float(((outcome - target_oh) ** 2).sum(axis=-1).mean()) if n else 0.0
+    draw_mask = targets == 1
+    draw_total = int(draw_mask.sum())
+    draw_correct = int(((preds == 1) & draw_mask).sum())
+    confusion = np.zeros((3, 3), dtype=np.int64)
+    for t, p in zip(targets.tolist(), preds.tolist()):
+        confusion[t, p] += 1
+
+    # Scoreline product quality: PMF argmax vs actual, and top-5 coverage.
+    actual_h = collected["home_goals"]
+    actual_a = collected["away_goals"]
+    exact_hits = int(
+        ((collected["top_home"][:, 0] == actual_h) & (collected["top_away"][:, 0] == actual_a)).sum()
+    )
+    in_top5 = int(
+        ((collected["top_home"] == actual_h[:, None]) & (collected["top_away"] == actual_a[:, None]))
+        .any(axis=1)
+        .sum()
+    )
+    goals_mae = float(
+        (np.abs(collected["lam_home"] - actual_h) + np.abs(collected["lam_away"] - actual_a)).mean() / 2.0
+    ) if n else 0.0
+
+    return {
+        "accuracy": correct / max(1, n),
+        "log_loss": nll,
+        "brier": brier,
+        "ece": ece_10bin(outcome, targets) if n else 0.0,
         "draw_recall": draw_correct / max(1, draw_total),
-        "n": total,
+        "scoreline_exact_rate": exact_hits / max(1, n),
+        "scoreline_top5_rate": in_top5 / max(1, n),
+        "goals_mae": goals_mae,
+        "calibrated": calibration is not None,
+        "n": n,
         "confusion": confusion.tolist(),
     }
 
 
-def _fit_calibrator(model: UnifiedMatchModel, val_tensors: Dict[str, torch.Tensor]) -> Dict[str, IsotonicRegression]:
-    """Per-class isotonic regression on the val set's outcome distribution."""
-    model.eval()
-    probs_list = []
-    targets_list = []
-    with torch.no_grad():
-        for batch in _iterate_batches(val_tensors, 1024, shuffle=False):
-            out = model(
-                dense=batch["dense"], league_id=batch["league_id"],
-                home_team_id=batch["home_team_id"], away_team_id=batch["away_team_id"],
-                referee_id=batch["referee_id"], phase_id=batch["phase_id"],
-            )
-            pmf = scoreline_distribution(out.lam_home, out.lam_away, out.lam_corr, max_goals=model.config.max_goals)
-            hw, dr, aw = outcome_probabilities_from_pmf(pmf)
-            head = torch.softmax(out.outcome_logits, dim=-1)
-            outcome = 0.5 * head + 0.5 * torch.stack([hw, dr, aw], dim=-1)
-            outcome = outcome / outcome.sum(dim=-1, keepdim=True).clamp(min=1e-12)
-            probs_list.append(outcome.cpu().numpy())
-            targets_list.append(batch["outcome_target"].cpu().numpy())
-    probs = np.concatenate(probs_list, axis=0)
-    targets = np.concatenate(targets_list, axis=0)
-
-    calibrators = {}
-    for k, name in enumerate(("home_win", "draw", "away_win")):
-        iso = IsotonicRegression(out_of_bounds="clip", y_min=1e-4, y_max=1 - 1e-4)
-        iso.fit(probs[:, k], (targets == k).astype(np.float32))
-        calibrators[name] = iso
-    return calibrators
+def _fit_calibration(
+    model: UnifiedMatchModel, val_tensors: Dict[str, torch.Tensor]
+) -> Dict[str, Any]:
+    """Fit the `temp_blend_v2` calibration on the validation split."""
+    collected = _collect_outputs(model, val_tensors)
+    return fit_calibration(collected["logits"], collected["pmf_probs"], collected["targets"])
 
 
 # ---------- artifact persistence ----------
@@ -304,7 +352,7 @@ def _save_artifacts(
     gender: str,
     model: UnifiedMatchModel,
     scaler: StandardScaler,
-    calibrators: Dict[str, IsotonicRegression],
+    calibration: Dict[str, Any],
     *,
     train_metrics: List[Dict[str, float]],
     val_metrics: Dict[str, float],
@@ -329,7 +377,7 @@ def _save_artifacts(
     with open(MODEL_DIR / f"unified_{suffix}_scaler.pkl", "wb") as f:
         pickle.dump(scaler, f)
     with open(MODEL_DIR / f"unified_{suffix}_calibrator.pkl", "wb") as f:
-        pickle.dump(calibrators, f)
+        pickle.dump(calibration, f)
 
     metadata = {
         "gender": gender,
@@ -344,9 +392,37 @@ def _save_artifacts(
         },
         "training_history": train_metrics,
         "val_metrics_final": val_metrics,
+        "calibration": {
+            "kind": calibration.get("kind", "legacy_isotonic"),
+            "temperature": calibration.get("temperature"),
+            "alpha": calibration.get("alpha"),
+            "isotonic_kept": bool(calibration.get("isotonic")),
+            "val_metrics": calibration.get("val_metrics"),
+        },
     }
     (MODEL_DIR / f"unified_{suffix}_metadata.json").write_text(json.dumps(metadata, indent=2, default=str))
     (MODEL_DIR / f"unified_{suffix}_holdout.json").write_text(json.dumps(test_metrics, indent=2, default=str))
+
+    # Committed-able summary for the /ai transparency dashboard: the model
+    # dir is gitignored, but diagnostics/ is tracked, so Vercel (which has
+    # no model artifacts) can still show honest holdout metrics.
+    diagnostics_dir = MODEL_DIR.parent / "diagnostics"
+    diagnostics_dir.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "gender": gender,
+        "model_version": f"unified-multitask-1.0-{suffix}",
+        "trained_at": metadata["trained_at"],
+        "n_parameters": metadata["n_parameters"],
+        "n_features": len(metadata["feature_names"]),
+        "vocab_sizes": metadata["vocab_sizes"],
+        "calibration": metadata["calibration"],
+        "holdout": {
+            k: v for k, v in test_metrics.items() if k != "confusion"
+        },
+    }
+    (diagnostics_dir / f"unified_{suffix}_summary.json").write_text(
+        json.dumps(summary, indent=2, default=str)
+    )
 
 
 # ---------- main ----------
@@ -518,18 +594,39 @@ def main(argv: Optional[List[str]] = None) -> int:
         best_score,
     )
 
-    # Fit calibrator on val set, evaluate on test set.
-    calibrators = _fit_calibrator(model, val_tensors)
-    test_metrics = _evaluate(model, test_tensors)
+    # Fit calibration on val set, evaluate the SERVED distribution on test.
+    calibration = _fit_calibration(model, val_tensors)
+    test_metrics = _evaluate(model, test_tensors, calibration=calibration)
+    test_uncalibrated = _evaluate(model, test_tensors)
+    test_metrics["uncalibrated"] = {
+        k: test_uncalibrated[k]
+        for k in ("accuracy", "log_loss", "brier", "ece", "draw_recall")
+    }
+    test_metrics["calibration"] = {
+        "kind": calibration.get("kind"),
+        "temperature": calibration.get("temperature"),
+        "alpha": calibration.get("alpha"),
+        "isotonic_kept": bool(calibration.get("isotonic")),
+    }
     logger.info(
-        "TEST  accuracy=%.4f  log_loss=%.4f  brier=%.4f  draw_recall=%.3f  n=%d",
-        test_metrics["accuracy"], test_metrics["log_loss"], test_metrics["brier"], test_metrics["draw_recall"], test_metrics["n"],
+        "TEST (served)  accuracy=%.4f  log_loss=%.4f  brier=%.4f  ece=%.4f  "
+        "draw_recall=%.3f  scoreline_exact=%.4f  scoreline_top5=%.4f  goals_mae=%.3f  n=%d",
+        test_metrics["accuracy"], test_metrics["log_loss"], test_metrics["brier"],
+        test_metrics["ece"], test_metrics["draw_recall"],
+        test_metrics["scoreline_exact_rate"], test_metrics["scoreline_top5_rate"],
+        test_metrics["goals_mae"], test_metrics["n"],
+    )
+    logger.info(
+        "TEST (uncalibrated 50/50 blend)  log_loss=%.4f  ece=%.4f  (calibration Δll=%+.4f Δece=%+.4f)",
+        test_uncalibrated["log_loss"], test_uncalibrated["ece"],
+        test_metrics["log_loss"] - test_uncalibrated["log_loss"],
+        test_metrics["ece"] - test_uncalibrated["ece"],
     )
 
     _save_artifacts(
-        args.gender, model, scaler, calibrators,
+        args.gender, model, scaler, calibration,
         train_metrics=history,
-        val_metrics=_evaluate(model, val_tensors),
+        val_metrics=_evaluate(model, val_tensors, calibration=calibration),
         test_metrics=test_metrics,
         feature_names=FEATURE_NAMES,
         league_map=builder.league_id_map,
