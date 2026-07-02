@@ -132,6 +132,8 @@ interface MatchDetails {
       btts?: { yes: number; no: number }
       correct_score_top5?: Array<{ home: number; away: number; probability: number }>
     } | null
+    /** "Why this prediction" attribution — present only when the unified engine explained the pick. */
+    attribution?: Array<{ feature: string; value: number; contribution: number }> | null
   }
   liveWinProbability?: LiveWinProbabilityResult
   commentary?: { minute: number; text: string }[]
@@ -212,6 +214,9 @@ function adaptMatchPrediction(match: MatchDetails): PredictionPayload {
       historical_accuracy: 0.5,
       overall: conf,
     },
+    // Pass through real attribution only — WhyThisPrediction renders
+    // nothing when it's absent.
+    attribution: Array.isArray(p.attribution) && p.attribution.length > 0 ? p.attribution : null,
     model_version: p.model_version ?? 'unified-multitask',
   }
 }

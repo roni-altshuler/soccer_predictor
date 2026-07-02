@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { WhyThisPrediction } from '@/components/prediction/WhyThisPrediction'
+import type { AttributionItem } from '@/lib/types/attribution'
 import { cn, clamp, formatPct } from '@/lib/utils'
 
 /**
@@ -63,6 +65,12 @@ export interface PredictionPayload {
     historical_accuracy: number
     overall: number
   }
+  /**
+   * Optional "why this prediction" per-feature attribution for the served
+   * pick (logit units, positive = toward the pick). Only present when the
+   * backend was asked to explain — absent for legacy/heuristic responses.
+   */
+  attribution?: AttributionItem[] | null
   model_version?: string
 }
 
@@ -436,6 +444,9 @@ function KeyDriversPanel({
 
 export function PredictionResult({ prediction, className }: PredictionResultProps) {
   const totalXg = prediction.goals.total_expected_goals
+  const { home_win, draw, away_win } = prediction.outcome
+  const predictedOutcome: 'home' | 'draw' | 'away' =
+    home_win >= draw && home_win >= away_win ? 'home' : away_win >= draw ? 'away' : 'draw'
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -520,6 +531,15 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
           awayTeam={prediction.away_team}
         />
       </Card>
+
+      {/* "Why this prediction" — only when the backend supplied real
+          per-feature attribution; renders nothing otherwise. */}
+      <WhyThisPrediction
+        attribution={prediction.attribution}
+        predictedOutcome={predictedOutcome}
+        homeTeam={prediction.home_team}
+        awayTeam={prediction.away_team}
+      />
 
       <Separator className="opacity-50" />
       <p className="text-center text-[10px] text-[var(--text-tertiary)]">
