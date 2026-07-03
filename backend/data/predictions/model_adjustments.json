@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-02T23:05:34.255112",
-  "total_predictions_analyzed": 1400,
-  "overall_accuracy": 0.4343,
+  "generated_at": "2026-07-03T09:31:56.715593",
+  "total_predictions_analyzed": 1402,
+  "overall_accuracy": 0.4351,
   "by_league": {
     "La Liga": {
       "predictions": 164,
