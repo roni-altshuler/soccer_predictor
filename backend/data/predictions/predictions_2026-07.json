@@ -777,14 +777,14 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "goals_diff": null,
+      "actual_home_goals": 0,
+      "actual_away_goals": 3,
+      "actual_winner": "away",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "goals_diff": 0,
       "prediction_timestamp": "2026-07-02T09:15:20.490623",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-04T22:57:08.206831"
     },
     {
       "match_id": "760503",
