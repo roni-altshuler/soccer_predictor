@@ -33,7 +33,7 @@ export function ModelExplainer() {
       icon: Gauge,
       title: 'How to read this page',
       body:
-        "Accuracy is the share of matches where we picked the correct winner (home / draw / away). The Brier score and calibration plot measure whether our probabilities are honest — a 70% pick should win roughly 70% of the time. Football is messy, so even 60% is well above sportsbook-level calibration.",
+        "Accuracy is the share of matches where we picked the correct winner (home / draw / away). The Brier score and calibration plot measure whether our probabilities are honest — a 70% pick should win roughly 70% of the time. Football is messy, so anything around 60% is a strong long-run hit rate.",
       accent: 'var(--accent-warn)',
     },
   ]
@@ -43,10 +43,10 @@ export function ModelExplainer() {
       <div className="mb-3">
         <SectionHeader kicker="Explainer" title="How it works" />
         <p className="mt-1 text-small text-[var(--text-tertiary)]">
-          A quick tour of the model behind the number above. For the engineer-level audit (calibration
-          drift, league-by-league quality gates, model versioning), see{' '}
+          A quick tour of the model behind the number above. For the deep audit (calibration
+          drift, league-by-league quality gates), see{' '}
           <Link href="/diagnostics" className="font-semibold text-[var(--accent-primary)] hover:underline">
-            /diagnostics
+            model diagnostics
           </Link>
           .
         </p>

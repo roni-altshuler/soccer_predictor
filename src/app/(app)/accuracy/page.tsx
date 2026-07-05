@@ -7,15 +7,15 @@ import { CalibrationPlot } from '@/components/accuracy/CalibrationPlot'
 import { ConfusionHeatmap, type ConfusionRow, type OutcomeKey } from '@/components/accuracy/ConfusionHeatmap'
 import { LeaguePerformanceBreakdown } from '@/components/accuracy/LeaguePerformanceBreakdown'
 import { ModelExplainer } from '@/components/accuracy/ModelExplainer'
-import { type RecentPick } from '@/components/accuracy/RecentPicksFeed'
+import { RecentPicksFeed, type RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 /**
  * Public-facing accuracy page — the one users land on when they click
- * "how accurate is the AI?". Pulls live numbers from the gender-aware
- * tracker endpoints (Stream A) and toggles between men's and women's
- * universes via the prominent hero gender control.
+ * "how accurate is the AI?". Matchday v3 grammar: compact title line,
+ * honest headline card, then dense flat cards (calibration, confusion,
+ * recent picks, league breakdown). Gender-aware via useGenderQuery.
  *
  * Sister page: /diagnostics keeps the engineer-facing TrackingCenter
  * content (model quality gates, league-by-league audit, drift charts).
@@ -71,7 +71,7 @@ export default function AccuracyPage() {
       fetch(`/api/v1/tracking/accuracy?gender=${asQueryParam}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
-      fetch(`/api/v1/tracking/recent?gender=${asQueryParam}&limit=20`, { cache: 'no-store' })
+      fetch(`/api/v1/tracking/recent?gender=${asQueryParam}&limit=30&completed_only=true`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : { predictions: [] }))
         .catch(() => ({ predictions: [] })),
     ]).then(([accuracy, recent]) => {
@@ -88,8 +88,6 @@ export default function AccuracyPage() {
   const confusion = useMemo(() => (metrics ? buildConfusion(metrics) : []), [metrics])
   const calibrationBins = metrics?.calibration_bins ?? []
 
-  // The hero shows headline numbers — sensible defaults when the
-  // backend hasn't responded yet so the page doesn't flash empty.
   const accuracyPct = metrics?.winner_accuracy ?? 0
   const recentAccuracy = metrics?.recent_accuracy ?? 0
   const completed = metrics?.completed_predictions ?? 0
@@ -97,24 +95,35 @@ export default function AccuracyPage() {
   const brier = metrics?.brier_score ?? 0
 
   // While the first fetch is in flight we show a skeleton instead of the
-  // hero — rendering "no predictions yet" copy before the data arrives
-  // would be dishonest (design rule 3).
+  // headline — rendering "no predictions yet" copy before the data
+  // arrives would be dishonest (design rule 5).
   if (loading && metrics === null) {
     return (
-      <div className="min-h-screen">
-        <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
-          <div className="animate-pulse space-y-5">
-            <div className="h-72 rounded-2xl bg-[var(--muted-bg)]" />
-            <div className="h-64 rounded-2xl bg-[var(--muted-bg)]" />
-          </div>
+      <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+        <h1 className="px-1 pb-3 text-lg font-bold tracking-tight text-[var(--text-primary)]">
+          Accuracy
+        </h1>
+        <div className="animate-pulse space-y-3">
+          <div className="h-24 rounded-xl bg-[var(--muted-bg)]" />
+          <div className="h-20 rounded-xl bg-[var(--muted-bg)]" />
+          <div className="h-64 rounded-xl bg-[var(--muted-bg)]" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
+    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+      <div className="px-1 pb-3">
+        <h1 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
+          Accuracy
+        </h1>
+        <p className="text-[12px] text-[var(--text-tertiary)]">
+          How the AI&apos;s picks have actually scored, updated as results come in.
+        </p>
+      </div>
+
+      <div className="space-y-3">
         <AccuracyHero
           accuracyPct={accuracyPct}
           completedPredictions={completed}
@@ -128,31 +137,39 @@ export default function AccuracyPage() {
             calibration views collapse to NaN/0% — render a clean
             empty-state card instead and keep the explainer below. */}
         {completed === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)]/60 p-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-              Collecting predictions
-            </p>
-            <h2 className="mt-2 text-h4 font-bold text-[var(--text-primary)]">
-              We&apos;re still waiting on settled matches
+          <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)] p-6 text-center">
+            <h2 className="text-sm font-bold text-[var(--text-primary)]">
+              Waiting on the first settled matches
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-small text-[var(--text-tertiary)]">
+            <p className="mx-auto mt-1.5 max-w-md text-[12px] text-[var(--text-tertiary)]">
               {total > 0 ? (
                 <>
-                  {total.toLocaleString()} prediction{total === 1 ? '' : 's'} tracked, none with a
-                  final result yet. The calibration plot, confusion matrix, and recent-picks feed
-                  appear here once the outcome fetcher settles its first match.
+                  {total.toLocaleString()} pick{total === 1 ? '' : 's'} tracked, none with a
+                  final result yet. The calibration plot and recent-picks feed appear here as
+                  soon as the first match finishes.
                 </>
               ) : (
-                <>The unified model hasn&apos;t made any predictions yet. Run a fixture from <a className="font-semibold text-[var(--accent-primary)] hover:underline" href="/predict">/predict</a> or wait for the scheduled pipeline to fire.</>
+                <>
+                  No picks tracked yet for this universe. Try one yourself on{' '}
+                  <a
+                    className="font-semibold text-[var(--accent-primary)] hover:underline"
+                    href="/predict"
+                  >
+                    AI predict
+                  </a>
+                  .
+                </>
               )}
             </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
               <CalibrationPlot bins={calibrationBins} className="lg:col-span-3" />
               <ConfusionHeatmap rows={confusion} className="lg:col-span-2" />
             </div>
+
+            <RecentPicksFeed picks={picks} />
 
             <LeaguePerformanceBreakdown picks={picks} />
           </>

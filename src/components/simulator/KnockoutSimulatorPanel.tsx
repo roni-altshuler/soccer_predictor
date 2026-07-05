@@ -177,7 +177,7 @@ export default function KnockoutSimulatorPanel({
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
       {/* Header — crest identity, no emoji, no hard-coded gradients */}
-      <div className="hero-band flex items-center gap-4 rounded-none border-0 border-b border-[var(--border-color)] p-5">
+      <div className="flex items-center gap-4 border-b border-[var(--border-color)] p-5">
         <TournamentCrest tournamentId={config.crestId} name={config.name} size={48} />
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">

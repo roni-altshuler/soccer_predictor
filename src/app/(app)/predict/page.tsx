@@ -26,7 +26,6 @@ import { GenderToggle } from '@/components/GenderToggle'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AttributionItem } from '@/lib/types/attribution'
-import { cn } from '@/lib/utils'
 
 interface PredictionResult {
   success?: boolean

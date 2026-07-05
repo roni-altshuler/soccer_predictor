@@ -151,7 +151,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Unified Intelligence Hub</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Diagnostics hub</p>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1 ${
                   gender === 'women'
@@ -162,7 +162,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
                 {gender === 'women' ? "Women's universe" : "Men's universe"}
               </span>
             </div>
-            <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Accuracy, Diagnostics, and Learning in one loop</h2>
+            <h2 className="text-base font-bold text-[var(--text-primary)]">Accuracy, diagnostics, and learning in one loop</h2>
             <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-3xl">
               Completed matches feed league-specific diagnostics, tuning updates adjust model blending, and the next predictions reflect learned behavior.
             </p>
@@ -213,10 +213,10 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
                 aria-selected={active}
                 aria-controls={`tracking-panel-${tab.key}`}
                 onClick={() => setActiveView(tab.key)}
-                className={`text-left rounded-xl border px-3 py-2.5 min-h-[44px] transition-all ${
+                className={`text-left rounded-xl border px-3 py-2.5 min-h-[44px] transition-colors ${
                   active
-                    ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] border-[var(--accent-primary)]/50 ring-2 ring-[var(--accent-primary)]/30'
-                    : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] hover:border-[var(--accent-primary)]/40 text-[var(--text-primary)]'
+                    ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] border-[var(--accent-primary)]/50'
+                    : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] text-[var(--text-primary)]'
                 }`}
               >
                 <p className="text-xs font-semibold">{tab.label}</p>

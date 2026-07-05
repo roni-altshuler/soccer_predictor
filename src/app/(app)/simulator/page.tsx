@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
-import { Trophy, Swords, FlaskConical } from 'lucide-react'
+import { Trophy, Swords } from 'lucide-react'
 
 import { SectionHeader } from '@/components/primitives'
 import KnockoutSimulatorPanel, {
@@ -10,7 +9,7 @@ import KnockoutSimulatorPanel, {
 } from '@/components/simulator/KnockoutSimulatorPanel'
 import { TournamentCrest } from '@/components/tournament'
 import LeagueChampionshipSimulator from '@/components/simulator/LeagueChampionshipSimulator'
-import { springSnappy } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 
 type SimulatorMode = 'tournament' | 'league'
 
@@ -26,40 +25,29 @@ const TOURNAMENTS: { id: KnockoutTournament; name: string; leagueId: string }[] 
 export default function SimulatorPage() {
   const [mode, setMode] = useState<SimulatorMode>('tournament')
   const [selected, setSelected] = useState<KnockoutTournament>('champions_league')
-  const reduceMotion = useReducedMotion()
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="mx-auto max-w-5xl space-y-6 px-4 pt-6 pb-12">
-        {/* Hero band */}
-        <section className="hero-band surface-elevated flex flex-wrap items-end justify-between gap-4 p-6">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-              Prediction lab
-            </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-[var(--text-primary)]">
-              Simulator
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-              Monte Carlo knockout brackets and title-race maths — run thousands of seasons and
-              see who lifts the trophy.
-            </p>
-          </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] px-3.5 py-2 text-xs font-semibold text-[var(--accent-ai)]">
-            <FlaskConical className="h-3.5 w-3.5" aria-hidden="true" />
-            Bradley-Terry · Monte Carlo
-          </span>
-        </section>
+      <div className="mx-auto max-w-5xl space-y-5 px-4 pt-5 pb-12">
+        {/* Compact page title — no marketing hero */}
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+            Simulator
+          </h1>
+          <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
+            Monte Carlo knockout brackets and title-race maths — run thousands of seasons.
+          </p>
+        </div>
 
-        {/* Mode toggle — Tournament (knockout brackets) vs League (championship race) */}
+        {/* Mode toggle — underline tabs (Tournament brackets vs League race) */}
         <div
           role="tablist"
           aria-label="Simulator mode"
-          className="flex gap-1 rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)]/60 p-1"
+          className="flex items-center gap-6 border-b border-[var(--border-color)]"
         >
           {([
-            { value: 'tournament' as const, label: 'Tournament', Icon: Swords, hint: 'Knockout brackets' },
-            { value: 'league' as const, label: 'League', Icon: Trophy, hint: 'Championship race' },
+            { value: 'tournament' as const, label: 'Tournament', Icon: Swords },
+            { value: 'league' as const, label: 'League', Icon: Trophy },
           ]).map((option) => {
             const active = mode === option.value
             const Icon = option.Icon
@@ -70,29 +58,15 @@ export default function SimulatorPage() {
                 aria-selected={active}
                 aria-controls={`simulator-${option.value}`}
                 onClick={() => setMode(option.value)}
-                className={`relative min-h-[48px] flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-colors sm:flex-initial sm:min-w-[190px] ${
+                className={cn(
+                  'relative -mb-px inline-flex min-h-[44px] items-center gap-2 border-b-2 px-1 pt-1 text-sm font-semibold transition-colors',
                   active
-                    ? 'text-[var(--text-primary)]'
-                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="simulator-mode-pill"
-                    transition={reduceMotion ? { duration: 0 } : springSnappy}
-                    className="absolute inset-0 -z-[1] rounded-xl bg-[var(--card-bg)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--accent-primary)]/30"
-                    aria-hidden="true"
-                  />
+                    ? 'border-[var(--accent-primary)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]',
                 )}
-                <span className="relative z-[1] inline-flex items-center gap-2">
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="flex flex-col items-start leading-tight">
-                    <span>{option.label}</span>
-                    <span className="text-[10px] font-normal text-[var(--text-tertiary)]">
-                      {option.hint}
-                    </span>
-                  </span>
-                </span>
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {option.label}
               </button>
             )
           })}

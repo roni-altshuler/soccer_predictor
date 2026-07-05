@@ -4,12 +4,29 @@ import { motion } from 'framer-motion'
 import { Activity, Brain, Trophy, Goal, ShieldAlert, Sparkles } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Prob1X2 } from '@/components/primitives'
 import { WhyThisPrediction } from '@/components/prediction/WhyThisPrediction'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { cn, clamp, formatPct } from '@/lib/utils'
+
+/** Flat v3 card surface — 1px hairline, 12px radius, no elevation/glow. */
+const FLAT_CARD =
+  'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5'
+
+/**
+ * Humanize an internal model identifier into a reader-facing label.
+ * Never surface raw pipeline ids like "unified-multitask-1.0".
+ */
+function humanizeModelVersion(raw?: string): string | null {
+  if (!raw) return null
+  const v = raw.toLowerCase()
+  if (v.includes('unified') || v.includes('multitask')) return 'Unified AI model'
+  if (v.includes('legacy') || v.includes('elo') || v.includes('poisson'))
+    return 'Elo-Poisson baseline'
+  return 'AI model'
+}
 
 /**
  * Showcase prediction visualization, designed for the AI prediction page
@@ -131,24 +148,10 @@ function ConfidenceGauge({ value, label }: { value: number; label?: string }) {
       ? 'var(--accent-ai)'
       : 'var(--accent-warn)'
 
-  const gaugeId = `gauge-${Math.round(pct * 1000)}`
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
-          <defs>
-            <linearGradient id={gaugeId} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={colour} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={colour} />
-            </linearGradient>
-            <filter id={`${gaugeId}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -161,11 +164,10 @@ function ConfidenceGauge({ value, label }: { value: number; label?: string }) {
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={`url(#${gaugeId})`}
+            stroke={colour}
             strokeWidth={stroke}
             strokeLinecap="round"
             fill="none"
-            filter={`url(#${gaugeId}-glow)`}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
@@ -201,15 +203,13 @@ function XGCompare({ home, away, homeTeam, awayTeam }: { home: number; away: num
       </div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--muted-bg)] ring-1 ring-[var(--border-color)]">
         <motion.div
-          className="h-full"
-          style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--accent-primary) 55%, transparent), var(--accent-primary))', boxShadow: '0 0 16px color-mix(in srgb, var(--accent-primary) 45%, transparent)' }}
+          className="h-full bg-[var(--accent-primary)]"
           initial={{ width: 0 }}
           animate={{ width: `${homePct}%` }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />
         <motion.div
-          className="h-full"
-          style={{ background: 'linear-gradient(90deg, var(--accent-loss), color-mix(in srgb, var(--accent-loss) 55%, transparent))', boxShadow: '0 0 16px color-mix(in srgb, var(--accent-loss) 45%, transparent)' }}
+          className="h-full bg-[var(--accent-loss)]"
           initial={{ width: 0 }}
           animate={{ width: `${awayPct}%` }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -447,6 +447,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
   const { home_win, draw, away_win } = prediction.outcome
   const predictedOutcome: 'home' | 'draw' | 'away' =
     home_win >= draw && home_win >= away_win ? 'home' : away_win >= draw ? 'away' : 'draw'
+  const modelLabel = humanizeModelVersion(prediction.model_version)
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -454,7 +455,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className={cn('flex flex-col gap-4', className)}
     >
-      <Card variant="ai" className="p-4 md:p-5">
+      <div className={FLAT_CARD}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Brain className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
@@ -464,18 +465,26 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
             {prediction.league}
           </Badge>
         </div>
+        {/* bet365-grammar 1X2 boxes — argmax tinted cyan */}
+        <div className="mb-4 flex items-center justify-center">
+          <Prob1X2
+            home={prediction.outcome.home_win}
+            draw={prediction.outcome.draw}
+            away={prediction.outcome.away_win}
+          />
+        </div>
         <OutcomeBars
           outcome={prediction.outcome}
           homeTeam={prediction.home_team}
           awayTeam={prediction.away_team}
         />
-      </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card variant="ai" className="flex flex-col items-center justify-center gap-2 p-4 md:p-5">
+        <div className={cn(FLAT_CARD, 'flex flex-col items-center justify-center gap-2')}>
           <ConfidenceGauge value={prediction.confidence.overall} label="Confidence" />
-        </Card>
-        <Card variant="elevated" className="col-span-1 flex flex-col justify-between gap-3 p-4 md:col-span-2 md:p-5">
+        </div>
+        <div className={cn(FLAT_CARD, 'col-span-1 flex flex-col justify-between gap-3 md:col-span-2')}>
           <div className="flex items-center gap-2">
             <Goal className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
             <h3 className="text-h4 font-bold text-[var(--text-primary)]">Goals & markets</h3>
@@ -490,10 +499,10 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
             awayTeam={prediction.away_team}
           />
           <MarketsStrip goals={prediction.goals} />
-        </Card>
+        </div>
       </div>
 
-      <Card className="p-4 md:p-5">
+      <div className={FLAT_CARD}>
         <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
           <h3 className="text-h4 font-bold text-[var(--text-primary)]">Most likely scorelines</h3>
@@ -502,9 +511,9 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
           mostLikely={prediction.most_likely_score}
           alternatives={prediction.alternative_scores}
         />
-      </Card>
+      </div>
 
-      <Card className="p-4 md:p-5">
+      <div className={FLAT_CARD}>
         <div className="mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
           <h3 className="text-h4 font-bold text-[var(--text-primary)]">Key drivers</h3>
@@ -530,7 +539,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
           homeTeam={prediction.home_team}
           awayTeam={prediction.away_team}
         />
-      </Card>
+      </div>
 
       {/* "Why this prediction" — only when the backend supplied real
           per-feature attribution; renders nothing otherwise. */}
@@ -543,9 +552,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
 
       <Separator className="opacity-50" />
       <p className="text-center text-[10px] text-[var(--text-tertiary)]">
-        {prediction.model_version
-          ? `Model ${prediction.model_version} · `
-          : ''}
+        {modelLabel ? `${modelLabel} · ` : ''}
         Predictions are for educational/entertainment purposes only. Not intended for betting.
       </p>
     </motion.div>

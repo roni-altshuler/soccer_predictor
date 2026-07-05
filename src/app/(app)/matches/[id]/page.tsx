@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleHelp, CheckCircle2, Clock, MapPin, MessageSquareText, RefreshCw, Scale, Sparkles, Swords, Zap } from 'lucide-react'
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleHelp, CheckCircle2, MapPin, MessageSquareText, RefreshCw, Scale, Sparkles, Swords, Zap } from 'lucide-react'
 import { EventTimeline } from '@/components/match/EventTimeline'
-import { MetaChipRow } from '@/components/match/MetaChipRow'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { FlagBadge, ProbBar, TeamBadge } from '@/components/primitives'
 
 import { cn } from '@/lib/utils'
+import { springSnappy } from '@/lib/motion'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import FormationDisplay, { PitchBackground, SubstitutesBench } from '@/components/lineup/FormationDisplay'
 import MatchWeather from '@/components/weather/MatchWeather'
@@ -24,10 +24,7 @@ import BettingIntelligence from '@/components/match/BettingIntelligence'
 import DataSourceBadge from '@/components/DataSourceBadge'
 import { type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
-import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
-import { LeagueBadge } from '@/components/match/LeagueBadge'
 import { SplitStatBar } from '@/components/match/SplitStatBar'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import type { LiveWinProbabilityResult, ThreeWayProbabilities } from '@/lib/liveWinProbability'
@@ -368,7 +365,7 @@ function FotmobStatsCard({
   compact?: boolean
 }) {
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+    <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Top Stats</h3>
         <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Fotmob-style side-by-side match comparison</p>
@@ -438,7 +435,7 @@ function LiveWinProbabilityPanel({ match }: { match: MatchDetails }) {
 
   if (!liveProbability?.available || !liveProbability.probabilities || !match.prediction) {
     return (
-      <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
         <div className="p-4 border-b flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Live Probability</p>
@@ -475,7 +472,7 @@ function LiveWinProbabilityPanel({ match }: { match: MatchDetails }) {
   ]
 
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+    <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="p-4 border-b flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
         <div>
           <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Live Probability</p>
@@ -492,7 +489,7 @@ function LiveWinProbabilityPanel({ match }: { match: MatchDetails }) {
       </div>
 
       <div className="p-4">
-        <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
             <span>Pre-match</span>
             <span>Live</span>
@@ -667,7 +664,7 @@ function PredictionInsightPanel({ match }: { match: MatchDetails }) {
   }
 
   return (
-    <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+    <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="p-4 border-b flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
         <div>
           <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Prediction Explainability</p>
@@ -1024,9 +1021,9 @@ export default function MatchDetailPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link 
               href="/matches" 
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--accent-ai)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] font-semibold hover:opacity-95 transition-colors"
+              className="px-6 py-3 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-on-primary)] font-semibold hover:opacity-90 transition-opacity"
             >
-              ← Browse Leagues
+              Browse matches
             </Link>
             <button
               onClick={() => {
@@ -1097,24 +1094,24 @@ export default function MatchDetailPage() {
 
   const isTeamTracked = (teamName: string) => trackedNameSet.has(normalizeTeamName(teamName))
 
-  const aiPick: 'home' | 'draw' | 'away' | null = match.prediction
-    ? (match.prediction.home_win ?? 0) >= (match.prediction.draw ?? 0) &&
-      (match.prediction.home_win ?? 0) >= (match.prediction.away_win ?? 0)
-      ? 'home'
-      : (match.prediction.away_win ?? 0) >= (match.prediction.draw ?? 0)
-        ? 'away'
-        : 'draw'
-    : null
-  const aiPickLabel = aiPick === 'home' ? match.home_team : aiPick === 'away' ? match.away_team : 'Draw'
-
   // Live minute label for the StickyScoreBar — falls back to match.status.
   const liveMinuteLabel = isLive ? (match.minute ?? match.status) : null
 
   // National-team fixtures resolve identities to country flags (rule 2).
   const isNational = isNationalTeamMatch(match.leagueId, match.league)
 
+  const leagueAccent = getLeagueAccent(match.leagueId ?? match.league)
+
   return (
-    <div className="min-h-screen">
+    <div
+      className="min-h-screen"
+      style={{
+        // Team tint tokens consumed by H2H bars, lineups and standings
+        // highlights further down the page (green home / league-brand away).
+        ['--team-tint-home' as string]: 'var(--accent-primary)',
+        ['--team-tint-away' as string]: leagueAccent?.accent || 'var(--accent-info)',
+      }}
+    >
       <StickyScoreBar
         heroRef={heroRef}
         homeName={match.home_team}
@@ -1129,76 +1126,30 @@ export default function MatchDetailPage() {
         liveMinute={liveMinuteLabel}
         statusLabel={isFinished ? 'FT' : isScheduled ? 'Scheduled' : match.status}
       />
-      {/* Hero header — cinematic team-tinted broadcast backdrop */}
-      <section
-        ref={heroRef}
-        className="team-header relative isolate overflow-hidden border-b border-[var(--border-color)]"
-        style={{
-          // Tint the broadcast gradient with the league's brand colour, split
-          // green (home) → blue (away) so the header reads like a TV bug.
-          ['--team-tint-home' as string]: 'var(--accent-primary)',
-          ['--team-tint-away' as string]: getLeagueAccent(match.leagueId ?? match.league)?.accent || 'var(--accent-info)',
-        }}
-      >
-        {/* drifting aurora + fine grain for depth */}
-        <div className="aurora-bg" aria-hidden />
-        <div className="grain" aria-hidden />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/50 to-transparent"
-        />
-
-        <div className="mx-auto w-full max-w-5xl px-4 pt-5 pb-6 md:px-8 md:pt-6 md:pb-8">
+      {/* Scoreboard header — flat card, ESPN grammar: league line, teams +
+          score (or kickoff), status, venue. No gradients, no glows. */}
+      <section ref={heroRef} className="border-b border-[var(--border-color)] bg-[var(--card-bg)]">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-5 pt-2 md:px-8">
           {/* Back link */}
           <button
             onClick={handleBack}
-            className="group mb-5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
+            className="group mb-2 -ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-xs font-medium text-[var(--text-tertiary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
           >
-            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
-            <span>Back to {match.league || 'leagues'}</span>
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Back to {match.league || 'matches'}</span>
           </button>
 
-          {/* Top chip row — league + status + (AI lean if available) */}
-          <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
-            <LeagueBadge league={match.leagueId ?? match.league} size="md" />
-            {isLive && !isHalftime && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-loss)]/35 bg-[var(--accent-loss)]/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-loss)]">
-                <span className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-70" />
-                  <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
-                </span>
-                Live · {match.minute}&apos;
-              </span>
+          {/* League line */}
+          <div className="mb-4 flex items-center justify-center gap-2">
+            {leagueAccent?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={leagueAccent.logoUrl} alt="" className="h-4 w-4 object-contain" aria-hidden="true" />
             )}
-            {isHalftime && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-warn)]">
-                Half time
-                {halftimeCountdown && (
-                  <span className="font-mono normal-case text-[10px] text-[var(--accent-warn)]/80">{halftimeCountdown}</span>
-                )}
-              </span>
-            )}
-            {isFinished && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)]/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                Full time
-              </span>
-            )}
-            {isScheduled && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)]/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                <Clock className="h-3 w-3" aria-hidden="true" />
-                Upcoming
-              </span>
-            )}
-            {match.prediction && aiPick && (
-              <ConfidenceIndicator
-                value={Math.max(
-                  Number(match.prediction.home_win) || 0,
-                  Number(match.prediction.draw) || 0,
-                  Number(match.prediction.away_win) || 0,
-                )}
-                pick={aiPickLabel}
-              />
-            )}
+            <span className="text-xs font-semibold text-[var(--text-secondary)]">
+              {leagueAccent && leagueAccent.competitionId !== 'unknown'
+                ? leagueAccent.displayName
+                : match.league}
+            </span>
           </div>
 
           {/* Score block — three columns */}
@@ -1224,40 +1175,80 @@ export default function MatchDetailPage() {
               )}
             </div>
 
-            {/* Score */}
-            <div className="flex-shrink-0 text-center px-2">
+            {/* Score / kickoff */}
+            <div className="flex-shrink-0 px-2 text-center">
               {isScheduled ? (
-                <p className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
-                  vs
-                </p>
+                <div>
+                  <p className="font-numeric text-[clamp(1.4rem,3.4vw,2rem)] font-bold leading-none tabular-nums text-[var(--text-primary)]">
+                    {(() => {
+                      try {
+                        return new Date(match.date).toLocaleTimeString(undefined, {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: false,
+                        })
+                      } catch {
+                        return 'TBD'
+                      }
+                    })()}
+                  </p>
+                </div>
               ) : (
                 <motion.div
-                  className="flex items-center gap-3 md:gap-5"
-                  initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                  className="flex items-center gap-3 md:gap-4"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <span
-                    className={cn(
-                      'font-numeric text-[clamp(2.6rem,6.5vw,4.2rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]',
-                      isLive && 'glow-text-primary'
-                    )}
-                  >
+                  <span className="font-numeric text-[clamp(2rem,5vw,3rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
                     {match.home_score}
                   </span>
-                  <span className="font-display text-[clamp(1.6rem,4vw,2.4rem)] font-bold leading-none text-[var(--text-tertiary)]">
+                  <span className="text-[clamp(1.2rem,3vw,1.8rem)] font-bold leading-none text-[var(--text-tertiary)]">
                     –
                   </span>
-                  <span
-                    className={cn(
-                      'font-numeric text-[clamp(2.6rem,6.5vw,4.2rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]',
-                      isLive && 'glow-text-primary'
-                    )}
-                  >
+                  <span className="font-numeric text-[clamp(2rem,5vw,3rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
                     {match.away_score}
                   </span>
                 </motion.div>
               )}
+
+              {/* Status line */}
+              <div className="mt-1.5">
+                {isLive && !isHalftime && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold tabular-nums text-[var(--live-text)]">
+                    <span className="relative inline-flex h-1.5 w-1.5">
+                      <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
+                    </span>
+                    {match.minute != null ? `${match.minute}'` : 'Live'}
+                  </span>
+                )}
+                {isHalftime && (
+                  <span className="text-xs font-bold text-[var(--accent-warn)]">
+                    HT{halftimeCountdown ? ` · ${halftimeCountdown}` : ''}
+                  </span>
+                )}
+                {isFinished && (
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    FT
+                  </span>
+                )}
+                {isScheduled && (
+                  <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
+                    {(() => {
+                      try {
+                        return new Date(match.date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      } catch {
+                        return ''
+                      }
+                    })()}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Away team */}
@@ -1282,24 +1273,19 @@ export default function MatchDetailPage() {
             </div>
           </div>
 
-          {/* Meta row — FotMob-style chips + provenance badge */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            <MetaChipRow
-              dateLabel={formatDate(match.date)}
-              venue={match.venue}
-              attendance={match.attendance ?? null}
-              capacity={match.capacity ?? null}
-            />
-            <DataSourceBadge
-              provider={match.source || 'none'}
-              detail={match.sourceDetail || 'Match detail feed'}
-              refreshedAt={match.generatedAt}
-              compact
-            />
+          {/* Venue + date line — small, quiet */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-[var(--text-tertiary)]">
+            <span>{formatDate(match.date)}</span>
+            {match.venue && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{match.venue}</span>
+              </>
+            )}
           </div>
 
-          {/* Track buttons — refined */}
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {/* Follow buttons + provenance — one quiet row */}
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
             {[match.home_team, match.away_team].map((teamName) => {
               const tracked = isTeamTracked(teamName)
               return (
@@ -1308,57 +1294,70 @@ export default function MatchDetailPage() {
                   onClick={() => trackTeam(teamName)}
                   disabled={tracked}
                   className={cn(
-                    'inline-flex max-w-[220px] items-center gap-1.5 truncate rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all',
+                    'inline-flex min-h-[36px] max-w-[220px] items-center gap-1.5 truncate rounded-full px-3 text-xs font-semibold transition-colors',
                     tracked
-                      ? 'border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] cursor-default'
-                      : 'border-[var(--border-color)] bg-[var(--card-bg)]/60 text-[var(--text-secondary)] hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/50 hover:bg-[var(--card-bg)] hover:text-[var(--accent-primary)]'
+                      ? 'cursor-default text-[var(--accent-primary)]'
+                      : 'text-[var(--text-tertiary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-secondary)]'
                   )}
                 >
                   {tracked ? (
                     <>
                       <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                      Tracking {teamName}
+                      Following {teamName}
                     </>
                   ) : (
                     <>
                       <Bookmark className="h-3.5 w-3.5" aria-hidden="true" />
-                      Track {teamName}
+                      Follow {teamName}
                     </>
                   )}
                 </button>
               )
             })}
+            <DataSourceBadge
+              provider={match.source || 'none'}
+              detail={match.sourceDetail || 'Match detail feed'}
+              refreshedAt={match.generatedAt}
+              compact
+            />
           </div>
         </div>
       </section>
 
-      {/* Tabs — shadcn primitives for consistent styling with the rest of the app */}
-      <div
-        className="sticky top-16 z-10 border-b bg-[var(--background-secondary)]/95 backdrop-blur-sm"
-        style={{ borderColor: 'var(--border-color)' }}
-      >
-        <div className="mx-auto max-w-4xl px-4">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as DetailTab)}>
-            <TabsList className="h-12 w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0">
-              {DETAIL_TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                  className="relative h-12 rounded-none border-b-2 border-transparent px-3 text-sm font-semibold capitalize text-[var(--text-secondary)] hover:text-[var(--text-primary)] data-[state=active]:border-[var(--accent-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--accent-primary)] data-[state=active]:shadow-none"
-                >
-                  {DETAIL_TAB_LABELS[tab]}
-                  {tab === 'ai' && (
-                    <span
-                      aria-hidden="true"
-                      className="ml-1.5 rounded-full bg-[var(--accent-ai)]/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--accent-ai)]"
-                    >
-                      AI
-                    </span>
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+      {/* Tab row — underline grammar (green bar on active), same as DateStrip */}
+      <div className="sticky top-[var(--shell-topbar-h)] z-10 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-md">
+        <div
+          className="mx-auto flex w-full max-w-4xl items-stretch overflow-x-auto px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Match sections"
+        >
+          {DETAIL_TABS.map((tab) => {
+            const active = activeTab === tab
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  'relative flex min-h-[44px] items-center justify-center whitespace-nowrap px-4 text-xs font-semibold transition-colors',
+                  active
+                    ? 'text-[var(--text-primary)]'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                )}
+              >
+                {DETAIL_TAB_LABELS[tab]}
+                {active && (
+                  <motion.span
+                    {...(reduceMotion ? {} : { layoutId: 'matchdetail-tab-active', transition: springSnappy })}
+                    className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-[var(--accent-primary)]"
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -1392,7 +1391,7 @@ export default function MatchDetailPage() {
 
             {/* ── AI Prediction Card ── */}
             {match.prediction && (
-              <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-ai) 16%, transparent), color-mix(in srgb, var(--accent-primary) 16%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-ai) 36%, transparent)' }}>
+              <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="h-4 w-4 text-[var(--accent-ai)]" aria-hidden />
@@ -1498,7 +1497,7 @@ export default function MatchDetailPage() {
 
             {/* ── Events Timeline ── */}
             {match.events.length > 0 && (
-              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)]">Events</h3>
                 </div>
@@ -1532,7 +1531,7 @@ export default function MatchDetailPage() {
             />
 
             {/* ── Match Info (FotMob-style) ── */}
-            <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
               <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                 <h3 className="font-semibold text-[var(--text-primary)]">Match Info</h3>
               </div>
@@ -1657,7 +1656,7 @@ export default function MatchDetailPage() {
 
             {/* ── H2H & Team Form Summary ── */}
             {(match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins > 0 || match.homeStanding || match.awayStanding) && (
-              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
                     <Swords className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden /> Head-to-Head &amp; Form
@@ -1789,7 +1788,7 @@ export default function MatchDetailPage() {
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <MessageSquareText className="h-4 w-4" aria-hidden /> Commentary
                 </h3>
-                <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="max-h-[400px] overflow-y-auto divide-y" style={{ borderColor: 'var(--border-color)' }}>
                     {match.commentary
                       .sort((a, b) => b.minute - a.minute)
@@ -1813,7 +1812,7 @@ export default function MatchDetailPage() {
             {/* Formation display - Lineup tab only shows formations */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Home Team Formation */}
-              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)]">{match.home_team}</h3>
                   {match.lineups.homeFormation && (
@@ -1858,7 +1857,7 @@ export default function MatchDetailPage() {
               </div>
               
               {/* Away Team Formation */}
-              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)]">{match.away_team}</h3>
                   {match.lineups.awayFormation && (

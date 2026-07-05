@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
@@ -29,6 +29,7 @@ interface CalibrationPlotProps {
 }
 
 export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
+  const reduce = useReducedMotion()
   // Plot dimensions — fits comfortably inside a card on mobile.
   const width = 360
   const height = 360
@@ -127,7 +128,7 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
                       fillOpacity="0.6"
                       stroke="var(--accent-primary)"
                       strokeWidth="1.5"
-                      initial={{ scale: 0, opacity: 0 }}
+                      initial={reduce ? false : { scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ duration: 0.3, delay: idx * 0.04, ease: [0.22, 1, 0.36, 1] }}
                     />
