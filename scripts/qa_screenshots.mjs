@@ -43,6 +43,14 @@ for (const vp of VIEWPORTS) {
   for (const [label, path] of PAGES) {
     const page = await ctx.newPage()
     const consoleErrors = []
+    const failedResources = []
+    // Provider images with graceful in-app fallbacks (PlayerAvatar initials,
+    // crest monograms): ESPN simply doesn't host headshots for many players,
+    // so their 404s are expected noise, not defects.
+    const EXEMPT_RESOURCE = /a\.espncdn\.com\/i\/(headshots|teamlogos)|flagcdn\.com/
+    page.on('response', (r) => {
+      if (r.status() >= 400 && !EXEMPT_RESOURCE.test(r.url())) failedResources.push(`${r.status()} ${r.url()}`)
+    })
     page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()) })
     page.on('pageerror', (e) => consoleErrors.push(String(e)))
     try {
@@ -80,7 +88,14 @@ for (const vp of VIEWPORTS) {
         }
         return n
       })
-      results.push({ page: label, vp: vp.name, overflowPx: overflow, tinyTargets, consoleErrors: consoleErrors.slice(0, 5) })
+      // "Failed to load resource" console entries carry no URL; when every
+      // failed response this page produced was an exempt fallback image,
+      // those entries are the expected noise — drop them.
+      const filteredConsole =
+        failedResources.length === 0
+          ? consoleErrors.filter((c) => !/Failed to load resource/.test(c))
+          : consoleErrors
+      results.push({ page: label, vp: vp.name, overflowPx: overflow, tinyTargets, consoleErrors: filteredConsole.slice(0, 5), failedResources: failedResources.slice(0, 5) })
     } catch (e) {
       results.push({ page: label, vp: vp.name, error: String(e).slice(0, 200) })
     }
