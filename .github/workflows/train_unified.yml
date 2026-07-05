@@ -162,9 +162,11 @@ jobs:
           if git diff --cached --quiet; then
             echo "No summary changes to commit"
           else
-            git pull --rebase origin main
+            # Commit BEFORE rebasing — `pull --rebase` refuses to run with
+            # a dirty index (this exact ordering failed the first CI run).
             git commit \
               -m "chore: weekly unified model training [automated]" \
               -m "Retrained unified models; published gated artifacts to models-latest. Gates — men: ${{ steps.gate_men.outcome }}, women: ${{ steps.gate_women.outcome }}."
+            git pull --rebase origin main
             git push
           fi
