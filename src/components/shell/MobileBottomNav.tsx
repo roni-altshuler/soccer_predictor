@@ -47,13 +47,8 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="md:hidden fixed bottom-2 left-2.5 right-2.5 z-40 glass-strong rounded-2xl shadow-[var(--shadow-lg)] flex justify-around py-1.5 pb-[calc(env(safe-area-inset-bottom,0.5rem)+0.4rem)]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 flex justify-around border-t border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-md pt-1 pb-[calc(env(safe-area-inset-bottom,0px)+0.25rem)]"
     >
-      {/* top hairline so the floating bar reads as a lit surface */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--hairline-bright)] to-transparent"
-      />
       {ITEMS.map((item) => {
         const active = isActive(pathname, item.href)
         const Icon = item.icon
@@ -61,31 +56,23 @@ export function MobileBottomNav() {
         const inner = (
           <span
             className={cn(
-              'relative flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-w-[54px] min-h-[44px] rounded-xl transition-colors duration-200',
+              'relative flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-w-[54px] min-h-[44px] transition-colors duration-200',
               active ? '' : 'text-[var(--text-tertiary)]'
             )}
             style={active ? { color: accentColor } : undefined}
           >
             {active && (
-              // Shared-layout slide is disabled under prefers-reduced-motion:
-              // the highlight simply appears on the active tab instead of
-              // animating between tabs.
+              // FotMob tab grammar: a small underline-style indicator at the
+              // top edge. Slide between tabs unless reduced motion is set.
               <motion.span
                 {...(reduceMotion
                   ? {}
                   : { layoutId: 'bottomnav-active', transition: springSnappy })}
-                className="absolute inset-0 rounded-xl"
-                style={{
-                  background: `color-mix(in srgb, ${accentColor} 14%, transparent)`,
-                  boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accentColor} 30%, transparent)`,
-                }}
+                className="absolute -top-1 h-[3px] w-8 rounded-full"
+                style={{ background: accentColor }}
               />
             )}
-            <Icon
-              className={cn('relative h-[18px] w-[18px] transition-transform', active && '-translate-y-px')}
-              strokeWidth={2.2}
-              aria-hidden="true"
-            />
+            <Icon className="relative h-[19px] w-[19px]" strokeWidth={2.1} aria-hidden="true" />
             <span className="relative text-[10px] font-semibold">{item.label}</span>
           </span>
         )

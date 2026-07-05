@@ -112,11 +112,11 @@ export function GenderToggle({
             className={cn(
               'relative inline-flex items-center justify-center gap-1.5 font-semibold transition-colors',
               styles.button,
-              // The selected pill uses drop-shadow + ring (see motion.span)
-              // so white text reads clearly in both light and dark mode.
               active
-                ? 'text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? opt.value === 'women'
+                  ? 'text-[var(--accent-women)]'
+                  : 'text-[var(--text-primary)]'
+                : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
             )}
           >
             {active && (
@@ -124,15 +124,11 @@ export function GenderToggle({
                 layoutId="gender-toggle-pill"
                 transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 className={cn(
-                  // -z-10 -> -z-[1] so the gradient sits above the
-                  // outer container border but below the button text.
-                  // In light mode the previous z-index was sending the
-                  // pill behind the card-bg, washing out the active state.
-                  'absolute inset-0 -z-[1] bg-gradient-to-br shadow-md ring-2 ring-white/30',
-                  styles.pill,
-                  opt.value === 'men'
-                    ? 'from-[var(--accent-ai)] to-[var(--accent-primary)]'
-                    : 'from-[var(--accent-women)] to-[var(--accent-market)]'
+                  // Flat segmented-control fill (Matchday v3): a quiet
+                  // surface step, never a gradient. Women's keeps its pink
+                  // brand signal via the label colour above.
+                  'absolute inset-0 -z-[1] bg-[var(--card-hover)] ring-1 ring-[var(--border-color)]',
+                  styles.pill
                 )}
               />
             )}

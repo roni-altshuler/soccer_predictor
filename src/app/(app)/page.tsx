@@ -2,31 +2,20 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { Bookmark, BookmarkCheck, Brain, Filter, Loader2, RefreshCw } from 'lucide-react'
+import { Bookmark, BookmarkCheck, Loader2 } from 'lucide-react'
 
-import { leagues } from '@/data/leagues'
 import {
   WATCHLIST_STORAGE_KEY,
   normalizeTeamName,
   teamMatchesWatchlist,
   type WatchTeam,
 } from '@/lib/watchlist'
-import WorldCupCountdown from '@/components/worldcup/WorldCupCountdown'
 import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
-import { HeroSpotlight, type HeroAccuracy } from '@/components/home/HeroSpotlight'
-import { LiveTickerBar } from '@/components/home/LiveTickerBar'
-import { NewsStrip } from '@/components/home/NewsStrip'
-import { LeagueChip, SectionHeader } from '@/components/primitives'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
-import {
-  MatchCenterHeader,
-  type DateOption,
-} from '@/components/match/MatchCenterHeader'
+import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
 import type { MatchRowMatch } from '@/components/match/MatchRow'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -66,7 +55,8 @@ function getDateOptions(): DateOption[] {
     if (i === -1) label = 'Yesterday'
     else if (i === 0) label = 'Today'
     else if (i === 1) label = 'Tomorrow'
-    else label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    else
+      label = `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${d.getDate()}`
     out.push({ label, date: iso, isToday: i === 0 })
   }
   return out
@@ -83,13 +73,13 @@ function groupMatchesByLeague(matches: TodayMatch[]): Record<string, TodayMatch[
 
 // FotMob-style league prioritisation — the eye-catching leagues bubble to the top.
 const LEAGUE_PRIORITY: string[] = [
+  'FIFA World Cup', 'FIFA World Cup 2026', 'World Cup',
   'UEFA Champions League', 'Champions League',
   'UEFA Europa League', 'Europa League',
   'Premier League', 'La Liga', 'LaLiga',
   'Bundesliga', 'Serie A', 'Ligue 1',
   'MLS', 'Major League Soccer',
   'Eredivisie', 'Primeira Liga',
-  'FIFA World Cup', 'World Cup',
   "UEFA European Championship", 'EURO 2024',
 ]
 
@@ -108,6 +98,7 @@ const LEAGUE_COUNTRY: Record<string, { country: string; code: string }> = {
   'UEFA Europa League': { country: 'Europe', code: 'EU' },
   'Europa League': { country: 'Europe', code: 'EU' },
   'FIFA World Cup': { country: 'World', code: 'EARTH' },
+  'FIFA World Cup 2026': { country: 'World', code: 'EARTH' },
   'World Cup': { country: 'World', code: 'EARTH' },
 }
 
@@ -130,20 +121,6 @@ const LEAGUE_ID_MAP: Record<string, string> = {
   'UEFA European Championship': 'uefa.euro',
   'Copa America': 'conmebol.america',
 }
-
-/**
- * Documented holdout accuracy for the unified models (11,661-match men's
- * test set / women's test set — see CLAUDE.md). Used as the honest fallback
- * when neither the 30-day nor the all-time tracked window has ≥10 settled
- * picks, per design-language rule 3.
- */
-const HOLDOUT_ACCURACY: Record<'M' | 'F', HeroAccuracy> = {
-  M: { pct: 60.56, windowLabel: 'holdout accuracy', detail: '11,661-match holdout test set' },
-  F: { pct: 51.45, windowLabel: 'holdout accuracy', detail: "women's holdout test set" },
-}
-
-/** Minimum settled picks before a tracked window is displayed. */
-const MIN_SETTLED_FOR_WINDOW = 10
 
 function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch['provider']): DataProvider {
   if (source === 'espn' || source === 'fotmob' || source === 'error') return source
@@ -170,8 +147,6 @@ export default function Home() {
   const [tab, setTab] = useState<'all' | 'live' | 'finished'>('all')
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
   const [watchlistOnly, setWatchlistOnly] = useState(false)
-  const [lastFetched, setLastFetched] = useState<Date | null>(null)
-  const [accuracy, setAccuracy] = useState<HeroAccuracy | null>(null)
 
   // Watchlist state — load from localStorage and react to cross-tab updates.
   useEffect(() => {
@@ -216,44 +191,6 @@ export default function Home() {
   // time the user toggles the men's/women's universe.
   const { asQueryParam } = useGenderQuery()
 
-  // Honest accuracy chip (design-language rule 3): show the 30-day window
-  // only when it holds ≥10 settled picks; otherwise widen to all-time; and
-  // if even that is too thin, fall back to the documented holdout figure.
-  useEffect(() => {
-    let cancelled = false
-
-    const readWindow = async (days?: number) => {
-      const url = `/api/v1/tracking/accuracy?gender=${asQueryParam}${days ? `&days=${days}` : ''}`
-      const res = await fetch(url, { cache: 'no-store' })
-      if (!res.ok) return null
-      const data = await res.json()
-      const settled = Number(data?.completed_predictions ?? 0)
-      const raw = Number(data?.winner_accuracy ?? data?.accuracy ?? 0)
-      if (!Number.isFinite(settled) || !Number.isFinite(raw)) return null
-      return { settled, pct: raw <= 1 ? raw * 100 : raw }
-    }
-
-    const resolveAccuracy = async (): Promise<HeroAccuracy> => {
-      try {
-        const win30 = await readWindow(30)
-        if (win30 && win30.settled >= MIN_SETTLED_FOR_WINDOW) {
-          return { pct: win30.pct, windowLabel: '30-day accuracy', detail: `${win30.settled} settled picks` }
-        }
-        const allTime = await readWindow()
-        if (allTime && allTime.settled >= MIN_SETTLED_FOR_WINDOW) {
-          return { pct: allTime.pct, windowLabel: 'all-time accuracy', detail: `${allTime.settled} settled picks` }
-        }
-      } catch {
-        /* fall through to holdout */
-      }
-      return HOLDOUT_ACCURACY[asQueryParam]
-    }
-
-    resolveAccuracy().then((resolved) => {
-      if (!cancelled) setAccuracy(resolved)
-    })
-    return () => { cancelled = true }
-  }, [asQueryParam])
   useEffect(() => {
     let cancelled = false
     const fetchMatches = async () => {
@@ -266,7 +203,6 @@ export default function Home() {
         if (res.ok && !cancelled) {
           const data = await res.json()
           setMatches(data)
-          setLastFetched(new Date())
         }
       } catch (e) {
         console.error('Failed fetching matches:', e)
@@ -311,120 +247,69 @@ export default function Home() {
     return a.localeCompare(b)
   })
 
-  const selectedDateLabel =
-    dateOptions.find((d) => d.date === selectedDate)?.label || selectedDate
-
-  // Single source of truth for the day's counts + committed-pick coverage:
-  // everything below derives from the one /api/todays_matches payload.
-  const aiPicksCount = [...live, ...upcoming, ...completed].filter(
-    (m) => typeof m.ai_home_prob === 'number'
-  ).length
-
   return (
     <div className="min-h-screen">
-      <HeroSpotlight
-        liveCount={live.length}
-        upcomingCount={upcoming.length}
-        finishedCount={completed.length}
-        selectedDateLabel={selectedDateLabel}
-        accuracy={accuracy}
-      />
-
-      <LiveTickerBar
-        matches={live.map((m) => ({
-          id: m.id,
-          home_team: m.home_team,
-          away_team: m.away_team,
-          home_score: m.home_score ?? 0,
-          away_score: m.away_score ?? 0,
-          minute: m.minute ?? null,
-          league: m.league,
-          leagueId: m.leagueId,
-        }))}
-      />
-
-      <MatchCenterHeader
+      <DateStrip
         dateOptions={dateOptions}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
-        selectedDateLabel={selectedDateLabel}
-        predictGender={asQueryParam}
-        aiPicksCount={aiPicksCount}
       />
 
-      <div className="mx-auto w-full max-w-5xl px-4 pt-4">
-        {/* Filter row */}
-        <Card className="overflow-hidden">
-          <div className="flex flex-wrap items-center gap-2 p-3">
-            {(['all', 'live', 'finished'] as const).map((t) => {
-              const count = t === 'all' ? tabMatches.length : t === 'live' ? live.length : completed.length
-              return (
-                <Button
-                  key={t}
-                  variant={tab === t ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setTab(t)}
-                  className="min-h-[40px] gap-1.5"
-                >
-                  {t === 'live' && live.length > 0 && (
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
-                    </span>
-                  )}
-                  <span className="uppercase tracking-wide">{t}</span>
-                  <span className="text-[10px] opacity-75">({count})</span>
-                </Button>
-              )
-            })}
-
-            {trackedTeams.length > 0 && (
-              <Button
-                variant={watchlistOnly ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setWatchlistOnly((v) => !v)}
-                className={cn('ml-auto min-h-[40px] gap-1.5', watchlistOnly && 'bg-[var(--accent-market)]/90 hover:bg-[var(--accent-market)]')}
-              >
-                {watchlistOnly ? (
-                  <BookmarkCheck className="h-3.5 w-3.5" />
-                ) : (
-                  <Bookmark className="h-3.5 w-3.5" />
+      <div className="mx-auto w-full max-w-5xl px-3 pb-8 pt-3 sm:px-4">
+        {/* Filter row — segment control + watchlist toggle, one quiet line */}
+        <div className="mb-2 flex items-center gap-1">
+          {(['all', 'live', 'finished'] as const).map((t) => {
+            const active = tab === t
+            const label = t === 'all' ? 'All' : t === 'live' ? 'Live' : 'Finished'
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={cn(
+                  'flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors',
+                  active
+                    ? 'bg-[var(--card-hover)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
                 )}
-                Tracked teams
-                <span className="text-[10px] opacity-75">({trackedMatchesInTab.length})</span>
-              </Button>
-            )}
-
-            {trackedTeams.length === 0 && (
-              <Link
-                href="/tracking?view=fan"
-                className="ml-auto inline-flex min-h-[40px] items-center rounded-lg px-2 text-[11px] text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-primary)]"
               >
-                <Filter className="mr-1 inline h-3 w-3" />
-                Add a team watchlist
-              </Link>
-            )}
-          </div>
+                {t === 'live' && live.length > 0 && (
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
+                  </span>
+                )}
+                {label}
+                {t === 'live' && live.length > 0 && (
+                  <span className="text-[10px] opacity-75">{live.length}</span>
+                )}
+              </button>
+            )
+          })}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-color)] px-3 py-2">
-            <DataSourceBadge
-              provider={resolveDataProvider(matches.source)}
-              detail={matches.sourceDetail || 'Daily match feed'}
-              refreshedAt={matches.generatedAt}
-              compact
-            />
-            {lastFetched && (
-              <span className="flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
-                <RefreshCw className="h-3 w-3" />
-                Refreshed {lastFetched.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </div>
-        </Card>
-      </div>
+          {trackedTeams.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setWatchlistOnly((v) => !v)}
+              className={cn(
+                'ml-auto flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors',
+                watchlistOnly
+                  ? 'bg-[var(--card-hover)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+              )}
+              aria-pressed={watchlistOnly}
+            >
+              {watchlistOnly ? (
+                <BookmarkCheck className="h-3.5 w-3.5" />
+              ) : (
+                <Bookmark className="h-3.5 w-3.5" />
+              )}
+              Following
+            </button>
+          )}
+        </div>
 
-      {/* Matches list */}
-      <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-8">
+        {/* The scores list IS the page */}
         {loading && visibleMatches.length === 0 ? (
           <Card className="flex items-center justify-center gap-2 py-12 text-small text-[var(--text-tertiary)]">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -433,110 +318,43 @@ export default function Home() {
         ) : sortedLeagueNames.length === 0 ? (
           <EmptyState
             illustration="no-matches"
-            title={`No matches ${watchlistOnly ? 'for tracked teams ' : ''}${tab === 'live' ? 'are live' : tab === 'finished' ? 'have finished' : 'scheduled'}`}
-            description="Try a different date or filter — the AI prediction tool still works for any matchup you can dream up."
+            title={`No matches ${watchlistOnly ? 'for followed teams ' : ''}${tab === 'live' ? 'are live' : tab === 'finished' ? 'have finished' : 'scheduled'}`}
+            description="Try a different date, or run the AI on any matchup you like."
             action={
               <Button asChild variant="default" size="sm">
-                <Link href="/predict">Run a custom prediction</Link>
+                <Link href="/predict">Open AI predict</Link>
               </Button>
             }
           />
         ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: { transition: { staggerChildren: 0.04 } },
-              hidden: {},
-            }}
-          >
-            <Card className="overflow-hidden">
-              {sortedLeagueNames.map((leagueName) => (
-                <motion.div
-                  key={leagueName}
-                  variants={{
-                    hidden: { opacity: 0, y: 8 },
-                    visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } },
-                  }}
-                >
-                  <LeagueSection
-                    leagueName={leagueName}
-                    leagueId={
-                      LEAGUE_ID_MAP[leagueName] ?? matchesByLeague[leagueName][0]?.leagueId
-                    }
-                    countryLabel={LEAGUE_COUNTRY[leagueName]?.country}
-                    matches={matchesByLeague[leagueName]}
-                    hrefFor={matchHref}
-                    defaultOpen
-                  />
-                </motion.div>
-              ))}
-            </Card>
-          </motion.div>
+          <Card className="overflow-hidden p-0">
+            {sortedLeagueNames.map((leagueName) => (
+              <LeagueSection
+                key={leagueName}
+                leagueName={leagueName}
+                leagueId={
+                  LEAGUE_ID_MAP[leagueName] ?? matchesByLeague[leagueName][0]?.leagueId
+                }
+                countryLabel={LEAGUE_COUNTRY[leagueName]?.country}
+                matches={matchesByLeague[leagueName]}
+                hrefFor={matchHref}
+                defaultOpen
+              />
+            ))}
+          </Card>
         )}
 
-        {/* AI promo card */}
-        <Card className="mt-4 overflow-hidden border-[var(--accent-ai)]/30 bg-gradient-to-r from-[var(--accent-ai)]/12 via-[var(--surface-highlight)] to-[var(--accent-primary)]/15 p-4">
-          <Link href="/predict" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/15">
-              <Brain className="h-5 w-5 text-[var(--accent-ai)]" strokeWidth={2} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-small font-bold text-[var(--text-primary)]">
-                Run the unified AI model on any fixture
-              </p>
-              <p className="text-[11px] text-[var(--text-tertiary)]">
-                Multi-task neural network · scoreline distribution · 80 contextual features
-              </p>
-            </div>
-            <Badge variant="outline" className="border-[var(--accent-ai)]/40 text-[var(--accent-ai)]">
-              Try it
-            </Badge>
-          </Link>
-        </Card>
-
-        {/* World Cup hub + editorial below the data */}
-        <div className="mt-4">
-          <WorldCupCountdown compact />
-        </div>
-        <NewsStrip className="px-0 pt-2" />
-
-        {/* Quick league chips */}
-        <div className="mt-6">
-          <SectionHeader
-            kicker="Browse"
-            title="Explore leagues"
-            className="mb-3"
-            action={
-              <Link
-                href="/matches"
-                className="inline-flex min-h-[40px] items-center text-xs font-medium text-[var(--accent-primary)] hover:underline"
-              >
-                See all
-              </Link>
-            }
+        {/* Provenance + disclaimer — one quiet line, not a banner */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+          <DataSourceBadge
+            provider={resolveDataProvider(matches.source)}
+            detail={matches.sourceDetail || 'Match feed'}
+            compact
           />
-          <div className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none]">
-            {leagues.slice(0, 10).map((league) => {
-              const id = LEAGUE_ID_MAP[league.name] || ''
-              return (
-                <LeagueChip
-                  key={league.name}
-                  leagueId={id || undefined}
-                  name={league.name.replace('UEFA ', '').replace(/\s*\(.*\)$/, '')}
-                  href={id ? `/leagues/${id}` : '/matches'}
-                  size="sm"
-                  className="shrink-0"
-                />
-              )
-            })}
-          </div>
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            Predictions are educational only — not betting advice.
+          </p>
         </div>
-
-        {/* Disclaimer */}
-        <p className="mt-6 text-center text-[10px] text-[var(--text-tertiary)]">
-          Predictions are for educational/entertainment purposes only. Not intended for betting.
-        </p>
       </div>
     </div>
   )

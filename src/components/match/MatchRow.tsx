@@ -4,24 +4,21 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 
-import { TeamFormPill, type FormEntry } from '@/components/match/TeamFormPill'
-import { FlagBadge, ProbBar } from '@/components/primitives'
+import { type FormEntry } from '@/components/match/TeamFormPill'
+import { FlagBadge, Prob1X2 } from '@/components/primitives'
 import { Badge } from '@/components/ui/badge'
 import { cn, clamp } from '@/lib/utils'
 
 /**
- * Canonical fixture row — the design-language anatomy applied everywhere:
+ * Canonical fixture row — Matchday v3 (FotMob grammar, stacked teams):
  *
- *   crest/flag + team names · kickoff/status · venue (tertiary, truncates)
- *   · ProbBar when a committed prediction exists · predicted-score chip
- *   (cyan tint) when available.
+ *   | time/status col | crest + Team A ... score |  1X2 boxes · pick chip |
+ *   |                 | crest + Team B ... score |  (committed picks only)|
  *
- * - National-team fixtures (`is_national`) resolve identities to real
- *   country flags via `FlagBadge`; clubs use their crest URL. The gray
- *   monogram is a last-resort fallback, never the default for known teams.
- * - The ProbBar renders ONLY when the payload carries committed model
- *   probabilities — no fabrication for uncovered fixtures.
- * - 52px+ tap target on mobile.
+ * One 56–64px unit; the whole row is the link. The AI zone renders ONLY
+ * when the payload carries committed model probabilities — no fabrication
+ * for uncovered fixtures. National-team fixtures (`is_national`) resolve to
+ * country flags via `FlagBadge`; clubs use their crest URL.
  */
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'completed'
@@ -68,77 +65,85 @@ function formatKickoff(timeStr?: string): string {
   }
 }
 
-function TeamIdentity({
-  url,
-  name,
-  align,
-  isNational,
-}: {
-  url?: string | null
-  name: string
-  align: 'left' | 'right'
-  isNational?: boolean
-}) {
-  const margin = align === 'right' ? 'order-2 ml-2' : 'mr-2'
-  return (
-    <span className={cn('inline-flex shrink-0', margin)} aria-hidden="true">
-      <FlagBadge
-        teamName={name}
-        // National teams get real country flags; clubs get their crest.
-        country={isNational ? name : undefined}
-        logoUrl={isNational ? undefined : url ?? undefined}
-        size={26}
-      />
-    </span>
-  )
-}
-
-function StatusBlock({ match }: { match: MatchRowMatch }) {
+/** Fixed-width left column: kickoff time, live minute, or FT. */
+function StatusColumn({ match }: { match: MatchRowMatch }) {
   const status = match.status?.toString().toLowerCase()
   if (status === 'live') {
-    const homeScore = match.home_score ?? 0
-    const awayScore = match.away_score ?? 0
     return (
-      <div className="flex w-24 flex-col items-center">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{homeScore}</span>
-          <span className="text-xs text-[var(--text-tertiary)]">–</span>
-          <span className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{awayScore}</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-1">
-          <span className="relative inline-flex h-1.5 w-1.5">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--live-text)]">
-            {match.minute ? `${match.minute}'` : 'LIVE'}
-          </span>
-        </div>
+      <div className="flex w-[52px] shrink-0 flex-col items-center justify-center">
+        <span className="text-xs font-bold tabular-nums text-[var(--live-text)]">
+          {match.minute ? `${match.minute}'` : 'LIVE'}
+        </span>
+        <span className="relative mt-1 inline-flex h-1.5 w-1.5">
+          <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
+        </span>
       </div>
     )
   }
   if (status === 'finished' || status === 'completed') {
-    const homeScore = match.home_score ?? 0
-    const awayScore = match.away_score ?? 0
     return (
-      <div className="flex w-24 flex-col items-center">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-xl font-bold tabular-nums text-[var(--text-secondary)]">{homeScore}</span>
-          <span className="text-xs text-[var(--text-tertiary)]">–</span>
-          <span className="text-xl font-bold tabular-nums text-[var(--text-secondary)]">{awayScore}</span>
-        </div>
-        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">FT</span>
+      <div className="flex w-[52px] shrink-0 items-center justify-center">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+          FT
+        </span>
       </div>
     )
   }
   return (
-    <div className="flex w-24 flex-col items-center">
-      <span className="text-base font-semibold tabular-nums text-[var(--accent-primary)]">
+    <div className="flex w-[52px] shrink-0 items-center justify-center">
+      <span className="text-xs font-semibold tabular-nums text-[var(--text-secondary)]">
         {formatKickoff(match.time)}
       </span>
-      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
-        Kick-off
+    </div>
+  )
+}
+
+function TeamLine({
+  name,
+  crestUrl,
+  isNational,
+  score,
+  showScore,
+  emphasis,
+}: {
+  name: string
+  crestUrl?: string | null
+  isNational?: boolean
+  score: number | null
+  showScore: boolean
+  emphasis: 'winner' | 'loser' | 'neutral'
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="inline-flex shrink-0" aria-hidden="true">
+        <FlagBadge
+          teamName={name}
+          country={isNational ? name : undefined}
+          logoUrl={isNational ? undefined : crestUrl ?? undefined}
+          size={20}
+        />
       </span>
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[13px]',
+          emphasis === 'winner' && 'font-semibold text-[var(--text-primary)]',
+          emphasis === 'loser' && 'font-medium text-[var(--text-tertiary)]',
+          emphasis === 'neutral' && 'font-medium text-[var(--text-primary)]'
+        )}
+      >
+        {name}
+      </span>
+      {showScore && (
+        <span
+          className={cn(
+            'shrink-0 pl-2 text-[13px] font-bold tabular-nums',
+            emphasis === 'loser' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'
+          )}
+        >
+          {score ?? 0}
+        </span>
+      )}
     </div>
   )
 }
@@ -173,11 +178,23 @@ export function MatchRow({
       ? match.predicted_scoreline
       : null
 
-  const isFinished = match.status === 'finished' || match.status === 'completed'
-  const teamTextClass = isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
+  const status = match.status?.toString().toLowerCase()
+  const isFinished = status === 'finished' || status === 'completed'
+  const isLive = status === 'live'
+  const showScore = isFinished || isLive
+  const homeScore = match.home_score ?? null
+  const awayScore = match.away_score ?? null
 
-  const body = (
-    <div className="flex w-full items-center gap-2">
+  // Finished matches dim the loser (FotMob grammar); live/scheduled stay neutral.
+  let homeEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  let awayEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  if (isFinished && homeScore !== null && awayScore !== null && homeScore !== awayScore) {
+    homeEmphasis = homeScore > awayScore ? 'winner' : 'loser'
+    awayEmphasis = awayScore > homeScore ? 'winner' : 'loser'
+  }
+
+  const inner = (
+    <div className="flex w-full items-center">
       {showFavoriteToggle && (
         <button
           type="button"
@@ -197,64 +214,34 @@ export function MatchRow({
         </button>
       )}
 
-      <div className="flex min-w-0 flex-1 items-center">
-        <div className="flex min-w-0 flex-1 items-center justify-end overflow-hidden text-right">
-          {match.home_form && (
-            <TeamFormPill
-              form={match.home_form}
-              size="xs"
-              className="mr-2 hidden sm:inline-flex"
-              teamName={match.home_team}
-            />
-          )}
-          <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.home_team}</span>
-          <TeamIdentity
-            url={match.home_crest_url}
-            name={match.home_team}
-            align="right"
-            isNational={match.is_national}
-          />
-        </div>
+      <StatusColumn match={match} />
 
-        <StatusBlock match={match} />
-
-        <div className="flex min-w-0 flex-1 items-center overflow-hidden">
-          <TeamIdentity
-            url={match.away_crest_url}
-            name={match.away_team}
-            align="left"
-            isNational={match.is_national}
-          />
-          <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.away_team}</span>
-          {match.away_form && (
-            <TeamFormPill
-              form={match.away_form}
-              size="xs"
-              className="ml-2 hidden sm:inline-flex"
-              teamName={match.away_team}
-            />
-          )}
-        </div>
+      <div className="min-w-0 flex-1 space-y-1.5 border-l border-[var(--border-color)]/60 py-2 pl-3">
+        <TeamLine
+          name={match.home_team}
+          crestUrl={match.home_crest_url}
+          isNational={match.is_national}
+          score={homeScore}
+          showScore={showScore}
+          emphasis={homeEmphasis}
+        />
+        <TeamLine
+          name={match.away_team}
+          crestUrl={match.away_crest_url}
+          isNational={match.is_national}
+          score={awayScore}
+          showScore={showScore}
+          emphasis={awayEmphasis}
+        />
       </div>
-    </div>
-  )
 
-  const inner = (
-    <div className="w-full">
-      {body}
       {hasAILean && (
-        <div className="mt-2">
-          <ProbBar home={aiHome} draw={aiDraw} away={aiAway} size="sm" showLabels />
-        </div>
-      )}
-      {(match.venue || predictedScoreline) && (
-        <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1 truncate text-[10px] text-[var(--text-tertiary)]">
-            {match.venue}
-          </div>
+        <div className="ml-3 flex shrink-0 items-center gap-2 pr-1">
+          <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} className="hidden sm:flex" />
+          <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} compact className="sm:hidden" />
           {predictedScoreline && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-ai)]/12 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
-              AI pick {predictedScoreline}
+            <span className="hidden shrink-0 items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
+              AI {predictedScoreline}
             </span>
           )}
         </div>
@@ -263,8 +250,8 @@ export function MatchRow({
   )
 
   const className = cn(
-    'group relative block w-full rounded-md px-3 py-2.5 transition-colors',
-    'min-h-[52px]',
+    'group relative block w-full px-3 transition-colors',
+    'min-h-[56px]',
     'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
   )
 
@@ -291,7 +278,7 @@ export function MatchRowList({
       initial="hidden"
       animate="visible"
       variants={{
-        visible: { transition: { staggerChildren: 0.025 } },
+        visible: { transition: { staggerChildren: 0.02 } },
         hidden: {},
       }}
       className={cn('divide-y divide-[var(--border-color)]/40', className)}
@@ -301,8 +288,8 @@ export function MatchRowList({
             <motion.div
               key={(child as { key?: string })?.key ?? idx}
               variants={{
-                hidden: { opacity: 0, y: 6 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } },
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { duration: 0.2 } },
               }}
             >
               {child}

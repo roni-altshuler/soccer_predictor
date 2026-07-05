@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Trophy } from 'lucide-react'
 
-import { LeagueBadge } from '@/components/match/LeagueBadge'
 import { MatchRow, type MatchRowMatch } from '@/components/match/MatchRow'
 import { Badge } from '@/components/ui/badge'
 import { getLeagueAccent } from '@/lib/leagueAccents'
@@ -82,15 +81,12 @@ export function LeagueSection({
   }))
 
   return (
-    <section
-      className="relative border-b border-[var(--border-color)]/40 first:border-t"
-      style={{ borderLeft: `3px solid ${accent.accent}` }}
-    >
+    <section className="relative border-b border-[var(--border-color)]/40 last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center gap-2 px-3 py-2.5 transition-colors',
+          'flex min-h-[40px] w-full items-center gap-2 bg-[var(--background-secondary)]/60 px-3 py-1.5 transition-colors',
           'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
         )}
         aria-expanded={open}
@@ -101,10 +97,21 @@ export function LeagueSection({
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.5} />
         )}
-        <LeagueBadge league={leagueId ?? leagueName} size="md" />
-        <span className="ml-1 hidden truncate text-xs font-medium text-[var(--text-tertiary)] sm:inline">
-          {accent.country}
+        {/* Flat league identity (v3): small real logo + name, no pill chrome. */}
+        {accent.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={accent.logoUrl} alt="" className="h-4 w-4 shrink-0 object-contain" aria-hidden="true" />
+        ) : (
+          <Trophy className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden="true" />
+        )}
+        <span className="truncate text-[12.5px] font-semibold text-[var(--text-primary)]">
+          {accent.competitionId !== 'unknown' ? accent.displayName : leagueName}
         </span>
+        {accent.country && (
+          <span className="hidden truncate text-[11px] font-medium text-[var(--text-tertiary)] sm:inline">
+            {accent.country}
+          </span>
+        )}
         {tableLeader && (
           <Badge
             variant="outline"

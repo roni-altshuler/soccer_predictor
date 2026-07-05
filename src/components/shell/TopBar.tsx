@@ -31,14 +31,9 @@ export function TopBar() {
   return (
     <>
       <header
-        className="sticky top-0 z-30 flex h-[var(--shell-topbar-h)] items-center gap-3 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] px-4 backdrop-blur-xl md:px-6"
+        className="sticky top-0 z-30 flex h-[var(--shell-topbar-h)] items-center gap-3 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] px-4 backdrop-blur-md md:px-6"
         role="banner"
       >
-        {/* glowing bottom hairline for depth */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)] to-transparent"
-        />
         {/* Brand mark — only visible on mobile (sidebar is hidden there) */}
         <Link
           href="/"
@@ -54,7 +49,7 @@ export function TopBar() {
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="group relative ml-auto md:ml-0 flex h-9 min-w-[160px] max-w-[420px] flex-1 items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]/70 px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] focus-visible:border-[var(--accent-primary)]/50"
+          className="group relative ml-auto md:ml-0 flex h-9 min-w-[160px] max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[var(--accent-primary)]/50"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]" />
@@ -71,7 +66,7 @@ export function TopBar() {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-primary)]/20"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)]"
                 aria-label="Account menu"
               >
                 {user.avatar_url ? (
@@ -103,7 +98,7 @@ export function TopBar() {
           ) : (
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="rounded-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-primary)]/20"
+              className="rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90"
             >
               Sign In
             </button>

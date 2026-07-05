@@ -8,27 +8,27 @@
    theme adapts automatically when `.dark` is toggled on <html>.
    ──────────────────────────────────────────────────────────── */
 :root {
-  /* Surfaces */
-  --background: #f5f7fb;
-  --background-secondary: #fafcff;
-  --background-tertiary: #e9eef7;
+  /* Surfaces — Matchday v3: neutral cool-whites, no blue undertone */
+  --background: #f2f3f5;
+  --background-secondary: #f7f8f9;
+  --background-tertiary: #e9eaee;
   --card-bg: #ffffff;
-  --card-hover: #f3f6fc;
-  --input-bg: #f4f7fc;
-  --muted-bg: #eef2f9;
-  --nav-bg: rgba(250, 252, 255, 0.86);
-  --nav-border: rgba(176, 192, 215, 0.55);
+  --card-hover: #f2f4f7;
+  --input-bg: #f4f5f7;
+  --muted-bg: #eef0f2;
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --nav-border: #e3e5e9;
 
   /* Text */
-  --text-primary: #0f1a2c;
-  --text-secondary: #3a4b66;
-  --text-tertiary: #5d7290;
+  --text-primary: #131316;
+  --text-secondary: #45454e;
+  --text-tertiary: #6d6d78;
 
-  /* Brand accents (new tokens — see Milestone 1 brief) */
-  --accent-primary: #16a34a;          /* green for wins / primary CTA */
-  --accent-primary-soft: #4ade80;
-  --accent-ai: #06b6d4;               /* cyan for AI / predictions */
-  --accent-ai-soft: #67e8f9;
+  /* Brand accents — one green; cyan reserved for AI-pick data only */
+  --accent-primary: #0a9950;          /* green for wins / primary actions */
+  --accent-primary-soft: #2fb26d;
+  --accent-ai: #0891b2;               /* cyan for AI / predictions */
+  --accent-ai-soft: #22b8d4;
   --accent-warn: #f59e0b;              /* amber for draws / uncertainty */
   --accent-warn-soft: #fbbf24;
   --accent-loss: #ef4444;             /* red for losses */
@@ -40,12 +40,12 @@
   --accent-women: #db2777;            /* pink for women's-universe brand signal */
   --accent-women-soft: #ec4899;
 
-  /* Borders & shadows */
-  --border-color: #d8e0ee;
-  --border-hover: #b2bfd5;
-  --shadow-sm: 0 1px 2px rgba(15, 26, 44, 0.06);
-  --shadow-md: 0 8px 18px rgba(15, 26, 44, 0.09);
-  --shadow-lg: 0 18px 34px rgba(15, 26, 44, 0.14);
+  /* Borders & shadows — flat product: hairlines carry the structure */
+  --border-color: #e3e5e9;
+  --border-hover: #c9ccd3;
+  --shadow-sm: 0 1px 2px rgba(19, 19, 22, 0.05);
+  --shadow-md: 0 4px 12px rgba(19, 19, 22, 0.07);
+  --shadow-lg: 0 12px 24px rgba(19, 19, 22, 0.10);
 
   /* Status surfaces */
   --success: var(--accent-primary);
@@ -78,15 +78,15 @@
   --radius: 0.75rem;
 
   /* App shell layout tokens (sidebar + topbar) */
-  --shell-sidebar-w: 68px;
-  --shell-sidebar-w-expanded: 232px;
-  --shell-topbar-h: 60px;
-  --shell-content-max: 1320px;
+  --shell-sidebar-w: 220px;
+  --shell-sidebar-w-expanded: 220px;
+  --shell-topbar-h: 56px;
+  --shell-content-max: 1160px;
 
-  /* Glass / surface mix tokens used by the new shell */
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(176, 192, 215, 0.42);
-  --glass-blur: saturate(160%) blur(14px);
+  /* Glass / surface mix tokens used by the shell (flat in v3) */
+  --glass-bg: rgba(255, 255, 255, 0.94);
+  --glass-border: #e3e5e9;
+  --glass-blur: blur(10px);
   --bento-hl: color-mix(in srgb, var(--accent-ai) 16%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 16%, transparent);
 
@@ -112,14 +112,16 @@
      mesh stops, elevated surface gradients, and team-tinted hero
      gradients. Light-mode values stay restrained; .dark turns them up.
      ──────────────────────────────────────────────────────────── */
-  --glow-ai: 0 0 0 1px color-mix(in srgb, var(--accent-ai) 22%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--accent-ai) 32%, transparent);
-  --glow-primary: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 22%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--accent-primary) 32%, transparent);
-  --glow-loss: 0 0 0 1px color-mix(in srgb, var(--accent-loss) 26%, transparent), 0 8px 36px -8px color-mix(in srgb, var(--accent-loss) 34%, transparent);
-  --aurora-1: color-mix(in srgb, var(--accent-primary) 28%, transparent);
-  --aurora-2: color-mix(in srgb, var(--accent-ai) 28%, transparent);
-  --aurora-3: color-mix(in srgb, var(--accent-market) 22%, transparent);
-  --elev-1: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 86%, white 14%), var(--card-bg));
-  --elev-2: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 78%, white 22%), var(--card-bg));
+  /* Matchday v3: glows and aurora washes are retired — kept as flat/neutral
+     values so legacy consumers render calm surfaces instead of neon bloom. */
+  --glow-ai: 0 0 0 1px var(--border-color);
+  --glow-primary: 0 0 0 1px var(--border-color);
+  --glow-loss: 0 0 0 1px var(--border-color);
+  --aurora-1: transparent;
+  --aurora-2: transparent;
+  --aurora-3: transparent;
+  --elev-1: var(--card-bg);
+  --elev-2: var(--card-bg);
   --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
   --hairline-bright: color-mix(in srgb, white 14%, transparent);
   /* Team-tint hero gradient — match-detail / cards override --team-tint-home
@@ -142,47 +144,46 @@
 }
 
 .dark {
-  /* Cinematic dark-first surfaces — deeper near-black navy with a cool blue
-     undertone so accent glows read as light emitted in a dark room. */
-  --background: #05070f;
-  --background-secondary: #090d1a;
-  --background-tertiary: #111a30;
-  --card-bg: #0d1424;
-  --card-hover: #141f38;
-  --input-bg: #0a1120;
-  --muted-bg: #151f38;
-  --nav-bg: rgba(7, 11, 22, 0.72);
-  --nav-border: rgba(64, 92, 140, 0.42);
+  /* Matchday v3 dark — neutral charcoal, zero blue undertone. The product
+     grammar of FotMob/ESPN dark modes: calm surfaces, hairline structure. */
+  --background: #0e0e10;
+  --background-secondary: #121215;
+  --background-tertiary: #1a1a1e;
+  --card-bg: #17171b;
+  --card-hover: #1e1e23;
+  --input-bg: #1c1c21;
+  --muted-bg: #1e1e23;
+  --nav-bg: rgba(17, 17, 20, 0.94);
+  --nav-border: #26262b;
 
-  --text-primary: #f3f6fc;
-  --text-secondary: #aebfdc;
-  --text-tertiary: #7e93b6;
+  --text-primary: #f5f5f6;
+  --text-secondary: #a6a6ae;
+  --text-tertiary: #74747e;
 
-  --accent-primary: #2ee46a;
-  --accent-primary-soft: #5cf08e;
-  --accent-ai: #2ad4f2;
-  --accent-ai-soft: #79e6fb;
-  --accent-warn: #fbbf24;
-  --accent-warn-soft: #fde047;
-  --accent-loss: #fb6f6f;
-  --accent-loss-soft: #fca5a5;
-  --accent-market: #9b6bff;
+  --accent-primary: #00c060;
+  --accent-primary-soft: #34d380;
+  --accent-ai: #27c4f5;
+  --accent-ai-soft: #67d9f9;
+  --accent-warn: #f5b021;
+  --accent-warn-soft: #fbcb52;
+  --accent-loss: #ff5c5c;
+  --accent-loss-soft: #ff8a8a;
+  --accent-market: #a58bff;
   --accent-market-soft: #c4b5fd;
-  --accent-info: #5aa6ff;
+  --accent-info: #6ba6f8;
   --accent-info-soft: #93c5fd;
-  --accent-women: #f86fb6;
+  --accent-women: #f871b0;
   --accent-women-soft: #f9a8d4;
 
-  --border-color: #1f2e49;
-  --border-hover: #38567e;
-  /* Shadows carry a faint cool tint + deeper falloff for the cinematic feel. */
-  --shadow-sm: 0 1px 2px rgba(2, 5, 12, 0.6);
-  --shadow-md: 0 14px 30px rgba(2, 5, 12, 0.6);
-  --shadow-lg: 0 30px 60px -12px rgba(2, 5, 12, 0.78);
+  --border-color: #26262b;
+  --border-hover: #3a3a42;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
 
-  --live-bg: rgba(248, 113, 113, 0.12);
-  --live-border: rgba(248, 113, 113, 0.32);
-  --live-text: #fca5a5;
+  --live-bg: rgba(255, 92, 92, 0.10);
+  --live-border: rgba(255, 92, 92, 0.30);
+  --live-text: #ff7070;
 
   --tab-active-bg: color-mix(in srgb, var(--accent-primary) 18%, transparent);
   --surface-highlight: color-mix(in srgb, var(--accent-ai) 14%, transparent);
@@ -195,9 +196,9 @@
   --pitch-text: #f1f5fb;
   --ticker-bg: linear-gradient(to right, #07101f, #14223a);
 
-  /* Dark-mode glass overrides */
-  --glass-bg: rgba(12, 24, 42, 0.62);
-  --glass-border: rgba(52, 78, 117, 0.4);
+  /* Dark-mode glass overrides (flat in v3) */
+  --glass-bg: rgba(23, 23, 27, 0.94);
+  --glass-border: #26262b;
   --bento-hl: color-mix(in srgb, var(--accent-ai) 22%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 22%, transparent);
 
@@ -207,20 +208,20 @@
   --rating-bg-high: color-mix(in srgb, var(--accent-primary) 28%, transparent);
   --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 28%, transparent);
   --headshot-ring: rgba(241, 245, 251, 0.22);
-  --score-numeric-shadow: 0 0 22px color-mix(in srgb, var(--accent-primary) 38%, transparent);
+  --score-numeric-shadow: none;
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 60%, transparent);
 
-  /* Cinematic layer — turned up for the dark showpiece. */
-  --glow-ai: 0 0 0 1px color-mix(in srgb, var(--accent-ai) 35%, transparent), 0 12px 60px -10px color-mix(in srgb, var(--accent-ai) 55%, transparent);
-  --glow-primary: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 35%, transparent), 0 12px 60px -10px color-mix(in srgb, var(--accent-primary) 50%, transparent);
-  --glow-loss: 0 0 0 1px color-mix(in srgb, var(--accent-loss) 40%, transparent), 0 12px 56px -10px color-mix(in srgb, var(--accent-loss) 50%, transparent);
-  --aurora-1: color-mix(in srgb, var(--accent-primary) 42%, transparent);
-  --aurora-2: color-mix(in srgb, var(--accent-ai) 42%, transparent);
-  --aurora-3: color-mix(in srgb, var(--accent-market) 34%, transparent);
-  --elev-1: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 82%, #2a3f63 18%), var(--card-bg));
-  --elev-2: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 70%, #2f4a73 30%), var(--card-bg));
+  /* Matchday v3: no neon bloom in dark mode either. */
+  --glow-ai: 0 0 0 1px var(--border-color);
+  --glow-primary: 0 0 0 1px var(--border-color);
+  --glow-loss: 0 0 0 1px var(--border-color);
+  --aurora-1: transparent;
+  --aurora-2: transparent;
+  --aurora-3: transparent;
+  --elev-1: var(--card-bg);
+  --elev-2: var(--card-bg);
   --hairline: color-mix(in srgb, var(--border-color) 80%, transparent);
-  --hairline-bright: color-mix(in srgb, white 9%, transparent);
+  --hairline-bright: rgba(255, 255, 255, 0.07);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -228,13 +229,9 @@
    ──────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
+  /* Matchday v3: flat neutral page surface — structure comes from hairlines
+     and surface steps, not ambient color washes. */
   background-color: var(--background);
-  background-image:
-    radial-gradient(60% 50% at 8% -6%, var(--aurora-1), transparent 60%),
-    radial-gradient(55% 45% at 96% 2%, var(--aurora-2), transparent 58%),
-    radial-gradient(50% 60% at 50% 110%, var(--aurora-3), transparent 60%),
-    linear-gradient(180deg, color-mix(in srgb, white 3%, transparent), transparent 22%);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
@@ -623,9 +620,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Ambient page backdrop — soft accent washes for the main content column */
 .ambient-bg {
-  background:
-    radial-gradient(circle at 6% -8%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 42%),
-    radial-gradient(circle at 96% 2%, color-mix(in srgb, var(--accent-ai) 14%, transparent), transparent 42%);
+  /* Matchday v3: ambient accent washes retired — flat page surface. */
+  background: var(--background);
 }
 
 /* Spotlight that follows the cursor on the hero card */

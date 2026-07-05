@@ -1,107 +1,119 @@
-# Pitchwise "Broadcast" design language
+# Matchday — Pitchwise design language (v3)
 
-The bar: a premium sports-analytics product (FotMob × Linear × a broadcast
-scoreboard) — data-forward, disciplined, cinematic where it earns it.
-Every page must read as one product. This document is the contract; any
-surface that deviates is a bug.
+Reference class: **FotMob** (list-first scores app), **ESPN** (scoreboard hierarchy),
+**bet365** (data-grid density). This supersedes "Broadcast" (v2). Every app surface
+must read as a professional sports data product — the kind of site B/R Football
+would link out to — not as an AI-startup landing page.
 
-## Hard rules (violations are bugs)
+## Why v2 failed (learn from it)
 
-1. **No emoji in chrome.** No 📅/🏴/🇪🇸 as icons or league markers. Use
-   lucide icons, league crests (`LeagueBadge`), or country flags via
-   `flagcdn.com` (already whitelisted in `next.config.js`).
-2. **Real identities, not letter-avatars.** Club matches use ESPN/FotMob
-   crests (`TeamBadge`); national teams use country flags. A gray circle
-   with an initial is a last resort, never the default for known teams.
-3. **No fabricated data, no shameful zeros.** Metrics render only when the
-   sample supports them: any rate with `n < 10` in its window shows the
-   larger-window or holdout value with an honest caption ("holdout" /
-   "all-time"), or hides. `0.0%` from an empty window must never render.
-4. **Tokens only.** `var(--*)` colors; no `text-white`/`bg-black`/hex.
-5. **Accent discipline.** green `--accent-primary` = results/positive;
-   cyan `--accent-ai` = model/AI outputs; amber `--accent-warn` = draws /
-   pending; red `--accent-loss` = losses/live; purple `--accent-market` =
-   markets. One accent per element — never rainbow a card.
-6. **Numbers are data.** `tabular-nums` on every numeric column/stat;
-   percentages to one decimal only when < 10 samples ambiguity matters,
-   else whole numbers on display surfaces.
-7. **Interactive targets ≥ 40px** on touch surfaces (44px for primary).
-8. **Reduced motion respected** for any animation added.
+v2 fixed emoji/fake-crest/zero-metric problems but kept the *template* feel:
 
-## Surface system (depth instead of flat sameness)
+- Marketing hero + CTA banners sat on top of app pages ("Live football. Calibrated AI.").
+- Neon green/cyan on blue-navy, aurora radial washes, glow shadows, gradient
+  wordmarks, border-beam effects — reads "AI dashboard template", not sports.
+- Fixture rows were ~110px tall (side-by-side teams + full-width tricolor bar +
+  venue line). FotMob fits three rows in that space.
+- Internal telemetry was presented as consumer data: "2 COMMITTED PICKS",
+  "FIXTURES TRACKED 18", "AI PICKS GENERATED", "Models live · v2.3", countdown
+  timers, refresh timestamps.
 
-Three levels, already tokenized:
-- **Canvas** `--background` — page.
-- **Card** `--card-bg` + `border-[var(--border-color)]` + `rounded-xl`.
-- **Elevated / featured** — card + `shadow-lg` + a 1px inner top highlight
-  (`.surface-elevated` utility in globals.css) + optional accent gradient
-  gloss for hero/featured only.
+## Hard rules
 
-Rhythm: cards in one grid share equal heights; section spacing is
-`space-y-10` on pages, `gap-4` inside grids. Page content lives in the
-shell's max width; hero surfaces may bleed full-width.
+1. **The scores list IS the page.** App routes open with data — a date strip and
+   fixture rows, a scoreboard, a table — never a hero, tagline, or CTA banner.
+   Marketing copy lives at `/welcome` only.
+2. **Neutral surfaces, one accent.** Charcoal (dark) / cool-white (light) neutral
+   surfaces with NO blue undertone. Brand green is for interactive/active states
+   only. Cyan appears ONLY on AI-pick data (chips, 1X2 boxes, prediction viz).
+   Red ONLY for live/loss. Amber ONLY for draws. **No gradients, no glow
+   shadows, no aurora washes, no BorderBeam/AnimatedGradientText in app chrome.**
+3. **Density.** Fixture row = one 56–64px unit (stacked team lines). A section
+   header is one 32–40px line. Nothing above the first data row may exceed
+   ~112px of chrome (topbar + date strip).
+4. **Data-field policy.** Never surface internal telemetry: prediction counts,
+   model/version chips, pipeline or job names, cache/refresh timestamps,
+   "committed picks". Consumer surfaces show football facts: scores, kickoff,
+   form (W/D/L), standings position, H2H, xG, scorers, venue (detail pages).
+   Model *quality* stats live on /accuracy, /ai, /diagnostics — nowhere else.
+5. **No fabricated data** (v2 rule, unchanged). A missing prediction renders
+   nothing — never flat placeholders. Empty accuracy windows are hidden, never
+   shown as 0%.
+6. **No emoji in chrome; real crests/flags** (v2 rule, unchanged) — clubs get
+   ESPN crest URLs, national teams get flagcdn flags via `FlagBadge`.
+7. **44px+ tap targets; `useReducedMotion` honored on every animation** (unchanged).
+8. **Tokens only** — `var(--*)` for every color (Vercel lint + light mode).
 
-## Shared primitives (in `src/components/primitives/` — USE, don't fork)
+## Surfaces (token values live in `globals.css`)
 
-- **`SectionHeader`** — kicker (11px uppercase tracking-wide tertiary) +
-  title (`text-xl font-bold`) + optional description + optional action
-  slot (right-aligned link/button). Every section on every page uses it.
-- **`StatCard`** — label, big tabular value (`text-3xl font-black`),
-  optional delta/sub-caption, optional accent. Replaces the ad-hoc
-  bordered stat boxes; supports `size="sm"` for dense rows.
-- **`ProbBar`** — inline horizontal stacked W/D/L probability bar
-  (green/amber/red at 100% total width, 6px tall, rounded, with optional
-  % labels). The signature element: every fixture row that has a
-  prediction shows one.
-- **`LeagueChip`** — crest/flag + name pill (no emoji), league accent as
-  left rail or ring on active. Wraps `getLeagueAccent`.
-- **`StatusChip`** — settled/pending/live/correct/incorrect in one
-  component: dot + lowercase-caps label, subtle bg tint, never full-sat.
-- **`EmptyState`** (exists) for empty; **`AsyncSection`** (exists) for
-  loading/error. No bespoke spinners.
+| Token | Dark | Light | Use |
+|---|---|---|---|
+| `--background` | `#0e0e10` | `#f2f3f5` | page |
+| `--card-bg` | `#17171b` | `#ffffff` | list containers, cards |
+| `--card-hover` | `#1e1e23` | `#f2f4f7` | row hover |
+| `--border-color` | `#26262b` | `#e3e5e9` | hairlines |
+| `--accent-primary` | `#00c060` | `#0a9950` | active nav, links, kickoff time |
+| `--accent-ai` | `#27c4f5` | `#0891b2` | AI pick data only |
 
-## Page anatomy
+Cards are **flat**: 1px hairline border, 12px radius, no elevation gradient.
+Depth comes from surface steps (bg → card → hover), not shadows.
 
-Every page: compact hero band (kicker + title + one-line description +
-right-aligned key stat or action) → sections via `SectionHeader`. Hero
-uses the elevated surface with a *subtle* league/AI accent gradient (8-12%
-opacity), not a solid color block. Match-centre home keeps its cinematic
-hero; other pages use the compact band — no page opens with a bare `<h1>`.
+## Anatomy
 
-## Fixture rows (consistent EVERYWHERE)
+### MatchRow (FotMob grammar — stacked teams)
 
-Crest/flag + team names (weight 600, winner-tinted when settled) ·
-kickoff/status · venue (tertiary, truncates) · `ProbBar` when a prediction
-exists · predicted score chip (cyan tint) when available. Settled rows:
-actual score bold + `StatusChip` correct/incorrect. Rows hover:
-`bg-[var(--card-hover)]`, no translate jumps in dense lists.
+```
+| 52px time/status | crest 20px  Team A            1 |  [1  62][X 23][2 15]  AI 2-1 |
+|  (HH:MM, 74',    | crest 20px  Team B            0 |   1X2 boxes · pick chip      |
+|   FT, HT)        |                                 |   (only if prediction exists)|
+```
 
-## Tables (history/diagnostics/standings)
+- Height 56–64px. Whole row is the link. Score column right-aligns within the
+  team block; winner's score is `--text-primary`, loser's `--text-tertiary`.
+- Live: time column shows red minute (`74'`), scores in primary text.
+- The right AI zone renders **only when a committed prediction exists**:
+  three fixed 1X2 percentage boxes (bet365 grammar — argmax box tinted cyan,
+  others muted) plus optional scoreline chip. On <640px the 1X2 boxes collapse
+  to the single argmax box + chip.
 
-Sticky header row, `tabular-nums`, zebra via `--muted-bg` at 40%,
-grouped by date with day dividers, paginated or "load more" past 25 rows,
-filters as segmented controls (not pill soup). Status via `StatusChip`.
+### League group
 
-## What premium looks like per accent moment
+32px header: 18px league crest/flag + league name (semibold 13px) +
+country (tertiary 12px) + match count right + chevron. Flat hairline between
+groups — no colored left-edge bars. Rows separated by `--border-color` at 40%.
 
-- AI/model outputs get the cyan treatment + the model chip
-  (`unified-multitask…` → display "Unified v2").
-- Live gets the red pulse dot (existing `LiveBadge`).
-- League context uses `leagueAccents.ts` rails (4px left border) on
-  league-scoped sections.
+### Date strip
 
-## Known baseline defects to eliminate (from the 2026-07-02 audit)
+Sticky under the topbar on scores surfaces: 7 buttons (−3…+3 days), compact
+(`Wed 3` / `Today`), active = green underline bar + primary text (tab grammar,
+not pill grammar).
 
-- Home: `0.0%` 30-day hit-rate rendered twice (empty window) — apply rule 3.
-- Home: hero says 3 upcoming while Match Centre chips say 0 — one source
-  of truth for today's counts.
-- Home fixture rows: no probabilities, letter avatars for national teams.
-- Upcoming: emoji calendar icon, emoji flag chips, empty-box calendar,
-  Premier League default in July (default to the league with matches
-  today; during the World Cup that's `fifa.world`).
-- History: 100 identical PENDING rows, no grouping/pagination; add the
-  fixture-row treatment + settled coloring + date grouping.
-- News: fine bones; featured overlay needs a gradient scrim for contrast.
-- Tiny targets: simulator (17), history (15), welcome (14), home (7).
-- Console 404s on world-cup + team-detail; league page fetches ESPN
-  client-side and hits CORS — move to a Next API route.
+### Shell
+
+- **Desktop sidebar**: fixed 220px, always-labeled text links (13px, icon 18px),
+  grouped: *Scores* (Matches, World Cup, Leagues, News) · *AI* (Predict,
+  Accuracy, History, Simulator) · *More* (Tournaments, Diagnostics, About).
+  Active = soft green wash + green text. Flat surface `--card-bg`, hairline right.
+- **Topbar**: 56px flat bar — mobile brand, search field, gender toggle,
+  ghost Sign-in. No glass gradients or glowing hairlines.
+- **Mobile**: bottom tab bar flush to the screen edge (not a floating pill),
+  5 slots, safe-area padded, top hairline, active = green icon+label.
+
+### Tables (unchanged from v2)
+
+Standings/stat tables: 13px, tabular-nums, right-aligned numerics, zebra-free,
+hairline rows, position-change arrows colored by token.
+
+## Primitives
+
+`src/components/primitives/` + `src/components/match/` are the only sources for:
+`MatchRow`, `LeagueSection`, `DateStrip`, `Prob1X2` (the 1X2 boxes), `ProbBar`
+(detail pages only — never in list rows), `FormPill`, `FlagBadge`, `LeagueChip`,
+`StatusChip`, `SectionHeader`, `StatCard`, `EmptyState`. New surfaces compose
+these; do not fork row/section markup per page.
+
+## Copy register
+
+Sentence case, terse, football-first ("Fixtures", "Table", "Form", "AI pick").
+Never "committed", "pipeline", "unified model" outside /ai + /diagnostics.
+Educational disclaimer stays in the footer — small, not a banner.
