@@ -1,6 +1,6 @@
 {
   "month": "2026-07",
-  "count": 32,
+  "count": 34,
   "predictions": [
     {
       "match_id": "760497",
@@ -889,14 +889,14 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "goals_diff": null,
+      "actual_home_goals": 0,
+      "actual_away_goals": 1,
+      "actual_winner": "away",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-07-02T09:15:20.490981",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-05T09:18:58.802471"
     },
     {
       "match_id": "760504",
@@ -2028,15 +2028,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-07-02T12:10:05.164753",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-05T09:18:58.912487"
     },
     {
       "match_id": "401853929",
@@ -2384,15 +2384,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 3,
+      "actual_away_goals": 1,
+      "actual_winner": "home",
+      "winner_correct": true,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-07-02T12:10:05.183094",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-05T09:18:58.912467"
     },
     {
       "match_id": "401853931",
@@ -4520,6 +4520,362 @@
       "scoreline_in_top5": null,
       "goals_diff": null,
       "prediction_timestamp": "2026-07-04T08:49:02.731062",
+      "outcome_timestamp": null
+    },
+    {
+      "match_id": "401853939",
+      "home_team": "Seattle Reign FC",
+      "away_team": "Portland Thorns FC",
+      "league": "NWSL",
+      "match_date": "2026-07-12",
+      "gender": "F",
+      "predicted_home_win": 0.4279,
+      "predicted_draw": 0.3011,
+      "predicted_away_win": 0.2709,
+      "predicted_home_goals": 1.34,
+      "predicted_away_goals": 1.04,
+      "predicted_scoreline": "1-1",
+      "top_scorelines": [
+        {
+          "score": "1-1",
+          "probability": 0.1232
+        },
+        {
+          "score": "1-0",
+          "probability": 0.1072
+        },
+        {
+          "score": "2-1",
+          "probability": 0.0902
+        },
+        {
+          "score": "0-1",
+          "probability": 0.0834
+        },
+        {
+          "score": "0-0",
+          "probability": 0.0801
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "home_weighted_form",
+          "value": 0.4648,
+          "contribution": 2.0519
+        },
+        {
+          "feature": "away_form_10_pts",
+          "value": 20.0,
+          "contribution": 0.9139
+        },
+        {
+          "feature": "home_matches_last_14d",
+          "value": 0.0,
+          "contribution": -0.8485
+        },
+        {
+          "feature": "home_form_5_pts",
+          "value": 2.0,
+          "contribution": -0.623
+        },
+        {
+          "feature": "home_xg_for_avg5",
+          "value": 0.0,
+          "contribution": -0.5356
+        },
+        {
+          "feature": "home_goals_for_avg5",
+          "value": 0.0,
+          "contribution": -0.5105
+        },
+        {
+          "feature": "away_xg_for_avg5",
+          "value": 0.0,
+          "contribution": -0.4669
+        },
+        {
+          "feature": "has_xg_data",
+          "value": 0.0,
+          "contribution": -0.4493
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 42.8,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "Lumen Field",
+      "feature_vector": [
+        1478.067192,
+        1500.0,
+        -21.932808,
+        0.2,
+        0.333333,
+        0.366667,
+        0.6,
+        0.2,
+        0.319048,
+        0.8,
+        1.2,
+        1.8,
+        1.6,
+        0.9,
+        1.6,
+        0.2,
+        0.4,
+        0.4,
+        1.6,
+        -1.0,
+        2.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        7.0,
+        43.0,
+        -36.0,
+        1.1,
+        1.8,
+        0.3,
+        0.5,
+        -0.4,
+        0.5,
+        -2.0,
+        1.0,
+        0.0,
+        1.0,
+        0.3316,
+        0.3519,
+        0.3165,
+        0.3519,
+        0.0,
+        0.447059,
+        0.492647,
+        0.466667,
+        0.504854,
+        2.08,
+        1.84,
+        0.463158,
+        0.438095,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        0.92,
+        1.044,
+        2.611049,
+        21.932808,
+        0.06632,
+        0.2,
+        1.959864,
+        1.0,
+        1.0,
+        1478.067192,
+        1500.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-05T09:19:02.953352",
+      "outcome_timestamp": null
+    },
+    {
+      "match_id": "401854064",
+      "home_team": "Denver Summit FC",
+      "away_team": "Houston Dash",
+      "league": "NWSL",
+      "match_date": "2026-07-12",
+      "gender": "F",
+      "predicted_home_win": 0.6351,
+      "predicted_draw": 0.2259,
+      "predicted_away_win": 0.1389,
+      "predicted_home_goals": 2.26,
+      "predicted_away_goals": 0.85,
+      "predicted_scoreline": "2-0",
+      "top_scorelines": [
+        {
+          "score": "2-0",
+          "probability": 0.1055
+        },
+        {
+          "score": "2-1",
+          "probability": 0.0969
+        },
+        {
+          "score": "1-0",
+          "probability": 0.0936
+        },
+        {
+          "score": "1-1",
+          "probability": 0.0827
+        },
+        {
+          "score": "3-0",
+          "probability": 0.0794
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "home_streak",
+          "value": 2.0,
+          "contribution": 0.8391
+        },
+        {
+          "feature": "away_matches_last_14d",
+          "value": 0.0,
+          "contribution": -0.6791
+        },
+        {
+          "feature": "home_goals_for_avg5",
+          "value": 2.2,
+          "contribution": 0.5006
+        },
+        {
+          "feature": "has_xg_data",
+          "value": 0.0,
+          "contribution": -0.4084
+        },
+        {
+          "feature": "away_goals_for_avg5",
+          "value": 0.2,
+          "contribution": -0.3739
+        },
+        {
+          "feature": "home_home_win_pct",
+          "value": 0.3333,
+          "contribution": 0.2956
+        },
+        {
+          "feature": "home_matches_last_14d",
+          "value": 0.0,
+          "contribution": -0.2776
+        },
+        {
+          "feature": "away_form_5_pts",
+          "value": 1.0,
+          "contribution": 0.2564
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 63.5,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "Dick's Sporting Goods Park",
+      "feature_vector": [
+        1521.932808,
+        1500.0,
+        21.932808,
+        0.6,
+        0.266667,
+        0.466667,
+        0.266667,
+        0.685714,
+        0.280952,
+        1.8,
+        1.0,
+        1.4,
+        1.8,
+        1.5,
+        1.0,
+        0.25,
+        0.0,
+        1.25,
+        0.25,
+        1.0,
+        5.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        8.0,
+        8.0,
+        0.0,
+        1.4,
+        0.8,
+        0.4,
+        0.1,
+        0.2,
+        -0.9,
+        -1.0,
+        -2.0,
+        0.0,
+        0.0,
+        0.3745,
+        0.3478,
+        0.2777,
+        0.3745,
+        0.0,
+        0.545045,
+        0.4,
+        0.493827,
+        0.387097,
+        1.9,
+        1.68,
+        0.588235,
+        0.34375,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        2.07,
+        0.87,
+        8.877565,
+        21.932808,
+        0.2568,
+        0.783673,
+        0.321088,
+        1.0,
+        1.0,
+        1521.932808,
+        1500.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-05T09:19:02.961688",
       "outcome_timestamp": null
     }
   ]
