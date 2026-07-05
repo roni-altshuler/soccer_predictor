@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Brain, Radio, Sparkles } from 'lucide-react'
+import { ArrowRight, Brain, Sparkles } from 'lucide-react'
 
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import { GenderToggle } from '@/components/GenderToggle'
@@ -11,16 +11,31 @@ import { DotPattern } from '@/components/magicui/dot-pattern'
 import { NumberTicker } from '@/components/magicui/number-ticker'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { Spotlight } from '@/components/magicui/spotlight'
+import { StatCard } from '@/components/primitives'
 import { useGenderPreference } from '@/hooks/useGenderPreference'
 import { cn } from '@/lib/utils'
+
+/**
+ * Honest accuracy figure for the hero chip. The parent resolves the widest
+ * trustworthy window (30-day → all-time → holdout) per the design-language
+ * rule: never render a rate from a window with fewer than 10 settled picks.
+ */
+export interface HeroAccuracy {
+  /** 0–100 display percentage. */
+  pct: number
+  /** Window caption, e.g. "30-day accuracy" / "all-time accuracy" / "holdout accuracy". */
+  windowLabel: string
+  /** Sample caption, e.g. "214 settled picks" / "11,661-match holdout". */
+  detail: string
+}
 
 interface HeroSpotlightProps {
   liveCount: number
   upcomingCount: number
   finishedCount: number
   selectedDateLabel: string
-  /** Headline accuracy figure (0–100). Pulled from /api/v1/tracking/accuracy by parent. */
-  modelAccuracyPct?: number
+  /** Resolved honest accuracy; chip hides while null/undefined. */
+  accuracy?: HeroAccuracy | null
 }
 
 /**
@@ -39,7 +54,7 @@ export function HeroSpotlight({
   upcomingCount,
   finishedCount,
   selectedDateLabel,
-  modelAccuracyPct,
+  accuracy,
 }: HeroSpotlightProps) {
   const { gender } = useGenderPreference()
   const reduce = useReducedMotion()
@@ -141,50 +156,67 @@ export function HeroSpotlight({
           className="flex w-full max-w-md flex-col gap-3"
         >
           <div className="grid grid-cols-3 gap-2">
-            <KpiTile
+            <StatCard
+              size="sm"
               accent="loss"
               label="Live now"
-              value={liveCount}
-              live
+              value={
+                <span className="inline-flex items-center gap-2">
+                  <AnimatedCounter value={liveCount} duration={1.0} />
+                  {liveCount > 0 && (
+                    <span className="relative inline-flex h-2 w-2" aria-hidden="true">
+                      <span className="absolute inset-0 motion-safe:animate-ping rounded-full bg-[var(--accent-loss)] opacity-60" />
+                      <span className="relative inline-block h-2 w-2 rounded-full bg-[var(--accent-loss)]" />
+                    </span>
+                  )}
+                </span>
+              }
+              className="bg-[var(--card-bg)]/70 backdrop-blur-sm"
             />
-            <KpiTile
-              accent="ai"
+            <StatCard
+              size="sm"
+              accent="warn"
               label="Upcoming"
-              value={upcomingCount}
+              value={<AnimatedCounter value={upcomingCount} duration={1.0} />}
+              className="bg-[var(--card-bg)]/70 backdrop-blur-sm"
             />
-            <KpiTile
-              accent="muted"
+            <StatCard
+              size="sm"
+              accent="primary"
               label="Finished"
-              value={finishedCount}
+              value={<AnimatedCounter value={finishedCount} duration={1.0} />}
+              className="bg-[var(--card-bg)]/70 backdrop-blur-sm"
             />
           </div>
 
-          {/* AI accuracy strip */}
-          <Link
-            href="/accuracy"
-            className="gradient-border group flex items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10">
-              <Brain className="h-5 w-5 text-[var(--accent-ai)]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Unified model · 30-day accuracy
-              </p>
-              <p className="flex items-baseline gap-1.5 text-[var(--text-primary)]">
-                <NumberTicker
-                  value={modelAccuracyPct ?? 0}
-                  decimalPlaces={1}
-                  suffix="%"
-                  className="text-h3 font-bold tabular-nums"
-                />
-                <span className="text-xs text-[var(--text-tertiary)]">
-                  outcome hit-rate
-                </span>
-              </p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent-ai)]" />
-          </Link>
+          {/* AI accuracy strip — only renders once an honest window resolved */}
+          {accuracy && (
+            <Link
+              href="/accuracy"
+              className="gradient-border group flex items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-0.5"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10">
+                <Brain className="h-5 w-5 text-[var(--accent-ai)]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Unified model · {accuracy.windowLabel}
+                </p>
+                <p className="flex items-baseline gap-1.5 text-[var(--text-primary)]">
+                  <NumberTicker
+                    value={accuracy.pct}
+                    decimalPlaces={0}
+                    suffix="%"
+                    className="text-h3 font-bold tabular-nums"
+                  />
+                  <span className="truncate text-xs text-[var(--text-tertiary)]">
+                    outcome hit-rate · {accuracy.detail}
+                  </span>
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent-ai)]" />
+            </Link>
+          )}
         </motion.div>
       </div>
     </section>
@@ -192,54 +224,3 @@ export function HeroSpotlight({
   )
 }
 
-function KpiTile({
-  accent,
-  label,
-  value,
-  live,
-}: {
-  accent: 'loss' | 'ai' | 'muted'
-  label: string
-  value: number
-  live?: boolean
-}) {
-  const ringClass =
-    accent === 'loss'
-      ? 'border-[var(--accent-loss)]/30'
-      : accent === 'ai'
-        ? 'border-[var(--accent-ai)]/30'
-        : 'border-[var(--border-color)]'
-  const numberClass =
-    accent === 'loss'
-      ? 'text-[var(--accent-loss)]'
-      : accent === 'ai'
-        ? 'text-[var(--accent-ai)]'
-        : 'text-[var(--text-primary)]'
-
-  return (
-    <div
-      className={cn(
-        'relative flex flex-col gap-1 rounded-xl border bg-[var(--card-bg)]/70 px-3 py-3 text-left shadow-sm backdrop-blur-sm',
-        ringClass
-      )}
-    >
-      <div className="flex items-center gap-1.5">
-        {live && value > 0 && (
-          <span className="relative inline-flex h-2 w-2 items-center justify-center">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-60" />
-            <span className="relative inline-block h-2 w-2 rounded-full bg-[var(--accent-loss)]" />
-          </span>
-        )}
-        {!live && accent === 'ai' && (
-          <Radio className="h-2.5 w-2.5 text-[var(--accent-ai)]" aria-hidden="true" />
-        )}
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-          {label}
-        </p>
-      </div>
-      <p className={cn('text-h2 font-extrabold leading-none tabular-nums', numberClass)}>
-        <AnimatedCounter value={value} duration={1.0} />
-      </p>
-    </div>
-  )
-}

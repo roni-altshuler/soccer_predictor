@@ -1,6 +1,5 @@
 import { ArrowRight, Sparkles } from 'lucide-react'
 
-import { BorderBeam } from '@/components/magicui/border-beam'
 import { DotPattern } from '@/components/magicui/dot-pattern'
 import { Section } from './primitives/Section'
 import { Reveal } from './primitives/Reveal'
@@ -11,7 +10,12 @@ export function FinalCTA() {
     <Section labelledBy="final-cta-heading" className="pb-24">
       <Reveal>
         <div className="relative isolate overflow-hidden rounded-[2rem] border border-[var(--border-color)] bg-[var(--card-bg)] px-6 py-16 text-center md:px-12 md:py-20">
-          <BorderBeam size={1} duration={16} borderRadius={32} colorFrom="var(--accent-primary)" colorTo="var(--accent-ai)" />
+          {/* Hairline top highlight instead of BorderBeam (mask-composite
+              floods the card in some renderers — see followups). */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)] to-transparent"
+          />
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_srgb,var(--accent-primary)_18%,transparent),transparent_65%),radial-gradient(50%_50%_at_50%_120%,color-mix(in_srgb,var(--accent-ai)_16%,transparent),transparent_60%)]"

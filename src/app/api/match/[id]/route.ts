@@ -270,10 +270,14 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
       let status = 'scheduled'
       let minute: number | undefined
       
-      if (statusType === 'STATUS_FINAL' || statusType === 'STATUS_FULL_TIME') {
+      // STATUS_FINAL_AET / STATUS_FINAL_PEN cover knockout matches decided
+      // after extra time or penalties — without them, finished World Cup
+      // knockout games rendered as "scheduled" with no score.
+      if (statusType.startsWith('STATUS_FINAL') || statusType === 'STATUS_FULL_TIME') {
         status = 'finished'
-      } else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' || 
-                 statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF') {
+      } else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' ||
+                 statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF' ||
+                 statusType === 'STATUS_OVERTIME' || statusType === 'STATUS_SHOOTOUT') {
         status = 'live'
         const displayClock = competition.status?.displayClock
         if (displayClock) {

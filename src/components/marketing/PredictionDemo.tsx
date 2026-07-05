@@ -86,7 +86,7 @@ export function PredictionDemo() {
               aria-selected={i === fixtureIdx}
               onClick={() => setFixtureIdx(i)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                'min-h-[40px] rounded-lg px-3 text-xs font-semibold transition-colors',
                 i === fixtureIdx
                   ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-sm'
                   : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]',
@@ -102,7 +102,7 @@ export function PredictionDemo() {
           <button
             onClick={() => run(fixtureIdx)}
             disabled={status === 'loading'}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
             aria-label="Re-run prediction"
           >
             <RefreshCw className={cn('h-4 w-4', status === 'loading' && 'animate-spin')} aria-hidden="true" />

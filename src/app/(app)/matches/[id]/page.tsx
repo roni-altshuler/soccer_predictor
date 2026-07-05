@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, CheckCircle2, Clock, MapPin, RefreshCw, Zap } from 'lucide-react'
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleHelp, CheckCircle2, Clock, MapPin, MessageSquareText, RefreshCw, Scale, Sparkles, Swords, Zap } from 'lucide-react'
 import { EventTimeline } from '@/components/match/EventTimeline'
 import { MetaChipRow } from '@/components/match/MetaChipRow'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
-import { TeamBadge } from '@/components/primitives/TeamBadge'
+import { FlagBadge, ProbBar, TeamBadge } from '@/components/primitives'
 
 import { cn } from '@/lib/utils'
 import { getLeagueAccent } from '@/lib/leagueAccents'
@@ -19,7 +19,6 @@ import KeyMatchFactors from '@/components/match/KeyMatchFactors'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
-import LiveProbabilityBar from '@/components/match/LiveProbabilityBar'
 import DerivedMarkets from '@/components/match/DerivedMarkets'
 import BettingIntelligence from '@/components/match/BettingIntelligence'
 import DataSourceBadge from '@/components/DataSourceBadge'
@@ -229,16 +228,50 @@ const DETAIL_TAB_LABELS: Record<DetailTab, string> = {
   ai: 'AI Prediction',
 }
 
+/**
+ * Competitions contested by national teams — identities resolve to real
+ * country flags (rule 2: no letter-avatars for known teams).
+ */
+const NATIONAL_TEAM_COMPETITIONS = new Set([
+  'fifa.world',
+  'fifa.wwc',
+  'fifa.friendly',
+  'fifa.friendly.w',
+  'uefa.euro',
+  'uefa.weuro',
+  'uefa.nations',
+  'conmebol.america',
+  'concacaf.gold',
+  'caf.nations',
+  'afc.asian.cup',
+])
+
+function isNationalTeamMatch(leagueId?: string, leagueName?: string): boolean {
+  if (leagueId && NATIONAL_TEAM_COMPETITIONS.has(leagueId)) return true
+  const name = (leagueName || '').toLowerCase()
+  return /world cup|euro(pean championship)?|copa america|nations league|gold cup|international friendl/.test(name)
+}
+
+/** Human display name for the model chip ("unified-multitask…" → "Unified v2"). */
+function modelDisplayName(version?: string | null): string | null {
+  if (!version) return null
+  if (version.toLowerCase().startsWith('unified')) return 'Unified v2'
+  if (version.toLowerCase().includes('elo')) return 'ELO-Poisson'
+  return version
+}
+
 type MatchStats = MatchDetails['stats']
 
 function TeamNameWithCrest({
   name,
   teamId,
   align,
+  isNational,
 }: {
   name: string
   teamId?: string
   align: 'left' | 'right'
+  isNational?: boolean
 }) {
   const content = (
     <span
@@ -247,7 +280,11 @@ function TeamNameWithCrest({
         align === 'right' ? 'flex-row-reverse justify-start' : 'justify-start',
       )}
     >
-      <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
+      {isNational ? (
+        <FlagBadge country={name} teamName={name} size={32} />
+      ) : (
+        <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
+      )}
       <span className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
         {name}
       </span>
@@ -636,7 +673,7 @@ function PredictionInsightPanel({ match }: { match: MatchDetails }) {
           <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Prediction Explainability</p>
           <h3 className="text-base font-semibold text-[var(--text-primary)]">Why the model leans this way</h3>
         </div>
-        <DataSourceBadge provider="model" detail={match.prediction.model_version || 'Unified neural ensemble'} />
+        <DataSourceBadge provider="model" detail={modelDisplayName(match.prediction.model_version) || 'Unified neural ensemble'} />
       </div>
 
       <div className="p-4">
@@ -935,7 +972,7 @@ export default function MatchDetailPage() {
     if (matchId) {
       fetchMatchDetails()
     }
-  }, [matchId, leagueId, retryCount]) // retryCount triggers refetch when incremented
+  }, [matchId, leagueId, retryCount, genderParam]) // retryCount triggers refetch when incremented
 
   const formatDate = (dateStr: string) => {
     try {
@@ -1073,12 +1110,17 @@ export default function MatchDetailPage() {
   // Live minute label for the StickyScoreBar — falls back to match.status.
   const liveMinuteLabel = isLive ? (match.minute ?? match.status) : null
 
+  // National-team fixtures resolve identities to country flags (rule 2).
+  const isNational = isNationalTeamMatch(match.leagueId, match.league)
+
   return (
     <div className="min-h-screen">
       <StickyScoreBar
         heroRef={heroRef}
         homeName={match.home_team}
         awayName={match.away_team}
+        homeCountry={isNational ? match.home_team : undefined}
+        awayCountry={isNational ? match.away_team : undefined}
         homeTeamId={match.home_team_id}
         awayTeamId={match.away_team_id}
         homeScore={match.home_score}
@@ -1167,6 +1209,7 @@ export default function MatchDetailPage() {
                 name={match.home_team}
                 teamId={match.home_team_id}
                 align="right"
+                isNational={isNational}
               />
               {match.events.filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
@@ -1223,6 +1266,7 @@ export default function MatchDetailPage() {
                 name={match.away_team}
                 teamId={match.away_team_id}
                 align="left"
+                isNational={isNational}
               />
               {match.events.filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
@@ -1351,16 +1395,16 @@ export default function MatchDetailPage() {
               <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent-ai) 16%, transparent), color-mix(in srgb, var(--accent-primary) 16%, transparent))', border: '1px solid color-mix(in srgb, var(--accent-ai) 36%, transparent)' }}>
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">🤖</span>
+                    <Sparkles className="h-4 w-4 text-[var(--accent-ai)]" aria-hidden />
                     <span className="text-sm font-semibold text-[var(--accent-ai)]">AI Prediction</span>
-                    <span className="text-xs bg-[var(--accent-ai)]/20 text-[var(--accent-ai)] px-2 py-0.5 rounded-full ml-auto">
+                    <span className="text-xs bg-[var(--accent-ai)]/20 text-[var(--accent-ai)] px-2 py-0.5 rounded-full ml-auto tabular-nums">
                       {match.prediction.confidence}% confidence
                     </span>
                   </div>
-                  <div className="flex items-center justify-center gap-6">
+                  <div className="flex items-center justify-center gap-4 sm:gap-6">
                     <div className="text-center">
                       <p className="text-xs text-[var(--text-tertiary)] mb-1">Predicted Score</p>
-                      <p className="text-2xl font-bold text-[var(--accent-ai)]">
+                      <p className="text-xl sm:text-2xl font-bold tabular-nums whitespace-nowrap text-[var(--accent-ai)]">
                         {match.prediction.predicted_score.home} - {match.prediction.predicted_score.away}
                       </p>
                     </div>
@@ -1368,38 +1412,47 @@ export default function MatchDetailPage() {
                     <div className="flex gap-3">
                       <div className="text-center">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Home</p>
-                        <p className={`text-lg font-bold ${match.prediction.home_win > match.prediction.away_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                        <p className={`text-lg font-bold tabular-nums ${match.prediction.home_win > match.prediction.away_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
                           {Math.round(match.prediction.home_win * 100)}%
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Draw</p>
-                        <p className="text-lg font-bold text-[var(--text-secondary)]">
+                        <p className="text-lg font-bold tabular-nums text-[var(--text-secondary)]">
                           {Math.round(match.prediction.draw * 100)}%
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Away</p>
-                        <p className={`text-lg font-bold ${match.prediction.away_win > match.prediction.home_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                        <p className={`text-lg font-bold tabular-nums ${match.prediction.away_win > match.prediction.home_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
                           {Math.round(match.prediction.away_win * 100)}%
                         </p>
                       </div>
                     </div>
                   </div>
+                  {/* Signature W/D/L probability bar */}
+                  <div className="mt-3">
+                    <ProbBar
+                      home={match.prediction.home_win}
+                      draw={match.prediction.draw}
+                      away={match.prediction.away_win}
+                      size="md"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
                       <p className="text-[10px] text-[var(--text-tertiary)]">Total Goals</p>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{(match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)).toFixed(1)}</p>
+                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{(match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)).toFixed(1)}</p>
                     </div>
-                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
                       <p className="text-[10px] text-[var(--text-tertiary)]">Over 2.5</p>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.over_2_5 !== undefined ? `${Math.round(match.prediction.over_2_5 * 100)}%` : 'N/A'}</p>
+                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{match.prediction.over_2_5 !== undefined ? `${Math.round(match.prediction.over_2_5 * 100)}%` : 'N/A'}</p>
                     </div>
-                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
                       <p className="text-[10px] text-[var(--text-tertiary)]">BTTS</p>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.btts_yes !== undefined ? `${Math.round(match.prediction.btts_yes * 100)}%` : 'N/A'}</p>
+                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{match.prediction.btts_yes !== undefined ? `${Math.round(match.prediction.btts_yes * 100)}%` : 'N/A'}</p>
                     </div>
-                    <div className="rounded-xl bg-white/5 p-2.5 text-center">
+                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
                       <p className="text-[10px] text-[var(--text-tertiary)]">Confidence Band</p>
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.confidence_band || 'Medium'}</p>
                     </div>
@@ -1407,13 +1460,14 @@ export default function MatchDetailPage() {
                   {(match.prediction.model_version || match.prediction.most_likely_score) && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {match.prediction.most_likely_score && (
-                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
+                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full tabular-nums">
                           Likeliest scoreline: {match.prediction.most_likely_score}
                         </span>
                       )}
                       {match.prediction.model_version && (
-                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
-                          {match.prediction.model_version}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-ai)]/12 px-2 py-1 text-[10px] font-semibold text-[var(--accent-ai)]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-ai)]" aria-hidden />
+                          {modelDisplayName(match.prediction.model_version)}
                         </span>
                       )}
                     </div>
@@ -1529,7 +1583,7 @@ export default function MatchDetailPage() {
                 )}
                 {/* Date & Time */}
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-xl">📅</span>
+                  <CalendarDays className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden />
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatDate(match.date)}</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{match.league}</p>
@@ -1557,7 +1611,7 @@ export default function MatchDetailPage() {
                 {/* Referee */}
                 {match.referee && (
                   <div className="flex items-center gap-3 px-4 py-3">
-                    <span className="text-xl">⚖️</span>
+                    <Scale className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden />
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{match.referee}</p>
                       {match.refereeCountry && (
@@ -1606,7 +1660,7 @@ export default function MatchDetailPage() {
               <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                    <span>⚔️</span> Head-to-Head &amp; Form
+                    <Swords className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden /> Head-to-Head &amp; Form
                   </h3>
                 </div>
                 <div className="p-4 space-y-4">
@@ -1623,14 +1677,14 @@ export default function MatchDetailPage() {
                           <span className="text-[var(--text-tertiary)] text-xs">{totalH2H} meetings</span>
                           <span className="text-[var(--text-primary)] font-medium">{match.away_team}</span>
                         </div>
-                        <div className="flex h-6 rounded-lg overflow-hidden text-xs font-bold text-white">
+                        <div className="flex h-6 rounded-lg overflow-hidden text-xs font-bold tabular-nums text-[var(--accent-on-primary)]">
                           {homePct > 0 && (
                             <div className="bg-[var(--team-tint-home)] flex items-center justify-center" style={{ width: `${homePct}%` }}>
                               {match.h2h.homeWins}W
                             </div>
                           )}
                           {drawPct > 0 && (
-                            <div className="bg-gray-400 flex items-center justify-center" style={{ width: `${drawPct}%` }}>
+                            <div className="bg-[var(--accent-warn)] flex items-center justify-center" style={{ width: `${drawPct}%` }}>
                               {match.h2h.draws}D
                             </div>
                           )}
@@ -1732,7 +1786,9 @@ export default function MatchDetailPage() {
             {/* ── Commentary ── */}
             {match.commentary && match.commentary.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>📝 Commentary</h3>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <MessageSquareText className="h-4 w-4" aria-hidden /> Commentary
+                </h3>
                 <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="max-h-[400px] overflow-y-auto divide-y" style={{ borderColor: 'var(--border-color)' }}>
                     {match.commentary
@@ -1789,7 +1845,7 @@ export default function MatchDetailPage() {
                     {match.lineups.home.slice(0, 11).map((player, idx) => (
                       <div key={idx} className="flex items-center justify-between py-1 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-[var(--team-tint-home)] text-white text-xs flex items-center justify-center">{player.jersey || idx + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-[var(--team-tint-home)] text-[var(--accent-on-primary)] text-xs tabular-nums flex items-center justify-center">{player.jersey || idx + 1}</span>
                           <span className="text-[var(--text-primary)]">{player.name}</span>
                         </div>
                         {player.position && (
@@ -1834,7 +1890,7 @@ export default function MatchDetailPage() {
                     {match.lineups.away.slice(0, 11).map((player, idx) => (
                       <div key={idx} className="flex items-center justify-between py-1 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-[var(--team-tint-away)] text-white text-xs flex items-center justify-center">{player.jersey || idx + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-[var(--team-tint-away)] text-[var(--accent-on-primary)] text-xs tabular-nums flex items-center justify-center">{player.jersey || idx + 1}</span>
                           <span className="text-[var(--text-primary)]">{player.name}</span>
                         </div>
                         {player.position && (

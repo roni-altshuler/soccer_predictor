@@ -53,6 +53,9 @@ interface Props {
 function StatBar({ label, homeVal, awayVal, unit, higherIsBetter = true }: {
   label: string; homeVal: number; awayVal: number; unit?: string; higherIsBetter?: boolean
 }) {
+  // Empty form windows produce 0-vs-0 rows that read as fabricated data
+  // (design-language rule 3) — render nothing instead.
+  if (homeVal === 0 && awayVal === 0) return null
   const max = Math.max(homeVal, awayVal, 0.01)
   const homePct = (homeVal / max) * 100
   const awayPct = (awayVal / max) * 100

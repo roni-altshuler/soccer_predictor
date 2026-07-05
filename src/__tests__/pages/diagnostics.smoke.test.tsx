@@ -82,9 +82,11 @@ describe('TrackingCenter (diagnostics page body)', () => {
     await waitFor(() =>
       expect(learningTab).toHaveAttribute('aria-selected', 'true'),
     )
-    // After switching, the learning-panel content (League Adaptation Table)
-    // should be in the document.
-    expect(screen.getByText(/League Adaptation Table/i)).toBeInTheDocument()
+    // After switching, the learning-panel content ("League adaptation"
+    // SectionHeader in the Broadcast redesign) should be in the document.
+    expect(
+      screen.getByRole('heading', { name: /League adaptation/i }),
+    ).toBeInTheDocument()
   })
 
   it('exposes role=tabpanel on the active view container', async () => {

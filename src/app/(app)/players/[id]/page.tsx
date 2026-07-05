@@ -7,12 +7,9 @@ import { ChevronLeft, Crosshair, Footprints, Star, Target, Timer, Trophy } from 
 
 import { FormSparkline } from '@/components/charts/FormSparkline'
 import { BentoCard, BentoGrid } from '@/components/magicui/bento-grid'
-import { BorderBeam } from '@/components/magicui/border-beam'
 import { NumberTicker } from '@/components/magicui/number-ticker'
 import { Spotlight } from '@/components/magicui/spotlight'
-import { PlayerAvatar } from '@/components/primitives/PlayerAvatar'
-import { TeamBadge } from '@/components/primitives/TeamBadge'
-import { StatCard } from '@/components/cards/StatCard'
+import { PlayerAvatar, SectionHeader, StatCard, TeamBadge } from '@/components/primitives'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { ChartSkeleton } from '@/components/skeletons/ChartSkeleton'
 import { Card } from '@/components/ui/card'
@@ -56,6 +53,34 @@ export default function PlayerPage() {
   const formValues = useMemo<number[] | undefined>(() => stats?.form ?? undefined, [stats])
   const matchLog = useMemo(() => stats?.matches ?? [], [stats])
 
+  // Guarded degradation: an unknown player id (or an unreachable data
+  // service) renders one honest EmptyState — never a zeroed-out profile.
+  if (!playerLoading && !player) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pt-6 pb-12">
+        <Link
+          href="/matches"
+          className="inline-flex min-h-[40px] items-center gap-1 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-primary)]"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> Back to matches
+        </Link>
+        <EmptyState
+          illustration="data-error"
+          title="Player profile unavailable"
+          description="We couldn't load this player right now. They may not be covered yet, or the data service is briefly unreachable."
+          action={
+            <Link
+              href="/matches"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border-color)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+            >
+              Browse matches
+            </Link>
+          }
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 pb-12">
       <Link
@@ -71,8 +96,7 @@ export default function PlayerPage() {
         size={420}
         color="color-mix(in srgb, var(--accent-ai) 18%, transparent)"
       >
-        <Card className="relative overflow-hidden p-6">
-          <BorderBeam size={1} duration={12} borderRadius={16} />
+        <Card className="surface-elevated relative overflow-hidden p-6">
           <div className="relative z-10 flex flex-col items-start gap-5 md:flex-row md:items-center">
             <PlayerAvatar
               playerId={Number.isFinite(id) ? id : undefined}
@@ -86,7 +110,7 @@ export default function PlayerPage() {
                 Player profile
               </p>
               <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
-                {player?.name ?? (playerLoading ? 'Loading…' : 'Unknown player')}
+                {player?.name ?? 'Loading…'}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-small text-[var(--text-secondary)]">
                 {player?.position ? (
@@ -190,17 +214,25 @@ export default function PlayerPage() {
         {stats?.minutes != null ? (
           <StatCard
             label="Minutes played"
-            value={stats.minutes}
-            caption={`${stats?.appearances ?? stats?.starts ?? 0} matches`}
-            Icon={Timer}
+            value={stats.minutes.toLocaleString()}
+            sub={
+              <span className="inline-flex items-center gap-1.5">
+                <Timer className="h-3.5 w-3.5" aria-hidden />
+                {stats?.appearances ?? stats?.starts ?? 0} matches
+              </span>
+            }
             accent="primary"
           />
         ) : (
           <StatCard
             label="Shots"
             value={stats?.shots ?? 0}
-            caption={`${stats?.shotsOnTarget ?? 0} on target`}
-            Icon={Crosshair}
+            sub={
+              <span className="inline-flex items-center gap-1.5">
+                <Crosshair className="h-3.5 w-3.5" aria-hidden />
+                {stats?.shotsOnTarget ?? 0} on target
+              </span>
+            }
             accent="primary"
           />
         )}
@@ -208,18 +240,22 @@ export default function PlayerPage() {
 
       {/* Match log */}
       <div className="mt-5">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-h3 text-[var(--text-primary)]">Recent matches</h2>
-          <span className="text-caption uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-            last {matchLog.length || 10}
-          </span>
-        </div>
+        <SectionHeader
+          kicker="Game log"
+          title="Recent matches"
+          className="mb-2"
+          action={
+            <span className="text-caption uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              last {matchLog.length || 10}
+            </span>
+          }
+        />
         {statsLoading ? (
           <TableSkeleton rows={5} columns={5} />
         ) : matchLog.length > 0 ? (
           <Card className="overflow-hidden p-0">
             <table className="w-full text-small">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[var(--card-bg)]">
                 <tr className="border-b border-[var(--border-color)] text-left text-caption uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
                   <th className="px-4 py-2.5 font-semibold">Date</th>
                   <th className="px-4 py-2.5 font-semibold">Opponent</th>
@@ -232,7 +268,7 @@ export default function PlayerPage() {
                 {matchLog.map((match) => (
                   <tr
                     key={match.id}
-                    className="border-b border-[var(--border-color)] last:border-b-0"
+                    className="border-b border-[var(--border-color)] last:border-b-0 odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]"
                   >
                     <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-[var(--text-secondary)]">
                       {formatMatchDate(match.date)}

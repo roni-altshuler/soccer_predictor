@@ -96,6 +96,22 @@ export default function AccuracyPage() {
   const total = metrics?.total_predictions ?? 0
   const brier = metrics?.brier_score ?? 0
 
+  // While the first fetch is in flight we show a skeleton instead of the
+  // hero — rendering "no predictions yet" copy before the data arrives
+  // would be dishonest (design rule 3).
+  if (loading && metrics === null) {
+    return (
+      <div className="min-h-screen">
+        <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
+          <div className="animate-pulse space-y-5">
+            <div className="h-72 rounded-2xl bg-[var(--muted-bg)]" />
+            <div className="h-64 rounded-2xl bg-[var(--muted-bg)]" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
@@ -143,10 +159,6 @@ export default function AccuracyPage() {
         )}
 
         <ModelExplainer />
-
-        {loading && metrics === null && (
-          <p className="text-center text-[10px] text-[var(--text-tertiary)]">Loading metrics…</p>
-        )}
       </div>
     </div>
   )

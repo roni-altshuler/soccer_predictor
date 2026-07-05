@@ -4,8 +4,6 @@ import useSWR from 'swr'
 
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
 export interface TeamInjury {
   playerId?: string | number
   name: string
@@ -165,21 +163,27 @@ function adaptOverview(payload: OverviewPayload, teamId: number | string): TeamP
 }
 
 async function fetchOverview(url: string): Promise<OverviewPayload | null> {
-  const res = await fetch(url)
-  // 404 → null so the UI renders a graceful empty state.
-  if (res.status === 404) return null
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return (await res.json()) as OverviewPayload
+  // Guarded fetch: a missing team (404) or a transport failure (backend
+  // down, offline) both resolve to null so the page degrades to an
+  // EmptyState instead of spamming the console with unhandled errors.
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return (await res.json()) as OverviewPayload
+  } catch {
+    return null
+  }
 }
 
 /**
- * Team profile + squad + fixtures + injuries, adapted from the rich
- * `/api/v1/teams/{id}/overview` endpoint (FastAPI locally; the Next.js
- * ESPN mirror on Vercel). Gender-aware via `useGenderQuery`.
+ * Team profile + squad + fixtures + injuries, adapted from the same-origin
+ * `/api/v1/teams/{id}/overview` Next.js route (which mirrors the FastAPI
+ * endpoint, so it works on Vercel and when the Python backend is down).
+ * Gender-aware via `useGenderQuery`.
  */
 export function useTeam(teamId: number | string | null) {
   const { withParam } = useGenderQuery()
-  const key = teamId != null ? withParam(`${API_BASE}/api/v1/teams/${teamId}/overview`) : null
+  const key = teamId != null ? withParam(`/api/v1/teams/${teamId}/overview`) : null
   return useSWR<TeamProfile | null>(
     key,
     async (url: string) => {

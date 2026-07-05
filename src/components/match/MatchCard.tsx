@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 
+import { ProbBar } from '@/components/primitives';
+
 interface FormResult {
   result: 'W' | 'D' | 'L';
   score?: string;
@@ -224,23 +226,17 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Model probabilities</span>
               {isFiniteNumber(prediction.confidence) && (
-                <span className="text-[10px] font-semibold text-[var(--accent-ai)]">{pct(prediction.confidence)} confidence</span>
+                <span className="text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">{pct(prediction.confidence)} confidence</span>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
-                <p className="text-[10px] text-[var(--text-tertiary)]">Home</p>
-                <p className="text-sm font-bold text-[var(--accent-primary)]">{pct(homePrediction)}</p>
-              </div>
-              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
-                <p className="text-[10px] text-[var(--text-tertiary)]">Draw</p>
-                <p className="text-sm font-bold text-[var(--accent-warn)]">{pct(drawPrediction)}</p>
-              </div>
-              <div className="rounded-lg bg-[var(--muted-bg)] px-2 py-2">
-                <p className="text-[10px] text-[var(--text-tertiary)]">Away</p>
-                <p className="text-sm font-bold text-[var(--accent-info)]">{pct(awayPrediction)}</p>
-              </div>
-            </div>
+            {/* Signature stacked W/D/L probability bar (design-language fixture anatomy) */}
+            <ProbBar
+              home={homePrediction}
+              draw={drawPrediction}
+              away={awayPrediction}
+              showLabels
+              size="md"
+            />
             {prediction.model && (
               <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">{prediction.model}</p>
             )}

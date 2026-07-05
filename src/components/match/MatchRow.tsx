@@ -4,28 +4,24 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Star } from 'lucide-react'
 
-import { ConfidenceIndicator } from '@/components/match/ConfidenceIndicator'
 import { TeamFormPill, type FormEntry } from '@/components/match/TeamFormPill'
+import { FlagBadge, ProbBar } from '@/components/primitives'
 import { Badge } from '@/components/ui/badge'
-import { cn, clamp, formatPct } from '@/lib/utils'
+import { cn, clamp } from '@/lib/utils'
 
 /**
- * Canonical FotMob-style match row, redesigned for visual density and
- * AI legibility:
+ * Canonical fixture row — the design-language anatomy applied everywhere:
  *
- *   ┌────┬──────────────────────┬───────────┬──────────────────────┬────┐
- *   │ ★  │ home form · TEAM 🛡  │ FT 2 - 1  │ 🛡 TEAM · away form  │    │
- *   │    │ AI lean bar (10px) ───────────────────────────────────────── │
- *   └────┴────────────────────────────────────────────────────────────────┘
+ *   crest/flag + team names · kickoff/status · venue (tertiary, truncates)
+ *   · ProbBar when a committed prediction exists · predicted-score chip
+ *   (cyan tint) when available.
  *
- * - 52px tap target on mobile (FotMob is 56px; we trim slightly so
- *   dense lists don't dominate the viewport).
- * - The AI lean bar is 10px tall — the previous 1px bar was effectively
- *   invisible and the user's #1 "looks beginner" complaint.
- * - When confidence is supplied, a chip is rendered next to the
- *   score so the model's certainty is visible without clicking through.
- * - Crest fallback is a 28×28 letterform on the league accent colour
- *   instead of the previous raw character.
+ * - National-team fixtures (`is_national`) resolve identities to real
+ *   country flags via `FlagBadge`; clubs use their crest URL. The gray
+ *   monogram is a last-resort fallback, never the default for known teams.
+ * - The ProbBar renders ONLY when the payload carries committed model
+ *   probabilities — no fabrication for uncovered fixtures.
+ * - 52px+ tap target on mobile.
  */
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'completed'
@@ -42,12 +38,16 @@ export interface MatchRowMatch {
   venue?: string | null
   home_crest_url?: string | null
   away_crest_url?: string | null
+  /** National-team fixture — identities resolve to country flags. */
+  is_national?: boolean
   /** Optional probability lean from the unified model. 0..1 each. */
   ai_home_prob?: number | null
   ai_draw_prob?: number | null
   ai_away_prob?: number | null
   /** Optional 0..1 model confidence; if absent, derived from max probability. */
   ai_confidence?: number | null
+  /** Committed predicted scoreline, e.g. "2-1". */
+  predicted_scoreline?: string | null
   /** Optional recent form strings (e.g. "WDLLW") for inline pills. */
   home_form?: string | FormEntry[] | null
   away_form?: string | FormEntry[] | null
@@ -68,46 +68,27 @@ function formatKickoff(timeStr?: string): string {
   }
 }
 
-function TeamCrest({
+function TeamIdentity({
   url,
   name,
   align,
-  leagueAccent,
+  isNational,
 }: {
   url?: string | null
   name: string
   align: 'left' | 'right'
-  leagueAccent?: string | null
+  isNational?: boolean
 }) {
   const margin = align === 'right' ? 'order-2 ml-2' : 'mr-2'
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        className={cn(
-          'h-7 w-7 rounded-full bg-[var(--card-bg)] object-contain ring-1 ring-[var(--border-color)] shrink-0',
-          margin
-        )}
-        loading="lazy"
-      />
-    )
-  }
-  const initial = name.replace(/[^A-Za-z0-9]/g, '').charAt(0).toUpperCase() || '?'
   return (
-    <span
-      className={cn(
-        'inline-flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-bold tracking-tight shrink-0',
-        'ring-1 ring-[var(--border-color)]',
-        margin
-      )}
-      style={{
-        background: leagueAccent ? `${leagueAccent}1f` : 'var(--surface-highlight)',
-        color: leagueAccent || 'var(--text-secondary)',
-      }}
-      aria-hidden="true"
-    >
-      {initial}
+    <span className={cn('inline-flex shrink-0', margin)} aria-hidden="true">
+      <FlagBadge
+        teamName={name}
+        // National teams get real country flags; clubs get their crest.
+        country={isNational ? name : undefined}
+        logoUrl={isNational ? undefined : url ?? undefined}
+        size={26}
+      />
     </span>
   )
 }
@@ -162,47 +143,6 @@ function StatusBlock({ match }: { match: MatchRowMatch }) {
   )
 }
 
-/**
- * Visible AI lean bar — 10px tall with embedded percentage labels at the
- * three ends. The old 1px version was invisible on mobile.
- */
-function AILeanBar({
-  home,
-  draw,
-  away,
-  homeTeam,
-  awayTeam,
-}: {
-  home: number
-  draw: number
-  away: number
-  homeTeam: string
-  awayTeam: string
-}) {
-  const total = Math.max(1e-6, home + draw + away)
-  const homePct = (home / total) * 100
-  const drawPct = (draw / total) * 100
-  const awayPct = (away / total) * 100
-  return (
-    <div className="mt-1.5 w-full">
-      <div
-        className="flex h-2.5 w-full overflow-hidden rounded-full ring-1 ring-[var(--border-color)]"
-        title={`AI lean: ${homeTeam} ${formatPct(home)} · draw ${formatPct(draw)} · ${awayTeam} ${formatPct(away)}`}
-        aria-label="AI prediction lean"
-      >
-        <span className="block h-full bg-[var(--accent-primary)]" style={{ width: `${homePct}%` }} />
-        <span className="block h-full bg-[var(--accent-warn)]" style={{ width: `${drawPct}%` }} />
-        <span className="block h-full bg-[var(--accent-loss)]" style={{ width: `${awayPct}%` }} />
-      </div>
-      <div className="mt-1 flex items-center justify-between text-[10px] tabular-nums">
-        <span className="font-semibold text-[var(--accent-primary)]">{formatPct(home)}</span>
-        <span className="font-semibold text-[var(--accent-warn)]">{formatPct(draw)}</span>
-        <span className="font-semibold text-[var(--accent-loss)]">{formatPct(away)}</span>
-      </div>
-    </div>
-  )
-}
-
 export interface MatchRowProps {
   match: MatchRowMatch
   href?: string
@@ -228,14 +168,10 @@ export function MatchRow({
   const aiHome = clamp(match.ai_home_prob ?? 0)
   const aiDraw = clamp(match.ai_draw_prob ?? 0)
   const aiAway = clamp(match.ai_away_prob ?? 0)
-  const aiPick = hasAILean
-    ? aiHome > aiAway && aiHome > aiDraw
-      ? match.home_team
-      : aiAway > aiDraw
-      ? match.away_team
-      : 'Draw'
-    : null
-  const confidence = match.ai_confidence ?? (hasAILean ? Math.max(aiHome, aiDraw, aiAway) : null)
+  const predictedScoreline =
+    hasAILean && typeof match.predicted_scoreline === 'string' && match.predicted_scoreline.length > 0
+      ? match.predicted_scoreline
+      : null
 
   const isFinished = match.status === 'finished' || match.status === 'completed'
   const teamTextClass = isFinished ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
@@ -272,22 +208,22 @@ export function MatchRow({
             />
           )}
           <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.home_team}</span>
-          <TeamCrest
+          <TeamIdentity
             url={match.home_crest_url}
             name={match.home_team}
             align="right"
-            leagueAccent={match.league_accent}
+            isNational={match.is_national}
           />
         </div>
 
         <StatusBlock match={match} />
 
         <div className="flex min-w-0 flex-1 items-center overflow-hidden">
-          <TeamCrest
+          <TeamIdentity
             url={match.away_crest_url}
             name={match.away_team}
             align="left"
-            leagueAccent={match.league_accent}
+            isNational={match.is_national}
           />
           <span className={cn('truncate text-sm font-semibold', teamTextClass)}>{match.away_team}</span>
           {match.away_form && (
@@ -307,19 +243,19 @@ export function MatchRow({
     <div className="w-full">
       {body}
       {hasAILean && (
-        <AILeanBar
-          home={aiHome}
-          draw={aiDraw}
-          away={aiAway}
-          homeTeam={match.home_team}
-          awayTeam={match.away_team}
-        />
+        <div className="mt-2">
+          <ProbBar home={aiHome} draw={aiDraw} away={aiAway} size="sm" showLabels />
+        </div>
       )}
-      {(match.venue || (confidence !== null && hasAILean)) && (
+      {(match.venue || predictedScoreline) && (
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1 truncate text-[10px] text-[var(--text-tertiary)]">{match.venue}</div>
-          {confidence !== null && hasAILean && aiPick && (
-            <ConfidenceIndicator value={confidence} pick={aiPick} />
+          <div className="min-w-0 flex-1 truncate text-[10px] text-[var(--text-tertiary)]">
+            {match.venue}
+          </div>
+          {predictedScoreline && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-ai)]/12 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
+              AI pick {predictedScoreline}
+            </span>
           )}
         </div>
       )}

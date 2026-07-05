@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import AccuracyDashboard from './AccuracyDashboard'
 import DiagnosticsDashboard from './DiagnosticsDashboard'
 import FanTrackingPanel from './FanTrackingPanel'
+import { SectionHeader, StatCard } from '@/components/primitives'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AccuracySummaryResponse } from '@/lib/types/accuracy'
 
@@ -51,9 +52,15 @@ function pct(value: number): string {
 }
 
 function statColor(value: number): string {
-  if (value >= 0.62) return '#22c55e'
-  if (value >= 0.5) return '#f59e0b'
-  return '#ef4444'
+  if (value >= 0.62) return 'var(--accent-primary)'
+  if (value >= 0.5) return 'var(--accent-warn)'
+  return 'var(--accent-loss)'
+}
+
+function statAccent(value: number): 'primary' | 'warn' | 'loss' {
+  if (value >= 0.62) return 'primary'
+  if (value >= 0.5) return 'warn'
+  return 'loss'
 }
 
 function severityCount(alerts: Array<{ severity: AlertSeverity }>, severity: AlertSeverity): number {
@@ -160,29 +167,33 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
               Completed matches feed league-specific diagnostics, tuning updates adjust model blending, and the next predictions reflect learned behavior.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 w-full lg:w-auto">
-            <MiniStatCard
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto">
+            <StatCard
+              size="sm"
               label="Outcome Accuracy"
-              value={summary ? pct(summary.overall.winner_accuracy) : '...'}
-              tone={summary ? statColor(summary.overall.winner_accuracy) : '#94a3b8'}
+              value={summary ? pct(summary.overall.winner_accuracy) : '…'}
+              accent={summary ? statAccent(summary.overall.winner_accuracy) : 'none'}
               sub={summary ? `${summary.overall.completed_predictions} completed` : 'loading'}
             />
-            <MiniStatCard
+            <StatCard
+              size="sm"
               label="Calibration ECE"
-              value={summary ? (summary.overall.expected_calibration_error ?? 0).toFixed(3) : '...'}
-              tone="#f59e0b"
-              sub="lower is better"
+              value={summary ? (summary.overall.expected_calibration_error ?? 0).toFixed(3) : '…'}
+              accent={summary ? 'ai' : 'none'}
+              sub={summary ? 'lower is better' : 'loading'}
             />
-            <MiniStatCard
+            <StatCard
+              size="sm"
               label="Drift Alerts"
-              value={diagnostics ? String(diagnostics.top_alerts.length) : '...'}
-              tone={highAlerts > 0 ? '#ef4444' : mediumAlerts > 0 ? '#f59e0b' : '#22c55e'}
-              sub={highAlerts > 0 ? `${highAlerts} high` : mediumAlerts > 0 ? `${mediumAlerts} medium` : 'stable'}
+              value={diagnostics ? String(diagnostics.top_alerts.length) : '…'}
+              accent={!diagnostics ? 'none' : highAlerts > 0 ? 'loss' : mediumAlerts > 0 ? 'warn' : 'primary'}
+              sub={!diagnostics ? 'loading' : highAlerts > 0 ? `${highAlerts} high` : mediumAlerts > 0 ? `${mediumAlerts} medium` : 'stable'}
             />
-            <MiniStatCard
+            <StatCard
+              size="sm"
               label="Neural Leagues"
-              value={modelInfo?.summary?.neural_ensemble_count !== undefined ? String(modelInfo.summary.neural_ensemble_count) : '...'}
-              tone="#38bdf8"
+              value={modelInfo?.summary?.neural_ensemble_count !== undefined ? String(modelInfo.summary.neural_ensemble_count) : '…'}
+              accent="ai"
               sub={modelInfo?.summary?.total_leagues !== undefined ? `of ${modelInfo.summary.total_leagues}` : 'loading'}
             />
           </div>
@@ -202,14 +213,14 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
                 aria-selected={active}
                 aria-controls={`tracking-panel-${tab.key}`}
                 onClick={() => setActiveView(tab.key)}
-                className={`text-left rounded-xl border px-3 py-2.5 transition-all ${
+                className={`text-left rounded-xl border px-3 py-2.5 min-h-[44px] transition-all ${
                   active
-                    ? 'bg-[var(--accent-primary)] text-white border-transparent shadow-md shadow-[var(--accent-primary)]/15 ring-2 ring-[var(--accent-primary)]/40'
+                    ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] border-[var(--accent-primary)]/50 ring-2 ring-[var(--accent-primary)]/30'
                     : 'bg-[var(--muted-bg)] border-[var(--border-color)] hover:bg-[var(--card-hover)] hover:border-[var(--accent-primary)]/40 text-[var(--text-primary)]'
                 }`}
               >
                 <p className="text-xs font-semibold">{tab.label}</p>
-                <p className={`text-[10px] mt-0.5 ${active ? 'text-white/80' : 'text-[var(--text-tertiary)]'}`}>{tab.hint}</p>
+                <p className={`text-[10px] mt-0.5 ${active ? 'text-[var(--accent-primary)]/80' : 'text-[var(--text-tertiary)]'}`}>{tab.hint}</p>
               </button>
             )
           })}
@@ -218,7 +229,7 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
         <div className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-[var(--text-secondary)] font-medium">Online learning cycle progress</span>
-            <span className="text-[var(--text-primary)] font-semibold">{outcomesSinceRetrain}/{retrainThreshold} outcomes toward next tuning cycle</span>
+            <span className="text-[var(--text-primary)] font-semibold tabular-nums">{outcomesSinceRetrain}/{retrainThreshold} outcomes toward next tuning cycle</span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-[var(--card-bg)] overflow-hidden">
             <div className="h-full bg-[var(--accent-primary)] transition-all duration-700" style={{ width: `${Math.max(2, retrainProgress * 100)}%` }} />
@@ -243,7 +254,12 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
       {activeView === 'learning' && (
         <section role="tabpanel" id="tracking-panel-learning" className="space-y-4">
           <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-            <h3 className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">League Adaptation Table</h3>
+            <SectionHeader
+              kicker="Learning loop"
+              title="League adaptation"
+              description="Per-league blend weights and draw thresholds, retuned as outcomes settle."
+              className="mb-3"
+            />
             {loading ? (
               <div className="h-40 rounded-xl bg-[var(--muted-bg)] animate-pulse" />
             ) : leagueRows.length === 0 ? (
@@ -264,14 +280,14 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
                   </thead>
                   <tbody>
                     {leagueRows.map((row) => (
-                      <tr key={row.league} className="border-t border-[var(--border-color)]/60">
+                      <tr key={row.league} className="border-t border-[var(--border-color)]/60 even:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]">
                         <td className="py-2 pr-2 font-medium text-[var(--text-primary)]">{row.league}</td>
-                        <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{row.sample}</td>
-                        <td className="py-2 px-2 text-right font-semibold" style={{ color: statColor(row.accuracy) }}>{pct(row.accuracy)}</td>
-                        <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{row.ece.toFixed(3)}</td>
-                        <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{pct(row.drawGap)}</td>
-                        <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{row.nnBase.toFixed(3)}</td>
-                        <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{row.drawMin.toFixed(3)}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-[var(--text-secondary)]">{row.sample}</td>
+                        <td className="py-2 px-2 text-right font-semibold tabular-nums" style={{ color: statColor(row.accuracy) }}>{pct(row.accuracy)}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-[var(--text-secondary)]">{row.ece.toFixed(3)}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-[var(--text-secondary)]">{pct(row.drawGap)}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-[var(--text-secondary)]">{row.nnBase.toFixed(3)}</td>
+                        <td className="py-2 px-2 text-right tabular-nums text-[var(--text-secondary)]">{row.drawMin.toFixed(3)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -302,16 +318,6 @@ export default function TrackingCenter({ initialView = 'overview' }: { initialVi
           <FanTrackingPanel />
         </div>
       )}
-    </div>
-  )
-}
-
-function MiniStatCard({ label, value, tone, sub }: { label: string; value: string; tone: string; sub: string }) {
-  return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-2.5 py-2">
-      <p className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">{label}</p>
-      <p className="text-base font-bold mt-0.5" style={{ color: tone }}>{value}</p>
-      <p className="text-[10px] text-[var(--text-tertiary)]">{sub}</p>
     </div>
   )
 }

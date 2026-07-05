@@ -1,17 +1,16 @@
 import { Cpu, Database, GitBranch, Layers } from 'lucide-react'
 
 import { NumberTicker } from '@/components/magicui/number-ticker'
-import { BorderBeam } from '@/components/magicui/border-beam'
 import { Section, SectionHeader } from './primitives/Section'
 import { Reveal, RevealGroup, RevealItem } from './primitives/Reveal'
 
 const STATS: { value: number; dp: number; suffix?: string; prefix?: string; label: string; sub: string }[] = [
-  { value: 60.56, dp: 2, suffix: '%', label: "Men's test accuracy", sub: '11,661-match holdout' },
-  { value: 51.45, dp: 2, suffix: '%', label: "Women's test accuracy", sub: '482-match holdout' },
-  { value: 0.865, dp: 3, label: 'Log loss', sub: 'lower is better' },
-  { value: 0.505, dp: 3, label: 'Brier score', sub: 'calibration quality' },
+  { value: 60.5, dp: 1, suffix: '%', label: "Men's accuracy", sub: '11,661-match holdout' },
+  { value: 51.45, dp: 2, suffix: '%', label: "Women's accuracy", sub: '482-match holdout' },
+  { value: 52.1, dp: 1, suffix: '%', label: 'Top-5 scoreline hit', sub: 'score in 5 likeliest · holdout' },
+  { value: 0.865, dp: 3, label: 'Log loss', sub: 'holdout · lower is better' },
   { value: 80, dp: 0, suffix: '+', label: 'Engineered features', sub: 'ELO · form · weather · refs' },
-  { value: 21, dp: 0, suffix: '%', label: 'Draw recall', sub: 'the hardest class' },
+  { value: 21, dp: 0, suffix: '%', label: 'Draw recall', sub: 'holdout · the hardest class' },
 ]
 
 const STACK = [
@@ -74,7 +73,12 @@ export function TechnicalCredibility() {
           <RevealItem key={title}>
             <div className="relative h-full overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-6">
               {idx === 0 ? (
-                <BorderBeam size={1} duration={12} borderRadius={16} colorFrom="var(--accent-primary)" colorTo="var(--accent-ai)" />
+                // Featured-card accent: static hairline (BorderBeam's mask
+                // composite floods the card in some renderers — see followups).
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)] to-transparent"
+                />
               ) : null}
               <div className="flex items-start gap-4">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-ai)]/12 text-[var(--accent-ai)]">

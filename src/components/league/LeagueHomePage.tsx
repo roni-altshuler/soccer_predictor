@@ -8,10 +8,9 @@ import { ArrowLeft } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import SeasonProjections from '@/components/league/SeasonProjections'
 
-import { BorderBeam } from '@/components/magicui/border-beam'
 import { Spotlight } from '@/components/magicui/spotlight'
-import { NumberTicker } from '@/components/magicui/number-ticker'
-import { GenderToggle } from '@/components/GenderToggle'
+import { ProbBar, SectionHeader, StatCard, StatusChip, TeamBadge } from '@/components/primitives'
+import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 
@@ -43,6 +42,8 @@ interface UpcomingMatch {
   id: string
   homeTeam: string
   awayTeam: string
+  homeTeamId?: string
+  awayTeamId?: string
   date: string
   time: string
   venue?: string
@@ -52,9 +53,92 @@ interface RecentMatch {
   id: string
   homeTeam: string
   awayTeam: string
+  homeTeamId?: string
+  awayTeamId?: string
   homeScore: number
   awayScore: number
   date: string
+}
+
+/** Committed model pick for a match, keyed by provider match id. */
+interface CommittedPick {
+  home: number
+  draw: number
+  away: number
+  scoreline?: string
+  winnerCorrect?: boolean | null
+}
+
+/* Loose provider payload shapes — ESPN's JSON varies by league, so these
+ * are intentionally permissive partial schemas covering only the fields we
+ * actually read. */
+
+interface RawSimTeam {
+  team_name?: string
+  team?: string
+  current_points?: number
+  matches_played?: number
+  avg_final_position?: number
+  avg_final_points?: number
+  predicted_points?: number
+  title_probability?: number
+  top_4_probability?: number
+  relegation_probability?: number
+  position_distribution?: Record<number, number>
+}
+
+interface EspnStandingEntry {
+  team?: { id?: number; displayName?: string }
+  stats?: Array<{ name?: string; value?: string | number }>
+}
+
+interface RawStandingRow {
+  position?: number
+  team?: string
+  name?: string
+  team_name?: string
+  id?: number
+  played?: number
+  won?: number
+  wins?: number
+  drawn?: number
+  draws?: number
+  lost?: number
+  losses?: number
+  goalsFor?: number
+  goalsAgainst?: number
+  goalDifference?: number
+  goalConDiff?: number
+  points?: number
+  pts?: number
+  form?: string[]
+}
+
+interface EspnCompetitor {
+  homeAway?: string
+  score?: string
+  team?: { id?: number | string; displayName?: string }
+}
+
+interface RawScorerRow {
+  rank?: number
+  name?: string
+  team?: string
+  goals?: number
+  assists?: number | null
+  matches?: number | null
+}
+
+interface RawNewsItem {
+  headline?: string
+  title?: string
+  description?: string
+  summary?: string
+  links?: { web?: { href?: string } }
+  url?: string
+  images?: Array<{ url?: string }>
+  image?: string
+  published?: string
 }
 
 interface NewsItem {
@@ -200,25 +284,14 @@ const formatShortDate = (value: string) => {
   return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function LeagueFact({ label, value, note }: { label: string; value: string | number; note: string }) {
-  const isNumeric = typeof value === 'number'
-  return (
-    <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm transition-colors hover:bg-white/15">
-      <p className="text-[10px] uppercase tracking-wider text-white/65 font-semibold">{label}</p>
-      <p className="mt-1 truncate text-sm md:text-base font-bold text-white tabular-nums">
-        {isNumeric ? <NumberTicker value={value as number} className="text-white" /> : value}
-      </p>
-      <p className="text-[11px] text-white/70 truncate">{note}</p>
-    </div>
-  )
-}
-
 function MatchStrip({
   match,
   mode,
+  pick,
 }: {
   match: UpcomingMatch | RecentMatch
   mode: 'upcoming' | 'result'
+  pick?: CommittedPick
 }) {
   const isResult = mode === 'result'
   const result = match as RecentMatch
@@ -229,33 +302,59 @@ function MatchStrip({
   return (
     <Link
       href={`/matches/${match.id}`}
-      className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 hover:bg-[var(--card-hover)] transition-colors"
+      className="block min-h-[44px] px-4 py-3 transition-colors hover:bg-[var(--card-hover)]"
     >
-      <div className="min-w-0 text-right">
-        <p className={`truncate text-sm font-semibold ${homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
-          {match.homeTeam}
-        </p>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div className="flex min-w-0 items-center justify-end gap-2 text-right">
+          <p className={`truncate text-sm font-semibold ${homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
+            {match.homeTeam}
+          </p>
+          <TeamBadge teamId={match.homeTeamId} name={match.homeTeam} size={20} />
+        </div>
+        <div className="min-w-[84px] text-center">
+          {isResult ? (
+            <>
+              <p className="font-mono text-lg font-black tabular-nums text-[var(--text-primary)]">
+                {result.homeScore}-{result.awayScore}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">FT</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold tabular-nums text-[var(--accent-ai)]">{upcoming.time || 'TBD'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{formatShortDate(upcoming.date)}</p>
+            </>
+          )}
+        </div>
+        <div className="flex min-w-0 items-center gap-2 text-left">
+          <TeamBadge teamId={match.awayTeamId} name={match.awayTeam} size={20} />
+          <p className={`truncate text-sm font-semibold ${awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
+            {match.awayTeam}
+          </p>
+        </div>
       </div>
-      <div className="min-w-[84px] text-center">
-        {isResult ? (
-          <>
-            <p className="font-mono text-lg font-black text-[var(--text-primary)]">
-              {result.homeScore}-{result.awayScore}
-            </p>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">FT</p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-bold text-[var(--accent-ai)]">{upcoming.time || 'TBD'}</p>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{formatShortDate(upcoming.date)}</p>
-          </>
-        )}
-      </div>
-      <div className="min-w-0 text-left">
-        <p className={`truncate text-sm font-semibold ${awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
-          {match.awayTeam}
-        </p>
-      </div>
+      {(pick || (!isResult && upcoming.venue)) && (
+        <div className="mt-2 flex items-center gap-3">
+          {pick && <ProbBar home={pick.home} draw={pick.draw} away={pick.away} size="sm" className="max-w-[220px]" />}
+          {pick?.scoreline && !isResult && (
+            <span
+              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+              style={{
+                color: 'var(--accent-ai)',
+                backgroundColor: 'color-mix(in srgb, var(--accent-ai) 12%, transparent)',
+              }}
+            >
+              AI {pick.scoreline}
+            </span>
+          )}
+          {pick && isResult && typeof pick.winnerCorrect === 'boolean' && (
+            <StatusChip status={pick.winnerCorrect ? 'correct' : 'incorrect'} />
+          )}
+          {!isResult && upcoming.venue && (
+            <span className="min-w-0 truncate text-[11px] text-[var(--text-tertiary)]">{upcoming.venue}</span>
+          )}
+        </div>
+      )}
     </Link>
   )
 }
@@ -303,6 +402,7 @@ function ActionCard({
 
 export default function LeagueHomePage({ leagueId, leagueName, country }: LeagueHomePageProps) {
   const [data, setData] = useState<LeagueHomeData | null>(null)
+  const [picks, setPicks] = useState<Record<string, CommittedPick>>({})
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator' | 'news'>('overview')
   const { asQueryParam: genderParam } = useGenderQuery()
@@ -421,9 +521,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           fixture_source: simData.fixture_source,
           most_likely_champion: simData.most_likely_champion || simData.standings?.[0]?.team_name || 'Unknown',
           champion_probability: simData.champion_probability || simData.standings?.[0]?.title_probability || 0,
-          likely_top_4: simData.likely_top_4 || simData.standings?.slice(0, 4).map((s: any) => s.team_name) || [],
-          relegation_candidates: simData.relegation_candidates || simData.standings?.slice(-3).map((s: any) => s.team_name) || [],
-          standings: (simData.standings || []).map((s: any) => ({
+          likely_top_4: simData.likely_top_4 || simData.standings?.slice(0, 4).map((s: RawSimTeam) => s.team_name) || [],
+          relegation_candidates: simData.relegation_candidates || simData.standings?.slice(-3).map((s: RawSimTeam) => s.team_name) || [],
+          standings: (simData.standings || []).map((s: RawSimTeam) => ({
             team_name: s.team_name || s.team || 'Unknown',
             current_points: s.current_points || 0,
             matches_played: s.matches_played || 0,
@@ -493,10 +593,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Season param only for standings (historical); scoreboard and leaders use current
         const seasonParam = selectedSeason ? `?season=${selectedSeason}` : ''
 
+        // Leaders goes through our own /api/leagues/leaders proxy: ESPN's
+        // leaders endpoint has no CORS headers, so a browser fetch dies.
         const espnResults = await Promise.allSettled([
           fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
           fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${scoreboardDateRange}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/leaders${seasonParam}`),
+          fetch(`/api/leagues/leaders?league=${encodeURIComponent(espnLeagueId)}${selectedSeason ? `&season=${encodeURIComponent(selectedSeason)}` : ''}`),
         ])
 
         const leagueData: LeagueHomeData = {
@@ -520,16 +622,16 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           if (espnStandings.value.ok) {
             const espnData = await espnStandings.value.json()
             const children = espnData.children || []
-            const allEntries: any[] = []
+            const allEntries: EspnStandingEntry[] = []
             for (const child of children) {
               const entries = child?.standings?.entries || []
               allEntries.push(...entries)
             }
             if (allEntries.length > 0) {
-              leagueData.standings = allEntries.map((entry: any, idx: number) => {
+              leagueData.standings = allEntries.map((entry: EspnStandingEntry, idx: number) => {
                 const getStatVal = (name: string) => {
-                  const stat = entry.stats?.find((s: any) => s.name === name)
-                  return parseInt(stat?.value || '0', 10)
+                  const stat = entry.stats?.find((s) => s.name === name)
+                  return parseInt(String(stat?.value ?? '0'), 10)
                 }
                 return {
                   position: idx + 1,
@@ -554,7 +656,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Fallback to local standings if ESPN fails
         if (!espnStandingsLoaded && standingsRes.status === 'fulfilled' && standingsRes.value.ok) {
           const standingsJson = await standingsRes.value.json()
-          leagueData.standings = (standingsJson.standings || []).map((s: any, idx: number) => ({
+          leagueData.standings = (standingsJson.standings || []).map((s: RawStandingRow, idx: number) => ({
             position: s.position || idx + 1,
             teamName: s.team || s.name || s.team_name || 'Unknown',
             teamId: s.id,
@@ -582,8 +684,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               const competition = event.competitions?.[0]
               if (!competition) continue
               
-              const homeTeam = competition.competitors?.find((c: any) => c.homeAway === 'home')
-              const awayTeam = competition.competitors?.find((c: any) => c.homeAway === 'away')
+              const homeTeam = competition.competitors?.find((c: EspnCompetitor) => c.homeAway === 'home')
+              const awayTeam = competition.competitors?.find((c: EspnCompetitor) => c.homeAway === 'away')
               const matchDate = new Date(event.date)
               const statusType = competition.status?.type?.name || ''
               
@@ -594,6 +696,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   id: String(event.id),
                   homeTeam: homeTeam?.team?.displayName || 'Home',
                   awayTeam: awayTeam?.team?.displayName || 'Away',
+                  homeTeamId: homeTeam?.team?.id ? String(homeTeam.team.id) : undefined,
+                  awayTeamId: awayTeam?.team?.id ? String(awayTeam.team.id) : undefined,
                   homeScore: parseInt(homeTeam?.score || '0'),
                   awayScore: parseInt(awayTeam?.score || '0'),
                   date: matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -604,6 +708,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   id: String(event.id),
                   homeTeam: homeTeam?.team?.displayName || 'Home',
                   awayTeam: awayTeam?.team?.displayName || 'Away',
+                  homeTeamId: homeTeam?.team?.id ? String(homeTeam.team.id) : undefined,
+                  awayTeamId: awayTeam?.team?.id ? String(awayTeam.team.id) : undefined,
                   date: matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                   time: matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
                   venue: competition.venue?.fullName,
@@ -611,130 +717,64 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               }
             }
             // Sort recent results by date descending (newest first)
-            leagueData.recentResults.sort((a: any, b: any) => (b._rawDate || 0) - (a._rawDate || 0))
-          }
-        }
-
-        // Process top scorers from ESPN with comprehensive parsing
-        if (espnResults[2].status === 'fulfilled') {
-          const espnLeaders = espnResults[2] as PromiseFulfilledResult<Response>
-          if (espnLeaders.value.ok) {
-            const leadersData = await espnLeaders.value.json()
-            
-            // Try different paths to find leaders data (ESPN API format varies by league)
-            let scorers: any[] = []
-            
-            // Path 1: leaders array with categories
-            if (leadersData.leaders && Array.isArray(leadersData.leaders)) {
-              const goalsCategory = leadersData.leaders.find((cat: any) => 
-                cat.name?.toLowerCase().includes('goal') || 
-                cat.displayName?.toLowerCase().includes('goal') ||
-                cat.abbreviation?.toLowerCase() === 'g' ||
-                cat.name?.toLowerCase() === 'goals'
-              )
-              if (goalsCategory?.leaders) {
-                scorers = goalsCategory.leaders
-              }
-              // Fallback: take first category if no goals found
-              if (scorers.length === 0 && leadersData.leaders[0]?.leaders) {
-                scorers = leadersData.leaders[0].leaders
-              }
-            }
-            
-            // Path 2: categories within leaders
-            if (scorers.length === 0 && leadersData.categories) {
-              const goalsCategory = leadersData.categories.find((cat: any) =>
-                cat.name?.toLowerCase().includes('goal') ||
-                cat.displayName?.toLowerCase().includes('goal') ||
-                cat.abbreviation?.toLowerCase() === 'g'
-              )
-              if (goalsCategory?.leaders) {
-                scorers = goalsCategory.leaders
-              }
-              // Fallback: take first category
-              if (scorers.length === 0 && leadersData.categories[0]?.leaders) {
-                scorers = leadersData.categories[0].leaders
-              }
-            }
-            
-            // Path 3: direct leaders array
-            if (scorers.length === 0 && leadersData.athletes) {
-              scorers = leadersData.athletes
-            }
-            
-            // Path 4: root-level array
-            if (scorers.length === 0 && Array.isArray(leadersData)) {
-              scorers = leadersData
-            }
-            
-            // Path 5: nested in sports structure (common for some ESPN endpoints)
-            if (scorers.length === 0 && leadersData.sports?.[0]?.leagues?.[0]?.athletes) {
-              scorers = leadersData.sports[0].leagues[0].athletes
-            }
-            
-            if (scorers.length > 0) {
-              leagueData.topScorers = scorers.slice(0, 10).map((leader: any, idx: number) => ({
-                rank: idx + 1,
-                name: leader.athlete?.displayName || leader.athlete?.fullName || leader.displayName || leader.name || leader.fullName || 'Unknown',
-                team: leader.athlete?.team?.displayName || leader.team?.displayName || leader.team?.name || leader.teamName || '',
-                goals: parseInt(leader.value || leader.stat || leader.goals || leader.statistics?.goals || '0'),
-                assists: parseInt(leader.assists || leader.statistics?.assists || '0'),
-                matches: leader.athlete?.statistics?.gamesPlayed || leader.gamesPlayed || leader.statistics?.gamesPlayed || 0,
-              }))
-            }
-          }
-        }
-        
-        // Fallback: Try alternative ESPN endpoint for leaders if still empty
-        if (leagueData.topScorers.length === 0) {
-          try {
-            const altLeadersRes = await fetch(
-              `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/statistics${seasonParam}`,
-              { next: { revalidate: 3600 } }
+            leagueData.recentResults.sort(
+              (a, b) =>
+                ((b as RecentMatch & { _rawDate?: number })._rawDate || 0) -
+                ((a as RecentMatch & { _rawDate?: number })._rawDate || 0)
             )
-            if (altLeadersRes.ok) {
-              const statsData = await altLeadersRes.json()
-              const leaders = statsData.leaders?.categories?.[0]?.leaders || statsData.categories?.[0]?.leaders || []
-              if (leaders.length > 0) {
-                leagueData.topScorers = leaders.slice(0, 10).map((leader: any, idx: number) => ({
-                  rank: idx + 1,
-                  name: leader.athlete?.displayName || leader.name || 'Unknown',
-                  team: leader.athlete?.team?.displayName || leader.team || '',
-                  goals: parseInt(leader.value || '0'),
-                  assists: 0,
-                  matches: 0,
-                }))
-              }
-            }
-          } catch {
-            // Silently fail on alternative endpoint
           }
         }
 
-        // Use the dedicated server route as the final authority for scorer rows.
-        try {
-          const leagueParam = leagueId.includes('.')
-            ? leagueId
-            : LEAGUE_TO_ESPN_ID[leagueId] || leagueId
-          const scorersRes = await fetch(`/api/top-scorers/${leagueParam}?season=${selectedSeason}`)
-          if (scorersRes.ok) {
-            const scorersData = await scorersRes.json()
-            if (scorersData.scorers && scorersData.scorers.length > 0) {
-              leagueData.topScorers = scorersData.scorers.map((s: any) => ({
-                rank: s.rank,
-                name: s.name,
-                team: s.team,
-                goals: s.goals,
+        // Top scorers now come from our same-origin /api/leagues/leaders
+        // proxy (which handles ESPN's leaders + statistics fallbacks
+        // server-side, where CORS doesn't apply).
+        if (espnResults[2].status === 'fulfilled') {
+          const leadersProxy = espnResults[2] as PromiseFulfilledResult<Response>
+          if (leadersProxy.value.ok) {
+            const leadersData = await leadersProxy.value.json()
+            const scorers = Array.isArray(leadersData?.scorers) ? leadersData.scorers : []
+            if (scorers.length > 0) {
+              leagueData.topScorers = scorers.map((s: RawScorerRow, idx: number) => ({
+                rank: s.rank ?? idx + 1,
+                name: s.name ?? 'Unknown',
+                team: s.team ?? '',
+                goals: s.goals ?? 0,
                 assists: s.assists ?? null,
                 matches: s.matches ?? null,
               }))
-              leagueData.topScorerSource = scorersData.source === 'verified_fallback'
-                ? 'Guardian verified fallback'
-                : 'ESPN leaders'
+              leagueData.topScorerSource = 'ESPN leaders'
             }
           }
-        } catch {
-          // Scorer route failed; keep any provider data already loaded.
+        }
+
+        // Fallback only: when the live leaders proxy came back empty, the
+        // dedicated top-scorers route (which can serve a verified curated
+        // list) fills the gap. Live provider data always wins over curated.
+        if (leagueData.topScorers.length === 0) {
+          try {
+            const leagueParam = leagueId.includes('.')
+              ? leagueId
+              : LEAGUE_TO_ESPN_ID[leagueId] || leagueId
+            const scorersRes = await fetch(`/api/top-scorers/${leagueParam}?season=${selectedSeason}`)
+            if (scorersRes.ok) {
+              const scorersData = await scorersRes.json()
+              if (scorersData.scorers && scorersData.scorers.length > 0) {
+                leagueData.topScorers = scorersData.scorers.map((s: RawScorerRow, idx: number) => ({
+                  rank: s.rank ?? idx + 1,
+                  name: s.name ?? 'Unknown',
+                  team: s.team ?? '',
+                  goals: s.goals ?? 0,
+                  assists: s.assists ?? null,
+                  matches: s.matches ?? null,
+                }))
+                leagueData.topScorerSource = scorersData.source === 'verified_fallback'
+                  ? 'Guardian verified fallback'
+                  : 'ESPN leaders'
+              }
+            }
+          } catch {
+            // Scorer route failed; keep any provider data already loaded.
+          }
         }
 
         // Process league-specific news from ESPN
@@ -745,7 +785,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           )
           if (espnNewsRes.ok) {
             const espnNewsData = await espnNewsRes.json()
-            leagueData.news = (espnNewsData.articles || []).slice(0, 8).map((n: any) => ({
+            leagueData.news = (espnNewsData.articles || []).slice(0, 8).map((n: RawNewsItem) => ({
               headline: n.headline || '',
               description: n.description || '',
               link: n.links?.web?.href || '',
@@ -757,7 +797,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           // Fallback to general news
           if (newsRes.status === 'fulfilled' && newsRes.value.ok) {
             const newsJson = await newsRes.value.json()
-            leagueData.news = (newsJson.articles || newsJson.news || []).slice(0, 5).map((n: any) => ({
+            leagueData.news = (newsJson.articles || newsJson.news || []).slice(0, 5).map((n: RawNewsItem) => ({
               headline: n.headline || n.title || '',
               description: n.description || n.summary || '',
               link: n.links?.web?.href || n.url || '',
@@ -765,6 +805,34 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               published: n.published || '',
             }))
           }
+        }
+
+        // Committed model picks for this league (from the tracked prediction
+        // JSON) — keyed by provider match id so fixture rows can render the
+        // signature ProbBar + AI scoreline chip / correct-incorrect chip.
+        try {
+          const picksRes = await fetch(
+            `/api/v1/tracking/recent?league=${encodeURIComponent(leagueName)}&limit=200`
+          )
+          if (picksRes.ok) {
+            const picksJson = await picksRes.json()
+            const map: Record<string, CommittedPick> = {}
+            for (const p of picksJson.predictions || []) {
+              if (!p?.match_id) continue
+              map[String(p.match_id)] = {
+                home: p.predicted_home_win ?? 0,
+                draw: p.predicted_draw ?? 0,
+                away: p.predicted_away_win ?? 0,
+                scoreline: p.predicted_scoreline || undefined,
+                winnerCorrect: p.winner_correct ?? null,
+              }
+            }
+            setPicks(map)
+          } else {
+            setPicks({})
+          }
+        } catch {
+          setPicks({})
         }
 
         setData(leagueData)
@@ -776,66 +844,83 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     }
 
     fetchLeagueData()
+    // getEspnLeagueId / seasons / isCalendarYear are all derived from
+    // leagueId, which is already a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, leagueName, country, selectedSeason, genderParam])
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-ai)]" />
+      <div className="flex-1" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
+        <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
+          <div className="h-44 animate-pulse rounded-2xl bg-[var(--muted-bg)]" />
+          <div className="h-10 w-2/3 animate-pulse rounded-lg bg-[var(--muted-bg)]" />
+          <div className="h-72 animate-pulse rounded-2xl bg-[var(--muted-bg)]" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex-1" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Hero Header — accent-driven, with magicui Spotlight + BorderBeam polish */}
+      {/* Hero band — league accent as a *subtle* gradient tint over the card
+          surface (design language: 8-12% opacity, never a solid color block),
+          with the crest as the identity mark. */}
       <Spotlight
-        className="relative block border-b border-white/10"
+        className="relative block border-b border-[var(--border-color)]"
         size={620}
-        color="color-mix(in srgb, var(--league-accent, #22c55e) 26%, transparent)"
+        color={`color-mix(in srgb, ${leagueAccent.accent} 22%, transparent)`}
       >
       <div
-        className="relative overflow-hidden px-4 py-5 md:py-6"
+        className="surface-elevated relative overflow-hidden px-4 py-5 md:py-6"
         style={{
           // Use the league brand from leagueAccents.ts (single source of truth).
-          background: `linear-gradient(135deg, ${leagueAccent.accent} 0%, #0a0e1c 78%)`,
+          background: `linear-gradient(135deg, color-mix(in srgb, ${leagueAccent.accent} 12%, var(--background)) 0%, var(--background) 70%)`,
           // Expose the accent as a CSS var for any nested CSS color-mix() callers.
           ['--league-accent' as string]: leagueAccent.accent,
         }}
       >
-        <BorderBeam size={1} duration={14} borderRadius={0} colorFrom={leagueAccent.accent} colorTo="rgba(255,255,255,0.7)" />
         <div className="relative z-10 max-w-6xl mx-auto">
           <Link
             href="/matches"
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70 hover:text-white transition-colors"
+            className="inline-flex min-h-[40px] items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             All leagues
           </Link>
 
-          <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="mt-2 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="flex items-center gap-4 min-w-0">
               {leagueLogo ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={leagueLogo}
                   alt={leagueName}
-                  className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-lg ring-1 ring-white/20"
+                  className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-lg ring-1 ring-[var(--border-color)]"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/12 text-3xl ring-1 ring-white/15">{leagueAccent.flag}</span>
+                <span
+                  aria-hidden
+                  className="flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-black"
+                  style={{
+                    color: leagueAccent.accent,
+                    backgroundColor: `color-mix(in srgb, ${leagueAccent.accent} 14%, transparent)`,
+                  }}
+                >
+                  {leagueName.trim().charAt(0).toUpperCase()}
+                </span>
               )}
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">{country} · {leagueAccent.shortName}</p>
-                <h1 className="truncate text-3xl md:text-4xl font-black text-white">{leagueName}</h1>
-                <p className="mt-1 text-sm text-white/75">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">{country} · {leagueAccent.shortName}</p>
+                <h1 className="truncate text-3xl md:text-4xl font-black text-[var(--text-primary)]">{leagueName}</h1>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">
                   {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} season
                 </p>
               </div>
             </div>
-            
+
             <div className="w-full md:w-auto">
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/55">Season</label>
+              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Season</label>
               <div className="relative">
                 <select
                   value={selectedSeason}
@@ -856,45 +941,55 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           </div>
           
           {simulationResults && (
-            <div className="mt-5 rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+            <div className="mt-5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-warn)]">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
-                  <p className="text-white font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
-                  <p className="text-white/70 text-sm mt-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-ai)]">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-[var(--text-primary)] font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
+                  <p className="text-[var(--text-secondary)] text-sm mt-1">
                     Top 4: {simulationResults.likely_top_4.join(', ')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-[var(--accent-warn)]">
-                    {(simulationResults.champion_probability * 100).toFixed(1)}%
+                  <p className="text-2xl font-bold tabular-nums text-[var(--accent-ai)]">
+                    {Math.round(simulationResults.champion_probability * 100)}%
                   </p>
-                  <p className="text-white/60 text-xs">title probability</p>
+                  <p className="text-[var(--text-tertiary)] text-xs">title probability</p>
                 </div>
               </div>
             </div>
           )}
 
           <div className="mt-5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
-            <LeagueFact
+            <StatCard
+              size="sm"
               label="Leader"
-              value={data?.standings[0]?.teamName || 'TBD'}
-              note={`${data?.standings[0]?.points || 0} points`}
+              value={<span className="truncate text-base">{data?.standings[0]?.teamName || 'TBD'}</span>}
+              sub={data?.standings[0] ? `${data.standings[0].points} points` : 'table pending'}
             />
-            <LeagueFact
-              label={data?.topScorers[0] ? 'Top Scorer' : 'Best GD'}
-              value={data?.topScorers[0]?.name || data?.standings[0]?.teamName || 'TBD'}
-              note={data?.topScorers[0] ? `${data.topScorers[0].goals} goals · ${data.topScorerSource || 'provider data'}` : `${data?.standings[0]?.goalDiff || 0} goal diff`}
+            <StatCard
+              size="sm"
+              label={data?.topScorers[0] ? 'Top scorer' : 'Best GD'}
+              value={<span className="truncate text-base">{data?.topScorers[0]?.name || data?.standings[0]?.teamName || 'TBD'}</span>}
+              sub={
+                data?.topScorers[0]
+                  ? `${data.topScorers[0].goals} goals · ${data.topScorerSource || 'provider data'}`
+                  : data?.standings[0]
+                    ? `${data.standings[0].goalDiff > 0 ? '+' : ''}${data.standings[0].goalDiff} goal diff`
+                    : 'table pending'
+              }
             />
-            <LeagueFact
+            <StatCard
+              size="sm"
               label="Matchweek"
-              value={data?.standings[0]?.played || 0}
-              note="matches played"
+              value={data?.standings[0]?.played ? data.standings[0].played : '—'}
+              sub="matches played"
             />
-            <LeagueFact
-              label="Coming Up"
-              value={data?.upcomingMatches?.length || 0}
-              note="fixtures scheduled"
+            <StatCard
+              size="sm"
+              label="Coming up"
+              value={data?.upcomingMatches?.length ? data.upcomingMatches.length : '—'}
+              sub={data?.upcomingMatches?.length ? 'fixtures scheduled' : 'none scheduled'}
             />
           </div>
         </div>
@@ -915,7 +1010,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveTab(tab)}
-                className={`relative rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
+                className={`relative min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
                   active
                     ? 'text-[var(--text-primary)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -955,41 +1050,51 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               ) : null}
 
               <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
-                <div className="flex items-center justify-between border-b border-[var(--border-color)] px-4 py-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Schedule</p>
-                    <h2 className="text-base font-bold text-[var(--text-primary)]">Upcoming Matches</h2>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('fixtures')}
-                    className="rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
-                  >
-                    Calendar
-                  </button>
-                </div>
+                <SectionHeader
+                  kicker="Schedule"
+                  title="Upcoming Matches"
+                  className="border-b border-[var(--border-color)] px-4 py-3"
+                  action={
+                    <button
+                      onClick={() => setActiveTab('fixtures')}
+                      className="min-h-[40px] rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+                    >
+                      Calendar
+                    </button>
+                  }
+                />
                 <div className="divide-y divide-[var(--border-color)]">
                   {data?.upcomingMatches && data.upcomingMatches.length > 0 ? (
                     data.upcomingMatches.slice(0, 5).map((match) => (
-                      <MatchStrip key={match.id} match={match} mode="upcoming" />
+                      <MatchStrip key={match.id} match={match} mode="upcoming" pick={picks[match.id]} />
                     ))
                   ) : (
-                    <p className="p-4 text-sm text-[var(--text-tertiary)]">No upcoming matches</p>
+                    <EmptyState
+                      title="No upcoming matches"
+                      description="Nothing is scheduled in the next two weeks — check the fixtures calendar for the full season."
+                      className="py-8"
+                    />
                   )}
                 </div>
               </div>
 
               <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
-                <div className="border-b border-[var(--border-color)] px-4 py-3">
-                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Form Check</p>
-                  <h2 className="text-base font-bold text-[var(--text-primary)]">Recent Results</h2>
-                </div>
+                <SectionHeader
+                  kicker="Form Check"
+                  title="Recent Results"
+                  className="border-b border-[var(--border-color)] px-4 py-3"
+                />
                 <div className="divide-y divide-[var(--border-color)]">
                   {data?.recentResults && data.recentResults.length > 0 ? (
                     data.recentResults.slice(0, 5).map((match) => (
-                      <MatchStrip key={match.id} match={match} mode="result" />
+                      <MatchStrip key={match.id} match={match} mode="result" pick={picks[match.id]} />
                     ))
                   ) : (
-                    <p className="p-4 text-sm text-[var(--text-tertiary)]">No recent results</p>
+                    <EmptyState
+                      title="No recent results"
+                      description="No matches finished in the last ten days."
+                      className="py-8"
+                    />
                   )}
                 </div>
               </div>
@@ -1012,26 +1117,28 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               </div>
 
               <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
-                <div className="border-b border-[var(--border-color)] px-4 py-3 flex justify-between items-center">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">Table</p>
-                    <h2 className="text-base font-bold text-[var(--text-primary)]">Standings</h2>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('standings')}
-                    className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
-                  >
-                    View All
-                  </button>
-                </div>
+                <SectionHeader
+                  kicker="Table"
+                  title="Standings"
+                  className="border-b border-[var(--border-color)] px-4 py-3"
+                  action={
+                    <button
+                      onClick={() => setActiveTab('standings')}
+                      className="min-h-[40px] px-1 text-xs font-semibold text-[var(--accent-primary)] hover:underline"
+                    >
+                      View All
+                    </button>
+                  }
+                />
                 <div className="divide-y divide-[var(--border-color)]">
                   {data?.standings.slice(0, 5).map((team, idx) => (
-                    <div key={team.teamName} className="flex justify-between items-center p-3">
+                    <div key={team.teamName} className="flex min-h-[44px] justify-between items-center p-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className={`w-1 h-9 rounded-full ${idx < 4 ? 'bg-[var(--accent-primary)]' : idx < 6 ? 'bg-[var(--accent-info)]' : 'bg-transparent'}`} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="w-5 text-center text-sm text-[var(--text-tertiary)]">{idx + 1}</span>
+                            <span className="w-5 text-center text-sm tabular-nums text-[var(--text-tertiary)]">{idx + 1}</span>
+                            <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
                             <span className="font-medium text-[var(--text-primary)] truncate">{team.teamName}</span>
                           </div>
                           <div className="flex gap-1 mt-1">
@@ -1051,7 +1158,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="font-bold text-[var(--text-primary)]">{team.points}</span>
+                        <span className="font-bold tabular-nums text-[var(--text-primary)]">{team.points}</span>
                         <div className="text-[10px] text-[var(--text-tertiary)]">pts</div>
                       </div>
                     </div>
@@ -1062,9 +1169,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               {/* Latest News */}
               {data?.news && data.news.length > 0 && (
                 <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                  <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                    <h2 className="text-lg font-semibold text-[var(--text-primary)]">Latest News</h2>
-                  </div>
+                  <SectionHeader
+                    kicker="Coverage"
+                    title="Latest News"
+                    className="p-4 border-b border-[var(--border-color)]"
+                  />
                   <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
                     {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
                       <a
@@ -1075,6 +1184,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         className="block p-4 hover:bg-[var(--muted-bg)] transition-colors group"
                       >
                         {item.image && (
+                          /* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */
                           <img
                             src={item.image}
                             alt={item.headline}
@@ -1116,9 +1226,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)]' : 'from-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]'}`} style={{ borderColor: 'var(--border-color)' }}>
                         <h2 className="text-lg font-semibold text-[var(--text-primary)]">{conference}</h2>
                       </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-[var(--muted-bg)]">
+                      <div className="max-h-[560px] overflow-auto">
+                        <table className="w-full tabular-nums">
+                          <thead className="sticky top-0 z-10 bg-[var(--muted-bg)]">
                             <tr className="text-xs text-[var(--text-tertiary)]">
                               <th className="text-left py-3 px-3 font-medium">#</th>
                               <th className="text-left py-3 px-3 font-medium">Team</th>
@@ -1129,16 +1239,21 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                           </thead>
                           <tbody>
                             {conferenceTeams.length > 0 ? conferenceTeams.map((team, idx) => {
-                              let zoneClass = ''
-                              if (idx < 7) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]'  // Playoff spots
-                              else if (idx < 9) zoneClass = 'border-l-4 border-l-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]'  // Wild card
+                              let zoneClass = 'odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]'
+                              if (idx < 7) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]'  // Playoff spots
+                              else if (idx < 9) zoneClass = 'border-l-4 border-l-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)]'  // Wild card
 
                               return (
                                 <tr key={team.teamName} className={`border-b hover:bg-[var(--muted-bg)] ${zoneClass}`} style={{ borderColor: 'var(--border-color)' }}>
-                                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">{idx + 1}</td>
-                                  <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">{team.teamName}</td>
-                                  <td className="py-2.5 px-2 text-center text-[var(--text-secondary)]">{team.played}</td>
-                                  <td className="py-2.5 px-2 text-center font-bold text-[var(--text-primary)]">{team.points}</td>
+                                  <td className="py-2.5 px-3 tabular-nums text-[var(--text-secondary)]">{idx + 1}</td>
+                                  <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">
+                                    <span className="flex items-center gap-2">
+                                      <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
+                                      {team.teamName}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-2 text-center tabular-nums text-[var(--text-secondary)]">{team.played}</td>
+                                  <td className="py-2.5 px-2 text-center font-bold tabular-nums text-[var(--text-primary)]">{team.points}</td>
                                   <td className="py-2.5 px-2 text-center hidden sm:table-cell">
                                     <div className="flex justify-center gap-0.5">
                                       {team.form && team.form.length > 0 ? (
@@ -1178,24 +1293,22 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             ) : (
               // Regular league standings
               <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
-                  <div>
-                    <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                      League Standings
-                    </h2>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      FotMob-inspired table with qualification zones and last-five form
-                    </p>
-                  </div>
-                  <div className="hidden md:flex items-center gap-2 text-[10px]">
-                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]">UCL</span>
-                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-info)_15%,transparent)] text-[var(--accent-info)]">Europe</span>
-                    <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]">Relegation</span>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-[var(--muted-bg)]">
+                <SectionHeader
+                  kicker="Table"
+                  title="League Standings"
+                  description="Qualification zones and last-five form."
+                  className="p-4 border-b border-[var(--border-color)]"
+                  action={
+                    <div className="hidden md:flex items-center gap-2 text-[10px]">
+                      <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]">UCL</span>
+                      <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-info)_15%,transparent)] text-[var(--accent-info)]">Europe</span>
+                      <span className="px-2 py-1 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]">Relegation</span>
+                    </div>
+                  }
+                />
+                <div className="max-h-[640px] overflow-auto">
+                  <table className="w-full tabular-nums">
+                    <thead className="sticky top-0 z-10 bg-[var(--muted-bg)]">
                       <tr className="text-xs text-[var(--text-tertiary)]">
                         <th className="text-left py-3 px-4 font-medium">#</th>
                         <th className="text-left py-3 px-4 font-medium">Team</th>
@@ -1210,11 +1323,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </thead>
                     <tbody>
                       {data.standings.map((team, idx) => {
-                        // Determine zone coloring with improved visibility
-                        let zoneClass = ''
-                        if (idx < 4) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)]'
-                        else if (idx >= data.standings.length - 3) zoneClass = 'border-l-4 border-l-[var(--accent-loss)] bg-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]'
-                        else if (idx < 6) zoneClass = 'border-l-4 border-l-[var(--accent-info)] bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)]'
+                        // Qualification zones read as 4px league-accent rails +
+                        // a faint tint; everything else zebra-stripes at 40%.
+                        let zoneClass = 'odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]'
+                        if (idx < 4) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]'
+                        else if (idx >= data.standings.length - 3) zoneClass = 'border-l-4 border-l-[var(--accent-loss)] bg-[color-mix(in_srgb,var(--accent-loss)_8%,transparent)]'
+                        else if (idx < 6) zoneClass = 'border-l-4 border-l-[var(--accent-info)] bg-[color-mix(in_srgb,var(--accent-info)_8%,transparent)]'
 
                         return (
                           <tr
@@ -1222,17 +1336,30 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                             className={`border-b hover:bg-[var(--muted-bg)] transition-colors ${zoneClass}`}
                             style={{ borderColor: 'var(--border-color)' }}
                           >
-                            <td className="py-3 px-4 text-[var(--text-secondary)]">{team.position}</td>
+                            <td className="py-3 px-4 tabular-nums text-[var(--text-secondary)]">{team.position}</td>
                             <td className="py-3 px-4">
-                              <div className="font-medium text-[var(--text-primary)]">{team.teamName}</div>
+                              {team.teamId ? (
+                                <Link
+                                  href={`/teams/${team.teamId}`}
+                                  className="flex items-center gap-2 font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)]"
+                                >
+                                  <TeamBadge teamId={team.teamId} name={team.teamName} size={20} />
+                                  {team.teamName}
+                                </Link>
+                              ) : (
+                                <div className="flex items-center gap-2 font-medium text-[var(--text-primary)]">
+                                  <TeamBadge name={team.teamName} size={20} />
+                                  {team.teamName}
+                                </div>
+                              )}
                               <div className="text-[10px] text-[var(--text-tertiary)] mt-1">
                                 {team.won}-{team.drawn}-{team.lost} record
                               </div>
                             </td>
-                            <td className="py-3 px-2 text-center text-[var(--text-secondary)]">{team.played}</td>
-                            <td className="py-3 px-2 text-center text-[var(--accent-primary)]">{team.won}</td>
-                            <td className="py-3 px-2 text-center text-[var(--text-tertiary)]">{team.drawn}</td>
-                            <td className="py-3 px-2 text-center text-[var(--accent-loss)]">{team.lost}</td>
+                            <td className="py-3 px-2 text-center tabular-nums text-[var(--text-secondary)]">{team.played}</td>
+                            <td className="py-3 px-2 text-center tabular-nums text-[var(--accent-primary)]">{team.won}</td>
+                            <td className="py-3 px-2 text-center tabular-nums text-[var(--text-tertiary)]">{team.drawn}</td>
+                            <td className="py-3 px-2 text-center tabular-nums text-[var(--accent-loss)]">{team.lost}</td>
                             <td
                               className={`py-3 px-2 text-center font-semibold tabular-nums ${
                                 team.goalDiff > 0
@@ -1293,19 +1420,19 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
         {activeTab === 'scorers' && (
           <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Top Scorers</h2>
-              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                {data?.season || (isCalendarYear ? '2026' : '2025-26')} · {data?.topScorerSource || 'Provider data'}
-              </p>
-            </div>
+            <SectionHeader
+              kicker="Golden Boot"
+              title="Top Scorers"
+              description={`${data?.season || (isCalendarYear ? '2026' : '2025-26')} · ${data?.topScorerSource || 'Provider data'}`}
+              className="p-4 border-b border-[var(--border-color)]"
+            />
             {data?.topScorers && data.topScorers.length > 0 ? (
               <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
                 {data.topScorers.map((scorer) => (
-                  <div key={scorer.name} className="flex items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
+                  <div key={scorer.name} className="flex min-h-[44px] items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
                     <div className="flex items-center gap-4">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        scorer.rank <= 3 ? 'bg-[var(--accent-warn)] text-white' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm tabular-nums ${
+                        scorer.rank <= 3 ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
                       }`}>
                         {scorer.rank}
                       </span>
@@ -1315,7 +1442,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-[var(--accent-primary)]">{scorer.goals}</p>
+                      <p className="text-xl font-bold tabular-nums text-[var(--accent-primary)]">{scorer.goals}</p>
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {scorer.assists === null ? 'Goals verified' : `${scorer.assists} assists`}
                       </p>
@@ -1324,11 +1451,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <span className="text-3xl mb-2 block">⚽</span>
-                <p className="text-[var(--text-tertiary)]">Top scorers data is being loaded...</p>
-                <p className="text-sm text-[var(--text-tertiary)] mt-1">Check back later for the latest statistics</p>
-              </div>
+              <EmptyState
+                title="No scorer data yet"
+                description="The provider hasn't published goal leaders for this season — check back once matches are underway."
+                className="py-10"
+              />
             )}
           </div>
         )}
@@ -1367,11 +1494,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   <button
                     onClick={runSeasonSimulation}
                     disabled={runningSimulation}
-                    className="px-6 py-3 rounded-xl font-semibold text-[#041320] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[var(--accent-ai)]/25 flex items-center gap-2"
+                    className="min-h-[44px] px-6 py-3 rounded-xl font-semibold text-[var(--accent-on-primary)] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[var(--accent-ai)]/25 flex items-center gap-2"
                   >
                     {runningSimulation ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-[#041320] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-[var(--accent-on-primary)] border-t-transparent rounded-full animate-spin" />
                         <span>Simulating...</span>
                       </>
                     ) : (
@@ -1460,8 +1587,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
+                    <table className="w-full tabular-nums">
+                      <thead className="sticky top-0 z-10 bg-[var(--card-bg)]">
                         <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
                           <th className="text-left py-3 px-4">Pos</th>
                           <th className="text-left py-3 px-4">Team</th>
@@ -1481,8 +1608,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                             <tr
                               onClick={() => setExpandedSimTeam(expandedSimTeam === team.team_name ? null : team.team_name)}
                               className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${
-                                idx < 4 ? 'border-l-2 border-l-emerald-500' : 
-                                idx >= simulationResults.standings.length - 3 ? 'border-l-2 border-l-red-500' : ''
+                                idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' :
+                                idx >= simulationResults.standings.length - 3 ? 'border-l-2 border-l-[var(--accent-loss)]' : 'odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]'
                               }`}
                             >
                               <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
@@ -1605,9 +1732,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   {/* Cover Photo */}
                   {item.image && (
                     <div className="aspect-video w-full overflow-hidden">
-                      <img 
-                        src={item.image} 
-                        alt={item.headline} 
+                      {/* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */}
+                      <img
+                        src={item.image}
+                        alt={item.headline}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>

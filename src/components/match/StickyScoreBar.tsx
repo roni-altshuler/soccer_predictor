@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 import { BorderBeam } from '@/components/magicui'
-import { LiveBadge, TeamBadge } from '@/components/primitives'
+import { FlagBadge, LiveBadge, TeamBadge } from '@/components/primitives'
 import { cn } from '@/lib/utils'
 
 interface StickyScoreBarProps {
@@ -12,6 +12,9 @@ interface StickyScoreBarProps {
   heroRef: React.RefObject<HTMLElement | null>
   homeName: string
   awayName: string
+  /** National-team fixtures — set to the country name to render a real flag. */
+  homeCountry?: string
+  awayCountry?: string
   homeTeamId?: number | string
   awayTeamId?: number | string
   homeColor?: string
@@ -38,6 +41,8 @@ export function StickyScoreBar({
   heroRef,
   homeName,
   awayName,
+  homeCountry,
+  awayCountry,
   homeTeamId,
   awayTeamId,
   homeColor,
@@ -80,10 +85,11 @@ export function StickyScoreBar({
           exit={reduce ? { opacity: 0 } : { y: -8, opacity: 0 }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           className={cn(
+            // NOTE: no 'relative' here — twMerge would let it override 'sticky'
+            // (both are position utilities) and the bar would never stick.
             'sticky z-40 top-[var(--shell-topbar-h)] w-full',
             'border-b border-[var(--border-color)]',
             'bg-[var(--nav-bg)] backdrop-blur-xl',
-            'relative',
             className,
           )}
           style={
@@ -95,14 +101,19 @@ export function StickyScoreBar({
           role="banner"
           aria-label={`${homeName} ${score} ${awayName}`}
         >
-          <div className="mx-auto flex max-w-[var(--shell-content-max)] items-center justify-between gap-4 px-4 py-2">
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-              <span className="truncate text-meta font-semibold text-[var(--text-primary)] sm:text-body">{homeName}</span>
-              <TeamBadge name={homeName} teamId={homeTeamId} teamColor={homeColor} size={24} />
+          {/* gap-2 + px-3 at ≤sm so long names + score never overflow 390px. */}
+          <div className="mx-auto flex max-w-[var(--shell-content-max)] items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-4">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
+              <span className="min-w-0 truncate text-meta font-semibold text-[var(--text-primary)] sm:text-body">{homeName}</span>
+              {homeCountry ? (
+                <FlagBadge country={homeCountry} teamName={homeName} size={22} />
+              ) : (
+                <TeamBadge name={homeName} teamId={homeTeamId} teamColor={homeColor} size={24} />
+              )}
             </div>
             <div className="flex flex-shrink-0 flex-col items-center">
               <span
-                className="font-numeric text-h2 font-bold tabular-nums text-[var(--text-primary)]"
+                className="font-numeric text-h3 font-bold tabular-nums text-[var(--text-primary)] sm:text-h2"
                 style={{ textShadow: 'var(--score-numeric-shadow)' }}
               >
                 {score}
@@ -115,9 +126,13 @@ export function StickyScoreBar({
                 </span>
               ) : null}
             </div>
-            <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
-              <TeamBadge name={awayName} teamId={awayTeamId} teamColor={awayColor} size={24} />
-              <span className="truncate text-meta font-semibold text-[var(--text-primary)] sm:text-body">{awayName}</span>
+            <div className="flex min-w-0 flex-1 items-center justify-start gap-1.5 sm:gap-2">
+              {awayCountry ? (
+                <FlagBadge country={awayCountry} teamName={awayName} size={22} />
+              ) : (
+                <TeamBadge name={awayName} teamId={awayTeamId} teamColor={awayColor} size={24} />
+              )}
+              <span className="min-w-0 truncate text-meta font-semibold text-[var(--text-primary)] sm:text-body">{awayName}</span>
             </div>
           </div>
           {isLive && (

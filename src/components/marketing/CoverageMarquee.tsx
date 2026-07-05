@@ -1,26 +1,44 @@
 import { Marquee } from '@/components/magicui/marquee'
+import { FlagBadge } from '@/components/primitives'
 import { leaguesForGender, type LeagueAccent } from '@/lib/leagueAccents'
 
-/** League chip — accent-tinted pill using the single source of truth for
- *  competition branding (lib/leagueAccents.ts). */
-function LeagueChip({ league }: { league: LeagueAccent }) {
+/**
+ * ESPN league crests for competitions that don't carry a `logoUrl` in
+ * leagueAccents.ts. Every URL verified against ESPN's own scoreboard API
+ * (leagues[0].logos) on 2026-07-02 — names matched, all 200 image/png.
+ */
+const EXTRA_LEAGUE_CRESTS: Record<string, string> = {
+  'uefa.champions': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2.png',
+  'uefa.europa': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2310.png',
+  'uefa.europa.conf': 'https://a.espncdn.com/i/leaguelogos/soccer/500/20296.png',
+  'fifa.world': 'https://a.espncdn.com/i/leaguelogos/soccer/500/4.png',
+  'uefa.euro': 'https://a.espncdn.com/i/leaguelogos/soccer/500/74.png',
+  'conmebol.america': 'https://a.espncdn.com/i/leaguelogos/soccer/500/83.png',
+  'eng.1.w': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2314.png',
+  'usa.1.w': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2323.png',
+  'uefa.champions.w': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2408.png',
+  'uefa.euro.w': 'https://a.espncdn.com/i/leaguelogos/soccer/500/2381.png',
+  'fifa.world.w': 'https://a.espncdn.com/i/leaguelogos/soccer/500/60.png',
+}
+
+/** League chip — real crest (FlagBadge chain: crest → country flag →
+ *  monogram) + name. No emoji (rule 1), no letter avatars (rule 2).
+ *  Non-interactive on purpose: the marquee repeats its children, so
+ *  focusable chips would spam the tab order. min-h keeps ≥40px rhythm. */
+function MarqueeLeagueChip({ league }: { league: LeagueAccent }) {
   return (
     <div
-      className="mx-2 flex shrink-0 items-center gap-2.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2"
+      className="mx-2 flex min-h-[40px] shrink-0 items-center gap-2.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2"
       style={{ borderColor: league.accentBg }}
     >
-      <span
-        aria-hidden="true"
-        className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-black"
-        style={{ background: league.accentBg, color: league.accent }}
-      >
-        {league.shortName.slice(0, 1)}
-      </span>
+      <FlagBadge
+        teamName={league.displayName}
+        country={league.country}
+        logoUrl={league.logoUrl ?? EXTRA_LEAGUE_CRESTS[league.competitionId]}
+        size={22}
+      />
       <span className="whitespace-nowrap text-sm font-semibold text-[var(--text-primary)]">
         {league.displayName}
-      </span>
-      <span aria-hidden="true" className="text-sm leading-none">
-        {league.flag}
       </span>
     </div>
   )
@@ -49,12 +67,12 @@ export function CoverageMarquee() {
       <div className="relative">
         <Marquee pauseOnHover className="[--duration:40s]">
           {mens.map((l) => (
-            <LeagueChip key={l.competitionId} league={l} />
+            <MarqueeLeagueChip key={l.competitionId} league={l} />
           ))}
         </Marquee>
         <Marquee reverse pauseOnHover className="mt-3 [--duration:36s]">
           {womens.map((l) => (
-            <LeagueChip key={l.competitionId} league={l} />
+            <MarqueeLeagueChip key={l.competitionId} league={l} />
           ))}
         </Marquee>
 

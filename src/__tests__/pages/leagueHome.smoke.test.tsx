@@ -45,7 +45,7 @@ afterEach(() => {
 })
 
 describe('LeagueHomePage', () => {
-  it('mounts without crashing and shows the loading spinner', () => {
+  it('mounts without crashing and shows the loading skeleton', () => {
     render(
       <LeagueHomePage
         leagueId="eng.1"
@@ -53,10 +53,10 @@ describe('LeagueHomePage', () => {
         country="England"
       />,
     )
-    // While loading, the component renders the spinner div instead of
-    // any of the tabs. We just need to confirm the surrounding container
-    // exists — the spinner has `animate-spin` class which is stable.
-    expect(document.querySelector('.animate-spin')).toBeTruthy()
+    // While loading, the component renders token-styled pulse skeletons
+    // (design language: no bespoke spinners) inside an aria-busy container.
+    expect(document.querySelector('[aria-busy="true"]')).toBeTruthy()
+    expect(document.querySelector('.animate-pulse')).toBeTruthy()
   })
 
   it('renders the redesigned hero, tabs, and league brand after data resolves', async () => {

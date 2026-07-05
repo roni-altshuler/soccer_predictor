@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalendarDays, MousePointerClick } from 'lucide-react';
 import Link from 'next/link';
 
 interface Match {
@@ -352,12 +353,12 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
               </div>
             ) : selectedDate ? (
               <div className="p-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-                <span className="text-4xl mb-2 block">📅</span>
+                <CalendarDays className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
                 <p>No matches on this date</p>
               </div>
             ) : (
               <div className="p-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-                <span className="text-4xl mb-2 block">👆</span>
+                <MousePointerClick className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
                 <p>Click on a date to see matches</p>
               </div>
             )}

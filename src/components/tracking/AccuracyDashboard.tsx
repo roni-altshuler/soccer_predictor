@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+import { useGenderQuery } from '@/hooks/useGenderQuery'
+
 import type {
   AccuracyMetrics,
   AccuracyPolicy,
@@ -162,16 +164,17 @@ export default function AccuracyDashboard() {
   const [trendWindow, setTrendWindow] = useState(10)
   const [fetcherStatus, setFetcherStatus] = useState<FetcherStatusResponse | null>(null)
   const [fetching, setFetching] = useState(false)
+  const { withParam } = useGenderQuery()
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const [summaryRes, trendRes, statusRes, modelRes, calibrationTrendRes] = await Promise.all([
-        fetch('/api/v1/tracking/accuracy/summary'),
-        fetch('/api/v1/tracking/accuracy/trend?window=' + trendWindow),
-        fetch('/api/v1/tracking/outcome-status'),
-        fetch('/api/v1/tracking/model-info'),
-        fetch('/api/v1/tracking/calibration-trend?window=100&step=25'),
+        fetch(withParam('/api/v1/tracking/accuracy/summary')),
+        fetch(withParam('/api/v1/tracking/accuracy/trend?window=' + trendWindow)),
+        fetch(withParam('/api/v1/tracking/outcome-status')),
+        fetch(withParam('/api/v1/tracking/model-info')),
+        fetch(withParam('/api/v1/tracking/calibration-trend?window=100&step=25')),
       ])
       if (summaryRes.ok) setSummary(await summaryRes.json())
       if (trendRes.ok) setTrend(await trendRes.json())
@@ -183,7 +186,7 @@ export default function AccuracyDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [trendWindow])
+  }, [trendWindow, withParam])
 
   useEffect(() => { load() }, [load])
 

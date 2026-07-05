@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Newspaper } from 'lucide-react'
 
-import { AsyncSection } from '@/components/primitives/AsyncSection'
+import { AsyncSection, LeagueChip, SectionHeader } from '@/components/primitives'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent, type LeagueAccent } from '@/lib/leagueAccents'
@@ -51,7 +51,7 @@ function NewsImage({
         <Newspaper
           className={cn(
             iconSize === 'lg' ? 'h-8 w-8' : 'h-5 w-5',
-            accent ? 'text-white/90' : 'text-[var(--text-tertiary)]'
+            accent ? 'text-[var(--pitch-text)] opacity-90' : 'text-[var(--text-tertiary)]'
           )}
           strokeWidth={1.8}
         />
@@ -67,6 +67,42 @@ function NewsImage({
       className={className}
       onError={() => setBroken(true)}
     />
+  )
+}
+
+/** Accent dot + league short name + relative time, shared by story rows. */
+function ArticleMeta({
+  accent,
+  published,
+  formatDate,
+  onScrim = false,
+}: {
+  accent: LeagueAccent | null
+  published: string
+  formatDate: (d: string) => string
+  onScrim?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 text-[11px] font-medium',
+        onScrim ? '' : 'text-[var(--text-tertiary)]'
+      )}
+      style={onScrim ? { color: 'color-mix(in srgb, var(--pitch-text) 72%, transparent)' } : undefined}
+    >
+      {accent && (
+        <>
+          <span
+            aria-hidden
+            className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: accent.accent }}
+          />
+          <span className="truncate">{accent.shortName}</span>
+          <span aria-hidden>·</span>
+        </>
+      )}
+      <time dateTime={published}>{formatDate(published)}</time>
+    </div>
   )
 }
 
@@ -135,36 +171,51 @@ export default function NewsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-8">
-        <div className="fm-surface p-4 mb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--text-tertiary)] mb-1">Newsroom</p>
-          <h1 className="text-xl md:text-2xl font-black text-[var(--text-primary)]">Latest Football Headlines</h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">Curated breaking stories, transfer chatter, and tactical updates in one feed.</p>
+      <div className="max-w-5xl mx-auto px-4 pt-4 pb-8">
+        <h1 className="sr-only">Pitchwise Newsroom — latest football headlines</h1>
+
+        {/* Hero band */}
+        <div className="hero-band surface-elevated mb-5 p-5 md:p-6">
+          <SectionHeader
+            kicker="Newsroom"
+            title="Latest Football Headlines"
+            description="Curated breaking stories, transfer chatter, and tactical updates in one feed."
+            action={
+              !loading && !error && articles.length > 0 ? (
+                <div className="text-right">
+                  <p className="text-2xl font-black leading-tight tabular-nums text-[var(--text-primary)]">
+                    {articles.length}
+                  </p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                    stories
+                  </p>
+                </div>
+              ) : undefined
+            }
+          />
         </div>
 
         {/* League filter chips — horizontal scroll on mobile */}
         {!loading && !error && leagueChips.length > 0 && (
-          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[{ competitionId: 'all', shortName: 'All', accent: 'var(--accent-primary)' } as Pick<LeagueAccent, 'competitionId' | 'shortName' | 'accent'>, ...leagueChips].map((chip) => {
-              const selected = activeLeague === chip.competitionId
-              return (
-                <button
-                  key={chip.competitionId}
-                  type="button"
-                  onClick={() => setActiveLeague(chip.competitionId)}
-                  aria-pressed={selected}
-                  className={cn(
-                    'inline-flex flex-shrink-0 items-center rounded-full border px-3 min-h-[36px] text-xs font-semibold whitespace-nowrap transition-colors',
-                    selected
-                      ? 'text-white border-transparent'
-                      : 'text-[var(--text-secondary)] border-[var(--border-color)] bg-[var(--card-bg)] hover:bg-[var(--muted-bg)]'
-                  )}
-                  style={selected ? { backgroundColor: chip.accent } : undefined}
-                >
-                  {chip.shortName}
-                </button>
-              )
-            })}
+          <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <LeagueChip
+              name="All"
+              size="sm"
+              active={activeLeague === 'all'}
+              onClick={() => setActiveLeague('all')}
+              className="flex-shrink-0"
+            />
+            {leagueChips.map((chip) => (
+              <LeagueChip
+                key={chip.competitionId}
+                leagueId={chip.competitionId}
+                name={chip.shortName}
+                size="sm"
+                active={activeLeague === chip.competitionId}
+                onClick={() => setActiveLeague(chip.competitionId)}
+                className="flex-shrink-0"
+              />
+            ))}
           </div>
         )}
 
@@ -184,40 +235,94 @@ export default function NewsPage() {
         >
           {/* Featured */}
           {featured && (
-            <a href={featured.url || '#'} target="_blank" rel="noopener noreferrer"
-              className="block mb-4 rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group shadow-[var(--shadow-sm)]">
-              <div className="aspect-video relative overflow-hidden">
+            <a
+              href={featured.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="surface-elevated group mb-5 block overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] transition-colors hover:border-[var(--border-hover)]"
+            >
+              <div className="relative aspect-video overflow-hidden">
                 <NewsImage
                   src={featured.image}
                   accent={resolveArticleLeague(featured)}
                   iconSize="lg"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent-primary)]">Featured</span>
-                  <h2 className="text-base font-bold text-white mt-0.5 line-clamp-2">{featured.title}</h2>
-                  <p className="text-xs text-white/60 mt-1">{formatDate(featured.published)}</p>
+                {/* Scrim: bottom 60% fading to transparent so the headline always passes contrast */}
+                <div
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-0 h-[60%]"
+                  style={{
+                    background:
+                      'linear-gradient(to top, var(--overlay-bg) 0%, var(--overlay-bg) 30%, transparent 100%), linear-gradient(to top, var(--overlay-bg) 0%, transparent 72%)',
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] backdrop-blur-sm"
+                    style={{
+                      color: 'var(--accent-primary-soft)',
+                      backgroundColor: 'color-mix(in srgb, var(--accent-primary) 22%, var(--overlay-bg))',
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: 'var(--accent-primary-soft)' }}
+                    />
+                    Featured
+                  </span>
+                  <h2
+                    className="mt-1.5 line-clamp-2 text-base font-bold md:text-lg"
+                    style={{ color: 'var(--pitch-text)' }}
+                  >
+                    {featured.title}
+                  </h2>
+                  <div className="mt-1.5">
+                    <ArticleMeta
+                      accent={resolveArticleLeague(featured)}
+                      published={featured.published}
+                      formatDate={formatDate}
+                      onScrim
+                    />
+                  </div>
                 </div>
               </div>
             </a>
           )}
 
-          {/* Article List */}
-          <div className="space-y-0.5">
-            {rest.map((article) => (
-              <a key={article.id} href={article.url || '#'} target="_blank" rel="noopener noreferrer"
-                className="flex gap-3 p-3 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-colors group shadow-[var(--shadow-sm)]">
-                <NewsImage
-                  src={article.image}
-                  accent={resolveArticleLeague(article)}
-                  className="w-20 h-14 rounded object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors">{article.title}</h3>
-                  <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{formatDate(article.published)}</p>
-                </div>
-              </a>
-            ))}
+          {/* Secondary stories — 2-col grid on desktop */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {rest.map((article) => {
+              const accent = resolveArticleLeague(article)
+              return (
+                <a
+                  key={article.id}
+                  href={article.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex min-h-[88px] items-center gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-3 shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
+                >
+                  <NewsImage
+                    src={article.image}
+                    accent={accent}
+                    className="h-16 w-24 flex-shrink-0 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent-primary)]">
+                      {article.title}
+                    </h3>
+                    <div className="mt-1.5">
+                      <ArticleMeta
+                        accent={accent}
+                        published={article.published}
+                        formatDate={formatDate}
+                      />
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
           </div>
         </AsyncSection>
       </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+import { SectionHeader, StatCard } from '@/components/primitives'
+
 type AlertSeverity = 'high' | 'medium' | 'low'
 
 type Outcome = 'home' | 'draw' | 'away'
@@ -87,9 +89,15 @@ function pct(value: number): string {
 }
 
 function metricColor(value: number): string {
-  if (value >= 0.6) return '#22c55e'
-  if (value >= 0.48) return '#f59e0b'
-  return '#ef4444'
+  if (value >= 0.6) return 'var(--accent-primary)'
+  if (value >= 0.48) return 'var(--accent-warn)'
+  return 'var(--accent-loss)'
+}
+
+function metricAccent(value: number): 'primary' | 'warn' | 'loss' {
+  if (value >= 0.6) return 'primary'
+  if (value >= 0.48) return 'warn'
+  return 'loss'
 }
 
 function severityBadge(severity: AlertSeverity): string {
@@ -135,7 +143,7 @@ function WalkForwardChart({ folds }: { folds: WalkForwardFold[] }) {
         })}
 
         <path d={areaPath} fill="url(#diagArea)" opacity={0.2} />
-        <path d={linePath} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 
         {folds.map((fold, idx) => (
           <circle key={fold.fold} cx={xs[idx]} cy={ys[idx]} r="2.8" fill={metricColor(fold.accuracy)}>
@@ -145,8 +153,8 @@ function WalkForwardChart({ folds }: { folds: WalkForwardFold[] }) {
 
         <defs>
           <linearGradient id="diagArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--accent-primary)" />
+            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
@@ -214,21 +222,21 @@ export default function DiagnosticsDashboard() {
     <div className="space-y-5">
       <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Audit Snapshot</p>
-            <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Walk-forward and Drift Diagnostics</h2>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              {data.total_completed_predictions} completed predictions across {data.league_count} leagues · tuning source {data.tuning_source}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
+          <SectionHeader
+            kicker="Audit snapshot"
+            title="Walk-forward and drift diagnostics"
+            description={`${data.total_completed_predictions.toLocaleString()} completed predictions across ${data.league_count} leagues · tuning source ${data.tuning_source}`}
+          />
+          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Select league">
             {leagueNames.map((league) => (
               <button
                 key={league}
+                role="tab"
+                aria-selected={activeLeague === league}
                 onClick={() => setSelectedLeague(league)}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] border transition-colors ${
+                className={`min-h-[40px] px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
                   activeLeague === league
-                    ? 'bg-[var(--accent-primary)] text-white border-transparent'
+                    ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] border-[var(--accent-primary)]/50'
                     : 'bg-[var(--muted-bg)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)]'
                 }`}
               >
@@ -241,7 +249,7 @@ export default function DiagnosticsDashboard() {
 
       {data.top_alerts.length > 0 && (
         <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Top Drift Alerts</h3>
+          <SectionHeader kicker="Stability" title="Top drift alerts" className="mb-3" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {data.top_alerts.slice(0, 6).map((alert, idx) => (
               <div key={`${alert.league}-${alert.metric}-${idx}`} className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-2.5">
@@ -258,16 +266,16 @@ export default function DiagnosticsDashboard() {
         </section>
       )}
 
-      <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-        <MetricCard label="League Accuracy" value={pct(leagueData.accuracy)} tone={metricColor(leagueData.accuracy)} sub={`n=${leagueData.sample_size}`} />
-        <MetricCard label="Brier Score" value={leagueData.brier_score.toFixed(3)} tone="#22c55e" sub="Lower is better" />
-        <MetricCard label="Log Loss" value={leagueData.log_loss.toFixed(3)} tone="#38bdf8" sub="Lower is better" />
-        <MetricCard label="ECE" value={leagueData.expected_calibration_error.toFixed(3)} tone="#f59e0b" sub="Calibration gap" />
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="League Accuracy" value={pct(leagueData.accuracy)} accent={metricAccent(leagueData.accuracy)} sub={`n=${leagueData.sample_size}`} />
+        <StatCard label="Brier Score" value={leagueData.brier_score.toFixed(3)} accent="ai" sub="Lower is better" />
+        <StatCard label="Log Loss" value={leagueData.log_loss.toFixed(3)} accent="ai" sub="Lower is better" />
+        <StatCard label="ECE" value={leagueData.expected_calibration_error.toFixed(3)} accent="ai" sub="Calibration gap" />
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Confusion Matrix</h3>
+          <SectionHeader kicker="Outcome audit" title="Confusion matrix" className="mb-3" />
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -287,11 +295,11 @@ export default function DiagnosticsDashboard() {
                       const norm = confusion.normalized[rowIdx]?.[colIdx] || 0
                       const diagonal = rowIdx === colIdx
                       const bg = diagonal
-                        ? `rgba(16, 185, 129, ${0.12 + (norm * 0.55)})`
-                        : `rgba(239, 68, 68, ${0.08 + (norm * 0.45)})`
+                        ? `color-mix(in srgb, var(--accent-primary) ${Math.round((0.12 + norm * 0.55) * 100)}%, transparent)`
+                        : `color-mix(in srgb, var(--accent-loss) ${Math.round((0.08 + norm * 0.45) * 100)}%, transparent)`
                       return (
                         <td key={`${predLabel}-${actualLabel}`} className="px-2 py-2 text-center">
-                          <span className="inline-flex min-w-[44px] justify-center rounded-md px-2 py-1 text-[11px] font-semibold text-[var(--text-primary)]" style={{ backgroundColor: bg }}>
+                          <span className="inline-flex min-w-[44px] justify-center rounded-md px-2 py-1 text-[11px] font-semibold tabular-nums text-[var(--text-primary)]" style={{ backgroundColor: bg }}>
                             {value}
                           </span>
                         </td>
@@ -305,7 +313,7 @@ export default function DiagnosticsDashboard() {
         </div>
 
         <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Reliability Curve Buckets</h3>
+          <SectionHeader kicker="Calibration" title="Reliability curve buckets" className="mb-3" />
           <div className="space-y-2">
             {leagueData.reliability_bins.filter((bin) => bin.sample_size > 0).map((bin) => {
               const confWidth = Math.max(2, bin.avg_confidence * 100)
@@ -333,13 +341,13 @@ export default function DiagnosticsDashboard() {
 
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-5">
         <div className="xl:col-span-3 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Walk-forward Stability</h3>
+          <SectionHeader kicker="Backtest" title="Walk-forward stability" className="mb-3" />
           <WalkForwardChart folds={leagueData.walk_forward.folds} />
         </div>
 
         <div className="xl:col-span-2 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5 space-y-4">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Current Tuning</h3>
+            <SectionHeader kicker="Adaptation" title="Current tuning" className="mb-2" />
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <TuningChip label="NN Base" value={leagueData.tuning.blend_nn_base.toFixed(3)} />
               <TuningChip label="NN Min" value={leagueData.tuning.blend_nn_min.toFixed(3)} />
@@ -351,7 +359,7 @@ export default function DiagnosticsDashboard() {
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">League Drift Alerts</h3>
+            <SectionHeader kicker="Stability" title="League drift alerts" className="mb-2" />
             {leagueData.drift_alerts.length === 0 ? (
               <p className="text-xs text-[var(--text-tertiary)]">No active drift alerts for this league.</p>
             ) : (
@@ -372,16 +380,6 @@ export default function DiagnosticsDashboard() {
           </div>
         </div>
       </section>
-    </div>
-  )
-}
-
-function MetricCard({ label, value, tone, sub }: { label: string; value: string; tone: string; sub: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-3.5">
-      <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className="text-2xl font-bold mt-1" style={{ color: tone }}>{value}</p>
-      <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{sub}</p>
     </div>
   )
 }

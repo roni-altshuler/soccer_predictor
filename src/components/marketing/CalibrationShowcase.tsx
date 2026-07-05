@@ -44,8 +44,9 @@ export function CalibrationShowcase() {
         const data = (await res.json()) as FlatAccuracyResponse
         const bins = Array.isArray(data.calibration_bins) ? data.calibration_bins : []
         if (cancelled) return
-        // Only treat as live if we actually have enough settled data to plot.
-        if (bins.length >= 3 && (data.completed_predictions ?? 0) > 0) {
+        // Only treat as live if we actually have enough settled data to plot
+        // AND a meaningful sample (rule 3: no rates from tiny windows).
+        if (bins.length >= 3 && (data.completed_predictions ?? 0) >= 10) {
           setSnap({
             bins,
             accuracy: data.winner_accuracy ?? data.accuracy ?? FALLBACK_ACCURACY.winner_accuracy,
@@ -75,10 +76,10 @@ export function CalibrationShowcase() {
   const loading = snap === null
 
   const stats = [
-    { value: view.accuracy * 100, dp: 2, suffix: '%', label: 'Outcome accuracy' },
+    { value: view.accuracy * 100, dp: 1, suffix: '%', label: 'Outcome accuracy' },
     { value: view.brier, dp: 3, label: 'Brier score' },
     { value: view.logLoss, dp: 3, label: 'Log loss' },
-    { value: view.completed, dp: 0, label: 'Settled picks' },
+    { value: view.completed, dp: 0, label: view.live ? 'Settled picks' : 'Holdout matches' },
   ]
 
   return (
@@ -97,7 +98,7 @@ export function CalibrationShowcase() {
             )}
           >
             {view.live && !loading ? <Wifi className="h-3 w-3" aria-hidden="true" /> : <WifiOff className="h-3 w-3" aria-hidden="true" />}
-            {loading ? 'Loading…' : view.live ? 'Live from the tracker' : 'Sample data'}
+            {loading ? 'Loading…' : view.live ? 'Live from the tracker' : 'Holdout data'}
           </span>
         </div>
 
