@@ -11,10 +11,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Matchday v3: flat fills — no gradients, sheen, or lift.
         default:
-          'sheen bg-gradient-to-br from-[var(--accent-primary-soft)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-[0_10px_28px_-12px_color-mix(in_srgb,var(--accent-primary)_80%,transparent)] hover:-translate-y-px hover:shadow-[0_14px_36px_-12px_color-mix(in_srgb,var(--accent-primary)_90%,transparent)] active:translate-y-0',
+          'bg-[var(--accent-primary)] text-[var(--accent-on-primary)] hover:opacity-90',
         ai:
-          'sheen bg-gradient-to-br from-[color-mix(in_srgb,var(--accent-ai)_78%,white)] to-[var(--accent-ai)] text-[var(--accent-on-primary)] shadow-[0_10px_28px_-12px_color-mix(in_srgb,var(--accent-ai)_80%,transparent)] hover:-translate-y-px hover:shadow-[0_14px_38px_-12px_color-mix(in_srgb,var(--accent-ai)_90%,transparent)] active:translate-y-0',
+          'bg-[var(--accent-ai)] text-[var(--accent-on-primary)] hover:opacity-90',
         destructive:
           'bg-[var(--accent-loss)] text-white hover:opacity-90 active:translate-y-px',
         outline:

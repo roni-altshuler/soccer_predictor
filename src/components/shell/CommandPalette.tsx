@@ -32,16 +32,16 @@ import { leaguesForGender } from '@/lib/leagueAccents'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
 const PAGES = [
-  { href: '/', label: 'Match Centre', icon: Activity, hint: 'Live + upcoming + finished' },
-  { href: '/matches', label: 'All Leagues', icon: Trophy, hint: 'Browse competitions' },
+  { href: '/', label: 'Matches', icon: Activity, hint: 'Scores + fixtures' },
+  { href: '/leagues', label: 'Leagues', icon: Trophy, hint: 'Browse competitions' },
   { href: '/tournaments', label: 'Tournaments', icon: Medal, hint: 'Brackets + group stages' },
-  { href: '/ai', label: 'AI Dashboard', icon: Sparkles, hint: 'Top picks + momentum', accent: 'ai' as const },
+  { href: '/ai', label: 'Model hub', icon: Sparkles, hint: 'Model transparency', accent: 'ai' as const },
   { href: '/predict', label: 'AI Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Model performance' },
   { href: '/history', label: 'Prediction History', icon: History, hint: 'Past picks + outcomes' },
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
   { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
-  { href: '/diagnostics', label: 'Diagnostics', icon: Gauge, hint: 'Pipeline + model health' },
+  { href: '/diagnostics', label: 'Diagnostics', icon: Gauge, hint: 'Model health' },
   { href: '/about', label: 'About', icon: Info, hint: 'How Pitchwise works' },
 ]
 
