@@ -1,6 +1,6 @@
 {
   "league": "ligue_1",
-  "generated_at": "2026-06-28T08:28:38.026959Z",
+  "generated_at": "2026-07-05T07:58:36.444129Z",
   "partial": false,
   "eval_mode": "fresh_fast_lgbm",
   "leakage_warning": null,
