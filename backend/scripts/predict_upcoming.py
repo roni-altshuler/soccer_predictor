@@ -1068,14 +1068,25 @@ async def predict_upcoming(days_ahead: int = 14):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     elo = EloPredictor()
 
-    # Load existing predictions to avoid duplicates
+    # Load existing predictions to avoid duplicates. Unsettled records made
+    # by a legacy engine are UPGRADE candidates: if the unified model can
+    # score them now, we re-predict and replace (this also repairs records
+    # stored against bracket placeholders like "Round of 32 11 Winner" —
+    # the ESPN event id is stable, so once the real teams are known the
+    # upgraded record carries them). fetch_upcoming_matches only returns
+    # pre-match fixtures, so an in-play or finished match can never be
+    # rewritten.
     existing_ids = set()
+    legacy_pending_ids = set()
     for f in DATA_DIR.glob("predictions_*.json"):
         try:
             with open(f) as fh:
                 data = json.load(fh)
             for p in data.get("predictions", []):
                 existing_ids.add(p["match_id"])
+                model = str(p.get("model_used") or "")
+                if p.get("actual_winner") is None and not model.startswith("unified"):
+                    legacy_pending_ids.add(p["match_id"])
         except Exception:
             continue
 
@@ -1088,10 +1099,22 @@ async def predict_upcoming(days_ahead: int = 14):
             for m in matches:
                 m["league"] = league_name
                 m["espn_id"] = espn_id
-            # Filter out already predicted matches
-            new_matches = [m for m in matches if m["id"] not in existing_ids]
+            # Keep genuinely new matches plus legacy-engine upgrade candidates.
+            new_matches = []
+            n_new = n_upgrade = 0
+            for m in matches:
+                if m["id"] not in existing_ids:
+                    m["is_upgrade"] = False
+                    new_matches.append(m)
+                    n_new += 1
+                elif m["id"] in legacy_pending_ids:
+                    m["is_upgrade"] = True
+                    new_matches.append(m)
+                    n_upgrade += 1
             all_upcoming.extend(new_matches)
-            logger.info(f"  Found {len(matches)} upcoming, {len(new_matches)} new")
+            logger.info(
+                f"  Found {len(matches)} upcoming, {n_new} new, {n_upgrade} legacy upgrade candidates"
+            )
 
             # Pre-fetch completed results per league (for real features)
             if new_matches:
@@ -1141,6 +1164,12 @@ async def predict_upcoming(days_ahead: int = 14):
         unified = _predict_unified(m, espn_id, gender)
         if unified is not None:
             unified_leagues_used.add(league)
+
+        # Upgrade candidates only ever move legacy -> unified. If the
+        # unified model can't score this fixture either, keep the
+        # existing record untouched.
+        if m.get("is_upgrade") and unified is None:
+            continue
 
         # ── Neural model prediction (legacy fallback, when available) ──
         nn_probs = None
@@ -1282,13 +1311,24 @@ async def predict_upcoming(days_ahead: int = 14):
             with open(file_path) as f:
                 existing = json.load(f)
             existing_preds = existing.get("predictions", [])
-            existing_match_ids = {p["match_id"] for p in existing_preds}
-            # Only add truly new predictions
-            added = [p for p in new_preds if p["match_id"] not in existing_match_ids]
-            existing_preds.extend(added)
+            by_id = {p["match_id"]: i for i, p in enumerate(existing_preds)}
+            added = 0
+            for p in new_preds:
+                idx = by_id.get(p["match_id"])
+                if idx is None:
+                    existing_preds.append(p)
+                    added += 1
+                elif (
+                    existing_preds[idx].get("actual_winner") is None
+                    and not str(existing_preds[idx].get("model_used") or "").startswith("unified")
+                    and str(p.get("model_used") or "").startswith("unified")
+                ):
+                    # Legacy → unified upgrade of an unsettled pre-match pick.
+                    existing_preds[idx] = p
+                    added += 1
             existing["predictions"] = existing_preds
             existing["count"] = len(existing_preds)
-            new_count += len(added)
+            new_count += added
         else:
             existing = {"month": month_key, "count": len(new_preds), "predictions": new_preds}
             new_count += len(new_preds)

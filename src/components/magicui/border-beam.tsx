@@ -40,12 +40,20 @@ export function BorderBeam({
       aria-hidden
     >
       <div
-        className={cn(
-          'absolute inset-0 overflow-hidden',
-          '[mask:linear-gradient(transparent,transparent),linear-gradient(black,black)]',
-          '[mask-clip:padding-box,border-box] [mask-composite:intersect]'
-        )}
-        style={{ borderRadius, padding: `${size}px` }}
+        className="absolute inset-0 overflow-hidden"
+        // Ring mask: content-box layer XOR full-box layer leaves only the
+        // `size`px padding ring visible. Inline styles (not Tailwind
+        // arbitrary properties) because property ordering broke the mask
+        // in Chromium and the beam rendered as an unmasked gradient slab.
+        style={{
+          borderRadius,
+          padding: `${size}px`,
+          WebkitMask:
+            'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'exclude',
+        }}
       >
         <motion.div
           className="absolute aspect-square"
