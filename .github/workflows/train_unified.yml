@@ -58,10 +58,18 @@ jobs:
             echo "warehouse restored from release"
 
       - name: Refresh warehouse sources
+        # NO --clubelo here: the ClubElo loader downloads one CSV per team
+        # at a polite ~8s spacing (hundreds of teams => hours) and burned
+        # the entire first run's 180-minute budget. Elo ratings ride along
+        # in the release warehouse and refresh via data_warehouse.yml.
+        # Refresh failure is non-fatal — training proceeds on the release
+        # warehouse as-is (at most a week stale).
+        timeout-minutes: 40
+        continue-on-error: true
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
             # Incremental: recent seasons + xG enrichment.
-            python -m backend.scripts.build_warehouse --espn --football-data --clubelo --min-season 2025 --max-season 2026
+            python -m backend.scripts.build_warehouse --espn --football-data --min-season 2025 --max-season 2026
             python -m backend.scripts.build_warehouse --understat --min-season 2024 --max-season 2026
           else
             echo "No warehouse from release — full build (slow first run)."
@@ -70,12 +78,14 @@ jobs:
           python -m backend.scripts.build_warehouse --stats
 
       - name: Train men's model
+        timeout-minutes: 75
         run: python -m backend.scripts.train_unified --gender M --device cpu
 
       - name: Train women's model
         # Draw-aware hyperparameters: the women's corpus is small (~3k
         # matches) and the default settings collapse draw recall to ~0.01;
         # these lifted holdout accuracy +1.9pp and log-loss/ECE with it.
+        timeout-minutes: 30
         run: python -m backend.scripts.train_unified --gender F --device cpu --class-weight-cap 1.9 --focal-gamma 2.2 --draw-recall-floor 0.15
 
       - name: Promotion gate (men)
