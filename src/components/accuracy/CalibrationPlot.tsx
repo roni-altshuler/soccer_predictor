@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 
+import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CalibrationDotPoint } from '@/lib/types/accuracy'
@@ -40,12 +41,16 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
 
   return (
     <Card className={cn('p-4 md:p-5', className)}>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-h4 font-bold text-[var(--text-primary)]">Calibration</h3>
-        <p className="text-[10px] text-[var(--text-tertiary)]">
-          On the diagonal = perfectly calibrated
-        </p>
-      </div>
+      <SectionHeader
+        kicker="Probability audit"
+        title="Calibration"
+        className="mb-3"
+        action={
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            On the diagonal = perfectly calibrated
+          </p>
+        }
+      />
 
       {bins.length === 0 ? (
         <div className="flex h-[360px] items-center justify-center rounded-lg border border-dashed border-[var(--border-color)] text-sm text-[var(--text-tertiary)]">

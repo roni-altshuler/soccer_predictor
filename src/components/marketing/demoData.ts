@@ -154,9 +154,10 @@ export const FALLBACK_CALIBRATION: CalibrationDotPoint[] = [
   { bin_lower: 0.8, bin_upper: 1.0, avg_predicted: 0.86, avg_actual: 0.88, count: 150 },
 ]
 
-/** Headline accuracy numbers used as the fallback for the calibration panel. */
+/** Headline holdout metrics (men's model) used as the fallback for the
+ *  calibration panel. Captioned as holdout data in the UI (rule 3). */
 export const FALLBACK_ACCURACY = {
-  winner_accuracy: 0.6056,
+  winner_accuracy: 0.605,
   brier_score: 0.505,
   log_loss: 0.865,
   completed_predictions: 11661,

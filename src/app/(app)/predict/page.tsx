@@ -1,25 +1,33 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   Brain,
   Globe2,
   Goal,
-  Home,
+  ListTree,
   Loader2,
-  Plane,
+  Percent,
   Sparkles,
-  TrendingUp,
-  X,
 } from 'lucide-react'
 
 import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
-import { PredictHero } from '@/components/prediction/PredictHero'
+import {
+  MatchupPicker,
+  flagCountryFor,
+  isNationalCompetition,
+  leagueAccentFor,
+  resolveCatalogTeam,
+  type TeamPick,
+} from '@/components/TeamSelector'
+import { AsyncSection, FlagBadge, SectionHeader } from '@/components/primitives'
+import { GenderToggle } from '@/components/GenderToggle'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AttributionItem } from '@/lib/types/attribution'
-
-interface TeamSearchResult { name: string; league: string }
+import { cn } from '@/lib/utils'
 
 interface PredictionResult {
   success?: boolean
@@ -52,183 +60,160 @@ interface PredictionResult {
   error?: string
 }
 
-interface LeagueOverview {
-  total_matches: number
-  avg_goals_per_match: number
-  avg_home_goals: number
-  avg_away_goals: number
-  home_win_rate: number
-  draw_rate: number
-  away_win_rate: number
+interface TodaysMatch {
+  home_team: string
+  away_team: string
+  league: string
+  leagueId: string
+  status: string
 }
 
-interface SeasonTrendEntry {
-  season: string
-  avg_goals: number
-  home_wins: number
-  draws: number
-  away_wins: number
-  total_matches: number
+interface ExampleFixture {
+  key: string
+  home: TeamPick
+  away: TeamPick
+  leagueId: string
 }
 
-interface LeagueInsight {
-  overview: LeagueOverview | null
-  latestTrend: SeasonTrendEntry | null
-  previousTrend: SeasonTrendEntry | null
+/** Marquee order for the example-fixture chips (lower = more marquee). */
+const EXAMPLE_LEAGUE_RANK: Record<string, number> = {
+  'fifa.world': 0,
+  'uefa.champions': 1,
+  'uefa.europa': 2,
+  'eng.1': 3,
+  'esp.1': 4,
+  'ita.1': 5,
+  'ger.1': 6,
+  'fra.1': 7,
+  'usa.1': 8,
+  'ned.1': 9,
+  'por.1': 10,
+  'uefa.europa.conf': 11,
 }
 
-function TeamSearchInput({
-  label, value, onSelect, placeholder, Icon
-}: {
-  label: string; value: { name: string; league: string } | null
-  onSelect: (team: { name: string; league: string } | null) => void
-  placeholder: string; Icon: typeof Goal
-}) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<TeamSearchResult[]>([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+/** ESPN league id → static catalog league name (predict API vocabulary). */
+const ESPN_TO_CATALOG: Record<string, string> = {
+  'eng.1': 'Premier League',
+  'esp.1': 'La Liga',
+  'ita.1': 'Serie A',
+  'ger.1': 'Bundesliga',
+  'fra.1': 'Ligue 1',
+  'ned.1': 'Eredivisie',
+  'por.1': 'Primeira Liga',
+  'usa.1': 'MLS',
+  'uefa.champions': 'Champions League (UCL)',
+  'uefa.europa': 'Europa League (UEL)',
+  'uefa.europa.conf': 'Conference League (UECL)',
+  'fifa.world': 'FIFA World Cup',
+  'uefa.euro': 'UEFA European Championship',
+  'conmebol.america': 'Copa America',
+}
 
-  const searchTeams = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults([]); return }
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/search-teams?q=${encodeURIComponent(q)}`)
-      if (res.ok) { const data = await res.json(); setResults(data.teams || []) }
-    } catch { setResults([]) }
-    finally { setLoading(false) }
-  }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => { if (query && !value) searchTeams(query) }, 300)
-    return () => clearTimeout(timer)
-  }, [query, value, searchTeams])
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node)) setIsOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
+function ChipIdentity({ pick }: { pick: TeamPick }) {
+  if (!isNationalCompetition(pick.league)) return null
   return (
-    <div className="relative">
-      <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">{label}</label>
-      {value ? (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-sm">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-ai)]/12 text-[var(--accent-ai)]">
-            <Icon className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{value.name}</p>
-            <p className="text-[10px] text-[var(--text-tertiary)]">{value.league}</p>
-          </div>
-          <button onClick={() => { onSelect(null); setQuery(''); setResults([]) }} className="p-1 rounded hover:bg-[var(--card-hover)] text-[var(--text-tertiary)]" aria-label={`Clear ${label}`}>
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-      ) : (
-        <div className="relative">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]">
-            <Icon className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <input
-            ref={inputRef} type="text" value={query}
-            onChange={(e) => { setQuery(e.target.value); setIsOpen(true) }}
-            onFocus={() => setIsOpen(true)}
-            placeholder={placeholder}
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ai)]/30 focus:border-[var(--accent-ai)]/70 transition-shadow shadow-sm"
-          />
-          {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--accent-ai)]" aria-hidden="true" />}
-        </div>
-      )}
-      {isOpen && results.length > 0 && !value && (
-        <div ref={dropdownRef} className="absolute z-50 w-full mt-1.5 max-h-56 overflow-y-auto rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] shadow-2xl">
-          {results.map((team, idx) => (
-            <button key={`${team.name}-${idx}`} onClick={() => { onSelect(team); setQuery(''); setResults([]); setIsOpen(false) }}
-              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-[var(--card-hover)] text-left text-sm">
-              <Goal className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" aria-hidden="true" />
-              <div className="min-w-0"><p className="text-[var(--text-primary)] font-medium truncate">{team.name}</p><p className="text-[10px] text-[var(--text-tertiary)] truncate">{team.league}</p></div>
-            </button>
-          ))}
-        </div>
-      )}
-      {isOpen && query.length >= 2 && results.length === 0 && !loading && !value && (
-        <div className="absolute z-50 w-full mt-1 p-3 rounded-lg bg-[var(--card-bg)] border border-[var(--border-color)] text-center text-xs text-[var(--text-tertiary)]">
-          No teams found
-        </div>
-      )}
+    <FlagBadge country={flagCountryFor(pick.name)} teamName={pick.name} size={16} />
+  )
+}
+
+function ResultSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="space-y-4 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5"
+    >
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-2.5 w-full rounded-full" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
     </div>
   )
 }
 
+const OUTPUT_EXPLAINERS = [
+  {
+    Icon: Percent,
+    tint: 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/12',
+    title: 'Calibrated probabilities',
+    desc: 'Win/draw/loss chances from the unified multi-task network, isotonic-calibrated on held-out matches.',
+  },
+  {
+    Icon: Goal,
+    tint: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/12',
+    title: 'Scoreline distribution',
+    desc: 'A bivariate-Poisson xG head scores every plausible final score and surfaces the most likely ones.',
+  },
+  {
+    Icon: ListTree,
+    tint: 'text-[var(--accent-warn)] bg-[var(--accent-warn)]/12',
+    title: 'Why this prediction',
+    desc: 'A factor panel showing which of the 87 features — ELO gap, form, home edge — moved the needle.',
+  },
+] as const
+
 function PredictPageContent() {
-  const [homeTeam, setHomeTeam] = useState<{ name: string; league: string } | null>(null)
-  const [awayTeam, setAwayTeam] = useState<{ name: string; league: string } | null>(null)
+  const reduceMotion = useReducedMotion()
+  const [homeTeam, setHomeTeam] = useState<TeamPick | null>(null)
+  const [awayTeam, setAwayTeam] = useState<TeamPick | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PredictionResult | null>(null)
-  const [leagueInsights, setLeagueInsights] = useState<Record<string, LeagueInsight | null>>({})
-  const [loadingLeagueInsights, setLoadingLeagueInsights] = useState(false)
+  const [examples, setExamples] = useState<ExampleFixture[]>([])
 
   useEffect(() => { setResult(null) }, [homeTeam, awayTeam])
 
-  const selectedLeagues = useMemo(() => {
-    const leagues = [homeTeam?.league, awayTeam?.league].filter((league): league is string => Boolean(league))
-    return Array.from(new Set(leagues))
-  }, [homeTeam?.league, awayTeam?.league])
-
-  useEffect(() => {
-    if (selectedLeagues.length === 0) {
-      setLeagueInsights({})
-      return
-    }
-
-    let cancelled = false
-    setLoadingLeagueInsights(true)
-
-    Promise.all(
-      selectedLeagues.map(async (league) => {
-        try {
-          const [overviewResponse, trendsResponse] = await Promise.all([
-            fetch(`/api/analytics/overview/${encodeURIComponent(league)}`),
-            fetch(`/api/analytics/season_trends/${encodeURIComponent(league)}`),
-          ])
-
-          const overview = overviewResponse.ok ? ((await overviewResponse.json()) as LeagueOverview) : null
-          const trendPayload = trendsResponse.ok
-            ? ((await trendsResponse.json()) as { trends?: SeasonTrendEntry[] })
-            : null
-          const trends = trendPayload?.trends || []
-          const latestTrend = trends.length > 0 ? trends[trends.length - 1] : null
-          const previousTrend = trends.length > 1 ? trends[trends.length - 2] : null
-
-          return [league, { overview, latestTrend, previousTrend }] as const
-        } catch {
-          return [league, null] as const
-        }
-      }),
-    )
-      .then((entries) => {
-        if (cancelled) return
-        const next: Record<string, LeagueInsight | null> = {}
-        for (const [league, data] of entries) {
-          next[league] = data
-        }
-        setLeagueInsights(next)
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingLeagueInsights(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [selectedLeagues])
-
   const { asQueryParam } = useGenderQuery()
+
+  // Example-matchup quick chips: real fixtures from today's scoreboard,
+  // shown only when both sides resolve to teams the model knows.
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/todays_matches?gender=${asQueryParam}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        const all: TodaysMatch[] = [
+          ...(Array.isArray(data.live) ? data.live : []),
+          ...(Array.isArray(data.upcoming) ? data.upcoming : []),
+          ...(Array.isArray(data.completed) ? data.completed : []),
+        ]
+        const ranked = all
+          .filter((m) => m.home_team && m.away_team)
+          .sort(
+            (a, b) =>
+              (EXAMPLE_LEAGUE_RANK[a.leagueId] ?? 99) -
+              (EXAMPLE_LEAGUE_RANK[b.leagueId] ?? 99)
+          )
+        const picked: ExampleFixture[] = []
+        for (const match of ranked) {
+          const catalogLeague = ESPN_TO_CATALOG[match.leagueId]
+          const home = resolveCatalogTeam(match.home_team, catalogLeague)
+          const away = resolveCatalogTeam(match.away_team, catalogLeague)
+          if (!home || !away || home.name === away.name) continue
+          const key = `${home.name}-${away.name}`
+          if (picked.some((f) => f.key === key)) continue
+          picked.push({ key, home, away, leagueId: match.leagueId })
+          if (picked.length >= 3) break
+        }
+        setExamples(picked)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [asQueryParam])
+
+  const handleSwap = useCallback(() => {
+    setHomeTeam(awayTeam)
+    setAwayTeam(homeTeam)
+  }, [homeTeam, awayTeam])
 
   const handlePredict = async () => {
     if (!homeTeam || !awayTeam) return
@@ -251,8 +236,10 @@ function PredictPageContent() {
     finally { setLoading(false) }
   }
 
-  const canPredict = homeTeam && awayTeam && homeTeam.name !== awayTeam.name
-  const formatPct = (value: number) => `${(value * 100).toFixed(1)}%`
+  const canPredict = Boolean(homeTeam && awayTeam && homeTeam.name !== awayTeam.name)
+  const isCrossLeague = Boolean(
+    homeTeam && awayTeam && homeTeam.league !== awayTeam.league
+  )
 
   /**
    * Convert the legacy `/api/predict/any-teams` response into the
@@ -294,6 +281,11 @@ function PredictPageContent() {
       r.total_goals ??
       (r.predicted_home_goals ?? 0) + (r.predicted_away_goals ?? 0)
 
+    // Legacy form is a ±15 net-points scale (W=+3, D=0, L=-3 over last 5);
+    // the viz expects 0..1 where score*15 reads as "pts of 15".
+    const normForm = (value: number | undefined): number =>
+      value === undefined ? 0.5 : Math.max(0, Math.min(1, (value + 15) / 30))
+
     // Legacy API doesn't expose 1.5/3.5 overs — derive from total goals
     // using simple Poisson tail heuristics. Close enough to keep the
     // markets strip populated; the unified endpoint provides exact values.
@@ -328,8 +320,8 @@ function PredictPageContent() {
         home_elo: r.ratings?.home_elo ?? 1500,
         away_elo: r.ratings?.away_elo ?? 1500,
         elo_difference: r.ratings?.elo_difference ?? 0,
-        home_form_score: r.form?.home_form ?? 0.5,
-        away_form_score: r.form?.away_form ?? 0.5,
+        home_form_score: normForm(r.form?.home_form),
+        away_form_score: normForm(r.form?.away_form),
         home_advantage: 0.25,
         h2h_advantage: 0,
         injury_impact: 0,
@@ -357,195 +349,192 @@ function PredictPageContent() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 md:px-8">
-        <>
-            <PredictHero />
-            {/* Team Selection Card */}
-            <div className="bento-card p-5">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                Step 1 · Pick two teams
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TeamSearchInput label="Home Team" value={homeTeam} onSelect={setHomeTeam} placeholder="Search home team…" Icon={Home} />
-                <TeamSearchInput label="Away Team" value={awayTeam} onSelect={setAwayTeam} placeholder="Search away team…" Icon={Plane} />
-              </div>
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 md:px-8">
+        <h1 className="sr-only">AI prediction engine</h1>
 
-              {homeTeam && awayTeam && homeTeam.league !== awayTeam.league && (
-                <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10 px-3 py-2 text-[11px] font-semibold text-[var(--accent-warn)]">
-                  <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Cross-league: {homeTeam.league} vs {awayTeam.league}
-                </div>
-              )}
+        {/* Hero band */}
+        <section className="hero-band surface-elevated p-5 md:p-6">
+          <SectionHeader
+            kicker="AI Prediction Engine"
+            title="Predict any matchup"
+            action={<GenderToggle size="default" />}
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-ai)]">
+              <Brain className="h-3.5 w-3.5" aria-hidden="true" />
+              Unified v2
+            </span>
+            <span>Unified multi-task model · 87 features · calibrated probabilities</span>
+          </div>
+        </section>
 
-              {selectedLeagues.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {selectedLeagues.map((league) => {
-                    const insight = leagueInsights[league]
-                    const trendDelta = insight?.latestTrend && insight.previousTrend
-                      ? insight.latestTrend.avg_goals - insight.previousTrend.avg_goals
-                      : null
+        {/* Matchup builder */}
+        <section className="surface-elevated rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+            Build your matchup
+          </p>
 
-                    return (
-                      <div key={league} className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-2.5">
-                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">League context</p>
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">{league}</p>
+          <MatchupPicker
+            home={homeTeam}
+            away={awayTeam}
+            onHomeChange={setHomeTeam}
+            onAwayChange={setAwayTeam}
+            onSwap={handleSwap}
+          />
 
-                        {loadingLeagueInsights && (!insight || !insight.overview) && (
-                          <p className="text-[11px] text-[var(--text-tertiary)] mt-1">Loading analytics…</p>
-                        )}
-
-                        {!loadingLeagueInsights && (!insight || !insight.overview) && (
-                          <p className="text-[11px] text-[var(--text-tertiary)] mt-1">No settled analytics available yet.</p>
-                        )}
-
-                        {insight?.overview && (
-                          <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-[10px] text-[var(--text-secondary)]">
-                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Matches: {insight.overview.total_matches}</span>
-                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Avg goals: {insight.overview.avg_goals_per_match.toFixed(2)}</span>
-                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Home: {formatPct(insight.overview.home_win_rate)}</span>
-                            <span className="px-2 py-1 rounded bg-[var(--card-bg)]">Draw: {formatPct(insight.overview.draw_rate)}</span>
-                            {insight.latestTrend && (
-                              <span className="px-2 py-1 rounded bg-[var(--card-bg)] col-span-2">
-                                Season {insight.latestTrend.season}: {insight.latestTrend.avg_goals.toFixed(2)} goals/match
-                                {trendDelta !== null && (
-                                  <span className={trendDelta >= 0 ? 'text-[var(--accent-primary)]' : 'text-[var(--accent-warn)]'}>
-                                    {' '}({trendDelta >= 0 ? '+' : ''}{trendDelta.toFixed(2)} vs prior season)
-                                  </span>
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              <button
-                onClick={handlePredict}
-                disabled={loading || !canPredict}
-                className="group mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] py-3.5 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    Analyzing…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" aria-hidden="true" />
-                    Get AI Prediction
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                  </>
-                )}
-              </button>
+          {isCrossLeague && homeTeam && awayTeam && (
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10 px-3 py-2 text-[11px] font-semibold text-[var(--accent-warn)]">
+              <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Cross-league: {homeTeam.league} vs {awayTeam.league}
             </div>
+          )}
 
-            {/* Result visualisation — new unified PredictionResult component */}
-            {adaptedPrediction && (
-              <div className="mt-4">
-                <PredictionResultViz prediction={adaptedPrediction} />
+          {examples.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                Today&apos;s fixtures
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {examples.map((fixture) => {
+                  const accent = leagueAccentFor(fixture.home.league)
+                  return (
+                    <button
+                      key={fixture.key}
+                      type="button"
+                      onClick={() => {
+                        setHomeTeam(fixture.home)
+                        setAwayTeam(fixture.away)
+                      }}
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)]/60 px-3.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
+                    >
+                      <ChipIdentity pick={fixture.home} />
+                      <span className="max-w-[9rem] truncate">{fixture.home.name}</span>
+                      <span className="text-[10px] font-normal text-[var(--text-tertiary)]">vs</span>
+                      <ChipIdentity pick={fixture.away} />
+                      <span className="max-w-[9rem] truncate">{fixture.away.name}</span>
+                      {accent.shortName !== 'Match' && (
+                        <span className="text-[10px] font-normal text-[var(--text-tertiary)]">
+                          · {accent.shortName}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Legacy verdict / policy strip — kept because the new component
-                doesn't yet render policy or cross-league context. */}
-            {result && !result.error && result.predictions && (() => {
-              return (
-                <div className="space-y-4 animate-fade-in mt-4">
-                  {/* Market & realism layer */}
-                  <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)] p-4 shadow-[var(--shadow-sm)]">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Policy & cross-league context</p>
-                    {result.verdict && (
-                      <div className={`mt-3 rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10' : 'border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10'}`}>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Policy Decision</p>
-                            <p className={`text-sm font-semibold ${result.verdict.recommended_action === 'play' ? 'text-[var(--accent-primary)]' : 'text-[var(--accent-warn)]'}`}>
-                              {result.verdict.recommended_action === 'play' ? 'Play' : 'Pass'}
-                              {result.verdict.recommended_pick ? ` · ${result.verdict.recommended_pick}` : ''}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5 text-[10px] text-[var(--text-secondary)]">
-                            {typeof result.verdict.edge_pct === 'number' && (
-                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Edge: {result.verdict.edge_pct.toFixed(1)}pp</span>
-                            )}
-                            {result.verdict.policy?.min_confidence !== undefined && (
-                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Min Conf: {result.verdict.policy.min_confidence}%</span>
-                            )}
-                            {result.verdict.policy?.min_edge !== undefined && (
-                              <span className="px-2 py-1 rounded-full bg-[var(--muted-bg)]">Min Edge: {result.verdict.policy.min_edge}pp</span>
-                            )}
-                          </div>
+          <button
+            onClick={handlePredict}
+            disabled={loading || !canPredict}
+            className={cn(
+              'group relative mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] px-6 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-40',
+              !reduceMotion && 'sheen'
+            )}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Running model…
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Run prediction
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </>
+            )}
+          </button>
+          {!canPredict && !loading && (
+            <p className="mt-2 text-center text-[11px] text-[var(--text-tertiary)]">
+              Pick both teams to run the model.
+            </p>
+          )}
+        </section>
+
+        {/* Result / loading / error */}
+        {(loading || result) && (
+          <AsyncSection
+            loading={loading}
+            error={result?.error ?? null}
+            onRetry={handlePredict}
+            section="prediction"
+            skeleton={<ResultSkeleton />}
+          >
+            {adaptedPrediction ? (
+              <div className="space-y-4">
+                <PredictionResultViz prediction={adaptedPrediction} />
+
+                {/* Legacy verdict / policy strip — kept because the viz
+                    doesn't yet render policy or cross-league context. */}
+                {result?.verdict && (
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 shadow-[var(--shadow-sm)]">
+                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Policy &amp; cross-league context
+                    </p>
+                    <div className={`rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10' : 'border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10'}`}>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Policy Decision</p>
+                          <p className={`text-sm font-semibold ${result.verdict.recommended_action === 'play' ? 'text-[var(--accent-primary)]' : 'text-[var(--accent-warn)]'}`}>
+                            {result.verdict.recommended_action === 'play' ? 'Play' : 'Pass'}
+                            {result.verdict.recommended_pick ? ` · ${result.verdict.recommended_pick}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 text-[10px] text-[var(--text-secondary)]">
+                          {typeof result.verdict.edge_pct === 'number' && (
+                            <span className="tabular rounded-full bg-[var(--muted-bg)] px-2 py-1">Edge: {result.verdict.edge_pct.toFixed(1)}pp</span>
+                          )}
+                          {result.verdict.policy?.min_confidence !== undefined && (
+                            <span className="tabular rounded-full bg-[var(--muted-bg)] px-2 py-1">Min Conf: {result.verdict.policy.min_confidence}%</span>
+                          )}
+                          {result.verdict.policy?.min_edge !== undefined && (
+                            <span className="tabular rounded-full bg-[var(--muted-bg)] px-2 py-1">Min Edge: {result.verdict.policy.min_edge}pp</span>
+                          )}
                         </div>
                       </div>
-                    )}
-                    {result.verdict?.summary && (
+                    </div>
+                    {result.verdict.summary && (
                       <p className="mt-3 text-xs text-[var(--text-secondary)]">{result.verdict.summary}</p>
                     )}
                   </div>
-                </div>
-              )
-            })()}
-
-            {result?.error && (
-              <div className="flex items-center gap-3 rounded-xl border border-[var(--accent-loss)]/30 bg-[var(--accent-loss)]/5 p-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]">
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Prediction Failed</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{result.error}</p>
-                </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 text-sm text-[var(--text-secondary)]">
+                The model returned an unexpected response for this matchup.
               </div>
             )}
+          </AsyncSection>
+        )}
 
-            {/* How It Works — only shown when no result */}
-            {!result && (
-              <div>
-                <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                  How it works
-                </p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {[
-                    {
-                      Icon: TrendingUp,
-                      tint: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/12',
-                      title: 'ELO ratings',
-                      desc: 'Dynamic team strength adjusted for league quality and home edge.',
-                    },
-                    {
-                      Icon: Goal,
-                      tint: 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/12',
-                      title: 'Poisson goals',
-                      desc: 'Bivariate-Poisson xG head returns a realistic scoreline distribution.',
-                    },
-                    {
-                      Icon: Globe2,
-                      tint: 'text-[var(--accent-warn)] bg-[var(--accent-warn)]/12',
-                      title: 'Cross-league',
-                      desc: 'Strength coefficients let you predict UCL vs MLS without breaking calibration.',
-                    },
-                  ].map(({ Icon: ItemIcon, tint, title, desc }) => (
-                    <div key={title} className="bento-card p-4">
-                      <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
-                        <ItemIcon className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-                      <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">{desc}</p>
-                    </div>
-                  ))}
+        {/* Empty state — honest explainer of the model's outputs */}
+        {!loading && !result && (
+          <section>
+            <SectionHeader
+              kicker="Before you run"
+              title="What the model returns"
+              description="Run a matchup to see live model output — nothing below is pre-baked."
+              className="mb-3"
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {OUTPUT_EXPLAINERS.map(({ Icon, tint, title, desc }) => (
+                <div key={title} className="bento-card p-4">
+                  <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+                  <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">{desc}</p>
                 </div>
-
-                <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--accent-ai)]/30 bg-[var(--accent-ai)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
-                  <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
-                  Pick two teams above to see calibrated probabilities, an xG breakdown, the
-                  most-likely scoreline, and the factors the model weighed most heavily.
-                </div>
-              </div>
-            )}
-        </>
+              ))}
+            </div>
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--accent-ai)]/30 bg-[var(--accent-ai)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
+              <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
+              Cross-league pairings work too — strength coefficients keep a UCL-vs-MLS
+              matchup calibrated instead of guessing.
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )
@@ -554,8 +543,8 @@ function PredictPageContent() {
 export default function PredictPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[var(--accent-ai)] border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent-ai)] border-t-transparent" />
       </div>
     }>
       <PredictPageContent />

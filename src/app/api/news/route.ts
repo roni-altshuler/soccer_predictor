@@ -62,6 +62,8 @@ async function fetchESPNNews(path: string): Promise<NewsArticle[]> {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         next: { revalidate: 300 }, // Cache for 5 minutes
+        // An unreachable ESPN otherwise hangs the route for 60s+.
+        signal: AbortSignal.timeout(8000),
       }
     )
     if (!response.ok) {

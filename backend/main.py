@@ -96,13 +96,17 @@ app = FastAPI(
 # Per-IP rate limiting (RATE_LIMIT_PER_MINUTE env var; 0 disables)
 app.add_middleware(RateLimitMiddleware)
 
-# Enable CORS
+# Enable CORS. Starlette does NOT expand wildcards inside allow_origins
+# (the previous "https://*.vercel.app" entry silently matched nothing) —
+# subdomain patterns must go through allow_origin_regex. 127.0.0.1 is
+# included because Next dev/Playwright often use it instead of localhost.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://*.vercel.app",
+        "http://127.0.0.1:3000",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

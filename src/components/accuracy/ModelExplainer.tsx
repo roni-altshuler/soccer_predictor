@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Brain, Database, Gauge } from 'lucide-react'
 
+import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 
 /**
@@ -40,7 +41,7 @@ export function ModelExplainer() {
   return (
     <Card className="p-4 md:p-5">
       <div className="mb-3">
-        <h3 className="text-h4 font-bold text-[var(--text-primary)]">How it works</h3>
+        <SectionHeader kicker="Explainer" title="How it works" />
         <p className="mt-1 text-small text-[var(--text-tertiary)]">
           A quick tour of the model behind the number above. For the engineer-level audit (calibration
           drift, league-by-league quality gates, model versioning), see{' '}

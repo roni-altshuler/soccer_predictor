@@ -1,24 +1,29 @@
 'use client'
 
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Brain, ShieldCheck, TrendingUp } from 'lucide-react'
+import { ArrowRight, Brain, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
 import { GenderToggle } from '@/components/GenderToggle'
+import { StatCard } from '@/components/primitives'
 import { AnimatedCounter } from '@/components/ui/animated-counter'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 /**
- * Big "Our AI gets it right 60.56% of the time" hero for the public
- * accuracy page. Pure presentational — accepts the live numbers from
- * the parent so it works for both the men's and women's universe via
- * the prominent gender toggle anchored top-right.
+ * Compact hero band for the public accuracy page — primary (results)
+ * accent per the Broadcast design language. Pure presentational —
+ * accepts the live numbers from the parent so it works for both the
+ * men's and women's universe via the gender toggle anchored top-right.
  *
- * Redesigned in Phase 2 to use the new shell tokens (.bento-card,
- * .gradient-border, .ambient-bg) and the shared AnimatedCounter primitive
- * for consistency with the home HeroSpotlight.
+ * Data honesty (design rule 3): the recent-window hit rate only renders
+ * when at least 10 predictions have settled; the Brier score and the
+ * headline only render once real outcomes exist. No 0.0% from empty
+ * windows, ever.
  */
+
+/** Minimum settled sample before a windowed rate is honest to show. */
+const MIN_WINDOW_SAMPLES = 10
 
 interface AccuracyHeroProps {
   accuracyPct: number          // 0..1
@@ -45,28 +50,23 @@ export function AccuracyHero({
   const recentPctScaled = recentAccuracy * 100
   const pendingCount = Math.max(0, totalPredictions - completedPredictions)
   const hasData = completedPredictions > 0
+  // The "recent" rate is computed over the last (up to) 50 settled picks —
+  // only honest to show once the window has a real sample behind it.
+  const recentWindow = Math.min(50, completedPredictions)
+  const showRecent = completedPredictions >= MIN_WINDOW_SAMPLES
 
   return (
     <section
       aria-label="AI model accuracy headline"
       className={cn(
-        'relative isolate overflow-hidden rounded-3xl border border-[var(--border-color)]',
+        'surface-elevated relative isolate overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]',
         className
       )}
     >
-      {/* Layered gradient + soft noise */}
+      {/* Subtle primary-accent gradient (8–12% opacity per design contract) */}
       <div
         aria-hidden="true"
-        className={cn(
-          'absolute inset-0 -z-10',
-          gender === 'women'
-            ? 'bg-[radial-gradient(60%_55%_at_15%_20%,rgba(236,72,153,0.20),transparent_60%),radial-gradient(50%_50%_at_88%_25%,rgba(139,92,246,0.20),transparent_60%)]'
-            : 'bg-[radial-gradient(60%_55%_at_15%_20%,color-mix(in_srgb,var(--accent-ai)_24%,transparent),transparent_60%),radial-gradient(50%_50%_at_88%_25%,color-mix(in_srgb,var(--accent-primary)_24%,transparent),transparent_60%)]'
-        )}
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-ai)]/40 to-transparent"
+        className="absolute inset-0 -z-10 bg-[radial-gradient(60%_55%_at_12%_18%,color-mix(in_srgb,var(--accent-primary)_12%,transparent),transparent_60%),radial-gradient(45%_50%_at_90%_20%,color-mix(in_srgb,var(--accent-primary)_8%,transparent),transparent_60%)]"
       />
 
       <div className="relative z-10 flex flex-col gap-6 p-6 md:p-8">
@@ -74,7 +74,7 @@ export function AccuracyHero({
           <div className="space-y-2">
             <Badge
               variant="outline"
-              className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]"
+              className="border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]"
             >
               <ShieldCheck className="mr-1 h-3 w-3" aria-hidden="true" />
               Audit · {universeLabel}
@@ -94,14 +94,12 @@ export function AccuracyHero({
           className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto] md:items-end"
         >
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
               Outcome accuracy
             </p>
             {hasData ? (
-              <h1 className="font-display text-[clamp(3rem,7vw,5.5rem)] font-extrabold leading-[0.95] tracking-tight">
-                <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-ai)] to-[var(--accent-primary)] bg-clip-text text-transparent">
-                  <AnimatedCounter value={accuracyPctScaled} digits={1} suffix="%" duration={1.2} />
-                </span>
+              <h1 className="font-display text-[clamp(3rem,7vw,5.5rem)] font-extrabold leading-[0.95] tracking-tight tabular-nums text-[var(--accent-primary)]">
+                <AnimatedCounter value={accuracyPctScaled} digits={1} suffix="%" duration={1.2} />
               </h1>
             ) : (
               <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-extrabold leading-tight text-[var(--text-primary)]">
@@ -119,11 +117,16 @@ export function AccuracyHero({
                   <span className="font-semibold tabular-nums text-[var(--text-primary)]">
                     {totalPredictions.toLocaleString()}
                   </span>{' '}
-                  we&apos;ve tracked. Recent 50 picks running at{' '}
-                  <span className="font-semibold tabular-nums text-[var(--accent-primary)]">
-                    {recentPctScaled.toFixed(1)}%
-                  </span>
-                  .
+                  we&apos;ve tracked.
+                  {showRecent && (
+                    <>
+                      {' '}Recent {recentWindow} picks running at{' '}
+                      <span className="font-semibold tabular-nums text-[var(--accent-primary)]">
+                        {Math.round(recentPctScaled)}%
+                      </span>
+                      .
+                    </>
+                  )}
                 </>
               ) : totalPredictions > 0 ? (
                 <>
@@ -142,7 +145,7 @@ export function AccuracyHero({
           {/* CTA card — pull from the trust strip into a clickable AI promo */}
           <Link
             href="/predict"
-            className="gradient-border group flex items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-0.5 md:min-w-[260px]"
+            className="gradient-border group flex min-h-[44px] items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-0.5 md:min-w-[260px]"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10">
               <Brain className="h-5 w-5 text-[var(--accent-ai)]" aria-hidden="true" />
@@ -159,65 +162,41 @@ export function AccuracyHero({
           </Link>
         </motion.div>
 
+        {/* Stat rail — StatCards render only when the sample supports them
+            (rule 3): no Brier/recent-rate from an empty or tiny window. */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <BentoStat
-            label="Brier score"
-            value={brierScore.toFixed(3)}
-            hint="Lower = better calibrated. Random guessing ≈ 0.66."
-            tone="ai"
-          />
-          <BentoStat
-            label="Recent (last 50)"
-            value={`${recentPctScaled.toFixed(1)}%`}
-            hint="How the model is doing right now."
-            tone="primary"
-            icon={<TrendingUp className="h-3 w-3" />}
-          />
-          <BentoStat
+          {hasData && (
+            <StatCard
+              label="Brier score"
+              value={brierScore.toFixed(3)}
+              sub="Lower = better calibrated. Random ≈ 0.66."
+              accent="ai"
+              size="sm"
+            />
+          )}
+          {showRecent && (
+            <StatCard
+              label={`Recent (last ${recentWindow})`}
+              value={`${Math.round(recentPctScaled)}%`}
+              sub="How the model is doing right now."
+              accent="primary"
+              size="sm"
+            />
+          )}
+          <StatCard
             label="Completed"
             value={completedPredictions.toLocaleString()}
-            hint="Predictions whose result is in."
-            tone="muted"
+            sub="Predictions whose result is in."
+            size="sm"
           />
-          <BentoStat
+          <StatCard
             label="Pending"
             value={pendingCount.toLocaleString()}
-            hint="Picks waiting on a final whistle."
-            tone="muted"
+            sub="Picks waiting on a final whistle."
+            size="sm"
           />
         </div>
       </div>
     </section>
-  )
-}
-
-function BentoStat({
-  label,
-  value,
-  hint,
-  tone,
-  icon,
-}: {
-  label: string
-  value: string
-  hint: string
-  tone: 'primary' | 'ai' | 'muted'
-  icon?: React.ReactNode
-}) {
-  const toneClasses =
-    tone === 'primary'
-      ? 'text-[var(--accent-primary)]'
-      : tone === 'ai'
-        ? 'text-[var(--accent-ai)]'
-        : 'text-[var(--text-primary)]'
-
-  return (
-    <div className="bento-card p-3" title={hint}>
-      <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {icon}
-        {label}
-      </p>
-      <p className={cn('mt-1.5 text-h3 font-black tabular-nums', toneClasses)}>{value}</p>
-    </div>
   )
 }

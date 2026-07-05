@@ -38,6 +38,24 @@ export interface LeagueSectionProps {
   tableLeader?: string | null
 }
 
+/** Competitions contested by national teams — fixture identities resolve to country flags. */
+const NATIONAL_COMPETITION_IDS = new Set([
+  'fifa.world',
+  'fifa.wwc',
+  'fifa.friendly',
+  'fifa.friendly.w',
+  'uefa.euro',
+  'uefa.weuro',
+  'uefa.nations',
+  'conmebol.america',
+  'caf.nations',
+  'concacaf.gold',
+  'afc.asian.cup',
+])
+
+const NATIONAL_COMPETITION_NAME_RE =
+  /world cup|european championship|nations league|copa am[eé]rica|gold cup|africa cup|asian cup|friendl/i
+
 export function LeagueSection({
   leagueName,
   leagueId,
@@ -52,11 +70,15 @@ export function LeagueSection({
   if (matches.length === 0) return null
 
   const liveCount = matches.filter((m) => m.status === 'live').length
-  // Stamp every match with the league accent so the crest-fallback in
-  // MatchRow picks up the right brand colour.
+  const isNationalCompetition = leagueId
+    ? NATIONAL_COMPETITION_IDS.has(leagueId)
+    : NATIONAL_COMPETITION_NAME_RE.test(leagueName)
+  // Stamp every match with the league accent (crest-fallback brand colour)
+  // and the national-team flag so MatchRow renders real country flags.
   const stampedMatches = matches.map((m) => ({
     ...m,
     league_accent: m.league_accent ?? accent.accent,
+    is_national: m.is_national ?? isNationalCompetition,
   }))
 
   return (
@@ -107,7 +129,7 @@ export function LeagueSection({
               href={`/leagues/${leagueId}`}
               onClick={(e) => e.stopPropagation()}
               prefetch={false}
-              className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)] hover:underline"
+              className="-my-2 inline-flex min-h-[40px] items-center px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)] hover:underline"
             >
               View
             </Link>

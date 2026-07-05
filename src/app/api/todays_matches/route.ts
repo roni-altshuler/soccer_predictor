@@ -1,3 +1,6 @@
+import fs from 'fs'
+import path from 'path'
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import { getLeagueAccent } from '@/lib/leagueAccents'
@@ -19,6 +22,14 @@ interface Match {
   venue?: string
   minute?: number | string
   provider?: 'espn' | 'fotmob'
+  home_crest_url?: string | null
+  away_crest_url?: string | null
+  /** Committed model prediction (joined from backend/data/predictions). */
+  ai_home_prob?: number
+  ai_draw_prob?: number
+  ai_away_prob?: number
+  ai_confidence?: number
+  predicted_scoreline?: string
 }
 
 interface ESPNCompetitor {
@@ -27,6 +38,101 @@ interface ESPNCompetitor {
   team?: {
     displayName?: string
     name?: string
+    logo?: string
+  }
+}
+
+/* ── committed-prediction join ──
+ * The prediction pipeline commits PredictionRecord JSON under
+ * backend/data/predictions/predictions_YYYY-MM.json (the same files the
+ * /api/v1/tracking routes read). We join them onto the day's fixtures by
+ * ESPN match id first, then by normalised team names + date — and never
+ * synthesise probabilities when no committed record exists.
+ */
+
+interface CommittedPrediction {
+  match_id: string | number
+  home_team: string
+  away_team: string
+  match_date: string
+  predicted_home_win: number
+  predicted_draw: number
+  predicted_away_win: number
+  predicted_scoreline?: string | null
+  confidence?: number
+}
+
+function normalizeTeamKey(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function monthKey(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+function loadCommittedPredictions(targetDate: Date): CommittedPrediction[] {
+  const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
+  if (!fs.existsSync(dataDir)) return []
+
+  // Only the requested month ± 1 — records are bucketed by match month.
+  const months = new Set<string>()
+  for (const offset of [-1, 0, 1]) {
+    const d = new Date(targetDate)
+    d.setUTCMonth(d.getUTCMonth() + offset)
+    months.add(monthKey(d))
+  }
+
+  const out: CommittedPrediction[] = []
+  for (const month of months) {
+    const file = path.join(dataDir, `predictions_${month}.json`)
+    if (!fs.existsSync(file)) continue
+    try {
+      const data = JSON.parse(fs.readFileSync(file, 'utf-8')) as {
+        predictions?: CommittedPrediction[]
+      }
+      if (Array.isArray(data.predictions)) out.push(...data.predictions)
+    } catch {
+      /* skip unreadable month file */
+    }
+  }
+  return out
+}
+
+function attachPredictions(matches: Match[], preds: CommittedPrediction[]): void {
+  if (preds.length === 0) return
+  const byId = new Map<string, CommittedPrediction>()
+  const byTeams = new Map<string, CommittedPrediction>()
+  for (const p of preds) {
+    byId.set(String(p.match_id), p)
+    byTeams.set(
+      `${p.match_date}|${normalizeTeamKey(p.home_team)}|${normalizeTeamKey(p.away_team)}`,
+      p
+    )
+  }
+
+  for (const m of matches) {
+    const dateKey = m.time ? m.time.slice(0, 10) : ''
+    const p =
+      byId.get(String(m.match_id)) ??
+      byTeams.get(`${dateKey}|${normalizeTeamKey(m.home_team)}|${normalizeTeamKey(m.away_team)}`)
+    if (!p) continue
+
+    const h = Number(p.predicted_home_win)
+    const d = Number(p.predicted_draw)
+    const a = Number(p.predicted_away_win)
+    if (!Number.isFinite(h) || !Number.isFinite(d) || !Number.isFinite(a) || h + d + a <= 0) {
+      continue
+    }
+    m.ai_home_prob = h
+    m.ai_draw_prob = d
+    m.ai_away_prob = a
+    if (typeof p.predicted_scoreline === 'string' && p.predicted_scoreline.length > 0) {
+      m.predicted_scoreline = p.predicted_scoreline
+    }
+    const conf = Number(p.confidence)
+    if (Number.isFinite(conf) && conf > 0) {
+      m.ai_confidence = conf > 1 ? conf / 100 : conf
+    }
   }
 }
 
@@ -56,8 +162,6 @@ const WOMENS_ESPN_LEAGUES = [
   { id: 'fifa.wwc', name: "FIFA Women's World Cup" },
 ]
 
-const ESPN_LEAGUES = MENS_ESPN_LEAGUES // legacy alias, kept for callers below
-
 function resolveRequestedDate(rawDate: string | null): Date {
   if (!rawDate) return new Date()
 
@@ -81,11 +185,12 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
 
   const leaguesToFetch = gender === 'F' ? WOMENS_ESPN_LEAGUES : MENS_ESPN_LEAGUES
 
-  for (const league of leaguesToFetch) {
-    try {
-      // Use dates parameter to explicitly request today's matches
-      const response = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.id}/scoreboard?dates=${targetDateStr}`,
+  // Fetch all league scoreboards concurrently — sequentially this route
+  // took ~20s cold across 12+ leagues.
+  const settled = await Promise.allSettled(
+    leaguesToFetch.map((league) =>
+      fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.id}/scoreboard?dates=${targetDateStr}`,
         {
           headers: {
             'Accept': 'application/json',
@@ -93,12 +198,22 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
           },
           next: { revalidate: 60 },
         }
-      )
-      
-      if (!response.ok) continue
-      
-      const data = await response.json()
-      
+      ).then(async (response) => ({
+        league,
+        data: response.ok ? await response.json() : null,
+      }))
+    )
+  )
+
+  for (const outcome of settled) {
+    if (outcome.status === 'rejected') {
+      console.error('Error fetching league scoreboard from ESPN:', outcome.reason)
+      continue
+    }
+    const { league, data } = outcome.value
+    if (!data) continue
+    try {
+
       for (const event of data.events || []) {
         const competition = event.competitions?.[0]
         if (!competition) continue
@@ -113,9 +228,9 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
         let status = 'upcoming'
         let minute: number | string | undefined = undefined
         
-        if (statusType === 'STATUS_FINAL' || statusType === 'STATUS_FULL_TIME') {
+        if (statusType.startsWith('STATUS_FINAL') || statusType === 'STATUS_FULL_TIME') {
           status = 'completed'
-        } else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' || statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF') {
+        } else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' || statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF' || statusType === 'STATUS_OVERTIME' || statusType === 'STATUS_SHOOTOUT') {
           status = 'live'
           // Extract minute from clock or status
           const displayClock = competition.status?.displayClock
@@ -142,13 +257,15 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
           venue: competition.venue?.fullName,
           minute,
           provider: 'espn',
+          home_crest_url: homeTeam.team?.logo || null,
+          away_crest_url: awayTeam.team?.logo || null,
         })
       }
     } catch (error) {
-      console.error(`Error fetching ${league.name} from ESPN:`, error)
+      console.error(`Error parsing ${league.name} scoreboard from ESPN:`, error)
     }
   }
-  
+
   return allMatches
 }
 
@@ -222,6 +339,12 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
             match_id: match.id,
             minute,
             provider: 'fotmob',
+            home_crest_url: match.home?.id
+              ? `https://images.fotmob.com/image_resources/logo/teamlogo/${match.home.id}_small.png`
+              : null,
+            away_crest_url: match.away?.id
+              ? `https://images.fotmob.com/image_resources/logo/teamlogo/${match.away.id}_small.png`
+              : null,
           })
         }
       }
@@ -257,7 +380,11 @@ export async function GET(request: NextRequest) {
     } else if (matches.length === 0) {
       source = 'none'
     }
-    
+
+    // Join committed model predictions (probabilities + predicted scoreline)
+    // so fixture rows can render the ProbBar without a second round-trip.
+    attachPredictions(matches, loadCommittedPredictions(requestedDate))
+
     // Categorize matches
     const result = {
       live: matches.filter(m => m.status === 'live'),

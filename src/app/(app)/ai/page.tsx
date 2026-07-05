@@ -2,24 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import {
-  ArrowRight,
-  BarChart3,
-  Brain,
-  Cpu,
-  FlaskConical,
-  Gauge,
-  Layers,
-  Scale,
-  Sparkles,
-} from 'lucide-react'
+import { ArrowRight, Brain, Sparkles } from 'lucide-react'
 
 import { EmptyState } from '@/components/EmptyState'
-import { BorderBeam } from '@/components/magicui/border-beam'
-import { GridPattern } from '@/components/magicui/grid-pattern'
+import { SectionHeader, StatCard } from '@/components/primitives'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
-import { Spotlight } from '@/components/magicui/spotlight'
-import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { cn } from '@/lib/utils'
@@ -112,6 +99,15 @@ function formatTrainedAt(iso?: string): string {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+/**
+ * Standardized model chip label (design contract: `unified-multitask…`
+ * always displays as "Unified v2"; anything else shows its raw version).
+ */
+function modelDisplayName(version?: string): string {
+  if (!version) return 'Unified'
+  return version.startsWith('unified-multitask') ? 'Unified v2' : version
+}
+
 const LEAGUE_DISPLAY: Record<string, string> = {
   premier_league: 'Premier League',
   la_liga: 'La Liga',
@@ -136,6 +132,23 @@ function leagueDisplayName(key: string): string {
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
+}
+
+/* ---------------- shared chip ---------------- */
+
+function ModelChip({ version, className }: { version?: string; className?: string }) {
+  return (
+    <span
+      title={version}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-ai)]',
+        className
+      )}
+    >
+      <Brain className="h-3 w-3" aria-hidden="true" />
+      {modelDisplayName(version)}
+    </span>
+  )
 }
 
 /* ---------------- holdout metric definitions ---------------- */
@@ -222,42 +235,34 @@ function ModelIdentityCard({ summary, genderLabel }: { summary: ModelSummary; ge
         .join(' · ')
     : '—'
 
-  const facts: { label: string; value: string; Icon: typeof Cpu }[] = [
-    { label: 'Model version', value: summary.model_version ?? '—', Icon: Brain },
-    { label: 'Trained', value: formatTrainedAt(summary.trained_at), Icon: FlaskConical },
-    { label: 'Parameters', value: intFmt(summary.n_parameters), Icon: Cpu },
-    { label: 'Dense features', value: intFmt(summary.n_features), Icon: Layers },
-    { label: 'Calibration', value: calDescription, Icon: Scale },
+  const facts: { label: string; value: string }[] = [
+    { label: 'Model version', value: summary.model_version ?? '—' },
+    { label: 'Trained', value: formatTrainedAt(summary.trained_at) },
+    { label: 'Parameters', value: intFmt(summary.n_parameters) },
+    { label: 'Dense features', value: intFmt(summary.n_features) },
+    { label: 'Calibration', value: calDescription },
   ]
 
   return (
     <Card variant="ai" className="p-4 md:p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
-          <h2 className="text-h4 font-bold text-[var(--text-primary)]">{genderLabel}</h2>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]"
-        >
-          Unified multi-task
-        </Badge>
-      </div>
+      <SectionHeader
+        kicker="Active model"
+        title={genderLabel}
+        className="mb-3"
+        action={<ModelChip version={summary.model_version} />}
+      />
       <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
-        {facts.map(({ label, value, Icon }) => (
-          <div
+        {facts.map(({ label, value }) => (
+          <StatCard
             key={label}
-            className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2.5"
-          >
-            <div className="mb-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-              <Icon className="h-3 w-3 text-[var(--accent-ai)]" aria-hidden="true" />
-              {label}
-            </div>
-            <p className="truncate text-small font-bold tabular-nums text-[var(--text-primary)]" title={value}>
-              {value}
-            </p>
-          </div>
+            label={label}
+            size="sm"
+            value={
+              <span className="block truncate text-base" title={value}>
+                {value}
+              </span>
+            }
+          />
         ))}
       </div>
     </Card>
@@ -314,33 +319,30 @@ function CalibrationDeltaStrip({ holdout }: { holdout: HoldoutMetrics }) {
 function HoldoutMetricsGrid({ holdout }: { holdout: HoldoutMetrics }) {
   return (
     <Card className="p-4 md:p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <Gauge className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
-        <h3 className="text-h4 font-bold text-[var(--text-primary)]">Holdout performance</h3>
-      </div>
-      <p className="mb-4 text-[11px] text-[var(--text-secondary)]">
-        Measured on {typeof holdout.n === 'number' ? holdout.n.toLocaleString() : 'a'} held-out
-        matches the model never saw during training.
-      </p>
+      <SectionHeader
+        kicker="Committed diagnostics"
+        title="Holdout performance"
+        description={`Measured on ${typeof holdout.n === 'number' ? holdout.n.toLocaleString() : 'a set of'} held-out matches the model never saw during training.`}
+        className="mb-4"
+      />
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {HOLDOUT_METRICS.map((m) => {
           const value = holdout[m.key]
           return (
-            <div
+            <StatCard
               key={m.key}
-              className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2.5"
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[11px] font-semibold text-[var(--text-primary)]">{m.label}</p>
-                <span className="text-[9px] uppercase tracking-wider text-[var(--text-tertiary)]">
-                  {m.better === 'higher' ? 'higher = better' : 'lower = better'}
-                </span>
-              </div>
-              <p className="mt-1 text-h3 font-black tabular-nums text-[var(--text-primary)]">
-                {m.format(typeof value === 'number' ? value : undefined)}
-              </p>
-              <p className="mt-1 text-[10px] leading-snug text-[var(--text-tertiary)]">{m.explanation}</p>
-            </div>
+              label={m.label}
+              accent={m.key === 'accuracy' ? 'ai' : 'none'}
+              value={m.format(typeof value === 'number' ? value : undefined)}
+              sub={
+                <>
+                  <span className="text-[9px] font-semibold uppercase tracking-wider">
+                    {m.better === 'higher' ? 'higher = better' : 'lower = better'}
+                  </span>
+                  <span className="mt-0.5 block leading-snug">{m.explanation}</span>
+                </>
+              }
+            />
           )
         })}
       </div>
@@ -353,18 +355,15 @@ function WalkforwardTable({ data }: { data: WalkforwardResponse }) {
   const leagues = data.leagues ?? []
   return (
     <Card className="p-4 md:p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <BarChart3 className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
-        <h3 className="text-h4 font-bold text-[var(--text-primary)]">Walk-forward backtests</h3>
-      </div>
-      <p className="mb-3 text-[11px] text-[var(--text-secondary)]">
-        Season-by-season simulation: train on the past, predict the next season, roll forward.
-        Harsher than a single holdout split — it shows how the approach generalises league by
-        league. Tournaments without enough eligible seasons are omitted.
-      </p>
-      <div className="overflow-x-auto">
+      <SectionHeader
+        kicker="Backtest"
+        title="Walk-forward backtests"
+        description="Season-by-season simulation: train on the past, predict the next season, roll forward. Harsher than a single holdout split — it shows how the approach generalises league by league. Tournaments without enough eligible seasons are omitted."
+        className="mb-3"
+      />
+      <div className="max-h-[480px] overflow-auto">
         <table className="w-full min-w-[520px] border-collapse text-left">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-[var(--card-bg)]">
             <tr className="border-b border-[var(--border-color)] text-[9px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
               <th scope="col" className="py-2 pr-3">League</th>
               <th scope="col" className="py-2 pr-3 text-right">Accuracy</th>
@@ -378,14 +377,14 @@ function WalkforwardTable({ data }: { data: WalkforwardResponse }) {
             {leagues.map((l) => (
               <tr
                 key={l.league}
-                className="border-b border-[var(--border-color)]/60 last:border-0"
+                className="border-b border-[var(--border-color)]/60 last:border-0 even:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]"
               >
                 <td className="py-2 pr-3 text-[12px] font-semibold text-[var(--text-primary)]">
                   {leagueDisplayName(l.league)}
                 </td>
                 <td className="py-2 pr-3 text-right text-[12px] tabular-nums text-[var(--text-primary)]">
                   {pct(l.accuracy_mean)}
-                  <span className="ml-1 text-[10px] text-[var(--text-tertiary)]">
+                  <span className="ml-1 text-[10px] tabular-nums text-[var(--text-tertiary)]">
                     ±{(l.accuracy_std * 100).toFixed(1)}
                   </span>
                 </td>
@@ -470,61 +469,50 @@ export default function ModelTransparencyPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 pb-12">
-      {/* HERO */}
-      <Spotlight
-        className="block rounded-2xl"
-        size={520}
-        color="color-mix(in srgb, var(--accent-ai) 18%, transparent)"
-      >
-        <Card className="relative overflow-hidden p-6">
-          <BorderBeam
-            size={1}
-            duration={11}
-            borderRadius={16}
-            colorFrom="var(--accent-ai)"
-            colorTo="var(--accent-primary)"
-          />
-          <GridPattern
-            width={28}
-            height={28}
-            className="opacity-40 [mask-image:linear-gradient(to_bottom_right,white,transparent_70%)]"
-          />
-          <div className="relative z-10 flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-caption font-mono uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                Pitchwise
-              </p>
-              <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
-                Model transparency
-              </h1>
-              <p className="mt-2 max-w-xl text-small text-[var(--text-secondary)]">
-                What the unified model is, how it was calibrated, and how it actually scores on
-                data it never trained on — for the {gender === 'women' ? "women's" : "men's"}{' '}
-                universe. No cherry-picking: these are the committed diagnostics.
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <Link href="/predict">
-                <ShimmerButton
-                  background="linear-gradient(135deg, var(--accent-ai), var(--accent-primary))"
-                  borderRadius="0.75rem"
-                  className="text-sm"
-                >
-                  Run a prediction
-                  <ArrowRight className="ml-1.5 inline h-3.5 w-3.5" />
-                </ShimmerButton>
-              </Link>
-              <Link
-                href="/accuracy"
-                className="inline-flex items-center gap-1 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)] hover:underline"
-              >
-                Live accuracy tracking
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
+      {/* HERO — compact band, cyan (AI) accent per the design contract */}
+      <section className="hero-band surface-elevated relative isolate overflow-hidden rounded-2xl">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(55%_60%_at_10%_15%,color-mix(in_srgb,var(--accent-ai)_12%,transparent),transparent_60%)]"
+        />
+        <div className="relative z-10 flex flex-col items-start gap-4 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              Pitchwise · AI transparency
+            </p>
+            <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
+              Model transparency
+            </h1>
+            <p className="mt-2 max-w-xl text-small text-[var(--text-secondary)]">
+              What the unified model is, how it was calibrated, and how it actually scores on
+              data it never trained on — for the {gender === 'women' ? "women's" : "men's"}{' '}
+              universe. No cherry-picking: these are the committed diagnostics.
+            </p>
+            {summary?.model_version ? (
+              <ModelChip version={summary.model_version} className="mt-3" />
+            ) : null}
           </div>
-        </Card>
-      </Spotlight>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <Link href="/predict">
+              <ShimmerButton
+                background="linear-gradient(135deg, var(--accent-ai), color-mix(in srgb, var(--accent-ai) 70%, var(--background)))"
+                borderRadius="0.75rem"
+                className="min-h-[44px] text-sm"
+              >
+                Run a prediction
+                <ArrowRight className="ml-1.5 inline h-3.5 w-3.5" />
+              </ShimmerButton>
+            </Link>
+            <Link
+              href="/accuracy"
+              className="inline-flex min-h-[40px] items-center gap-1 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)] hover:underline"
+            >
+              Live accuracy tracking
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* MODEL CARD + HOLDOUT */}
       <section className="mt-6 flex flex-col gap-4" aria-label="Model summary">
@@ -557,7 +545,7 @@ export default function ModelTransparencyPage() {
               action={
                 <Link
                   href="/accuracy"
-                  className="inline-flex items-center gap-1 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 text-[12px] font-semibold text-[var(--accent-primary)] hover:bg-[var(--card-hover)]"
+                  className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 text-[12px] font-semibold text-[var(--accent-primary)] hover:bg-[var(--card-hover)]"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   View live accuracy

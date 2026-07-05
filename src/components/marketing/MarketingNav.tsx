@@ -53,7 +53,7 @@ export function MarketingNav() {
         {/* Brand */}
         <Link
           href="/welcome"
-          className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="flex min-h-[44px] items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <span className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] text-[var(--accent-on-primary)] shadow-sm">
             <span className="text-sm font-black">P</span>
@@ -69,7 +69,7 @@ export function MarketingNav() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
+              className="inline-flex min-h-[40px] items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
             >
               {link.label}
             </Link>
@@ -94,7 +94,7 @@ export function MarketingNav() {
           aria-expanded={open}
           aria-controls="mkt-mobile-menu"
           aria-label={open ? 'Close menu' : 'Open menu'}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)] md:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)] md:hidden"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -112,7 +112,7 @@ export function MarketingNav() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-3 text-base font-medium text-[var(--text-secondary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
+                className="flex min-h-[44px] items-center rounded-lg px-3 py-3 text-base font-medium text-[var(--text-secondary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
               >
                 {link.label}
               </Link>

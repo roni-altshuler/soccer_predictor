@@ -1,21 +1,22 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Skull } from 'lucide-react';
+import { AlertTriangle, ArrowDown, Award, Loader2, Trophy, Skull } from 'lucide-react';
 import { LeagueSimulationResult } from '@/lib/api';
-import { leagueFlagUrls } from '@/data/leagues';
+import { LeagueChip, SectionHeader, StatCard } from '@/components/primitives';
 import { BorderBeam } from '@/components/magicui/border-beam';
 
-// League options for simulation with flag codes
+// League options for simulation. `competitionId` drives the LeagueChip crest
+// + accent (matches src/lib/leagueAccents.ts ids).
 const SIMULATION_LEAGUES = [
-  { id: 47, name: 'Premier League', flagCode: 'ENG' },
-  { id: 87, name: 'La Liga', flagCode: 'ES' },
-  { id: 55, name: 'Serie A', flagCode: 'IT' },
-  { id: 54, name: 'Bundesliga', flagCode: 'DE' },
-  { id: 53, name: 'Ligue 1', flagCode: 'FR' },
-  { id: 57, name: 'Eredivisie', flagCode: 'NL' },
-  { id: 61, name: 'Primeira Liga', flagCode: 'PT' },
-  { id: 130, name: 'MLS', flagCode: 'US' },
+  { id: 47, name: 'Premier League', competitionId: 'eng.1' },
+  { id: 87, name: 'La Liga', competitionId: 'esp.1' },
+  { id: 55, name: 'Serie A', competitionId: 'ita.1' },
+  { id: 54, name: 'Bundesliga', competitionId: 'ger.1' },
+  { id: 53, name: 'Ligue 1', competitionId: 'fra.1' },
+  { id: 57, name: 'Eredivisie', competitionId: 'ned.1' },
+  { id: 61, name: 'Primeira Liga', competitionId: 'por.1' },
+  { id: 130, name: 'MLS', competitionId: 'usa.1' },
 ];
 
 export interface TitleRaceRow {
@@ -119,51 +120,44 @@ export default function LeagueChampionshipSimulator() {
   return (
     <div className="space-y-6">
       {/* League Selection */}
-      <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <span>🏆</span>
-          Select League
-        </h3>
+      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
+        <SectionHeader
+          kicker="Setup"
+          title="Select league"
+          description="Pick a competition, choose the simulation depth, and run the race."
+          className="mb-4"
+        />
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div className="mb-6 flex flex-wrap gap-2">
           {SIMULATION_LEAGUES.map((league) => (
-            <button
+            <LeagueChip
               key={league.id}
+              leagueId={league.competitionId}
+              name={league.name}
+              active={selectedLeague?.id === league.id}
               onClick={() => {
                 setSelectedLeague(league);
                 setResult(null);
                 setWhatIfFixtureKey('');
               }}
-              className={`p-4 rounded-xl border transition-all text-center ${
-                selectedLeague?.id === league.id
-                  ? 'bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] border-[color-mix(in_srgb,var(--accent-info)_50%,transparent)]'
-                  : 'bg-[var(--background-secondary)] border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-info)_30%,transparent)]'
-              }`}
-            >
-              {leagueFlagUrls[league.flagCode] ? (
-                <img 
-                  src={leagueFlagUrls[league.flagCode]} 
-                  alt={league.name}
-                  className="w-8 h-auto mx-auto mb-2"
-                />
-              ) : (
-                <span className="text-2xl block mb-2">🏆</span>
-              )}
-              <span className="text-sm font-medium text-[var(--text-primary)]">{league.name}</span>
-            </button>
+            />
           ))}
         </div>
 
         {/* Simulation Options */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm text-[var(--text-secondary)] mb-2">
-              Number of Simulations
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="min-w-[200px] flex-1">
+            <label
+              htmlFor="league-n-simulations"
+              className="mb-2 block text-sm text-[var(--text-secondary)]"
+            >
+              Number of simulations
             </label>
             <select
+              id="league-n-simulations"
               value={nSimulations}
               onChange={(e) => setNSimulations(Number(e.target.value))}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+              className="tabular min-h-[44px] w-full rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 text-sm text-[var(--text-primary)]"
             >
               <option value={1000}>1,000 (Fast)</option>
               <option value={5000}>5,000 (Balanced)</option>
@@ -172,52 +166,57 @@ export default function LeagueChampionshipSimulator() {
             </select>
           </div>
 
+          {/* Primary CTA with progress state */}
           <button
             onClick={runSimulation}
             disabled={loading || !selectedLeague}
-            className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--accent-info)] to-[var(--accent-market)] hover:from-[var(--accent-info-soft)] hover:to-[var(--accent-market-soft)] disabled:from-[var(--text-tertiary)] disabled:to-[var(--text-tertiary)] disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[color:color-mix(in_srgb,var(--accent-info)_25%,transparent)] flex items-center gap-2"
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-6 text-sm font-bold text-[var(--accent-on-primary)] shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--accent-primary)_60%,transparent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--muted-bg)] disabled:text-[var(--text-tertiary)] disabled:shadow-none"
           >
             {loading ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Simulating...</span>
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
+                <span aria-live="polite" className="tabular">
+                  Running {nSimulations.toLocaleString()} simulations…
+                </span>
               </>
             ) : (
-              <>
-                <span>🎲</span>
-                <span>Run Simulation</span>
-              </>
+              <span>Run simulation</span>
             )}
           </button>
         </div>
 
-        <p className="text-xs text-[var(--text-tertiary)] mt-3">
+        <p className="mt-3 text-xs text-[var(--text-tertiary)]">
           Monte Carlo simulation using Bradley-Terry model with team strength derived from current performance
         </p>
       </div>
 
       {selectedLeague && result?.upcoming_fixtures && result.upcoming_fixtures.length > 0 && (
-        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-6">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Fixture What-If Lab</p>
-              <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">Lock one remaining result and rerun the table</h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Select a provider-backed upcoming fixture, force the outcome, and compare how title, top-four, and relegation probabilities move.
-              </p>
-            </div>
-            {result.what_if && (
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${result.what_if.applied ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]' : 'bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]'}`}>
-                {result.what_if.applied ? 'What-if applied' : 'What-if not applied'}
-              </span>
-            )}
-          </div>
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
+          <SectionHeader
+            kicker="Fixture what-if lab"
+            title="Lock one remaining result and rerun the table"
+            description="Select a provider-backed upcoming fixture, force the outcome, and compare how title, top-four, and relegation probabilities move."
+            action={
+              result.what_if ? (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    result.what_if.applied
+                      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]'
+                      : 'bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]'
+                  }`}
+                >
+                  {result.what_if.applied ? 'What-if applied' : 'What-if not applied'}
+                </span>
+              ) : undefined
+            }
+          />
 
           <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
             <select
               value={whatIfFixtureKey}
               onChange={(event) => setWhatIfFixtureKey(event.target.value)}
-              className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-3 text-sm text-[var(--text-primary)]"
+              aria-label="Fixture to lock"
+              className="min-h-[44px] rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-2 text-sm text-[var(--text-primary)]"
             >
               <option value="">Baseline, no locked fixture</option>
               {result.upcoming_fixtures.map((fixture) => (
@@ -230,7 +229,8 @@ export default function LeagueChampionshipSimulator() {
               value={whatIfOutcome}
               onChange={(event) => setWhatIfOutcome(event.target.value as 'home' | 'draw' | 'away')}
               disabled={!whatIfFixtureKey}
-              className="rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Forced outcome"
+              className="min-h-[44px] rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-2 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="home">Home win</option>
               <option value="draw">Draw</option>
@@ -239,7 +239,7 @@ export default function LeagueChampionshipSimulator() {
             <button
               onClick={runSimulation}
               disabled={loading || !selectedLeague}
-              className="rounded-xl border border-[color-mix(in_srgb,var(--accent-info)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] px-5 py-3 text-sm font-bold text-[var(--accent-info)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-[44px] rounded-xl border border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-5 text-sm font-bold text-[var(--accent-ai)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Rerun What-If
             </button>
@@ -252,68 +252,90 @@ export default function LeagueChampionshipSimulator() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] rounded-xl p-4">
-          <p className="text-[var(--accent-loss)]">❌ {error}</p>
+        <div className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] p-4 text-[var(--accent-loss)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {error}
         </div>
       )}
 
       {/* Results */}
       {result && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Summary Card */}
-          <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-            <div className="p-6 bg-gradient-to-r from-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-market)_20%,transparent)] border-b border-[var(--border-color)]">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">{result.league_name}</h3>
-                  <p className="text-[var(--text-secondary)]">
-                    {result.remaining_matches} matches remaining • {result.n_simulations.toLocaleString()} simulations
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-[var(--text-secondary)]">Most Likely Champion</p>
-                  <p className="text-xl font-bold text-[var(--accent-warn)]">{result.most_likely_champion}</p>
-                  <p className="text-sm text-[color-mix(in_srgb,var(--accent-warn)_80%,transparent)]">{(result.champion_probability * 100).toFixed(1)}% probability</p>
-                </div>
+        <div className="animate-fade-in space-y-6">
+          {/* Summary — headline StatCards + contention lists */}
+          <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+            <div className="hero-band rounded-none border-0 border-b border-[var(--border-color)] p-5">
+              <SectionHeader
+                kicker={`${result.remaining_matches} matches remaining · ${result.n_simulations.toLocaleString()} simulations`}
+                title={result.league_name}
+              />
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <StatCard
+                  size="sm"
+                  accent="ai"
+                  label="Most likely champion"
+                  value={result.most_likely_champion}
+                  sub={`${(result.champion_probability * 100).toFixed(1)}% of simulations`}
+                />
+                <StatCard
+                  size="sm"
+                  label="Matches remaining"
+                  value={result.remaining_matches}
+                  sub="across the league"
+                />
+                <StatCard
+                  size="sm"
+                  label="Simulations"
+                  value={result.n_simulations.toLocaleString()}
+                  sub="Monte Carlo iterations"
+                />
               </div>
             </div>
 
             {/* Key Insights */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">🥇 Title Contenders</p>
+            <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
+              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
+                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                  <Trophy className="h-3.5 w-3.5 text-[var(--accent-ai)]" aria-hidden="true" />
+                  Title Contenders
+                </p>
                 <div className="space-y-1">
                   {result.standings
                     .filter(t => t.title_probability > 0.01)
                     .sort((a, b) => b.title_probability - a.title_probability)
                     .slice(0, 4)
-                    .map((team, idx) => (
+                    .map((team) => (
                       <div key={team.team_name} className="flex justify-between text-sm">
                         <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                        <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
+                        <span className="tabular text-[var(--accent-ai)]">{(team.title_probability * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">🏆 Top 4 Favorites</p>
+              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
+                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                  <Award className="h-3.5 w-3.5 text-[var(--accent-primary)]" aria-hidden="true" />
+                  Top 4 Favorites
+                </p>
                 <div className="space-y-1">
                   {result.likely_top_4?.slice(0, 4).map((team, idx) => (
                     <div key={team} className="flex items-center gap-2 text-sm">
-                      <span className="w-5 text-center text-[var(--accent-primary)]">{idx + 1}</span>
+                      <span className="tabular w-5 text-center text-[var(--accent-primary)]">{idx + 1}</span>
                       <span className="text-[var(--text-primary)]">{team}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">⚠️ Relegation Danger</p>
+              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
+                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                  <ArrowDown className="h-3.5 w-3.5 text-[var(--accent-loss)]" aria-hidden="true" />
+                  Relegation Danger
+                </p>
                 <div className="space-y-1">
-                  {result.relegation_candidates?.slice(0, 3).map((team, idx) => (
+                  {result.relegation_candidates?.slice(0, 3).map((team) => (
                     <div key={team} className="flex items-center gap-2 text-sm">
-                      <span className="w-5 text-center text-[var(--accent-loss)]">↓</span>
+                      <ArrowDown className="h-3.5 w-3.5 text-[var(--accent-loss)]" aria-hidden="true" />
                       <span className="text-[var(--text-primary)]">{team}</span>
                     </div>
                   ))}
@@ -323,25 +345,20 @@ export default function LeagueChampionshipSimulator() {
           </div>
 
           {/* Title Race — "who can still win" math (independent of simulation) */}
-          <div className="relative bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-            <BorderBeam size={1} duration={12} borderRadius={24} colorFrom="var(--accent-warn)" colorTo="var(--accent-primary)" />
-            <div className="p-4 md:p-5 border-b border-[var(--border-color)] flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] font-semibold">Title Race</p>
-                <h3 className="mt-1 text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-[var(--accent-warn)]" aria-hidden="true" />
-                  Who can still win?
-                </h3>
-                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                  Mathematical contention vs the current leader · Monte Carlo title probability shown alongside.
-                </p>
-              </div>
+          <div className="relative overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+            <BorderBeam size={1} duration={12} borderRadius={12} colorFrom="var(--accent-warn)" colorTo="var(--accent-primary)" />
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-color)] p-4 md:p-5">
+              <SectionHeader
+                kicker="Title race"
+                title="Who can still win?"
+                description="Mathematical contention vs the current leader · Monte Carlo title probability shown alongside."
+              />
               <div className="flex gap-2 text-[11px]">
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)] px-2.5 py-1 font-semibold">
+                <span className="tabular rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] px-2.5 py-1 font-semibold text-[var(--accent-primary)]">
                   {alive.length} alive
                 </span>
                 {eliminated.length > 0 && (
-                  <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)] px-2.5 py-1 font-semibold">
+                  <span className="tabular rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] px-2.5 py-1 font-semibold text-[var(--accent-loss)]">
                     {eliminated.length} eliminated
                   </span>
                 )}
@@ -350,13 +367,13 @@ export default function LeagueChampionshipSimulator() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
-                    <th className="text-left py-2.5 px-4">Team</th>
-                    <th className="text-right py-2.5 px-3">Pts</th>
-                    <th className="text-right py-2.5 px-3">Behind</th>
-                    <th className="text-right py-2.5 px-3">Max</th>
-                    <th className="text-right py-2.5 px-3 hidden md:table-cell">Min wins to catch</th>
-                    <th className="text-right py-2.5 px-4">Title %</th>
+                  <tr className="border-b border-[var(--border-color)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <th className="py-2.5 px-4 text-left">Team</th>
+                    <th className="py-2.5 px-3 text-right">Pts</th>
+                    <th className="py-2.5 px-3 text-right">Behind</th>
+                    <th className="py-2.5 px-3 text-right">Max</th>
+                    <th className="hidden py-2.5 px-3 text-right md:table-cell">Min wins to catch</th>
+                    <th className="py-2.5 px-4 text-right">Title %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -370,19 +387,19 @@ export default function LeagueChampionshipSimulator() {
                       return b.title_probability - a.title_probability;
                     })
                     .map((row) => {
-                      const eliminated = row.mathematically_eliminated;
+                      const isOut = row.mathematically_eliminated;
                       const titlePct = row.title_probability * 100;
                       return (
                         <tr
                           key={row.team_name}
                           className={`border-b border-[var(--border-color)]/60 ${
-                            eliminated ? 'opacity-55' : 'hover:bg-[var(--background-secondary)]'
+                            isOut ? 'opacity-55' : 'hover:bg-[var(--background-secondary)]'
                           }`}
                         >
                           <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
                             <span className="inline-flex items-center gap-1.5">
                               {row.team_name}
-                              {eliminated && (
+                              {isOut && (
                                 <Skull className="h-3 w-3 text-[var(--accent-loss)]" aria-label="Mathematically eliminated" />
                               )}
                             </span>
@@ -392,32 +409,32 @@ export default function LeagueChampionshipSimulator() {
                           </td>
                           <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
                             {row.points_behind_leader === 0 ? (
-                              <span className="text-[var(--accent-warn)] font-semibold">Leader</span>
+                              <span className="font-semibold text-[var(--accent-primary)]">Leader</span>
                             ) : (
                               `−${row.points_behind_leader}`
                             )}
                           </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-primary)] font-semibold">
+                          <td className="py-2.5 px-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">
                             {row.max_possible_points}
                           </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-tertiary)] hidden md:table-cell">
-                            {eliminated || row.min_wins_to_catch === Infinity
+                          <td className="hidden py-2.5 px-3 text-right tabular-nums text-[var(--text-tertiary)] md:table-cell">
+                            {isOut || row.min_wins_to_catch === Infinity
                               ? '—'
                               : `${row.min_wins_to_catch} / ${row.matches_remaining}`}
                           </td>
                           <td className="py-2.5 px-4 text-right">
                             {/* Probability bar inline */}
-                            <div className="inline-flex items-center gap-2 justify-end">
+                            <div className="inline-flex items-center justify-end gap-2">
                               <span
-                                className="hidden sm:inline-block h-1 w-16 overflow-hidden rounded-full bg-[var(--border-color)]/50"
+                                className="hidden h-1 w-16 overflow-hidden rounded-full bg-[var(--border-color)]/50 sm:inline-block"
                                 aria-hidden="true"
                               >
                                 <span
-                                  className="block h-full rounded-full bg-[var(--accent-warn)]"
+                                  className="block h-full rounded-full bg-[var(--accent-ai)]"
                                   style={{ width: `${Math.max(2, Math.min(100, titlePct))}%` }}
                                 />
                               </span>
-                              <span className="tabular-nums font-semibold text-[var(--accent-warn)] w-12 text-right">
+                              <span className="w-12 text-right font-semibold tabular-nums text-[var(--accent-ai)]">
                                 {titlePct >= 0.05 ? `${titlePct.toFixed(1)}%` : '<0.1%'}
                               </span>
                             </div>
@@ -428,7 +445,7 @@ export default function LeagueChampionshipSimulator() {
                 </tbody>
               </table>
             </div>
-            <div className="p-3 border-t border-[var(--border-color)] text-[11px] text-[var(--text-tertiary)] leading-snug">
+            <div className="border-t border-[var(--border-color)] p-3 text-[11px] leading-snug text-[var(--text-tertiary)]">
               <span className="font-semibold text-[var(--text-secondary)]">Behind</span> = points behind current leader ·{' '}
               <span className="font-semibold text-[var(--text-secondary)]">Max</span> = current + remaining × 3 ·{' '}
               <span className="font-semibold text-[var(--text-secondary)]">Min wins to catch</span> = wins needed if leader drops 0 more points ·{' '}
@@ -437,26 +454,27 @@ export default function LeagueChampionshipSimulator() {
           </div>
 
           {/* Full Standings Table */}
-          <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
-              <h3 className="font-semibold text-[var(--text-primary)]">Predicted Final Standings</h3>
-              <span className="text-sm text-[var(--text-secondary)]">
-                📊 {result.remaining_matches} games remaining
-              </span>
+          <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+            <div className="border-b border-[var(--border-color)] p-4 md:p-5">
+              <SectionHeader
+                kicker="Projection"
+                title="Predicted final standings"
+                description={`${result.remaining_matches} games remaining · click a row for its position distribution`}
+              />
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--border-color)]">
-                    <th className="text-left py-3 px-4">Pos</th>
-                    <th className="text-left py-3 px-4">Team</th>
-                    <th className="text-center py-3 px-4">Pts</th>
-                    <th className="text-center py-3 px-4">Pred Pts</th>
-                    <th className="text-center py-3 px-4">Avg Pos</th>
-                    <th className="text-center py-3 px-4">Title %</th>
-                    <th className="text-center py-3 px-4">Top 4 %</th>
-                    <th className="text-center py-3 px-4">Releg %</th>
+                  <tr className="border-b border-[var(--border-color)] text-xs text-[var(--text-tertiary)]">
+                    <th className="py-3 px-4 text-left">Pos</th>
+                    <th className="py-3 px-4 text-left">Team</th>
+                    <th className="py-3 px-4 text-center">Pts</th>
+                    <th className="py-3 px-4 text-center">Pred Pts</th>
+                    <th className="py-3 px-4 text-center">Avg Pos</th>
+                    <th className="py-3 px-4 text-center">Title %</th>
+                    <th className="py-3 px-4 text-center">Top 4 %</th>
+                    <th className="py-3 px-4 text-center">Releg %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -466,38 +484,38 @@ export default function LeagueChampionshipSimulator() {
                       <React.Fragment key={team.team_name}>
                       <tr
                         onClick={() => setExpandedTeam(expandedTeam === team.team_name ? null : team.team_name)}
-                        className={`border-b border-[var(--border-color)] hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${
+                        className={`cursor-pointer border-b border-[var(--border-color)] transition-colors hover:bg-[var(--background-secondary)] ${
                           idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' :
                           idx >= result.standings.length - 3 ? 'border-l-2 border-l-[var(--accent-loss)]' : ''
                         }`}
                       >
-                        <td className="py-3 px-4 text-[var(--text-secondary)]">{idx + 1}</td>
-                        <td className="py-3 px-4 text-[var(--text-primary)] font-medium">
+                        <td className="py-3 px-4 tabular-nums text-[var(--text-secondary)]">{idx + 1}</td>
+                        <td className="py-3 px-4 font-medium text-[var(--text-primary)]">
                           {team.team_name}
-                          <span className="text-xs text-[var(--text-tertiary)] ml-1">▾</span>
+                          <span className="ml-1 text-xs text-[var(--text-tertiary)]">▾</span>
                         </td>
-                        <td className="py-3 px-4 text-center text-[var(--text-secondary)]">{team.current_points}</td>
-                        <td className="py-3 px-4 text-center text-[var(--text-primary)] font-semibold">
+                        <td className="py-3 px-4 text-center tabular-nums text-[var(--text-secondary)]">{team.current_points}</td>
+                        <td className="py-3 px-4 text-center font-semibold tabular-nums text-[var(--text-primary)]">
                           {team.avg_final_points.toFixed(0)}
                         </td>
-                        <td className="py-3 px-4 text-center text-[var(--text-secondary)]">
+                        <td className="py-3 px-4 text-center tabular-nums text-[var(--text-secondary)]">
                           {team.avg_final_position.toFixed(1)}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-4 text-center tabular-nums">
                           {team.title_probability > 0.01 ? (
-                            <span className="text-[var(--accent-warn)]">{(team.title_probability * 100).toFixed(1)}%</span>
+                            <span className="text-[var(--accent-ai)]">{(team.title_probability * 100).toFixed(1)}%</span>
                           ) : (
                             <span className="text-[var(--text-tertiary)]">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-4 text-center tabular-nums">
                           {team.top_4_probability > 0.01 ? (
                             <span className="text-[var(--accent-primary)]">{(team.top_4_probability * 100).toFixed(0)}%</span>
                           ) : (
                             <span className="text-[var(--text-tertiary)]">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-4 text-center tabular-nums">
                           {team.relegation_probability > 0.01 ? (
                             <span className="text-[var(--accent-loss)]">{(team.relegation_probability * 100).toFixed(0)}%</span>
                           ) : (
@@ -508,7 +526,7 @@ export default function LeagueChampionshipSimulator() {
                       {expandedTeam === team.team_name && team.position_distribution && (
                         <tr className="bg-[var(--background-secondary)]">
                           <td colSpan={8} className="px-4 py-3">
-                            <div className="text-xs text-[var(--text-secondary)] mb-2 font-medium">
+                            <div className="mb-2 text-xs font-medium text-[var(--text-secondary)]">
                               Position probability distribution
                             </div>
                             <div className="flex flex-wrap gap-1">
@@ -518,15 +536,15 @@ export default function LeagueChampionshipSimulator() {
                                   const pct = (prob as number) * 100;
                                   const bg = Number(pos) <= 4 ? 'bg-[var(--accent-primary)]' :
                                              Number(pos) > result.standings.length - 3 ? 'bg-[var(--accent-loss)]' :
-                                             'bg-[var(--accent-info)]';
+                                             'bg-[var(--accent-ai)]';
                                   return (
-                                    <div key={pos} className="text-center min-w-[36px]">
+                                    <div key={pos} className="min-w-[36px] text-center">
                                       <div
                                         className={`${bg} rounded-t`}
                                         style={{ height: `${Math.max(4, pct * 1.5)}px`, opacity: Math.max(0.3, pct / 50) }}
                                       />
-                                      <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{pos}</div>
-                                      <div className="text-[10px] text-[var(--text-secondary)]">{pct.toFixed(1)}%</div>
+                                      <div className="mt-0.5 text-[10px] tabular-nums text-[var(--text-tertiary)]">{pos}</div>
+                                      <div className="text-[10px] tabular-nums text-[var(--text-secondary)]">{pct.toFixed(1)}%</div>
                                     </div>
                                   );
                                 })}
@@ -541,23 +559,26 @@ export default function LeagueChampionshipSimulator() {
             </div>
 
             {/* Legend */}
-            <div className="p-4 flex gap-6 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-color)]">
+            <div className="flex gap-6 border-t border-[var(--border-color)] p-4 text-xs text-[var(--text-tertiary)]">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
+                <div className="h-3 w-3 rounded bg-[var(--accent-primary)]" />
                 <span>Champions League</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[var(--accent-loss)] rounded" />
+                <div className="h-3 w-3 rounded bg-[var(--accent-loss)]" />
                 <span>Relegation Zone</span>
               </div>
             </div>
           </div>
 
           {/* Disclaimer */}
-          <div className="p-4 rounded-xl bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]">
-            <p className="text-sm text-[var(--accent-warn)] text-center">
-              <span className="font-semibold">⚠️ Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings. 
-              Actual results may vary significantly due to injuries, transfers, and unpredictable events.
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] p-4">
+            <p className="flex items-center justify-center gap-2 text-center text-sm text-[var(--accent-warn)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings.
+                Actual results may vary significantly due to injuries, transfers, and unpredictable events.
+              </span>
             </p>
           </div>
         </div>
@@ -565,10 +586,10 @@ export default function LeagueChampionshipSimulator() {
 
       {/* Initial State - No selection */}
       {!result && !loading && !error && (
-        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-8 text-center">
           <Trophy className="mx-auto mb-4 h-12 w-12 text-[var(--accent-warn)]" aria-hidden="true" />
-          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Championship contention simulator</h3>
-          <p className="text-[var(--text-secondary)] max-w-md mx-auto">
+          <h3 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">Championship contention simulator</h3>
+          <p className="mx-auto max-w-md text-[var(--text-secondary)]">
             Pick a league and run the Monte Carlo to see who can still mathematically
             win the title, what points are needed to catch the leader, and how the
             top-four / relegation races shake out across thousands of seasons.

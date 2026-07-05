@@ -947,3 +947,39 @@ h1, h2, h3, h4, h5, h6 {
   .live-dot::before { animation: none !important; }
   .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* ─── Broadcast utilities (Phase: broadcast foundation) ─────────────────────
+   Additive helpers for the shared broadcast primitives. Do not fold these
+   into existing rules — they are meant to be dropped onto any surface. */
+.surface-elevated {
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+.surface-elevated::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text-primary) 18%, transparent),
+    transparent
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+.hero-band {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-ai) 7%, var(--card-bg)),
+    var(--card-bg) 55%
+  );
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

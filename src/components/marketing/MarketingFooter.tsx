@@ -38,7 +38,7 @@ export function MarketingFooter() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           {/* Brand block */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/welcome" className="flex items-center gap-2.5">
+            <Link href="/welcome" className="inline-flex min-h-[44px] items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] text-[var(--accent-on-primary)]">
                 <span className="text-sm font-black">P</span>
               </span>
@@ -55,12 +55,13 @@ export function MarketingFooter() {
           {COLUMNS.map((col) => (
             <div key={col.heading}>
               <p className="mkt-eyebrow">{col.heading}</p>
-              <ul className="mt-3 space-y-2.5">
+              <ul className="mt-1.5">
                 {col.links.map((link) => (
                   <li key={link.label}>
+                    {/* min-h keeps every footer link a ≥40px touch target (rule 7) */}
                     <Link
                       href={link.href}
-                      className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-primary)]"
+                      className="inline-flex min-h-[40px] items-center text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent-primary)]"
                     >
                       {link.label}
                     </Link>

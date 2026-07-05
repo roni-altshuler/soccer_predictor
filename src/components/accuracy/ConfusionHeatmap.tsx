@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 
+import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { cn, formatPct } from '@/lib/utils'
 
@@ -40,12 +41,16 @@ export function ConfusionHeatmap({ rows, className }: ConfusionHeatmapProps) {
 
   return (
     <Card className={cn('p-4 md:p-5', className)}>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-h4 font-bold text-[var(--text-primary)]">Confusion matrix</h3>
-        <p className="text-[10px] text-[var(--text-tertiary)]">
-          Rows = actual result · columns = AI pick
-        </p>
-      </div>
+      <SectionHeader
+        kicker="Outcome audit"
+        title="Confusion matrix"
+        className="mb-3"
+        action={
+          <p className="text-[10px] text-[var(--text-tertiary)]">
+            Rows = actual result · columns = AI pick
+          </p>
+        }
+      />
 
       {totalCells === 0 ? (
         <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-[var(--border-color)] text-sm text-[var(--text-tertiary)]">

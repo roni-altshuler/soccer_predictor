@@ -47,7 +47,7 @@ export function SimulatorDemo() {
               aria-selected={scenario === t.key}
               onClick={() => setScenario(t.key)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                'min-h-[40px] rounded-lg px-3 text-xs font-semibold transition-colors',
                 scenario === t.key
                   ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-sm'
                   : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]',

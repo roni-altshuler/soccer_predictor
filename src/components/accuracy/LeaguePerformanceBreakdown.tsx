@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { ArrowDownAZ, ArrowUpDown, Filter, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { LeagueBadge } from '@/components/match/LeagueBadge'
+import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
@@ -112,63 +113,54 @@ export function LeaguePerformanceBreakdown({
   return (
     <Card className={cn('overflow-hidden p-0', className)}>
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3 md:px-5">
-        <div>
-          <h3 className="text-h4 font-bold text-[var(--text-primary)]">
-            Where the model wins
-          </h3>
-          <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
-            {totals.leagueCount > 0 ? (
-              <>
-                Hit rate by league ·{' '}
-                <span className="font-semibold text-[var(--text-secondary)]">
-                  {Math.round(totals.overallRate * 100)}%
-                </span>{' '}
-                across {totals.settled} settled picks in {totals.leagueCount}{' '}
-                league{totals.leagueCount === 1 ? '' : 's'}
-              </>
-            ) : (
-              <>League-by-league hit rates appear here once at least {minSamples} matches per league have settled</>
-            )}
-          </p>
-        </div>
-
-        {/* Sort chips */}
-        <div
-          role="tablist"
-          aria-label="Sort league breakdown"
-          className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]/70 p-0.5"
-        >
-          {(
-            [
-              { value: 'hitRate' as const, label: 'Hit rate', icon: TrendingUp },
-              { value: 'samples' as const, label: 'Sample size', icon: ArrowUpDown },
-              { value: 'alpha' as const, label: 'A→Z', icon: ArrowDownAZ },
-            ]
-          ).map((option) => {
-            const Icon = option.icon
-            const active = sort === option.value
-            return (
-              <button
-                key={option.value}
-                role="tab"
-                type="button"
-                aria-selected={active}
-                onClick={() => setSort(option.value)}
-                className={cn(
-                  'flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                  active
-                    ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
-                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
-                )}
-              >
-                {active && <Filter className="h-2.5 w-2.5" aria-hidden="true" />}
-                <Icon className="h-3 w-3" aria-hidden="true" />
-                {option.label}
-              </button>
-            )
-          })}
-        </div>
+      <div className="border-b border-[var(--border-color)] px-4 py-3 md:px-5">
+        <SectionHeader
+          className="flex-col items-start gap-2 sm:flex-row sm:items-end"
+          kicker="League audit"
+          title="Where the model wins"
+          description={
+            totals.leagueCount > 0
+              ? `Hit rate by league · ${Math.round(totals.overallRate * 100)}% across ${totals.settled} settled picks in ${totals.leagueCount} league${totals.leagueCount === 1 ? '' : 's'}`
+              : `League-by-league hit rates appear here once at least ${minSamples} matches per league have settled`
+          }
+          action={
+            <div
+              role="tablist"
+              aria-label="Sort league breakdown"
+              className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]/70 p-0.5"
+            >
+              {(
+                [
+                  { value: 'hitRate' as const, label: 'Hit rate', icon: TrendingUp },
+                  { value: 'samples' as const, label: 'Sample size', icon: ArrowUpDown },
+                  { value: 'alpha' as const, label: 'A→Z', icon: ArrowDownAZ },
+                ]
+              ).map((option) => {
+                const Icon = option.icon
+                const active = sort === option.value
+                return (
+                  <button
+                    key={option.value}
+                    role="tab"
+                    type="button"
+                    aria-selected={active}
+                    onClick={() => setSort(option.value)}
+                    className={cn(
+                      'flex min-h-[36px] items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                      active
+                        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
+                        : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    {active && <Filter className="h-2.5 w-2.5" aria-hidden="true" />}
+                    <Icon className="h-3 w-3" aria-hidden="true" />
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          }
+        />
       </div>
 
       {/* Body */}

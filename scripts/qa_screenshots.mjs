@@ -25,6 +25,14 @@ const PAGES = [
   ['predict', '/predict'],
   ['simulator', '/simulator'],
   ['ai', '/ai'],
+  ['news', '/news'],
+  ['history', '/history'],
+  ['tournaments', '/tournaments'],
+  ['diagnostics', '/diagnostics'],
+  ['upcoming', '/upcoming'],
+  // Dynamic routes: override via env when the defaults go stale.
+  ['match-detail', `/matches/${process.env.QA_MATCH_ID || '760497'}`],
+  ['team-detail', `/teams/${process.env.QA_TEAM_ID || '360'}`],
 ]
 
 const results = []
@@ -39,7 +47,21 @@ for (const vp of VIEWPORTS) {
     page.on('pageerror', (e) => consoleErrors.push(String(e)))
     try {
       await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded', timeout: 45000 })
-      await page.waitForTimeout(2600) // let data fetches + animations settle (networkidle never fires with persistent CSS animations)
+      // Let data fetches + animations settle (networkidle never fires with
+      // persistent CSS animations; dev-mode compiles and live API fetches
+      // need the longer default — tune via QA_SETTLE_MS).
+      await page.waitForTimeout(Number(process.env.QA_SETTLE_MS || 5000))
+      // Scroll through the page so whileInView reveals fire — otherwise
+      // fullPage captures show below-the-fold content stuck at opacity 0.
+      await page.evaluate(async () => {
+        const step = window.innerHeight * 0.8
+        for (let y = 0; y < document.body.scrollHeight; y += step) {
+          window.scrollTo(0, y)
+          await new Promise((r) => setTimeout(r, 120))
+        }
+        window.scrollTo(0, 0)
+      })
+      await page.waitForTimeout(700)
       const file = `${OUT}/${label}-${vp.name}.png`
       await page.screenshot({ path: file, fullPage: true })
       // horizontal overflow check

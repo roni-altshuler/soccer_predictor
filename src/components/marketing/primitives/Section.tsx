@@ -52,6 +52,12 @@ export function Section({
 /**
  * Standard section header: eyebrow kicker + title + optional lede.
  * Centered by default; pass `align="left"` for left-aligned headers.
+ *
+ * Anatomy (kicker → title → description) mirrors the product-wide
+ * `@/components/primitives` SectionHeader; the landing keeps display-scale
+ * titles (gradient spans, clamp sizing) that the shared string-only title
+ * can't host, but the kicker uses the identical treatment so both read as
+ * one system.
  */
 export function SectionHeader({
   eyebrow,
@@ -76,7 +82,11 @@ export function SectionHeader({
         className,
       )}
     >
-      {eyebrow ? <span className="mkt-eyebrow">{eyebrow}</span> : null}
+      {eyebrow ? (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+          {eyebrow}
+        </span>
+      ) : null}
       <h2
         id={titleId}
         className={cn(

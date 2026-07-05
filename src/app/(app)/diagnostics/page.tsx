@@ -1,8 +1,7 @@
-import { Activity, ArrowRight, Eye, RefreshCw, Repeat, TrendingUp, Wrench } from 'lucide-react'
+import { Activity, ArrowRight, Eye, RefreshCw, Wrench } from 'lucide-react'
 
-import { BorderBeam } from '@/components/magicui/border-beam'
+import { SectionHeader } from '@/components/primitives'
 import { MagicCard } from '@/components/magicui/magic-card'
-import { Spotlight } from '@/components/magicui/spotlight'
 import { Badge } from '@/components/ui/badge'
 import TrackingCenter from '@/components/tracking/TrackingCenter'
 
@@ -31,26 +30,16 @@ export default function DiagnosticsPage({
   return (
     <div className="min-h-screen">
       <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-5 px-4 py-6 md:px-8">
-        {/* Hero — matches the language of /accuracy and /predict heros, now
-            with magicui Spotlight + BorderBeam for consistency with the
-            redesigned league home. */}
-        <Spotlight
-          className="relative block rounded-3xl"
-          size={520}
-          color="color-mix(in srgb, var(--accent-ai) 18%, transparent)"
-        >
-        <section className="relative isolate overflow-hidden rounded-3xl border border-[var(--border-color)]">
-          <BorderBeam size={1} duration={14} borderRadius={24} colorFrom="var(--accent-ai)" colorTo="var(--accent-primary)" />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-[radial-gradient(55%_55%_at_12%_15%,color-mix(in_srgb,var(--accent-ai)_22%,transparent),transparent_60%),radial-gradient(45%_45%_at_88%_25%,color-mix(in_srgb,var(--accent-primary)_18%,transparent),transparent_60%)]"
-          />
+        {/* Hero — deliberately neutral (no accent gradient): this is the
+            engineer surface; /accuracy owns the primary accent and /ai
+            owns cyan. */}
+        <section className="surface-elevated relative isolate overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]">
           <div className="relative z-10 flex flex-col gap-5 p-6 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
                 <Badge
                   variant="outline"
-                  className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]"
+                  className="border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-secondary)]"
                 >
                   <Wrench className="mr-1 h-3 w-3" aria-hidden="true" /> Engineer surface
                 </Badge>
@@ -69,29 +58,27 @@ export default function DiagnosticsPage({
               </div>
               <div className="flex flex-wrap gap-2">
                 <DomainChip tone="primary" Icon={Activity} label="Outcome + Scoreline" />
-                <DomainChip tone="ai" Icon={TrendingUp} label="Calibration + Learning" />
+                <DomainChip tone="ai" Icon={RefreshCw} label="Calibration + Learning" />
                 <DomainChip tone="violet" Icon={Eye} label="Personal Team Tracking" />
               </div>
             </div>
           </div>
         </section>
-        </Spotlight>
 
         <TrackingCenter initialView={initialView} />
 
         {/* Continuous learning pipeline */}
         <section className="bento-card p-5 md:p-6">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-[var(--accent-ai)]" aria-hidden="true" />
-              <h2 className="text-h4 font-bold text-[var(--text-primary)]">
-                Continuous learning pipeline
-              </h2>
-            </div>
-            <span className="hidden md:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-              Observe <ArrowRight className="h-3 w-3" aria-hidden="true" /> Diagnose <ArrowRight className="h-3 w-3" aria-hidden="true" /> Adapt <ArrowRight className="h-3 w-3" aria-hidden="true" /> Predict
-            </span>
-          </div>
+          <SectionHeader
+            kicker="Learning loop"
+            title="Continuous learning pipeline"
+            className="mb-4"
+            action={
+              <span className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)] md:inline-flex">
+                Observe <ArrowRight className="h-3 w-3" aria-hidden="true" /> Diagnose <ArrowRight className="h-3 w-3" aria-hidden="true" /> Adapt <ArrowRight className="h-3 w-3" aria-hidden="true" /> Predict
+              </span>
+            }
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             {[
               { Icon: Eye, step: 'Observe outcomes', desc: 'Finished matches synced and labelled by league + gender.', tone: 'ai' as const },

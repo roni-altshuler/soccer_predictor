@@ -1,3 +1,6 @@
+import fs from 'fs'
+import path from 'path'
+
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -14,14 +17,76 @@ import {
   Zap,
 } from 'lucide-react'
 
-import { BorderBeam } from '@/components/magicui/border-beam'
-import { Spotlight } from '@/components/magicui/spotlight'
+import { SectionHeader, StatCard } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 
 export const metadata = {
   title: 'About · Pitchwise',
   description:
     'Pitchwise turns live football coverage into calibrated predictions — a unified neural model, honest accuracy tracking, and a single dashboard for every league.',
+}
+
+// Re-read the committed training summaries on every request so the numbers
+// track the latest retrain (mirrors /api/v1/ai/model-summary).
+export const dynamic = 'force-dynamic'
+
+interface ModelSummary {
+  model_version: string
+  trained_at: string
+  n_parameters: number
+  n_features: number
+  vocab_sizes: { leagues: number; teams: number; referees: number; phases: number }
+  holdout: { accuracy: number; brier: number; ece: number; n: number }
+}
+
+/**
+ * Read a per-gender unified-model training summary from the committed
+ * diagnostics JSON (same source as /api/v1/ai/model-summary). Returns null
+ * when the file is missing, malformed, or the holdout sample is too small to
+ * quote (rule 3: no metrics from windows with n < 10).
+ */
+function readModelSummary(file: string): ModelSummary | null {
+  try {
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), 'backend', 'data', 'diagnostics', file),
+      'utf-8'
+    )
+    const summary = JSON.parse(raw) as ModelSummary
+    const h = summary?.holdout
+    if (
+      !h ||
+      typeof h.accuracy !== 'number' ||
+      typeof h.brier !== 'number' ||
+      typeof h.ece !== 'number' ||
+      !(typeof h.n === 'number' && h.n >= 10)
+    ) {
+      return null
+    }
+    return summary
+  } catch {
+    return null
+  }
+}
+
+function formatTrainedAt(iso: string): string | null {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+/** Cyan model chip — `unified-multitask…` displays as "Unified v2". */
+function ModelChip() {
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+      style={{
+        color: 'var(--accent-ai)',
+        backgroundColor: 'color-mix(in srgb, var(--accent-ai) 12%, transparent)',
+      }}
+    >
+      Unified v2
+    </span>
+  )
 }
 
 const PRINCIPLES = [
@@ -102,72 +167,91 @@ const FEATURES = [
   },
 ]
 
+// The warehouse's ingestion loaders (backend/services/data/) — real sources,
+// each surfaced in the product via the data-provenance badge.
+const DATA_SOURCES = [
+  { name: 'ESPN', role: 'Live scores, fixtures, standings, and news' },
+  { name: 'FotMob', role: 'Match detail and lineup enrichment' },
+  { name: 'football-data.co.uk', role: 'Historical results archive' },
+  { name: 'ClubElo', role: 'Long-run team strength ratings' },
+  { name: 'OpenFootball', role: 'Open fixture and season data' },
+  { name: 'FBref', role: 'Advanced team statistics' },
+  { name: 'Understat', role: 'Expected-goals (xG) histories' },
+  { name: 'Open-Meteo', role: 'Matchday weather conditions' },
+]
+
 export default function AboutPage() {
+  const men = readModelSummary('unified_men_summary.json')
+  const women = readModelSummary('unified_women_summary.json')
+  const heroStat = men ?? women
+
+  const modelRows = [
+    { key: 'men', label: "Men's model", summary: men },
+    { key: 'women', label: "Women's model", summary: women },
+  ].filter((row): row is { key: string; label: string; summary: ModelSummary } => row.summary != null)
+
   return (
     <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-8 px-4 py-6 md:px-8">
-        {/* Hero */}
-        <Spotlight
-          className="relative block rounded-3xl"
-          size={520}
-          color="color-mix(in srgb, var(--accent-primary) 18%, transparent)"
-        >
-          <section className="relative isolate overflow-hidden rounded-3xl border border-[var(--border-color)]">
-            <BorderBeam size={1} duration={14} borderRadius={24} colorFrom="var(--accent-primary)" colorTo="var(--accent-ai)" />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 -z-10 bg-[radial-gradient(55%_55%_at_15%_15%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%),radial-gradient(45%_45%_at_85%_25%,color-mix(in_srgb,var(--accent-ai)_18%,transparent),transparent_60%)]"
-            />
-            <div className="relative z-10 flex flex-col gap-6 p-6 md:p-10">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
-                  <Sparkles className="h-3 w-3" aria-hidden="true" />
-                  Calibrated football intelligence
+      <div className="mx-auto w-full max-w-[var(--shell-content-max)] space-y-10 px-4 py-6 md:px-8">
+        {/* Compact hero band */}
+        <section className="hero-band surface-elevated p-6 md:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl space-y-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                Calibrated football intelligence
+              </span>
+              <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] md:text-4xl">
+                Pitchwise turns live football into{' '}
+                <span className="bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-ai)] bg-clip-text text-transparent">
+                  honest probabilities
                 </span>
-                <h1 className="font-display text-[clamp(2rem,5vw,3.4rem)] font-extrabold leading-[1.02] tracking-tight text-[var(--text-primary)]">
-                  Pitchwise turns live football <br className="hidden md:block" />
-                  into{' '}
-                  <span className="bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-ai)] bg-clip-text text-transparent">
-                    honest probabilities
-                  </span>
-                  .
-                </h1>
-                <p className="max-w-2xl text-base leading-relaxed text-[var(--text-secondary)] md:text-lg">
-                  One dashboard. Every major league. A unified model that publishes its
-                  confidence, tracks every miss, and re-trains on outcomes — three times a day,
-                  for both the men&apos;s and women&apos;s game.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
+                .
+              </h1>
+              <p className="text-sm leading-relaxed text-[var(--text-secondary)] md:text-base">
+                One dashboard, every major league — a unified model that publishes its
+                confidence, tracks every miss, and re-trains on outcomes three times a day,
+                for both the men&apos;s and women&apos;s game.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-1">
                 <Link
                   href="/predict"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-on-primary)] shadow-md shadow-[var(--accent-primary)]/20 transition-all hover:translate-y-[-1px] hover:shadow-lg"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-on-primary)] shadow-md shadow-[var(--accent-primary)]/20 transition-all hover:translate-y-[-1px] hover:shadow-lg"
                 >
                   Run a prediction <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
                 <Link
                   href="/accuracy"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]"
                 >
                   See accuracy <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               </div>
             </div>
-          </section>
-        </Spotlight>
+            {heroStat && (
+              <div className="flex-shrink-0 md:pl-6 md:text-right">
+                <p className="text-4xl font-black leading-none tabular-nums text-[var(--accent-ai)]">
+                  {Math.round(heroStat.holdout.accuracy * 100)}%
+                </p>
+                <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                  Holdout accuracy
+                </p>
+                <p className="mt-0.5 text-xs tabular-nums text-[var(--text-tertiary)]">
+                  {heroStat.holdout.n.toLocaleString('en-US')} unseen matches ·{' '}
+                  {heroStat === men ? "men's model" : "women's model"}
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Principles row */}
         <section>
-          <header className="mb-4 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                What we stand for
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                Three principles
-              </h2>
-            </div>
-          </header>
+          <SectionHeader
+            kicker="What we stand for"
+            title="Three principles"
+            className="mb-4"
+          />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {PRINCIPLES.map(({ Icon, title, body }) => (
               <Card key={title} className="relative overflow-hidden p-5">
@@ -185,19 +269,16 @@ export default function AboutPage() {
 
         {/* Pipeline */}
         <section>
-          <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                How the AI works
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                Observe → Predict → Audit → Adapt
-              </h2>
-            </div>
-            <span className="hidden text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-tertiary)] md:inline">
-              Loop runs 3× daily
-            </span>
-          </header>
+          <SectionHeader
+            kicker="How the AI works"
+            title="Observe → Predict → Audit → Adapt"
+            action={
+              <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] md:inline">
+                Loop runs 3× daily
+              </span>
+            }
+            className="mb-4"
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PIPELINE.map(({ Icon, step, title, body }, idx) => (
               <Card key={title} className="relative overflow-hidden p-5">
@@ -224,20 +305,71 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* The model at a glance — real holdout numbers from the training summary */}
+        {modelRows.length > 0 && (
+          <section>
+            <SectionHeader
+              kicker="Model transparency"
+              title="The model at a glance"
+              description="Holdout metrics from the latest training run — matches the model never saw in training, recomputed and republished on every retrain."
+              className="mb-4"
+            />
+            <div className="space-y-6">
+              {modelRows.map(({ key, label, summary }) => {
+                const trained = formatTrainedAt(summary.trained_at)
+                const { holdout, vocab_sizes: vocab, n_features: nFeatures } = summary
+                return (
+                  <div key={key}>
+                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <ModelChip />
+                      <span className="text-sm font-bold text-[var(--text-primary)]">{label}</span>
+                      <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
+                        {trained ? `retrained ${trained} · ` : ''}
+                        {vocab.teams.toLocaleString('en-US')} teams · {nFeatures} features
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <StatCard
+                        label="Holdout accuracy"
+                        value={`${Math.round(holdout.accuracy * 100)}%`}
+                        accent="ai"
+                        sub="vs 33% random baseline"
+                        size="sm"
+                      />
+                      <StatCard
+                        label="Brier score"
+                        value={holdout.brier.toFixed(3)}
+                        sub="3-way outcome · lower is better"
+                        size="sm"
+                      />
+                      <StatCard
+                        label="Calibration error"
+                        value={`${(holdout.ece * 100).toFixed(1)}%`}
+                        sub="ECE after calibration"
+                        size="sm"
+                      />
+                      <StatCard
+                        label="Holdout matches"
+                        value={holdout.n.toLocaleString('en-US')}
+                        sub="settled, unseen in training"
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Surfaces */}
         <section>
-          <header className="mb-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-              The product
-            </p>
-            <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-              Five surfaces, one model
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-              The same unified prediction engine powers every page. Toggle between the
-              men&apos;s and women&apos;s universes from the top bar at any time.
-            </p>
-          </header>
+          <SectionHeader
+            kicker="The product"
+            title="Five surfaces, one model"
+            description="The same unified prediction engine powers every page. Toggle between the men's and women's universes from the top bar at any time."
+            className="mb-4"
+          />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ href, Icon, title, desc }) => (
               <Link
@@ -263,6 +395,27 @@ export default function AboutPage() {
                   </div>
                 </div>
               </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Data sources */}
+        <section>
+          <SectionHeader
+            kicker="Where the numbers come from"
+            title="Data sources"
+            description="Dedicated ingestion loaders feed one SQLite warehouse; every match surface shows its provenance badge, and missing provider fields are never back-filled with placeholders."
+            className="mb-4"
+          />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {DATA_SOURCES.map(({ name, role }) => (
+              <div
+                key={name}
+                className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-3.5"
+              >
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{name}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-tertiary)]">{role}</p>
+              </div>
             ))}
           </div>
         </section>

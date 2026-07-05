@@ -6,15 +6,19 @@ import { ArrowRight, Sparkles, TrendingUp } from 'lucide-react'
 
 import { DotPattern } from '@/components/magicui/dot-pattern'
 import { NumberTicker } from '@/components/magicui/number-ticker'
+import { FlagBadge } from '@/components/primitives'
 import { cn } from '@/lib/utils'
 import { CtaButton } from './primitives/CtaButton'
 
 /** Static, lightweight demo numbers for the hero centerpiece card. The real,
- *  live prediction is rendered further down the page in <PredictionDemo>. */
+ *  live prediction is rendered further down the page in <PredictionDemo>.
+ *  Crest URLs are ESPN's canonical club logos (rule 2: real identities). */
 const HERO_MATCH = {
   league: 'Premier League',
   home: 'Arsenal',
+  homeCrest: 'https://a.espncdn.com/i/teamlogos/soccer/500/359.png',
   away: 'Chelsea',
+  awayCrest: 'https://a.espncdn.com/i/teamlogos/soccer/500/363.png',
   homeWin: 0.54,
   draw: 0.26,
   awayWin: 0.2,
@@ -147,7 +151,7 @@ export function MarketingHero() {
             className="mt-2 grid w-full max-w-lg grid-cols-3 gap-4 border-t border-[var(--border-color)] pt-6"
           >
             {[
-              { value: 60.56, suffix: '%', dp: 2, label: 'Test accuracy', sub: '11,661-match holdout' },
+              { value: 60.5, suffix: '%', dp: 1, label: "Men's accuracy", sub: '11,661-match holdout' },
               { value: 77735, suffix: '+', dp: 0, label: 'Matches trained', sub: 'men + women' },
               { value: 3, suffix: '×', dp: 0, label: 'Retrains daily', sub: 'online learning' },
             ].map((s) => (
@@ -187,8 +191,8 @@ export function MarketingHero() {
             {/* Teams */}
             <div className="mt-5 flex items-center justify-between">
               <div className="flex flex-col items-center gap-2">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted-bg)] text-lg font-black text-[var(--text-primary)]">
-                  {HERO_MATCH.home.slice(0, 3).toUpperCase()}
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted-bg)]">
+                  <FlagBadge teamName={HERO_MATCH.home} logoUrl={HERO_MATCH.homeCrest} size={34} />
                 </span>
                 <span className="text-xs font-semibold text-[var(--text-primary)]">{HERO_MATCH.home}</span>
               </div>
@@ -199,8 +203,8 @@ export function MarketingHero() {
                 <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-tertiary)]">most likely</span>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted-bg)] text-lg font-black text-[var(--text-primary)]">
-                  {HERO_MATCH.away.slice(0, 3).toUpperCase()}
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--muted-bg)]">
+                  <FlagBadge teamName={HERO_MATCH.away} logoUrl={HERO_MATCH.awayCrest} size={34} />
                 </span>
                 <span className="text-xs font-semibold text-[var(--text-primary)]">{HERO_MATCH.away}</span>
               </div>
