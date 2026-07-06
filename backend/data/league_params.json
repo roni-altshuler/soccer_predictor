@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-07-06T16:53:09.719762",
+  "updated_at": "2026-07-06T23:06:04.871899",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -138,10 +138,10 @@
     "fifa.world": {
       "display_name": "FIFA World Cup",
       "country": "International",
-      "avg_goals": 1.3,
-      "home_adv": 0.15,
+      "avg_goals": 1.2853,
+      "home_adv": 0.1705,
       "rho": -0.09,
-      "draw_rate": 0.18,
+      "draw_rate": 0.1237,
       "league_coefficient": 1.1,
       "total_matchdays": 3,
       "relegation_spots": 0,

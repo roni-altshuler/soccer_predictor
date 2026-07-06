@@ -1422,15 +1422,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 0,
+      "actual_away_goals": 1,
+      "actual_winner": "away",
+      "winner_correct": true,
+      "scoreline_correct": false,
+      "scoreline_in_top5": true,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-07-05T14:13:47.937559",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-06T23:05:58.817878"
     },
     {
       "match_id": "760507",
