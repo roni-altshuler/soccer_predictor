@@ -2,6 +2,8 @@
 
 import { useMemo } from 'react'
 
+import { cn } from '@/lib/utils'
+
 export interface DerivedMarketsData {
   over_under?: Record<string, { over: number; under: number }>
   btts?: { yes: number; no: number }
@@ -26,6 +28,74 @@ function pct(value: number): string {
 
 const OVER_UNDER_LINES = ['0.5', '1.5', '2.5', '3.5'] as const
 
+/**
+ * Quiet AI-market probability rows (totals, BTTS, correct score) in the
+ * bet365 data-grid register: one hairline row per market, thin cyan
+ * `--accent-ai` bar for the modelled probability, tabular numerals. The
+ * leading option in each pair is saturated; the trailing option muted.
+ * Renders nothing when no market data exists.
+ */
+function ProbRow({
+  label,
+  value,
+  emphasized = true,
+  scaleMax = 1,
+}: {
+  label: string
+  value: number
+  emphasized?: boolean
+  /** Visual scale ceiling — lets low-probability sets (correct score) stay legible. */
+  scaleMax?: number
+}) {
+  const p = clamp01(value)
+  const width = scaleMax > 0 ? Math.min(1, p / scaleMax) : p
+  return (
+    <div className="flex min-h-[28px] items-center gap-3">
+      <span
+        className={cn(
+          'w-16 shrink-0 text-[12px] tabular-nums',
+          emphasized ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
+        )}
+      >
+        {label}
+      </span>
+      <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--muted-bg)]">
+        <div
+          className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+          style={{
+            width: `${width * 100}%`,
+            background: emphasized
+              ? 'var(--accent-ai)'
+              : 'color-mix(in srgb, var(--accent-ai) 35%, transparent)',
+          }}
+        />
+      </div>
+      <span
+        className={cn(
+          'w-10 shrink-0 text-right text-[12px] tabular-nums',
+          emphasized ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'
+        )}
+      >
+        {pct(p)}
+      </span>
+    </div>
+  )
+}
+
+function MarketColumn({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] p-3">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+          {title}
+        </h4>
+        {hint && <span className="text-[10px] text-[var(--text-tertiary)]">{hint}</span>}
+      </div>
+      <div className="space-y-1">{children}</div>
+    </div>
+  )
+}
+
 export default function DerivedMarkets({ data, homeTeam, awayTeam, onRefresh }: DerivedMarketsProps) {
   const overUnderRows = useMemo(() => {
     if (!data?.over_under) return []
@@ -46,127 +116,65 @@ export default function DerivedMarkets({ data, homeTeam, awayTeam, onRefresh }: 
 
   return (
     <section
-      className="fm-card overflow-hidden"
-      style={{ background: '#0d1117', borderColor: 'color-mix(in srgb, #7c3aed 32%, var(--border-color))' }}
-      aria-label="Derived betting markets"
+      className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]"
+      aria-label="AI goal and scoreline markets"
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
+      <header className="flex items-center justify-between border-b border-[var(--border-color)] px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full" style={{ background: '#7c3aed' }} />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Derived Markets</h3>
-          <span className="text-[10px] text-[var(--text-tertiary)]">model-derived</span>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Goal markets</h3>
+          <span className="rounded border border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--accent-ai)]">
+            AI
+          </span>
         </div>
         {onRefresh && (
           <button
             type="button"
             onClick={onRefresh}
-            className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[#7c3aed]/50 transition-colors"
+            className="min-h-[32px] rounded-md border border-[var(--border-color)] px-2.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
           >
             Refresh
           </button>
         )}
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-4" style={{ background: '#0d1117' }}>
+      <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-3">
         {/* Over / Under */}
         {overUnderRows.length > 0 && (
-          <div className="rounded-xl p-3" style={{ background: '#161b22', border: '1px solid var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wide">Total Goals</h4>
-              <span className="text-[10px] text-[var(--text-tertiary)]">Over / Under</span>
-            </div>
-            <div className="space-y-2.5">
-              {overUnderRows.map(({ line, over, under }) => (
-                <div key={line} className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
-                    <span className="font-semibold text-[var(--text-primary)]">Line {line}</span>
-                    <span>
-                      <span className="text-[var(--text-primary)] font-semibold">{pct(over)}</span>
-                      <span className="text-[var(--text-tertiary)]"> / {pct(under)}</span>
-                    </span>
-                  </div>
-                  <div className="relative h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full"
-                      style={{ width: `${clamp01(over) * 100}%`, background: '#7c3aed' }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <MarketColumn title="Total goals" hint="Over the line">
+            {overUnderRows.map(({ line, over }) => (
+              <ProbRow key={line} label={`Over ${line}`} value={over} emphasized={over >= 0.5} />
+            ))}
+          </MarketColumn>
         )}
 
         {/* BTTS */}
         {btts && (
-          <div className="rounded-xl p-3" style={{ background: '#161b22', border: '1px solid var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wide">Both Teams to Score</h4>
-              <span className="text-[10px] text-[var(--text-tertiary)]">BTTS</span>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="font-semibold text-[var(--text-primary)]">Yes</span>
-                  <span className="text-[var(--text-secondary)]">{pct(btts.yes)}</span>
-                </div>
-                <div className="relative h-2 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${clamp01(btts.yes) * 100}%`, background: '#7c3aed' }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="font-semibold text-[var(--text-primary)]">No</span>
-                  <span className="text-[var(--text-secondary)]">{pct(btts.no)}</span>
-                </div>
-                <div className="relative h-2 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${clamp01(btts.no) * 100}%`, background: 'rgba(124,58,237,0.45)' }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <MarketColumn title="Both teams to score">
+            <ProbRow label="Yes" value={btts.yes} emphasized={btts.yes >= btts.no} />
+            <ProbRow label="No" value={btts.no} emphasized={btts.no > btts.yes} />
+          </MarketColumn>
         )}
 
         {/* Correct Score Top 5 */}
         {topScores.length > 0 && (
-          <div className="rounded-xl p-3" style={{ background: '#161b22', border: '1px solid var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wide">Correct Score</h4>
-              <span className="text-[10px] text-[var(--text-tertiary)]">Top 5</span>
-            </div>
-            <div className="space-y-2">
-              {topScores.slice(0, 5).map((row, idx) => {
-                const p = clamp01(row.probability)
-                return (
-                  <div key={`${row.home}-${row.away}-${idx}`} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-[var(--text-primary)] tabular-nums" aria-label={`Score ${row.home} to ${row.away}`}>
-                        {row.home}-{row.away}
-                      </span>
-                      <span className="text-[var(--text-secondary)] tabular-nums">{pct(p)}</span>
-                    </div>
-                    <div className="relative h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ width: `${p * 100}%`, background: '#7c3aed' }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {(homeTeam || awayTeam) && (
-              <p className="mt-3 text-[10px] text-[var(--text-tertiary)] truncate">
-                {homeTeam || 'Home'} vs {awayTeam || 'Away'}
-              </p>
-            )}
-          </div>
+          <MarketColumn
+            title="Correct score"
+            hint={homeTeam && awayTeam ? `${homeTeam} · ${awayTeam}` : 'Top 5'}
+          >
+            {(() => {
+              const rows = topScores.slice(0, 5)
+              const maxP = Math.max(...rows.map((r) => clamp01(r.probability)), 1e-6)
+              return rows.map((row, idx) => (
+                <ProbRow
+                  key={`${row.home}-${row.away}-${idx}`}
+                  label={`${row.home}–${row.away}`}
+                  value={row.probability}
+                  emphasized={idx === 0}
+                  scaleMax={maxP}
+                />
+              ))
+            })()}
+          </MarketColumn>
         )}
       </div>
     </section>

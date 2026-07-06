@@ -7,7 +7,7 @@ const PRINCIPLES = [
   {
     Icon: Target,
     title: 'Calibration over hype',
-    body: 'A 60% pick should win 60% of the time. We publish Brier score and calibration on every model, so confidence is grounded in math — not vibes.',
+    body: 'When we say 60%, it should happen about 60% of the time. Every pick is scored in public, so confidence is grounded in results — not vibes.',
   },
   {
     Icon: Eye,
@@ -57,8 +57,8 @@ export function TrustStrip() {
             </p>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[var(--text-secondary)]">
               Pitchwise is a personal research project for visualising calibrated football
-              probabilities. It cannot model injuries, weather, red cards, or tactical changes —
-              and even a well-calibrated model loses regularly. Do not use these outputs for
+              probabilities. It cannot foresee injuries, weather, red cards, or tactical changes —
+              and even a strong prediction loses regularly. Do not use these outputs for
               betting or any financial decision.
             </p>
           </div>

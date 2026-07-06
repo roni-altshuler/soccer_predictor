@@ -79,7 +79,7 @@ export function CalibrationShowcase() {
     { value: view.accuracy * 100, dp: 1, suffix: '%', label: 'Outcome accuracy' },
     { value: view.brier, dp: 3, label: 'Brier score' },
     { value: view.logLoss, dp: 3, label: 'Log loss' },
-    { value: view.completed, dp: 0, label: view.live ? 'Settled picks' : 'Holdout matches' },
+    { value: view.completed, dp: 0, label: view.live ? 'Settled picks' : 'Scored matches' },
   ]
 
   return (
@@ -98,7 +98,7 @@ export function CalibrationShowcase() {
             )}
           >
             {view.live && !loading ? <Wifi className="h-3 w-3" aria-hidden="true" /> : <WifiOff className="h-3 w-3" aria-hidden="true" />}
-            {loading ? 'Loading…' : view.live ? 'Live from the tracker' : 'Holdout data'}
+            {loading ? 'Loading…' : view.live ? 'Live from the tracker' : 'Sample data'}
           </span>
         </div>
 

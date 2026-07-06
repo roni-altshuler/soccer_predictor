@@ -24,11 +24,11 @@ const PAGES = [
   ['accuracy', '/accuracy'],
   ['predict', '/predict'],
   ['simulator', '/simulator'],
-  ['ai', '/ai'],
+  ['leagues', '/leagues'],
   ['news', '/news'],
   ['history', '/history'],
   ['tournaments', '/tournaments'],
-  ['diagnostics', '/diagnostics'],
+  ['players', '/players'],
   ['upcoming', '/upcoming'],
   // Dynamic routes: override via env when the defaults go stale.
   ['match-detail', `/matches/${process.env.QA_MATCH_ID || '760497'}`],

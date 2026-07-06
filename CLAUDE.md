@@ -70,7 +70,7 @@ The unified PyTorch model artefacts (`unified_*.pt`, `*_scaler.pkl`, `*_calibrat
 
 ## Key conventions
 
-- **Data-provenance honesty**: never synthesize match rows or fill missing provider fields with placeholders. The `DataSourceBadge` component shows ESPN/FotMob/model/none on every match-list and match-detail surface.
+- **Data-provenance honesty**: never fabricate data — no synthesized match rows, no placeholder fills for missing provider fields. `DataSourceBadge` no longer exists: provenance and methodology are documented in README/`docs/methodology.md` and MUST NOT appear in the website UI (provider names, algorithm/method names, pipeline details) outside a short plain-language note on `/about`.
 - **Accuracy disclaimers**: predictions are educational only; the README pins this explicitly. Don't add betting language.
 - **No bot attribution in commits**: the user explicitly doesn't want "Co-Authored-By: Claude" or "Generated with Claude Code" trailers in this repo.
 - **CSS variables over Tailwind colours**: use `text-[var(--text-primary)]`, `bg-[var(--card-bg)]`, `border-[var(--border-color)]`, etc. Hardcoded `text-white` / `bg-black` / `text-gray-400` will break light mode — tokens are defined in `src/app/globals.css` under `:root` (light) and `.dark` (dark).

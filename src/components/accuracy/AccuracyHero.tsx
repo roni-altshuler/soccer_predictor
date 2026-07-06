@@ -119,9 +119,9 @@ export function AccuracyHero({
             />
           )}
           <StatCard
-            label="Brier score"
+            label="Probability score"
             value={brierScore.toFixed(3)}
-            sub="Lower = better calibrated. Random is about 0.66."
+            sub="Lower = percentages closer to reality. Random is about 0.66."
             size="sm"
           />
           <StatCard

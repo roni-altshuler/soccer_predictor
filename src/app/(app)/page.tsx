@@ -10,10 +10,10 @@ import {
   teamMatchesWatchlist,
   type WatchTeam,
 } from '@/lib/watchlist'
-import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
+import { FeaturedStrip } from '@/components/match/FeaturedStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
 import type { MatchRowMatch } from '@/components/match/MatchRow'
 import { Button } from '@/components/ui/button'
@@ -120,11 +120,6 @@ const LEAGUE_ID_MAP: Record<string, string> = {
   'FIFA World Cup 2026': 'fifa.world',
   'UEFA European Championship': 'uefa.euro',
   'Copa America': 'conmebol.america',
-}
-
-function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch['provider']): DataProvider {
-  if (source === 'espn' || source === 'fotmob' || source === 'error') return source
-  return 'none'
 }
 
 function matchHref(m: TodayMatch): string | undefined {
@@ -256,6 +251,17 @@ export default function Home() {
       />
 
       <div className="mx-auto w-full max-w-5xl px-3 pb-8 pt-3 sm:px-4">
+        {/* Featured strip — up to six notable fixtures from the same payload
+            (live first, then league priority). Sits between the date strip and
+            the filter row so the segment control stays glued to the list it
+            filters. Renders nothing below two crest-complete fixtures. */}
+        <FeaturedStrip
+          matches={[...live, ...upcoming, ...completed]}
+          priorityFor={leaguePriority}
+          hrefFor={matchHref}
+          className="mb-2"
+        />
+
         {/* Filter row — segment control + watchlist toggle, one quiet line */}
         <div className="mb-2 flex items-center gap-1">
           {(['all', 'live', 'finished'] as const).map((t) => {
@@ -344,13 +350,8 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Provenance + disclaimer — one quiet line, not a banner */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
-          <DataSourceBadge
-            provider={resolveDataProvider(matches.source)}
-            detail={matches.sourceDetail || 'Match feed'}
-            compact
-          />
+        {/* Disclaimer — one quiet line, not a banner */}
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
             Predictions are educational only — not betting advice.
           </p>

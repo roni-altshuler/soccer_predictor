@@ -16,6 +16,20 @@ import {
   DotPattern,
 } from '@/components/magicui'
 import { ConfidencePill, LiveBadge, PlayerAvatar, TeamBadge } from '@/components/primitives'
+import {
+  ChartContainer,
+  FactorMeters,
+  FeaturedMatchCarousel,
+  FormTrend,
+  H2HMatrix,
+  NarrativeCard,
+  OutcomeBars,
+  ProgressionChart,
+  ScorelineHeatmap,
+  type FeaturedMatch,
+  type ScorelineCell,
+} from '@/components/viz'
+import { AnimatedNumber, ClubColorBar } from '@/components/motion'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -85,6 +99,190 @@ const TYPE_SAMPLES: Array<{ tier: string; classes: string; sample: string }> = [
   { tier: 'numeric (NEW)', classes: 'text-h1 font-numeric tabular-nums', sample: '2 – 1' },
 ]
 
+/* ---------------------------------------------------------------- */
+/* Viz kit (v3.1) sample data — Arsenal v Liverpool, realistic shapes */
+/* ---------------------------------------------------------------- */
+
+const ARSENAL_CREST = 'https://a.espncdn.com/i/teamlogos/soccer/500/359.png'
+const LIVERPOOL_CREST = 'https://a.espncdn.com/i/teamlogos/soccer/500/364.png'
+const ARSENAL_RED = '#EF0107'
+const LIVERPOOL_RED = '#C8102E'
+
+const OUTCOME_SAMPLE = [
+  {
+    label: 'Arsenal',
+    probability: 0.47,
+    rawProbability: 0.52,
+    color: ARSENAL_RED,
+    crestUrl: ARSENAL_CREST,
+    sublabel: 'Home',
+  },
+  { label: 'Draw', probability: 0.27, rawProbability: 0.24, color: 'var(--accent-warn)' },
+  {
+    label: 'Liverpool',
+    probability: 0.26,
+    rawProbability: 0.24,
+    color: LIVERPOOL_RED,
+    crestUrl: LIVERPOOL_CREST,
+    sublabel: 'Away',
+  },
+]
+
+function poisson(lambda: number, k: number): number {
+  let fact = 1
+  for (let i = 2; i <= k; i++) fact *= i
+  return (Math.exp(-lambda) * Math.pow(lambda, k)) / fact
+}
+
+/** Independent-Poisson scoreline grid (λ home 1.8, away 1.1) — demo only. */
+function buildScorelineSample(): ScorelineCell[] {
+  const cells: ScorelineCell[] = []
+  for (let home = 0; home <= 5; home++) {
+    for (let away = 0; away <= 5; away++) {
+      cells.push({ home, away, probability: poisson(1.8, home) * poisson(1.1, away) })
+    }
+  }
+  return cells
+}
+
+const SCORELINE_SAMPLE = buildScorelineSample()
+
+/** Cumulative points through MD24 from deterministic W/D/L strings. */
+function cumulativePoints(results: string): number[] {
+  const out: number[] = []
+  let total = 0
+  for (const r of results) {
+    total += r === 'W' ? 3 : r === 'D' ? 1 : 0
+    out.push(total)
+  }
+  return out
+}
+
+const PROGRESSION_SAMPLE = [
+  {
+    key: 'ars',
+    label: 'Arsenal',
+    color: ARSENAL_RED,
+    values: cumulativePoints('WWDWWLWWWDWWDWLWWWWDWWWW'),
+  },
+  {
+    key: 'liv',
+    label: 'Liverpool',
+    color: LIVERPOOL_RED,
+    values: cumulativePoints('WDWWWWDLWWWDWWWWDWLWWDWW'),
+  },
+]
+
+const FACTOR_SAMPLE = [
+  {
+    label: 'Home form',
+    value: 0.82,
+    tone: 'advantage' as const,
+    detail: '13 points from the last five at the Emirates.',
+  },
+  {
+    label: 'Attacking output',
+    value: 0.64,
+    tone: 'advantage' as const,
+    detail: 'xG 2.1 per match over the last month.',
+  },
+  {
+    label: 'Injury list',
+    value: 0.48,
+    tone: 'risk' as const,
+    detail: 'First-choice centre-back doubtful after international duty.',
+  },
+  {
+    label: 'Congested schedule',
+    value: 0.3,
+    tone: 'risk' as const,
+    detail: 'Third match in eight days.',
+  },
+]
+
+const H2H_ENTITIES = [
+  { id: 'ars', label: 'Arsenal', crestUrl: ARSENAL_CREST },
+  { id: 'liv', label: 'Liverpool', crestUrl: LIVERPOOL_CREST },
+  { id: 'mci', label: 'Manchester City', crestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/382.png' },
+  { id: 'che', label: 'Chelsea', crestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/363.png' },
+]
+
+const H2H_MATRIX: Array<Array<number | null>> = [
+  [null, 0.55, 0.48, 0.62],
+  [0.45, null, 0.44, 0.58],
+  [0.52, 0.56, null, 0.65],
+  [0.38, 0.42, 0.35, null],
+]
+
+const NARRATIVE_SAMPLE = [
+  {
+    tone: 'edge' as const,
+    title: 'Set-piece threat',
+    detail: 'Arsenal have scored from a corner in six of the last eight home matches.',
+  },
+  {
+    tone: 'risk' as const,
+    title: 'Counter-attack exposure',
+    detail: 'Liverpool average 3.4 shots per match from fast breaks, the most in the league.',
+  },
+  {
+    tone: 'watch' as const,
+    title: 'Referee profile',
+    detail: 'Saturday referee averages 4.8 cards per match this season.',
+  },
+  {
+    tone: 'note' as const,
+    title: 'Head to head',
+    detail: 'Three of the last four league meetings here finished level.',
+  },
+]
+
+const CAROUSEL_SAMPLE: FeaturedMatch[] = [
+  {
+    id: 'ars-liv',
+    homeTeam: 'Arsenal',
+    awayTeam: 'Liverpool',
+    homeCrestUrl: ARSENAL_CREST,
+    awayCrestUrl: LIVERPOOL_CREST,
+    homeColor: ARSENAL_RED,
+    awayColor: LIVERPOOL_RED,
+    league: 'Premier League · Matchweek 24',
+    kickoff: 'Sat 17:30',
+    status: 'live',
+    statusDetail: "74'",
+    aiPick: 'AI 2-1',
+    href: '#viz-kit',
+  },
+  {
+    id: 'mci-che',
+    homeTeam: 'Man City',
+    awayTeam: 'Chelsea',
+    homeCrestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/382.png',
+    awayCrestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/363.png',
+    homeColor: '#6CABDD',
+    awayColor: '#034694',
+    league: 'Premier League · Matchweek 24',
+    kickoff: 'Sun 16:30',
+    status: 'upcoming',
+    aiPick: 'AI 1X',
+    href: '#viz-kit',
+  },
+  {
+    id: 'tot-mun',
+    homeTeam: 'Tottenham',
+    awayTeam: 'Man Utd',
+    homeCrestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/367.png',
+    awayCrestUrl: 'https://a.espncdn.com/i/teamlogos/soccer/500/360.png',
+    homeColor: '#132257',
+    awayColor: '#DA291C',
+    league: 'Premier League · Matchweek 24',
+    kickoff: 'Sun 14:00',
+    status: 'ft',
+    statusDetail: '2 – 2',
+    href: '#viz-kit',
+  },
+]
+
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24">
@@ -149,7 +347,7 @@ export default function DesignSystemPage() {
           <Subhead>State surfaces</Subhead>
           <TokenGrid tokens={STATE_TOKENS} />
           <div className="mt-8" />
-          <Subhead>FotMob-redesign deltas (Phase 0.A)</Subhead>
+          <Subhead>Redesign deltas (Phase 0.A)</Subhead>
           <TokenGrid tokens={REDESIGN_TOKENS} />
         </Section>
 
@@ -442,6 +640,89 @@ export default function DesignSystemPage() {
               <p className="text-meta text-[var(--text-secondary)]">
                 Meta chips read `--meta-chip-bg`. Scoreboard glow comes from `--score-numeric-shadow` (dark mode only).
               </p>
+            </Card>
+          </div>
+        </Section>
+
+        <Section id="viz-kit" title="Viz kit (v3.1)">
+          <p className="mb-6 max-w-2xl text-meta text-[var(--text-secondary)]">
+            Production-grade data-viz and motion components ported from the motorsportverse F1
+            project and retokenized to Matchday v3.1 (<code className="font-mono">var(--*)</code> only,
+            flat hairline cards, reduced-motion safe). Lives in{' '}
+            <code className="font-mono">src/components/viz</code> and{' '}
+            <code className="font-mono">src/components/motion</code>. New chart surfaces compose
+            these instead of hand-rolling recharts.
+          </p>
+
+          <div className="mb-6">
+            <Subhead>FeaturedMatchCarousel — club-colour duotone fixture cards</Subhead>
+            <FeaturedMatchCarousel matches={CAROUSEL_SAMPLE} />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="p-5">
+              <Subhead>OutcomeBars — 1X2 probabilities</Subhead>
+              <OutcomeBars data={OUTCOME_SAMPLE} sorted={false} />
+              <p className="mt-2 text-meta text-[var(--text-secondary)]">
+                Club-coloured horizontal bars; hover for the raw → calibrated pair.
+              </p>
+            </Card>
+
+            <Card className="p-5">
+              <Subhead>ScorelineHeatmap — inside ChartContainer (lazy)</Subhead>
+              <ChartContainer height={300} label="Loading scoreline heatmap">
+                <ScorelineHeatmap cells={SCORELINE_SAMPLE} predicted={{ home: 2, away: 1 }} />
+              </ChartContainer>
+              <p className="mt-2 text-meta text-[var(--text-secondary)]">
+                Cyan `--accent-ai` tint by probability; the predicted 2–1 cell is outlined.
+              </p>
+            </Card>
+
+            <Card className="p-5 md:col-span-2">
+              <Subhead>ProgressionChart — cumulative points + projection</Subhead>
+              <ProgressionChart series={PROGRESSION_SAMPLE} now={24} totalSteps={38} height={300} />
+            </Card>
+
+            <Card className="p-5">
+              <Subhead>FactorMeters — why the model leans home</Subhead>
+              <FactorMeters factors={FACTOR_SAMPLE} />
+            </Card>
+
+            <Card className="p-5">
+              <Subhead>H2HMatrix — row beats column</Subhead>
+              <H2HMatrix entities={H2H_ENTITIES} matrix={H2H_MATRIX} />
+            </Card>
+
+            <NarrativeCard heading="Match angles" insights={NARRATIVE_SAMPLE} />
+
+            <Card className="space-y-5 p-5">
+              <div>
+                <Subhead>FormTrend — last 5 vs season average</Subhead>
+                <div className="space-y-4">
+                  <FormTrend label="xG per match" baseline={1.42} recent={1.95} decimals={2} />
+                  <FormTrend
+                    label="Goals conceded"
+                    baseline={1.1}
+                    recent={0.6}
+                    higherIsBetter={false}
+                    decimals={1}
+                  />
+                </div>
+              </div>
+              <div>
+                <Subhead>AnimatedNumber + ClubColorBar</Subhead>
+                <div className="flex items-center gap-3">
+                  <ClubColorBar color={ARSENAL_RED} team="Arsenal" size="lg" animate="draw" />
+                  <p className="text-display text-[var(--text-primary)]">
+                    <AnimatedNumber value={61.2} decimals={1} suffix="%" />
+                  </p>
+                  <ClubColorBar color={LIVERPOOL_RED} team="Liverpool" size="lg" animate="draw" />
+                </div>
+                <p className="mt-2 text-meta text-[var(--text-secondary)]">
+                  Count-up in tabular numerals; instant under reduced motion. Bars are the flat
+                  club-colour identity slivers.
+                </p>
+              </div>
             </Card>
           </div>
         </Section>

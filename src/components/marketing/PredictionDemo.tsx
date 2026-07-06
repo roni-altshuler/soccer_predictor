@@ -123,7 +123,7 @@ export function PredictionDemo() {
             >
               <Loader2 className="h-6 w-6 animate-spin text-[var(--accent-ai)]" aria-hidden="true" />
               <p className="text-sm text-[var(--text-tertiary)]">
-                Running {fixture.home} vs {fixture.away} through the model…
+                Running {fixture.home} vs {fixture.away} through the AI…
               </p>
             </motion.div>
           ) : (
@@ -158,10 +158,10 @@ function StatusPill({ status }: { status: Status }) {
           ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
           : 'bg-[var(--accent-warn)]/12 text-[var(--accent-warn)]',
       )}
-      title={live ? 'Computed live by the backend model' : 'Backend unreachable — showing a sample prediction'}
+      title={live ? 'Computed live by Pitchwise' : 'Backend unreachable — showing a sample prediction'}
     >
       {live ? <Wifi className="h-3 w-3" aria-hidden="true" /> : <WifiOff className="h-3 w-3" aria-hidden="true" />}
-      {live ? 'Live model' : 'Sample data'}
+      {live ? 'Live' : 'Sample data'}
     </span>
   )
 }

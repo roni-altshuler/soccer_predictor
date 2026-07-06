@@ -122,16 +122,8 @@ export default function MatchEventHeatmap({
     return points.filter((point) => point.team === focusTeam)
   }, [points, focusTeam])
 
-  if (points.length === 0) {
-    return (
-      <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Play Heatmap</h3>
-        <p className="text-xs mt-2 text-[var(--text-tertiary)]">
-          Heatmap appears once event-level match actions are available.
-        </p>
-      </div>
-    )
-  }
+  // No event data → render nothing (missing data never draws placeholders).
+  if (points.length === 0) return null
 
   const baseColor = focusTeam === 'home' ? 'var(--team-tint-home)' : 'var(--team-tint-away)'
   const maxWeight = Math.max(...focused.map((point) => point.weight), 1)
@@ -161,9 +153,9 @@ export default function MatchEventHeatmap({
       <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Play Heatmap</h3>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Play heatmap</h3>
             <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-              {usingShotmap ? 'Shot-location pressure from match shotmap data.' : 'Event-pressure view inspired by Fotmob stats tab.'}
+              {usingShotmap ? 'Where the shots came from.' : 'Where the key moments happened.'}
             </p>
           </div>
           <div className="flex gap-1 rounded-lg bg-[var(--muted-bg)] p-1">
@@ -171,7 +163,7 @@ export default function MatchEventHeatmap({
               onClick={() => setFocusTeam('home')}
               className={`px-3 py-1.5 text-xs rounded-md font-semibold transition-colors ${
                 focusTeam === 'home'
-                  ? 'bg-[var(--accent-primary)] text-white'
+                  ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -181,7 +173,7 @@ export default function MatchEventHeatmap({
               onClick={() => setFocusTeam('away')}
               className={`px-3 py-1.5 text-xs rounded-md font-semibold transition-colors ${
                 focusTeam === 'away'
-                  ? 'bg-[var(--accent-primary)] text-white'
+                  ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -189,11 +181,11 @@ export default function MatchEventHeatmap({
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-[var(--text-tertiary)] mt-2">
-          {usingShotmap
-            ? 'Using real shot coordinates when available from match providers.'
-            : 'Current source uses deterministic event positions as a proxy until shot coordinates are wired.'}
-        </p>
+        {!usingShotmap && (
+          <p className="text-[10px] text-[var(--text-tertiary)] mt-2">
+            Approximate view built from match events — not exact pitch locations.
+          </p>
+        )}
       </div>
 
       <div className="p-4 space-y-3">

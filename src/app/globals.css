@@ -144,21 +144,22 @@
 }
 
 .dark {
-  /* Matchday v3 dark — neutral charcoal, zero blue undertone. The product
-     grammar of FotMob/ESPN dark modes: calm surfaces, hairline structure. */
-  --background: #0e0e10;
-  --background-secondary: #121215;
-  --background-tertiary: #1a1a1e;
-  --card-bg: #17171b;
-  --card-hover: #1e1e23;
-  --input-bg: #1c1c21;
-  --muted-bg: #1e1e23;
-  --nav-bg: rgba(17, 17, 20, 0.94);
-  --nav-border: #26262b;
+  /* Matchday v3.1 dark — lifted charcoal with a faint pitch-green cast
+     (hue ~150, sat 4-6%): lighter than v3 per product direction, and the
+     undertone quietly says "football" without reading as a colored theme. */
+  --background: #171a18;
+  --background-secondary: #1b1e1c;
+  --background-tertiary: #242825;
+  --card-bg: #1f2320;
+  --card-hover: #272b28;
+  --input-bg: #252927;
+  --muted-bg: #272b28;
+  --nav-bg: rgba(28, 32, 29, 0.94);
+  --nav-border: #333835;
 
-  --text-primary: #f5f5f6;
-  --text-secondary: #a6a6ae;
-  --text-tertiary: #74747e;
+  --text-primary: #f6f7f6;
+  --text-secondary: #b2b6b3;
+  --text-tertiary: #7f847f;
 
   --accent-primary: #00c060;
   --accent-primary-soft: #34d380;
@@ -175,8 +176,8 @@
   --accent-women: #f871b0;
   --accent-women-soft: #f9a8d4;
 
-  --border-color: #26262b;
-  --border-hover: #3a3a42;
+  --border-color: #333835;
+  --border-hover: #464c47;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
@@ -197,8 +198,8 @@
   --ticker-bg: linear-gradient(to right, #07101f, #14223a);
 
   /* Dark-mode glass overrides (flat in v3) */
-  --glass-bg: rgba(23, 23, 27, 0.94);
-  --glass-border: #26262b;
+  --glass-bg: rgba(31, 35, 32, 0.94);
+  --glass-border: #333835;
   --bento-hl: color-mix(in srgb, var(--accent-ai) 22%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 22%, transparent);
 

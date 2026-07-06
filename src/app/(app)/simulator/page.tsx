@@ -35,7 +35,7 @@ export default function SimulatorPage() {
             Simulator
           </h1>
           <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
-            Monte Carlo knockout brackets and title-race maths — run thousands of seasons.
+            Simulated knockout brackets and title-race maths — run thousands of seasons.
           </p>
         </div>
 
@@ -118,22 +118,20 @@ export default function SimulatorPage() {
           </div>
         )}
 
-        {/* Methodology — context-specific */}
+        {/* How it works — context-specific */}
         <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
-          <SectionHeader kicker="Under the hood" title="Methodology" className="mb-3" />
+          <SectionHeader kicker="Good to know" title="How it works" className="mb-3" />
           {mode === 'tournament' ? (
             <ul className="list-inside list-disc space-y-1 text-xs text-[var(--text-secondary)]">
-              <li>Bradley-Terry model for match probability</li>
-              <li>ELO ratings adjusted for home advantage &amp; form</li>
-              <li>Monte Carlo: 10,000+ iterations</li>
-              <li>Tournament-specific rules (two-legged ties, away goals)</li>
+              <li>Each bracket is played out thousands of times, match by match</li>
+              <li>Team strength reflects long-run ratings, home advantage, and form</li>
+              <li>Tournament-specific rules (two-legged ties, away goals) are respected</li>
             </ul>
           ) : (
             <ul className="list-inside list-disc space-y-1 text-xs text-[var(--text-secondary)]">
-              <li>Bradley-Terry match probability with home advantage (~1.35×)</li>
-              <li>Team strength derived from current points-per-game (no ML retrain)</li>
-              <li>League-specific draw rate calibration</li>
-              <li>Monte Carlo over all remaining fixtures (ESPN scoreboard) — 1k–25k runs</li>
+              <li>Every remaining fixture is simulated thousands of times — 1k–25k runs</li>
+              <li>Team strength is derived from current standings and points-per-game</li>
+              <li>Draw rates are tuned per league</li>
               <li>What-if mode: lock one fixture outcome and re-simulate the rest</li>
               <li>Title race table: pure mathematics (max possible vs leader&apos;s current)</li>
             </ul>

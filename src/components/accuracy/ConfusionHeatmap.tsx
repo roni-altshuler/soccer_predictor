@@ -43,7 +43,7 @@ export function ConfusionHeatmap({ rows, className }: ConfusionHeatmapProps) {
     <Card className={cn('p-4 md:p-5', className)}>
       <SectionHeader
         kicker="Outcome audit"
-        title="Confusion matrix"
+        title="Picks vs results"
         className="mb-3"
         action={
           <p className="text-[10px] text-[var(--text-tertiary)]">

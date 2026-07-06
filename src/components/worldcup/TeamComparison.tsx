@@ -65,7 +65,7 @@ export default function TeamComparison({ teams }: { teams: BracketTeam[] }) {
   const winB = 1 - winA
 
   const rows: Row[] = [
-    { label: 'Elo rating', a: eloA, b: eloB, format: (n) => n.toFixed(0), higherIsBetter: true },
+    { label: 'Team rating', a: eloA, b: eloB, format: (n) => n.toFixed(0), higherIsBetter: true },
     { label: 'Win the tournament', a: a.p_champion, b: b.p_champion, format: pct, higherIsBetter: true },
     { label: 'Reach the final', a: a.p_final, b: b.p_final, format: pct, higherIsBetter: true },
     { label: 'Reach the semi-finals', a: a.p_semi, b: b.p_semi, format: pct, higherIsBetter: true },
@@ -113,7 +113,7 @@ export default function TeamComparison({ teams }: { teams: BracketTeam[] }) {
           </motion.div>
         </div>
         <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-          Elo expected result — the draw share is folded into each side&apos;s win expectancy.
+          Expected result from team ratings — the draw share is folded into each side&apos;s win expectancy.
         </p>
       </div>
 

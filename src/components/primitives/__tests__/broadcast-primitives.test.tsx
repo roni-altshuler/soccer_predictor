@@ -24,10 +24,10 @@ describe('broadcast primitives', () => {
   })
 
   it('StatCard renders label and value', () => {
-    render(<StatCard label="Accuracy" value="60.6%" sub="holdout" accent="ai" />)
+    render(<StatCard label="Accuracy" value="60.6%" sub="settled picks" accent="ai" />)
     expect(screen.getByText('Accuracy')).toBeInTheDocument()
     expect(screen.getByText('60.6%')).toBeInTheDocument()
-    expect(screen.getByText('holdout')).toBeInTheDocument()
+    expect(screen.getByText('settled picks')).toBeInTheDocument()
   })
 
   it('ProbBar exposes an accessible probability label and renormalises', () => {

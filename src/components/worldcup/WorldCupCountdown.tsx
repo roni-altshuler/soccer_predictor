@@ -98,7 +98,7 @@ export default function WorldCupCountdown({ compact = false }: { compact?: boole
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-[var(--text-tertiary)]">
-              World Cup fixtures use the `fifa.world` pipeline and the global fallback when tournament sample size is limited.
+              Every World Cup fixture gets a prediction — with a broader fallback when tournament sample size is limited.
             </p>
             <Link
               href="/world-cup"

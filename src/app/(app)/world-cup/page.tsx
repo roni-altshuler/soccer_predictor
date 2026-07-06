@@ -14,7 +14,7 @@ export const revalidate = 300
 export const metadata: Metadata = {
   title: 'World Cup 2026 — AI predictions',
   description:
-    'AI-powered 2026 FIFA World Cup hub: tournament winner probabilities, group advancement odds, and live match predictions from calibrated Monte Carlo simulations.',
+    'AI-powered 2026 FIFA World Cup hub: tournament winner probabilities, group advancement odds, and live match predictions from thousands of simulated tournament runs.',
 }
 
 const STANDINGS_URL = 'https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings'
@@ -169,12 +169,12 @@ export default async function WorldCupHubPage() {
             Who wins the World Cup?
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-body text-[var(--text-secondary)]">
-            Calibrated Monte Carlo simulations over the official 48-team bracket — winner
+            Thousands of simulated tournament runs over the official 48-team bracket — winner
             probabilities, group advancement odds, and a prediction for every match.
           </p>
           {favourite ? (
             <p className="mt-4 text-small text-[var(--text-secondary)]">
-              Current model favourite:{' '}
+              Current favourite:{' '}
               <span className="font-bold text-[var(--text-primary)]">{favourite.name}</span>{' '}
               <span className="font-mono text-[var(--accent-ai)]">
                 {(favourite.pChampion * 100).toFixed(1)}%

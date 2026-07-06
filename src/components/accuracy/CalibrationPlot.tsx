@@ -43,23 +43,23 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
   return (
     <Card className={cn('p-4 md:p-5', className)}>
       <SectionHeader
-        kicker="Probability audit"
-        title="Calibration"
+        kicker="Reality check"
+        title="Do the percentages hold up?"
         className="mb-3"
         action={
           <p className="text-[10px] text-[var(--text-tertiary)]">
-            On the diagonal = perfectly calibrated
+            On the diagonal = 60% picks win about 60% of the time
           </p>
         }
       />
 
       {bins.length === 0 ? (
         <div className="flex h-[360px] items-center justify-center rounded-lg border border-dashed border-[var(--border-color)] text-sm text-[var(--text-tertiary)]">
-          Not enough completed predictions to plot calibration yet.
+          Not enough completed predictions to plot this yet.
         </div>
       ) : (
         <TooltipProvider delayDuration={150}>
-          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Model calibration plot" className="w-full">
+          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Prediction confidence versus actual results" className="w-full">
             {/* Background grid */}
             {[0, 0.25, 0.5, 0.75, 1].map((t) => (
               <g key={t}>

@@ -1,32 +1,34 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Activity, Brain, Trophy, Goal, ShieldAlert, Sparkles } from 'lucide-react'
+import { Activity, Brain, Goal, ShieldAlert, Sparkles } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Prob1X2 } from '@/components/primitives'
 import { WhyThisPrediction } from '@/components/prediction/WhyThisPrediction'
+import {
+  ChartContainer,
+  OutcomeBars,
+  ScorelineHeatmap,
+  type OutcomeBarDatum,
+  type ScorelineCell,
+} from '@/components/viz'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { cn, clamp, formatPct } from '@/lib/utils'
+
+/**
+ * Team identity tints — the match-detail page defines `--team-tint-home` /
+ * `--team-tint-away` per fixture (club/league colours); everywhere else the
+ * bars fall back to the Matchday brand tokens.
+ */
+const HOME_TINT = 'var(--team-tint-home, var(--accent-primary))'
+const AWAY_TINT = 'var(--team-tint-away, var(--accent-info))'
 
 /** Flat v3 card surface — 1px hairline, 12px radius, no elevation/glow. */
 const FLAT_CARD =
   'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5'
-
-/**
- * Humanize an internal model identifier into a reader-facing label.
- * Never surface raw pipeline ids like "unified-multitask-1.0".
- */
-function humanizeModelVersion(raw?: string): string | null {
-  if (!raw) return null
-  const v = raw.toLowerCase()
-  if (v.includes('unified') || v.includes('multitask')) return 'Unified AI model'
-  if (v.includes('legacy') || v.includes('elo') || v.includes('poisson'))
-    return 'Elo-Poisson baseline'
-  return 'AI model'
-}
 
 /**
  * Showcase prediction visualization, designed for the AI prediction page
@@ -98,95 +100,58 @@ interface PredictionResultProps {
 
 /* ---------------- helpers ---------------- */
 
-function OutcomeBars({ outcome, homeTeam, awayTeam }: { outcome: PredictionPayload['outcome']; homeTeam: string; awayTeam: string }) {
-  const items: { label: string; pct: number; tone: 'home' | 'draw' | 'away' }[] = [
-    { label: `${homeTeam} win`, pct: clamp(outcome.home_win), tone: 'home' },
-    { label: 'Draw', pct: clamp(outcome.draw), tone: 'draw' },
-    { label: `${awayTeam} win`, pct: clamp(outcome.away_win), tone: 'away' },
-  ]
-  const toneStyles: Record<string, { bg: string; track: string; text: string }> = {
-    home: { bg: 'bg-[var(--accent-primary)]', track: 'bg-[var(--accent-primary)]/15', text: 'text-[var(--accent-primary)]' },
-    draw: { bg: 'bg-[var(--accent-warn)]', track: 'bg-[var(--accent-warn)]/15', text: 'text-[var(--accent-warn)]' },
-    away: { bg: 'bg-[var(--accent-loss)]', track: 'bg-[var(--accent-loss)]/15', text: 'text-[var(--accent-loss)]' },
-  }
+/**
+ * Quiet confidence chip — replaces the old circular gauge. One line of
+ * tabular numerals on a hairline chip; no needles, no dials.
+ */
+function ConfidenceChip({ value }: { value: number }) {
+  const pct = clamp(value)
+  const band = pct >= 0.7 ? 'High' : pct >= 0.45 ? 'Medium' : 'Low'
   return (
-    <div className="space-y-3">
-      {items.map((it) => {
-        const styles = toneStyles[it.tone]
-        return (
-          <div key={it.label}>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="truncate text-small font-medium text-[var(--text-primary)]">{it.label}</span>
-              <span className={cn('text-small font-bold tabular-nums', styles.text)}>{formatPct(it.pct)}</span>
-            </div>
-            <div className={cn('h-2.5 w-full overflow-hidden rounded-full', styles.track)}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${it.pct * 100}%` }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className={cn('h-full rounded-full', styles.bg)}
-              />
-            </div>
-          </div>
-        )
-      })}
-    </div>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)]"
+      aria-label={`Prediction confidence ${Math.round(pct * 100)} percent, ${band}`}
+    >
+      <span className="tabular-nums text-[var(--text-primary)]">{Math.round(pct * 100)}%</span>
+      <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+        {band} confidence
+      </span>
+    </span>
   )
 }
 
-function ConfidenceGauge({ value, label }: { value: number; label?: string }) {
-  const pct = clamp(value)
-  const size = 96
-  const stroke = 8
-  const radius = (size - stroke) / 2
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference * (1 - pct)
-  const colour =
-    pct >= 0.7
-      ? 'var(--accent-primary)'
-      : pct >= 0.4
-      ? 'var(--accent-ai)'
-      : 'var(--accent-warn)'
+/** Map the 1X2 outcome triple onto club-coloured OutcomeBars rows. */
+function buildOutcomeRows(prediction: PredictionPayload): OutcomeBarDatum[] {
+  return [
+    {
+      label: prediction.home_team,
+      probability: clamp(prediction.outcome.home_win),
+      color: HOME_TINT,
+      sublabel: 'Home',
+    },
+    { label: 'Draw', probability: clamp(prediction.outcome.draw), color: 'var(--accent-warn)' },
+    {
+      label: prediction.away_team,
+      probability: clamp(prediction.outcome.away_win),
+      color: AWAY_TINT,
+      sublabel: 'Away',
+    },
+  ]
+}
 
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="var(--muted-bg)"
-            strokeWidth={stroke}
-            fill="none"
-          />
-          <motion.circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={colour}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            fill="none"
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            style={{ strokeDasharray: circumference }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-h3 font-black text-[var(--text-primary)] tabular-nums">
-            {Math.round(pct * 100)}%
-          </span>
-          {label && (
-            <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-              {label}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+/** Scoreline distribution cells from the payload's top scorelines. */
+function buildScorelineCells(prediction: PredictionPayload): ScorelineCell[] {
+  const all = [prediction.most_likely_score, ...prediction.alternative_scores]
+  const seen = new Set<string>()
+  const cells: ScorelineCell[] = []
+  for (const s of all) {
+    if (!s || !Number.isFinite(s.probability) || s.probability <= 0) continue
+    const key = `${s.home_goals}-${s.away_goals}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    cells.push({ home: s.home_goals, away: s.away_goals, probability: s.probability })
+  }
+  return cells
 }
 
 function XGCompare({ home, away, homeTeam, awayTeam }: { home: number; away: number; homeTeam: string; awayTeam: string }) {
@@ -203,13 +168,15 @@ function XGCompare({ home, away, homeTeam, awayTeam }: { home: number; away: num
       </div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--muted-bg)] ring-1 ring-[var(--border-color)]">
         <motion.div
-          className="h-full bg-[var(--accent-primary)]"
+          className="h-full"
+          style={{ background: HOME_TINT }}
           initial={{ width: 0 }}
           animate={{ width: `${homePct}%` }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />
         <motion.div
-          className="h-full bg-[var(--accent-loss)]"
+          className="h-full"
+          style={{ background: AWAY_TINT }}
           initial={{ width: 0 }}
           animate={{ width: `${awayPct}%` }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -223,56 +190,44 @@ function XGCompare({ home, away, homeTeam, awayTeam }: { home: number; away: num
   )
 }
 
-function ScorelineGrid({
+/**
+ * Scoreline panel — a probability heatmap of the model's top scorelines
+ * (predicted cell outlined) when a real distribution exists; a single quiet
+ * chip when only the headline scoreline is known. Never pads the grid with
+ * fabricated cells.
+ */
+function ScorelinePanel({
+  cells,
   mostLikely,
-  alternatives,
 }: {
+  cells: ScorelineCell[]
   mostLikely: PredictionPayload['most_likely_score']
-  alternatives: PredictionPayload['alternative_scores']
 }) {
-  const all = [mostLikely, ...alternatives].slice(0, 5)
-  const max = Math.max(...all.map((s) => s.probability), 1e-3)
+  if (cells.length >= 3) {
+    return (
+      /* Heatmap height ≈ width (square grid + 48px axes); cap the width so
+         the reserved box never clips the bottom rows. */
+      <ChartContainer height={332} label="Loading scoreline probabilities">
+        <div className="mx-auto" style={{ maxWidth: 328 }}>
+          {/* No `predicted` override — the heatmap outlines its true peak
+              cell, so an unsorted upstream list can't outline an off-mode
+              scoreline. */}
+          <ScorelineHeatmap cells={cells} maxGoals={4} />
+        </div>
+      </ChartContainer>
+    )
+  }
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-      {all.map((s, idx) => {
-        const isTop = idx === 0
-        return (
-          <motion.div
-            key={`${s.score}-${idx}`}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * idx, duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className={cn(
-              'rounded-lg border px-3 py-2 text-center',
-              isTop
-                ? 'border-[var(--accent-primary)]/60 bg-[var(--accent-primary)]/10'
-                : 'border-[var(--border-color)] bg-[var(--card-bg)]'
-            )}
-          >
-            <div className="mb-1 flex items-center justify-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-              {isTop && <Trophy className="h-3 w-3 text-[var(--accent-primary)]" strokeWidth={2.5} />}
-              {isTop ? 'Most likely' : `Alt #${idx}`}
-            </div>
-            <div
-              className={cn(
-                'text-h3 font-black tabular-nums',
-                isTop ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'
-              )}
-            >
-              {s.score}
-            </div>
-            <div className="mt-1 text-[10px] text-[var(--text-tertiary)]">{formatPct(s.probability, 1)}</div>
-            <div className="mt-1 h-1 overflow-hidden rounded-full bg-[var(--surface-muted)]/20">
-              <motion.div
-                className={cn('h-full', isTop ? 'bg-[var(--accent-primary)]' : 'bg-[var(--accent-ai)]')}
-                initial={{ width: 0 }}
-                animate={{ width: `${(s.probability / max) * 100}%` }}
-                transition={{ duration: 0.5, delay: 0.1 + 0.05 * idx, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </div>
-          </motion.div>
-        )
-      })}
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-3 py-1.5">
+        <span className="text-h4 font-bold tabular-nums text-[var(--text-primary)]">
+          {mostLikely.score}
+        </span>
+        <span className="text-caption tabular-nums text-[var(--text-secondary)]">
+          {formatPct(mostLikely.probability, 1)}
+        </span>
+      </span>
+      <span className="text-caption text-[var(--text-tertiary)]">Most likely scoreline</span>
     </div>
   )
 }
@@ -325,7 +280,7 @@ function buildDrivers(
     {
       label: 'Rating edge',
       lean: Math.tanh(factors.elo_difference / 200),
-      detail: `${fmtElo(factors.home_elo)} vs ${fmtElo(factors.away_elo)} · Δ ${factors.elo_difference >= 0 ? '+' : ''}${fmtElo(factors.elo_difference)} Elo`,
+      detail: `Ratings ${fmtElo(factors.home_elo)} vs ${fmtElo(factors.away_elo)} · edge ${factors.elo_difference >= 0 ? '+' : ''}${fmtElo(factors.elo_difference)}`,
     },
     {
       label: 'Recent form',
@@ -447,7 +402,8 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
   const { home_win, draw, away_win } = prediction.outcome
   const predictedOutcome: 'home' | 'draw' | 'away' =
     home_win >= draw && home_win >= away_win ? 'home' : away_win >= draw ? 'away' : 'draw'
-  const modelLabel = humanizeModelVersion(prediction.model_version)
+  const outcomeRows = buildOutcomeRows(prediction)
+  const scorelineCells = buildScorelineCells(prediction)
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -459,47 +415,43 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Brain className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
-            <h2 className="text-h4 font-bold text-[var(--text-primary)]">Outcome probabilities</h2>
+            <h2 className="text-h4 font-bold text-[var(--text-primary)]">Win probability</h2>
           </div>
-          <Badge variant="outline" className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
-            {prediction.league}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
+              {prediction.league}
+            </Badge>
+            {/* Confidence as a quiet chip — no gauges, no needles. */}
+            <ConfidenceChip value={prediction.confidence.overall} />
+          </div>
         </div>
         {/* bet365-grammar 1X2 boxes — argmax tinted cyan */}
-        <div className="mb-4 flex items-center justify-center">
+        <div className="mb-3 flex items-center justify-center">
           <Prob1X2
             home={prediction.outcome.home_win}
             draw={prediction.outcome.draw}
             away={prediction.outcome.away_win}
           />
         </div>
-        <OutcomeBars
-          outcome={prediction.outcome}
+        {/* Club-coloured Home/Draw/Away probability rows (viz kit). */}
+        <OutcomeBars data={outcomeRows} sorted={false} />
+      </div>
+
+      <div className={cn(FLAT_CARD, 'flex flex-col gap-3')}>
+        <div className="flex items-center gap-2">
+          <Goal className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
+          <h3 className="text-h4 font-bold text-[var(--text-primary)]">Goals & markets</h3>
+          <Badge variant="outline" className="ml-auto">
+            {totalXg.toFixed(2)} total xG
+          </Badge>
+        </div>
+        <XGCompare
+          home={prediction.goals.home_expected_goals}
+          away={prediction.goals.away_expected_goals}
           homeTeam={prediction.home_team}
           awayTeam={prediction.away_team}
         />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className={cn(FLAT_CARD, 'flex flex-col items-center justify-center gap-2')}>
-          <ConfidenceGauge value={prediction.confidence.overall} label="Confidence" />
-        </div>
-        <div className={cn(FLAT_CARD, 'col-span-1 flex flex-col justify-between gap-3 md:col-span-2')}>
-          <div className="flex items-center gap-2">
-            <Goal className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
-            <h3 className="text-h4 font-bold text-[var(--text-primary)]">Goals & markets</h3>
-            <Badge variant="outline" className="ml-auto">
-              {totalXg.toFixed(2)} total xG
-            </Badge>
-          </div>
-          <XGCompare
-            home={prediction.goals.home_expected_goals}
-            away={prediction.goals.away_expected_goals}
-            homeTeam={prediction.home_team}
-            awayTeam={prediction.away_team}
-          />
-          <MarketsStrip goals={prediction.goals} />
-        </div>
+        <MarketsStrip goals={prediction.goals} />
       </div>
 
       <div className={FLAT_CARD}>
@@ -507,10 +459,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
           <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
           <h3 className="text-h4 font-bold text-[var(--text-primary)]">Most likely scorelines</h3>
         </div>
-        <ScorelineGrid
-          mostLikely={prediction.most_likely_score}
-          alternatives={prediction.alternative_scores}
-        />
+        <ScorelinePanel cells={scorelineCells} mostLikely={prediction.most_likely_score} />
       </div>
 
       <div className={FLAT_CARD}>
@@ -528,7 +477,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
               </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-[260px]">
-              The signals the unified model weighed, ordered by how strongly each
+              The signals behind this prediction, ordered by how strongly each
               leans. Bars show <em>which side</em> a factor favours and its relative
               strength — not an exact split of the win probability.
             </TooltipContent>
@@ -552,7 +501,6 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
 
       <Separator className="opacity-50" />
       <p className="text-center text-[10px] text-[var(--text-tertiary)]">
-        {modelLabel ? `${modelLabel} · ` : ''}
         Predictions are for educational/entertainment purposes only. Not intended for betting.
       </p>
     </motion.div>

@@ -1069,7 +1069,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
             <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-[var(--accent-warn-soft)] text-sm font-medium">🏆 Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
+                  <p className="text-[var(--accent-warn-soft)] text-sm font-medium">🏆 Simulated {simulationResults.n_simulations.toLocaleString()} times</p>
                   <p className="text-white font-bold text-lg">{simulationResults.most_likely_winner} to win the tournament</p>
                   <p className="text-white/70 text-sm mt-1">
                     Top contenders: {simulationResults.teams.slice(0, 3).map(t => `${t.team_name} (${(t.win_probability * 100).toFixed(1)}%)`).join(', ')}
@@ -1248,8 +1248,8 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                     <h3 className="text-xl font-bold text-[var(--text-primary)]">Tournament Simulation</h3>
                     <p className="text-sm text-[var(--text-secondary)]">
                       {tournamentId === 'champions_league'
-                        ? 'Monte Carlo projection from the current semi-final bracket'
-                        : 'Monte Carlo simulation using team standings and goal difference'}
+                        ? 'Simulated projection from the current semi-final bracket'
+                        : 'Simulation using team standings and goal difference'}
                     </p>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -1572,7 +1572,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                   {/* Disclaimer */}
                   <div className="p-4 rounded-xl bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)]">
                     <p className="text-sm text-[var(--accent-warn)] text-center">
-                      <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, bracket state, and team ratings.
+                      <span className="font-semibold">Note:</span> Predictions are based on thousands of simulated tournament runs using current standings, bracket state, and team ratings.
                       Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                     </p>
                   </div>
@@ -1584,7 +1584,7 @@ export default function TournamentHomePage({ tournamentId, tournamentName }: Tou
                 <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl border border-[var(--border-color)] p-8 text-center">
                   <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Tournament Simulation</h3>
                   <p className="text-[var(--text-secondary)] max-w-md mx-auto">
-                    Run a Monte Carlo simulation to project the tournament winner and remaining knockout path.
+                    Run a simulation to project the tournament winner and remaining knockout path.
                   </p>
                 </div>
               )}

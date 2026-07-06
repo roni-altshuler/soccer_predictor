@@ -28,7 +28,7 @@ const FEATURES: Feature[] = [
   {
     Icon: Sparkles,
     title: 'AI predictions, not guesses',
-    body: 'Run any fixture through the unified model: home/draw/away probabilities, expected goals, the most-likely scoreline, and a confidence the model is willing to be measured against.',
+    body: 'Run any fixture through the AI: home/draw/away probabilities, expected goals, the most-likely scoreline, and a confidence it is willing to be measured against.',
     href: '/predict',
     cta: 'Run a prediction',
     span: 'lg:col-span-2 lg:row-span-2',
@@ -37,7 +37,7 @@ const FEATURES: Feature[] = [
   {
     Icon: Radio,
     title: 'Live scores, 3× daily',
-    body: 'Every major league, refreshed automatically — with honest data-source badges and never a fabricated row.',
+    body: 'Every major league, refreshed automatically — and never a fabricated row.',
     href: '/',
     cta: 'Open Match Centre',
     span: 'lg:col-span-1',
@@ -46,7 +46,7 @@ const FEATURES: Feature[] = [
   {
     Icon: BarChart3,
     title: 'Accuracy you can audit',
-    body: 'Public Brier score, calibration curve, and confusion matrix — the running win rate against a 33% baseline.',
+    body: 'A public track record: hit rates, honesty-checked percentages, and the running win rate against a 33% baseline.',
     href: '/accuracy',
     cta: 'See accuracy',
     span: 'lg:col-span-1',
@@ -54,7 +54,7 @@ const FEATURES: Feature[] = [
   },
   {
     Icon: Trophy,
-    title: 'Monte Carlo simulator',
+    title: 'Season simulator',
     body: 'Simulate a full season and watch a single what-if result reshape the title race, the top four, and the drop zone.',
     href: '/simulator',
     cta: 'Try the simulator',
@@ -64,7 +64,7 @@ const FEATURES: Feature[] = [
   {
     Icon: Users,
     title: "Women's & men's, first-class",
-    body: 'A dedicated women’s model — not an afterthought. Toggle universes anywhere; accuracy is tracked separately for each.',
+    body: 'The women’s game is covered in its own right — not an afterthought. Toggle universes anywhere; accuracy is tracked separately for each.',
     href: '/',
     cta: 'Explore both',
     span: 'lg:col-span-1',
@@ -121,10 +121,10 @@ export function FeatureBento() {
           titleId="features-heading"
           title={
             <>
-              One model. <span className="mkt-headline-gradient">Six ways</span> to use it.
+              One engine. <span className="mkt-headline-gradient">Six ways</span> to use it.
             </>
           }
-          lede="The same unified prediction engine powers every surface — from a single fixture to a full-season simulation. No outcome is sold to you; everything is measured."
+          lede="The same prediction engine powers every surface — from a single fixture to a full-season simulation. No outcome is sold to you; everything is measured."
         />
       </Reveal>
 

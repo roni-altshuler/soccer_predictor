@@ -237,9 +237,6 @@ export default function MatchCard({ match, league, showLeague = true, onClick, r
               showLabels
               size="md"
             />
-            {prediction.model && (
-              <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">{prediction.model}</p>
-            )}
           </div>
         )}
       </div>

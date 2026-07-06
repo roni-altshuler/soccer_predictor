@@ -7,7 +7,17 @@ import Link from 'next/link'
 import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleHelp, CheckCircle2, MapPin, MessageSquareText, RefreshCw, Scale, Sparkles, Swords, Zap } from 'lucide-react'
 import { EventTimeline } from '@/components/match/EventTimeline'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
-import { FlagBadge, ProbBar, TeamBadge } from '@/components/primitives'
+import { FlagBadge, TeamBadge } from '@/components/primitives'
+import {
+  ChartContainer,
+  NarrativeCard,
+  OutcomeBars,
+  ScorelineHeatmap,
+  type NarrativeInsight,
+  type OutcomeBarDatum,
+  type ScorelineCell,
+} from '@/components/viz'
+import { ClubColorBar } from '@/components/motion'
 
 import { cn } from '@/lib/utils'
 import { springSnappy } from '@/lib/motion'
@@ -21,7 +31,6 @@ import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import DerivedMarkets from '@/components/match/DerivedMarkets'
 import BettingIntelligence from '@/components/match/BettingIntelligence'
-import DataSourceBadge from '@/components/DataSourceBadge'
 import { type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { SplitStatBar } from '@/components/match/SplitStatBar'
@@ -161,6 +170,12 @@ function adaptMatchPrediction(match: MatchDetails): PredictionPayload {
   const over15 = Math.max(over25, Math.min(1, (totalGoals - 0.5) / 2))
   const over35 = Math.max(0, Math.min(over25, (totalGoals - 2.5) / 2))
   const btts = p.btts_yes ?? 0.5
+  const topScorelines = (p.derived_markets?.correct_score_top5 ?? []).map((s) => ({
+    score: `${s.home}-${s.away}`,
+    home_goals: s.home,
+    away_goals: s.away,
+    probability: s.probability,
+  }))
 
   return {
     match_id: match.id,
@@ -177,13 +192,16 @@ function adaptMatchPrediction(match: MatchDetails): PredictionPayload {
       over_3_5: over35,
       btts_yes: btts,
     },
-    most_likely_score: {
-      score: p.most_likely_score ?? `${p.predicted_score.home}-${p.predicted_score.away}`,
-      home_goals: p.predicted_score.home,
-      away_goals: p.predicted_score.away,
+    // Real committed top scorelines (when the record carries them) feed the
+    // scoreline heatmap — nothing is synthesised. The mode scoreline is the
+    // top entry when present; the rounded xG scoreline otherwise.
+    most_likely_score: topScorelines[0] ?? {
+      score: p.most_likely_score ?? `${Math.round(p.predicted_score.home)}-${Math.round(p.predicted_score.away)}`,
+      home_goals: Math.round(p.predicted_score.home),
+      away_goals: Math.round(p.predicted_score.away),
       probability: Math.max(norm.home, norm.draw, norm.away),
     },
-    alternative_scores: [],
+    alternative_scores: topScorelines.slice(1),
     factors: {
       home_elo: match.homeStanding?.points
         ? 1500 + match.homeStanding.points * 5
@@ -249,14 +267,6 @@ function isNationalTeamMatch(leagueId?: string, leagueName?: string): boolean {
   return /world cup|euro(pean championship)?|copa america|nations league|gold cup|international friendl/.test(name)
 }
 
-/** Human display name for the model chip ("unified-multitask…" → "Unified v2"). */
-function modelDisplayName(version?: string | null): string | null {
-  if (!version) return null
-  if (version.toLowerCase().startsWith('unified')) return 'Unified v2'
-  if (version.toLowerCase().includes('elo')) return 'ELO-Poisson'
-  return version
-}
-
 type MatchStats = MatchDetails['stats']
 
 function TeamNameWithCrest({
@@ -264,27 +274,49 @@ function TeamNameWithCrest({
   teamId,
   align,
   isNational,
+  accent,
 }: {
   name: string
   teamId?: string
   align: 'left' | 'right'
   isNational?: boolean
+  /** Club identity tint — renders a flat colour sliver under the name. */
+  accent?: string
 }) {
   const content = (
-    <span
-      className={cn(
-        'flex items-center gap-2.5 min-w-0',
-        align === 'right' ? 'flex-row-reverse justify-start' : 'justify-start',
-      )}
-    >
-      {isNational ? (
-        <FlagBadge country={name} teamName={name} size={32} />
-      ) : (
-        <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
-      )}
-      <span className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
-        {name}
+    <span className="block min-w-0">
+      <span
+        className={cn(
+          'flex items-center gap-2.5 min-w-0',
+          align === 'right' ? 'flex-row-reverse justify-start' : 'justify-start',
+        )}
+      >
+        {isNational ? (
+          <FlagBadge country={name} teamName={name} size={32} />
+        ) : (
+          <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
+        )}
+        <span className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
+          {name}
+        </span>
       </span>
+      {accent && (
+        <span
+          className={cn(
+            'mt-1.5 flex',
+            align === 'right' ? 'justify-end pr-[42px]' : 'justify-start pl-[42px]',
+          )}
+        >
+          <ClubColorBar
+            color={accent}
+            team={name}
+            orientation="horizontal"
+            size="sm"
+            animate="draw"
+            style={{ width: 44, height: 3 }}
+          />
+        </span>
+      )}
     </span>
   )
   if (!teamId) return content
@@ -296,60 +328,6 @@ function TeamNameWithCrest({
     >
       {content}
     </Link>
-  )
-}
-
-function formatStatValue(value: number, suffix?: string, decimals = 0): string {
-  const printed = decimals > 0 ? value.toFixed(decimals) : String(value)
-  return `${printed}${suffix || ''}`
-}
-
-function DuelStatRow({
-  label,
-  home,
-  away,
-  suffix,
-  inverse = false,
-  decimals = 0,
-  fixedTotal,
-}: {
-  label: string
-  home: number
-  away: number
-  suffix?: string
-  inverse?: boolean
-  decimals?: number
-  fixedTotal?: number
-}) {
-  const total = fixedTotal ?? (home + away)
-  const safeTotal = total > 0 ? total : 1
-  const homeWidth = (home / safeTotal) * 100
-  const awayWidth = (away / safeTotal) * 100
-  const homeLeading = inverse ? home < away : home > away
-  const awayLeading = inverse ? away < home : away > home
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <span className={`font-semibold ${homeLeading ? 'text-[var(--accent-info)]' : 'text-[var(--text-secondary)]'}`}>
-          {formatStatValue(home, suffix, decimals)}
-        </span>
-        <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-        <span className={`font-semibold ${awayLeading ? 'text-[var(--accent-warn)]' : 'text-[var(--text-secondary)]'}`}>
-          {formatStatValue(away, suffix, decimals)}
-        </span>
-      </div>
-      <div className="flex h-2 rounded-full overflow-hidden bg-[var(--muted-bg)]">
-        <div
-          className={`transition-all ${homeLeading ? 'bg-[var(--accent-info)]' : 'bg-[color-mix(in_srgb,var(--accent-info)_40%,transparent)]'}`}
-          style={{ width: `${homeWidth}%` }}
-        />
-        <div
-          className={`transition-all ${awayLeading ? 'bg-[var(--accent-warn)]' : 'bg-[color-mix(in_srgb,var(--accent-warn)_40%,transparent)]'}`}
-          style={{ width: `${awayWidth}%` }}
-        />
-      </div>
-    </div>
   )
 }
 
@@ -367,19 +345,23 @@ function FotmobStatsCard({
   return (
     <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Top Stats</h3>
-        <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Fotmob-style side-by-side match comparison</p>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Top stats</h3>
       </div>
 
       <div className={compact ? 'p-4 space-y-4' : 'p-5 space-y-4'}>
-        <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-primary)]">
-          <span className="truncate pr-3">{homeTeam}</span>
-          <span className="truncate pl-3 text-right">{awayTeam}</span>
+        <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[var(--text-primary)]">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <ClubColorBar color="var(--team-tint-home, var(--accent-primary))" team={homeTeam} size="sm" />
+            <span className="truncate">{homeTeam}</span>
+          </span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-right">{awayTeam}</span>
+            <ClubColorBar color="var(--team-tint-away, var(--accent-info))" team={awayTeam} size="sm" />
+          </span>
         </div>
 
-        {/* Possession + Shots-on-target render as FotMob-style split bars
-            so the share is visible at a glance instead of the older
-            numeric-pair DuelStatRow that hid the proportion. */}
+        {/* Every row uses the FotMob centred dual-bar grammar — home value,
+            label, away value, with proportional bars meeting in the middle. */}
         <SplitStatBar
           label="Possession"
           homeValue={stats.possession[0]}
@@ -391,21 +373,12 @@ function FotmobStatsCard({
           homeValue={stats.shotsOnTarget[0]}
           awayValue={stats.shotsOnTarget[1]}
         />
-
-        <DuelStatRow label="Total Shots" home={stats.shots[0]} away={stats.shots[1]} />
-        <DuelStatRow label="Corners" home={stats.corners[0]} away={stats.corners[1]} />
-        <DuelStatRow label="Fouls" home={stats.fouls[0]} away={stats.fouls[1]} inverse />
+        <SplitStatBar label="Total shots" homeValue={stats.shots[0]} awayValue={stats.shots[1]} />
+        <SplitStatBar label="Corners" homeValue={stats.corners[0]} awayValue={stats.corners[1]} />
+        <SplitStatBar label="Fouls" homeValue={stats.fouls[0]} awayValue={stats.fouls[1]} lowerIsBetter />
       </div>
     </div>
   )
-}
-
-type PredictionDriverTone = 'positive' | 'neutral' | 'risk'
-
-type PredictionDriver = {
-  label: string
-  detail: string
-  tone: PredictionDriverTone
 }
 
 function formatProbability(value: number): string {
@@ -557,171 +530,113 @@ function getPredictionRank(match: MatchDetails) {
   ].sort((a, b) => b.value - a.value)
 }
 
-function buildPredictionDrivers(match: MatchDetails): PredictionDriver[] {
-  if (!match.prediction) return []
+/**
+ * "What the model sees" — a small pure rule engine that turns the fields the
+ * page already holds (win probabilities, table positions, head-to-head record,
+ * goal expectancy) into 2–4 tone-tagged football insights for `NarrativeCard`.
+ * Every rule checks its underlying field first; when nothing fires the card
+ * renders nothing (no fabricated angles).
+ */
+function buildModelInsights(match: MatchDetails): NarrativeInsight[] {
+  const insights: NarrativeInsight[] = []
+  const p = match.prediction
+  if (!p) return insights
 
+  // 1) Pick clarity — clear lean is an edge, a coin-flip is a risk.
   const ranked = getPredictionRank(match)
   const leader = ranked[0]
   const runnerUp = ranked[1]
-  const margin = leader && runnerUp ? Math.round((leader.value - runnerUp.value) * 100) : 0
-  const drivers: PredictionDriver[] = []
-
-  if (leader) {
-    drivers.push({
-      label: 'Primary lean',
-      detail: `${leader.label} leads the market-style outcome grid at ${formatProbability(leader.value)}${runnerUp ? `, ${margin} points above ${runnerUp.shortLabel.toLowerCase()}` : ''}.`,
-      tone: margin >= 10 ? 'positive' : 'neutral',
-    })
-  }
-
-  if (match.homeStanding && match.awayStanding) {
-    const positionGap = match.awayStanding.position - match.homeStanding.position
-    const pointsGap = match.homeStanding.points - match.awayStanding.points
-    const strongerTeam = positionGap > 0 ? match.home_team : positionGap < 0 ? match.away_team : null
-
-    if (strongerTeam) {
-      drivers.push({
-        label: 'Table context',
-        detail: `${strongerTeam} is ${Math.abs(positionGap)} places above the opponent with a ${Math.abs(pointsGap)} point table gap.`,
-        tone: Math.abs(positionGap) >= 4 || Math.abs(pointsGap) >= 8 ? 'positive' : 'neutral',
+  if (leader && runnerUp) {
+    const margin = Math.round((leader.value - runnerUp.value) * 100)
+    if (margin >= 12) {
+      insights.push({
+        tone: 'edge',
+        title: `Clear lean: ${leader.label}`,
+        detail: `${formatProbability(leader.value)} win probability, ${margin} points clear of the next most likely result.`,
       })
-    } else {
-      drivers.push({
-        label: 'Table context',
-        detail: `Both teams are adjacent in the table, so the model does not treat league position as a major separator.`,
-        tone: 'neutral',
+    } else if (margin < 7) {
+      insights.push({
+        tone: 'risk',
+        title: 'Tight call',
+        detail: `Only ${margin} point${margin === 1 ? '' : 's'} separate ${leader.shortLabel.toLowerCase()} and ${runnerUp.shortLabel.toLowerCase()} — this one could swing either way.`,
       })
     }
   }
 
+  // 2) League table gap — only when both teams sit in the same table.
+  if (match.homeStanding && match.awayStanding) {
+    const posGap = match.awayStanding.position - match.homeStanding.position
+    const ptsGap = match.homeStanding.points - match.awayStanding.points
+    if (Math.abs(posGap) >= 5) {
+      const stronger = posGap > 0 ? match.home_team : match.away_team
+      insights.push({
+        tone: 'edge',
+        title: `${stronger} arrive as the form side`,
+        detail: `#${match.homeStanding.position} vs #${match.awayStanding.position} in the table${
+          Math.abs(ptsGap) > 0 ? `, a ${Math.abs(ptsGap)}-point gap` : ''
+        }.`,
+      })
+    } else if (Math.abs(posGap) <= 1) {
+      insights.push({
+        tone: 'note',
+        title: 'Little between them',
+        detail: `The sides sit #${match.homeStanding.position} and #${match.awayStanding.position} — a genuine peer matchup.`,
+      })
+    }
+  }
+
+  // 3) Head-to-head history — needs a real sample.
   const h2hTotal = match.h2h.homeWins + match.h2h.draws + match.h2h.awayWins
-  if (h2hTotal > 0) {
-    const h2hLeader = [
-      { label: match.home_team, wins: match.h2h.homeWins },
-      { label: 'Draws', wins: match.h2h.draws },
-      { label: match.away_team, wins: match.h2h.awayWins },
-    ].sort((a, b) => b.wins - a.wins)[0]
-
-    drivers.push({
-      label: 'Head-to-head sample',
-      detail: `${h2hLeader.label} has the strongest recent H2H count: ${match.h2h.homeWins}-${match.h2h.draws}-${match.h2h.awayWins} across ${h2hTotal} recorded meetings.`,
-      tone: h2hLeader.wins / h2hTotal >= 0.5 ? 'positive' : 'neutral',
-    })
+  if (h2hTotal >= 4) {
+    const homeShare = match.h2h.homeWins / h2hTotal
+    const awayShare = match.h2h.awayWins / h2hTotal
+    const record = `${match.h2h.homeWins}–${match.h2h.draws}–${match.h2h.awayWins}`
+    if (homeShare >= 0.6 || awayShare >= 0.6) {
+      const owner = homeShare >= 0.6 ? match.home_team : match.away_team
+      insights.push({
+        tone: 'watch',
+        title: `${owner} own this fixture`,
+        detail: `${homeShare >= 0.6 ? match.h2h.homeWins : match.h2h.awayWins} wins in the last ${h2hTotal} meetings (${record}).`,
+      })
+    } else if (match.h2h.draws / h2hTotal >= 0.4) {
+      insights.push({
+        tone: 'watch',
+        title: 'Draw-heavy history',
+        detail: `${match.h2h.draws} of the last ${h2hTotal} meetings ended level (${record}).`,
+      })
+    }
   }
 
-  const totalGoals = match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)
+  // 4) Goal expectancy.
+  const totalGoals = p.total_goals ?? p.predicted_score.home + p.predicted_score.away
   if (Number.isFinite(totalGoals)) {
-    const overText = match.prediction.over_2_5 !== undefined
-      ? ` Over 2.5 is priced by the model at ${formatProbability(match.prediction.over_2_5)}.`
-      : ''
-    drivers.push({
-      label: 'Goal profile',
-      detail: `Projected total is ${totalGoals.toFixed(1)} goals with a ${match.prediction.predicted_score.home}-${match.prediction.predicted_score.away} model scoreline.${overText}`,
-      tone: totalGoals >= 2.8 ? 'positive' : totalGoals <= 1.8 ? 'risk' : 'neutral',
+    const overText =
+      p.over_2_5 !== undefined ? ` Over 2.5 goals is priced at ${formatProbability(p.over_2_5)}.` : ''
+    if (totalGoals >= 3.0) {
+      insights.push({
+        tone: 'watch',
+        title: 'Goals expected',
+        detail: `Expected total of ${totalGoals.toFixed(1)} goals.${overText}`,
+      })
+    } else if (totalGoals <= 2.0) {
+      insights.push({
+        tone: 'note',
+        title: 'Low-scoring profile',
+        detail: `Expected total of just ${totalGoals.toFixed(1)} goals.${overText}`,
+      })
+    }
+  }
+
+  // 5) Both ends threatened.
+  if (p.btts_yes !== undefined && p.btts_yes >= 0.62) {
+    insights.push({
+      tone: 'watch',
+      title: 'Both ends threatened',
+      detail: `Both teams to score is priced at ${formatProbability(p.btts_yes)}.`,
     })
   }
 
-  if (match.prediction.confidence_band || Number.isFinite(match.prediction.confidence)) {
-    drivers.push({
-      label: 'Confidence calibration',
-      detail: `${match.prediction.confidence_band || 'Medium'} confidence at ${match.prediction.confidence}% means the model sees a ${margin >= 12 ? 'clearer' : 'competitive'} outcome distribution.`,
-      tone: match.prediction.confidence >= 70 ? 'positive' : match.prediction.confidence < 55 ? 'risk' : 'neutral',
-    })
-  }
-
-  const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
-  if (!isScheduled && match.stats.shots[0] + match.stats.shots[1] > 0) {
-    const shotLeader = match.stats.shots[0] > match.stats.shots[1]
-      ? match.home_team
-      : match.stats.shots[1] > match.stats.shots[0]
-        ? match.away_team
-        : null
-
-    drivers.push({
-      label: 'In-match evidence',
-      detail: shotLeader
-        ? `${shotLeader} leads total shots ${match.stats.shots[0]}-${match.stats.shots[1]} in the current match data feed.`
-        : `Shot volume is level at ${match.stats.shots[0]}-${match.stats.shots[1]} in the current match data feed.`,
-      tone: shotLeader ? 'positive' : 'neutral',
-    })
-  }
-
-  return drivers.slice(0, 5)
-}
-
-function PredictionInsightPanel({ match }: { match: MatchDetails }) {
-  if (!match.prediction) return null
-
-  const ranked = getPredictionRank(match)
-  const leader = ranked[0]
-  const runnerUp = ranked[1]
-  const separation = leader && runnerUp ? Math.round((leader.value - runnerUp.value) * 100) : 0
-  const drivers = buildPredictionDrivers(match)
-  const toneClass: Record<PredictionDriverTone, string> = {
-    positive: 'border-[color-mix(in_srgb,var(--accent-primary)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)]',
-    neutral: 'border-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)]',
-    risk: 'border-[color-mix(in_srgb,var(--accent-warn)_25%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]',
-  }
-
-  return (
-    <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-      <div className="p-4 border-b flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Prediction Explainability</p>
-          <h3 className="text-base font-semibold text-[var(--text-primary)]">Why the model leans this way</h3>
-        </div>
-        <DataSourceBadge provider="model" detail={modelDisplayName(match.prediction.model_version) || 'Unified neural ensemble'} />
-      </div>
-
-      <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Top outcome</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">{leader?.label || 'Unavailable'}</p>
-            <p className="text-xs text-[var(--text-secondary)]">{leader ? formatProbability(leader.value) : 'N/A'}</p>
-          </div>
-          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Separation</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">{separation} points</p>
-            <p className="text-xs text-[var(--text-secondary)]">vs next outcome</p>
-          </div>
-          <div className="rounded-xl bg-[var(--muted-bg)] p-3">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Scoreline</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] mt-1">
-              {match.prediction.predicted_score.home}-{match.prediction.predicted_score.away}
-            </p>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {match.prediction.most_likely_score ? `Mode: ${match.prediction.most_likely_score}` : 'Expected goals output'}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 space-y-2">
-          {drivers.map((driver) => (
-            <div key={driver.label} className={`rounded-xl border p-3 ${toneClass[driver.tone]}`}>
-              <p className="text-xs font-bold text-[var(--text-primary)]">{driver.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{driver.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
-            Model output is probabilistic and uses available provider data, standings context, H2H samples, and calibrated scoring features.
-          </p>
-          {match.source && (
-            <DataSourceBadge
-              provider={match.source}
-              detail={match.sourceDetail}
-              refreshedAt={match.generatedAt}
-              compact
-              className="flex-shrink-0"
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  return insights.slice(0, 4)
 }
 
 export default function MatchDetailPage() {
@@ -1161,6 +1076,7 @@ export default function MatchDetailPage() {
                 teamId={match.home_team_id}
                 align="right"
                 isNational={isNational}
+                accent="var(--team-tint-home, var(--accent-primary))"
               />
               {match.events.filter(e => e.team === 'home' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
@@ -1258,6 +1174,7 @@ export default function MatchDetailPage() {
                 teamId={match.away_team_id}
                 align="left"
                 isNational={isNational}
+                accent="var(--team-tint-away, var(--accent-info))"
               />
               {match.events.filter(e => e.team === 'away' && (e.type === 'goal' || e.type === 'own_goal')).length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
@@ -1314,12 +1231,6 @@ export default function MatchDetailPage() {
                 </button>
               )
             })}
-            <DataSourceBadge
-              provider={match.source || 'none'}
-              detail={match.sourceDetail || 'Match detail feed'}
-              refreshedAt={match.generatedAt}
-              compact
-            />
           </div>
         </div>
       </section>
@@ -1389,111 +1300,135 @@ export default function MatchDetailPage() {
               shotmap={match.shotmap || []}
             />
 
-            {/* ── AI Prediction Card ── */}
-            {match.prediction && (
-              <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
+            {/* ── AI pick card — club-coloured OutcomeBars + scoreline heatmap ── */}
+            {match.prediction && (() => {
+              const p = match.prediction
+              const crest = (teamId?: string) =>
+                !isNational && teamId
+                  ? `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png`
+                  : undefined
+              const outcomeRows: OutcomeBarDatum[] = [
+                {
+                  label: match.home_team,
+                  probability: p.home_win,
+                  color: 'var(--team-tint-home, var(--accent-primary))',
+                  crestUrl: crest(match.home_team_id),
+                  sublabel: 'Home',
+                },
+                { label: 'Draw', probability: p.draw, color: 'var(--accent-warn)' },
+                {
+                  label: match.away_team,
+                  probability: p.away_win,
+                  color: 'var(--team-tint-away, var(--accent-info))',
+                  crestUrl: crest(match.away_team_id),
+                  sublabel: 'Away',
+                },
+              ]
+              const scorelineCells: ScorelineCell[] = (p.derived_markets?.correct_score_top5 ?? [])
+                .filter((s) => Number.isFinite(s.probability) && s.probability > 0)
+                .map((s) => ({ home: s.home, away: s.away, probability: s.probability }))
+              const totalGoals = p.total_goals ?? p.predicted_score.home + p.predicted_score.away
+              const quickMarkets: Array<{ label: string; value: string }> = [
+                ...(Number.isFinite(totalGoals)
+                  ? [{ label: 'Total goals', value: totalGoals.toFixed(1) }]
+                  : []),
+                ...(p.over_2_5 !== undefined
+                  ? [{ label: 'Over 2.5', value: `${Math.round(p.over_2_5 * 100)}%` }]
+                  : []),
+                ...(p.btts_yes !== undefined
+                  ? [{ label: 'BTTS', value: `${Math.round(p.btts_yes * 100)}%` }]
+                  : []),
+              ]
+              return (
+                <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+                  <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-color)] px-4 py-3">
                     <Sparkles className="h-4 w-4 text-[var(--accent-ai)]" aria-hidden />
-                    <span className="text-sm font-semibold text-[var(--accent-ai)]">AI Prediction</span>
-                    <span className="text-xs bg-[var(--accent-ai)]/20 text-[var(--accent-ai)] px-2 py-0.5 rounded-full ml-auto tabular-nums">
-                      {match.prediction.confidence}% confidence
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">AI pick</h3>
+                    {/* Confidence as a quiet chip — no gauges. */}
+                    <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+                      <span className="tabular-nums text-[var(--text-primary)]">{p.confidence}%</span>
+                      <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                        {p.confidence_band ?? 'Medium'} confidence
+                      </span>
                     </span>
                   </div>
-                  <div className="flex items-center justify-center gap-4 sm:gap-6">
-                    <div className="text-center">
-                      <p className="text-xs text-[var(--text-tertiary)] mb-1">Predicted Score</p>
-                      <p className="text-xl sm:text-2xl font-bold tabular-nums whitespace-nowrap text-[var(--accent-ai)]">
-                        {match.prediction.predicted_score.home} - {match.prediction.predicted_score.away}
-                      </p>
-                    </div>
-                    <div className="h-10 w-px bg-[var(--accent-ai)]/20" />
-                    <div className="flex gap-3">
-                      <div className="text-center">
-                        <p className="text-xs text-[var(--text-tertiary)] mb-1">Home</p>
-                        <p className={`text-lg font-bold tabular-nums ${match.prediction.home_win > match.prediction.away_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
-                          {Math.round(match.prediction.home_win * 100)}%
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-[var(--text-tertiary)] mb-1">Draw</p>
-                        <p className="text-lg font-bold tabular-nums text-[var(--text-secondary)]">
-                          {Math.round(match.prediction.draw * 100)}%
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-[var(--text-tertiary)] mb-1">Away</p>
-                        <p className={`text-lg font-bold tabular-nums ${match.prediction.away_win > match.prediction.home_win ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
-                          {Math.round(match.prediction.away_win * 100)}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Signature W/D/L probability bar */}
-                  <div className="mt-3">
-                    <ProbBar
-                      home={match.prediction.home_win}
-                      draw={match.prediction.draw}
-                      away={match.prediction.away_win}
-                      size="md"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Total Goals</p>
-                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{(match.prediction.total_goals ?? (match.prediction.predicted_score.home + match.prediction.predicted_score.away)).toFixed(1)}</p>
-                    </div>
-                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Over 2.5</p>
-                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{match.prediction.over_2_5 !== undefined ? `${Math.round(match.prediction.over_2_5 * 100)}%` : 'N/A'}</p>
-                    </div>
-                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
-                      <p className="text-[10px] text-[var(--text-tertiary)]">BTTS</p>
-                      <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{match.prediction.btts_yes !== undefined ? `${Math.round(match.prediction.btts_yes * 100)}%` : 'N/A'}</p>
-                    </div>
-                    <div className="rounded-xl bg-[var(--muted-bg)]/70 p-2.5 text-center">
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Confidence Band</p>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.confidence_band || 'Medium'}</p>
-                    </div>
-                  </div>
-                  {(match.prediction.model_version || match.prediction.most_likely_score) && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {match.prediction.most_likely_score && (
-                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full tabular-nums">
-                          Likeliest scoreline: {match.prediction.most_likely_score}
-                        </span>
+
+                  <div className="p-4">
+                    <div
+                      className={cn(
+                        'grid grid-cols-1 gap-6',
+                        scorelineCells.length >= 3 && 'md:grid-cols-[minmax(0,1fr)_minmax(0,300px)]'
                       )}
-                      {match.prediction.model_version && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-ai)]/12 px-2 py-1 text-[10px] font-semibold text-[var(--accent-ai)]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-ai)]" aria-hidden />
-                          {modelDisplayName(match.prediction.model_version)}
-                        </span>
+                    >
+                      <div className="min-w-0">
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                          Win probability
+                        </p>
+                        <OutcomeBars data={outcomeRows} sorted={false} />
+                        {quickMarkets.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {quickMarkets.map((m) => (
+                              <span
+                                key={m.label}
+                                className="inline-flex items-baseline gap-1.5 rounded border border-[var(--border-color)] bg-[var(--muted-bg)] px-2 py-1 text-[11px]"
+                              >
+                                <span className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                                  {m.label}
+                                </span>
+                                <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                                  {m.value}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Scoreline probability grid — only from committed top
+                          scorelines; predicted (peak) cell outlined. */}
+                      {scorelineCells.length >= 3 && (
+                        <div className="min-w-0">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                            Scoreline probabilities
+                          </p>
+                          {/* Heatmap height ≈ width (square grid + 48px axes);
+                              cap the width so the reserved box never clips. */}
+                          <ChartContainer height={300} label="Loading scoreline probabilities">
+                            <div style={{ maxWidth: 296 }}>
+                              <ScorelineHeatmap cells={scorelineCells} maxGoals={4} />
+                            </div>
+                          </ChartContainer>
+                        </div>
                       )}
                     </div>
-                  )}
-                  {isFinished && match.home_score !== null && match.away_score !== null && (() => {
-                    const accuracy = getPredictionAccuracy()
-                    return accuracy.message ? (
-                      <div className="mt-3 pt-3 border-t border-[var(--accent-ai)]/20">
-                        <p className={`text-center text-xs font-semibold inline-flex items-center justify-center gap-1.5 w-full ${
-                          accuracy.type === 'exact' ? 'text-[var(--accent-primary)]' :
-                          accuracy.type === 'close' ? 'text-[var(--accent-warn)]' :
-                          'text-[var(--text-tertiary)]'
-                        }`}>
-                          {accuracy.type === 'exact' && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
-                          {accuracy.type === 'close' && <Zap className="h-3.5 w-3.5" aria-hidden />}
-                          {accuracy.message}
-                        </p>
-                      </div>
-                    ) : null
-                  })()}
+
+                    {isFinished && match.home_score !== null && match.away_score !== null && (() => {
+                      const accuracy = getPredictionAccuracy()
+                      return accuracy.message ? (
+                        <div className="mt-4 border-t border-[var(--border-color)] pt-3">
+                          <p className={`inline-flex w-full items-center justify-center gap-1.5 text-center text-xs font-semibold ${
+                            accuracy.type === 'exact' ? 'text-[var(--accent-primary)]' :
+                            accuracy.type === 'close' ? 'text-[var(--accent-warn)]' :
+                            'text-[var(--text-tertiary)]'
+                          }`}>
+                            {accuracy.type === 'exact' && <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
+                            {accuracy.type === 'close' && <Zap className="h-3.5 w-3.5" aria-hidden />}
+                            {accuracy.message}
+                          </p>
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             <LiveWinProbabilityPanel match={match} />
 
-            <PredictionInsightPanel match={match} />
+            {/* ── What the model sees — rule-engine narrative angles ── */}
+            {match.prediction && (
+              <NarrativeCard heading="What the model sees" insights={buildModelInsights(match)} />
+            )}
 
             {/* ── Events Timeline ── */}
             {match.events.length > 0 && (
@@ -1587,25 +1522,6 @@ export default function MatchDetailPage() {
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatDate(match.date)}</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{match.league}</p>
                   </div>
-                </div>
-                {/* Data source */}
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] text-[10px] font-black text-[var(--text-secondary)]">
-                    DS
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Match data source</p>
-                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                      Provider-backed details are used when available; unavailable fields stay blank.
-                    </p>
-                  </div>
-                  <DataSourceBadge
-                    provider={match.source || 'none'}
-                    detail={match.sourceDetail}
-                    refreshedAt={match.generatedAt}
-                    compact
-                    className="flex-shrink-0"
-                  />
                 </div>
                 {/* Referee */}
                 {match.referee && (
@@ -1910,16 +1826,14 @@ export default function MatchDetailPage() {
 
             <FotmobStatsCard stats={match.stats} homeTeam={match.home_team} awayTeam={match.away_team} />
             
-            {/* Full League Standings Table */}
+            {/* Full League Standings Table — hidden entirely when the league
+                has no table (missing data renders nothing). */}
+            {match.fullStandings && match.fullStandings.length > 0 && (
             <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-medium text-[var(--text-primary)]">{match.league} Standings</h4>
-                {!match.fullStandings?.length && (
-                  <span className="text-xs text-[var(--text-tertiary)]">Data unavailable</span>
-                )}
               </div>
-              
-              {match.fullStandings && match.fullStandings.length > 0 ? (
+              {(
                 <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                     <table className="w-full">
@@ -1993,13 +1907,9 @@ export default function MatchDetailPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 bg-[var(--muted-bg)] rounded-xl">
-                  <CircleHelp className="mx-auto mb-3 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
-                  <p className="text-[var(--text-secondary)]">League standings not available</p>
-                </div>
               )}
             </div>
+            )}
           </div>
         )}
 

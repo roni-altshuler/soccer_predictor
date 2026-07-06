@@ -312,8 +312,8 @@ export async function GET(
       n_simulations: nSimulations,
       remaining_matches: remainingMatches,
       fixture_source: remainingFixtures.length > 0
-        ? 'ESPN scoreboard remaining fixtures'
-        : 'Generated fixture fallback from current ESPN standings',
+        ? 'Remaining scheduled fixtures'
+        : 'Generated fixture fallback from current standings',
       what_if: fixtureOverride
         ? {
           fixture_key: fixtureOverride.fixtureKey,

@@ -88,7 +88,7 @@ export function SimulatorDemo() {
       </div>
 
       <p className="mt-4 text-[11px] text-[var(--text-tertiary)]">
-        Illustrative sample. The live simulator runs seeded Monte Carlo over real standings and fixtures.
+        Illustrative sample. The live simulator runs thousands of simulated seasons over real standings and fixtures.
       </p>
     </div>
   )

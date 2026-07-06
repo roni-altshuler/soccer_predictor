@@ -142,20 +142,20 @@ const OUTPUT_EXPLAINERS = [
   {
     Icon: Percent,
     tint: 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/12',
-    title: 'Calibrated probabilities',
-    desc: 'Win/draw/loss chances from the unified multi-task network, isotonic-calibrated on held-out matches.',
+    title: 'Honest probabilities',
+    desc: 'Win/draw/loss chances with a confidence we track publicly — when we say 60%, it should happen about 60% of the time.',
   },
   {
     Icon: Goal,
     tint: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/12',
     title: 'Scoreline distribution',
-    desc: 'A bivariate-Poisson xG head scores every plausible final score and surfaces the most likely ones.',
+    desc: 'Every plausible final score gets a probability, with the most likely ones surfaced first.',
   },
   {
     Icon: ListTree,
     tint: 'text-[var(--accent-warn)] bg-[var(--accent-warn)]/12',
     title: 'Why this prediction',
-    desc: 'A factor panel showing which of the 87 features — ELO gap, form, home edge — moved the needle.',
+    desc: 'A factor panel showing which signals — rating gap, form, home edge — moved the needle.',
   },
 ] as const
 
@@ -519,8 +519,8 @@ function PredictPageContent() {
             </div>
             <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
               <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
-              Cross-league pairings work too — strength coefficients keep a UCL-vs-MLS
-              matchup calibrated instead of guessing.
+              Cross-league pairings work too — team strength is put on a common scale so a
+              UCL-vs-MLS matchup stays grounded instead of guessing.
             </div>
           </section>
         )}

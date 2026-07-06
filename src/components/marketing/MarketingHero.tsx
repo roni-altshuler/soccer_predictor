@@ -123,9 +123,9 @@ export function MarketingHero() {
             transition={reduce ? { duration: 0 } : { duration: 0.6, delay: 0.12 }}
             className="max-w-xl text-pretty text-base leading-relaxed text-[var(--text-secondary)] md:text-lg"
           >
-            Pitchwise pairs live scores with a unified neural model that publishes its confidence,
-            logs every pick, and re-trains on real outcomes — three times a day, for the men&apos;s and
-            women&apos;s game alike.
+            Pitchwise pairs live scores with AI predictions that publish their confidence,
+            log every pick, and answer to real outcomes — updated through the day, for the men&apos;s
+            and women&apos;s game alike.
           </motion.p>
 
           <motion.div
@@ -151,9 +151,9 @@ export function MarketingHero() {
             className="mt-2 grid w-full max-w-lg grid-cols-3 gap-4 border-t border-[var(--border-color)] pt-6"
           >
             {[
-              { value: 60.5, suffix: '%', dp: 1, label: "Men's accuracy", sub: '11,661-match holdout' },
-              { value: 77735, suffix: '+', dp: 0, label: 'Matches trained', sub: 'men + women' },
-              { value: 3, suffix: '×', dp: 0, label: 'Retrains daily', sub: 'online learning' },
+              { value: 60.5, suffix: '%', dp: 1, label: "Men's accuracy", sub: 'across 11,661 scored matches' },
+              { value: 77735, suffix: '+', dp: 0, label: 'Matches analysed', sub: 'men + women' },
+              { value: 3, suffix: '×', dp: 0, label: 'Daily refreshes', sub: 'picks stay current' },
             ].map((s) => (
               <div key={s.label}>
                 <p className="font-numeric text-2xl font-extrabold tabular-nums text-[var(--text-primary)] md:text-3xl">

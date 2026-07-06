@@ -55,7 +55,7 @@ export function WinnerProjectionsBoard({
         <Trophy className="h-4 w-4 text-[var(--accent-warn)]" />
         <h2 className="text-h4 font-bold text-[var(--text-primary)]">AI winner projections</h2>
         <span className="ml-auto text-caption uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-          {Intl.NumberFormat().format(nSimulations)} Monte Carlo runs
+          Simulated {Intl.NumberFormat().format(nSimulations)} times
         </span>
       </header>
 
@@ -119,7 +119,7 @@ export function WinnerProjectionsBoard({
       </ol>
 
       <footer className="px-5 py-3 text-caption leading-relaxed text-[var(--text-tertiary)]">
-        ELO-Poisson Monte Carlo over the official 2026 bracket
+        Simulated tournament runs over the official 2026 bracket
         {bracketSet
           ? ', knockout entrants confirmed'
           : ' — group outcomes projected from current standings and remaining fixtures; best-third qualifiers approximated by team strength'}

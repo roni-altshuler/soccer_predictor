@@ -18,12 +18,12 @@ import {
 export const metadata: Metadata = {
   title: 'Pitchwise — Football predictions you can verify',
   description:
-    'Calibrated football intelligence: live scores, a unified AI model that publishes its confidence, and accuracy you can audit — for the men\'s and women\'s game.',
+    'Calibrated football intelligence: live scores, AI predictions that publish their confidence, and accuracy you can audit — for the men\'s and women\'s game.',
   alternates: { canonical: '/welcome' },
   openGraph: {
     title: 'Pitchwise — Football predictions you can verify',
     description:
-      'Live scores, calibrated AI match probabilities, and accuracy you can audit. One model, every major league, men\'s and women\'s.',
+      'Live scores, calibrated AI match probabilities, and accuracy you can audit. Every major league, men\'s and women\'s.',
     url: '/welcome',
   },
 }
@@ -48,7 +48,7 @@ export default function WelcomePage() {
             title={
               <>
                 Run a real fixture through the{' '}
-                <span className="mkt-headline-gradient">model</span>.
+                <span className="mkt-headline-gradient">AI</span>.
               </>
             }
             lede="This isn't a mockup. Pick a fixture and the prediction is computed by the live backend — outcome probabilities, expected goals, the most-likely scoreline, and the factors behind it."

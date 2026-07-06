@@ -24,6 +24,10 @@ want live data *and* honest, data-driven insight in one interface.
 > loses regularly. Licensed under [MIT](LICENSE); see [SECURITY.md](SECURITY.md) and
 > [CONTRIBUTING.md](CONTRIBUTING.md) before contributing.
 
+**Data & methodology:** where the data comes from and how predictions are computed is documented
+in [docs/methodology.md](docs/methodology.md). By design these details live in the repo — not in
+the website UI, which keeps to plain outcomes language.
+
 ---
 
 ## What It Does

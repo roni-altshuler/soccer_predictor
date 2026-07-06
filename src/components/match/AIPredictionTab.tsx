@@ -137,7 +137,7 @@ function EmptyState({
       eyebrow: 'Past fixture',
       title: 'No live pre-match pick on file',
       body:
-        'This match has already finished. The live model only predicts upcoming fixtures, but you can run a retrospective analysis — what the same model would have predicted given everything we knew before kickoff.',
+        'This match has already finished. Live picks only cover upcoming fixtures, but you can run a retrospective analysis — what the AI would have predicted given everything we knew before kickoff.',
       cta: 'Run retrospective analysis',
       Icon: History,
     },
@@ -145,15 +145,15 @@ function EmptyState({
       eyebrow: 'Match in progress',
       title: 'Live prediction not in the feed yet',
       body:
-        "The pipeline hadn't picked this fixture before kickoff. You can still run an on-demand analysis — uses the same unified model but doesn't see in-play events.",
+        "This fixture didn't get a pick before kickoff. You can still run an on-demand analysis — same AI, but it doesn't see in-play events.",
       cta: 'Run on-demand prediction',
       Icon: Radio,
     },
     upcoming: {
       eyebrow: 'Upcoming fixture',
-      title: 'Live model run pending',
+      title: 'Live pick pending',
       body:
-        'The unified model runs three times a day (06:00, 14:00, 22:00 UTC) and picks all matches in the next 7 days. This fixture will appear here after the next run — or you can generate an on-demand prediction now.',
+        'Predictions refresh several times a day and cover all matches in the next 7 days. This fixture will appear here after the next refresh — or you can generate an on-demand prediction now.',
       cta: 'Run prediction now',
       Icon: Clock,
     },
@@ -167,18 +167,12 @@ function EmptyState({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="bento-card bento-ai overflow-hidden"
+      className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]"
     >
-      <div className="relative isolate p-6 md:p-8">
-        {/* Layered ambient */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_15%_10%,color-mix(in_srgb,var(--accent-ai)_24%,transparent),transparent_60%),radial-gradient(50%_50%_at_85%_25%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%)]"
-        />
-
+      <div className="p-6 md:p-8">
         <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="space-y-2">
@@ -208,7 +202,7 @@ function EmptyState({
             onClick={onRun}
             disabled={loading}
             className={cn(
-              'group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0'
+              'inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
             )}
           >
             {loading ? (
@@ -243,9 +237,9 @@ function RetrospectiveBanner() {
     <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-warn)]/30 bg-[var(--accent-warn)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
       <History className="h-3.5 w-3.5 shrink-0 text-[var(--accent-warn)]" aria-hidden="true" />
       <span>
-        Retrospective analysis — same unified model, but{' '}
+        Retrospective analysis — same AI, but{' '}
         <span className="font-semibold text-[var(--text-primary)]">not</span> the live pre-match
-        pick. Useful for auditing the model on past fixtures.
+        pick. Useful for auditing predictions on past fixtures.
       </span>
     </div>
   )
