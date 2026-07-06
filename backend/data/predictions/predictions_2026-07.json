@@ -5214,15 +5214,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": true,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 0,
       "prediction_timestamp": "2026-07-05T09:19:02.953352",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-06T16:53:04.389810"
     },
     {
       "match_id": "401854064",
@@ -5392,15 +5392,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 2,
+      "actual_winner": "draw",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-07-05T09:19:02.961688",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-06T16:53:04.389834"
     }
   ]
 }
