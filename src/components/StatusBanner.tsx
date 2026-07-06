@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 
 type Status = 'ok' | 'degraded' | 'down'
 
@@ -11,7 +10,6 @@ interface HealthPayload {
 
 const POLL_INTERVAL_MS = 60_000
 const DISMISS_KEY = 'pitchwise:status-banner-dismissed'
-const DIAGNOSTICS_HREF = '/diagnostics'
 
 /**
  * Production health banner — env-gated. Polls /api/health when
@@ -87,12 +85,6 @@ export function StatusBanner() {
     >
       <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-1.5 text-[12px] sm:text-[13px] font-medium">
         <span className="flex-1 truncate">{message}</span>
-        <Link
-          href={DIAGNOSTICS_HREF}
-          className="shrink-0 underline underline-offset-2 opacity-90 hover:opacity-100"
-        >
-          details
-        </Link>
         {!isDown && (
           <button
             type="button"

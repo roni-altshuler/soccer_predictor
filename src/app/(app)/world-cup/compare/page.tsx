@@ -10,7 +10,7 @@ export const revalidate = 300
 export const metadata: Metadata = {
   title: 'Compare teams — World Cup 2026 · Pitchwise',
   description:
-    'Head-to-head comparison of any two 2026 World Cup nations: Elo ratings, neutral-pitch win expectancy, and tournament advancement probabilities from calibrated Monte Carlo simulations.',
+    'Head-to-head comparison of any two 2026 World Cup nations: team ratings, neutral-pitch win expectancy, and tournament advancement probabilities from thousands of simulated tournament runs.',
 }
 
 export default async function WorldCupComparePage() {
@@ -30,7 +30,7 @@ export default async function WorldCupComparePage() {
         Compare any two nations
       </h1>
       <p className="mt-2 max-w-2xl text-body text-[var(--text-secondary)]">
-        Pick two teams to see their Elo ratings, a neutral-pitch win expectancy, and how
+        Pick two teams to see their ratings, a neutral-pitch win expectancy, and how
         far each is projected to go — straight from the tournament simulation.
       </p>
 

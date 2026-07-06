@@ -60,7 +60,7 @@ export function CoverageMarquee() {
     >
       <div className="mx-auto mb-6 max-w-[var(--shell-content-max)] px-5 text-center sm:px-8">
         <h2 id="coverage-heading" className="mkt-eyebrow">
-          One model · every major competition · men&apos;s &amp; women&apos;s
+          One engine · every major competition · men&apos;s &amp; women&apos;s
         </h2>
       </div>
 

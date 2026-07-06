@@ -18,14 +18,13 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       { label: 'How it works', href: '#how-it-works' },
       { label: 'Features', href: '#features' },
       { label: 'Live demo', href: '#prediction-demo' },
-      { label: 'Technology', href: '#technology' },
+      { label: 'Track record', href: '#technology' },
     ],
   },
   {
     heading: 'About',
     links: [
       { label: 'The project', href: '/about' },
-      { label: 'Diagnostics', href: '/diagnostics' },
       { label: 'News', href: '/news' },
     ],
   },

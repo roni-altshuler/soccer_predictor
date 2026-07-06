@@ -61,11 +61,11 @@ const BOOLEAN_FEATURES = new Set([
  */
 export function featureLabel(feature: string, homeTeam: string, awayTeam: string): string {
   const explicit: Record<string, string> = {
-    // --- ELO + ratings ---
-    elo_home: `${homeTeam} Elo rating`,
-    elo_away: `${awayTeam} Elo rating`,
-    elo_diff: 'Elo gap (magnitude)',
-    elo_diff_signed: 'Elo rating gap',
+    // --- ratings ---
+    elo_home: `${homeTeam} team rating`,
+    elo_away: `${awayTeam} team rating`,
+    elo_diff: 'Rating gap (magnitude)',
+    elo_diff_signed: 'Team rating gap',
     // --- recent form / rolling stats ---
     home_form_5_pts: `${homeTeam} form (last 5)`,
     away_form_5_pts: `${awayTeam} form (last 5)`,

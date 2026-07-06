@@ -33,7 +33,7 @@ describe('WhyThisPrediction', () => {
 
     // Accessible text carries direction + contribution for every row.
     expect(
-      screen.getByLabelText(/Elo rating gap.*pushed toward Arsenal win.*\+0\.42/)
+      screen.getByLabelText(/Team rating gap.*pushed toward Arsenal win.*\+0\.42/)
     ).toBeInTheDocument()
     expect(
       screen.getByLabelText(/Chelsea goals conceded \(last 5\).*pushed against Arsenal win/)
@@ -77,7 +77,7 @@ describe('WhyThisPrediction', () => {
 
 describe('featureLabel', () => {
   it('maps common dense features to plain language with team names', () => {
-    expect(featureLabel('elo_diff_signed', HOME, AWAY)).toBe('Elo rating gap')
+    expect(featureLabel('elo_diff_signed', HOME, AWAY)).toBe('Team rating gap')
     expect(featureLabel('home_form_5_pts', HOME, AWAY)).toBe('Arsenal form (last 5)')
     expect(featureLabel('away_goals_against_avg5', HOME, AWAY)).toBe(
       'Chelsea goals conceded (last 5)'

@@ -6,13 +6,11 @@ import {
   Activity,
   Brain,
   Calculator,
-  Gauge,
   Globe,
   History,
   Info,
   Medal,
   Newspaper,
-  Sparkles,
   TrendingUp,
   Trophy,
 } from 'lucide-react'
@@ -48,7 +46,6 @@ const GROUPS: NavGroup[] = [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
       { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
       { href: '/history', label: 'History', icon: History },
-      { href: '/ai', label: 'Model hub', icon: Sparkles, accent: 'ai' },
     ],
   },
   {
@@ -56,7 +53,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/simulator', label: 'Simulator', icon: Calculator },
       { href: '/tournaments', label: 'Tournaments', icon: Medal },
-      { href: '/diagnostics', label: 'Diagnostics', icon: Gauge },
       { href: '/about', label: 'About', icon: Info },
     ],
   },

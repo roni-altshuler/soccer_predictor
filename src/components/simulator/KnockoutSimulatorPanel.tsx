@@ -181,7 +181,7 @@ export default function KnockoutSimulatorPanel({
         <TournamentCrest tournamentId={config.crestId} name={config.name} size={48} />
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-            Monte Carlo knockout
+            Knockout simulator
           </p>
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{config.name}</h2>
         </div>
@@ -292,7 +292,7 @@ export default function KnockoutSimulatorPanel({
               size="sm"
               label="Simulations"
               value={results.numSimulations.toLocaleString()}
-              sub="Monte Carlo iterations"
+              sub="tournament runs"
             />
           </div>
 
@@ -362,8 +362,8 @@ export default function KnockoutSimulatorPanel({
           </button>
 
           <p className="tabular text-center text-xs text-[var(--text-tertiary)]">
-            Based on {results.numSimulations.toLocaleString()} Monte Carlo simulations using ELO
-            ratings and a Bradley-Terry model
+            Based on {results.numSimulations.toLocaleString()} simulated tournament runs over
+            long-run team ratings
           </p>
         </div>
       )}

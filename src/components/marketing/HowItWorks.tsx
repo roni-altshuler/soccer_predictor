@@ -8,28 +8,28 @@ const STEPS = [
     Icon: Database,
     step: '01',
     title: 'Ingest',
-    body: 'Live ESPN scoreboards, standings, scorers, and decades of historical results feed a unified match warehouse — for the men’s and women’s game.',
+    body: 'Live scoreboards, standings, scorers, and decades of historical results — for the men’s and women’s game.',
     accent: 'var(--accent-ai)',
   },
   {
     Icon: Brain,
     step: '02',
     title: 'Predict',
-    body: 'A per-gender unified neural model blends with an ELO-Poisson baseline to produce home/draw/away probabilities, expected goals, and a full scoreline distribution.',
+    body: 'Every upcoming fixture gets home/draw/away probabilities, expected goals, and a full scoreline distribution — with a confidence we are willing to be measured against.',
     accent: 'var(--accent-primary)',
   },
   {
     Icon: LineChart,
     step: '03',
     title: 'Audit',
-    body: 'Every settled match updates accuracy, calibration, and per-league drift. The model is held to a sportsbook-style quality gate — and every miss stays visible.',
+    body: 'Every settled match updates the public track record — when we say 60%, it should happen about 60% of the time. Every miss stays visible.',
     accent: 'var(--accent-warn)',
   },
   {
     Icon: Zap,
     step: '04',
     title: 'Adapt',
-    body: 'Three times a day the online-learning pipeline re-tunes blend weights and draw thresholds per league, then rolls the improved model forward automatically.',
+    body: 'Predictions refresh several times a day, so new results and fixtures are reflected automatically — league by league.',
     accent: 'var(--accent-ai)',
   },
 ]
@@ -47,7 +47,7 @@ export function HowItWorks() {
               <span className="mkt-headline-gradient">Adapt.</span>
             </>
           }
-          lede="A closed loop that never stops learning. Each step is transparent — you can inspect the model's confidence, its accuracy, and how it changed after the whistle."
+          lede="A closed loop that never stops learning. Each step is transparent — you can inspect the AI's confidence, its accuracy, and how it changed after the whistle."
         />
       </Reveal>
 

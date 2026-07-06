@@ -39,7 +39,7 @@ export function FinalCTA() {
             <span className="mkt-headline-gradient">calibrated lens</span>.
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-[var(--text-secondary)] md:text-lg">
-            Open the Match Centre for today&apos;s fixtures, or run any matchup through the model
+            Open the Match Centre for today&apos;s fixtures, or run any matchup through the AI
             right now. Every probability comes with the track record to back it up.
           </p>
 

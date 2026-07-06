@@ -73,7 +73,7 @@ export function GroupsGlance({ groups }: { groups: GlanceGroup[] }) {
         ))}
       </div>
       <p className="mt-2 text-caption text-[var(--text-tertiary)]">
-        Percentages are the model&apos;s probability of reaching the knockout stage.
+        Percentages are each team&apos;s probability of reaching the knockout stage.
       </p>
     </section>
   )

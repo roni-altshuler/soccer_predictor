@@ -21,7 +21,6 @@ import HighlightsLink from '@/components/match/HighlightsLink'
 import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import DerivedMarkets from '@/components/match/DerivedMarkets'
 import BettingIntelligence from '@/components/match/BettingIntelligence'
-import DataSourceBadge from '@/components/DataSourceBadge'
 import { type PredictionPayload } from '@/components/prediction/PredictionResult'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { SplitStatBar } from '@/components/match/SplitStatBar'
@@ -249,14 +248,6 @@ function isNationalTeamMatch(leagueId?: string, leagueName?: string): boolean {
   return /world cup|euro(pean championship)?|copa america|nations league|gold cup|international friendl/.test(name)
 }
 
-/** Human display name for the model chip ("unified-multitask…" → "Unified v2"). */
-function modelDisplayName(version?: string | null): string | null {
-  if (!version) return null
-  if (version.toLowerCase().startsWith('unified')) return 'Unified v2'
-  if (version.toLowerCase().includes('elo')) return 'ELO-Poisson'
-  return version
-}
-
 type MatchStats = MatchDetails['stats']
 
 function TeamNameWithCrest({
@@ -368,7 +359,7 @@ function FotmobStatsCard({
     <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
       <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Top Stats</h3>
-        <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Fotmob-style side-by-side match comparison</p>
+        <p className="text-[10px] mt-0.5 text-[var(--text-tertiary)]">Side-by-side match comparison</p>
       </div>
 
       <div className={compact ? 'p-4 space-y-4' : 'p-5 space-y-4'}>
@@ -668,9 +659,8 @@ function PredictionInsightPanel({ match }: { match: MatchDetails }) {
       <div className="p-4 border-b flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: 'var(--border-color)' }}>
         <div>
           <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--accent-ai)]">Prediction Explainability</p>
-          <h3 className="text-base font-semibold text-[var(--text-primary)]">Why the model leans this way</h3>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">Why the AI leans this way</h3>
         </div>
-        <DataSourceBadge provider="model" detail={modelDisplayName(match.prediction.model_version) || 'Unified neural ensemble'} />
       </div>
 
       <div className="p-4">
@@ -705,19 +695,10 @@ function PredictionInsightPanel({ match }: { match: MatchDetails }) {
           ))}
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4">
           <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
-            Model output is probabilistic and uses available provider data, standings context, H2H samples, and calibrated scoring features.
+            Predictions are probabilistic — even the strongest pick loses sometimes.
           </p>
-          {match.source && (
-            <DataSourceBadge
-              provider={match.source}
-              detail={match.sourceDetail}
-              refreshedAt={match.generatedAt}
-              compact
-              className="flex-shrink-0"
-            />
-          )}
         </div>
       </div>
     </div>
@@ -1314,12 +1295,6 @@ export default function MatchDetailPage() {
                 </button>
               )
             })}
-            <DataSourceBadge
-              provider={match.source || 'none'}
-              detail={match.sourceDetail || 'Match detail feed'}
-              refreshedAt={match.generatedAt}
-              compact
-            />
           </div>
         </div>
       </section>
@@ -1456,19 +1431,11 @@ export default function MatchDetailPage() {
                       <p className="text-sm font-semibold text-[var(--text-primary)]">{match.prediction.confidence_band || 'Medium'}</p>
                     </div>
                   </div>
-                  {(match.prediction.model_version || match.prediction.most_likely_score) && (
+                  {match.prediction.most_likely_score && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {match.prediction.most_likely_score && (
-                        <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full tabular-nums">
-                          Likeliest scoreline: {match.prediction.most_likely_score}
-                        </span>
-                      )}
-                      {match.prediction.model_version && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-ai)]/12 px-2 py-1 text-[10px] font-semibold text-[var(--accent-ai)]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-ai)]" aria-hidden />
-                          {modelDisplayName(match.prediction.model_version)}
-                        </span>
-                      )}
+                      <span className="text-[10px] bg-[var(--muted-bg)] text-[var(--text-secondary)] px-2 py-1 rounded-full tabular-nums">
+                        Likeliest scoreline: {match.prediction.most_likely_score}
+                      </span>
                     </div>
                   )}
                   {isFinished && match.home_score !== null && match.away_score !== null && (() => {
@@ -1587,25 +1554,6 @@ export default function MatchDetailPage() {
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatDate(match.date)}</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{match.league}</p>
                   </div>
-                </div>
-                {/* Data source */}
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] text-[10px] font-black text-[var(--text-secondary)]">
-                    DS
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Match data source</p>
-                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                      Provider-backed details are used when available; unavailable fields stay blank.
-                    </p>
-                  </div>
-                  <DataSourceBadge
-                    provider={match.source || 'none'}
-                    detail={match.sourceDetail}
-                    refreshedAt={match.generatedAt}
-                    compact
-                    className="flex-shrink-0"
-                  />
                 </div>
                 {/* Referee */}
                 {match.referee && (

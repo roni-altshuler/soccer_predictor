@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
-import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
@@ -82,11 +81,6 @@ function resolveCompetitionId(m: TodayMatch): string {
   const byId = getLeagueAccent(m.leagueId)
   if (byId.competitionId !== 'unknown') return byId.competitionId
   return getLeagueAccent(m.league).competitionId
-}
-
-function resolveDataProvider(source?: TodayMatchesPayload['source']): DataProvider {
-  if (source === 'espn' || source === 'fotmob' || source === 'error') return source
-  return 'none'
 }
 
 function matchHref(m: MatchRowMatch & { leagueId?: string }): string | undefined {
@@ -296,13 +290,8 @@ function MatchesContent() {
           </Card>
         )}
 
-        {/* Provenance + disclaimer — one quiet line, not a banner */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
-          <DataSourceBadge
-            provider={resolveDataProvider(payload.source)}
-            detail={payload.sourceDetail || 'Match feed'}
-            compact
-          />
+        {/* Disclaimer — one quiet line, not a banner */}
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
             Predictions are educational only — not betting advice.
           </p>

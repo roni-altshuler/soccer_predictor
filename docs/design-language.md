@@ -46,14 +46,36 @@ v2 fixed emoji/fake-crest/zero-metric problems but kept the *template* feel:
 
 ## Surfaces (token values live in `globals.css`)
 
+v3.1: dark surfaces lifted (v3 was "almost too dark") and given a faint
+pitch-green cast (hue ~150, sat 4-6%) — a quiet football identity, never a
+colored theme.
+
 | Token | Dark | Light | Use |
 |---|---|---|---|
-| `--background` | `#0e0e10` | `#f2f3f5` | page |
-| `--card-bg` | `#17171b` | `#ffffff` | list containers, cards |
-| `--card-hover` | `#1e1e23` | `#f2f4f7` | row hover |
-| `--border-color` | `#26262b` | `#e3e5e9` | hairlines |
+| `--background` | `#171a18` | `#f2f3f5` | page |
+| `--card-bg` | `#1f2320` | `#ffffff` | list containers, cards |
+| `--card-hover` | `#272b28` | `#f2f4f7` | row hover |
+| `--border-color` | `#333835` | `#e3e5e9` | hairlines |
 | `--accent-primary` | `#00c060` | `#0a9950` | active nav, links, kickoff time |
 | `--accent-ai` | `#27c4f5` | `#0891b2` | AI pick data only |
+
+## Copy policy: no provenance or methodology in the UI (v3.1)
+
+The website is the showcase. Data-provider names and how-it's-calculated
+language (providers, algorithms, training/calibration/pipeline terms) live in
+`README.md` + `docs/methodology.md` only. `/about` may carry a 2-4 sentence
+plain-language note. Numbers are fine ("simulated 20,000 times"); method
+names are not. The educational disclaimer stays in the footer.
+
+## Ported viz kit (v3.1)
+
+Production-grade data-viz and motion components ported from the
+motorsportverse F1 project (plus FireFly/personal-site picks) live under
+`src/components/viz/` and `src/components/motion/` — probability bars,
+scoreline heatmap, progression-with-projection chart, factor meters,
+animated numbers, club color bars, lazy chart hydration. New chart surfaces
+must compose these instead of hand-rolling recharts/divs, and must be
+retokenized to `var(--*)` (no source-project palettes).
 
 Cards are **flat**: 1px hairline border, 12px radius, no elevation gradient.
 Depth comes from surface steps (bg → card → hover), not shadows.

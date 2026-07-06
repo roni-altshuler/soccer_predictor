@@ -1309,7 +1309,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             <SectionHeader
               kicker="Golden Boot"
               title="Top Scorers"
-              description={`${data?.season || (isCalendarYear ? '2026' : '2025-26')} · ${data?.topScorerSource || 'Provider data'}`}
+              description={data?.season || (isCalendarYear ? '2026' : '2025-26')}
               className="p-4 border-b border-[var(--border-color)]"
             />
             {data?.topScorers && data.topScorers.length > 0 ? (
@@ -1360,7 +1360,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text-primary)]">Season Simulation</h3>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Monte Carlo simulation using current standings, provider fixtures, ELO ratings, and Poisson goal distributions.
+                    Thousands of simulated seasons using current standings, remaining fixtures, and team ratings.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1582,7 +1582,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 {/* Disclaimer */}
                 <div className="p-4 rounded-xl bg-[var(--accent-warn)]/10 border border-[var(--accent-warn)]/20">
                   <p className="text-sm text-[var(--accent-warn)] text-center">
-                    <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings, provider fixtures when available, and team ratings.
+                    <span className="font-semibold">Note:</span> Predictions are based on thousands of simulated seasons using current standings, remaining fixtures, and team ratings.
                     Actual results may vary significantly due to injuries, transfers, and unpredictable events.
                   </p>
                 </div>
@@ -1594,7 +1594,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               <div className="bg-[var(--card-bg)] border border-[var(--border-color)] p-8 text-center">
                 <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Season Simulation</h3>
                 <p className="text-[var(--text-secondary)] max-w-md mx-auto">
-                  Run a Monte Carlo simulation to predict final standings, 
+                  Run a season simulation to predict final standings,
                   title probabilities, and relegation risks based on remaining fixtures.
                 </p>
               </div>

@@ -106,7 +106,7 @@ export default async function WorldCupGroupPage({
             </p>
             <h1 className="mt-1 text-2xl font-black sm:text-3xl">Group {groupLabel}</h1>
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Live Monte Carlo advancement probabilities. {nSims > 0 ? `${nSims.toLocaleString()} simulations` : 'No simulations available yet'}
+              Live advancement probabilities. {nSims > 0 ? `Simulated ${nSims.toLocaleString()} times` : 'No simulations available yet'}
               {generatedAt ? ` · generated ${new Date(generatedAt).toLocaleString()}` : ''}.
             </p>
           </div>

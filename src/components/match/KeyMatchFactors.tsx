@@ -321,7 +321,7 @@ export default function KeyMatchFactors({ homeTeam, awayTeam, leagueId, matchDat
           <span>📊</span> Key Match Factors
         </h3>
         <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          Research-backed indicators driving the prediction model
+          Research-backed indicators behind the prediction
         </p>
       </div>
 

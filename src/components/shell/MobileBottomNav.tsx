@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
+  Brain,
   Globe,
   Search,
-  Sparkles,
   TrendingUp,
 } from 'lucide-react'
 
@@ -29,7 +29,7 @@ const ITEMS: Item[] = [
   // 'Leagues', icon: Trophy } after the 2026 final on July 19.
   { href: '/world-cup', label: 'World Cup', icon: Globe },
   { action: 'palette', label: 'Search', icon: Search },
-  { href: '/ai', label: 'AI', icon: Sparkles, accent: 'ai' },
+  { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
 ]
 

@@ -117,7 +117,7 @@ export function LeaguePerformanceBreakdown({
         <SectionHeader
           className="flex-col items-start gap-2 sm:flex-row sm:items-end"
           kicker="League audit"
-          title="Where the model wins"
+          title="Where the picks land"
           description={
             totals.leagueCount > 0
               ? `Hit rate by league · ${Math.round(totals.overallRate * 100)}% across ${totals.settled} settled picks in ${totals.leagueCount} league${totals.leagueCount === 1 ? '' : 's'}`

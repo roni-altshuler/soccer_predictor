@@ -23,13 +23,12 @@ describe('Footer', () => {
     expect(screen.getByText(new RegExp(`© ${currentYear}`))).toBeInTheDocument()
   })
 
-  it('shows data source attribution', () => {
+  it('does not surface data-provider attribution in the UI', () => {
+    // Provenance is documented in the repo (README / docs), not on the site.
     render(<Footer />)
-    expect(screen.getByText(/Powered by/i)).toBeInTheDocument()
-    const fotmobLink = screen.getByRole('link', { name: /FotMob/i })
-    const espnLink = screen.getByRole('link', { name: /ESPN/i })
-    expect(fotmobLink).toHaveAttribute('href', 'https://www.fotmob.com')
-    expect(espnLink).toHaveAttribute('href', 'https://www.espn.com/soccer/')
+    expect(screen.queryByText(/Powered by/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /FotMob/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /ESPN/i })).not.toBeInTheDocument()
   })
 
   it('displays educational disclaimer', () => {

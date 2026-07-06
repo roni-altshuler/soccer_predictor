@@ -1,39 +1,37 @@
 'use client'
 
-import Link from 'next/link'
-import { Brain, Database, Gauge } from 'lucide-react'
+import { Brain, Gauge, Target } from 'lucide-react'
 
 import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 
 /**
  * Plain-language section on the public accuracy page. Three short
- * cards explain WHAT the model is, WHAT data it learned from, and HOW
- * to read the accuracy number above. Designed for end-users, not
- * engineers — for the full audit see /diagnostics.
+ * cards explain how to read the results above in everyday terms —
+ * outcomes only, no methodology.
  */
 
 export function ModelExplainer() {
   const cards = [
     {
       icon: Brain,
-      title: 'One AI for every league',
+      title: 'Every pick is on the record',
       body:
-        "We trained a single neural network on every match in our database. Instead of guessing each league separately, the model shares what it learns from the Premier League across La Liga, Bundesliga, the Champions League, NWSL — every competition we cover. A second model with the same shape powers the women's universe.",
+        'Predictions are locked in before kick-off and never edited afterwards. Once the final whistle goes, each pick is scored as a hit or a miss and added to the totals you see on this page.',
       accent: 'var(--accent-ai)',
     },
     {
-      icon: Database,
-      title: '80,000+ matches of context',
+      icon: Gauge,
+      title: 'What the accuracy number means',
       body:
-        "The model sees a team's ELO rating, last-five form, head-to-head record, days of rest, weather, referee tendencies, and 75+ other contextual features before each prediction. We retrain regularly so recent results carry the right weight.",
+        'Accuracy is the share of matches where we picked the correct result (home win, draw, or away win). Football is messy, so anything around 60% is a strong long-run hit rate.',
       accent: 'var(--accent-primary)',
     },
     {
-      icon: Gauge,
-      title: 'How to read this page',
+      icon: Target,
+      title: 'When we say 60%, it happens about 60% of the time',
       body:
-        "Accuracy is the share of matches where we picked the correct winner (home / draw / away). The Brier score and calibration plot measure whether our probabilities are honest — a 70% pick should win roughly 70% of the time. Football is messy, so anything around 60% is a strong long-run hit rate.",
+        'The chart below checks whether our confidence is honest. Picks we gave a 70% chance should come true roughly 70% of the time — when the dots hug the diagonal, the percentages mean exactly what they say.',
       accent: 'var(--accent-warn)',
     },
   ]
@@ -41,14 +39,9 @@ export function ModelExplainer() {
   return (
     <Card className="p-4 md:p-5">
       <div className="mb-3">
-        <SectionHeader kicker="Explainer" title="How it works" />
+        <SectionHeader kicker="Explainer" title="How to read this page" />
         <p className="mt-1 text-small text-[var(--text-tertiary)]">
-          A quick tour of the model behind the number above. For the deep audit (calibration
-          drift, league-by-league quality gates), see{' '}
-          <Link href="/diagnostics" className="font-semibold text-[var(--accent-primary)] hover:underline">
-            model diagnostics
-          </Link>
-          .
+          A quick guide to the numbers above — what gets counted, and what the percentages mean.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">

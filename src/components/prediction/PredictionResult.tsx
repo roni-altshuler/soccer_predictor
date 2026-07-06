@@ -16,19 +16,6 @@ const FLAT_CARD =
   'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5'
 
 /**
- * Humanize an internal model identifier into a reader-facing label.
- * Never surface raw pipeline ids like "unified-multitask-1.0".
- */
-function humanizeModelVersion(raw?: string): string | null {
-  if (!raw) return null
-  const v = raw.toLowerCase()
-  if (v.includes('unified') || v.includes('multitask')) return 'Unified AI model'
-  if (v.includes('legacy') || v.includes('elo') || v.includes('poisson'))
-    return 'Elo-Poisson baseline'
-  return 'AI model'
-}
-
-/**
  * Showcase prediction visualization, designed for the AI prediction page
  * and the match-detail "AI Prediction" tab.
  *
@@ -325,7 +312,7 @@ function buildDrivers(
     {
       label: 'Rating edge',
       lean: Math.tanh(factors.elo_difference / 200),
-      detail: `${fmtElo(factors.home_elo)} vs ${fmtElo(factors.away_elo)} · Δ ${factors.elo_difference >= 0 ? '+' : ''}${fmtElo(factors.elo_difference)} Elo`,
+      detail: `Ratings ${fmtElo(factors.home_elo)} vs ${fmtElo(factors.away_elo)} · edge ${factors.elo_difference >= 0 ? '+' : ''}${fmtElo(factors.elo_difference)}`,
     },
     {
       label: 'Recent form',
@@ -447,7 +434,6 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
   const { home_win, draw, away_win } = prediction.outcome
   const predictedOutcome: 'home' | 'draw' | 'away' =
     home_win >= draw && home_win >= away_win ? 'home' : away_win >= draw ? 'away' : 'draw'
-  const modelLabel = humanizeModelVersion(prediction.model_version)
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -528,7 +514,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
               </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-[260px]">
-              The signals the unified model weighed, ordered by how strongly each
+              The signals behind this prediction, ordered by how strongly each
               leans. Bars show <em>which side</em> a factor favours and its relative
               strength — not an exact split of the win probability.
             </TooltipContent>
@@ -552,7 +538,6 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
 
       <Separator className="opacity-50" />
       <p className="text-center text-[10px] text-[var(--text-tertiary)]">
-        {modelLabel ? `${modelLabel} · ` : ''}
         Predictions are for educational/entertainment purposes only. Not intended for betting.
       </p>
     </motion.div>

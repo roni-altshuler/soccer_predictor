@@ -17,8 +17,8 @@ import type { FlatAccuracyResponse } from '@/lib/types/accuracy'
  * honest headline card, then dense flat cards (calibration, confusion,
  * recent picks, league breakdown). Gender-aware via useGenderQuery.
  *
- * Sister page: /diagnostics keeps the engineer-facing TrackingCenter
- * content (model quality gates, league-by-league audit, drift charts).
+ * This is the only results surface — methodology lives in
+ * docs/methodology.md, not in the UI.
  */
 
 type AccuracyResponse = FlatAccuracyResponse
@@ -145,7 +145,7 @@ export default function AccuracyPage() {
               {total > 0 ? (
                 <>
                   {total.toLocaleString()} pick{total === 1 ? '' : 's'} tracked, none with a
-                  final result yet. The calibration plot and recent-picks feed appear here as
+                  final result yet. The charts and recent-picks feed appear here as
                   soon as the first match finishes.
                 </>
               ) : (

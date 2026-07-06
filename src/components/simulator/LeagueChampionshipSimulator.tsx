@@ -185,7 +185,7 @@ export default function LeagueChampionshipSimulator() {
         </div>
 
         <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          Monte Carlo simulation using Bradley-Terry model with team strength derived from current performance
+          Thousands of simulated seasons with team strength derived from current performance
         </p>
       </div>
 
@@ -285,7 +285,7 @@ export default function LeagueChampionshipSimulator() {
                   size="sm"
                   label="Simulations"
                   value={result.n_simulations.toLocaleString()}
-                  sub="Monte Carlo iterations"
+                  sub="season runs"
                 />
               </div>
             </div>
@@ -349,7 +349,7 @@ export default function LeagueChampionshipSimulator() {
               <SectionHeader
                 kicker="Title race"
                 title="Who can still win?"
-                description="Mathematical contention vs the current leader · Monte Carlo title probability shown alongside."
+                description="Mathematical contention vs the current leader · simulated title probability shown alongside."
               />
               <div className="flex gap-2 text-[11px]">
                 <span className="tabular rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] px-2.5 py-1 font-semibold text-[var(--accent-primary)]">
@@ -574,7 +574,7 @@ export default function LeagueChampionshipSimulator() {
             <p className="flex items-center justify-center gap-2 text-center text-sm text-[var(--accent-warn)]">
               <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>
-                <span className="font-semibold">Note:</span> Predictions are based on Monte Carlo simulations using current standings and team ratings.
+                <span className="font-semibold">Note:</span> Predictions are based on thousands of simulated seasons using current standings and team ratings.
                 Actual results may vary significantly due to injuries, transfers, and unpredictable events.
               </span>
             </p>
@@ -588,7 +588,7 @@ export default function LeagueChampionshipSimulator() {
           <Trophy className="mx-auto mb-4 h-12 w-12 text-[var(--accent-warn)]" aria-hidden="true" />
           <h3 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">Championship contention simulator</h3>
           <p className="mx-auto max-w-md text-[var(--text-secondary)]">
-            Pick a league and run the Monte Carlo to see who can still mathematically
+            Pick a league and run the simulation to see who can still mathematically
             win the title, what points are needed to catch the leader, and how the
             top-four / relegation races shake out across thousands of seasons.
           </p>

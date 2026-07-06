@@ -1,7 +1,5 @@
 'use client'
 
-import DataSourceBadge from '@/components/DataSourceBadge'
-
 type CommandTab = 'Groups' | 'Knockout' | 'Fixtures' | 'Simulator' | 'Challenge'
 
 type WorldCupGroupStanding = {
@@ -141,12 +139,8 @@ export default function WorldCupCommandCenter({
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--accent-ai)]">World Cup Command Center</p>
             <h2 className="mt-1 text-xl font-black text-[var(--text-primary)]">2026 tournament operating board</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--text-secondary)]">
-              A single control surface for tournament data coverage, model readiness, fixtures, knockout paths, and scenario simulation.
+              A single control surface for tournament coverage, prediction readiness, fixtures, knockout paths, and scenario simulation.
             </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <DataSourceBadge provider="espn" detail="Tournament fixtures, groups, results, and leaders" />
-            <DataSourceBadge provider="model" detail="fifa.world + global fallback" />
           </div>
         </div>
       </div>
@@ -156,13 +150,13 @@ export default function WorldCupCommandCenter({
           <MetricTile
             label="Team Coverage"
             value={`${loadedTeamCount}/${expectedTeams}`}
-            detail={`${groups.length}/${expectedGroups} groups loaded from provider data.`}
+            detail={`${groups.length}/${expectedGroups} groups loaded.`}
             tone={loadedTeamCount >= expectedTeams ? 'good' : loadedTeamCount > 0 ? 'watch' : 'neutral'}
           />
           <MetricTile
             label="Fixtures"
             value={`${upcomingMatches.length}`}
-            detail={nextMatch ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam} · ${nextMatch.date}` : 'No upcoming provider fixtures loaded yet.'}
+            detail={nextMatch ? `${nextMatch.homeTeam} vs ${nextMatch.awayTeam} · ${nextMatch.date}` : 'No upcoming fixtures loaded yet.'}
             tone={upcomingMatches.length > 0 ? 'good' : 'neutral'}
           />
           <MetricTile
@@ -172,7 +166,7 @@ export default function WorldCupCommandCenter({
             tone="neutral"
           />
           <MetricTile
-            label="Model Favorite"
+            label="Title Favorite"
             value={topChampion?.team || 'Pending'}
             detail={topChampion ? `${pct(topChampion.probability)} simulated title probability.` : 'Run or refresh simulation once teams are available.'}
             tone={topChampion ? 'good' : 'watch'}
@@ -194,7 +188,7 @@ export default function WorldCupCommandCenter({
               <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <ActionButton
                   label="Review groups"
-                  detail={loadedTeamCount > 0 ? 'Inspect qualification status and group table gaps.' : 'Open group tables when provider data appears.'}
+                  detail={loadedTeamCount > 0 ? 'Inspect qualification status and group table gaps.' : 'Open group tables when data appears.'}
                   onClick={() => onOpenTab('Groups')}
                 />
                 <ActionButton
@@ -204,7 +198,7 @@ export default function WorldCupCommandCenter({
                 />
                 <ActionButton
                   label="Open fixtures"
-                  detail={nextMatch ? `Next provider fixture: ${nextMatch.date}${nextMatch.time ? ` at ${nextMatch.time}` : ''}.` : 'Check official fixtures as the tournament feed fills.'}
+                  detail={nextMatch ? `Next fixture: ${nextMatch.date}${nextMatch.time ? ` at ${nextMatch.time}` : ''}.` : 'Check official fixtures as the tournament feed fills.'}
                   onClick={() => onOpenTab('Fixtures')}
                 />
                 <ActionButton
@@ -229,7 +223,7 @@ export default function WorldCupCommandCenter({
                 <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
                   {latestResult
                     ? `${latestResult.homeTeam} vs ${latestResult.awayTeam} · ${latestResult.date}`
-                    : 'No completed World Cup result in the current provider window.'}
+                    : 'No completed World Cup result in the current window.'}
                 </p>
               </div>
               <div>
@@ -237,13 +231,13 @@ export default function WorldCupCommandCenter({
                 <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
                   {leadingScorer
                     ? `${leadingScorer.name}, ${leadingScorer.team}: ${leadingScorer.goals} goals.`
-                    : 'Top scorer board will stay empty until provider-backed leader data is available.'}
+                    : 'Top scorer board will stay empty until leader data is available.'}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-bold text-[var(--text-primary)]">Data rule</p>
                 <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                  Command center metrics use live provider data. Missing teams, scorers, fixtures, and venues are not filled with fabricated placeholders.
+                  Command center metrics use live data. Missing teams, scorers, fixtures, and venues are not filled with fabricated placeholders.
                 </p>
               </div>
             </div>

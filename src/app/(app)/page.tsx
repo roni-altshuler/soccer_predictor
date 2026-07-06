@@ -10,7 +10,6 @@ import {
   teamMatchesWatchlist,
   type WatchTeam,
 } from '@/lib/watchlist'
-import DataSourceBadge, { type DataProvider } from '@/components/DataSourceBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
@@ -120,11 +119,6 @@ const LEAGUE_ID_MAP: Record<string, string> = {
   'FIFA World Cup 2026': 'fifa.world',
   'UEFA European Championship': 'uefa.euro',
   'Copa America': 'conmebol.america',
-}
-
-function resolveDataProvider(source?: TodayMatchesPayload['source'] | TodayMatch['provider']): DataProvider {
-  if (source === 'espn' || source === 'fotmob' || source === 'error') return source
-  return 'none'
 }
 
 function matchHref(m: TodayMatch): string | undefined {
@@ -344,13 +338,8 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Provenance + disclaimer — one quiet line, not a banner */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
-          <DataSourceBadge
-            provider={resolveDataProvider(matches.source)}
-            detail={matches.sourceDetail || 'Match feed'}
-            compact
-          />
+        {/* Disclaimer — one quiet line, not a banner */}
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
             Predictions are educational only — not betting advice.
           </p>

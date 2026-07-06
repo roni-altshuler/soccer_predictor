@@ -164,14 +164,14 @@ export default function WorldCupReadinessPanel({ compact = false }: { compact?: 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Prediction readiness</p>
-              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">World Cup model status</h2>
+              <h2 className="mt-1 text-lg font-black text-[var(--text-primary)]">World Cup prediction status</h2>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">
                 Opening match {formatDate(data.dates.opening_match)}. Final {formatDate(data.dates.final)}.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <StatusPill ok={readiness.modelOk} label={data.model.available ? 'Model ready' : 'Model missing'} />
-              <StatusPill ok={readiness.integrityOk} label={readiness.integrityOk ? 'No fake data' : 'Sim weather on'} />
+              <StatusPill ok={readiness.modelOk} label={data.model.available ? 'Predictions ready' : 'Predictions unavailable'} />
+              <StatusPill ok={readiness.integrityOk} label={readiness.integrityOk ? 'No fake data' : 'Data check failed'} />
             </div>
           </div>
         </div>
@@ -181,42 +181,42 @@ export default function WorldCupReadinessPanel({ compact = false }: { compact?: 
             <ReadinessCard
               title="Readiness"
               value={`${readiness.score}/4`}
-              detail="Model, calibration, diagnostics, and data policy checks."
+              detail="Prediction, accuracy, and data policy checks."
               tone={readiness.score >= 3 ? 'good' : 'watch'}
             />
             <ReadinessCard
-              title="Model Sample"
+              title="Matches Analysed"
               value={`${data.model.samples}`}
-              detail={`${data.model.n_features || 0} features. Test set ${data.model.test_samples} matches.`}
+              detail={`Scored on ${data.model.test_samples} recent matches.`}
               tone={readiness.modelOk ? 'good' : 'watch'}
             />
             <ReadinessCard
-              title="Test Accuracy"
+              title="Accuracy"
               value={pct(data.model.ensemble_accuracy)}
-              detail={`Neural ${pct(data.model.nn_accuracy)}. Log loss ${num(data.model.ensemble_log_loss, 3)}.`}
+              detail="Share of correct home/draw/away calls."
               tone="neutral"
             />
             <ReadinessCard
-              title="Audit Accuracy"
+              title="Live Accuracy"
               value={pct(data.diagnostics?.accuracy)}
-              detail={`Settled sample ${data.diagnostics?.sample_size || 0}. Brier ${num(data.diagnostics?.brier_score, 3)}.`}
+              detail={`Across ${data.diagnostics?.sample_size || 0} settled picks.`}
               tone={readiness.diagnosticsOk ? 'good' : 'watch'}
             />
           </div>
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
             <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Calibration</p>
+              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Scoring Profile</p>
               <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-                Avg goals {num(data.calibration.avg_goals, 2)}. Draw rate {pct(data.calibration.draw_rate)}. Neural blend {pct(data.calibration.blend_nn_min)}-{pct(data.calibration.blend_nn_max)}.
+                Avg goals {num(data.calibration.avg_goals, 2)}. Draw rate {pct(data.calibration.draw_rate)}.
               </p>
             </div>
             <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Global Model</p>
+              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Fallback Coverage</p>
               <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">
                 {data.model.global_model_available
-                  ? `Available. Trained ${formatDate(data.model.global_model_trained_at)}. Last online update ${formatDate(data.model.global_model_last_online_update)} (${data.model.global_model_last_online_update_samples || 0} matches).`
-                  : 'Not trained yet. Per-league World Cup model remains primary.'}
+                  ? `Available. Last updated ${formatDate(data.model.global_model_last_online_update)}.`
+                  : 'Not available yet. Tournament-specific predictions remain primary.'}
               </p>
             </div>
             <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">

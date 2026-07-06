@@ -5,34 +5,34 @@ import { Section, SectionHeader } from './primitives/Section'
 import { Reveal, RevealGroup, RevealItem } from './primitives/Reveal'
 
 const STATS: { value: number; dp: number; suffix?: string; prefix?: string; label: string; sub: string }[] = [
-  { value: 60.5, dp: 1, suffix: '%', label: "Men's accuracy", sub: '11,661-match holdout' },
-  { value: 51.45, dp: 2, suffix: '%', label: "Women's accuracy", sub: '482-match holdout' },
-  { value: 52.1, dp: 1, suffix: '%', label: 'Top-5 scoreline hit', sub: 'score in 5 likeliest · holdout' },
-  { value: 0.865, dp: 3, label: 'Log loss', sub: 'holdout · lower is better' },
-  { value: 80, dp: 0, suffix: '+', label: 'Engineered features', sub: 'ELO · form · weather · refs' },
-  { value: 21, dp: 0, suffix: '%', label: 'Draw recall', sub: 'holdout · the hardest class' },
+  { value: 60.5, dp: 1, suffix: '%', label: "Men's accuracy", sub: 'across 11,661 scored matches' },
+  { value: 51.45, dp: 2, suffix: '%', label: "Women's accuracy", sub: 'across 482 scored matches' },
+  { value: 52.1, dp: 1, suffix: '%', label: 'Top-5 scoreline hit', sub: 'real score in our 5 likeliest' },
+  { value: 77735, dp: 0, suffix: '+', label: 'Matches analysed', sub: "men's + women's game" },
+  { value: 18, dp: 0, label: 'Competitions covered', sub: 'leagues, cups, and tournaments' },
+  { value: 21, dp: 0, suffix: '%', label: 'Draw recall', sub: 'the hardest call in football' },
 ]
 
 const STACK = [
   {
     Icon: Layers,
-    title: 'Unified neural model',
-    body: 'A per-gender multi-task network predicts outcome, expected goals, and goal correlation jointly — with an ELO-Poisson (Dixon-Coles) baseline as a calibrated fallback.',
+    title: 'One engine for every competition',
+    body: 'The same prediction engine covers every league we track — men’s and women’s — and publishes a confidence figure with every single pick.',
   },
   {
     Icon: Database,
-    title: 'A single match warehouse',
-    body: 'ESPN, FotMob, FBref, Understat, ClubElo and more are reconciled into one store, with a weekly data-quality gate that fails CI on stale or missing sources.',
+    title: 'A public track record',
+    body: 'Every prediction is recorded before kick-off and scored once the match settles. Hits and misses alike stay on the board — no retroactive cherry-picking.',
   },
   {
     Icon: GitBranch,
-    title: 'Continuous online learning',
-    body: 'Three times a day the pipeline settles outcomes, generates the next week of picks, re-tunes per-league blend weights, and rolls the model forward — fully automated.',
+    title: 'Always current',
+    body: 'Picks refresh several times a day, so new results, form swings, and fixture changes are reflected quickly — fully automated.',
   },
   {
     Icon: Cpu,
-    title: 'Next.js 15 · FastAPI · PyTorch',
-    body: 'Server-first React for data routes, a typed FastAPI inference layer, and a seeded Monte Carlo engine for league and tournament simulation.',
+    title: 'Simulations at scale',
+    body: 'League and tournament projections come from thousands of simulated seasons over real standings and fixtures — rerun whenever the table moves.',
   },
 ]
 
@@ -41,14 +41,14 @@ export function TechnicalCredibility() {
     <Section id="technology" labelledBy="technology-heading" className="bg-[var(--background-secondary)]">
       <Reveal>
         <SectionHeader
-          eyebrow="Under the hood"
+          eyebrow="Track record"
           titleId="technology-heading"
           title={
             <>
               Numbers that hold up to <span className="mkt-headline-gradient">scrutiny</span>.
             </>
           }
-          lede="We publish the metrics that matter for a probabilistic model — not just accuracy, but calibration and the classes everyone else gets wrong."
+          lede="We publish the numbers that matter — not just accuracy, but whether our percentages mean what they say, and the calls everyone else gets wrong."
         />
       </Reveal>
 

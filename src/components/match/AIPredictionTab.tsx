@@ -137,7 +137,7 @@ function EmptyState({
       eyebrow: 'Past fixture',
       title: 'No live pre-match pick on file',
       body:
-        'This match has already finished. The live model only predicts upcoming fixtures, but you can run a retrospective analysis — what the same model would have predicted given everything we knew before kickoff.',
+        'This match has already finished. Live picks only cover upcoming fixtures, but you can run a retrospective analysis — what the AI would have predicted given everything we knew before kickoff.',
       cta: 'Run retrospective analysis',
       Icon: History,
     },
@@ -145,15 +145,15 @@ function EmptyState({
       eyebrow: 'Match in progress',
       title: 'Live prediction not in the feed yet',
       body:
-        "The pipeline hadn't picked this fixture before kickoff. You can still run an on-demand analysis — uses the same unified model but doesn't see in-play events.",
+        "This fixture didn't get a pick before kickoff. You can still run an on-demand analysis — same AI, but it doesn't see in-play events.",
       cta: 'Run on-demand prediction',
       Icon: Radio,
     },
     upcoming: {
       eyebrow: 'Upcoming fixture',
-      title: 'Live model run pending',
+      title: 'Live pick pending',
       body:
-        'The unified model runs three times a day (06:00, 14:00, 22:00 UTC) and picks all matches in the next 7 days. This fixture will appear here after the next run — or you can generate an on-demand prediction now.',
+        'Predictions refresh several times a day and cover all matches in the next 7 days. This fixture will appear here after the next refresh — or you can generate an on-demand prediction now.',
       cta: 'Run prediction now',
       Icon: Clock,
     },
@@ -243,9 +243,9 @@ function RetrospectiveBanner() {
     <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-warn)]/30 bg-[var(--accent-warn)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
       <History className="h-3.5 w-3.5 shrink-0 text-[var(--accent-warn)]" aria-hidden="true" />
       <span>
-        Retrospective analysis — same unified model, but{' '}
+        Retrospective analysis — same AI, but{' '}
         <span className="font-semibold text-[var(--text-primary)]">not</span> the live pre-match
-        pick. Useful for auditing the model on past fixtures.
+        pick. Useful for auditing predictions on past fixtures.
       </span>
     </div>
   )
