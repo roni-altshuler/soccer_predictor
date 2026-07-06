@@ -3,7 +3,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { Lightbulb } from 'lucide-react'
 
-import { Card } from '@/components/ui/card'
 import { EASE_OUT } from '@/lib/motion'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { cn } from '@/lib/utils'
@@ -218,7 +217,12 @@ export function WhyThisPrediction({
         : 'a draw'
 
   return (
-    <Card className={cn('p-4 md:p-5', className)}>
+    <div
+      className={cn(
+        'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5',
+        className,
+      )}
+    >
       <div className="mb-1 flex items-center gap-2">
         <Lightbulb className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
         <h3 className="text-h4 font-bold text-[var(--text-primary)]">Why this prediction</h3>
@@ -296,6 +300,6 @@ export function WhyThisPrediction({
           )
         })}
       </motion.ul>
-    </Card>
+    </div>
   )
 }

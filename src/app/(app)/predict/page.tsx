@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
-import { useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   Brain,
@@ -22,12 +21,11 @@ import {
   resolveCatalogTeam,
   type TeamPick,
 } from '@/components/TeamSelector'
-import { AsyncSection, FlagBadge, SectionHeader } from '@/components/primitives'
+import { AsyncSection, FlagBadge } from '@/components/primitives'
 import { GenderToggle } from '@/components/GenderToggle'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AttributionItem } from '@/lib/types/attribution'
-import { cn } from '@/lib/utils'
 
 interface PredictionResult {
   success?: boolean
@@ -162,7 +160,6 @@ const OUTPUT_EXPLAINERS = [
 ] as const
 
 function PredictPageContent() {
-  const reduceMotion = useReducedMotion()
   const [homeTeam, setHomeTeam] = useState<TeamPick | null>(null)
   const [awayTeam, setAwayTeam] = useState<TeamPick | null>(null)
   const [loading, setLoading] = useState(false)
@@ -349,27 +346,22 @@ function PredictPageContent() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 md:px-8">
-        <h1 className="sr-only">AI prediction engine</h1>
-
-        {/* Hero band */}
-        <section className="hero-band surface-elevated p-5 md:p-6">
-          <SectionHeader
-            kicker="AI Prediction Engine"
-            title="Predict any matchup"
-            action={<GenderToggle size="default" />}
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-ai)]">
-              <Brain className="h-3.5 w-3.5" aria-hidden="true" />
-              Unified v2
-            </span>
-            <span>Unified multi-task model · 87 features · calibrated probabilities</span>
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 md:px-8">
+        {/* Compact page title — no marketing hero */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              AI predict
+            </h1>
+            <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
+              Pick two teams — calibrated win/draw/loss, scoreline, and the factors behind it.
+            </p>
           </div>
-        </section>
+          <GenderToggle size="default" />
+        </div>
 
         {/* Matchup builder */}
-        <section className="surface-elevated rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+        <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
             Build your matchup
           </p>
@@ -427,10 +419,7 @@ function PredictPageContent() {
           <button
             onClick={handlePredict}
             disabled={loading || !canPredict}
-            className={cn(
-              'group relative mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] px-6 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-40',
-              !reduceMotion && 'sheen'
-            )}
+            className="group mt-4 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent-ai)] px-6 text-sm font-bold text-[var(--accent-on-primary)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-ai)_88%,black)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? (
               <>
@@ -468,7 +457,7 @@ function PredictPageContent() {
                 {/* Legacy verdict / policy strip — kept because the viz
                     doesn't yet render policy or cross-league context. */}
                 {result?.verdict && (
-                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 shadow-[var(--shadow-sm)]">
+                  <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
                     <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Policy &amp; cross-league context
                     </p>
@@ -511,16 +500,16 @@ function PredictPageContent() {
         {/* Empty state — honest explainer of the model's outputs */}
         {!loading && !result && (
           <section>
-            <SectionHeader
-              kicker="Before you run"
-              title="What the model returns"
-              description="Run a matchup to see live model output — nothing below is pre-baked."
-              className="mb-3"
-            />
+            <p className="mb-2 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              What the model returns
+            </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {OUTPUT_EXPLAINERS.map(({ Icon, tint, title, desc }) => (
-                <div key={title} className="bento-card p-4">
-                  <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+                <div
+                  key={title}
+                  className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4"
+                >
+                  <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg ${tint}`}>
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
@@ -528,7 +517,7 @@ function PredictPageContent() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--accent-ai)]/30 bg-[var(--accent-ai)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
               <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
               Cross-league pairings work too — strength coefficients keep a UCL-vs-MLS
               matchup calibrated instead of guessing.

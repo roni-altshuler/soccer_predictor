@@ -765,7 +765,7 @@ function MetricCard({ label, value, tone, sub }: { label: string; value: string;
   return (
     <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-3.5">
       <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className="text-2xl font-bold mt-1" style={{ color: tone }}>{value}</p>
+      <p className="text-xl font-bold tabular-nums mt-1" style={{ color: tone }}>{value}</p>
       <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{sub}</p>
     </div>
   )

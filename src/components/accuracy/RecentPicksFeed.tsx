@@ -1,10 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Check, ChevronDown, Filter, Minus, X } from 'lucide-react'
 
 import { LeagueBadge } from '@/components/match/LeagueBadge'
+import { TeamBadge } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -130,7 +131,7 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
                 setShowAll(false)
               }}
               className={cn(
-                'flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                'flex min-h-[36px] items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
                 filter === f.value
                   ? f.tone === 'primary'
                     ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
@@ -186,12 +187,20 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
 }
 
 function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
+  const reduce = useReducedMotion()
   const isHit = pick.winner_correct === true
   const isMiss = pick.winner_correct === false
   const isPending = !isHit && !isMiss
 
   const picked = pickedTeamName(pick)
-  const confidencePct = Math.round((pick.confidence ?? 0) * 100)
+  // Tracker records store confidence as 0..1, but some historical files
+  // carry an already-scaled 0..100 value — normalise defensively so we
+  // never render "3870%".
+  const rawConfidence = pick.confidence ?? 0
+  const confidencePct = Math.min(
+    100,
+    Math.round(rawConfidence > 1 ? rawConfidence : rawConfidence * 100)
+  )
   const haveScore =
     typeof pick.actual_home_goals === 'number' &&
     typeof pick.actual_away_goals === 'number'
@@ -205,7 +214,7 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: idx * 0.02, ease: [0.22, 1, 0.36, 1] }}
       className="grid grid-cols-[28px_1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 md:px-5"
@@ -225,14 +234,16 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
         {isPending && <Minus className="h-3.5 w-3.5" strokeWidth={3} />}
       </div>
 
-      {/* Matchup — column 2 row 1 */}
+      {/* Matchup — column 2 row 1 (crest via manifest, initials fallback) */}
       <div className="min-w-0 flex items-center gap-2 text-sm">
+        <TeamBadge name={pick.home_team} size={18} className="shrink-0" />
         <span className="truncate font-semibold text-[var(--text-primary)]">
           {pick.home_team}
         </span>
         <span className={cn('shrink-0 font-bold tabular-nums', scoreClass)}>
           {haveScore ? `${pick.actual_home_goals}–${pick.actual_away_goals}` : 'vs'}
         </span>
+        <TeamBadge name={pick.away_team} size={18} className="shrink-0" />
         <span className="truncate font-semibold text-[var(--text-primary)]">
           {pick.away_team}
         </span>

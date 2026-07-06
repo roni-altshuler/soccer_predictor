@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Newspaper } from 'lucide-react'
 
-import { AsyncSection, LeagueChip, SectionHeader } from '@/components/primitives'
+import { AsyncSection, LeagueChip } from '@/components/primitives'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent, type LeagueAccent } from '@/lib/leagueAccents'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 interface NewsArticle {
@@ -20,8 +21,8 @@ function resolveArticleLeague(article: NewsArticle): LeagueAccent | null {
   return accent.competitionId === 'unknown' ? null : accent
 }
 
-/** Image that swaps to a token-styled placeholder if the source is missing or fails. */
-function NewsImage({
+/** 16:9 thumbnail that falls back to a flat league-accent block on error. */
+function NewsThumb({
   src,
   accent,
   className,
@@ -36,22 +37,16 @@ function NewsImage({
   const showPlaceholder = !src || broken
 
   if (showPlaceholder) {
-    const gradient = accent
-      ? `linear-gradient(135deg, ${accent.accent} 0%, ${accent.accentBg} 100%)`
-      : undefined
     return (
       <div
-        className={cn(
-          'flex items-center justify-center bg-[var(--muted-bg)]',
-          className
-        )}
-        style={gradient ? { backgroundImage: gradient } : undefined}
+        className={cn('flex items-center justify-center bg-[var(--muted-bg)]', className)}
+        style={accent ? { backgroundColor: accent.accentBg } : undefined}
         aria-hidden="true"
       >
         <Newspaper
           className={cn(
-            iconSize === 'lg' ? 'h-8 w-8' : 'h-5 w-5',
-            accent ? 'text-[var(--pitch-text)] opacity-90' : 'text-[var(--text-tertiary)]'
+            iconSize === 'lg' ? 'h-7 w-7' : 'h-4 w-4',
+            'text-[var(--text-tertiary)]'
           )}
           strokeWidth={1.8}
         />
@@ -64,6 +59,7 @@ function NewsImage({
     <img
       src={src}
       alt=""
+      loading="lazy"
       className={className}
       onError={() => setBroken(true)}
     />
@@ -75,21 +71,13 @@ function ArticleMeta({
   accent,
   published,
   formatDate,
-  onScrim = false,
 }: {
   accent: LeagueAccent | null
   published: string
   formatDate: (d: string) => string
-  onScrim?: boolean
 }) {
   return (
-    <div
-      className={cn(
-        'flex items-center gap-1.5 text-[11px] font-medium',
-        onScrim ? '' : 'text-[var(--text-tertiary)]'
-      )}
-      style={onScrim ? { color: 'color-mix(in srgb, var(--pitch-text) 72%, transparent)' } : undefined}
-    >
+    <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
       {accent && (
         <>
           <span
@@ -167,165 +155,122 @@ export default function NewsPage() {
     return articles.filter((a) => resolveArticleLeague(a)?.competitionId === activeLeague)
   }, [articles, activeLeague])
 
-  const [featured, ...rest] = filteredArticles
+  const [lead, ...rest] = filteredArticles
+  const leadAccent = lead ? resolveArticleLeague(lead) : null
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="max-w-5xl mx-auto px-4 pt-4 pb-8">
-        <h1 className="sr-only">Pitchwise Newsroom — latest football headlines</h1>
+    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+      <h1 className="px-1 pb-3 text-lg font-bold tracking-tight text-[var(--text-primary)]">
+        News
+      </h1>
 
-        {/* Hero band */}
-        <div className="hero-band surface-elevated mb-5 p-5 md:p-6">
-          <SectionHeader
-            kicker="Newsroom"
-            title="Latest Football Headlines"
-            description="Curated breaking stories, transfer chatter, and tactical updates in one feed."
-            action={
-              !loading && !error && articles.length > 0 ? (
-                <div className="text-right">
-                  <p className="text-2xl font-black leading-tight tabular-nums text-[var(--text-primary)]">
-                    {articles.length}
-                  </p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                    stories
-                  </p>
-                </div>
-              ) : undefined
-            }
+      {/* Competition filter chips — one quiet, scrollable line */}
+      {!loading && !error && leagueChips.length > 0 && (
+        <div className="mb-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <LeagueChip
+            name="All"
+            size="sm"
+            active={activeLeague === 'all'}
+            onClick={() => setActiveLeague('all')}
+            className="flex-shrink-0"
           />
-        </div>
-
-        {/* League filter chips — horizontal scroll on mobile */}
-        {!loading && !error && leagueChips.length > 0 && (
-          <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {leagueChips.map((chip) => (
             <LeagueChip
-              name="All"
+              key={chip.competitionId}
+              leagueId={chip.competitionId}
+              name={chip.shortName}
               size="sm"
-              active={activeLeague === 'all'}
-              onClick={() => setActiveLeague('all')}
+              active={activeLeague === chip.competitionId}
+              onClick={() => setActiveLeague(chip.competitionId)}
               className="flex-shrink-0"
             />
-            {leagueChips.map((chip) => (
-              <LeagueChip
-                key={chip.competitionId}
-                leagueId={chip.competitionId}
-                name={chip.shortName}
-                size="sm"
-                active={activeLeague === chip.competitionId}
-                onClick={() => setActiveLeague(chip.competitionId)}
-                className="flex-shrink-0"
-              />
-            ))}
-          </div>
+          ))}
+        </div>
+      )}
+
+      <AsyncSection
+        loading={loading}
+        error={error}
+        onRetry={fetchNews}
+        section="news"
+        empty={filteredArticles.length === 0}
+        emptyState={
+          <EmptyState
+            illustration="no-matches"
+            title="No news available"
+            description="There are no stories for this selection right now. Check back soon."
+          />
+        }
+      >
+        {/* Lead story — one larger flat card */}
+        {lead && (
+          <a
+            href={lead.url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mb-3 flex flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] transition-colors hover:bg-[var(--card-hover)] sm:flex-row"
+          >
+            <NewsThumb
+              src={lead.image}
+              accent={leadAccent}
+              iconSize="lg"
+              className="aspect-video w-full shrink-0 object-cover sm:w-72 md:w-80"
+            />
+            <div className="min-w-0 flex-1 p-4">
+              <h2 className="line-clamp-3 text-base font-bold leading-snug text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] md:text-lg">
+                {lead.title}
+              </h2>
+              {lead.description ? (
+                <p className="mt-1.5 line-clamp-2 text-[13px] leading-snug text-[var(--text-secondary)]">
+                  {lead.description}
+                </p>
+              ) : null}
+              <div className="mt-2">
+                <ArticleMeta accent={leadAccent} published={lead.published} formatDate={formatDate} />
+              </div>
+            </div>
+          </a>
         )}
 
-        <AsyncSection
-          loading={loading}
-          error={error}
-          onRetry={fetchNews}
-          section="news"
-          empty={filteredArticles.length === 0}
-          emptyState={
-            <EmptyState
-              illustration="no-matches"
-              title="No news available"
-              description="There are no stories for this selection right now. Check back soon."
-            />
-          }
-        >
-          {/* Featured */}
-          {featured && (
-            <a
-              href={featured.url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="surface-elevated group mb-5 block overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] transition-colors hover:border-[var(--border-hover)]"
-            >
-              <div className="relative aspect-video overflow-hidden">
-                <NewsImage
-                  src={featured.image}
-                  accent={resolveArticleLeague(featured)}
-                  iconSize="lg"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                {/* Scrim: bottom 60% fading to transparent so the headline always passes contrast */}
-                <div
-                  aria-hidden
-                  className="absolute inset-x-0 bottom-0 h-[60%]"
-                  style={{
-                    background:
-                      'linear-gradient(to top, var(--overlay-bg) 0%, var(--overlay-bg) 30%, transparent 100%), linear-gradient(to top, var(--overlay-bg) 0%, transparent 72%)',
-                  }}
-                />
-                <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] backdrop-blur-sm"
-                    style={{
-                      color: 'var(--accent-primary-soft)',
-                      backgroundColor: 'color-mix(in srgb, var(--accent-primary) 22%, var(--overlay-bg))',
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      className="inline-block h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: 'var(--accent-primary-soft)' }}
-                    />
-                    Featured
-                  </span>
-                  <h2
-                    className="mt-1.5 line-clamp-2 text-base font-bold md:text-lg"
-                    style={{ color: 'var(--pitch-text)' }}
-                  >
-                    {featured.title}
-                  </h2>
-                  <div className="mt-1.5">
-                    <ArticleMeta
-                      accent={resolveArticleLeague(featured)}
-                      published={featured.published}
-                      formatDate={formatDate}
-                      onScrim
-                    />
-                  </div>
-                </div>
-              </div>
-            </a>
-          )}
-
-          {/* Secondary stories — 2-col grid on desktop */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {rest.map((article) => {
-              const accent = resolveArticleLeague(article)
-              return (
-                <a
-                  key={article.id}
-                  href={article.url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex min-h-[88px] items-center gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-3 shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
-                >
-                  <NewsImage
-                    src={article.image}
-                    accent={accent}
-                    className="h-16 w-24 flex-shrink-0 rounded-lg object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent-primary)]">
-                      {article.title}
-                    </h3>
-                    <div className="mt-1.5">
-                      <ArticleMeta
+        {/* Headline rows — dense list, thumbnail left */}
+        {rest.length > 0 && (
+          <Card className="overflow-hidden p-0">
+            <ul className="divide-y divide-[var(--border-color)]/40">
+              {rest.map((article) => {
+                const accent = resolveArticleLeague(article)
+                return (
+                  <li key={article.id}>
+                    <a
+                      href={article.url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+                    >
+                      <NewsThumb
+                        src={article.image}
                         accent={accent}
-                        published={article.published}
-                        formatDate={formatDate}
+                        className="aspect-video w-24 flex-shrink-0 rounded-md object-cover sm:w-28"
                       />
-                    </div>
-                  </div>
-                </a>
-              )
-            })}
-          </div>
-        </AsyncSection>
-      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
+                          {article.title}
+                        </h3>
+                        <div className="mt-1">
+                          <ArticleMeta
+                            accent={accent}
+                            published={article.published}
+                            formatDate={formatDate}
+                          />
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+          </Card>
+        )}
+      </AsyncSection>
     </div>
   )
 }

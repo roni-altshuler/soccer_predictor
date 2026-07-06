@@ -5,8 +5,6 @@ import { useParams } from 'next/navigation'
 import { ChevronLeft, Medal, Trophy } from 'lucide-react'
 
 import KnockoutBracket, { type BracketRound } from '@/components/knockout/KnockoutBracket'
-import { BorderBeam } from '@/components/magicui/border-beam'
-import { Spotlight } from '@/components/magicui/spotlight'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/EmptyState'
@@ -66,13 +64,8 @@ export default function TournamentPage() {
         <ChevronLeft className="h-3.5 w-3.5" /> All tournaments
       </Link>
 
-      <Spotlight
-        className="mt-3 block rounded-2xl"
-        size={460}
-        color="color-mix(in srgb, var(--accent-primary) 16%, transparent)"
-      >
+      <div className="mt-3 block rounded-2xl">
         <Card className="relative overflow-hidden p-6">
-          <BorderBeam size={1} duration={11} borderRadius={16} />
           <div className="relative z-10 flex flex-col items-start gap-4 md:flex-row md:items-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
               <Medal className="h-7 w-7" />
@@ -100,7 +93,7 @@ export default function TournamentPage() {
             </div>
           </div>
         </Card>
-      </Spotlight>
+      </div>
 
       {/* Bracket / Groups */}
       <div className="mt-6">

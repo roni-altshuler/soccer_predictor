@@ -35,10 +35,10 @@ export function AppShell({
     <TooltipProvider delayDuration={200} skipDelayDuration={400}>
       <SidebarNav />
       <div
-        className="ambient-bg flex min-h-screen flex-col md:pl-[var(--shell-sidebar-w)]"
+        className="flex min-h-screen flex-col bg-[var(--background)] md:pl-[var(--shell-sidebar-w)]"
       >
         <TopBar />
-        <main id="main" className="flex-1 pb-24 md:pb-0">
+        <main id="main" className="flex-1 pb-20 md:pb-0">
           <PageTransition>{children}</PageTransition>
         </main>
         {footer}

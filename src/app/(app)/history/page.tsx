@@ -3,17 +3,9 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { Check, ChevronDown, Download } from 'lucide-react'
+import { Check, ChevronDown, Download, Minus, X } from 'lucide-react'
 
-import {
-  AsyncSection,
-  FlagBadge,
-  LeagueChip,
-  ProbBar,
-  SectionHeader,
-  StatCard,
-  StatusChip,
-} from '@/components/primitives'
+import { AsyncSection, FlagBadge } from '@/components/primitives'
 import { EmptyState } from '@/components/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -22,9 +14,17 @@ import { cn } from '@/lib/utils'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 
 /**
+ * /history — the audit ledger of settled predictions (Matchday v3).
+ *
+ * Day-grouped, dense fixture rows: teams with real crests/flags, final
+ * score, the AI pick (outcome + scoreline) and a correct/incorrect tick
+ * coloured by token. Model *quality* stats live on /accuracy — this page
+ * is the ledger, so the only summary is a quiet "N settled" line.
+ */
+
+/**
  * Shape of a PredictionRecord as served by /api/v1/tracking/recent (the Node
- * route streams the committed backend JSON through unmodified, so newer
- * fields like `top_scorelines` arrive when present).
+ * route streams the committed backend JSON through unmodified).
  */
 interface HistoryRecord {
   match_id: string | number
@@ -58,7 +58,6 @@ type StatusFilter = 'all' | 'correct' | 'incorrect' | 'pending'
 
 const WINDOW_LIMIT = 200
 const PAGE_SIZE = 25
-const MIN_SAMPLE = 10
 
 /** Competitions whose participants are national teams (flag identities). */
 const NATIONAL_COMPETITIONS = new Set([
@@ -87,6 +86,13 @@ function pickLabel(r: HistoryRecord): string {
   return 'Draw'
 }
 
+/** bet365-grammar outcome code for the compact mobile chip. */
+function pickCode(r: HistoryRecord): string {
+  if (r.predicted_winner === 'home') return '1'
+  if (r.predicted_winner === 'away') return '2'
+  return 'X'
+}
+
 function dayKey(r: HistoryRecord): string {
   return (r.match_date || '').slice(0, 10) || 'unknown'
 }
@@ -96,8 +102,8 @@ function formatDay(key: string): string {
   const d = new Date(`${key}T12:00:00`)
   if (Number.isNaN(d.getTime())) return key
   return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
+    weekday: 'long',
+    month: 'long',
     day: 'numeric',
     year: 'numeric',
   })
@@ -157,33 +163,31 @@ function downloadCSV(rows: HistoryRecord[]) {
   URL.revokeObjectURL(url)
 }
 
-/** One team line inside a fixture row: identity, name, goals when settled. */
+/** One team line: crest/flag, name, final goals when settled. */
 function TeamLine({
   name,
   goals,
   settled,
-  won,
-  drew,
+  emphasis,
   national,
 }: {
   name: string
   goals: number | null
   settled: boolean
-  won: boolean
-  drew: boolean
+  emphasis: 'winner' | 'loser' | 'neutral'
   national: boolean
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <FlagBadge country={national ? name : undefined} teamName={name} size={20} />
+      <span className="inline-flex shrink-0" aria-hidden="true">
+        <FlagBadge country={national ? name : undefined} teamName={name} size={20} />
+      </span>
       <span
         className={cn(
-          'truncate text-sm',
-          settled
-            ? won || drew
-              ? 'font-semibold text-[var(--text-primary)]'
-              : 'text-[var(--text-secondary)]'
-            : 'font-medium text-[var(--text-primary)]'
+          'min-w-0 flex-1 truncate text-[13px]',
+          emphasis === 'winner' && 'font-semibold text-[var(--text-primary)]',
+          emphasis === 'loser' && 'font-medium text-[var(--text-tertiary)]',
+          emphasis === 'neutral' && 'font-medium text-[var(--text-primary)]'
         )}
       >
         {name}
@@ -191,12 +195,8 @@ function TeamLine({
       {settled && goals != null && (
         <span
           className={cn(
-            'ml-auto pl-2 text-sm tabular-nums',
-            won
-              ? 'font-bold text-[var(--accent-primary)]'
-              : drew
-                ? 'font-semibold text-[var(--text-primary)]'
-                : 'text-[var(--text-secondary)]'
+            'shrink-0 pl-2 text-[13px] font-bold tabular-nums',
+            emphasis === 'loser' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'
           )}
         >
           {goals}
@@ -206,93 +206,126 @@ function TeamLine({
   )
 }
 
-function FixtureRow({ record }: { record: HistoryRecord }) {
+/** Result tick — green correct / red incorrect / muted pending, tokens only. */
+function ResultTick({ status }: { status: 'correct' | 'incorrect' | 'pending' }) {
+  if (status === 'correct') {
+    return (
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]"
+        role="img"
+        aria-label="Pick correct"
+        title="Pick correct"
+      >
+        <Check className="h-3 w-3" strokeWidth={3} />
+      </span>
+    )
+  }
+  if (status === 'incorrect') {
+    return (
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-loss)]/12 text-[var(--accent-loss)]"
+        role="img"
+        aria-label="Pick incorrect"
+        title="Pick incorrect"
+      >
+        <X className="h-3 w-3" strokeWidth={3} />
+      </span>
+    )
+  }
+  return (
+    <span
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--muted-bg)] text-[var(--text-tertiary)]"
+      role="img"
+      aria-label="Awaiting result"
+      title="Awaiting result"
+    >
+      <Minus className="h-3 w-3" strokeWidth={3} />
+    </span>
+  )
+}
+
+/** One ledger row — MatchRow grammar: status col, stacked teams, AI zone. */
+function LedgerRow({ record }: { record: HistoryRecord }) {
   const status = statusOf(record)
   const settled = status !== 'pending'
   const accent = getLeagueAccent(record.league)
   const national = NATIONAL_COMPETITIONS.has(accent.competitionId)
   const winner = record.actual_winner
 
-  return (
-    <Link
-      href={`/matches/${record.match_id}`}
-      className="group block px-4 py-3 transition-colors odd:bg-[var(--muted-bg)]/40 hover:bg-[var(--card-hover)]"
-    >
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
-        {/* Identities + league/venue meta */}
-        <div className="min-w-0 flex-1 space-y-1">
-          <TeamLine
-            name={record.home_team}
-            goals={record.actual_home_goals}
-            settled={settled}
-            won={winner === 'home'}
-            drew={winner === 'draw'}
-            national={national}
-          />
-          <TeamLine
-            name={record.away_team}
-            goals={record.actual_away_goals}
-            settled={settled}
-            won={winner === 'away'}
-            drew={winner === 'draw'}
-            national={national}
-          />
-          <p className="flex items-center gap-1.5 truncate text-[11px] text-[var(--text-tertiary)]">
-            <span
-              aria-hidden
-              className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: accent.accent }}
-            />
-            <span className="truncate">
-              {record.league}
-              {record.venue ? ` · ${record.venue}` : ''}
-            </span>
-          </p>
-        </div>
+  let homeEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  let awayEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  if (settled && winner === 'home') {
+    homeEmphasis = 'winner'
+    awayEmphasis = 'loser'
+  } else if (settled && winner === 'away') {
+    homeEmphasis = 'loser'
+    awayEmphasis = 'winner'
+  }
 
-        {/* Model probabilities */}
-        <div className="w-full shrink-0 md:w-44">
-          <ProbBar
-            home={record.predicted_home_win}
-            draw={record.predicted_draw}
-            away={record.predicted_away_win}
-            size="sm"
-            showLabels
-          />
-        </div>
+  const href = /^\d+$/.test(String(record.match_id))
+    ? `/matches/${record.match_id}`
+    : undefined
 
-        {/* Predicted pick + scoreline chip (+ top-5 tick when earned) */}
-        <div className="flex shrink-0 items-center gap-1.5 md:w-48 md:justify-end">
-          <span
-            className="inline-flex max-w-[12rem] items-center gap-1 truncate rounded-md px-2 py-1 text-xs font-semibold tabular-nums"
-            style={{
-              color: 'var(--accent-ai)',
-              backgroundColor: 'color-mix(in srgb, var(--accent-ai) 12%, transparent)',
-            }}
-          >
-            <span className="truncate">{pickLabel(record)}</span>
-            {record.predicted_scoreline ? <span>· {record.predicted_scoreline}</span> : null}
-          </span>
-          {record.scoreline_in_top5 === true && (
-            <span
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-              style={{
-                color: 'var(--accent-ai)',
-                backgroundColor: 'color-mix(in srgb, var(--accent-ai) 14%, transparent)',
-              }}
-              title="Actual scoreline was in the model's top-5"
-              aria-label="Actual scoreline was in the model's top-5"
-            >
-              <Check className="h-3 w-3" />
-            </span>
-          )}
-        </div>
-
-        {/* Settlement status */}
-        <div className="flex shrink-0 items-center md:w-24 md:justify-end">
-          <StatusChip status={status} />
-        </div>
+  const inner = (
+    <div className="flex w-full items-center">
+      {/* Status column — FT for settled, dash for pending */}
+      <div className="flex w-[52px] shrink-0 items-center justify-center">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+          {settled ? 'FT' : '–'}
+        </span>
       </div>
+
+      <div className="min-w-0 flex-1 space-y-1.5 border-l border-[var(--border-color)]/60 py-2 pl-3">
+        <TeamLine
+          name={record.home_team}
+          goals={record.actual_home_goals}
+          settled={settled}
+          emphasis={homeEmphasis}
+          national={national}
+        />
+        <TeamLine
+          name={record.away_team}
+          goals={record.actual_away_goals}
+          settled={settled}
+          emphasis={awayEmphasis}
+          national={national}
+        />
+      </div>
+
+      {/* AI pick zone — committed pick only, cyan data accent */}
+      <div className="ml-3 flex shrink-0 items-center gap-2 pr-1">
+        <span className="hidden w-24 truncate text-right text-[11px] text-[var(--text-tertiary)] md:block">
+          {accent.competitionId !== 'unknown' ? accent.shortName : record.league}
+        </span>
+        <span className="inline-flex max-w-[10rem] items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
+          {/* Full pick label on >=sm; compact "AI 2-1" / "AI 1|X|2" on phones */}
+          <span className="hidden truncate sm:inline">AI {pickLabel(record)}</span>
+          {record.predicted_scoreline ? (
+            <span className="shrink-0 sm:ml-1">
+              <span className="sm:hidden">AI </span>
+              {record.predicted_scoreline}
+            </span>
+          ) : (
+            <span className="shrink-0 sm:hidden">AI {pickCode(record)}</span>
+          )}
+        </span>
+        <ResultTick status={status} />
+      </div>
+    </div>
+  )
+
+  const className = cn(
+    'group relative block w-full px-3 transition-colors',
+    'min-h-[56px]',
+    'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
+  )
+
+  if (!href) {
+    return <div className={className}>{inner}</div>
+  }
+  return (
+    <Link href={href} className={className} prefetch={false}>
+      {inner}
     </Link>
   )
 }
@@ -350,23 +383,11 @@ export default function HistoryPage() {
     [leagueRows, statusFilter]
   )
 
-  // Window-level summary (honest: rates only render with n >= MIN_SAMPLE).
-  const summary = useMemo(() => {
-    const settled = counts.correct + counts.incorrect
-    const accuracy = settled >= MIN_SAMPLE ? Math.round((counts.correct / settled) * 100) : null
-    const top5Sample = leagueRows.filter((r) => typeof r.scoreline_in_top5 === 'boolean')
-    const top5Hits = top5Sample.filter((r) => r.scoreline_in_top5 === true).length
-    const top5Rate =
-      top5Sample.length >= MIN_SAMPLE
-        ? Math.round((top5Hits / top5Sample.length) * 100)
-        : null
-    return { settled, accuracy, top5Rate, top5Hits, top5N: top5Sample.length }
-  }, [counts, leagueRows])
-
   const visible = filtered.slice(0, visibleCount)
 
-  // First fetch still in flight — show honest dashes instead of zeros.
+  // First fetch still in flight — no counts until real data lands.
   const hydrating = isLoading && rows.length === 0
+  const settledCount = counts.correct + counts.incorrect
 
   const groups = useMemo(() => {
     const out: { key: string; records: HistoryRecord[] }[] = []
@@ -379,162 +400,100 @@ export default function HistoryPage() {
     return out
   }, [visible])
 
-  const activeAccent = leagueFilter ? getLeagueAccent(leagueFilter) : null
-
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 pb-12 pt-6">
-      {/* Hero band */}
-      <section className="hero-band p-6">
-        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                Audit
-              </p>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ring-1',
-                  gender === 'women'
-                    ? 'bg-[var(--accent-women)]/12 text-[var(--accent-women)] ring-[var(--accent-women)]/30'
-                    : 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
-                )}
-              >
-                {gender === 'women' ? 'Women’s football' : 'Men’s football'}
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-5xl px-3 pb-8 pt-3 sm:px-4">
+        {/* Compact title line — the ledger is the page */}
+        <div className="mb-2 flex items-center justify-between gap-2 px-1">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h1 className="text-[15px] font-bold text-[var(--text-primary)]">History</h1>
+            {!hydrating && counts.all > 0 && (
+              <span className="truncate text-[11px] tabular-nums text-[var(--text-tertiary)]">
+                {settledCount} settled
+                {counts.pending > 0 ? ` · ${counts.pending} pending` : ''}
               </span>
-            </div>
-            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--text-primary)] md:text-4xl">
-              Prediction history
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-              Every pick the model has made — green when we got it right, red when we
-              missed. Honest by default.
-            </p>
+            )}
           </div>
-          <div className="shrink-0 md:text-right">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-              Picks in window
-            </p>
-            <p className="mt-1 text-4xl font-black tabular-nums text-[var(--text-primary)]">
-              {hydrating ? '—' : rows.length}
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-              newest {WINDOW_LIMIT}-pick audit window
-            </p>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-[36px] shrink-0 gap-1.5 text-xs text-[var(--text-secondary)]"
+            onClick={() => downloadCSV(filtered)}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </Button>
         </div>
-      </section>
 
-      {/* Summary stats — rates hide behind an honest dash below n=10 */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard
-          label="Accuracy"
-          value={summary.accuracy != null ? `${summary.accuracy}%` : '—'}
-          sub={
-            summary.accuracy != null
-              ? `${counts.correct}/${summary.settled} settled in window`
-              : hydrating
-                ? 'loading window…'
-                : `needs ${MIN_SAMPLE}+ settled picks`
-          }
-          accent="primary"
-        />
-        <StatCard
-          label="Settled"
-          value={hydrating ? '—' : summary.settled}
-          sub="correct + incorrect"
-        />
-        <StatCard
-          label="Pending"
-          value={hydrating ? '—' : counts.pending}
-          sub="awaiting result"
-          accent="warn"
-        />
-        <StatCard
-          label="Top-5 scoreline"
-          value={summary.top5Rate != null ? `${summary.top5Rate}%` : '—'}
-          sub={
-            summary.top5Rate != null
-              ? `${summary.top5Hits}/${summary.top5N} in model top-5`
-              : 'awaiting settled sample'
-          }
-          accent="ai"
-        />
-      </div>
-
-      {/* Ledger */}
-      <section className="space-y-4">
-        <SectionHeader
-          kicker="Ledger"
-          title="All picks"
-          description="Grouped by matchday — filter by outcome or competition."
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[40px] gap-1.5"
-              onClick={() => downloadCSV(filtered)}
-              disabled={filtered.length === 0}
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export CSV
-            </Button>
-          }
-        />
-
-        {/* Status segmented control */}
+        {/* Outcome filter — quiet pills */}
         <div
-          className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)]/60 p-1"
+          className="mb-1 flex flex-wrap items-center gap-1"
           role="group"
           aria-label="Filter by outcome"
         >
-          {(['all', 'correct', 'incorrect', 'pending'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setStatusFilter(f)}
-              aria-pressed={statusFilter === f}
-              className={cn(
-                'min-h-[40px] rounded-lg px-3.5 text-sm font-semibold capitalize transition-colors',
-                statusFilter === f
-                  ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              )}
-            >
-              {f}
-              <span className="ml-1.5 text-xs tabular-nums text-[var(--text-tertiary)]">
-                {hydrating ? '–' : counts[f]}
-              </span>
-            </button>
-          ))}
+          {(['all', 'correct', 'incorrect', 'pending'] as const).map((f) => {
+            const active = statusFilter === f
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setStatusFilter(f)}
+                aria-pressed={active}
+                className={cn(
+                  'flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold capitalize transition-colors',
+                  active
+                    ? 'bg-[var(--card-hover)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                )}
+              >
+                {f}
+                {!hydrating && (
+                  <span className="text-[10px] tabular-nums opacity-75">{counts[f]}</span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
-        {/* League filter chips */}
+        {/* League filter — quiet chips, second line only when useful */}
         {leagues.length > 1 && (
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by league">
+          <div
+            className="mb-2 flex flex-wrap items-center gap-1"
+            role="group"
+            aria-label="Filter by league"
+          >
             <button
               type="button"
               onClick={() => setLeagueFilter(null)}
               aria-pressed={leagueFilter === null}
               className={cn(
-                'inline-flex min-h-[40px] items-center rounded-full border px-3.5 text-xs font-semibold transition-colors',
+                'flex min-h-[36px] items-center rounded-full px-3 text-xs font-semibold transition-colors',
                 leagueFilter === null
-                  ? 'border-[var(--text-secondary)] bg-[var(--card-bg)] text-[var(--text-primary)] ring-1 ring-[var(--text-secondary)]'
-                  : 'border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:border-[var(--border-hover)]'
+                  ? 'bg-[var(--card-hover)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
               )}
             >
               All leagues
             </button>
             {leagues.map((name) => {
               const acc = getLeagueAccent(name)
+              const active = leagueFilter === name
               return (
-                <LeagueChip
+                <button
                   key={name}
-                  leagueId={acc.competitionId !== 'unknown' ? acc.competitionId : undefined}
-                  name={name}
-                  size="sm"
-                  active={leagueFilter === name}
-                  onClick={() => setLeagueFilter(leagueFilter === name ? null : name)}
-                />
+                  type="button"
+                  onClick={() => setLeagueFilter(active ? null : name)}
+                  aria-pressed={active}
+                  className={cn(
+                    'flex min-h-[36px] items-center rounded-full px-3 text-xs font-semibold transition-colors',
+                    active
+                      ? 'bg-[var(--card-hover)] text-[var(--text-primary)]'
+                      : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                  )}
+                >
+                  {acc.competitionId !== 'unknown' ? acc.shortName : name}
+                </button>
               )
             })}
           </div>
@@ -554,41 +513,37 @@ export default function HistoryPage() {
             />
           }
         >
-          <Card
-            className="overflow-hidden"
-            style={
-              activeAccent
-                ? { borderLeft: `4px solid ${activeAccent.accent}` }
-                : undefined
-            }
-          >
-            {groups.map((group, groupIdx) => (
-              <div key={group.key}>
-                <div
+          {/* Day-grouped ledger */}
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <section key={group.key} aria-label={formatDay(group.key)}>
+                <h2
                   className={cn(
-                    'flex items-center justify-between border-y border-[var(--border-color)] bg-[var(--muted-bg)]/70 px-4 py-2',
-                    groupIdx === 0 && 'border-t-0'
+                    'sticky top-[var(--shell-topbar-h)] z-10 -mx-1 flex items-baseline justify-between',
+                    'bg-[var(--background)]/95 px-1 py-2 backdrop-blur-sm'
                   )}
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
                     {formatDay(group.key)}
-                  </p>
-                  <p className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
-                    {group.records.length} {group.records.length === 1 ? 'pick' : 'picks'}
-                  </p>
-                </div>
-                <div>
-                  {group.records.map((r) => (
-                    <FixtureRow key={`${r.match_id}-${r.match_date}`} record={r} />
-                  ))}
-                </div>
-              </div>
+                  </span>
+                  <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">
+                    {group.records.length}
+                  </span>
+                </h2>
+                <Card className="overflow-hidden p-0">
+                  <div className="divide-y divide-[var(--border-color)]/40">
+                    {group.records.map((r) => (
+                      <LedgerRow key={`${r.match_id}-${r.match_date}`} record={r} />
+                    ))}
+                  </div>
+                </Card>
+              </section>
             ))}
-          </Card>
+          </div>
 
           {/* Load more */}
           <div className="mt-4 flex flex-col items-center gap-1">
-            <p className="text-xs tabular-nums text-[var(--text-tertiary)]">
+            <p className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
               Showing {visible.length} of {filtered.length} picks
             </p>
             {filtered.length > visibleCount && (
@@ -603,7 +558,7 @@ export default function HistoryPage() {
             )}
           </div>
         </AsyncSection>
-      </section>
+      </div>
     </div>
   )
 }

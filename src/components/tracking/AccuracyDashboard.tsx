@@ -369,15 +369,15 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
     <div className="bg-[var(--card-bg)] border rounded-2xl p-5" style={{ borderColor: 'var(--border-color)' }}>
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Sportsbook-Style Governance</p>
-          <h3 className="mt-1 text-xl font-black text-[var(--text-primary)]">Model quality gate</h3>
+          <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Governance</p>
+          <h3 className="mt-1 text-lg font-bold text-[var(--text-primary)]">Model quality gate</h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
             This board checks coverage, calibration, and holdout performance before presenting model confidence. It is a probability audit layer, not a betting guarantee.
           </p>
         </div>
         <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] px-4 py-3 min-w-[170px]">
           <p className="text-[10px] uppercase text-[var(--text-tertiary)]">Overall Gate</p>
-          <p className="mt-1 text-2xl font-black" style={{ color: gate ? gateTone(gate.overall_status) : 'var(--text-tertiary)' }}>
+          <p className="mt-1 text-xl font-bold" style={{ color: gate ? gateTone(gate.overall_status) : 'var(--text-tertiary)' }}>
             {gate ? gateLabel(gate.overall_status) : 'N/A'}
           </p>
           <p className="text-[10px] text-[var(--text-tertiary)]">
@@ -395,7 +395,7 @@ function ModelQualityGatePanel({ gate }: { gate: ModelQualityGate | null }) {
                   <p className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)]">{check.label}</p>
                   <span className="h-2 w-2 rounded-full mt-1.5" style={{ backgroundColor: gateTone(check.status) }} />
                 </div>
-                <p className="mt-2 text-lg font-black" style={{ color: gateTone(check.status) }}>{formatGateValue(check)}</p>
+                <p className="mt-2 text-base font-bold tabular-nums" style={{ color: gateTone(check.status) }}>{formatGateValue(check)}</p>
                 <p className="text-[10px] text-[var(--text-tertiary)]">{check.threshold}</p>
               </div>
             ))}
@@ -527,20 +527,20 @@ function HeroMetrics({
   const weightedBar = Math.min(100, Math.max(2, weightedAcc * 100))
 
   return (
-    <div className="border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
+    <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
       <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="p-5 md:p-6 border-b xl:border-b-0 xl:border-r border-[var(--border-color)]">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">AI Visualization Board</p>
-              <h2 className="mt-1 text-2xl font-black text-[var(--text-primary)]">Model performance report</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">Performance</p>
+              <h2 className="mt-1 text-lg font-bold text-[var(--text-primary)]">Model performance report</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
                 Outcome accuracy is scored only after real match results are fetched. Scoreline accuracy is tracked separately because exact scores are a much stricter target than 1X2 outcomes.
               </p>
             </div>
             <div className="min-w-[150px] rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
               <p className="text-[10px] uppercase tracking-normal text-[var(--text-tertiary)]">Audit Score</p>
-              <p className="mt-1 text-3xl font-black" style={{ color: weightedColor }}>{pct(weightedAcc)}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums" style={{ color: weightedColor }}>{pct(weightedAcc)}</p>
               <p className="text-[11px] text-[var(--text-secondary)]">65% outcome, 35% scoreline</p>
             </div>
           </div>
@@ -642,7 +642,7 @@ function MetricRail({
           <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
           <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
         </div>
-        <p className="text-lg font-black" style={{ color }}>{value}</p>
+        <p className="text-base font-bold tabular-nums" style={{ color }}>{value}</p>
       </div>
       <div className="mt-2 h-2 rounded-full bg-[var(--muted-bg)] overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: color }} />
@@ -655,7 +655,7 @@ function AuditTile({ label, value, note }: { label: string; value: string; note:
   return (
     <div className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-3">
       <p className="text-[10px] font-semibold uppercase tracking-normal text-[var(--text-tertiary)]">{label}</p>
-      <p className="mt-1 text-xl font-black text-[var(--text-primary)]">{value}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--text-primary)]">{value}</p>
       <p className="text-[11px] text-[var(--text-secondary)]">{note}</p>
     </div>
   )
@@ -744,7 +744,7 @@ function CalibrationTrendHistory({ data }: { data: CalibrationTrendData | null }
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Calibration Trend History</p>
-          <h3 className="mt-1 text-lg font-black text-[var(--text-primary)]">Rolling reliability drift</h3>
+          <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">Rolling reliability drift</h3>
           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
             Tracks expected calibration error, Brier score, confidence, and hit rate across chronological windows of settled real outcomes.
           </p>
@@ -887,17 +887,11 @@ function TrendChart({
             <line x1={PAD} y1={y50} x2={W - PAD} y2={y50} stroke="var(--accent-warn)" strokeDasharray="6 3" opacity={0.4} />
           ) : null
         })()}
-        <path d={areaD} fill="url(#trendGrad)" opacity={0.15} />
+        <path d={areaD} fill="var(--accent-primary)" opacity={0.08} />
         <path d={pathD} fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p: TrendPoint, i: number) => (
           <circle key={i} cx={xs[i]} cy={ys[i]} r="2.5" fill={accuracyColor(p.accuracy)} />
         ))}
-        <defs>
-          <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent-primary)" />
-            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
       </svg>
 
       <p className="text-[10px] text-[var(--text-tertiary)] mt-1 text-center">
@@ -1226,7 +1220,7 @@ function ModelPolicyCard({ policy }: { policy: ModelInfoResponse['model_selectio
           <div className="grid grid-cols-4 gap-2 mb-4">
             {['league', 'blend', 'global', 'global_fallback'].map(key => (
               <div key={key} className="rounded-lg border border-[var(--border-color)] bg-[var(--muted-bg)] p-2">
-                <p className="text-sm font-black" style={{ color: decisionTone[key] || 'var(--text-primary)' }}>
+                <p className="text-sm font-bold tabular-nums" style={{ color: decisionTone[key] || 'var(--text-primary)' }}>
                   {policy.decision_counts[key] || 0}
                 </p>
                 <p className="text-[9px] uppercase text-[var(--text-tertiary)]">{key.replace('_', ' ')}</p>

@@ -53,10 +53,10 @@ afterEach(() => {
 })
 
 describe('TrackingCenter (diagnostics page body)', () => {
-  it('mounts without crashing and shows the Unified Intelligence Hub header', async () => {
+  it('mounts without crashing and shows the diagnostics hub header', async () => {
     render(<TrackingCenter initialView="diagnostics" />)
     expect(
-      screen.getByText(/Unified Intelligence Hub/i),
+      screen.getByText(/Diagnostics hub/i),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('heading', {

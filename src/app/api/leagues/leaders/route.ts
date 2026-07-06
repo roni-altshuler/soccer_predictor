@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 interface LeaderRow {
   rank: number
+  /** ESPN athlete id when the provider exposes it — powers headshots + profile links. */
+  id: number | null
   name: string
   team: string
   goals: number
@@ -88,8 +90,12 @@ function normaliseLeader(leader: any, idx: number): LeaderRow {
     leader.statistics?.gamesPlayed ??
     matchesFromDisplay
 
+  const idRaw = leader.athlete?.id ?? leader.id
+  const idNum = Number(idRaw)
+
   return {
     rank: idx + 1,
+    id: Number.isInteger(idNum) && idNum > 0 ? idNum : null,
     name:
       leader.athlete?.displayName ||
       leader.athlete?.fullName ||

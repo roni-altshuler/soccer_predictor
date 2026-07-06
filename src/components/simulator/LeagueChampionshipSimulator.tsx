@@ -4,7 +4,6 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDown, Award, Loader2, Trophy, Skull } from 'lucide-react';
 import { LeagueSimulationResult } from '@/lib/api';
 import { LeagueChip, SectionHeader, StatCard } from '@/components/primitives';
-import { BorderBeam } from '@/components/magicui/border-beam';
 
 // League options for simulation. `competitionId` drives the LeagueChip crest
 // + accent (matches src/lib/leagueAccents.ts ids).
@@ -263,7 +262,7 @@ export default function LeagueChampionshipSimulator() {
         <div className="animate-fade-in space-y-6">
           {/* Summary — headline StatCards + contention lists */}
           <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-            <div className="hero-band rounded-none border-0 border-b border-[var(--border-color)] p-5">
+            <div className="border-b border-[var(--border-color)] p-5">
               <SectionHeader
                 kicker={`${result.remaining_matches} matches remaining · ${result.n_simulations.toLocaleString()} simulations`}
                 title={result.league_name}
@@ -346,7 +345,6 @@ export default function LeagueChampionshipSimulator() {
 
           {/* Title Race — "who can still win" math (independent of simulation) */}
           <div className="relative overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-            <BorderBeam size={1} duration={12} borderRadius={12} colorFrom="var(--accent-warn)" colorTo="var(--accent-primary)" />
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-color)] p-4 md:p-5">
               <SectionHeader
                 kicker="Title race"

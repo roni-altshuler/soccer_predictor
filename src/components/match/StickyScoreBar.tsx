@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
-import { BorderBeam } from '@/components/magicui'
 import { FlagBadge, LiveBadge, TeamBadge } from '@/components/primitives'
 import { cn } from '@/lib/utils'
 
@@ -32,8 +31,8 @@ interface StickyScoreBarProps {
 
 /**
  * StickyScoreBar — FotMob-style condensed scoreline that appears below the
- * topbar when the user scrolls past the match hero. Live matches get a
- * BorderBeam accent (Phase 0.A token + magic-ui primitive).
+ * topbar when the user scrolls past the match scoreboard header. Flat v3
+ * chrome: hairline border, no beams or glows; live state is the red minute.
  *
  * Stacking: parent topbar is z-50, this bar is z-40, the match tabs sit at z-30.
  */
@@ -112,10 +111,7 @@ export function StickyScoreBar({
               )}
             </div>
             <div className="flex flex-shrink-0 flex-col items-center">
-              <span
-                className="font-numeric text-h3 font-bold tabular-nums text-[var(--text-primary)] sm:text-h2"
-                style={{ textShadow: 'var(--score-numeric-shadow)' }}
-              >
+              <span className="font-numeric text-h3 font-bold tabular-nums text-[var(--text-primary)] sm:text-h2">
                 {score}
               </span>
               {isLive ? (
@@ -135,15 +131,6 @@ export function StickyScoreBar({
               <span className="min-w-0 truncate text-meta font-semibold text-[var(--text-primary)] sm:text-body">{awayName}</span>
             </div>
           </div>
-          {isLive && (
-            <BorderBeam
-              size={120}
-              duration={6}
-              colorFrom="var(--accent-loss)"
-              colorTo="var(--accent-warn)"
-              borderRadius={0}
-            />
-          )}
         </motion.div>
       )}
     </AnimatePresence>

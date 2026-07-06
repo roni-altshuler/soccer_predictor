@@ -2,13 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   Brain,
   Calculator,
-  Compass,
   Gauge,
   Globe,
   History,
@@ -20,10 +17,7 @@ import {
   Trophy,
 } from 'lucide-react'
 
-import { BorderBeam } from '@/components/magicui/border-beam'
-import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 import { cn } from '@/lib/utils'
-import { springSnappy } from '@/lib/motion'
 
 type NavItem = {
   href: string
@@ -33,23 +27,39 @@ type NavItem = {
   accent?: 'ai'
 }
 
-const NAV: NavItem[] = [
-  { href: '/', label: 'Match Centre', icon: Activity },
-  { href: '/world-cup', label: 'World Cup', icon: Globe },
-  { href: '/matches', label: 'Leagues', icon: Trophy },
-  { href: '/tournaments', label: 'Tournaments', icon: Medal },
-  { href: '/ai', label: 'AI Dashboard', icon: Sparkles, accent: 'ai' },
-  { href: '/predict', label: 'AI Predict', icon: Brain, accent: 'ai' },
-  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-  { href: '/history', label: 'History', icon: History },
-  { href: '/simulator', label: 'Simulator', icon: Calculator },
-  { href: '/news', label: 'News', icon: Newspaper },
-]
+type NavGroup = {
+  title: string
+  items: NavItem[]
+}
 
-const SECONDARY: NavItem[] = [
-  { href: '/welcome', label: 'Overview', icon: Compass },
-  { href: '/diagnostics', label: 'Diagnostics', icon: Gauge },
-  { href: '/about', label: 'About', icon: Info },
+const GROUPS: NavGroup[] = [
+  {
+    title: 'Scores',
+    items: [
+      { href: '/', label: 'Matches', icon: Activity },
+      { href: '/world-cup', label: 'World Cup', icon: Globe },
+      { href: '/leagues', label: 'Leagues', icon: Trophy },
+      { href: '/news', label: 'News', icon: Newspaper },
+    ],
+  },
+  {
+    title: 'AI',
+    items: [
+      { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
+      { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
+      { href: '/history', label: 'History', icon: History },
+      { href: '/ai', label: 'Model hub', icon: Sparkles, accent: 'ai' },
+    ],
+  },
+  {
+    title: 'More',
+    items: [
+      { href: '/simulator', label: 'Simulator', icon: Calculator },
+      { href: '/tournaments', label: 'Tournaments', icon: Medal },
+      { href: '/diagnostics', label: 'Diagnostics', icon: Gauge },
+      { href: '/about', label: 'About', icon: Info },
+    ],
+  },
 ]
 
 function isActive(pathname: string, href: string) {
@@ -58,158 +68,80 @@ function isActive(pathname: string, href: string) {
 }
 
 /**
- * Desktop sidebar — fixed icon rail (68px) that expands to 232px on hover or
- * keyboard focus. The expansion is controlled by React state rather than
- * pure CSS `:hover` / `:focus-within` because a clicked link retains focus
- * after navigation, which kept the rail stuck open under the CSS-only
- * approach. We blur links on click to release focus, and use focus capture
- * on the aside so keyboard tabbing still expands it for screen readers.
+ * Desktop sidebar — fixed 220px column with always-visible labels, grouped
+ * FotMob/ESPN style. Flat surface, hairline right edge; the active item gets
+ * a soft accent wash. No hover-expansion, no animated chrome.
  */
 export function SidebarNav() {
-  const pathname = usePathname()
-  const [expanded, setExpanded] = useState(false)
-
-  const handleFocusCapture = useCallback(() => setExpanded(true), [])
-  const handleBlurCapture = useCallback((event: React.FocusEvent<HTMLElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setExpanded(false)
-    }
-  }, [])
+  const pathname = usePathname() || '/'
 
   return (
     <aside
       aria-label="Primary"
-      data-expanded={expanded ? 'true' : undefined}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      onFocusCapture={handleFocusCapture}
-      onBlurCapture={handleBlurCapture}
-      className={cn(
-        'hidden md:flex group/shell fixed inset-y-0 left-0 z-40',
-        expanded ? 'w-[232px]' : 'w-[68px]',
-        'transition-[width] duration-200 ease-out',
-        'border-r border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-xl',
-        'flex-col py-3'
-      )}
+      className="hidden md:flex fixed inset-y-0 left-0 z-40 w-[var(--shell-sidebar-w)] flex-col border-r border-[var(--nav-border)] bg-[var(--card-bg)]"
     >
-      {/* Brand mark with traced border-beam */}
+      {/* Brand */}
       <Link
         href="/"
         aria-label="Pitchwise home"
-        onClick={(e) => (e.currentTarget as HTMLAnchorElement).blur()}
-        className="relative mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[var(--accent-ai)]/14 to-[var(--accent-primary)]/14 ring-1 ring-[var(--border-color)] transition-transform hover:scale-105"
+        className="flex h-[var(--shell-topbar-h)] shrink-0 items-center gap-2.5 border-b border-[var(--nav-border)] px-4"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="relative z-10 h-7 w-7" />
-        <BorderBeam size={1} duration={8} borderRadius={12} colorFrom="var(--accent-ai)" colorTo="var(--accent-primary)" />
+        <img src="/brand/logo-mark.svg" alt="" width={24} height={24} className="h-6 w-6" />
+        <span className="text-[15px] font-bold tracking-tight text-[var(--text-primary)]">
+          Pitchwise
+        </span>
       </Link>
 
-      {/* Wordmark — only visible when expanded */}
-      <div className="mt-3 px-3 opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 overflow-hidden whitespace-nowrap">
-        <div className="flex items-baseline gap-1.5">
-          <AnimatedGradientText
-            speed={10}
-            colorFrom="var(--accent-primary)"
-            colorTo="var(--accent-ai)"
-            className="text-sm font-bold tracking-tight"
-          >
-            Pitchwise
-          </AnimatedGradientText>
-        </div>
-        <p className="mt-0.5 text-[10px] text-[var(--text-tertiary)]">Calibrated football intelligence</p>
-      </div>
-
-      {/* Primary nav */}
-      <nav className="mt-4 flex-1 overflow-y-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <ul className="flex flex-col gap-1">
-          {NAV.map((item) => (
-            <SidebarLink
-              key={item.href}
-              item={item}
-              active={isActive(pathname || '/', item.href)}
-            />
-          ))}
-        </ul>
-
-        <div className="my-3 mx-3 h-px bg-[var(--border-color)] opacity-60" />
-
-        <ul className="flex flex-col gap-1">
-          {SECONDARY.map((item) => (
-            <SidebarLink
-              key={item.href}
-              item={item}
-              active={isActive(pathname || '/', item.href)}
-            />
-          ))}
-        </ul>
+      <nav className="flex-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {GROUPS.map((group) => (
+          <div key={group.title} className="mb-4">
+            <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              {group.title}
+            </p>
+            <ul className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <SidebarLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(pathname, item.href)}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
-
-      {/* Footer area — version/build chip */}
-      <div className="px-2 pt-2">
-        <div className="shell-nav-item pointer-events-none opacity-70">
-          <span
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]"
-            aria-hidden="true"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)] animate-pulse" />
-          </span>
-          <span className="opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity whitespace-nowrap text-[11px] font-medium text-[var(--text-tertiary)]">
-            Models live · v2.3
-          </span>
-        </div>
-      </div>
     </aside>
   )
 }
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon
-  const reduceMotion = useReducedMotion()
   const accentColor = item.accent === 'ai' ? 'var(--accent-ai)' : 'var(--accent-primary)'
   return (
     <li>
       <Link
         href={item.href}
-        data-active={active ? 'true' : 'false'}
-        data-accent={item.accent ?? undefined}
-        onClick={(e) => (e.currentTarget as HTMLAnchorElement).blur()}
-        className="shell-nav-item"
-        title={item.label}
-      >
-        {active && (
-          <>
-            {/* Sliding active highlight — animates between items on navigation.
-                Under prefers-reduced-motion the shared-layout slide is dropped
-                so the highlight simply appears on the active item. */}
-            <motion.span
-              {...(reduceMotion ? {} : { layoutId: 'sidebar-active', transition: springSnappy })}
-              className="absolute inset-0 rounded-xl"
-              style={{ background: `color-mix(in srgb, ${accentColor} 14%, transparent)` }}
-              aria-hidden
-            />
-            <motion.span
-              {...(reduceMotion ? {} : { layoutId: 'sidebar-rail', transition: springSnappy })}
-              className="absolute left-[-4px] top-2 bottom-2 w-[3px] rounded-full"
-              style={{ background: accentColor, boxShadow: `0 0 12px ${accentColor}` }}
-              aria-hidden
-            />
-          </>
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'flex min-h-[38px] items-center gap-2.5 rounded-lg px-2 text-[13px] font-medium transition-colors',
+          active
+            ? 'text-[var(--text-primary)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]'
         )}
+        style={
+          active
+            ? { background: `color-mix(in srgb, ${accentColor} 12%, transparent)` }
+            : undefined
+        }
+      >
         <Icon
-          className={cn(
-            'relative z-10 h-[18px] w-[18px] shrink-0 transition-colors',
-            active
-              ? item.accent === 'ai'
-                ? 'text-[var(--accent-ai)]'
-                : 'text-[var(--accent-primary)]'
-              : 'text-[var(--text-secondary)] group-hover/shell:text-[var(--text-primary)]'
-          )}
+          className="h-[18px] w-[18px] shrink-0"
+          style={active ? { color: accentColor } : undefined}
           strokeWidth={2.1}
           aria-hidden="true"
         />
-        <span className="relative z-10 opacity-0 group-data-[expanded=true]/shell:opacity-100 transition-opacity duration-150 whitespace-nowrap">
-          {item.label}
-        </span>
+        {item.label}
       </Link>
     </li>
   )

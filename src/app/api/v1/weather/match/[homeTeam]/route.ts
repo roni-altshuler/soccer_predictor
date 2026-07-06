@@ -21,10 +21,18 @@ export async function GET(
       },
     })
 
-    const payload = await response.json().catch(() => ({}))
-    return NextResponse.json(payload, { status: response.status })
-  } catch (error) {
-    console.error('Error proxying weather request:', error)
-    return NextResponse.json({ error: 'Weather data unavailable' }, { status: 503 })
+    // Weather is an optional enrichment: when the backend (or its provider)
+    // can't serve it, answer 200 with an "unavailable" payload instead of
+    // surfacing a 5xx — the client treats missing fields as unavailable,
+    // and every match view stops logging console errors (Vercel has no
+    // FastAPI at all, so this path is the norm there).
+    if (!response.ok) {
+      return NextResponse.json({ available: false }, { status: 200 })
+    }
+
+    const payload = await response.json().catch(() => ({ available: false }))
+    return NextResponse.json(payload, { status: 200 })
+  } catch {
+    return NextResponse.json({ available: false }, { status: 200 })
   }
 }

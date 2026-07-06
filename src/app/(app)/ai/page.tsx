@@ -6,7 +6,6 @@ import { ArrowRight, Brain, Sparkles } from 'lucide-react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { SectionHeader, StatCard } from '@/components/primitives'
-import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { Card } from '@/components/ui/card'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { cn } from '@/lib/utils'
@@ -244,7 +243,7 @@ function ModelIdentityCard({ summary, genderLabel }: { summary: ModelSummary; ge
   ]
 
   return (
-    <Card variant="ai" className="p-4 md:p-5">
+    <Card className="p-4 md:p-5">
       <SectionHeader
         kicker="Active model"
         title={genderLabel}
@@ -320,7 +319,7 @@ function HoldoutMetricsGrid({ holdout }: { holdout: HoldoutMetrics }) {
   return (
     <Card className="p-4 md:p-5">
       <SectionHeader
-        kicker="Committed diagnostics"
+        kicker="Holdout"
         title="Holdout performance"
         description={`Measured on ${typeof holdout.n === 'number' ? holdout.n.toLocaleString() : 'a set of'} held-out matches the model never saw during training.`}
         className="mb-4"
@@ -332,6 +331,7 @@ function HoldoutMetricsGrid({ holdout }: { holdout: HoldoutMetrics }) {
             <StatCard
               key={m.key}
               label={m.label}
+              size="sm"
               accent={m.key === 'accuracy' ? 'ai' : 'none'}
               value={m.format(typeof value === 'number' ? value : undefined)}
               sub={
@@ -468,54 +468,38 @@ export default function ModelTransparencyPage() {
   const summary = modelSummary?.available ? modelSummary.summary : undefined
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-6 pb-12">
-      {/* HERO — compact band, cyan (AI) accent per the design contract */}
-      <section className="hero-band surface-elevated relative isolate overflow-hidden rounded-2xl">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(55%_60%_at_10%_15%,color-mix(in_srgb,var(--accent-ai)_12%,transparent),transparent_60%)]"
-        />
-        <div className="relative z-10 flex flex-col items-start gap-4 p-6 md:flex-row md:items-center md:justify-between md:p-8">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-              Pitchwise · AI transparency
-            </p>
-            <h1 className="mt-1 text-display font-extrabold tracking-tight text-[var(--text-primary)]">
-              Model transparency
-            </h1>
-            <p className="mt-2 max-w-xl text-small text-[var(--text-secondary)]">
-              What the unified model is, how it was calibrated, and how it actually scores on
-              data it never trained on — for the {gender === 'women' ? "women's" : "men's"}{' '}
-              universe. No cherry-picking: these are the committed diagnostics.
-            </p>
-            {summary?.model_version ? (
-              <ModelChip version={summary.model_version} className="mt-3" />
-            ) : null}
-          </div>
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            <Link href="/predict">
-              <ShimmerButton
-                background="linear-gradient(135deg, var(--accent-ai), color-mix(in srgb, var(--accent-ai) 70%, var(--background)))"
-                borderRadius="0.75rem"
-                className="min-h-[44px] text-sm"
-              >
-                Run a prediction
-                <ArrowRight className="ml-1.5 inline h-3.5 w-3.5" />
-              </ShimmerButton>
-            </Link>
-            <Link
-              href="/accuracy"
-              className="inline-flex min-h-[40px] items-center gap-1 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)] hover:underline"
-            >
-              Live accuracy tracking
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
+    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+      {/* Compact page title line — no hero band (v3 grammar) */}
+      <div className="flex flex-wrap items-end justify-between gap-3 px-1 pb-3">
+        <div>
+          <h1 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
+            Model transparency
+          </h1>
+          <p className="max-w-xl text-[12px] text-[var(--text-tertiary)]">
+            What the model is, how it was calibrated, and how it scores on data it never
+            trained on — {gender === 'women' ? "women's" : "men's"} universe.
+          </p>
         </div>
-      </section>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/accuracy"
+            className="inline-flex min-h-[44px] items-center gap-1 text-[12px] font-semibold text-[var(--accent-primary)] hover:underline"
+          >
+            Live accuracy
+            <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/predict"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-[12px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--card-hover)]"
+          >
+            Run a prediction
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
 
       {/* MODEL CARD + HOLDOUT */}
-      <section className="mt-6 flex flex-col gap-4" aria-label="Model summary">
+      <section className="flex flex-col gap-3" aria-label="Model summary">
         {loading ? (
           <>
             <SectionSkeleton rows={1} />
@@ -557,7 +541,7 @@ export default function ModelTransparencyPage() {
       </section>
 
       {/* WALK-FORWARD */}
-      <section className="mt-4" aria-label="Walk-forward backtests">
+      <section className="mt-3" aria-label="Walk-forward backtests">
         {loading ? (
           <SectionSkeleton rows={3} />
         ) : walkforward?.available && (walkforward.leagues?.length ?? 0) > 0 ? (
@@ -574,8 +558,8 @@ export default function ModelTransparencyPage() {
       </section>
 
       {/* FOOTNOTE */}
-      <p className="mt-6 text-center text-[10px] text-[var(--text-tertiary)]">
-        All figures come from committed diagnostics files — nothing on this page is estimated
+      <p className="mt-4 px-1 text-[10px] text-[var(--text-tertiary)]">
+        All figures come from saved diagnostics files — nothing on this page is estimated
         client-side. Predictions are for educational/entertainment purposes only.
       </p>
     </div>

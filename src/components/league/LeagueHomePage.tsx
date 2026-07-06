@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import SeasonProjections from '@/components/league/SeasonProjections'
 
-import { Spotlight } from '@/components/magicui/spotlight'
-import { ProbBar, SectionHeader, StatCard, StatusChip, TeamBadge } from '@/components/primitives'
+import { ProbBar, SectionHeader, StatusChip, TeamBadge } from '@/components/primitives'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
@@ -359,44 +357,37 @@ function MatchStrip({
   )
 }
 
-function ActionCard({
-  title,
-  description,
-  eyebrow,
-  href,
-  onClick,
-}: {
-  title: string
-  description: string
-  eyebrow: string
-  href?: string
-  onClick?: () => void
-}) {
-  const content = (
-    <div className="h-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">{eyebrow}</p>
-          <h3 className="mt-1 text-base font-bold text-[var(--text-primary)]">{title}</h3>
-        </div>
-        <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--accent-ai)]">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M9 7h8v8" />
-          </svg>
-        </span>
-      </div>
-      <p className="mt-2 text-sm leading-5 text-[var(--text-secondary)]">{description}</p>
-    </div>
-  )
-
-  if (href) {
-    return <Link href={href} className="block h-full">{content}</Link>
-  }
-
+/** Last-five form pip — token colours via color-mix (light-mode safe). */
+function FormPip({ result }: { result: string }) {
+  const accent =
+    result === 'W'
+      ? 'var(--accent-primary)'
+      : result === 'D'
+        ? 'var(--accent-warn)'
+        : result === 'L'
+          ? 'var(--accent-loss)'
+          : 'var(--text-tertiary)'
   return (
-    <button type="button" onClick={onClick} className="block h-full w-full text-left">
-      {content}
-    </button>
+    <span
+      className="flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold"
+      style={{
+        color: accent,
+        backgroundColor: `color-mix(in srgb, ${accent} 16%, transparent)`,
+      }}
+    >
+      {result}
+    </span>
+  )
+}
+
+/** Standings-zone marker: a small token-coloured dot before the position. */
+function ZoneDot({ color }: { color?: string }) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+      style={{ backgroundColor: color ?? 'transparent' }}
+    />
   )
 }
 
@@ -853,9 +844,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     return (
       <div className="flex-1" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
         <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
-          <div className="h-44 animate-pulse rounded-2xl bg-[var(--muted-bg)]" />
+          <div className="h-44 animate-pulse rounded-xl bg-[var(--muted-bg)]" />
           <div className="h-10 w-2/3 animate-pulse rounded-lg bg-[var(--muted-bg)]" />
-          <div className="h-72 animate-pulse rounded-2xl bg-[var(--muted-bg)]" />
+          <div className="h-72 animate-pulse rounded-xl bg-[var(--muted-bg)]" />
         </div>
       </div>
     )
@@ -863,144 +854,78 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
   return (
     <div className="flex-1" style={{ backgroundColor: 'var(--background)' }}>
-      {/* Hero band — league accent as a *subtle* gradient tint over the card
-          surface (design language: 8-12% opacity, never a solid color block),
-          with the crest as the identity mark. */}
-      <Spotlight
-        className="relative block border-b border-[var(--border-color)]"
-        size={620}
-        color={`color-mix(in srgb, ${leagueAccent.accent} 22%, transparent)`}
-      >
-      <div
-        className="surface-elevated relative overflow-hidden px-4 py-5 md:py-6"
-        style={{
-          // Use the league brand from leagueAccents.ts (single source of truth).
-          background: `linear-gradient(135deg, color-mix(in srgb, ${leagueAccent.accent} 12%, var(--background)) 0%, var(--background) 70%)`,
-          // Expose the accent as a CSS var for any nested CSS color-mix() callers.
-          ['--league-accent' as string]: leagueAccent.accent,
-        }}
-      >
-        <div className="relative z-10 max-w-6xl mx-auto">
+      {/* Flat league header — crest, name, country line, season picker. */}
+      <div className="border-b border-[var(--border-color)] bg-[var(--card-bg)]">
+        <div className="mx-auto max-w-6xl px-4 pb-3">
           <Link
             href="/matches"
-            className="inline-flex min-h-[40px] items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+            className="inline-flex min-h-[40px] items-center gap-1 text-[12px] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             All leagues
           </Link>
 
-          <div className="mt-2 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div className="flex items-center gap-4 min-w-0">
-              {leagueLogo ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
+          <div className="flex items-center gap-3">
+            {leagueLogo ? (
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--muted-bg)]/60">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={leagueLogo}
-                  alt={leagueName}
-                  className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-lg ring-1 ring-[var(--border-color)]"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-8 w-8 object-contain"
                 />
-              ) : (
-                <span
-                  aria-hidden
-                  className="flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-black"
-                  style={{
-                    color: leagueAccent.accent,
-                    backgroundColor: `color-mix(in srgb, ${leagueAccent.accent} 14%, transparent)`,
-                  }}
-                >
-                  {leagueName.trim().charAt(0).toUpperCase()}
-                </span>
-              )}
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">{country} · {leagueAccent.shortName}</p>
-                <h1 className="truncate text-3xl md:text-4xl font-black text-[var(--text-primary)]">{leagueName}</h1>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')} season
-                </p>
-              </div>
+              </span>
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-lg font-bold"
+                style={{
+                  color: leagueAccent.accent,
+                  backgroundColor: `color-mix(in srgb, ${leagueAccent.accent} 14%, transparent)`,
+                }}
+              >
+                {leagueName.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-xl font-bold tracking-tight text-[var(--text-primary)]">
+                {leagueName}
+              </h1>
+              <p className="text-[12px] text-[var(--text-tertiary)]">
+                {country} · {leagueAccent.shortName} ·{' '}
+                {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')}
+              </p>
             </div>
 
-            <div className="w-full md:w-auto">
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Season</label>
-              <div className="relative">
-                <select
-                  value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="w-full md:w-44 appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-2 pr-9 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition-colors hover:border-[var(--accent-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40"
-                >
-                  {seasons.map(season => (
-                    <option key={season.value} value={season.value} className="bg-[var(--card-bg)] text-[var(--text-primary)]">
-                      {season.label}
-                    </option>
-                  ))}
-                </select>
-                <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          {simulationResults && (
-            <div className="mt-5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-ai)]">Monte Carlo Simulation ({simulationResults.n_simulations.toLocaleString()} runs)</p>
-                  <p className="text-[var(--text-primary)] font-bold text-lg">{simulationResults.most_likely_champion} predicted champion</p>
-                  <p className="text-[var(--text-secondary)] text-sm mt-1">
-                    Top 4: {simulationResults.likely_top_4.join(', ')}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold tabular-nums text-[var(--accent-ai)]">
-                    {Math.round(simulationResults.champion_probability * 100)}%
-                  </p>
-                  <p className="text-[var(--text-tertiary)] text-xs">title probability</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
-            <StatCard
-              size="sm"
-              label="Leader"
-              value={<span className="truncate text-base">{data?.standings[0]?.teamName || 'TBD'}</span>}
-              sub={data?.standings[0] ? `${data.standings[0].points} points` : 'table pending'}
-            />
-            <StatCard
-              size="sm"
-              label={data?.topScorers[0] ? 'Top scorer' : 'Best GD'}
-              value={<span className="truncate text-base">{data?.topScorers[0]?.name || data?.standings[0]?.teamName || 'TBD'}</span>}
-              sub={
-                data?.topScorers[0]
-                  ? `${data.topScorers[0].goals} goals · ${data.topScorerSource || 'provider data'}`
-                  : data?.standings[0]
-                    ? `${data.standings[0].goalDiff > 0 ? '+' : ''}${data.standings[0].goalDiff} goal diff`
-                    : 'table pending'
-              }
-            />
-            <StatCard
-              size="sm"
-              label="Matchweek"
-              value={data?.standings[0]?.played ? data.standings[0].played : '—'}
-              sub="matches played"
-            />
-            <StatCard
-              size="sm"
-              label="Coming up"
-              value={data?.upcomingMatches?.length ? data.upcomingMatches.length : '—'}
-              sub={data?.upcomingMatches?.length ? 'fixtures scheduled' : 'none scheduled'}
-            />
+            <label className="shrink-0">
+              <span className="sr-only">Season</span>
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="h-11 appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 pr-8 text-[13px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--card-hover)] focus:border-[var(--accent-primary)] focus:outline-none"
+                style={{
+                  backgroundImage:
+                    'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23888\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.6rem center',
+                }}
+              >
+                {seasons.map(season => (
+                  <option key={season.value} value={season.value} className="bg-[var(--card-bg)] text-[var(--text-primary)]">
+                    {season.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </div>
-      </div>
-      </Spotlight>
 
-      <div className="sticky top-0 z-20 border-b border-[var(--border-color)] bg-[var(--background)]/90 backdrop-blur-md">
+        {/* Underline tabs (tab grammar, not pill grammar) */}
         <div
           role="tablist"
           aria-label="League sections"
-          className="max-w-6xl mx-auto flex gap-1 overflow-x-auto px-4 py-3"
+          className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => {
             const active = activeTab === tab
@@ -1010,21 +935,19 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveTab(tab)}
-                className={`relative min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold capitalize whitespace-nowrap transition-colors ${
+                className={`relative min-h-[44px] whitespace-nowrap px-3 text-[13px] font-semibold capitalize transition-colors ${
                   active
                     ? 'text-[var(--text-primary)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
                 }`}
               >
+                {TAB_LABELS[tab] || tab}
                 {active && (
-                  <motion.span
-                    layoutId="league-tab-pill"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    className="absolute inset-0 -z-[1] rounded-lg bg-[var(--card-bg)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--border-color)]"
+                  <span
                     aria-hidden="true"
+                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[var(--accent-primary)]"
                   />
                 )}
-                <span className="relative z-[1]">{TAB_LABELS[tab] || tab}</span>
               </button>
             )
           })}
@@ -1043,13 +966,13 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   nSimulations={simulationResults.n_simulations}
                 />
               ) : runningSimulation ? (
-                <div className="flex items-center gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-5 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-sm)]">
+                <div className="flex items-center gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-5 text-sm text-[var(--text-secondary)]">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent-primary)] border-t-transparent" />
                   Simulating the rest of the season…
                 </div>
               ) : null}
 
-              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
                 <SectionHeader
                   kicker="Schedule"
                   title="Upcoming Matches"
@@ -1078,7 +1001,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 </div>
               </div>
 
-              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
                 <SectionHeader
                   kicker="Form Check"
                   title="Recent Results"
@@ -1101,22 +1024,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             </div>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-3">
-                <ActionCard
-                  eyebrow="Projection"
-                  title="Run Simulation"
-                  description="Simulate the remaining season using current ESPN standings, listed fixtures when available, ELO strength, and scoreline probabilities."
-                  onClick={() => setActiveTab('simulator')}
-                />
-                <ActionCard
-                  eyebrow="Model Room"
-                  title="AI Model Accuracy"
-                  description="Review hit rate, Brier score, calibration, drift alerts, and league-level tuning."
-                  href="/tracking"
-                />
-              </div>
-
-              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden shadow-[var(--shadow-sm)]">
+              <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] overflow-hidden">
                 <SectionHeader
                   kicker="Table"
                   title="Standings"
@@ -1130,37 +1038,29 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </button>
                   }
                 />
-                <div className="divide-y divide-[var(--border-color)]">
+                <div className="divide-y divide-[var(--border-color)]/40">
                   {data?.standings.slice(0, 5).map((team, idx) => (
-                    <div key={team.teamName} className="flex min-h-[44px] justify-between items-center p-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={`w-1 h-9 rounded-full ${idx < 4 ? 'bg-[var(--accent-primary)]' : idx < 6 ? 'bg-[var(--accent-info)]' : 'bg-transparent'}`} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 text-center text-sm tabular-nums text-[var(--text-tertiary)]">{idx + 1}</span>
-                            <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
-                            <span className="font-medium text-[var(--text-primary)] truncate">{team.teamName}</span>
-                          </div>
-                          <div className="flex gap-1 mt-1">
-                            {(team.form || []).slice(-5).map((result, formIndex) => (
-                              <span
-                                key={`${team.teamName}-preview-${formIndex}`}
-                                className={`w-4 h-4 rounded-md text-[9px] font-bold flex items-center justify-center ${
-                                  result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
-                                  result === 'D' ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' :
-                                  'bg-[var(--accent-loss)] text-white'
-                                }`}
-                              >
-                                {result}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold tabular-nums text-[var(--text-primary)]">{team.points}</span>
-                        <div className="text-[10px] text-[var(--text-tertiary)]">pts</div>
-                      </div>
+                    <div key={team.teamName} className="flex min-h-[44px] items-center gap-2 px-3 py-2">
+                      <ZoneDot
+                        color={
+                          idx < 4
+                            ? 'var(--accent-primary)'
+                            : idx < 6
+                              ? 'var(--accent-info)'
+                              : undefined
+                        }
+                      />
+                      <span className="w-4 text-center text-[13px] tabular-nums text-[var(--text-tertiary)]">{idx + 1}</span>
+                      <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--text-primary)]">{team.teamName}</span>
+                      {team.form && team.form.length > 0 ? (
+                        <span className="hidden items-center gap-0.5 sm:flex">
+                          {team.form.slice(-5).map((result, formIndex) => (
+                            <FormPip key={`${team.teamName}-preview-${formIndex}`} result={result} />
+                          ))}
+                        </span>
+                      ) : null}
+                      <span className="w-8 text-right text-[13px] font-bold tabular-nums text-[var(--text-primary)]">{team.points}</span>
                     </div>
                   ))}
                 </div>
@@ -1222,52 +1122,51 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   )
                   
                   return (
-                    <div key={conference} className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                      <div className={`p-4 border-b bg-gradient-to-r ${isEastern ? 'from-[color-mix(in_srgb,var(--accent-info)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)]' : 'from-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] to-[color-mix(in_srgb,var(--accent-loss)_20%,transparent)]'}`} style={{ borderColor: 'var(--border-color)' }}>
-                        <h2 className="text-lg font-semibold text-[var(--text-primary)]">{conference}</h2>
+                    <div key={conference} className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                      <div className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-3 py-2">
+                        <h2 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">{conference}</h2>
                       </div>
                       <div className="max-h-[560px] overflow-auto">
-                        <table className="w-full tabular-nums">
-                          <thead className="sticky top-0 z-10 bg-[var(--muted-bg)]">
-                            <tr className="text-xs text-[var(--text-tertiary)]">
-                              <th className="text-left py-3 px-3 font-medium">#</th>
-                              <th className="text-left py-3 px-3 font-medium">Team</th>
-                              <th className="text-center py-3 px-2 font-medium">P</th>
-                              <th className="text-center py-3 px-2 font-medium">Pts</th>
-                              <th className="text-center py-3 px-2 font-medium hidden sm:table-cell">Form</th>
+                        <table className="w-full text-[13px] tabular-nums">
+                          <thead className="sticky top-0 z-10 bg-[var(--card-bg)]">
+                            <tr className="border-b border-[var(--border-color)] text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                              <th className="text-left py-2 pl-3 pr-1 font-semibold">#</th>
+                              <th className="text-left py-2 px-2 font-semibold">Team</th>
+                              <th className="text-right py-2 px-2 font-semibold">P</th>
+                              <th className="text-right py-2 px-3 font-semibold">Pts</th>
+                              <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">Form</th>
                             </tr>
                           </thead>
                           <tbody>
                             {conferenceTeams.length > 0 ? conferenceTeams.map((team, idx) => {
-                              let zoneClass = 'odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]'
-                              if (idx < 7) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]'  // Playoff spots
-                              else if (idx < 9) zoneClass = 'border-l-4 border-l-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)]'  // Wild card
+                              const zoneColor =
+                                idx < 7
+                                  ? 'var(--accent-primary)' // Playoff spots
+                                  : idx < 9
+                                    ? 'var(--accent-warn)' // Wild card
+                                    : undefined
 
                               return (
-                                <tr key={team.teamName} className={`border-b hover:bg-[var(--muted-bg)] ${zoneClass}`} style={{ borderColor: 'var(--border-color)' }}>
-                                  <td className="py-2.5 px-3 tabular-nums text-[var(--text-secondary)]">{idx + 1}</td>
-                                  <td className="py-2.5 px-3 font-medium text-[var(--text-primary)]">
-                                    <span className="flex items-center gap-2">
-                                      <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
-                                      {team.teamName}
+                                <tr key={team.teamName} className="border-b border-[var(--border-color)]/40 last:border-b-0 hover:bg-[var(--card-hover)]">
+                                  <td className="py-2 pl-3 pr-1 text-[var(--text-secondary)]">
+                                    <span className="flex items-center gap-1.5">
+                                      <ZoneDot color={zoneColor} />
+                                      {idx + 1}
                                     </span>
                                   </td>
-                                  <td className="py-2.5 px-2 text-center tabular-nums text-[var(--text-secondary)]">{team.played}</td>
-                                  <td className="py-2.5 px-2 text-center font-bold tabular-nums text-[var(--text-primary)]">{team.points}</td>
-                                  <td className="py-2.5 px-2 text-center hidden sm:table-cell">
+                                  <td className="py-2 px-2 font-medium text-[var(--text-primary)]">
+                                    <span className="flex items-center gap-2">
+                                      <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
+                                      <span className="truncate">{team.teamName}</span>
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{team.played}</td>
+                                  <td className="py-2 px-3 text-right font-bold text-[var(--text-primary)]">{team.points}</td>
+                                  <td className="py-2 px-2 hidden sm:table-cell">
                                     <div className="flex justify-center gap-0.5">
                                       {team.form && team.form.length > 0 ? (
                                         team.form.slice(-5).map((result, i) => (
-                                          <span
-                                            key={i}
-                                            className={`w-4 h-4 flex items-center justify-center text-[9px] font-bold rounded ${
-                                              result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
-                                              result === 'D' ? 'bg-[var(--text-tertiary)] text-white' :
-                                              'bg-[var(--accent-loss)] text-white'
-                                            }`}
-                                          >
-                                            {result}
-                                          </span>
+                                          <FormPip key={i} result={result} />
                                         ))
                                       ) : (
                                         <span className="text-[var(--text-tertiary)] text-xs">-</span>
@@ -1282,9 +1181,9 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                           </tbody>
                         </table>
                       </div>
-                      <div className="p-3 border-t text-xs text-[var(--text-tertiary)] flex gap-3" style={{ borderColor: 'var(--border-color)' }}>
-                        <span><span className="inline-block w-2 h-2 rounded-sm bg-[var(--accent-primary)] mr-1"></span> Playoff</span>
-                        <span><span className="inline-block w-2 h-2 rounded-sm bg-[var(--accent-warn)] mr-1"></span> Wild Card</span>
+                      <div className="p-3 border-t text-xs text-[var(--text-tertiary)] flex items-center gap-4" style={{ borderColor: 'var(--border-color)' }}>
+                        <span className="inline-flex items-center gap-1.5"><ZoneDot color="var(--accent-primary)" /> Playoff</span>
+                        <span className="inline-flex items-center gap-1.5"><ZoneDot color="var(--accent-warn)" /> Wild card</span>
                       </div>
                     </div>
                   )
@@ -1292,7 +1191,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               </div>
             ) : (
               // Regular league standings
-              <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                 <SectionHeader
                   kicker="Table"
                   title="League Standings"
@@ -1307,61 +1206,66 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   }
                 />
                 <div className="max-h-[640px] overflow-auto">
-                  <table className="w-full tabular-nums">
-                    <thead className="sticky top-0 z-10 bg-[var(--muted-bg)]">
-                      <tr className="text-xs text-[var(--text-tertiary)]">
-                        <th className="text-left py-3 px-4 font-medium">#</th>
-                        <th className="text-left py-3 px-4 font-medium">Team</th>
-                        <th className="text-center py-3 px-2 font-medium">P</th>
-                        <th className="text-center py-3 px-2 font-medium">W</th>
-                        <th className="text-center py-3 px-2 font-medium">D</th>
-                        <th className="text-center py-3 px-2 font-medium">L</th>
-                        <th className="text-center py-3 px-2 font-medium">GD</th>
-                        <th className="text-center py-3 px-4 font-medium">Pts</th>
-                        <th className="text-center py-3 px-2 font-medium hidden sm:table-cell">Form</th>
+                  <table className="w-full text-[13px] tabular-nums">
+                    <thead className="sticky top-0 z-10 bg-[var(--card-bg)]">
+                      <tr className="border-b border-[var(--border-color)] text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                        <th className="text-left py-2 pl-3 pr-1 font-semibold">#</th>
+                        <th className="text-left py-2 px-2 font-semibold">Team</th>
+                        <th className="text-right py-2 px-2 font-semibold">P</th>
+                        <th className="text-right py-2 px-2 font-semibold">W</th>
+                        <th className="text-right py-2 px-2 font-semibold">D</th>
+                        <th className="text-right py-2 px-2 font-semibold">L</th>
+                        <th className="text-right py-2 px-2 font-semibold">GD</th>
+                        <th className="text-right py-2 px-3 font-semibold">Pts</th>
+                        <th className="text-center py-2 px-2 font-semibold hidden sm:table-cell">Form</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.standings.map((team, idx) => {
-                        // Qualification zones read as 4px league-accent rails +
-                        // a faint tint; everything else zebra-stripes at 40%.
-                        let zoneClass = 'odd:bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)]'
-                        if (idx < 4) zoneClass = 'border-l-4 border-l-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]'
-                        else if (idx >= data.standings.length - 3) zoneClass = 'border-l-4 border-l-[var(--accent-loss)] bg-[color-mix(in_srgb,var(--accent-loss)_8%,transparent)]'
-                        else if (idx < 6) zoneClass = 'border-l-4 border-l-[var(--accent-info)] bg-[color-mix(in_srgb,var(--accent-info)_8%,transparent)]'
+                        // Qualification zones read as a small coloured dot by
+                        // the position — no rails, no zebra (v3 table rules).
+                        const zoneColor =
+                          idx < 4
+                            ? 'var(--accent-primary)'
+                            : idx >= data.standings.length - 3
+                              ? 'var(--accent-loss)'
+                              : idx < 6
+                                ? 'var(--accent-info)'
+                                : undefined
 
                         return (
                           <tr
                             key={team.teamName}
-                            className={`border-b hover:bg-[var(--muted-bg)] transition-colors ${zoneClass}`}
-                            style={{ borderColor: 'var(--border-color)' }}
+                            className="border-b border-[var(--border-color)]/40 transition-colors last:border-b-0 hover:bg-[var(--card-hover)]"
                           >
-                            <td className="py-3 px-4 tabular-nums text-[var(--text-secondary)]">{team.position}</td>
-                            <td className="py-3 px-4">
+                            <td className="py-2 pl-3 pr-1 text-[var(--text-secondary)]">
+                              <span className="flex items-center gap-1.5">
+                                <ZoneDot color={zoneColor} />
+                                {team.position}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2">
                               {team.teamId ? (
                                 <Link
                                   href={`/teams/${team.teamId}`}
                                   className="flex items-center gap-2 font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)]"
                                 >
-                                  <TeamBadge teamId={team.teamId} name={team.teamName} size={20} />
-                                  {team.teamName}
+                                  <TeamBadge teamId={team.teamId} name={team.teamName} size={18} />
+                                  <span className="truncate">{team.teamName}</span>
                                 </Link>
                               ) : (
                                 <div className="flex items-center gap-2 font-medium text-[var(--text-primary)]">
-                                  <TeamBadge name={team.teamName} size={20} />
-                                  {team.teamName}
+                                  <TeamBadge name={team.teamName} size={18} />
+                                  <span className="truncate">{team.teamName}</span>
                                 </div>
                               )}
-                              <div className="text-[10px] text-[var(--text-tertiary)] mt-1">
-                                {team.won}-{team.drawn}-{team.lost} record
-                              </div>
                             </td>
-                            <td className="py-3 px-2 text-center tabular-nums text-[var(--text-secondary)]">{team.played}</td>
-                            <td className="py-3 px-2 text-center tabular-nums text-[var(--accent-primary)]">{team.won}</td>
-                            <td className="py-3 px-2 text-center tabular-nums text-[var(--text-tertiary)]">{team.drawn}</td>
-                            <td className="py-3 px-2 text-center tabular-nums text-[var(--accent-loss)]">{team.lost}</td>
+                            <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{team.played}</td>
+                            <td className="py-2 px-2 text-right text-[var(--text-secondary)]">{team.won}</td>
+                            <td className="py-2 px-2 text-right text-[var(--text-tertiary)]">{team.drawn}</td>
+                            <td className="py-2 px-2 text-right text-[var(--text-tertiary)]">{team.lost}</td>
                             <td
-                              className={`py-3 px-2 text-center font-semibold tabular-nums ${
+                              className={`py-2 px-2 text-right ${
                                 team.goalDiff > 0
                                   ? 'text-[var(--accent-primary)]'
                                   : team.goalDiff < 0
@@ -1371,21 +1275,12 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                             >
                               {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
                             </td>
-                            <td className="py-3 px-4 text-center font-extrabold text-[var(--text-primary)] tabular-nums">{team.points}</td>
-                            <td className="py-3 px-2 text-center hidden sm:table-cell">
+                            <td className="py-2 px-3 text-right font-bold text-[var(--text-primary)]">{team.points}</td>
+                            <td className="py-2 px-2 hidden sm:table-cell">
                               <div className="flex justify-center gap-0.5">
                                 {team.form && team.form.length > 0 ? (
                                   team.form.slice(-5).map((result, i) => (
-                                    <span
-                                      key={i}
-                                      className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-md ${
-                                        result === 'W' ? 'bg-[var(--accent-primary)] text-white' :
-                                        result === 'D' ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' :
-                                        'bg-[var(--accent-loss)] text-white'
-                                      }`}
-                                    >
-                                      {result}
-                                    </span>
+                                    <FormPip key={i} result={result} />
                                   ))
                                 ) : (
                                   <span className="text-[var(--text-tertiary)] text-xs">-</span>
@@ -1399,19 +1294,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   </table>
                 </div>
                 {/* Legend */}
-                <div className="p-4 border-t flex flex-wrap gap-4 text-xs" style={{ borderColor: 'var(--border-color)' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-[var(--accent-primary)] rounded" />
-                    <span className="text-[var(--text-tertiary)]">Champions League</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-[var(--accent-info)] rounded" />
-                    <span className="text-[var(--text-tertiary)]">Europa League</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-[var(--accent-loss)] rounded" />
-                    <span className="text-[var(--text-tertiary)]">Relegation</span>
-                  </div>
+                <div className="p-3 border-t flex flex-wrap items-center gap-4 text-xs text-[var(--text-tertiary)]" style={{ borderColor: 'var(--border-color)' }}>
+                  <span className="inline-flex items-center gap-1.5"><ZoneDot color="var(--accent-primary)" /> Champions League</span>
+                  <span className="inline-flex items-center gap-1.5"><ZoneDot color="var(--accent-info)" /> Europa League</span>
+                  <span className="inline-flex items-center gap-1.5"><ZoneDot color="var(--accent-loss)" /> Relegation</span>
                 </div>
               </div>
             )}
@@ -1419,7 +1305,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         )}
 
         {activeTab === 'scorers' && (
-          <div className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
             <SectionHeader
               kicker="Golden Boot"
               title="Top Scorers"
@@ -1427,26 +1313,25 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               className="p-4 border-b border-[var(--border-color)]"
             />
             {data?.topScorers && data.topScorers.length > 0 ? (
-              <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="divide-y divide-[var(--border-color)]/40">
                 {data.topScorers.map((scorer) => (
-                  <div key={scorer.name} className="flex min-h-[44px] items-center justify-between p-4 hover:bg-[var(--muted-bg)]">
-                    <div className="flex items-center gap-4">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm tabular-nums ${
-                        scorer.rank <= 3 ? 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]' : 'bg-[var(--muted-bg)] text-[var(--text-secondary)]'
-                      }`}>
-                        {scorer.rank}
+                  <div key={scorer.name} className="flex min-h-[48px] items-center gap-3 px-3 py-2 hover:bg-[var(--card-hover)]">
+                    <span className="w-5 shrink-0 text-center text-[12px] tabular-nums text-[var(--text-tertiary)]">
+                      {scorer.rank}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{scorer.name}</p>
+                      <p className="truncate text-[11px] text-[var(--text-tertiary)]">{scorer.team}</p>
+                    </div>
+                    {scorer.assists != null ? (
+                      <span className="hidden shrink-0 text-[12px] tabular-nums text-[var(--text-tertiary)] sm:inline">
+                        {scorer.assists} A
                       </span>
-                      <div>
-                        <p className="font-medium text-[var(--text-primary)]">{scorer.name}</p>
-                        <p className="text-sm text-[var(--text-tertiary)]">{scorer.team}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold tabular-nums text-[var(--accent-primary)]">{scorer.goals}</p>
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        {scorer.assists === null ? 'Goals verified' : `${scorer.assists} assists`}
-                      </p>
-                    </div>
+                    ) : null}
+                    <span className="w-10 shrink-0 text-right text-[13px] font-bold tabular-nums text-[var(--text-primary)]">
+                      {scorer.goals}
+                      <span className="ml-1 text-[10px] font-semibold text-[var(--text-tertiary)]">G</span>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -1494,7 +1379,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   <button
                     onClick={runSeasonSimulation}
                     disabled={runningSimulation}
-                    className="min-h-[44px] px-6 py-3 rounded-xl font-semibold text-[var(--accent-on-primary)] bg-gradient-to-r from-[var(--accent-ai-light)] to-[var(--accent-ai)] hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-[var(--accent-ai)]/25 flex items-center gap-2"
+                    className="min-h-[44px] px-5 rounded-lg font-semibold text-sm text-[var(--accent-on-primary)] bg-[var(--accent-primary)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center gap-2"
                   >
                     {runningSimulation ? (
                       <>
@@ -1511,10 +1396,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
             {/* Simulation Results */}
             {simulationResults && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 {/* Summary Card */}
-                <div className="bg-[var(--card-bg)] border border-[var(--border-color)] overflow-hidden">
-                  <div className="p-6 bg-gradient-to-r from-[var(--accent-ai)]/18 to-[var(--accent-primary)]/16 border-b border-[var(--border-color)]">
+                <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-[var(--border-color)]">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div>
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{simulationResults.league_name}</h3>
@@ -1718,47 +1603,48 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         )}
 
         {activeTab === 'news' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data?.news && data.news.length > 0 ? (
-              data.news.filter(item => item.link).map((item, idx) => (
-                <a 
-                  key={idx} 
-                  href={item.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-[var(--card-bg)] border rounded-2xl overflow-hidden transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl hover:border-[var(--accent-primary)]" 
-                  style={{ borderColor: 'var(--border-color)' }}
-                >
-                  {/* Cover Photo */}
-                  {item.image && (
-                    <div className="aspect-video w-full overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */}
-                      <img
-                        src={item.image}
-                        alt={item.headline}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-[var(--text-primary)] mb-2 group-hover:text-[var(--accent-primary)] transition-colors line-clamp-2">
-                      {item.headline}
-                    </h3>
-                    <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{item.description}</p>
-                    {item.published && (
-                      <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                        {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
-                      </p>
-                    )}
-                  </div>
-                </a>
-              ))
-            ) : (
-              <div className="bg-[var(--card-bg)] border rounded-2xl p-8 text-center col-span-2" style={{ borderColor: 'var(--border-color)' }}>
-                <p className="text-[var(--text-tertiary)]">No news available</p>
-              </div>
-            )}
-          </div>
+          data?.news && data.news.filter(item => item.link).length > 0 ? (
+            <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <ul className="divide-y divide-[var(--border-color)]/40">
+                {data.news.filter(item => item.link).map((item, idx) => (
+                  <li key={idx}>
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+                    >
+                      {item.image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */
+                        <img
+                          src={item.image}
+                          alt=""
+                          loading="lazy"
+                          className="aspect-video w-24 flex-shrink-0 rounded-md object-cover sm:w-28"
+                        />
+                      ) : (
+                        <span className="aspect-video w-24 flex-shrink-0 rounded-md bg-[var(--muted-bg)] sm:w-28" aria-hidden="true" />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
+                          {item.headline}
+                        </span>
+                        {item.published && (
+                          <span className="mt-1 block text-[11px] text-[var(--text-tertiary)]">
+                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
+                          </span>
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="bg-[var(--card-bg)] border rounded-xl p-8 text-center" style={{ borderColor: 'var(--border-color)' }}>
+              <p className="text-[var(--text-tertiary)]">No news available</p>
+            </div>
+          )
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
@@ -88,6 +88,7 @@ export function ConfusionHeatmap({ rows, className }: ConfusionHeatmapProps) {
 }
 
 function RowGroup({ row, rowTotal, idx }: { row: ConfusionRow; rowTotal: number; idx: number }) {
+  const reduce = useReducedMotion()
   const cells: { key: OutcomeKey; count: number; share: number; correct: boolean }[] = (
     ['home', 'draw', 'away'] as OutcomeKey[]
   ).map((col) => ({
@@ -110,7 +111,7 @@ function RowGroup({ row, rowTotal, idx }: { row: ConfusionRow; rowTotal: number;
         return (
           <motion.div
             key={`cell-${row.actual}-${cell.key}`}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={reduce ? false : { opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25, delay: idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-center justify-center rounded-md border border-[var(--border-color)] px-2 py-3 text-center"

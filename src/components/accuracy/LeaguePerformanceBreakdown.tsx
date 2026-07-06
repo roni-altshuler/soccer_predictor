@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowDownAZ, ArrowUpDown, Filter, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { LeagueBadge } from '@/components/match/LeagueBadge'
@@ -199,6 +199,7 @@ function LeagueRowItem({
   idx: number
   overall: number
 }) {
+  const reduce = useReducedMotion()
   const rate = row.hitRate
   const pct = Math.round(rate * 100)
   const delta = rate - overall
@@ -220,7 +221,7 @@ function LeagueRowItem({
 
   return (
     <motion.li
-      initial={{ opacity: 0, y: 6 }}
+      initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: idx * 0.03, ease: [0.22, 1, 0.36, 1] }}
       className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 px-4 py-3 md:px-5"
