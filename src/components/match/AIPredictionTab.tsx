@@ -167,18 +167,12 @@ function EmptyState({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="bento-card bento-ai overflow-hidden"
+      className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]"
     >
-      <div className="relative isolate p-6 md:p-8">
-        {/* Layered ambient */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_15%_10%,color-mix(in_srgb,var(--accent-ai)_24%,transparent),transparent_60%),radial-gradient(50%_50%_at_85%_25%,color-mix(in_srgb,var(--accent-primary)_22%,transparent),transparent_60%)]"
-        />
-
+      <div className="p-6 md:p-8">
         <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="space-y-2">
@@ -208,7 +202,7 @@ function EmptyState({
             onClick={onRun}
             disabled={loading}
             className={cn(
-              'group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[var(--accent-ai)] to-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] shadow-lg shadow-[var(--accent-ai)]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[var(--accent-ai)]/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0'
+              'inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
             )}
           >
             {loading ? (

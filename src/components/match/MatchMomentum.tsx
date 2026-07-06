@@ -65,7 +65,7 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
   const goalMarkers = events.filter((e) => e.type === 'goal' || e.type === 'own_goal')
 
   return (
-    <div className="cine-card p-4">
+    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Momentum</h3>
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
@@ -80,19 +80,9 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
 
       <div className="relative">
         <svg viewBox={`0 0 360 ${chartH}`} className="w-full" style={{ height: chartH }} role="img" aria-label="Match momentum">
-          <defs>
-            <linearGradient id="momentum-home" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor={HOME_COLOR} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={HOME_COLOR} stopOpacity="1" />
-            </linearGradient>
-            <linearGradient id="momentum-away" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={AWAY_COLOR} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={AWAY_COLOR} stopOpacity="1" />
-            </linearGradient>
-          </defs>
-
+          {/* Flat chart surface: one centre hairline + a quiet HT tick. No grid. */}
           <line x1="0" y1={midY} x2="360" y2={midY} stroke="var(--border-color)" strokeWidth="1" strokeDasharray="3,3" />
-          <line x1="180" y1="0" x2="180" y2={chartH} stroke="var(--border-color)" strokeWidth="0.75" />
+          <line x1="180" y1={chartH - 10} x2="180" y2={chartH} stroke="var(--border-color)" strokeWidth="0.75" />
           <text x="183" y={chartH - 3} fill="var(--text-tertiary)" fontSize="7">HT</text>
 
           {momentumData.map((val, i) => {
@@ -108,7 +98,8 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
                 x={x}
                 width={barW}
                 rx="2"
-                fill={isHome ? 'url(#momentum-home)' : 'url(#momentum-away)'}
+                fill={isHome ? HOME_COLOR : AWAY_COLOR}
+                fillOpacity={0.9}
                 initial={reduce ? false : { height: 0, y: midY }}
                 animate={{ height: h, y }}
                 transition={{ duration: 0.5, delay: reduce ? 0 : i * 0.025, ease: [0.22, 1, 0.36, 1] }}
@@ -123,11 +114,7 @@ export default function MatchMomentum({ events, homeTeam, awayTeam, status, poss
             const color = evt.team === 'home' ? HOME_COLOR : AWAY_COLOR
             return (
               <g key={i}>
-                <circle cx={x} cy={y} r="6" fill={color} opacity="0.25">
-                  {!reduce && (
-                    <animate attributeName="r" values="5;9;5" dur="2.4s" repeatCount="indefinite" />
-                  )}
-                </circle>
+                <circle cx={x} cy={y} r="5" fill={color} opacity="0.22" />
                 <circle cx={x} cy={y} r="3.5" fill={color} />
                 <circle cx={x} cy={y} r="1.4" fill="var(--card-bg)" />
               </g>
