@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-08T08:41:29.759955",
-  "total_predictions_analyzed": 1426,
-  "overall_accuracy": 0.4376,
+  "generated_at": "2026-07-08T16:03:26.807631",
+  "total_predictions_analyzed": 1427,
+  "overall_accuracy": 0.438,
   "by_league": {
     "La Liga": {
       "predictions": 164,
@@ -340,26 +340,26 @@
       }
     },
     "NWSL": {
-      "predictions": 13,
-      "accuracy": 0.6154,
-      "brier_score": 0.5619,
-      "scoreline_rate": 0.0769,
-      "actual_draw_rate": 0.2308,
-      "predicted_draw_rate": 0.2663,
-      "draw_rate_adjustment": -0.01067,
-      "actual_home_win_rate": 0.7692,
-      "predicted_home_win_rate": 0.4618,
-      "home_adv_adjustment": 0.06148,
-      "avg_goals_diff": 0.542,
-      "goals_scale_adjustment": 0.02712,
+      "predictions": 14,
+      "accuracy": 0.6429,
+      "brier_score": 0.556,
+      "scoreline_rate": 0.0714,
+      "actual_draw_rate": 0.2143,
+      "predicted_draw_rate": 0.2653,
+      "draw_rate_adjustment": -0.01532,
+      "actual_home_win_rate": 0.7857,
+      "predicted_home_win_rate": 0.4599,
+      "home_adv_adjustment": 0.06515,
+      "avg_goals_diff": 0.399,
+      "goals_scale_adjustment": 0.01996,
       "confidence_calibration": {
         "high": {
           "count": 6,
           "accuracy": 0.6667
         },
         "medium": {
-          "count": 7,
-          "accuracy": 0.5714
+          "count": 8,
+          "accuracy": 0.625
         },
         "low": {
           "count": 0,
@@ -536,14 +536,14 @@
     },
     "FIFA World Cup": {
       "current": {
-        "avg_goals": 1.2813,
-        "home_adv": 0.2174,
+        "avg_goals": 1.2855,
+        "home_adv": 0.2334,
         "rho": -0.09,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.286,
-        "home_adv": 0.233,
+        "avg_goals": 1.29,
+        "home_adv": 0.249,
         "draw_rate": 0.08,
         "rho": -0.09
       },
@@ -557,9 +557,9 @@
         "draw_rate": 0.24
       },
       "suggested": {
-        "avg_goals": 1.377,
-        "home_adv": 0.311,
-        "draw_rate": 0.229,
+        "avg_goals": 1.37,
+        "home_adv": 0.315,
+        "draw_rate": 0.225,
         "rho": -0.13
       },
       "changed": true
