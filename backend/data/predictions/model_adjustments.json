@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08T23:05:56.671510",
+  "generated_at": "2026-07-09T09:54:35.938468",
   "total_predictions_analyzed": 1427,
   "overall_accuracy": 0.438,
   "by_league": {
@@ -536,14 +536,14 @@
     },
     "FIFA World Cup": {
       "current": {
-        "avg_goals": 1.2897,
-        "home_adv": 0.2494,
+        "avg_goals": 1.2939,
+        "home_adv": 0.2654,
         "rho": -0.09,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.294,
-        "home_adv": 0.265,
+        "avg_goals": 1.298,
+        "home_adv": 0.281,
         "draw_rate": 0.08,
         "rho": -0.09
       },
