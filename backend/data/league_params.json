@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-07-09T16:28:58.913691",
+  "updated_at": "2026-07-09T23:10:27.885873",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -139,7 +139,7 @@
       "display_name": "FIFA World Cup",
       "country": "International",
       "avg_goals": 1.3023,
-      "home_adv": 0.2974,
+      "home_adv": 0.317,
       "rho": -0.09,
       "draw_rate": 0.08,
       "league_coefficient": 1.1,
