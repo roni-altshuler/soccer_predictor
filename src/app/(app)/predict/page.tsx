@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   ArrowRight,
   Brain,
@@ -160,8 +161,13 @@ const OUTPUT_EXPLAINERS = [
 ] as const
 
 function PredictPageContent() {
-  const [homeTeam, setHomeTeam] = useState<TeamPick | null>(null)
-  const [awayTeam, setAwayTeam] = useState<TeamPick | null>(null)
+  const searchParams = useSearchParams()
+  const [homeTeam, setHomeTeam] = useState<TeamPick | null>(() =>
+    resolveCatalogTeam(searchParams.get('home') ?? '')
+  )
+  const [awayTeam, setAwayTeam] = useState<TeamPick | null>(() =>
+    resolveCatalogTeam(searchParams.get('away') ?? '')
+  )
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PredictionResult | null>(null)
   const [examples, setExamples] = useState<ExampleFixture[]>([])

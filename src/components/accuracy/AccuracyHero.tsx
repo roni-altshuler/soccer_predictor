@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
+import { AnimatedNumber } from '@/components/motion'
 import { StatCard } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -56,9 +57,12 @@ export function AccuracyHero({
           <div className="flex min-w-0 items-baseline gap-2.5">
             {hasData ? (
               <>
-                <span className="text-xl font-bold tabular-nums leading-none text-[var(--accent-primary)]">
-                  {accuracyPctScaled.toFixed(1)}%
-                </span>
+                <AnimatedNumber
+                  value={accuracyPctScaled}
+                  decimals={1}
+                  suffix="%"
+                  className="text-xl font-bold leading-none text-[var(--accent-primary)]"
+                />
                 <span className="text-[13px] text-[var(--text-secondary)]">
                   correct winner across{' '}
                   <span className="font-semibold tabular-nums text-[var(--text-primary)]">
@@ -106,33 +110,43 @@ export function AccuracyHero({
           {showRecent ? (
             <StatCard
               label={`Last ${recentWindow} picks`}
-              value={`${Math.round(recentPctScaled)}%`}
+              value={<AnimatedNumber value={Math.round(recentPctScaled)} suffix="%" />}
               sub="Recent settled window."
               size="sm"
             />
           ) : (
             <StatCard
               label="Recent form"
-              value={`${accuracyPctScaled.toFixed(1)}%`}
+              value={<AnimatedNumber value={accuracyPctScaled} decimals={1} suffix="%" />}
               sub={`All-time — shown until ${MIN_WINDOW_SAMPLES}+ recent picks settle.`}
               size="sm"
             />
           )}
           <StatCard
             label="Probability score"
-            value={brierScore.toFixed(3)}
+            value={<AnimatedNumber value={brierScore} decimals={3} />}
             sub="Lower = percentages closer to reality. Random is about 0.66."
             size="sm"
           />
           <StatCard
             label="Settled"
-            value={completedPredictions.toLocaleString()}
+            value={
+              <AnimatedNumber
+                value={completedPredictions}
+                format={(n) => Math.round(n).toLocaleString()}
+              />
+            }
             sub="Picks with a final result."
             size="sm"
           />
           <StatCard
             label="Pending"
-            value={pendingCount.toLocaleString()}
+            value={
+              <AnimatedNumber
+                value={pendingCount}
+                format={(n) => Math.round(n).toLocaleString()}
+              />
+            }
             sub="Waiting on the final whistle."
             size="sm"
           />

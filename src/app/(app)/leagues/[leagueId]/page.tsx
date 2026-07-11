@@ -85,7 +85,7 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
       <Breadcrumbs
         items={[
           { label: 'Home', href: '/' },
-          { label: 'Leagues', href: '/matches' },
+          { label: 'Leagues', href: '/leagues' },
           { label: config.name },
         ]}
       />

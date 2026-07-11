@@ -704,18 +704,18 @@ export default function BracketChallengeBoard({
   return (
     <div className="space-y-6">
       <div className="bg-[var(--card-bg)] rounded-3xl border border-[var(--border-color)] overflow-hidden">
-        <div className="border-b border-[var(--border-color)] bg-gradient-to-r from-[#42132d] via-[#641c3f] to-[#8a2f43] p-5 text-white">
+        <div className="border-b border-[var(--border-color)] bg-[var(--background-secondary)]/60 p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">Bracket Challenge</p>
-              <h2 className="mt-1 text-2xl font-black">{tournamentName} Pick&apos;em Groups</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/80">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Bracket Challenge</p>
+              <h2 className="mt-1 text-2xl font-black text-[var(--text-primary)]">{tournamentName} Pick&apos;em Groups</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
                 Build a private knockout challenge, save bracket picks for multiple people, and watch the leaderboard move as real results settle.
               </p>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-              <p className="font-bold">{season} knockout board</p>
-              <p className="text-white/70">{matches.length} tracked matches across {sortedRounds.length} rounds</p>
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-3 text-sm">
+              <p className="font-bold text-[var(--text-primary)]">{season} knockout board</p>
+              <p className="text-[var(--text-tertiary)]">{matches.length} tracked matches across {sortedRounds.length} rounds</p>
             </div>
           </div>
         </div>

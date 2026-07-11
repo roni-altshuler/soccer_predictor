@@ -3,14 +3,15 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
 import type { MatchRowMatch } from '@/components/match/MatchRow'
+import { MatchCardSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent, leaguesForGender } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
@@ -246,9 +247,12 @@ function MatchesContent() {
 
         {/* The scores list IS the page */}
         {loading && visibleMatches.length === 0 ? (
-          <Card className="flex items-center justify-center gap-2 py-12 text-small text-[var(--text-tertiary)]">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading matches…
+          <Card className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches">
+            <div className="flex items-center gap-2 border-b border-[var(--border-color)] px-4 py-2.5">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-3.5 w-36" />
+            </div>
+            <MatchCardSkeleton count={7} />
           </Card>
         ) : sortedLeagueNames.length === 0 ? (
           <EmptyState
@@ -305,8 +309,10 @@ export default function MatchesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-          <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
+        <div className="mx-auto w-full max-w-5xl px-3 pb-8 pt-3 sm:px-4" aria-busy="true">
+          <Card className="overflow-hidden p-0">
+            <MatchCardSkeleton count={7} />
+          </Card>
         </div>
       }
     >

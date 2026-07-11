@@ -37,9 +37,7 @@ function pct(value: number, decimals = 1): string {
 export function WinnerProjectionsBoard({
   rows,
   nSimulations,
-  generatedAt,
   bracketSet,
-  source,
   limit = 12,
 }: WinnerProjectionsBoardProps) {
   const visible = rows.slice(0, limit)
@@ -124,9 +122,6 @@ export function WinnerProjectionsBoard({
           ? ', knockout entrants confirmed'
           : ' — group outcomes projected from current standings and remaining fixtures; best-third qualifiers approximated by team strength'}
         . Strength ratings derive from World Cup, Euro, and Copa América results since 1998.
-        {source === 'snapshot' && generatedAt
-          ? ` Snapshot generated ${new Date(generatedAt).toLocaleString()}.`
-          : ''}
       </footer>
     </section>
   )
