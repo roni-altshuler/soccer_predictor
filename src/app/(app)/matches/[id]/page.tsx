@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, CircleHelp, CheckCircle2, MapPin, MessageSquareText, RefreshCw, Scale, Sparkles, Swords, Zap } from 'lucide-react'
 import { EventTimeline } from '@/components/match/EventTimeline'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
+import { MatchDetailSkeleton } from '@/components/skeletons'
 import { FlagBadge, TeamBadge } from '@/components/primitives'
 import {
   ChartContainer,
@@ -904,8 +905,8 @@ export default function MatchDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-ai)]" />
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
+        <MatchDetailSkeleton />
       </div>
     )
   }

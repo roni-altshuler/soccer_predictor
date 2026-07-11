@@ -6,6 +6,7 @@ import {
   Activity,
   Brain,
   Calculator,
+  CalendarDays,
   Globe,
   History,
   Info,
@@ -13,6 +14,7 @@ import {
   Newspaper,
   TrendingUp,
   Trophy,
+  Users,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -35,6 +37,7 @@ const GROUPS: NavGroup[] = [
     title: 'Scores',
     items: [
       { href: '/', label: 'Matches', icon: Activity },
+      { href: '/upcoming', label: 'Fixtures', icon: CalendarDays },
       { href: '/world-cup', label: 'World Cup', icon: Globe },
       { href: '/leagues', label: 'Leagues', icon: Trophy },
       { href: '/news', label: 'News', icon: Newspaper },
@@ -53,6 +56,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/simulator', label: 'Simulator', icon: Calculator },
       { href: '/tournaments', label: 'Tournaments', icon: Medal },
+      { href: '/players', label: 'Players', icon: Users },
       { href: '/about', label: 'About', icon: Info },
     ],
   },

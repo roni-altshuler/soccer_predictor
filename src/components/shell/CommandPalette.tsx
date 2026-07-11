@@ -1,11 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Activity,
   Brain,
   Calculator,
+  CalendarDays,
+  Globe2,
   History,
   Info,
   Medal,
@@ -13,8 +15,10 @@ import {
   TrendingUp,
   Trophy,
   UserRound,
+  Users,
 } from 'lucide-react'
 
+import { TeamBadge } from '@/components/primitives'
 import {
   CommandDialog,
   CommandEmpty,
@@ -31,8 +35,11 @@ import { useCommandPalette } from '@/store/commandPaletteStore'
 
 const PAGES = [
   { href: '/', label: 'Matches', icon: Activity, hint: 'Scores + fixtures' },
+  { href: '/upcoming', label: 'Fixtures', icon: CalendarDays, hint: 'Upcoming schedule' },
   { href: '/leagues', label: 'Leagues', icon: Trophy, hint: 'Browse competitions' },
+  { href: '/world-cup', label: 'World Cup', icon: Globe2, hint: 'Tournament hub' },
   { href: '/tournaments', label: 'Tournaments', icon: Medal, hint: 'Brackets + group stages' },
+  { href: '/players', label: 'Players', icon: Users, hint: 'Top scorers + form' },
   { href: '/predict', label: 'AI Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Prediction track record' },
   { href: '/history', label: 'Prediction History', icon: History, hint: 'Past picks + outcomes' },
@@ -41,14 +48,63 @@ const PAGES = [
   { href: '/about', label: 'About', icon: Info, hint: 'How Pitchwise works' },
 ]
 
+interface TeamHit {
+  name: string
+  league: string
+}
+
+/**
+ * Debounced team lookup against /api/search-teams. Results feed a "Teams"
+ * group in the palette; each hit deep-links into /predict with the team
+ * pre-filled as the home side.
+ */
+function useTeamSearch(query: string, enabled: boolean) {
+  const [hits, setHits] = useState<TeamHit[]>([])
+  const abortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    if (!enabled || query.trim().length < 2) {
+      setHits([])
+      return
+    }
+    const controller = new AbortController()
+    abortRef.current?.abort()
+    abortRef.current = controller
+    const timer = setTimeout(() => {
+      fetch(`/api/search-teams?q=${encodeURIComponent(query.trim())}`, {
+        signal: controller.signal,
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (controller.signal.aborted) return
+          setHits(Array.isArray(data?.teams) ? data.teams.slice(0, 6) : [])
+        })
+        .catch(() => {})
+    }, 160)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [query, enabled])
+
+  return hits
+}
+
 export function CommandPalette() {
   const router = useRouter()
   const open = useCommandPalette((s) => s.open)
   const setOpen = useCommandPalette((s) => s.setOpen)
   const toggle = useCommandPalette((s) => s.toggle)
   const { gender, setGender } = useGenderPreference()
+  const [query, setQuery] = useState('')
 
   const leagues = leaguesForGender(gender === 'women' ? 'F' : 'M')
+  const teamHits = useTeamSearch(query, open)
+
+  // Reset the query whenever the palette closes so it reopens fresh.
+  useEffect(() => {
+    if (!open) setQuery('')
+  }, [open])
 
   // Keyboard shortcut — Cmd+K / Ctrl+K opens, also '/' when not in an input
   useEffect(() => {
@@ -76,14 +132,42 @@ export function CommandPalette() {
 
   const go = (href: string) => {
     setOpen(false)
-    router.push(href)
+    // Push on the next frame: the Radix dialog close in the same tick
+    // otherwise swallows the route transition (selection never navigated).
+    requestAnimationFrame(() => router.push(href))
   }
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a page, league, or action…" />
+      <CommandInput
+        placeholder="Search teams, leagues, pages…"
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {teamHits.length > 0 && (
+          <>
+            <CommandGroup heading="Teams">
+              {teamHits.map((team) => (
+                <CommandItem
+                  key={`${team.name}-${team.league}`}
+                  value={`${team.name} ${team.league} team`}
+                  onSelect={() => go(`/predict?home=${encodeURIComponent(team.name)}`)}
+                >
+                  <TeamBadge name={team.name} size={20} className="mr-2 shrink-0" />
+                  <span>{team.name}</span>
+                  <span className="ml-2 text-[11px] text-[var(--text-tertiary)]">
+                    {team.league}
+                  </span>
+                  <CommandShortcut>AI predict</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         <CommandGroup heading="Navigate">
           {PAGES.map((p) => {

@@ -72,8 +72,8 @@ interface KnockoutBracketProps {
   onMatchClick?: (match: KnockoutMatch) => void
 }
 
-// AI purple — accent color for live probability badges.
-const PROBABILITY_BADGE_COLOR = '#7c3aed'
+// AI-pick accent for probability badges (cyan per the Matchday palette).
+const PROBABILITY_BADGE_COLOR = 'var(--accent-ai)'
 
 function pctLabel(p: number): string {
   if (p <= 0) return '<1%'
@@ -90,7 +90,6 @@ const TOURNAMENT_CONFIG = {
   champions_league: {
     name: 'UEFA Champions League',
     emoji: '\u{1F3C6}',
-    gradient: 'from-[#0D1B4A] to-[#1A3A8F]',
     accent: '#3B82F6',
     accentBg: 'rgba(59,130,246,0.12)',
     textColor: 'text-blue-400',
@@ -101,7 +100,6 @@ const TOURNAMENT_CONFIG = {
   europa_league: {
     name: 'UEFA Europa League',
     emoji: '\u{1F3C6}',
-    gradient: 'from-[#3D1F00] to-[#C2590A]',
     accent: '#F97316',
     accentBg: 'rgba(249,115,22,0.12)',
     textColor: 'text-orange-400',
@@ -112,7 +110,6 @@ const TOURNAMENT_CONFIG = {
   world_cup: {
     name: 'FIFA World Cup',
     emoji: '\u{1F30D}',
-    gradient: 'from-[#2D0A3E] to-[#7C1940]',
     accent: '#A855F7',
     accentBg: 'rgba(168,85,247,0.12)',
     textColor: 'text-purple-400',
@@ -123,7 +120,6 @@ const TOURNAMENT_CONFIG = {
   euro: {
     name: 'UEFA European Championship',
     emoji: '\u{1F3C6}',
-    gradient: 'from-[#075985] to-[#2563EB]',
     accent: '#38BDF8',
     accentBg: 'rgba(56,189,248,0.12)',
     textColor: 'text-sky-400',
@@ -134,7 +130,6 @@ const TOURNAMENT_CONFIG = {
   copa_america: {
     name: 'Copa America',
     emoji: '\u{1F3C6}',
-    gradient: 'from-[#7A4A00] to-[#047857]',
     accent: '#FBBF24',
     accentBg: 'rgba(251,191,36,0.12)',
     textColor: 'text-amber-400',
@@ -145,7 +140,6 @@ const TOURNAMENT_CONFIG = {
   conference_league: {
     name: 'UEFA Conference League',
     emoji: '\u{1F3C6}',
-    gradient: 'from-[#0A3D2A] to-[#10B981]',
     accent: '#10B981',
     accentBg: 'rgba(16,185,129,0.12)',
     textColor: 'text-emerald-400',
@@ -240,7 +234,7 @@ function BracketMatchCard({
     const survivalPct = probTeam && roundProbKey ? (probTeam[roundProbKey] as number | undefined) : undefined
     return (
       <div
-        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/[0.04] transition-colors"
+        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[var(--card-hover)] transition-colors"
         style={isWinner ? { background: `${accent}18` } : undefined}
         onClick={() => onMatchClick?.(displayMatch)}
       >
@@ -259,7 +253,7 @@ function BracketMatchCard({
           {champPct !== undefined && name && name !== 'TBD' && (
             <span
               className="text-[9px] font-semibold leading-none px-1 py-0.5 rounded-sm shrink-0"
-              style={{ color: PROBABILITY_BADGE_COLOR, background: `${PROBABILITY_BADGE_COLOR}1A` }}
+              style={{ color: PROBABILITY_BADGE_COLOR, background: 'color-mix(in srgb, var(--accent-ai) 12%, transparent)' }}
               title={`Predicted to win the tournament: ${(champPct * 100).toFixed(1)}%`}
             >
               {pctLabel(champPct)}
@@ -597,13 +591,11 @@ export default function KnockoutBracket({
       className="rounded-xl border border-[var(--border-color)] overflow-hidden"
       style={{ background: 'var(--card-bg)' }}
     >
-      {/* Gradient header */}
-      <div className={`bg-gradient-to-r ${config.gradient} px-4 py-3 flex items-center justify-center gap-3`}>
-        <span className="text-base">{config.emoji}</span>
-        <h2 className="text-xs font-extrabold text-white uppercase tracking-[0.15em]">
+      {/* Flat header — hairline separation, no gradient band (v3.1) */}
+      <div className="flex items-center justify-center border-b border-[var(--border-color)] bg-[var(--background-secondary)]/60 px-4 py-3">
+        <h2 className="text-xs font-extrabold uppercase tracking-[0.15em] text-[var(--text-primary)]">
           Road to the Final
         </h2>
-        <span className="text-base">{config.emoji}</span>
       </div>
 
       {/* Round labels header - desktop */}

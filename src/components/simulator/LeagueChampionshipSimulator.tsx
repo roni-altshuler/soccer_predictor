@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDown, Award, Loader2, Trophy, Skull } from 'lucide-react';
 import { LeagueSimulationResult } from '@/lib/api';
 import { LeagueChip, SectionHeader, StatCard } from '@/components/primitives';
+import { ChartContainer, ProgressionChart, type ProgressionSeries } from '@/components/viz';
 
 // League options for simulation. `competitionId` drives the LeagueChip crest
 // + accent (matches src/lib/leagueAccents.ts ids).
@@ -88,6 +89,49 @@ export default function LeagueChampionshipSimulator() {
   );
   const alive = titleRace.filter((row) => !row.mathematically_eliminated);
   const eliminated = titleRace.filter((row) => row.mathematically_eliminated);
+
+  // Projection lanes for the top title contenders: each series anchors at the
+  // team's real current points (no fabricated history) and runs a dashed lane
+  // to the simulation's mean final total. Distinct accent tokens per lane.
+  const raceLanes = useMemo<{ series: ProgressionSeries[]; now: number; total: number } | null>(() => {
+    if (!result) return null;
+    const total = result.matches_per_season;
+    const contenders = [...result.standings]
+      .sort((a, b) => b.title_probability - a.title_probability)
+      .slice(0, 5)
+      .filter((t) => t.matches_played > 0 && t.matches_played < total);
+    if (contenders.length < 2) return null;
+    const now = Math.max(...contenders.map((t) => t.matches_played));
+    const laneColors = [
+      'var(--accent-primary)',
+      'var(--accent-ai)',
+      'var(--accent-warn)',
+      'var(--accent-market)',
+      'var(--accent-info)',
+    ];
+    const series = contenders.map((team, i) => {
+      const played = team.matches_played;
+      const remaining = total - played;
+      const values: (number | null)[] = Array.from({ length: played }, (_, idx) =>
+        idx === played - 1 ? team.current_points : null
+      );
+      const projected = Array.from({ length: total - played }, (_, k) =>
+        Math.round(
+          (team.current_points +
+            ((team.avg_final_points - team.current_points) * (k + 1)) / remaining) *
+            10
+        ) / 10
+      );
+      return {
+        key: `t${team.team_id ?? i}`,
+        label: team.team_name,
+        color: laneColors[i % laneColors.length],
+        values,
+        projected,
+      };
+    });
+    return { series, now, total };
+  }, [result]);
 
   const runSimulation = async () => {
     if (!selectedLeague) return;
@@ -450,6 +494,42 @@ export default function LeagueChampionshipSimulator() {
               <span className="font-semibold text-[var(--text-secondary)]">Eliminated</span> = even running the table leaves you behind the leader&apos;s current total.
             </div>
           </div>
+
+          {/* Title race projection lanes */}
+          {raceLanes && (
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                <SectionHeader
+                  kicker="Projection"
+                  title="Race to the finish"
+                  description="Dashed lanes run from each contender's real points today to their mean simulated final total."
+                />
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {raceLanes.series.map((s) => (
+                    <span
+                      key={s.key}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)]"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: s.color }}
+                      />
+                      {s.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <ChartContainer height={300} lazy label="Title race projection chart">
+                <ProgressionChart
+                  series={raceLanes.series}
+                  now={raceLanes.now}
+                  totalSteps={raceLanes.total}
+                  height={300}
+                />
+              </ChartContainer>
+            </div>
+          )}
 
           {/* Full Standings Table */}
           <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">

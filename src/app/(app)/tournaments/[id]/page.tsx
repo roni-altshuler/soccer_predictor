@@ -154,7 +154,7 @@ export default function TournamentPage() {
           <EmptyState
             illustration="no-matches"
             title="Bracket not available yet"
-            description="The tournament endpoint will populate this section once the backend route lands."
+            description="The knockout stage hasn't been drawn for this tournament. Check back once the group stage wraps up."
           />
         )}
       </div>

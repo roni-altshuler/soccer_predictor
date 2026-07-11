@@ -61,6 +61,7 @@ export function TopBar() {
 
         {/* Right cluster */}
         <div className="ml-auto flex items-center gap-2 md:ml-3">
+          <GenderToggle size="compact" iconless className="sm:hidden" />
           <GenderToggle size="default" className="hidden sm:inline-flex" />
           {isAuthenticated && user ? (
             <div className="relative">

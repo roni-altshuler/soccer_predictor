@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
-import { Bookmark, BookmarkCheck, Loader2 } from 'lucide-react'
+import { Bookmark, BookmarkCheck } from 'lucide-react'
 
 import {
   WATCHLIST_STORAGE_KEY,
@@ -16,8 +16,10 @@ import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { FeaturedStrip } from '@/components/match/FeaturedStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
 import type { MatchRowMatch } from '@/components/match/MatchRow'
+import { MatchCardSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 /* ── data shapes mirror /api/todays_matches ── */
@@ -317,9 +319,12 @@ export default function Home() {
 
         {/* The scores list IS the page */}
         {loading && visibleMatches.length === 0 ? (
-          <Card className="flex items-center justify-center gap-2 py-12 text-small text-[var(--text-tertiary)]">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading matches…
+          <Card className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches">
+            <div className="flex items-center gap-2 border-b border-[var(--border-color)] px-4 py-2.5">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-3.5 w-36" />
+            </div>
+            <MatchCardSkeleton count={7} />
           </Card>
         ) : sortedLeagueNames.length === 0 ? (
           <EmptyState

@@ -153,65 +153,72 @@ export default async function WorldCupHubPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-14">
-      {/* Hero */}
-      <section className="relative isolate -mx-4 overflow-hidden border-b border-[var(--border-color)] px-4 pb-10 pt-12 sm:pt-16">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(55%_60%_at_18%_10%,color-mix(in_srgb,var(--accent-ai)_22%,transparent),transparent_62%),radial-gradient(50%_55%_at_85%_18%,color-mix(in_srgb,var(--accent-primary)_20%,transparent),transparent_62%),radial-gradient(40%_45%_at_55%_95%,color-mix(in_srgb,var(--accent-warn)_12%,transparent),transparent_60%)]"
-        />
-        <div className="mx-auto max-w-4xl text-center">
-          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] px-3 py-1 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--accent-loss)]" />
-            FIFA World Cup 2026 · Group stage live
-            {liveCount > 0 ? ` · ${liveCount} match${liveCount === 1 ? '' : 'es'} in play` : ''}
-          </p>
-          <h1 className="mt-4 font-display text-[clamp(2rem,6vw,3.6rem)] font-extrabold leading-[1.05] tracking-tight text-[var(--text-primary)]">
-            Who wins the World Cup?
+      {/* Compact header band — title, live state, favourite. Data starts
+          immediately below; no hero, no aurora, no CTA banner (v3.1 rule 1). */}
+      <div className="flex flex-col gap-2 pb-3 pt-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)] sm:text-2xl">
+            World Cup 2026
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-body text-[var(--text-secondary)]">
-            Thousands of simulated tournament runs over the official 48-team bracket — winner
-            probabilities, group advancement odds, and a prediction for every match.
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+            {liveCount > 0 && (
+              <>
+                <span className="live-dot" aria-hidden="true" />
+                <span className="font-semibold text-[var(--live-text)]">
+                  {liveCount} live
+                </span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            Winner odds and match predictions from thousands of simulated tournament runs
           </p>
-          {favourite ? (
-            <p className="mt-4 text-small text-[var(--text-secondary)]">
-              Current favourite:{' '}
-              <span className="font-bold text-[var(--text-primary)]">{favourite.name}</span>{' '}
-              <span className="font-mono text-[var(--accent-ai)]">
-                {(favourite.pChampion * 100).toFixed(1)}%
-              </span>
-            </p>
-          ) : null}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/leagues/fifa.world"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-5 py-2.5 text-small font-bold text-white transition-opacity hover:opacity-90"
-            >
-              <GitBranch className="h-4 w-4" /> Knockout bracket
-            </Link>
-            <Link
-              href="/simulator"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-5 py-2.5 text-small font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
-            >
-              <BarChart3 className="h-4 w-4" /> Run your own simulation
-            </Link>
-            <Link
-              href="/world-cup/compare"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-5 py-2.5 text-small font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
-            >
-              <Scale className="h-4 w-4" /> Compare teams
-            </Link>
-            <Link
-              href="/accuracy"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-5 py-2.5 text-small font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
-            >
-              <Sparkles className="h-4 w-4 text-[var(--accent-ai)]" /> Model accuracy
-            </Link>
-          </div>
         </div>
-      </section>
+        {favourite ? (
+          <p className="text-xs text-[var(--text-secondary)]">
+            Favourite{' '}
+            <span className="font-bold text-[var(--text-primary)]">{favourite.name}</span>{' '}
+            <span className="tabular-nums font-semibold text-[var(--accent-ai)]">
+              {(favourite.pChampion * 100).toFixed(1)}%
+            </span>
+          </p>
+        ) : null}
+      </div>
+
+      {/* Quiet section-nav chips — links, not marketing CTAs */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--border-color)] pb-3">
+        {[
+          { href: '/leagues/fifa.world', label: 'Knockout bracket', icon: GitBranch },
+          { href: '/world-cup/compare', label: 'Compare teams', icon: Scale },
+          { href: '/simulator', label: 'Simulator', icon: BarChart3 },
+          { href: '/accuracy', label: 'Model accuracy', icon: Sparkles },
+        ].map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            {label}
+          </Link>
+        ))}
+      </div>
+
+      {/* Today's matches — the scores list leads the page */}
+      <div className="mt-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-h3 text-[var(--text-primary)]">Today at the World Cup</h2>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-caption font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]"
+          >
+            Match centre <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <TodayAtTheCup matches={todayMatches} />
+      </div>
 
       {/* Winner projections */}
-      <div className="mt-8">
+      <div className="mt-10">
         {bracket && projectionRows.length > 0 ? (
           <WinnerProjectionsBoard
             rows={projectionRows}
@@ -226,20 +233,6 @@ export default async function WorldCupHubPage() {
             generated yet.
           </p>
         )}
-      </div>
-
-      {/* Today's matches */}
-      <div className="mt-10">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-h3 text-[var(--text-primary)]">Today at the World Cup</h2>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-caption font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]"
-          >
-            Match centre <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <TodayAtTheCup matches={todayMatches} />
       </div>
 
       {/* Groups */}

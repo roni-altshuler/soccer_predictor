@@ -96,6 +96,34 @@ export default function AboutPage() {
             </div>
           </div>
         </Card>
+
+        {/* Where to go next — /about should open doors, not close them */}
+        <Card className="overflow-hidden p-0">
+          <p className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            Explore Pitchwise
+          </p>
+          <ul className="divide-y divide-[var(--border-color)]/40">
+            {[
+              { href: '/', title: 'Match centre', desc: "Today's scores and fixtures with AI picks alongside" },
+              { href: '/predict', title: 'AI predict', desc: 'Run the model on any matchup you like' },
+              { href: '/accuracy', title: 'Accuracy', desc: 'The public track record, every miss included' },
+              { href: '/history', title: 'History', desc: 'Every settled pick, day by day' },
+              { href: '/leagues', title: 'Leagues', desc: 'Tables, form, and projections per competition' },
+            ].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="flex min-h-[48px] flex-col justify-center px-4 py-2 transition-colors hover:bg-[var(--card-hover)]"
+                >
+                  <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+                    {item.title}
+                  </span>
+                  <span className="text-[11px] text-[var(--text-tertiary)]">{item.desc}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
     </div>
   )

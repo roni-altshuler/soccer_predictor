@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ChevronRight, Trophy } from 'lucide-react'
 
+import { Stagger, StaggerItem } from '@/components/motion'
 import { Card } from '@/components/ui/card'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { leaguesForGender, type LeagueAccent } from '@/lib/leagueAccents'
@@ -47,37 +48,39 @@ export default function LeaguesPage() {
         Leagues
       </h1>
 
-      <div className="space-y-4">
+      <Stagger className="space-y-4" inView={false} stagger={0.04}>
         {groups.map((group) => (
-          <Card key={group.title} className="overflow-hidden p-0">
-            <p className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-              {group.title}
-            </p>
-            <ul className="divide-y divide-[var(--border-color)]/40">
-              {group.items.map((league) => (
-                <li key={league.competitionId}>
-                  <Link
-                    href={`/leagues/${league.competitionId}`}
-                    prefetch={false}
-                    className="flex min-h-[52px] items-center gap-3 px-3 transition-colors hover:bg-[var(--card-hover)]"
-                  >
-                    <LeagueMark league={league} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">
-                        {league.displayName}
+          <StaggerItem key={group.title}>
+            <Card className="overflow-hidden p-0">
+              <p className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                {group.title}
+              </p>
+              <ul className="divide-y divide-[var(--border-color)]/40">
+                {group.items.map((league) => (
+                  <li key={league.competitionId}>
+                    <Link
+                      href={`/leagues/${league.competitionId}`}
+                      prefetch={false}
+                      className="flex min-h-[52px] items-center gap-3 px-3 transition-colors hover:bg-[var(--card-hover)]"
+                    >
+                      <LeagueMark league={league} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">
+                          {league.displayName}
+                        </span>
+                        <span className="block text-[11px] text-[var(--text-tertiary)]">
+                          {league.country}
+                        </span>
                       </span>
-                      <span className="block text-[11px] text-[var(--text-tertiary)]">
-                        {league.country}
-                      </span>
-                    </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </div>
   )
 }

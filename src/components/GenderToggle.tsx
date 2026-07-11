@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useId } from 'react'
 
 import { useGenderPreference, type GenderPreference } from '@/hooks/useGenderPreference'
 import { cn } from '@/lib/utils'
@@ -82,6 +83,9 @@ export function GenderToggle({
 }: GenderToggleProps) {
   const { gender, setGender } = useGenderPreference()
   const styles = sizeStyles[size]
+  // Unique per instance — multiple toggles can be mounted at once (e.g. the
+  // mobile + desktop topbar variants) and must not share a layout animation.
+  const pillLayoutId = useId()
 
   const handleSelect = (value: GenderPreference) => {
     setGender(value)
@@ -121,7 +125,7 @@ export function GenderToggle({
           >
             {active && (
               <motion.span
-                layoutId="gender-toggle-pill"
+                layoutId={pillLayoutId}
                 transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 className={cn(
                   // Flat segmented-control fill (Matchday v3): a quiet
