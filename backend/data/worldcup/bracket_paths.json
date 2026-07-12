@@ -1,6 +1,6 @@
 {
  "tournament": "world_cup",
- "generated_at": "2026-07-11T22:46:17.090678+00:00",
+ "generated_at": "2026-07-12T08:29:16.658769+00:00",
  "n_simulations": 20000,
  "bracket_set": true,
  "teams": [
@@ -8,8 +8,8 @@
    "team_id": null,
    "name": "Spain",
    "elo": 1686,
-   "p_champion": 0.3756,
-   "p_final": 0.5518,
+   "p_champion": 0.3571,
+   "p_final": 0.5494,
    "p_semi": 1.0,
    "p_quarter": 1.0,
    "p_r16": 1.0,
@@ -20,8 +20,8 @@
    "team_id": null,
    "name": "France",
    "elo": 1545,
-   "p_champion": 0.243,
-   "p_final": 0.4482,
+   "p_champion": 0.2293,
+   "p_final": 0.4506,
    "p_semi": 1.0,
    "p_quarter": 1.0,
    "p_r16": 1.0,
@@ -32,9 +32,9 @@
    "team_id": null,
    "name": "Argentina",
    "elo": 1676,
-   "p_champion": 0.1753,
-   "p_final": 0.3853,
-   "p_semi": 0.712,
+   "p_champion": 0.2199,
+   "p_final": 0.4812,
+   "p_semi": 1.0,
    "p_quarter": 1.0,
    "p_r16": 1.0,
    "p_r32": 1.0,
@@ -44,37 +44,13 @@
    "team_id": null,
    "name": "England",
    "elo": 1592,
-   "p_champion": 0.1031,
-   "p_final": 0.2747,
-   "p_semi": 0.5088,
+   "p_champion": 0.1938,
+   "p_final": 0.5188,
+   "p_semi": 1.0,
    "p_quarter": 1.0,
    "p_r16": 1.0,
    "p_r32": 1.0,
-   "most_likely_round_reached": "Quarter-Finals"
-  },
-  {
-   "team_id": null,
-   "name": "Norway",
-   "elo": 1498,
-   "p_champion": 0.0614,
-   "p_final": 0.2185,
-   "p_semi": 0.4912,
-   "p_quarter": 1.0,
-   "p_r16": 1.0,
-   "p_r32": 1.0,
-   "most_likely_round_reached": "Quarter-Finals"
-  },
-  {
-   "team_id": null,
-   "name": "Switzerland",
-   "elo": 1566,
-   "p_champion": 0.0416,
-   "p_final": 0.1215,
-   "p_semi": 0.2879,
-   "p_quarter": 1.0,
-   "p_r16": 1.0,
-   "p_r32": 1.0,
-   "most_likely_round_reached": "Quarter-Finals"
+   "most_likely_round_reached": "Semi-Finals"
   },
   {
    "team_id": null,
@@ -183,6 +159,18 @@
    "p_r16": 0.0,
    "p_r32": 1.0,
    "most_likely_round_reached": "Round of 32"
+  },
+  {
+   "team_id": null,
+   "name": "Norway",
+   "elo": 1498,
+   "p_champion": 0.0,
+   "p_final": 0.0,
+   "p_semi": 0.0,
+   "p_quarter": 1.0,
+   "p_r16": 1.0,
+   "p_r32": 1.0,
+   "most_likely_round_reached": "Quarter-Finals"
   },
   {
    "team_id": null,
@@ -315,6 +303,18 @@
    "p_r16": 0.0,
    "p_r32": 1.0,
    "most_likely_round_reached": "Round of 32"
+  },
+  {
+   "team_id": null,
+   "name": "Switzerland",
+   "elo": 1566,
+   "p_champion": 0.0,
+   "p_final": 0.0,
+   "p_semi": 0.0,
+   "p_quarter": 1.0,
+   "p_r16": 1.0,
+   "p_r32": 1.0,
+   "most_likely_round_reached": "Quarter-Finals"
   },
   {
    "team_id": null,
@@ -644,18 +644,18 @@
      "match_id": "760512",
      "home": "Norway",
      "away": "England",
-     "home_score": null,
-     "away_score": null,
-     "winner": null,
+     "home_score": 1,
+     "away_score": 2,
+     "winner": "England",
      "date": "2026-07-11T21:00Z"
     },
     {
      "match_id": "760513",
      "home": "Argentina",
      "away": "Switzerland",
-     "home_score": null,
-     "away_score": null,
-     "winner": null,
+     "home_score": 3,
+     "away_score": 1,
+     "winner": "Argentina",
      "date": "2026-07-12T01:00Z"
     }
    ]
@@ -675,8 +675,8 @@
     },
     {
      "match_id": "760515",
-     "home": null,
-     "away": null,
+     "home": "England",
+     "away": "Argentina",
      "home_score": null,
      "away_score": null,
      "winner": null,
