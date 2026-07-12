@@ -1,7 +1,7 @@
 {
   "gender": "F",
   "model_version": "unified-multitask-1.0-women",
-  "trained_at": "2026-07-02T12:23:38.811478+00:00",
+  "trained_at": "2026-07-12T05:41:41.820182+00:00",
   "n_parameters": 93210,
   "n_features": 87,
   "vocab_sizes": {
@@ -25,20 +25,20 @@
   },
   "holdout": {
     "accuracy": 0.5352697095435685,
-    "log_loss": 0.9850749932921374,
-    "brier": 0.5792523526671763,
-    "ece": 0.06553276092034133,
+    "log_loss": 0.9850750027959558,
+    "brier": 0.5792523584111738,
+    "ece": 0.06553276169557416,
     "draw_recall": 0.0,
     "scoreline_exact_rate": 0.13070539419087138,
     "scoreline_top5_rate": 0.46265560165975106,
-    "goals_mae": 0.9897296414923124,
+    "goals_mae": 0.9897296486491979,
     "calibrated": true,
     "n": 482,
     "uncalibrated": {
       "accuracy": 0.533195020746888,
-      "log_loss": 1.0004351807571013,
-      "brier": 0.5895143747813034,
-      "ece": 0.030952062418028652,
+      "log_loss": 1.0004351956206508,
+      "brier": 0.5895143836384042,
+      "ece": 0.03095206660412718,
       "draw_recall": 0.09433962264150944
     },
     "calibration": {
