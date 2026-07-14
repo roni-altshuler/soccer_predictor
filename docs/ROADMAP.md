@@ -19,10 +19,13 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   deterministic), browsable tables with divergence deltas, condition search with true
   found-in-N counts, honest never-happened empty state. On both /simulator and league
   pages. *Shipped 2026-07-14. Knockout-bracket universes deferred.*
-- ☐ **Story page v1** — post-match acts/beats on match detail: turning points from goal
-  timeline + win-prob deltas + rarity stamps. *Blocked on: backfill + rarity landing.*
-- ☐ **Full backfill runs** — ESPN (~20k matches), Understat, openfootball; scheduled
-  continuation in the pipeline workflow; coverage report on /diagnostics.
+- ☑ **Story page v1** — finished matches open with "The story": acts + beats weighted
+  by exact historical win-rate swings (rarity artifact as the empirical win-prob
+  function; n≥50 gates; turning point = largest counted swing ≥15pp; zero LLM calls).
+  *Shipped 2026-07-14.*
+- ◐ **Full backfill runs** — ESPN full run in progress (2,978/~20k covered at last
+  check; resumable). Then: Understat long tail, rarity artifact regeneration +
+  commit, pipeline-workflow continuation, coverage report on /diagnostics.
 - ☐ **Justice Ledger** — luck-adjusted (xG) season tables + "deserved table" artifact
   and league-page section. Data already in warehouse.
 - ◐ **Name decision** — **DECIDED 2026-07-14: Pitchverse.** Remaining: trademark +
