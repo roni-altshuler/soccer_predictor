@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { getPredictionVerdict } from './adaptPrediction'
 import { buildModelInsights } from './insights'
 import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
+import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
 import { RarityStamp } from './RarityStamp'
 import { TopStatsPreview } from './StatsTab'
 import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
@@ -542,6 +543,11 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
 
   return (
     <div className="space-y-6">
+      {/* The story — acts, detected turning points, exact-count receipts.
+          Renders nothing unless the match is finished, the events reconcile
+          with the final score, and the rarity artifact has real counts. */}
+      <MatchStory match={match} isFinished={isFinished} />
+
       {/* Momentum — real feed series when present, synthesized (labelled) otherwise */}
       {((match.momentum?.length ?? 0) > 0 || match.events.length > 0) && (
         <MatchMomentum
@@ -554,9 +560,14 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
         />
       )}
 
-      {/* Key events — substitutions included */}
+      {/* Key events — substitutions included. The id is the story beats'
+          anchor-scroll target. */}
       {match.events.length > 0 && (
-        <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+        <div
+          id={MATCH_EVENTS_ANCHOR_ID}
+          className="bg-[var(--card-bg)] border rounded-xl overflow-hidden scroll-mt-20"
+          style={{ borderColor: 'var(--border-color)' }}
+        >
           <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
             <h3 className="font-semibold text-[var(--text-primary)]">Events</h3>
           </div>
