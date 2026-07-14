@@ -1,6 +1,6 @@
 'use client'
 
-import { CircleDot, RefreshCw, Square, ShieldOff } from 'lucide-react'
+import { ArrowDown, ArrowUp, CircleDot, RefreshCw, Square, ShieldOff } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -36,6 +36,8 @@ interface EventTimelineProps {
   awayColor?: string
   /** Minute at which half-time happened (default 45). */
   halftimeMinute?: number
+  /** Optional half-time score ("1-0") — rendered inside the HT divider. */
+  halftimeScore?: string
   className?: string
 }
 
@@ -86,6 +88,7 @@ export function EventTimeline({
   homeColor,
   awayColor,
   halftimeMinute = 45,
+  halftimeScore,
   className,
 }: EventTimelineProps) {
   // Sort events stably (already given but defensive) and split around halftime.
@@ -110,9 +113,50 @@ export function EventTimeline({
   const firstHalf = sorted.filter((e) => e.minute <= halftimeMinute)
   const secondHalf = sorted.filter((e) => e.minute > halftimeMinute)
 
+  // Compact substitution body: in-arrow + incoming name (green), out-arrow +
+  // outgoing name (tertiary). Used on both sides of the centre spine.
+  function renderSubBody(evt: TimelineEvent, align: 'left' | 'right') {
+    const itemAlign = align === 'right' ? 'justify-end' : 'justify-start'
+    return (
+      <div className={cn('flex flex-col gap-0.5', align === 'right' ? 'items-end' : 'items-start')}>
+        {evt.relatedPlayer && (
+          <span className={cn('flex items-center gap-1', itemAlign)}>
+            <ArrowUp className="h-3 w-3 text-[var(--accent-primary)]" aria-hidden />
+            <span className="text-meta font-medium text-[var(--accent-primary)]">{evt.relatedPlayer}</span>
+          </span>
+        )}
+        <span className={cn('flex items-center gap-1', itemAlign)}>
+          <ArrowDown className="h-3 w-3 text-[var(--text-tertiary)]" aria-hidden />
+          <span className="text-meta text-[var(--text-tertiary)]">{evt.player}</span>
+        </span>
+      </div>
+    )
+  }
+
+  function renderEventBody(evt: TimelineEvent, align: 'left' | 'right') {
+    if (evt.type === 'substitution') return renderSubBody(evt, align)
+    const isGoal = evt.type === 'goal' || evt.type === 'own_goal' || evt.type === 'penalty_goal'
+    return (
+      <div className={cn('flex flex-col', align === 'right' ? 'items-end' : 'items-start')}>
+        <span
+          className={cn(
+            'text-meta text-[var(--text-primary)]',
+            isGoal && 'font-semibold',
+          )}
+        >
+          {eventLabel(evt)}
+        </span>
+        {evt.relatedPlayer && isGoal && (
+          <span className="text-caption text-[var(--text-tertiary)]">assist · {evt.relatedPlayer}</span>
+        )}
+      </div>
+    )
+  }
+
   function renderEvent(evt: TimelineEvent, idx: number) {
     const isHome = evt.team === 'home'
     const isGoal = evt.type === 'goal' || evt.type === 'own_goal' || evt.type === 'penalty_goal'
+    const isRed = evt.type === 'red_card'
     return (
       <div
         key={`${evt.minute}-${idx}-${evt.player}`}
@@ -121,22 +165,7 @@ export function EventTimeline({
         <div className={cn('flex items-center justify-end gap-2', !isHome && 'invisible')}>
           {isHome && (
             <>
-              <div className="flex flex-col items-end">
-                <span
-                  className={cn(
-                    'text-meta text-[var(--text-primary)]',
-                    isGoal && 'font-semibold',
-                  )}
-                >
-                  {eventLabel(evt)}
-                </span>
-                {evt.relatedPlayer && isGoal && (
-                  <span className="text-caption text-[var(--text-tertiary)]">assist · {evt.relatedPlayer}</span>
-                )}
-                {evt.relatedPlayer && evt.type === 'substitution' && (
-                  <span className="text-caption text-[var(--text-tertiary)]">on · {evt.relatedPlayer}</span>
-                )}
-              </div>
+              {renderEventBody(evt, 'right')}
               <span className="flex-shrink-0">{eventIcon(evt.type)}</span>
             </>
           )}
@@ -146,7 +175,9 @@ export function EventTimeline({
             'flex h-7 min-w-[3rem] items-center justify-center rounded-full px-2 text-meta font-numeric font-semibold tabular-nums',
             isGoal
               ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
-              : 'bg-[var(--muted-bg)] text-[var(--text-tertiary)]',
+              : isRed
+                ? 'bg-[color-mix(in_srgb,var(--accent-loss)_16%,transparent)] text-[var(--accent-loss)]'
+                : 'bg-[var(--muted-bg)] text-[var(--text-tertiary)]',
           )}
         >
           {formatMinute(evt)}
@@ -155,22 +186,7 @@ export function EventTimeline({
           {!isHome && (
             <>
               <span className="flex-shrink-0">{eventIcon(evt.type)}</span>
-              <div className="flex flex-col">
-                <span
-                  className={cn(
-                    'text-meta text-[var(--text-primary)]',
-                    isGoal && 'font-semibold',
-                  )}
-                >
-                  {eventLabel(evt)}
-                </span>
-                {evt.relatedPlayer && isGoal && (
-                  <span className="text-caption text-[var(--text-tertiary)]">assist · {evt.relatedPlayer}</span>
-                )}
-                {evt.relatedPlayer && evt.type === 'substitution' && (
-                  <span className="text-caption text-[var(--text-tertiary)]">on · {evt.relatedPlayer}</span>
-                )}
-              </div>
+              {renderEventBody(evt, 'left')}
             </>
           )}
         </div>
@@ -206,7 +222,11 @@ export function EventTimeline({
         {secondHalf.length > 0 && (
           <div className="flex items-center justify-center py-3">
             <span className="rounded-full border border-dashed border-[var(--border-color)] px-3 py-1 text-caption uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-              Half time
+              HT{halftimeScore ? (
+                <span className="ml-1.5 font-numeric font-semibold tabular-nums text-[var(--text-secondary)]">
+                  {halftimeScore}
+                </span>
+              ) : null}
             </span>
           </div>
         )}

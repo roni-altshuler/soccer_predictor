@@ -5,17 +5,16 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Check, ChevronDown, Filter, Minus, X } from 'lucide-react'
 
 import { LeagueBadge } from '@/components/match/LeagueBadge'
-import { TeamBadge } from '@/components/primitives'
+import { Prob1X2, TeamBadge } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 /**
- * Recent-picks feed — last 20 settled predictions rendered as a scannable
- * row list. Each row uses a strict 3-band layout (status / matchup / verdict)
- * so the user can audit the model without parsing parenthetical asides.
- *
- *   ✓  Sporting KC  2-2 → 1-3  San Jose Earthquakes        MLS · May 22
- *      AI picked San Jose Earthquakes · 46% confidence  [████···]
+ * Recent-picks feed — settled predictions rendered as FotMob-grammar
+ * fixture rows: status ring, stacked team lines with the final score
+ * (winner emphasised), league + date, and the committed 1X2 probabilities
+ * on the right with the predicted scoreline chip. The AI zone renders only
+ * from real committed probabilities — never fabricated.
  *
  * Filter chips (All / Hits / Misses) sit above the list so users can drill
  * straight into the wrong picks — the most useful audit.
@@ -46,12 +45,6 @@ interface RecentPicksFeedProps {
 }
 
 type StatusFilter = 'all' | 'hits' | 'misses'
-
-function pickedTeamName(p: RecentPick): string {
-  if (p.predicted_winner === 'home') return p.home_team
-  if (p.predicted_winner === 'away') return p.away_team
-  return 'Draw'
-}
 
 function shortDate(iso: string): string {
   if (!iso) return ''
@@ -173,7 +166,7 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="flex w-full items-center justify-center gap-1 border-t border-[var(--border-color)] px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
+          className="flex min-h-[44px] w-full items-center justify-center gap-1 border-t border-[var(--border-color)] px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
         >
           <ChevronDown
             className={cn('h-3.5 w-3.5 transition-transform', showAll && 'rotate-180')}
@@ -186,106 +179,132 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
   )
 }
 
+function TeamLine({
+  name,
+  score,
+  emphasis,
+}: {
+  name: string
+  score: number | null
+  emphasis: 'winner' | 'loser' | 'neutral'
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <TeamBadge name={name} size={18} className="shrink-0" />
+      <span
+        className={cn(
+          'min-w-0 truncate text-[13px]',
+          emphasis === 'winner'
+            ? 'font-semibold text-[var(--text-primary)]'
+            : emphasis === 'loser'
+              ? 'font-medium text-[var(--text-tertiary)]'
+              : 'font-medium text-[var(--text-primary)]'
+        )}
+      >
+        {name}
+      </span>
+      {score !== null && (
+        <span
+          className={cn(
+            'ml-auto shrink-0 pl-2 text-[13px] font-bold tabular-nums',
+            emphasis === 'loser' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'
+          )}
+        >
+          {score}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
   const reduce = useReducedMotion()
   const isHit = pick.winner_correct === true
   const isMiss = pick.winner_correct === false
   const isPending = !isHit && !isMiss
 
-  const picked = pickedTeamName(pick)
-  // Tracker records store confidence as 0..1, but some historical files
-  // carry an already-scaled 0..100 value — normalise defensively so we
-  // never render "3870%".
-  const rawConfidence = pick.confidence ?? 0
-  const confidencePct = Math.min(
-    100,
-    Math.round(rawConfidence > 1 ? rawConfidence : rawConfidence * 100)
-  )
-  const haveScore =
-    typeof pick.actual_home_goals === 'number' &&
-    typeof pick.actual_away_goals === 'number'
+  const homeScore = typeof pick.actual_home_goals === 'number' ? pick.actual_home_goals : null
+  const awayScore = typeof pick.actual_away_goals === 'number' ? pick.actual_away_goals : null
+  const haveScore = homeScore !== null && awayScore !== null
 
-  // Score line: "(2 — 3)" coloured by hit/miss
-  const scoreClass = isHit
-    ? 'text-[var(--accent-primary)]'
-    : isMiss
-      ? 'text-[var(--accent-loss)]'
-      : 'text-[var(--text-secondary)]'
+  let homeEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  let awayEmphasis: 'winner' | 'loser' | 'neutral' = 'neutral'
+  if (haveScore && homeScore !== awayScore) {
+    homeEmphasis = homeScore > awayScore ? 'winner' : 'loser'
+    awayEmphasis = awayScore > homeScore ? 'winner' : 'loser'
+  }
+
+  const hasProbs =
+    Number.isFinite(pick.predicted_home_win) &&
+    Number.isFinite(pick.predicted_draw) &&
+    Number.isFinite(pick.predicted_away_win) &&
+    pick.predicted_home_win + pick.predicted_draw + pick.predicted_away_win > 0
+
+  const hasScorelinePick =
+    typeof pick.predicted_scoreline === 'string' && pick.predicted_scoreline.length > 0
 
   return (
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: idx * 0.02, ease: [0.22, 1, 0.36, 1] }}
-      className="grid grid-cols-[28px_1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-3 md:px-5"
+      className="flex min-h-[56px] items-center gap-3 px-4 py-2.5 md:px-5"
     >
-      {/* Status — column 1 (spans both rows) */}
+      {/* Status ring */}
       <div
         className={cn(
-          'row-span-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
-          isHit && 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30',
-          isMiss && 'bg-[var(--accent-loss)]/12 text-[var(--accent-loss)] ring-1 ring-[var(--accent-loss)]/30',
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+          isHit &&
+            'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30',
+          isMiss &&
+            'bg-[var(--accent-loss)]/12 text-[var(--accent-loss)] ring-1 ring-[var(--accent-loss)]/30',
           isPending && 'bg-[var(--muted-bg)] text-[var(--text-tertiary)] ring-1 ring-[var(--border-color)]'
         )}
-        aria-label={isHit ? 'Hit' : isMiss ? 'Miss' : 'Pending'}
+        role="img"
+        aria-label={isHit ? 'Correct pick' : isMiss ? 'Missed pick' : 'Pending result'}
       >
         {isHit && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
         {isMiss && <X className="h-3.5 w-3.5" strokeWidth={3} />}
         {isPending && <Minus className="h-3.5 w-3.5" strokeWidth={3} />}
       </div>
 
-      {/* Matchup — column 2 row 1 (crest via manifest, initials fallback) */}
-      <div className="min-w-0 flex items-center gap-2 text-sm">
-        <TeamBadge name={pick.home_team} size={18} className="shrink-0" />
-        <span className="truncate font-semibold text-[var(--text-primary)]">
-          {pick.home_team}
-        </span>
-        <span className={cn('shrink-0 font-bold tabular-nums', scoreClass)}>
-          {haveScore ? `${pick.actual_home_goals}–${pick.actual_away_goals}` : 'vs'}
-        </span>
-        <TeamBadge name={pick.away_team} size={18} className="shrink-0" />
-        <span className="truncate font-semibold text-[var(--text-primary)]">
-          {pick.away_team}
-        </span>
+      {/* Stacked team lines with the final score */}
+      <div className="min-w-0 flex-1 space-y-1 border-l border-[var(--border-color)]/60 py-0.5 pl-3">
+        <TeamLine name={pick.home_team} score={homeScore} emphasis={homeEmphasis} />
+        <TeamLine name={pick.away_team} score={awayScore} emphasis={awayEmphasis} />
       </div>
 
-      {/* League + date — column 3 row 1 */}
-      <div className="row-span-2 flex shrink-0 flex-col items-end gap-1">
+      {/* League + date */}
+      <div className="flex shrink-0 flex-col items-end gap-1">
         <LeagueBadge league={pick.league} size="sm" />
         <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">
           {shortDate(pick.match_date)}
         </span>
       </div>
 
-      {/* Pick + confidence bar — column 2 row 2 */}
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="text-[11px] text-[var(--text-tertiary)]">
-          Picked{' '}
-          <span className={cn('font-semibold', isHit ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]')}>
-            {picked}
-          </span>
-        </span>
-        <span className="text-[10px] text-[var(--text-tertiary)]">·</span>
-        <span className="text-[11px] font-semibold tabular-nums text-[var(--text-secondary)]">
-          {confidencePct}%
-        </span>
-        <span
-          className="ml-1 hidden h-1 w-20 overflow-hidden rounded-full bg-[var(--border-color)]/60 sm:inline-block"
-          aria-hidden="true"
-        >
-          <span
-            className={cn(
-              'block h-full rounded-full',
-              isHit
-                ? 'bg-[var(--accent-primary)]/70'
-                : isMiss
-                  ? 'bg-[var(--accent-loss)]/60'
-                  : 'bg-[var(--accent-ai)]/60'
-            )}
-            style={{ width: `${confidencePct}%` }}
+      {/* AI zone — committed probabilities + scoreline pick */}
+      {hasProbs && (
+        <div className="flex shrink-0 items-center gap-2">
+          <Prob1X2
+            home={pick.predicted_home_win}
+            draw={pick.predicted_draw}
+            away={pick.predicted_away_win}
+            className="hidden sm:flex"
           />
-        </span>
-      </div>
+          <Prob1X2
+            home={pick.predicted_home_win}
+            draw={pick.predicted_draw}
+            away={pick.predicted_away_win}
+            compact
+            className="sm:hidden"
+          />
+          {hasScorelinePick && (
+            <span className="hidden shrink-0 items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
+              AI {pick.predicted_scoreline}
+            </span>
+          )}
+        </div>
+      )}
     </motion.div>
   )
 }

@@ -121,6 +121,9 @@ interface H2HData {
   draws: number
   awayWins: number
   recentMatches: H2HMatch[]
+  /** Total goals scored by each reference team across the tracked meetings. */
+  homeGoals?: number
+  awayGoals?: number
 }
 
 export interface DerivedMarkets {
@@ -154,6 +157,94 @@ interface ShotMapPoint {
   isGoal?: boolean
   minute?: number
   player?: string
+}
+
+/**
+ * Extensible stat list — ADDITIVE to the legacy fixed 5-tuple `stats` shape.
+ * Only stats the upstream payload actually carries are included; nothing is
+ * fabricated for missing entries.
+ */
+export interface ExtendedStat {
+  key: string
+  label: string
+  home: number
+  away: number
+  group: 'Top stats' | 'Shots' | 'Passes' | 'Defence' | 'Discipline'
+  /** True when both values are percentages (render with a % suffix). */
+  percent?: boolean
+}
+
+/** Real per-minute momentum sample. Sign encodes side (positive = home). */
+interface MomentumPoint {
+  minute: number
+  value: number
+}
+
+interface LineupPlayer {
+  name: string
+  position?: string
+  jersey?: number
+  /** Provider player id (ESPN athlete id / FotMob player id) — powers headshots. */
+  id?: string
+  captain?: boolean
+  /** Provider-published match rating (0–10) when available. */
+  rating?: number
+}
+
+/** Canonical stat registry — output order, grouping and label per key. */
+const STAT_ORDER: ReadonlyArray<{
+  key: string
+  label: string
+  group: ExtendedStat['group']
+  percent?: boolean
+}> = [
+  { key: 'xg', label: 'Expected goals (xG)', group: 'Top stats' },
+  { key: 'possession', label: 'Possession', group: 'Top stats', percent: true },
+  { key: 'big_chances', label: 'Big chances', group: 'Top stats' },
+  { key: 'big_chances_missed', label: 'Big chances missed', group: 'Top stats' },
+  { key: 'corners', label: 'Corners', group: 'Top stats' },
+  { key: 'shots', label: 'Total shots', group: 'Shots' },
+  { key: 'shots_on_target', label: 'Shots on target', group: 'Shots' },
+  { key: 'shots_off_target', label: 'Shots off target', group: 'Shots' },
+  { key: 'blocked_shots', label: 'Blocked shots', group: 'Shots' },
+  { key: 'shots_inside_box', label: 'Shots inside box', group: 'Shots' },
+  { key: 'shots_outside_box', label: 'Shots outside box', group: 'Shots' },
+  { key: 'passes', label: 'Passes', group: 'Passes' },
+  { key: 'accurate_passes', label: 'Accurate passes', group: 'Passes' },
+  { key: 'pass_accuracy', label: 'Pass accuracy', group: 'Passes', percent: true },
+  { key: 'crosses', label: 'Crosses', group: 'Passes' },
+  { key: 'accurate_crosses', label: 'Accurate crosses', group: 'Passes' },
+  { key: 'long_balls', label: 'Long balls', group: 'Passes' },
+  { key: 'accurate_long_balls', label: 'Accurate long balls', group: 'Passes' },
+  { key: 'tackles', label: 'Tackles', group: 'Defence' },
+  { key: 'tackles_won', label: 'Tackles won', group: 'Defence' },
+  { key: 'interceptions', label: 'Interceptions', group: 'Defence' },
+  { key: 'clearances', label: 'Clearances', group: 'Defence' },
+  { key: 'blocks', label: 'Blocks', group: 'Defence' },
+  { key: 'saves', label: 'Keeper saves', group: 'Defence' },
+  { key: 'fouls', label: 'Fouls', group: 'Discipline' },
+  { key: 'offsides', label: 'Offsides', group: 'Discipline' },
+  { key: 'yellow_cards', label: 'Yellow cards', group: 'Discipline' },
+  { key: 'red_cards', label: 'Red cards', group: 'Discipline' },
+]
+
+function buildExtendedStats(
+  found: Map<string, { home: number; away: number }>
+): ExtendedStat[] | undefined {
+  const out: ExtendedStat[] = []
+  for (const def of STAT_ORDER) {
+    const pair = found.get(def.key)
+    if (!pair) continue
+    out.push({
+      key: def.key,
+      label: def.label,
+      home: pair.home,
+      away: pair.away,
+      group: def.group,
+      ...(def.percent ? { percent: true } : {}),
+    })
+  }
+  return out.length > 0 ? out : undefined
 }
 
 type ESPNEventLike = {
@@ -209,8 +300,13 @@ interface MatchDetailsResponse {
   refereeCountry?: string
   events: MatchEvent[]
   lineups: {
-    home: { name: string; position?: string; jersey?: number }[]
-    away: { name: string; position?: string; jersey?: number }[]
+    home: LineupPlayer[]
+    away: LineupPlayer[]
+    /** Bench players (also appended after the XI in home/away for legacy consumers). */
+    homeBench?: LineupPlayer[]
+    awayBench?: LineupPlayer[]
+    homeCoach?: string
+    awayCoach?: string
     homeFormation?: string
     awayFormation?: string
   }
@@ -221,6 +317,10 @@ interface MatchDetailsResponse {
     corners: [number, number]
     fouls: [number, number]
   }
+  /** Extensible grouped stat list — everything the upstream payload carries. */
+  statsExtended?: ExtendedStat[]
+  /** Real momentum series when the upstream payload publishes one. */
+  momentum?: MomentumPoint[]
   commentary?: { minute: number; text: string }[]
   prediction?: PredictionData
   liveWinProbability?: LiveWinProbabilityResult
@@ -427,6 +527,57 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
           }
         }
       }
+
+      // Extended stat list — map every whitelisted boxscore stat ESPN ships.
+      // Defensive: one bad field must never kill the whole response.
+      let statsExtended: ExtendedStat[] | undefined
+      try {
+        const ESPN_STAT_KEYS: Record<string, string> = {
+          possessionpct: 'possession',
+          totalshots: 'shots',
+          shotsontarget: 'shots_on_target',
+          blockedshots: 'blocked_shots',
+          woncorners: 'corners',
+          foulscommitted: 'fouls',
+          offsides: 'offsides',
+          yellowcards: 'yellow_cards',
+          redcards: 'red_cards',
+          saves: 'saves',
+          totalpasses: 'passes',
+          accuratepasses: 'accurate_passes',
+          passpct: 'pass_accuracy',
+          totalcrosses: 'crosses',
+          accuratecrosses: 'accurate_crosses',
+          totallongballs: 'long_balls',
+          accuratelongballs: 'accurate_long_balls',
+          totaltackles: 'tackles',
+          effectivetackles: 'tackles_won',
+          interceptions: 'interceptions',
+          effectiveclearance: 'clearances',
+        }
+        const homeVals = new Map<string, number>()
+        const awayVals = new Map<string, number>()
+        for (const team of Array.isArray(boxscore.teams) ? boxscore.teams : []) {
+          const bucket =
+            team?.homeAway === 'home' ? homeVals : team?.homeAway === 'away' ? awayVals : null
+          if (!bucket) continue
+          for (const stat of Array.isArray(team?.statistics) ? team.statistics : []) {
+            const rawName = String(stat?.name ?? '').toLowerCase().replace(/[^a-z]/g, '')
+            const key = ESPN_STAT_KEYS[rawName]
+            if (!key || bucket.has(key)) continue
+            const value = parseFloat(String(stat?.displayValue ?? stat?.value ?? '').replace('%', ''))
+            if (Number.isFinite(value)) bucket.set(key, value)
+          }
+        }
+        const found = new Map<string, { home: number; away: number }>()
+        for (const [key, home] of homeVals) {
+          const away = awayVals.get(key)
+          if (away !== undefined) found.set(key, { home, away })
+        }
+        statsExtended = buildExtendedStats(found)
+      } catch {
+        statsExtended = undefined
+      }
       
       // Extract commentary
       const commentary: { minute: number; text: string }[] = []
@@ -470,21 +621,42 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
         referee: data.gameInfo?.officials?.[0]?.fullName,
         refereeCountry: data.gameInfo?.officials?.[0]?.nationality,
         events,
-        lineups: {
-          home: homeLineup.map((p: { athlete?: { displayName?: string }; position?: { abbreviation?: string }; jersey?: string }) => ({
+        lineups: (() => {
+          type ESPNRosterEntry = {
+            starter?: boolean
+            jersey?: string
+            athlete?: { id?: string | number; displayName?: string }
+            position?: { abbreviation?: string }
+          }
+          const mapEspnPlayer = (p: ESPNRosterEntry): LineupPlayer => ({
             name: p.athlete?.displayName || 'Unknown',
             position: p.position?.abbreviation,
             jersey: p.jersey ? parseInt(p.jersey) : undefined,
-          })),
-          away: awayLineup.map((p: { athlete?: { displayName?: string }; position?: { abbreviation?: string }; jersey?: string }) => ({
-            name: p.athlete?.displayName || 'Unknown',
-            position: p.position?.abbreviation,
-            jersey: p.jersey ? parseInt(p.jersey) : undefined,
-          })),
-          homeFormation: data.rosters?.find((r: { homeAway: string }) => r.homeAway === 'home')?.formation,
-          awayFormation: data.rosters?.find((r: { homeAway: string }) => r.homeAway === 'away')?.formation,
-        },
+            id: p.athlete?.id != null ? String(p.athlete.id) : undefined,
+          })
+          // Split starters/bench on ESPN's starter flag; when the flag is
+          // absent keep the raw order (legacy behavior — first 11 = XI).
+          const splitRoster = (roster: ESPNRosterEntry[]) => {
+            const hasFlags = roster.some((p) => typeof p?.starter === 'boolean')
+            if (!hasFlags) return { starters: roster, bench: [] as ESPNRosterEntry[] }
+            return {
+              starters: roster.filter((p) => p.starter),
+              bench: roster.filter((p) => !p.starter),
+            }
+          }
+          const homeSplit = splitRoster(Array.isArray(homeLineup) ? homeLineup : [])
+          const awaySplit = splitRoster(Array.isArray(awayLineup) ? awayLineup : [])
+          return {
+            home: [...homeSplit.starters, ...homeSplit.bench].map(mapEspnPlayer),
+            away: [...awaySplit.starters, ...awaySplit.bench].map(mapEspnPlayer),
+            homeBench: homeSplit.bench.length > 0 ? homeSplit.bench.map(mapEspnPlayer) : undefined,
+            awayBench: awaySplit.bench.length > 0 ? awaySplit.bench.map(mapEspnPlayer) : undefined,
+            homeFormation: data.rosters?.find((r: { homeAway: string }) => r.homeAway === 'home')?.formation,
+            awayFormation: data.rosters?.find((r: { homeAway: string }) => r.homeAway === 'away')?.formation,
+          }
+        })(),
         stats,
+        statsExtended,
         commentary: commentary.slice(-50), // Last 50 commentary items
       }
     } catch (e) {
@@ -557,8 +729,13 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
       })
     }
     
-    // Extract stats
-    const statsData = content.stats?.Ede || []
+    // Extract stats — the section container moved across FotMob payload
+    // versions; resolve whichever array exists.
+    const statsData: Array<{ stats?: Array<{ title?: string; stats?: unknown[] }> }> =
+      (Array.isArray(content.stats?.Periods?.All?.stats) && content.stats.Periods.All.stats) ||
+      (Array.isArray(content.stats?.stats) && content.stats.stats) ||
+      (Array.isArray(content.stats?.Ede) && content.stats.Ede) ||
+      []
     const stats = {
       possession: [50, 50] as [number, number],
       shots: [0, 0] as [number, number],
@@ -566,13 +743,13 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
       corners: [0, 0] as [number, number],
       fouls: [0, 0] as [number, number],
     }
-    
+
     for (const section of statsData) {
       for (const stat of section.stats || []) {
         const title = stat.title?.toLowerCase() || ''
-        const home = parseInt(stat.stats?.[0]) || 0
-        const away = parseInt(stat.stats?.[1]) || 0
-        
+        const home = parseInt(String(stat.stats?.[0])) || 0
+        const away = parseInt(String(stat.stats?.[1])) || 0
+
         if (title.includes('possession')) {
           stats.possession = [home, away]
         } else if (title === 'shots on target') {
@@ -586,11 +763,173 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
         }
       }
     }
+
+    // Extended stat list — everything whitelisted that the payload carries.
+    let statsExtended: ExtendedStat[] | undefined
+    try {
+      // "434 (89%)" → { main: 434, pct: 89 }; "56%" → { main: 56 }; "1.24" → { main: 1.24 }
+      const parseStatValue = (raw: unknown): { main: number; pct?: number } => {
+        if (typeof raw === 'number') return { main: raw }
+        const s = String(raw ?? '').trim()
+        const withPct = s.match(/^([\d.,]+)\s*\((\d+(?:\.\d+)?)\s*%\)/)
+        if (withPct) {
+          return { main: parseFloat(withPct[1].replace(/,/g, '')), pct: parseFloat(withPct[2]) }
+        }
+        const pctOnly = s.match(/^(\d+(?:\.\d+)?)\s*%$/)
+        if (pctOnly) return { main: parseFloat(pctOnly[1]) }
+        return { main: parseFloat(s.replace(/,/g, '')) }
+      }
+      const TITLE_KEYS: Array<{ match: (t: string) => boolean; key: string; pctKey?: string }> = [
+        { match: (t) => t.includes('possession'), key: 'possession' },
+        { match: (t) => t.includes('expected goals') || t === 'xg', key: 'xg' },
+        { match: (t) => t === 'total shots' || t === 'shots', key: 'shots' },
+        { match: (t) => t === 'shots on target', key: 'shots_on_target' },
+        { match: (t) => t === 'shots off target', key: 'shots_off_target' },
+        { match: (t) => t === 'blocked shots', key: 'blocked_shots' },
+        { match: (t) => t === 'shots inside box', key: 'shots_inside_box' },
+        { match: (t) => t === 'shots outside box', key: 'shots_outside_box' },
+        { match: (t) => t === 'big chances', key: 'big_chances' },
+        { match: (t) => t === 'big chances missed', key: 'big_chances_missed' },
+        { match: (t) => t.startsWith('accurate passes'), key: 'accurate_passes', pctKey: 'pass_accuracy' },
+        { match: (t) => t === 'passes', key: 'passes' },
+        { match: (t) => t.startsWith('accurate crosses'), key: 'accurate_crosses' },
+        { match: (t) => t.startsWith('accurate long balls'), key: 'accurate_long_balls' },
+        { match: (t) => t.includes('corner'), key: 'corners' },
+        { match: (t) => t.includes('fouls'), key: 'fouls' },
+        { match: (t) => t === 'offsides', key: 'offsides' },
+        { match: (t) => t === 'yellow cards', key: 'yellow_cards' },
+        { match: (t) => t === 'red cards', key: 'red_cards' },
+        { match: (t) => t.includes('tackles won'), key: 'tackles_won' },
+        { match: (t) => t === 'tackles', key: 'tackles' },
+        { match: (t) => t === 'interceptions', key: 'interceptions' },
+        { match: (t) => t === 'clearances', key: 'clearances' },
+        { match: (t) => t === 'blocks', key: 'blocks' },
+        { match: (t) => t.includes('keeper saves') || t.includes('goalkeeper saves') || t === 'saves', key: 'saves' },
+      ]
+      const found = new Map<string, { home: number; away: number }>()
+      for (const section of statsData) {
+        for (const stat of Array.isArray(section?.stats) ? section.stats : []) {
+          const title = String(stat?.title ?? '').toLowerCase().trim()
+          if (!title || !Array.isArray(stat?.stats)) continue
+          const def = TITLE_KEYS.find((d) => d.match(title))
+          if (!def) continue
+          const home = parseStatValue(stat.stats[0])
+          const away = parseStatValue(stat.stats[1])
+          if (Number.isFinite(home.main) && Number.isFinite(away.main) && !found.has(def.key)) {
+            found.set(def.key, { home: home.main, away: away.main })
+          }
+          if (
+            def.pctKey &&
+            Number.isFinite(home.pct as number) &&
+            Number.isFinite(away.pct as number) &&
+            !found.has(def.pctKey)
+          ) {
+            found.set(def.pctKey, { home: home.pct as number, away: away.pct as number })
+          }
+        }
+      }
+      statsExtended = buildExtendedStats(found)
+    } catch {
+      statsExtended = undefined
+    }
+
+    // Real momentum series (content.momentum) — sign encodes side.
+    let momentum: MomentumPoint[] | undefined
+    try {
+      const rawMomentum = (content.momentum as { main?: { data?: unknown } } | undefined)?.main?.data
+      if (Array.isArray(rawMomentum)) {
+        const points = rawMomentum
+          .map((entry) => ({
+            minute: Number((entry as { minute?: unknown })?.minute),
+            value: Number((entry as { value?: unknown })?.value),
+          }))
+          .filter((p) => Number.isFinite(p.minute) && Number.isFinite(p.value))
+        if (points.length >= 6) momentum = points
+      }
+    } catch {
+      momentum = undefined
+    }
     
-    // Extract lineups
+    // Extract lineups — enriched: bench, captain flag, player ratings, ids,
+    // coach. Parsed defensively; a failure falls back to the minimal shape.
     const lineupData = content.lineup || {}
     const homeTeamId = Number(general.homeTeam?.id || header.teams?.[0]?.id)
     const awayTeamId = Number(general.awayTeam?.id || header.teams?.[1]?.id)
+
+    type FotMobLineupPlayer = {
+      id?: string | number
+      name?: string
+      firstName?: string
+      lastName?: string
+      shirt?: number | string
+      shirtNumber?: number | string
+      positionStringShort?: string
+      role?: string
+      isCaptain?: boolean
+      captain?: boolean
+      rating?: { num?: string | number } | string | number
+      performance?: { rating?: number | string }
+    }
+
+    const toRating = (p: FotMobLineupPlayer): number | undefined => {
+      const raw =
+        p?.performance?.rating ??
+        (p?.rating && typeof p.rating === 'object' ? p.rating.num : p?.rating)
+      const num = typeof raw === 'string' ? parseFloat(raw) : Number(raw)
+      return Number.isFinite(num) && num > 0 && num <= 10 ? num : undefined
+    }
+
+    const mapFotmobPlayer = (p: FotMobLineupPlayer): LineupPlayer => {
+      const jerseyRaw = Number(p?.shirt ?? p?.shirtNumber)
+      const position = p?.positionStringShort ?? p?.role
+      return {
+        name:
+          p?.name ||
+          [p?.firstName, p?.lastName].filter(Boolean).join(' ') ||
+          'Unknown',
+        position: typeof position === 'string' && position ? position : undefined,
+        jersey: Number.isFinite(jerseyRaw) && jerseyRaw > 0 ? jerseyRaw : undefined,
+        id: p?.id != null ? String(p.id) : undefined,
+        captain: p?.isCaptain === true || p?.captain === true ? true : undefined,
+        rating: toRating(p),
+      }
+    }
+
+    const readLineupSide = (side: unknown) => {
+      try {
+        const s = side as
+          | {
+              starters?: unknown
+              subs?: unknown
+              bench?: unknown
+              formation?: unknown
+              coach?: { name?: string } | Array<{ name?: string }>
+            }
+          | undefined
+        const starters = Array.isArray(s?.starters)
+          ? (s.starters as FotMobLineupPlayer[]).map(mapFotmobPlayer)
+          : []
+        const benchRaw = Array.isArray(s?.subs)
+          ? s.subs
+          : Array.isArray(s?.bench)
+            ? s.bench
+            : []
+        const bench = (benchRaw as FotMobLineupPlayer[]).map(mapFotmobPlayer)
+        const coachRaw = s?.coach
+        const coachName = Array.isArray(coachRaw) ? coachRaw[0]?.name : coachRaw?.name
+        return {
+          starters,
+          bench,
+          coach: typeof coachName === 'string' && coachName ? coachName : undefined,
+          formation: typeof s?.formation === 'string' && s.formation ? s.formation : undefined,
+        }
+      } catch {
+        return { starters: [], bench: [], coach: undefined, formation: undefined }
+      }
+    }
+
+    const homeSide = readLineupSide(lineupData.homeTeam)
+    const awaySide = readLineupSide(lineupData.awayTeam)
 
     const rawShots = content.shotmap?.shots || content.shotmap?.shotsData || content.shotMap?.shots || []
     const shotmap: ShotMapPoint[] = Array.isArray(rawShots)
@@ -650,20 +989,19 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
       capacity: general.venue?.capacity,
       events,
       lineups: {
-        home: (lineupData.homeTeam?.starters || []).map((p: { name?: string; positionStringShort?: string; shirt?: number }) => ({
-          name: p.name || 'Unknown',
-          position: p.positionStringShort,
-          jersey: p.shirt,
-        })),
-        away: (lineupData.awayTeam?.starters || []).map((p: { name?: string; positionStringShort?: string; shirt?: number }) => ({
-          name: p.name || 'Unknown',
-          position: p.positionStringShort,
-          jersey: p.shirt,
-        })),
-        homeFormation: lineupData.homeTeam?.formation,
-        awayFormation: lineupData.awayTeam?.formation,
+        // Legacy shape kept: home/away = XI first, then the bench appended.
+        home: [...homeSide.starters, ...homeSide.bench],
+        away: [...awaySide.starters, ...awaySide.bench],
+        homeBench: homeSide.bench.length > 0 ? homeSide.bench : undefined,
+        awayBench: awaySide.bench.length > 0 ? awaySide.bench : undefined,
+        homeCoach: homeSide.coach,
+        awayCoach: awaySide.coach,
+        homeFormation: homeSide.formation ?? lineupData.homeTeam?.formation,
+        awayFormation: awaySide.formation ?? lineupData.awayTeam?.formation,
       },
       stats,
+      statsExtended,
+      momentum,
       shotmap,
       commentary: (content.matchFacts?.highlights?.text || []).map((item: { text?: string; time?: number }) => ({
         minute: item.time || 0,
@@ -893,9 +1231,13 @@ async function fetchH2H(homeTeam: string, awayTeam: string, leagueId?: string): 
     let homeWins = 0
     let awayWins = 0
     let draws = 0
+    let homeGoals = 0
+    let awayGoals = 0
 
     for (const m of sortedMatches) {
       const homeIsReferenceHome = teamNamesMatch(m.homeTeam, homeTeam)
+      homeGoals += homeIsReferenceHome ? m.homeScore : m.awayScore
+      awayGoals += homeIsReferenceHome ? m.awayScore : m.homeScore
       if (m.homeScore === m.awayScore) {
         draws += 1
         continue
@@ -913,6 +1255,8 @@ async function fetchH2H(homeTeam: string, awayTeam: string, leagueId?: string): 
       homeWins,
       draws,
       awayWins,
+      homeGoals,
+      awayGoals,
       recentMatches: sortedMatches.slice(0, 8),
     }
   } catch (e) {

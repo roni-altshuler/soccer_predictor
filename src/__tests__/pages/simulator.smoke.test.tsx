@@ -26,72 +26,68 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-// The Broadcast redesign renders TWO tablists: the mode toggle
-// ("Simulator mode": Tournament / League) and, in tournament mode, the
-// tournament picker ("Tournament": Champions League, Europa League, …).
-// Names like /League/i are ambiguous across them, so queries scope to
-// the owning tablist.
+// The page renders TWO tablists: the mode toggle ("Simulator mode":
+// League / Tournament) and, in tournament mode, the tournament picker
+// ("Tournament": Champions League, Europa League, …). Names like
+// /League/i are ambiguous across them, so queries scope to the owning
+// tablist.
 const modeToggle = () =>
   within(screen.getByRole('tablist', { name: /Simulator mode/i }))
 const tournamentPicker = () =>
   screen.queryByRole('tablist', { name: /^Tournament$/i })
 
 describe('SimulatorPage', () => {
-  it('renders the Tournament/League mode toggle', () => {
+  it('renders the League/Tournament mode toggle', () => {
     render(<SimulatorPage />)
     expect(modeToggle().getByRole('tab', { name: /Tournament/i })).toBeInTheDocument()
     expect(modeToggle().getByRole('tab', { name: /League/i })).toBeInTheDocument()
   })
 
-  it('defaults to Tournament mode and mounts the knockout simulator', () => {
-    render(<SimulatorPage />)
-    const tournamentTab = modeToggle().getByRole('tab', { name: /Tournament/i })
-    expect(tournamentTab).toHaveAttribute('aria-selected', 'true')
-    // Methodology copy that is *tournament-specific* should be present.
-    expect(
-      screen.getByText(/Tournament-specific rules/i),
-    ).toBeInTheDocument()
-  })
-
-  it('switches to League mode on click and mounts the championship simulator', async () => {
+  it('defaults to League mode and mounts the championship simulator', () => {
     render(<SimulatorPage />)
     const leagueTab = modeToggle().getByRole('tab', { name: /League/i })
-    fireEvent.click(leagueTab)
+    expect(leagueTab).toHaveAttribute('aria-selected', 'true')
+    expect(document.getElementById('simulator-league')).toBeTruthy()
+    // Methodology copy that is *league-specific* should be present.
+    expect(screen.getByText(/what-if lab locks a single result/i)).toBeInTheDocument()
+  })
+
+  it('switches to Tournament mode on click and mounts the knockout simulator', async () => {
+    render(<SimulatorPage />)
+    const tournamentTab = modeToggle().getByRole('tab', { name: /Tournament/i })
+    fireEvent.click(tournamentTab)
     await waitFor(() =>
-      expect(leagueTab).toHaveAttribute('aria-selected', 'true'),
+      expect(tournamentTab).toHaveAttribute('aria-selected', 'true'),
     )
-    // The championship-mode empty state heading or its CTA should appear.
+    expect(document.getElementById('simulator-tournament')).toBeTruthy()
+    // Tournament-mode methodology bullet should replace the league one.
     expect(
-      screen.getByText(/Championship contention simulator/i),
-    ).toBeInTheDocument()
-    // League-mode methodology bullet should replace the tournament one.
-    expect(
-      screen.getByText(/Title race table: pure mathematics/i),
+      screen.getByText(/Club rounds are two-legged/i),
     ).toBeInTheDocument()
   })
 
-  it('hides tournament sub-tabs in League mode', () => {
+  it('shows tournament sub-tabs only in Tournament mode', () => {
     render(<SimulatorPage />)
-    // Tournament picker tablist is visible in tournament mode (default).
+    // League mode (default) — the tournament picker should not render.
+    expect(tournamentPicker()).not.toBeInTheDocument()
+    // Switch to Tournament — the picker tablist appears with crest chips.
+    fireEvent.click(modeToggle().getByRole('tab', { name: /Tournament/i }))
     const picker = tournamentPicker()
     expect(picker).toBeTruthy()
     expect(
       within(picker!).getByRole('tab', { name: /Champions League/i }),
     ).toBeInTheDocument()
-    // Switch to League — the tournament picker should not render.
-    fireEvent.click(modeToggle().getByRole('tab', { name: /League/i }))
-    expect(tournamentPicker()).not.toBeInTheDocument()
   })
 
-  it('does not render a stale Tournament panel while in League mode', () => {
+  it('does not render a stale League panel while in Tournament mode', () => {
     render(<SimulatorPage />)
-    // Initially both panels are NOT both mounted — only tournament is.
-    expect(document.getElementById('simulator-tournament')).toBeTruthy()
-    expect(document.getElementById('simulator-league')).toBeFalsy()
-    fireEvent.click(modeToggle().getByRole('tab', { name: /League/i }))
-    // After switching, the league panel mounts and the tournament panel
-    // unmounts (clean state — no stale tournament UI underneath).
+    // Initially both panels are NOT both mounted — only league is.
     expect(document.getElementById('simulator-league')).toBeTruthy()
     expect(document.getElementById('simulator-tournament')).toBeFalsy()
+    fireEvent.click(modeToggle().getByRole('tab', { name: /Tournament/i }))
+    // After switching, the tournament panel mounts and the league panel
+    // unmounts (clean state — no stale league UI underneath).
+    expect(document.getElementById('simulator-tournament')).toBeTruthy()
+    expect(document.getElementById('simulator-league')).toBeFalsy()
   })
 })

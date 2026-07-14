@@ -6,9 +6,9 @@ import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 
 /**
- * Plain-language section on the public accuracy page. Three short
- * cards explain how to read the results above in everyday terms —
- * outcomes only, no methodology.
+ * Plain-language section at the bottom of /accuracy. Three short cards
+ * explain how to read the results above in everyday terms — outcomes
+ * only, no methodology or provenance (design-language copy policy).
  */
 
 export function ModelExplainer() {
@@ -17,33 +17,28 @@ export function ModelExplainer() {
       icon: Brain,
       title: 'Every pick is on the record',
       body:
-        'Predictions are locked in before kick-off and never edited afterwards. Once the final whistle goes, each pick is scored as a hit or a miss and added to the totals you see on this page.',
+        'Picks are locked in before kick-off and never edited. When the final whistle goes, each one is scored as a hit or a miss and added to the totals on this page.',
       accent: 'var(--accent-ai)',
     },
     {
       icon: Gauge,
-      title: 'What the accuracy number means',
+      title: 'What the headline number means',
       body:
-        'Accuracy is the share of matches where we picked the correct result (home win, draw, or away win). Football is messy, so anything around 60% is a strong long-run hit rate.',
+        'It is the share of matches where the predicted result (home win, draw, or away win) came true. Football is messy — anything around 60% is a strong long-run hit rate.',
       accent: 'var(--accent-primary)',
     },
     {
       icon: Target,
-      title: 'When we say 60%, it happens about 60% of the time',
+      title: 'Probabilities, not certainties',
       body:
-        'The chart below checks whether our confidence is honest. Picks we gave a 70% chance should come true roughly 70% of the time — when the dots hug the diagonal, the percentages mean exactly what they say.',
+        'A 70% pick should come true roughly 70% of the time. The calibration chart above checks exactly that — when the dots hug the diagonal, the percentages mean what they say.',
       accent: 'var(--accent-warn)',
     },
   ]
 
   return (
     <Card className="p-4 md:p-5">
-      <div className="mb-3">
-        <SectionHeader kicker="Explainer" title="How to read this page" />
-        <p className="mt-1 text-small text-[var(--text-tertiary)]">
-          A quick guide to the numbers above — what gets counted, and what the percentages mean.
-        </p>
-      </div>
+      <SectionHeader kicker="Explainer" title="How to read this page" className="mb-3" />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {cards.map((c) => {
           const Icon = c.icon

@@ -13,9 +13,10 @@ import { cn, clamp, formatPct } from '@/lib/utils'
  * binned buckets. A perfectly calibrated model lies on the diagonal.
  *
  * Renders as a stylised SVG so it stays consistent with the rest of the
- * design system rather than dropping into a Recharts canvas. Each bucket
- * is a square plotted at its (predicted, actual) position; size scales
- * with how many predictions landed in the bucket.
+ * design system. Each bucket is a dot at its (predicted, actual) position;
+ * radius scales with bucket sample size, and colour encodes where the
+ * bucket sits relative to the diagonal: on target (within ±5pts),
+ * overconfident (delivered less than stated), or underconfident.
  */
 
 // Backwards-compat alias for the dot-plot bin shape. Canonical definition
@@ -23,12 +24,37 @@ import { cn, clamp, formatPct } from '@/lib/utils'
 // component stay in lockstep.
 export type CalibrationBin = CalibrationDotPoint
 
+/** Buckets within ±5pts of the diagonal count as "on target". */
+const ON_TARGET_PTS = 0.05
+
 interface CalibrationPlotProps {
   bins: CalibrationBin[]
+  /** Expected calibration error 0..1 — renders the header chip when set. */
+  ece?: number | null
   className?: string
 }
 
-export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
+type BinTone = 'onTarget' | 'over' | 'under'
+
+function toneFor(b: CalibrationDotPoint): BinTone {
+  const diff = b.avg_actual - b.avg_predicted
+  if (Math.abs(diff) <= ON_TARGET_PTS) return 'onTarget'
+  return diff < 0 ? 'over' : 'under'
+}
+
+const TONE_COLOR: Record<BinTone, string> = {
+  onTarget: 'var(--accent-primary)',
+  over: 'var(--accent-warn)',
+  under: 'var(--accent-info)',
+}
+
+const TONE_LABEL: Record<BinTone, string> = {
+  onTarget: 'on target',
+  over: 'overconfident',
+  under: 'underconfident',
+}
+
+export function CalibrationPlot({ bins, ece, className }: CalibrationPlotProps) {
   const reduce = useReducedMotion()
   // Plot dimensions — fits comfortably inside a card on mobile.
   const width = 360
@@ -40,6 +66,16 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
   const xScale = (v: number) => padding + clamp(v) * inner
   const yScale = (v: number) => height - padding - clamp(v) * inner
 
+  // ±5pt band around the diagonal, clipped to the unit square.
+  const bandPoints = [
+    `${xScale(0)},${yScale(ON_TARGET_PTS)}`,
+    `${xScale(1 - ON_TARGET_PTS)},${yScale(1)}`,
+    `${xScale(1)},${yScale(1)}`,
+    `${xScale(1)},${yScale(1 - ON_TARGET_PTS)}`,
+    `${xScale(ON_TARGET_PTS)},${yScale(0)}`,
+    `${xScale(0)},${yScale(0)}`,
+  ].join(' ')
+
   return (
     <Card className={cn('p-4 md:p-5', className)}>
       <SectionHeader
@@ -47,9 +83,15 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
         title="Do the percentages hold up?"
         className="mb-3"
         action={
-          <p className="text-[10px] text-[var(--text-tertiary)]">
-            On the diagonal = 60% picks win about 60% of the time
-          </p>
+          typeof ece === 'number' && bins.length > 0 ? (
+            <span className="inline-flex items-center rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)]/60 px-2 py-1 text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">
+              Calibration error ±{(ece * 100).toFixed(1)}pts
+            </span>
+          ) : (
+            <p className="text-[10px] text-[var(--text-tertiary)]">
+              On the diagonal = 60% picks win about 60% of the time
+            </p>
+          )
         }
       />
 
@@ -59,7 +101,12 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
         </div>
       ) : (
         <TooltipProvider delayDuration={150}>
-          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Prediction confidence versus actual results" className="w-full">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            role="img"
+            aria-label="Stated confidence versus actual results, per confidence bucket"
+            className="w-full"
+          >
             {/* Background grid */}
             {[0, 0.25, 0.5, 0.75, 1].map((t) => (
               <g key={t}>
@@ -100,6 +147,9 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
               </g>
             ))}
 
+            {/* ±5pt tolerance band around the diagonal */}
+            <polygon points={bandPoints} fill="var(--accent-primary)" fillOpacity="0.07" />
+
             {/* Diagonal reference */}
             <line
               x1={xScale(0)}
@@ -117,6 +167,8 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
               const r = 4 + 8 * (b.count / maxCount)
               const cx = xScale(b.avg_predicted)
               const cy = yScale(b.avg_actual)
+              const tone = toneFor(b)
+              const color = TONE_COLOR[tone]
               return (
                 <Tooltip key={idx}>
                   <TooltipTrigger asChild>
@@ -124,9 +176,9 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
                       cx={cx}
                       cy={cy}
                       r={r}
-                      fill="var(--accent-primary)"
-                      fillOpacity="0.6"
-                      stroke="var(--accent-primary)"
+                      fill={color}
+                      fillOpacity="0.55"
+                      stroke={color}
                       strokeWidth="1.5"
                       initial={reduce ? false : { scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -138,7 +190,8 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
                       Bucket {formatPct(b.bin_lower)} – {formatPct(b.bin_upper)}
                     </p>
                     <p className="text-[11px] opacity-80">
-                      Predicted {formatPct(b.avg_predicted)} · happened {formatPct(b.avg_actual)} · {b.count} picks
+                      Predicted {formatPct(b.avg_predicted)} · happened {formatPct(b.avg_actual)} ·{' '}
+                      {b.count} picks · {TONE_LABEL[tone]}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -164,6 +217,24 @@ export function CalibrationPlot({ bins, className }: CalibrationPlotProps) {
               Observed frequency
             </text>
           </svg>
+
+          {/* Dot-colour legend */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-[var(--text-tertiary)]">
+            {(['onTarget', 'over', 'under'] as const).map((tone) => (
+              <span key={tone} className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: TONE_COLOR[tone] }}
+                />
+                {tone === 'onTarget' ? 'On target (±5pts)' : TONE_LABEL[tone][0].toUpperCase() + TONE_LABEL[tone].slice(1)}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full border border-[var(--text-tertiary)]" />
+              Dot size = sample size
+            </span>
+          </div>
         </TooltipProvider>
       )}
     </Card>

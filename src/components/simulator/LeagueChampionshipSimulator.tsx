@@ -1,10 +1,27 @@
-'use client';
+'use client'
 
-import React, { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, Award, Loader2, Trophy, Skull } from 'lucide-react';
-import { LeagueSimulationResult } from '@/lib/api';
-import { LeagueChip, SectionHeader, StatCard } from '@/components/primitives';
-import { ChartContainer, ProgressionChart, type ProgressionSeries } from '@/components/viz';
+import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, RotateCcw, Skull } from 'lucide-react'
+
+import { EmptyState } from '@/components/EmptyState'
+import SeasonProjections from '@/components/league/SeasonProjections'
+import { Stagger, StaggerItem } from '@/components/motion'
+import { LeagueChip, SectionHeader, TeamBadge } from '@/components/primitives'
+import {
+  ChartContainer,
+  NarrativeCard,
+  ProgressionChart,
+  type NarrativeInsight,
+  type ProgressionSeries,
+} from '@/components/viz'
+import type { LeagueSimulationResult } from '@/lib/api'
+import { cn } from '@/lib/utils'
+
+import PositionDistributionMatrix from './PositionDistributionMatrix'
+import PredictedStandingsTable from './PredictedStandingsTable'
+import SimulatorHero from './SimulatorHero'
+import WhatIfLab, { type FixtureOverrideSelection } from './WhatIfLab'
+import { fetchLeagueTeamMeta, ordinal, type TeamMeta } from './shared'
 
 // League options for simulation. `competitionId` drives the LeagueChip crest
 // + accent (matches src/lib/leagueAccents.ts ids).
@@ -17,19 +34,19 @@ const SIMULATION_LEAGUES = [
   { id: 57, name: 'Eredivisie', competitionId: 'ned.1' },
   { id: 61, name: 'Primeira Liga', competitionId: 'por.1' },
   { id: 130, name: 'MLS', competitionId: 'usa.1' },
-];
+]
 
 export interface TitleRaceRow {
-  team_name: string;
-  current_points: number;
-  matches_played: number;
-  matches_remaining: number;
-  max_possible_points: number;
-  points_behind_leader: number;
-  title_probability: number;
-  mathematically_eliminated: boolean;
+  team_name: string
+  current_points: number
+  matches_played: number
+  matches_remaining: number
+  max_possible_points: number
+  points_behind_leader: number
+  title_probability: number
+  mathematically_eliminated: boolean
   /** Min wins-of-remaining required to even theoretically catch leader's current points. */
-  min_wins_to_catch: number;
+  min_wins_to_catch: number
 }
 
 /**
@@ -44,19 +61,19 @@ export interface TitleRaceRow {
  *   win earns 3 pts and the leader gets no further points. Capped at remaining.
  */
 export function buildTitleRace(result: LeagueSimulationResult): TitleRaceRow[] {
-  const byCurrent = [...result.standings].sort((a, b) => b.current_points - a.current_points);
-  const leader = byCurrent[0];
-  if (!leader) return [];
+  const byCurrent = [...result.standings].sort((a, b) => b.current_points - a.current_points)
+  const leader = byCurrent[0]
+  if (!leader) return []
 
   return result.standings.map((team) => {
-    const matches_remaining = Math.max(0, result.matches_per_season - team.matches_played);
-    const max_possible_points = team.current_points + matches_remaining * 3;
-    const points_behind_leader = Math.max(0, leader.current_points - team.current_points);
-    const mathematically_eliminated = max_possible_points < leader.current_points;
+    const matches_remaining = Math.max(0, result.matches_per_season - team.matches_played)
+    const max_possible_points = team.current_points + matches_remaining * 3
+    const points_behind_leader = Math.max(0, leader.current_points - team.current_points)
+    const mathematically_eliminated = max_possible_points < leader.current_points
     const min_wins_to_catch =
       matches_remaining === 0
         ? Infinity
-        : Math.min(matches_remaining, Math.ceil(points_behind_leader / 3));
+        : Math.min(matches_remaining, Math.ceil(points_behind_leader / 3))
     return {
       team_name: team.team_name,
       current_points: team.current_points,
@@ -67,613 +84,568 @@ export function buildTitleRace(result: LeagueSimulationResult): TitleRaceRow[] {
       title_probability: team.title_probability,
       mathematically_eliminated,
       min_wins_to_catch,
-    };
-  });
+    }
+  })
+}
+
+/** Skeleton mirroring the result layout — hero, zone columns, matrix, table. */
+function ResultSkeleton() {
+  const block =
+    'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] motion-safe:animate-pulse'
+  return (
+    <div aria-hidden className="space-y-5">
+      <div className={cn(block, 'h-[96px]')} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={cn(block, 'h-44')} />
+        <div className={cn(block, 'hidden h-44 sm:block')} />
+        <div className={cn(block, 'hidden h-44 lg:block')} />
+      </div>
+      <div className={cn(block, 'h-[420px]')} />
+      <div className={cn(block, 'h-80')} />
+    </div>
+  )
 }
 
 export default function LeagueChampionshipSimulator() {
-  const [selectedLeague, setSelectedLeague] = useState<typeof SIMULATION_LEAGUES[0] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<LeagueSimulationResult | null>(null);
-  const [nSimulations, setNSimulations] = useState(10000);
-  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  const [whatIfFixtureKey, setWhatIfFixtureKey] = useState('');
-  const [whatIfOutcome, setWhatIfOutcome] = useState<'home' | 'draw' | 'away'>('home');
+  const [selectedLeague, setSelectedLeague] = useState(SIMULATION_LEAGUES[0])
+  const [nSimulations, setNSimulations] = useState(10000)
+  const [result, setResult] = useState<LeagueSimulationResult | null>(null)
+  const [baseline, setBaseline] = useState<LeagueSimulationResult | null>(null)
+  const [override, setOverride] = useState<FixtureOverrideSelection | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [teamMeta, setTeamMeta] = useState<Record<string, TeamMeta>>({})
+  const [titleRaceOpen, setTitleRaceOpen] = useState(false)
+  const [runToken, setRunToken] = useState(0)
 
-  // "Who can still win" math derived from current result. Memoised so the
-  // table re-sort doesn't recompute on every render.
+  // Crest ids + brand colours for the selected league (same ESPN feed the
+  // simulation route reads, so team names line up exactly).
+  useEffect(() => {
+    const controller = new AbortController()
+    setTeamMeta({})
+    fetchLeagueTeamMeta(selectedLeague.competitionId, controller.signal).then(setTeamMeta)
+    return () => controller.abort()
+  }, [selectedLeague])
+
+  // Auto-run: league select, sim-count change, what-if override, manual re-run.
+  useEffect(() => {
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function run() {
+      setLoading(true)
+      setError(null)
+      try {
+        const params = new URLSearchParams({ n_simulations: String(nSimulations) })
+        if (override) {
+          params.set('what_if_fixture', override.fixtureKey)
+          params.set('what_if_outcome', override.outcome)
+        }
+        const response = await fetch(
+          `/api/simulation/${selectedLeague.id}?${params.toString()}`,
+          { signal: controller.signal },
+        )
+        if (!response.ok) throw new Error('The simulation is unavailable right now')
+        const data = (await response.json()) as LeagueSimulationResult
+        if (cancelled) return
+        if (!Array.isArray(data.standings) || data.standings.length === 0) {
+          throw new Error('The simulation returned no standings')
+        }
+        setResult(data)
+        // Runs without an override are the delta baseline for the what-if lab.
+        if (!override) setBaseline(data)
+      } catch (err) {
+        if (cancelled || (err instanceof DOMException && err.name === 'AbortError')) return
+        setError(
+          err instanceof Error ? err.message : 'The simulation is unavailable right now',
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [selectedLeague, nSimulations, override, runToken])
+
+  const selectLeague = (league: (typeof SIMULATION_LEAGUES)[number]) => {
+    if (league.id === selectedLeague.id) return
+    setSelectedLeague(league)
+    setResult(null)
+    setBaseline(null)
+    setOverride(null)
+    setTitleRaceOpen(false)
+  }
+
+  const changeSimCount = (n: number) => {
+    setNSimulations(n)
+    // A different run depth is a different baseline — clear any override.
+    setBaseline(null)
+    setOverride(null)
+  }
+
+  // "Who can still win" math derived from current result.
   const titleRace = useMemo<TitleRaceRow[]>(
     () => (result ? buildTitleRace(result) : []),
-    [result]
-  );
-  const alive = titleRace.filter((row) => !row.mathematically_eliminated);
-  const eliminated = titleRace.filter((row) => row.mathematically_eliminated);
+    [result],
+  )
+  const alive = titleRace.filter((row) => !row.mathematically_eliminated)
+  const eliminated = titleRace.filter((row) => row.mathematically_eliminated)
 
   // Projection lanes for the top title contenders: each series anchors at the
   // team's real current points (no fabricated history) and runs a dashed lane
   // to the simulation's mean final total. Distinct accent tokens per lane.
-  const raceLanes = useMemo<{ series: ProgressionSeries[]; now: number; total: number } | null>(() => {
-    if (!result) return null;
-    const total = result.matches_per_season;
+  const raceLanes = useMemo<{
+    series: ProgressionSeries[]
+    now: number
+    total: number
+  } | null>(() => {
+    if (!result) return null
+    const total = result.matches_per_season
     const contenders = [...result.standings]
       .sort((a, b) => b.title_probability - a.title_probability)
       .slice(0, 5)
-      .filter((t) => t.matches_played > 0 && t.matches_played < total);
-    if (contenders.length < 2) return null;
-    const now = Math.max(...contenders.map((t) => t.matches_played));
+      .filter((t) => t.matches_played > 0 && t.matches_played < total)
+    if (contenders.length < 2) return null
+    const now = Math.max(...contenders.map((t) => t.matches_played))
     const laneColors = [
       'var(--accent-primary)',
       'var(--accent-ai)',
       'var(--accent-warn)',
       'var(--accent-market)',
       'var(--accent-info)',
-    ];
+    ]
     const series = contenders.map((team, i) => {
-      const played = team.matches_played;
-      const remaining = total - played;
+      const played = team.matches_played
+      const remaining = total - played
       const values: (number | null)[] = Array.from({ length: played }, (_, idx) =>
-        idx === played - 1 ? team.current_points : null
-      );
+        idx === played - 1 ? team.current_points : null,
+      )
       const projected = Array.from({ length: total - played }, (_, k) =>
         Math.round(
           (team.current_points +
             ((team.avg_final_points - team.current_points) * (k + 1)) / remaining) *
-            10
-        ) / 10
-      );
+            10,
+        ) / 10,
+      )
       return {
         key: `t${team.team_id ?? i}`,
         label: team.team_name,
         color: laneColors[i % laneColors.length],
         values,
         projected,
-      };
-    });
-    return { series, now, total };
-  }, [result]);
-
-  const runSimulation = async () => {
-    if (!selectedLeague) return;
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      // Use local API route instead of external backend
-      const params = new URLSearchParams({ n_simulations: String(nSimulations) });
-      if (whatIfFixtureKey) {
-        params.set('what_if_fixture', whatIfFixtureKey);
-        params.set('what_if_outcome', whatIfOutcome);
       }
-      const response = await fetch(`/api/simulation/${selectedLeague.id}?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to run simulation');
+    })
+    return { series, now, total }
+  }, [result])
+
+  // Honest, payload-derived talking points (max 5; sections that don't apply
+  // are simply absent — NarrativeCard hides itself when the list is empty).
+  const insights = useMemo<NarrativeInsight[]>(() => {
+    if (!result) return []
+    const list: NarrativeInsight[] = []
+    const standings = result.standings
+
+    const byTitle = [...standings].sort((a, b) => b.title_probability - a.title_probability)
+    const [first, second] = byTitle
+    if (first && second) {
+      if (first.title_probability >= 0.8) {
+        list.push({
+          tone: 'edge',
+          title: 'Title all but settled',
+          detail: `${first.team_name} win the league in ${(first.title_probability * 100).toFixed(0)}% of the simulated seasons.`,
+        })
+      } else if (second.title_probability >= 0.1) {
+        const ptsGap = Math.abs(first.current_points - second.current_points)
+        list.push({
+          tone: 'watch',
+          title: 'Tight at the top',
+          detail: `${first.team_name} (${(first.title_probability * 100).toFixed(0)}%) and ${second.team_name} (${(second.title_probability * 100).toFixed(0)}%) are ${ptsGap} point${ptsGap === 1 ? '' : 's'} apart today.`,
+        })
       }
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to run simulation');
-    } finally {
-      setLoading(false);
     }
-  };
+
+    let riser: (typeof standings)[number] | null = null
+    let riserGain = 1.5
+    let faller: (typeof standings)[number] | null = null
+    let fallerDrop = 1.5
+    for (const team of standings) {
+      const gain = team.current_position - team.avg_final_position
+      if (gain > riserGain) {
+        riser = team
+        riserGain = gain
+      }
+      if (-gain > fallerDrop) {
+        faller = team
+        fallerDrop = -gain
+      }
+    }
+    if (riser) {
+      list.push({
+        tone: 'edge',
+        title: 'Biggest riser',
+        detail: `${riser.team_name} climb from ${ordinal(riser.current_position)} today to a projected ${ordinal(Math.round(riser.avg_final_position))}.`,
+      })
+    }
+    if (faller) {
+      list.push({
+        tone: 'risk',
+        title: 'Biggest slide',
+        detail: `${faller.team_name} drop from ${ordinal(faller.current_position)} today to a projected ${ordinal(Math.round(faller.avg_final_position))}.`,
+      })
+    }
+
+    const dropBattle = standings
+      .filter((t) => t.relegation_probability >= 0.15 && t.relegation_probability <= 0.85)
+      .sort((a, b) => b.relegation_probability - a.relegation_probability)
+    if (dropBattle.length >= 2) {
+      const names = dropBattle.slice(0, 4).map((t) => t.team_name)
+      list.push({
+        tone: 'risk',
+        title: 'Relegation battle',
+        detail: `${dropBattle.length} teams are genuinely in the drop fight — ${names.join(', ')}${dropBattle.length > 4 ? ' and more' : ''}.`,
+      })
+    }
+
+    const scramble = standings.filter(
+      (t) => t.top_4_probability >= 0.2 && t.top_4_probability <= 0.8,
+    )
+    if (scramble.length >= 3) {
+      list.push({
+        tone: 'watch',
+        title: 'Top-four scramble',
+        detail: `${scramble.length} teams sit between 20% and 80% to make the top four.`,
+      })
+    }
+
+    return list.slice(0, 5)
+  }, [result])
+
+  const championMeta = result ? teamMeta[result.most_likely_champion] : undefined
+  const titleRaceSorted = useMemo(
+    () =>
+      titleRace.slice().sort((a, b) => {
+        if (a.mathematically_eliminated !== b.mathematically_eliminated) {
+          return a.mathematically_eliminated ? 1 : -1
+        }
+        return b.title_probability - a.title_probability
+      }),
+    [titleRace],
+  )
 
   return (
-    <div className="space-y-6">
-      {/* League Selection */}
-      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
-        <SectionHeader
-          kicker="Setup"
-          title="Select league"
-          description="Pick a competition, choose the simulation depth, and run the race."
-          className="mb-4"
-        />
-
-        <div className="mb-6 flex flex-wrap gap-2">
+    <div className="space-y-5">
+      {/* Setup — league picker + run depth. The simulation runs itself. */}
+      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+        <div className="flex flex-wrap gap-2">
           {SIMULATION_LEAGUES.map((league) => (
             <LeagueChip
               key={league.id}
               leagueId={league.competitionId}
               name={league.name}
-              active={selectedLeague?.id === league.id}
-              onClick={() => {
-                setSelectedLeague(league);
-                setResult(null);
-                setWhatIfFixtureKey('');
-              }}
+              active={selectedLeague.id === league.id}
+              onClick={() => selectLeague(league)}
             />
           ))}
         </div>
-
-        {/* Simulation Options */}
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-[200px] flex-1">
-            <label
-              htmlFor="league-n-simulations"
-              className="mb-2 block text-sm text-[var(--text-secondary)]"
-            >
-              Number of simulations
-            </label>
-            <select
-              id="league-n-simulations"
-              value={nSimulations}
-              onChange={(e) => setNSimulations(Number(e.target.value))}
-              className="tabular min-h-[44px] w-full rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 text-sm text-[var(--text-primary)]"
-            >
-              <option value={1000}>1,000 (Fast)</option>
-              <option value={5000}>5,000 (Balanced)</option>
-              <option value={10000}>10,000 (Accurate)</option>
-              <option value={25000}>25,000 (High Precision)</option>
-            </select>
-          </div>
-
-          {/* Primary CTA with progress state */}
-          <button
-            onClick={runSimulation}
-            disabled={loading || !selectedLeague}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-6 text-sm font-bold text-[var(--accent-on-primary)] shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--accent-primary)_60%,transparent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--muted-bg)] disabled:text-[var(--text-tertiary)] disabled:shadow-none"
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="league-n-simulations"
+            className="text-[12px] text-[var(--text-secondary)]"
           >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
-                <span aria-live="polite" className="tabular">
-                  Running {nSimulations.toLocaleString()} simulations…
-                </span>
-              </>
-            ) : (
-              <span>Run simulation</span>
-            )}
+            Season runs
+          </label>
+          <select
+            id="league-n-simulations"
+            value={nSimulations}
+            onChange={(e) => changeSimCount(Number(e.target.value))}
+            className="min-h-[44px] rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 text-[13px] tabular-nums text-[var(--text-primary)]"
+          >
+            <option value={1000}>1,000</option>
+            <option value={5000}>5,000</option>
+            <option value={10000}>10,000</option>
+            <option value={25000}>25,000</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => setRunToken((t) => t + 1)}
+            disabled={loading}
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-[var(--border-color)] px-3 text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw
+              className={cn('h-3.5 w-3.5', loading && 'motion-safe:animate-spin')}
+              aria-hidden="true"
+            />
+            Re-run
           </button>
+          {loading && result && (
+            <span className="text-[12px] text-[var(--text-tertiary)]" aria-live="polite">
+              Updating…
+            </span>
+          )}
         </div>
-
-        <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          Thousands of simulated seasons with team strength derived from current performance
-        </p>
       </div>
 
-      {selectedLeague && result?.upcoming_fixtures && result.upcoming_fixtures.length > 0 && (
-        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
-          <SectionHeader
-            kicker="Fixture what-if lab"
-            title="Lock one remaining result and rerun the table"
-            description="Select a provider-backed upcoming fixture, force the outcome, and compare how title, top-four, and relegation probabilities move."
+      {/* Inline error over stale results; full empty state when nothing to show. */}
+      {error && result && (
+        <div
+          role="alert"
+          className="rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] p-3.5 text-[13px] text-[var(--accent-loss)]"
+        >
+          {error} — showing the last completed run.
+        </div>
+      )}
+      {error && !result && !loading && (
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+          <EmptyState
+            illustration="data-error"
+            title="Simulation unavailable"
+            description={`${selectedLeague.name} standings could not be loaded. Nothing is shown rather than made-up numbers.`}
             action={
-              result.what_if ? (
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    result.what_if.applied
-                      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]'
-                      : 'bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]'
-                  }`}
-                >
-                  {result.what_if.applied ? 'What-if applied' : 'What-if not applied'}
-                </span>
-              ) : undefined
+              <button
+                type="button"
+                onClick={() => setRunToken((t) => t + 1)}
+                className="min-h-[44px] rounded-lg border border-[var(--border-color)] px-4 text-[13px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--card-hover)]"
+              >
+                Try again
+              </button>
             }
           />
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
-            <select
-              value={whatIfFixtureKey}
-              onChange={(event) => setWhatIfFixtureKey(event.target.value)}
-              aria-label="Fixture to lock"
-              className="min-h-[44px] rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-2 text-sm text-[var(--text-primary)]"
-            >
-              <option value="">Baseline, no locked fixture</option>
-              {result.upcoming_fixtures.map((fixture) => (
-                <option key={fixture.key} value={fixture.key}>
-                  {fixture.home_team} vs {fixture.away_team}{fixture.date ? ` · ${new Date(fixture.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
-                </option>
-              ))}
-            </select>
-            <select
-              value={whatIfOutcome}
-              onChange={(event) => setWhatIfOutcome(event.target.value as 'home' | 'draw' | 'away')}
-              disabled={!whatIfFixtureKey}
-              aria-label="Forced outcome"
-              className="min-h-[44px] rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] px-4 py-2 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="home">Home win</option>
-              <option value="draw">Draw</option>
-              <option value="away">Away win</option>
-            </select>
-            <button
-              onClick={runSimulation}
-              disabled={loading || !selectedLeague}
-              className="min-h-[44px] rounded-xl border border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-5 text-sm font-bold text-[var(--accent-ai)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent-ai)_20%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Rerun What-If
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-            Fixture source: {result.fixture_source || 'Current standings fallback'}
-          </p>
         </div>
       )}
 
-      {/* Error State */}
-      {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] p-4 text-[var(--accent-loss)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {error}
-        </div>
-      )}
+      {loading && !result && <ResultSkeleton />}
 
-      {/* Results */}
       {result && (
-        <div className="animate-fade-in space-y-6">
-          {/* Summary — headline StatCards + contention lists */}
-          <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-            <div className="border-b border-[var(--border-color)] p-5">
-              <SectionHeader
-                kicker={`${result.remaining_matches} matches remaining · ${result.n_simulations.toLocaleString()} simulations`}
-                title={result.league_name}
+        <div className={cn(loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
+          <Stagger key={result.league_id} inView={false} className="space-y-5">
+            <StaggerItem>
+              <SimulatorHero
+                kicker="Most likely champion"
+                teamName={result.most_likely_champion}
+                probability={result.champion_probability}
+                color={championMeta?.color}
+                badge={
+                  <TeamBadge
+                    teamId={championMeta?.id}
+                    name={result.most_likely_champion}
+                    teamColor={championMeta?.color}
+                    size={56}
+                  />
+                }
+                chips={[
+                  { label: `${result.remaining_matches} matches left` },
+                  { label: `${result.n_simulations.toLocaleString()} season runs` },
+                ]}
               />
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <StatCard
-                  size="sm"
-                  accent="ai"
-                  label="Most likely champion"
-                  value={result.most_likely_champion}
-                  sub={`${(result.champion_probability * 100).toFixed(1)}% of simulations`}
-                />
-                <StatCard
-                  size="sm"
-                  label="Matches remaining"
-                  value={result.remaining_matches}
-                  sub="across the league"
-                />
-                <StatCard
-                  size="sm"
-                  label="Simulations"
-                  value={result.n_simulations.toLocaleString()}
-                  sub="season runs"
-                />
-              </div>
-            </div>
+            </StaggerItem>
 
-            {/* Key Insights */}
-            <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
-              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
-                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                  <Trophy className="h-3.5 w-3.5 text-[var(--accent-ai)]" aria-hidden="true" />
-                  Title Contenders
-                </p>
-                <div className="space-y-1">
-                  {result.standings
-                    .filter(t => t.title_probability > 0.01)
-                    .sort((a, b) => b.title_probability - a.title_probability)
-                    .slice(0, 4)
-                    .map((team) => (
-                      <div key={team.team_name} className="flex justify-between text-sm">
-                        <span className="text-[var(--text-primary)]">{team.team_name}</span>
-                        <span className="tabular text-[var(--accent-ai)]">{(team.title_probability * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
-                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                  <Award className="h-3.5 w-3.5 text-[var(--accent-primary)]" aria-hidden="true" />
-                  Top 4 Favorites
-                </p>
-                <div className="space-y-1">
-                  {result.likely_top_4?.slice(0, 4).map((team, idx) => (
-                    <div key={team} className="flex items-center gap-2 text-sm">
-                      <span className="tabular w-5 text-center text-[var(--accent-primary)]">{idx + 1}</span>
-                      <span className="text-[var(--text-primary)]">{team}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-[var(--background-secondary)] p-4">
-                <p className="mb-2 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                  <ArrowDown className="h-3.5 w-3.5 text-[var(--accent-loss)]" aria-hidden="true" />
-                  Relegation Danger
-                </p>
-                <div className="space-y-1">
-                  {result.relegation_candidates?.slice(0, 3).map((team) => (
-                    <div key={team} className="flex items-center gap-2 text-sm">
-                      <ArrowDown className="h-3.5 w-3.5 text-[var(--accent-loss)]" aria-hidden="true" />
-                      <span className="text-[var(--text-primary)]">{team}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Title Race — "who can still win" math (independent of simulation) */}
-          <div className="relative overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-color)] p-4 md:p-5">
-              <SectionHeader
-                kicker="Title race"
-                title="Who can still win?"
-                description="Mathematical contention vs the current leader · simulated title probability shown alongside."
+            <StaggerItem>
+              <SeasonProjections
+                teams={result.standings}
+                nSimulations={result.n_simulations}
               />
-              <div className="flex gap-2 text-[11px]">
-                <span className="tabular rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] px-2.5 py-1 font-semibold text-[var(--accent-primary)]">
-                  {alive.length} alive
-                </span>
-                {eliminated.length > 0 && (
-                  <span className="tabular rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] px-2.5 py-1 font-semibold text-[var(--accent-loss)]">
-                    {eliminated.length} eliminated
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--border-color)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <th className="py-2.5 px-4 text-left">Team</th>
-                    <th className="py-2.5 px-3 text-right">Pts</th>
-                    <th className="py-2.5 px-3 text-right">Behind</th>
-                    <th className="py-2.5 px-3 text-right">Max</th>
-                    <th className="hidden py-2.5 px-3 text-right md:table-cell">Min wins to catch</th>
-                    <th className="py-2.5 px-4 text-right">Title %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {titleRace
-                    .slice()
-                    .sort((a, b) => {
-                      // Live contenders first, then by title probability desc.
-                      if (a.mathematically_eliminated !== b.mathematically_eliminated) {
-                        return a.mathematically_eliminated ? 1 : -1;
-                      }
-                      return b.title_probability - a.title_probability;
-                    })
-                    .map((row) => {
-                      const isOut = row.mathematically_eliminated;
-                      const titlePct = row.title_probability * 100;
-                      return (
-                        <tr
-                          key={row.team_name}
-                          className={`border-b border-[var(--border-color)]/60 ${
-                            isOut ? 'opacity-55' : 'hover:bg-[var(--background-secondary)]'
-                          }`}
-                        >
-                          <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
-                            <span className="inline-flex items-center gap-1.5">
-                              {row.team_name}
-                              {isOut && (
-                                <Skull className="h-3 w-3 text-[var(--accent-loss)]" aria-label="Mathematically eliminated" />
-                              )}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
-                            {row.current_points}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[var(--text-secondary)]">
-                            {row.points_behind_leader === 0 ? (
-                              <span className="font-semibold text-[var(--accent-primary)]">Leader</span>
-                            ) : (
-                              `−${row.points_behind_leader}`
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">
-                            {row.max_possible_points}
-                          </td>
-                          <td className="hidden py-2.5 px-3 text-right tabular-nums text-[var(--text-tertiary)] md:table-cell">
-                            {isOut || row.min_wins_to_catch === Infinity
-                              ? '—'
-                              : `${row.min_wins_to_catch} / ${row.matches_remaining}`}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            {/* Probability bar inline */}
-                            <div className="inline-flex items-center justify-end gap-2">
-                              <span
-                                className="hidden h-1 w-16 overflow-hidden rounded-full bg-[var(--border-color)]/50 sm:inline-block"
-                                aria-hidden="true"
-                              >
-                                <span
-                                  className="block h-full rounded-full bg-[var(--accent-ai)]"
-                                  style={{ width: `${Math.max(2, Math.min(100, titlePct))}%` }}
-                                />
-                              </span>
-                              <span className="w-12 text-right font-semibold tabular-nums text-[var(--accent-ai)]">
-                                {titlePct >= 0.05 ? `${titlePct.toFixed(1)}%` : '<0.1%'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-            <div className="border-t border-[var(--border-color)] p-3 text-[11px] leading-snug text-[var(--text-tertiary)]">
-              <span className="font-semibold text-[var(--text-secondary)]">Behind</span> = points behind current leader ·{' '}
-              <span className="font-semibold text-[var(--text-secondary)]">Max</span> = current + remaining × 3 ·{' '}
-              <span className="font-semibold text-[var(--text-secondary)]">Min wins to catch</span> = wins needed if leader drops 0 more points ·{' '}
-              <span className="font-semibold text-[var(--text-secondary)]">Eliminated</span> = even running the table leaves you behind the leader&apos;s current total.
-            </div>
-          </div>
+            </StaggerItem>
 
-          {/* Title race projection lanes */}
-          {raceLanes && (
-            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <StaggerItem>
+              <div className="space-y-2">
                 <SectionHeader
-                  kicker="Projection"
-                  title="Race to the finish"
-                  description="Dashed lanes run from each contender's real points today to their mean simulated final total."
+                  kicker="Signature view"
+                  title="Where every team finishes"
+                  description="Each row is a team, each column a final position — darker means it happens more often."
                 />
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {raceLanes.series.map((s) => (
-                    <span
-                      key={s.key}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)]"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="inline-block h-2 w-2 rounded-full"
-                        style={{ backgroundColor: s.color }}
-                      />
-                      {s.label}
-                    </span>
-                  ))}
-                </div>
+                <PositionDistributionMatrix
+                  standings={result.standings}
+                  teamMeta={teamMeta}
+                />
               </div>
-              <ChartContainer height={300} lazy label="Title race projection chart">
-                <ProgressionChart
-                  series={raceLanes.series}
-                  now={raceLanes.now}
-                  totalSteps={raceLanes.total}
-                  height={300}
-                />
-              </ChartContainer>
-            </div>
-          )}
+            </StaggerItem>
 
-          {/* Full Standings Table */}
-          <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-            <div className="border-b border-[var(--border-color)] p-4 md:p-5">
-              <SectionHeader
-                kicker="Projection"
-                title="Predicted final standings"
-                description={`${result.remaining_matches} games remaining · click a row for its position distribution`}
+            <StaggerItem>
+              <PredictedStandingsTable
+                standings={result.standings}
+                teamMeta={teamMeta}
+                remainingMatches={result.remaining_matches}
               />
-            </div>
+            </StaggerItem>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--border-color)] text-xs text-[var(--text-tertiary)]">
-                    <th className="py-3 px-4 text-left">Pos</th>
-                    <th className="py-3 px-4 text-left">Team</th>
-                    <th className="py-3 px-4 text-center">Pts</th>
-                    <th className="py-3 px-4 text-center">Pred Pts</th>
-                    <th className="py-3 px-4 text-center">Avg Pos</th>
-                    <th className="py-3 px-4 text-center">Title %</th>
-                    <th className="py-3 px-4 text-center">Top 4 %</th>
-                    <th className="py-3 px-4 text-center">Releg %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.standings
-                    .sort((a, b) => a.avg_final_position - b.avg_final_position)
-                    .map((team, idx) => (
-                      <React.Fragment key={team.team_name}>
-                      <tr
-                        onClick={() => setExpandedTeam(expandedTeam === team.team_name ? null : team.team_name)}
-                        className={`cursor-pointer border-b border-[var(--border-color)] transition-colors hover:bg-[var(--background-secondary)] ${
-                          idx < 4 ? 'border-l-2 border-l-[var(--accent-primary)]' :
-                          idx >= result.standings.length - 3 ? 'border-l-2 border-l-[var(--accent-loss)]' : ''
-                        }`}
-                      >
-                        <td className="py-3 px-4 tabular-nums text-[var(--text-secondary)]">{idx + 1}</td>
-                        <td className="py-3 px-4 font-medium text-[var(--text-primary)]">
-                          {team.team_name}
-                          <span className="ml-1 text-xs text-[var(--text-tertiary)]">▾</span>
-                        </td>
-                        <td className="py-3 px-4 text-center tabular-nums text-[var(--text-secondary)]">{team.current_points}</td>
-                        <td className="py-3 px-4 text-center font-semibold tabular-nums text-[var(--text-primary)]">
-                          {team.avg_final_points.toFixed(0)}
-                        </td>
-                        <td className="py-3 px-4 text-center tabular-nums text-[var(--text-secondary)]">
-                          {team.avg_final_position.toFixed(1)}
-                        </td>
-                        <td className="py-3 px-4 text-center tabular-nums">
-                          {team.title_probability > 0.01 ? (
-                            <span className="text-[var(--accent-ai)]">{(team.title_probability * 100).toFixed(1)}%</span>
-                          ) : (
-                            <span className="text-[var(--text-tertiary)]">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center tabular-nums">
-                          {team.top_4_probability > 0.01 ? (
-                            <span className="text-[var(--accent-primary)]">{(team.top_4_probability * 100).toFixed(0)}%</span>
-                          ) : (
-                            <span className="text-[var(--text-tertiary)]">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center tabular-nums">
-                          {team.relegation_probability > 0.01 ? (
-                            <span className="text-[var(--accent-loss)]">{(team.relegation_probability * 100).toFixed(0)}%</span>
-                          ) : (
-                            <span className="text-[var(--text-tertiary)]">-</span>
-                          )}
-                        </td>
-                      </tr>
-                      {expandedTeam === team.team_name && team.position_distribution && (
-                        <tr className="bg-[var(--background-secondary)]">
-                          <td colSpan={8} className="px-4 py-3">
-                            <div className="mb-2 text-xs font-medium text-[var(--text-secondary)]">
-                              Position probability distribution
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(team.position_distribution)
-                                .sort(([a], [b]) => Number(a) - Number(b))
-                                .map(([pos, prob]) => {
-                                  const pct = (prob as number) * 100;
-                                  const bg = Number(pos) <= 4 ? 'bg-[var(--accent-primary)]' :
-                                             Number(pos) > result.standings.length - 3 ? 'bg-[var(--accent-loss)]' :
-                                             'bg-[var(--accent-ai)]';
-                                  return (
-                                    <div key={pos} className="min-w-[36px] text-center">
-                                      <div
-                                        className={`${bg} rounded-t`}
-                                        style={{ height: `${Math.max(4, pct * 1.5)}px`, opacity: Math.max(0.3, pct / 50) }}
-                                      />
-                                      <div className="mt-0.5 text-[10px] tabular-nums text-[var(--text-tertiary)]">{pos}</div>
-                                      <div className="text-[10px] tabular-nums text-[var(--text-secondary)]">{pct.toFixed(1)}%</div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </td>
-                        </tr>
+            {raceLanes && (
+              <StaggerItem>
+                <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                    <SectionHeader
+                      kicker="Projection"
+                      title="Race to the finish"
+                      description="Dashed lanes run from each contender's real points today to their mean simulated final total."
+                    />
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {raceLanes.series.map((s) => (
+                        <span
+                          key={s.key}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)]"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ backgroundColor: s.color }}
+                          />
+                          {s.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <ChartContainer height={300} lazy label="Title race projection chart">
+                    <ProgressionChart
+                      series={raceLanes.series}
+                      now={raceLanes.now}
+                      totalSteps={raceLanes.total}
+                      height={300}
+                    />
+                  </ChartContainer>
+                </div>
+              </StaggerItem>
+            )}
+
+            {titleRace.length > 0 && (
+              <StaggerItem>
+                <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+                  <button
+                    type="button"
+                    aria-expanded={titleRaceOpen}
+                    onClick={() => setTitleRaceOpen((open) => !open)}
+                    className="flex min-h-[52px] w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--card-hover)]"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                        Title race
+                      </span>
+                      <span className="block text-[15px] font-bold text-[var(--text-primary)]">
+                        Who can still win?
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2 text-[11px]">
+                      <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] px-2.5 py-1 font-semibold tabular-nums text-[var(--accent-primary)]">
+                        {alive.length} alive
+                      </span>
+                      {eliminated.length > 0 && (
+                        <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] px-2.5 py-1 font-semibold tabular-nums text-[var(--accent-loss)]">
+                          {eliminated.length} out
+                        </span>
                       )}
-                      </React.Fragment>
-                    ))}
-                </tbody>
-              </table>
-            </div>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 text-[var(--text-tertiary)] transition-transform',
+                          titleRaceOpen && 'rotate-180',
+                        )}
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </button>
+                  {titleRaceOpen && (
+                    <>
+                      <div className="overflow-x-auto border-t border-[var(--border-color)]">
+                        <table className="w-full text-[13px]">
+                          <thead>
+                            <tr className="border-b border-[var(--border-color)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                              <th className="px-4 py-2 text-left font-semibold">Team</th>
+                              <th className="px-3 py-2 text-right font-semibold">Pts</th>
+                              <th className="px-3 py-2 text-right font-semibold">Behind</th>
+                              <th className="px-3 py-2 text-right font-semibold">Max</th>
+                              <th className="hidden px-3 py-2 text-right font-semibold md:table-cell">
+                                Min wins to catch
+                              </th>
+                              <th className="px-4 py-2 text-right font-semibold">Title</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {titleRaceSorted.map((row) => {
+                              const isOut = row.mathematically_eliminated
+                              const titlePct = row.title_probability * 100
+                              return (
+                                <tr
+                                  key={row.team_name}
+                                  className={cn(
+                                    'border-b border-[var(--border-color)]/60 last:border-b-0',
+                                    isOut ? 'opacity-55' : 'hover:bg-[var(--card-hover)]',
+                                  )}
+                                >
+                                  <td className="px-4 py-2 font-medium text-[var(--text-primary)]">
+                                    <span className="inline-flex items-center gap-1.5">
+                                      {row.team_name}
+                                      {isOut && (
+                                        <Skull
+                                          className="h-3 w-3 text-[var(--accent-loss)]"
+                                          aria-label="Mathematically eliminated"
+                                        />
+                                      )}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+                                    {row.current_points}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
+                                    {row.points_behind_leader === 0 ? (
+                                      <span className="font-semibold text-[var(--accent-primary)]">
+                                        Leader
+                                      </span>
+                                    ) : (
+                                      `−${row.points_behind_leader}`
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-right font-semibold tabular-nums text-[var(--text-primary)]">
+                                    {row.max_possible_points}
+                                  </td>
+                                  <td className="hidden px-3 py-2 text-right tabular-nums text-[var(--text-tertiary)] md:table-cell">
+                                    {isOut || row.min_wins_to_catch === Infinity
+                                      ? '—'
+                                      : `${row.min_wins_to_catch} / ${row.matches_remaining}`}
+                                  </td>
+                                  <td className="px-4 py-2 text-right font-semibold tabular-nums text-[var(--accent-ai)]">
+                                    {titlePct >= 0.05 ? `${titlePct.toFixed(1)}%` : '<0.1%'}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="border-t border-[var(--border-color)] px-4 py-2.5 text-[11px] leading-snug text-[var(--text-tertiary)]">
+                        Behind = points behind the current leader · Max = current +
+                        remaining × 3 · Min wins to catch assumes the leader takes no more
+                        points · Out = even winning every match leaves the team short.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </StaggerItem>
+            )}
 
-            {/* Legend */}
-            <div className="flex gap-6 border-t border-[var(--border-color)] p-4 text-xs text-[var(--text-tertiary)]">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded bg-[var(--accent-primary)]" />
-                <span>Champions League</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded bg-[var(--accent-loss)]" />
-                <span>Relegation Zone</span>
-              </div>
-            </div>
-          </div>
+            {result.upcoming_fixtures && result.upcoming_fixtures.length > 0 && (
+              <StaggerItem>
+                <WhatIfLab
+                  fixtures={result.upcoming_fixtures}
+                  override={override}
+                  onOverrideChange={setOverride}
+                  applied={Boolean(result.what_if?.applied)}
+                  loading={loading}
+                  baseline={baseline}
+                  current={result}
+                  teamMeta={teamMeta}
+                />
+              </StaggerItem>
+            )}
 
-          {/* Disclaimer */}
-          <div className="rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_20%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] p-4">
-            <p className="flex items-center justify-center gap-2 text-center text-sm text-[var(--accent-warn)]">
-              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>
-                <span className="font-semibold">Note:</span> Predictions are based on thousands of simulated seasons using current standings and team ratings.
-                Actual results may vary significantly due to injuries, transfers, and unpredictable events.
-              </span>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Initial State - No selection */}
-      {!result && !loading && !error && (
-        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-8 text-center">
-          <Trophy className="mx-auto mb-4 h-12 w-12 text-[var(--accent-warn)]" aria-hidden="true" />
-          <h3 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">Championship contention simulator</h3>
-          <p className="mx-auto max-w-md text-[var(--text-secondary)]">
-            Pick a league and run the simulation to see who can still mathematically
-            win the title, what points are needed to catch the leader, and how the
-            top-four / relegation races shake out across thousands of seasons.
-          </p>
+            {insights.length > 0 && (
+              <StaggerItem>
+                <NarrativeCard heading="What stands out" insights={insights} />
+              </StaggerItem>
+            )}
+          </Stagger>
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -23,7 +23,7 @@ const TOURNAMENTS: { id: KnockoutTournament; name: string; leagueId: string }[] 
 ]
 
 export default function SimulatorPage() {
-  const [mode, setMode] = useState<SimulatorMode>('tournament')
+  const [mode, setMode] = useState<SimulatorMode>('league')
   const [selected, setSelected] = useState<KnockoutTournament>('champions_league')
 
   return (
@@ -35,7 +35,7 @@ export default function SimulatorPage() {
             Simulator
           </h1>
           <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
-            Simulated knockout brackets and title-race maths — run thousands of seasons.
+            Title races and knockout brackets, played out thousands of times.
           </p>
         </div>
 
@@ -46,8 +46,8 @@ export default function SimulatorPage() {
           className="flex items-center gap-6 border-b border-[var(--border-color)]"
         >
           {([
-            { value: 'tournament' as const, label: 'Tournament', Icon: Swords },
             { value: 'league' as const, label: 'League', Icon: Trophy },
+            { value: 'tournament' as const, label: 'Tournament', Icon: Swords },
           ]).map((option) => {
             const active = mode === option.value
             const Icon = option.Icon
@@ -106,15 +106,15 @@ export default function SimulatorPage() {
           </div>
         )}
 
-        {mode === 'tournament' && (
-          <div role="tabpanel" id="simulator-tournament">
-            <KnockoutSimulatorPanel tournament={selected} />
-          </div>
-        )}
-
         {mode === 'league' && (
           <div role="tabpanel" id="simulator-league">
             <LeagueChampionshipSimulator />
+          </div>
+        )}
+
+        {mode === 'tournament' && (
+          <div role="tabpanel" id="simulator-tournament">
+            <KnockoutSimulatorPanel tournament={selected} />
           </div>
         )}
 
@@ -123,17 +123,17 @@ export default function SimulatorPage() {
           <SectionHeader kicker="Good to know" title="How it works" className="mb-3" />
           {mode === 'tournament' ? (
             <ul className="list-inside list-disc space-y-1 text-xs text-[var(--text-secondary)]">
-              <li>Each bracket is played out thousands of times, match by match</li>
-              <li>Team strength reflects long-run ratings, home advantage, and form</li>
-              <li>Tournament-specific rules (two-legged ties, away goals) are respected</li>
+              <li>Each bracket is played out up to 50,000 times, match by match</li>
+              <li>Team ratings set the chance of winning every tie</li>
+              <li>Club rounds are two-legged with a one-off neutral final; national tournaments are single matches throughout</li>
+              <li>Removing a team from the field reruns the bracket without them</li>
             </ul>
           ) : (
             <ul className="list-inside list-disc space-y-1 text-xs text-[var(--text-secondary)]">
-              <li>Every remaining fixture is simulated thousands of times — 1k–25k runs</li>
-              <li>Team strength is derived from current standings and points-per-game</li>
-              <li>Draw rates are tuned per league</li>
-              <li>What-if mode: lock one fixture outcome and re-simulate the rest</li>
-              <li>Title race table: pure mathematics (max possible vs leader&apos;s current)</li>
+              <li>Plays out every remaining fixture up to 25,000 times and counts where each team lands</li>
+              <li>Team strength comes from points per game in the current table, with home advantage and league-tuned draw rates</li>
+              <li>The what-if lab locks a single result and reruns the season so you can see what one match is worth</li>
+              <li>The title-race table is pure arithmetic: a team is out only when winning every match still leaves it short</li>
             </ul>
           )}
         </section>

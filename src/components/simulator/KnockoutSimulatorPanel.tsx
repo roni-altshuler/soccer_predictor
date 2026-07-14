@@ -1,30 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { AlertTriangle, Loader2, RotateCcw, Settings2, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { RotateCcw, X } from 'lucide-react'
 
-import { StatCard } from '@/components/primitives'
+import { EmptyState } from '@/components/EmptyState'
+import { Stagger, StaggerItem } from '@/components/motion'
+import { FlagBadge } from '@/components/primitives'
 import { TournamentCrest } from '@/components/tournament'
+import type { KnockoutRoundKey } from '@/lib/simulation/knockoutMonteCarlo'
+import { cn } from '@/lib/utils'
 
-interface TeamProbability {
-  team: string
-  probability: number
-  seed?: number
-}
-
-interface KnockoutSimulationResult {
-  tournament: string
-  numSimulations: number
-  rounds: {
-    round_of_16?: TeamProbability[]
-    quarter_finals: TeamProbability[]
-    semi_finals: TeamProbability[]
-    final: TeamProbability[]
-    champion: TeamProbability[]
-  }
-  winner: { team: string; probability: number }
-  runnerUp: { team: string; probability: number }
-}
+import AdvancementTable, { type AdvancementRow } from './AdvancementTable'
+import SimulatorHero from './SimulatorHero'
 
 export type KnockoutTournament =
   | 'champions_league'
@@ -40,11 +27,12 @@ interface KnockoutSimulatorPanelProps {
 
 const TOURNAMENT_CONFIGS: Record<
   KnockoutTournament,
-  { name: string; crestId: string; defaultTeams: string[] }
+  { name: string; crestId: string; national: boolean; defaultTeams: string[] }
 > = {
   champions_league: {
     name: 'UEFA Champions League',
     crestId: 'uefa.champions',
+    national: false,
     defaultTeams: [
       'Real Madrid', 'Manchester City', 'Bayern Munich', 'PSG',
       'Barcelona', 'Liverpool', 'Chelsea', 'Inter Milan',
@@ -55,6 +43,7 @@ const TOURNAMENT_CONFIGS: Record<
   europa_league: {
     name: 'UEFA Europa League',
     crestId: 'uefa.europa',
+    national: false,
     defaultTeams: [
       'Roma', 'West Ham', 'Atalanta', 'Bayer Leverkusen',
       'Villarreal', 'Marseille', 'Ajax', 'Sevilla',
@@ -65,6 +54,7 @@ const TOURNAMENT_CONFIGS: Record<
   world_cup: {
     name: 'FIFA World Cup',
     crestId: 'fifa.world',
+    national: true,
     defaultTeams: [
       'France', 'Brazil', 'Argentina', 'England',
       'Germany', 'Spain', 'Netherlands', 'Portugal',
@@ -75,6 +65,7 @@ const TOURNAMENT_CONFIGS: Record<
   euro: {
     name: 'UEFA European Championship',
     crestId: 'uefa.euro',
+    national: true,
     defaultTeams: [
       'Spain', 'England', 'France', 'Germany',
       'Portugal', 'Netherlands', 'Italy', 'Belgium',
@@ -85,6 +76,7 @@ const TOURNAMENT_CONFIGS: Record<
   copa_america: {
     name: 'Copa América',
     crestId: 'conmebol.america',
+    national: true,
     defaultTeams: [
       'Argentina', 'Brazil', 'Uruguay', 'Colombia',
       'Ecuador', 'Chile', 'Peru', 'Paraguay',
@@ -94,277 +86,265 @@ const TOURNAMENT_CONFIGS: Record<
   },
 }
 
-const ROUND_ORDER = ['champion', 'final', 'semi_finals', 'quarter_finals', 'round_of_16'] as const
-const ROUND_LABELS: Record<(typeof ROUND_ORDER)[number], string> = {
-  champion: 'Winner',
-  final: 'Final',
-  semi_finals: 'Semi-Finals',
-  quarter_finals: 'Quarter-Finals',
-  round_of_16: 'Round of 16',
-}
-
-/** Display-honest probability format: whole % ≥10, one decimal below. */
-function formatProbability(prob: number): string {
-  const pct = prob * 100
-  if (pct < 0.05) return '<0.1%'
-  if (pct < 10) return `${pct.toFixed(1)}%`
-  return `${Math.round(pct)}%`
+interface KnockoutApiResponse {
+  n_simulations: number
+  bracket_size: number
+  rounds: KnockoutRoundKey[]
+  most_likely_winner: string
+  winner_probability: number
+  round_probabilities: Record<string, Partial<Record<KnockoutRoundKey, number>>>
 }
 
 /**
- * KnockoutSimulatorPanel — Monte Carlo knockout simulator in the Broadcast
- * design language: crest identity (no emoji), ≥40px tap targets on every
- * control, a primary CTA with an in-flight progress state, and StatCards for
- * the headline result. Model outputs carry the cyan `--accent-ai` treatment.
+ * Team ratings for a custom roster follow the roster order (strongest
+ * first), matching the historical simulator behaviour: club fields step
+ * down 100 rating points per slot, national fields 80.
+ */
+function rosterInputs(teams: string[], national: boolean) {
+  const step = national ? 80 : 100
+  return teams.map((name, idx) => ({
+    name,
+    elo: 1800 + step * Math.max(0, 16 - idx),
+    country: national ? name : undefined,
+  }))
+}
+
+function KnockoutSkeleton() {
+  const block =
+    'rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] motion-safe:animate-pulse'
+  return (
+    <div aria-hidden className="space-y-4">
+      <div className={cn(block, 'h-[96px]')} />
+      <div className={cn(block, 'h-[420px]')} />
+    </div>
+  )
+}
+
+/**
+ * KnockoutSimulatorPanel — bracket simulator on the in-app engine
+ * (POST /api/simulation/knockout). Auto-runs on mount and debounces roster
+ * or run-depth changes; the winner lands in a SimulatorHero and every
+ * team's path to the trophy renders as a heat-tinted AdvancementTable.
  */
 export default function KnockoutSimulatorPanel({
   tournament,
   initialTeams,
 }: KnockoutSimulatorPanelProps) {
   const config = TOURNAMENT_CONFIGS[tournament]
-  const [teams, setTeams] = useState<string[]>(initialTeams || config.defaultTeams)
-  const [results, setResults] = useState<KnockoutSimulationResult | null>(null)
-  const [loading, setLoading] = useState(false)
+  const rosterForTournament = useMemo(
+    () => initialTeams ?? TOURNAMENT_CONFIGS[tournament].defaultTeams,
+    [tournament, initialTeams],
+  )
+
+  const [teams, setTeams] = useState<string[]>(rosterForTournament)
+  const [result, setResult] = useState<KnockoutApiResponse | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [numSimulations, setNumSimulations] = useState(10000)
-  const [activeRound, setActiveRound] = useState<string>('champion')
-  const [showSetup, setShowSetup] = useState(true)
+  const [runToken, setRunToken] = useState(0)
+  const firstRun = useRef(true)
 
-  const teamsRemoved = teams.length < (initialTeams || config.defaultTeams).length
+  // Fresh roster when the tournament changes.
+  useEffect(() => {
+    setTeams(rosterForTournament)
+    setResult(null)
+    firstRun.current = true
+  }, [rosterForTournament])
 
-  const runSimulation = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const endpoint =
-        tournament === 'champions_league'
-          ? '/api/v1/knockout/champions-league'
-          : tournament === 'europa_league'
-            ? '/api/v1/knockout/europa-league'
-            : '/api/v1/knockout/world-cup'
+  // Auto-run: immediately on mount / tournament change, debounced while the
+  // roster or run depth is being edited.
+  useEffect(() => {
+    if (teams.length < 2) return
+    const controller = new AbortController()
+    let cancelled = false
 
-      const response = await fetch(`${endpoint}?n_simulations=${numSimulations}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teams }),
-      })
-
-      if (!response.ok) throw new Error(`Simulation failed (HTTP ${response.status})`)
-
-      const data = await response.json()
-      setResults({
-        tournament: config.name,
-        numSimulations,
-        rounds: data.round_probabilities || {},
-        winner: data.winner || { team: 'Unknown', probability: 0 },
-        runnerUp: data.runner_up || { team: 'Unknown', probability: 0 },
-      })
-      setShowSetup(false)
-      setActiveRound('champion')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Simulation failed')
-    } finally {
-      setLoading(false)
+    async function run() {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await fetch('/api/simulation/knockout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournament,
+            n_simulations: numSimulations,
+            teams: rosterInputs(teams, config.national),
+          }),
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error('The simulation is unavailable right now')
+        const data = (await response.json()) as KnockoutApiResponse
+        if (cancelled) return
+        if (!Array.isArray(data.rounds) || typeof data.round_probabilities !== 'object') {
+          throw new Error('The simulation returned an unexpected result')
+        }
+        setResult(data)
+      } catch (err) {
+        if (cancelled || (err instanceof DOMException && err.name === 'AbortError')) return
+        setError(
+          err instanceof Error ? err.message : 'The simulation is unavailable right now',
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
-  }
 
-  const activeRoundTeams =
-    (results?.rounds[activeRound as keyof KnockoutSimulationResult['rounds']] as
-      | TeamProbability[]
-      | undefined) ?? []
-  const maxRoundProb = Math.max(0.0001, ...activeRoundTeams.map((t) => t.probability))
+    const delay = firstRun.current ? 0 : 350
+    firstRun.current = false
+    const timer = window.setTimeout(run, delay)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [tournament, teams, numSimulations, runToken, config.national])
+
+  const rows = useMemo<AdvancementRow[]>(() => {
+    if (!result) return []
+    return Object.entries(result.round_probabilities)
+      .map(([name, reach]) => ({ name, reach }))
+      .sort((a, b) => (b.reach.winner ?? 0) - (a.reach.winner ?? 0))
+  }, [result])
+
+  const teamsRemoved = teams.length < rosterForTournament.length
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
-      {/* Header — crest identity, no emoji, no hard-coded gradients */}
-      <div className="flex items-center gap-4 border-b border-[var(--border-color)] p-5">
-        <TournamentCrest tournamentId={config.crestId} name={config.name} size={48} />
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-            Knockout simulator
-          </p>
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">{config.name}</h2>
-        </div>
-      </div>
-
-      {/* Setup */}
-      {showSetup && (
-        <div className="space-y-5 p-5">
-          <div>
+    <div className="space-y-4">
+      {/* Header + roster controls */}
+      <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+        <div className="flex flex-wrap items-center gap-4 border-b border-[var(--border-color)] p-4 md:p-5">
+          <TournamentCrest tournamentId={config.crestId} name={config.name} size={44} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              Bracket simulator
+            </p>
+            <h2 className="truncate text-lg font-bold text-[var(--text-primary)]">
+              {config.name}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
             <label
               htmlFor="knockout-n-simulations"
-              className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
+              className="text-[12px] text-[var(--text-secondary)]"
             >
-              Number of simulations
+              Runs
             </label>
             <select
               id="knockout-n-simulations"
               value={numSimulations}
-              onChange={(e) => setNumSimulations(parseInt(e.target.value))}
-              className="tabular min-h-[44px] w-full rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)] px-4 text-sm text-[var(--text-primary)] md:w-56"
+              onChange={(e) => setNumSimulations(parseInt(e.target.value, 10))}
+              className="min-h-[44px] rounded-lg border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 text-[13px] tabular-nums text-[var(--text-primary)]"
             >
-              <option value={1000}>1,000 simulations</option>
-              <option value={10000}>10,000 simulations</option>
-              <option value={50000}>50,000 simulations</option>
-              <option value={100000}>100,000 simulations</option>
+              <option value={1000}>1,000</option>
+              <option value={10000}>10,000</option>
+              <option value={25000}>25,000</option>
+              <option value={50000}>50,000</option>
             </select>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-[var(--text-secondary)]">
-                Participating teams ({teams.length})
-              </p>
-              {teamsRemoved && (
-                <button
-                  type="button"
-                  onClick={() => setTeams(initialTeams || config.defaultTeams)}
-                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                  Reset teams
-                </button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {teams.map((team) => (
-                <button
-                  key={team}
-                  type="button"
-                  onClick={() => setTeams(teams.filter((t) => t !== team))}
-                  aria-label={`Remove ${team}`}
-                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[color-mix(in_srgb,var(--accent-loss)_45%,transparent)] hover:text-[var(--accent-loss)]"
-                >
-                  {team}
-                  <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Primary CTA with progress state */}
-          <button
-            type="button"
-            onClick={runSimulation}
-            disabled={loading || teams.length < 2}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-6 text-sm font-bold text-[var(--accent-on-primary)] shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--accent-primary)_60%,transparent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--muted-bg)] disabled:text-[var(--text-tertiary)] disabled:shadow-none"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
-                <span aria-live="polite" className="tabular">
-                  Running {numSimulations.toLocaleString()} simulations…
-                </span>
-              </>
-            ) : (
-              <span>Run simulation</span>
+            {loading && result && (
+              <span className="text-[12px] text-[var(--text-tertiary)]" aria-live="polite">
+                Updating…
+              </span>
             )}
-          </button>
-        </div>
-      )}
-
-      {error && (
-        <div className="mx-5 mb-5 flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] p-3.5 text-sm text-[var(--accent-loss)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {error}
-        </div>
-      )}
-
-      {/* Results */}
-      {results && !showSetup && (
-        <div className="space-y-5 p-5">
-          {/* Headline — StatCards, model output = cyan */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard
-              size="sm"
-              accent="ai"
-              label="Most likely champion"
-              value={results.winner.team}
-              sub={`wins ${formatProbability(results.winner.probability)} of simulations`}
-            />
-            <StatCard
-              size="sm"
-              label="Runner-up"
-              value={results.runnerUp.team}
-              sub={`${formatProbability(results.runnerUp.probability)} of simulations`}
-            />
-            <StatCard
-              size="sm"
-              label="Simulations"
-              value={results.numSimulations.toLocaleString()}
-              sub="tournament runs"
-            />
           </div>
+        </div>
 
-          {/* Round tabs */}
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Simulation round">
-            {ROUND_ORDER.map((round) => {
-              const roundData = results.rounds[round as keyof KnockoutSimulationResult['rounds']]
-              if (!roundData) return null
-              const active = activeRound === round
-              return (
-                <button
-                  key={round}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setActiveRound(round)}
-                  className={`min-h-[40px] rounded-full px-4 text-sm font-medium transition-colors ${
-                    active
-                      ? 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]'
-                      : 'border border-[var(--border-color)] bg-[var(--muted-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {ROUND_LABELS[round]}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Round probabilities */}
-          <div className="space-y-1.5">
-            {activeRoundTeams.map((team, idx) => (
-              <div
-                key={team.team}
-                className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-1.5 transition-colors hover:bg-[var(--card-hover)]"
+        <div className="p-4 md:p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className="text-[12px] text-[var(--text-secondary)]">
+              Field · <span className="tabular-nums">{teams.length}</span> teams — tap to
+              remove
+            </p>
+            {teamsRemoved && (
+              <button
+                type="button"
+                onClick={() => setTeams(rosterForTournament)}
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
               >
-                <span className="tabular w-6 shrink-0 text-right text-sm text-[var(--text-tertiary)]">
-                  {idx + 1}
-                </span>
-                <p className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
-                  {team.team}
-                </p>
-                <span
-                  className="hidden h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-[var(--muted-bg)] sm:inline-block"
-                  aria-hidden="true"
-                >
-                  <span
-                    className="block h-full rounded-full bg-[var(--accent-ai)]"
-                    style={{
-                      width: `${Math.max(2, Math.min(100, (team.probability / maxRoundProb) * 100))}%`,
-                    }}
-                  />
-                </span>
-                <span className="tabular w-14 shrink-0 text-right text-sm font-semibold text-[var(--accent-ai)]">
-                  {formatProbability(team.probability)}
-                </span>
-              </div>
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                Reset field
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((team) => (
+              <button
+                key={team}
+                type="button"
+                onClick={() => setTeams(teams.filter((t) => t !== team))}
+                aria-label={`Remove ${team} from the field`}
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--background-secondary)] px-3 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:border-[color-mix(in_srgb,var(--accent-loss)_45%,transparent)] hover:text-[var(--accent-loss)]"
+              >
+                <FlagBadge
+                  teamName={team}
+                  country={config.national ? team : undefined}
+                  size={16}
+                />
+                {team}
+                <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden="true" />
+              </button>
             ))}
           </div>
+        </div>
+      </div>
 
-          <button
-            type="button"
-            onClick={() => setShowSetup(true)}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--muted-bg)] hover:text-[var(--text-primary)]"
-          >
-            <Settings2 className="h-4 w-4" aria-hidden="true" />
-            Modify teams &amp; re-run
-          </button>
+      {error && !result && !loading && (
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+          <EmptyState
+            illustration="data-error"
+            title="Simulation unavailable"
+            description="The bracket could not be simulated. Nothing is shown rather than made-up numbers."
+            action={
+              <button
+                type="button"
+                onClick={() => setRunToken((t) => t + 1)}
+                className="min-h-[44px] rounded-lg border border-[var(--border-color)] px-4 text-[13px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--card-hover)]"
+              >
+                Try again
+              </button>
+            }
+          />
+        </div>
+      )}
+      {error && result && (
+        <div
+          role="alert"
+          className="rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] p-3.5 text-[13px] text-[var(--accent-loss)]"
+        >
+          {error} — showing the last completed run.
+        </div>
+      )}
 
-          <p className="tabular text-center text-xs text-[var(--text-tertiary)]">
-            Based on {results.numSimulations.toLocaleString()} simulated tournament runs over
-            long-run team ratings
-          </p>
+      {loading && !result && <KnockoutSkeleton />}
+
+      {result && rows.length > 0 && (
+        <div className={cn(loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
+          <Stagger key={tournament} inView={false} className="space-y-4">
+            <StaggerItem>
+              <SimulatorHero
+                kicker="Most likely winner"
+                teamName={result.most_likely_winner}
+                probability={result.winner_probability}
+                badge={
+                  <FlagBadge
+                    teamName={result.most_likely_winner}
+                    country={config.national ? result.most_likely_winner : undefined}
+                    size={56}
+                  />
+                }
+                chips={[
+                  { label: `${result.bracket_size}-team bracket` },
+                  { label: `${result.n_simulations.toLocaleString()} tournament runs` },
+                ]}
+              />
+            </StaggerItem>
+            <StaggerItem>
+              <AdvancementTable
+                rounds={result.rounds}
+                teams={rows}
+                national={config.national}
+              />
+            </StaggerItem>
+          </Stagger>
         </div>
       )}
     </div>

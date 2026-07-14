@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { CircleDot, Footprints } from 'lucide-react'
+import { ArrowDown, ArrowUp, CircleDot, Footprints } from 'lucide-react'
 
 import { PlayerAvatar, RatingPill } from '@/components/primitives'
 
@@ -12,6 +12,7 @@ interface PlayerLineup {
   position?: string
   jersey?: number
   isSubstitute?: boolean
+  captain?: boolean
   rating?: number
   events?: {
     goal?: number
@@ -254,7 +255,8 @@ export default function FormationDisplay({
     const lastName = player.name.split(' ').pop() || player.name
     const hasEvents = player.events && (
       player.events.goal || player.events.assist ||
-      player.events.yellowCard || player.events.redCard
+      player.events.yellowCard || player.events.redCard ||
+      player.events.subOff != null
     )
 
     // Resolve AI impact score by id then by name.
@@ -288,32 +290,51 @@ export default function FormationDisplay({
           {lastName}
         </p>
 
-        {/* Top-right cluster: AI impact pill (priority) → event indicators */}
-        {impactScore != null ? (
+        {/* Captain badge — top-left of the node (rating/events sit top-right) */}
+        {player.captain && (
+          <span
+            className="absolute -top-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] text-[9px] font-bold text-[var(--text-primary)] shadow"
+            aria-label="Captain"
+          >
+            C
+          </span>
+        )}
+
+        {/* Top-right cluster: rating pill (AI impact wins over provider
+            rating) with the event indicators sliding beneath it. */}
+        {(impactScore ?? player.rating) != null && (
           <div className="absolute -top-1 -right-1">
-            <RatingPill value={impactScore} compact />
+            <RatingPill value={(impactScore ?? player.rating)!} compact />
           </div>
-        ) : (
-          hasEvents && showStats && (
-            <div className="absolute -top-2 -right-1 flex gap-0.5">
-              {player.events?.goal && (
-                <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
-                  <CircleDot className="h-3 w-3 text-[var(--accent-primary)]" aria-hidden />
-                </span>
-              )}
-              {player.events?.assist && (
-                <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
-                  <Footprints className="h-3 w-3 text-[var(--text-secondary)]" aria-hidden />
-                </span>
-              )}
-              {player.events?.yellowCard && (
-                <span className="w-2 h-3 bg-[var(--accent-warn)] rounded-sm shadow" />
-              )}
-              {player.events?.redCard && (
-                <span className="w-2 h-3 bg-[var(--accent-loss)] rounded-sm shadow" />
-              )}
-            </div>
-          )
+        )}
+        {hasEvents && showStats && (
+          <div
+            className={`absolute -right-1 flex gap-0.5 ${
+              (impactScore ?? player.rating) != null ? 'top-4' : '-top-2'
+            }`}
+          >
+            {player.events?.goal && (
+              <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                <CircleDot className="h-3 w-3 text-[var(--accent-primary)]" aria-hidden />
+              </span>
+            )}
+            {player.events?.assist && (
+              <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                <Footprints className="h-3 w-3 text-[var(--text-secondary)]" aria-hidden />
+              </span>
+            )}
+            {player.events?.yellowCard && (
+              <span className="w-2 h-3 bg-[var(--accent-warn)] rounded-sm shadow" />
+            )}
+            {player.events?.redCard && (
+              <span className="w-2 h-3 bg-[var(--accent-loss)] rounded-sm shadow" />
+            )}
+            {player.events?.subOff != null && (
+              <span className="bg-white rounded-full w-4 h-4 flex items-center justify-center shadow">
+                <ArrowDown className="h-3 w-3 text-[var(--accent-loss)]" aria-hidden />
+              </span>
+            )}
+          </div>
         )}
 
         {/* Hover tooltip with full name */}
@@ -438,10 +459,11 @@ export function PitchBackground({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Substitutes bench component
+// Substitutes bench component. Players who came on carry a green minute
+// chip (events.subOn); rated players get the rating pill.
 export function SubstitutesBench({ players }: { players: PlayerLineup[] }) {
   if (players.length === 0) return null
-  
+
   return (
     <div className="p-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
       <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">Substitutes</h4>
@@ -451,7 +473,7 @@ export function SubstitutesBench({ players }: { players: PlayerLineup[] }) {
             key={idx}
             className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[var(--muted-bg)]"
           >
-            <span className="w-5 h-5 rounded-full bg-[var(--text-tertiary)] text-white text-[10px] flex items-center justify-center">
+            <span className="w-5 h-5 rounded-full bg-[var(--text-tertiary)] text-white text-[10px] tabular-nums flex items-center justify-center">
               {player.jersey || (idx + 12)}
             </span>
             <span className="text-xs text-[var(--text-primary)]">
@@ -462,6 +484,13 @@ export function SubstitutesBench({ players }: { players: PlayerLineup[] }) {
                 {player.position}
               </span>
             )}
+            {player.events?.subOn != null && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold tabular-nums text-[var(--accent-primary)]">
+                <ArrowUp className="h-2.5 w-2.5" aria-hidden />
+                {player.events.subOn}&apos;
+              </span>
+            )}
+            {player.rating != null && <RatingPill value={player.rating} compact />}
           </div>
         ))}
       </div>
