@@ -9,6 +9,7 @@ import type { LeagueSimulationResult } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 import SeasonSimulationResults, { SeasonSimulationSkeleton } from './SeasonSimulationResults'
+import { UNIVERSE_SAMPLE_REQUEST, type UniverseFindSelection } from './UniverseBrowser'
 import { type FixtureOverrideSelection } from './WhatIfLab'
 import { fetchLeagueTeamMeta, type TeamMeta } from './shared'
 
@@ -41,6 +42,7 @@ export default function LeagueChampionshipSimulator() {
   const [result, setResult] = useState<LeagueSimulationResult | null>(null)
   const [baseline, setBaseline] = useState<LeagueSimulationResult | null>(null)
   const [override, setOverride] = useState<FixtureOverrideSelection | null>(null)
+  const [findUniverse, setFindUniverse] = useState<UniverseFindSelection | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [teamMeta, setTeamMeta] = useState<Record<string, TeamMeta>>({})
@@ -64,10 +66,17 @@ export default function LeagueChampionshipSimulator() {
       setLoading(true)
       setError(null)
       try {
-        const params = new URLSearchParams({ n_simulations: String(nSimulations) })
+        const params = new URLSearchParams({
+          n_simulations: String(nSimulations),
+          universes: String(UNIVERSE_SAMPLE_REQUEST),
+        })
         if (override) {
           params.set('what_if_fixture', override.fixtureKey)
           params.set('what_if_outcome', override.outcome)
+        }
+        if (findUniverse) {
+          params.set('find_team', findUniverse.team)
+          params.set('find_outcome', findUniverse.outcome)
         }
         const response = await fetch(
           `/api/simulation/${selectedLeague.id}?${params.toString()}`,
@@ -97,7 +106,7 @@ export default function LeagueChampionshipSimulator() {
       cancelled = true
       controller.abort()
     }
-  }, [selectedLeague, nSimulations, override, runToken])
+  }, [selectedLeague, nSimulations, override, findUniverse, runToken])
 
   const selectLeague = (league: (typeof SIMULATION_LEAGUES)[number]) => {
     if (league.id === selectedLeague.id) return
@@ -105,6 +114,7 @@ export default function LeagueChampionshipSimulator() {
     setResult(null)
     setBaseline(null)
     setOverride(null)
+    setFindUniverse(null)
   }
 
   const changeSimCount = (n: number) => {
@@ -112,6 +122,7 @@ export default function LeagueChampionshipSimulator() {
     // A different run depth is a different baseline — clear any override.
     setBaseline(null)
     setOverride(null)
+    setFindUniverse(null)
   }
 
   return (
@@ -206,6 +217,7 @@ export default function LeagueChampionshipSimulator() {
           onOverrideChange={setOverride}
           loading={loading}
           teamMeta={teamMeta}
+          onFindUniverse={(team, outcome) => setFindUniverse({ team, outcome })}
         />
       )}
     </div>

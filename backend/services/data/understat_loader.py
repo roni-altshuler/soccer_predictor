@@ -47,7 +47,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 import httpx
 
 from backend.services.data.team_resolver import TeamResolver
-from backend.services.data.warehouse import Warehouse
+from backend.services.data.warehouse import MatchEvent, Warehouse
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +165,120 @@ def _write_cache(slug: str, season: int, body: str) -> None:
         _cache_path(slug, season).write_text(body)
     except Exception as exc:
         logger.debug("Failed to cache Understat %s: %s", slug, exc)
+
+
+# ---------------------------------------------------------------------------
+# Per-match shot data → minute-level goal events
+#
+# `GET https://understat.com/getMatchData/{id}` (requires the same
+# X-Requested-With: XMLHttpRequest marker as getLeagueData) returns
+# {"rosters": ..., "shots": {"h": [shot...], "a": [shot...]}, "tmpl": ...}.
+# Shot fields verified 2026-07: minute, result ('Goal', 'OwnGoal',
+# 'SavedShot', ...), situation ('OpenPlay', 'Penalty', ...), player, h_a.
+#
+# Attribution quirk (verified against real matches): an 'OwnGoal' shot sits
+# in the SHOOTER's array, but the goal is credited to the OPPOSITE side
+# (e.g. Ethan Pinnock's OG in shots['h'] for Brentford 2-1 Crystal Palace
+# was Palace's goal). We flip the side so goal sums reconcile with scores.
+#
+# Minute convention: Understat records the floor of elapsed minutes (a shot
+# at 86:30 has minute=86 while match reports say 87') — we store minute+1 to
+# align with the ESPN/display convention. Understat has no added-time field:
+# league play only, so anything past 90 is stoppage and is folded into
+# (90, +n). First-half stoppage is genuinely ambiguous in their data (45+2
+# looks like 46') and is stored as-is — a documented ±few-minute fuzz around
+# halftime for understat-sourced events only.
+# ---------------------------------------------------------------------------
+
+UNDERSTAT_MATCH_URL = "https://understat.com/getMatchData/{match_id}"
+
+
+def _match_shots_cache_path(understat_match_id: str) -> Path:
+    return CACHE_DIR / f"match_{understat_match_id}.json"
+
+
+async def fetch_match_shots(
+    client: httpx.AsyncClient, understat_match_id: str
+) -> Tuple[Optional[Dict], Optional[str]]:
+    """Fetch (and cache forever — finished matches don't change) one match's shots.
+
+    Returns (shots_dict, error); exactly one is non-None. `shots_dict` is the
+    {"h": [...], "a": [...]} mapping.
+    """
+    cache = _match_shots_cache_path(understat_match_id)
+    if cache.exists():
+        try:
+            return json.loads(cache.read_text()), None
+        except Exception:
+            pass  # fall through to refetch
+    url = UNDERSTAT_MATCH_URL.format(match_id=understat_match_id)
+    try:
+        resp = await client.get(
+            url, timeout=30, headers={"X-Requested-With": "XMLHttpRequest"}
+        )
+    except Exception as exc:
+        return None, str(exc)
+    if resp.status_code != 200:
+        return None, f"http {resp.status_code}"
+    try:
+        shots = resp.json().get("shots") or {}
+    except Exception as exc:
+        return None, f"json parse: {exc}"
+    if not isinstance(shots, dict):
+        return None, "unexpected shots payload"
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        cache.write_text(json.dumps(shots))
+    except Exception as exc:
+        logger.debug("Failed to cache Understat match %s: %s", understat_match_id, exc)
+    return shots, None
+
+
+def _normalise_understat_minute(raw_minute) -> Optional[Tuple[int, Optional[int]]]:
+    try:
+        m = int(raw_minute) + 1  # Understat is floor-of-elapsed; display is +1
+    except (TypeError, ValueError):
+        return None
+    if m < 1:
+        return None
+    if m > 90:  # league-only coverage → past 90 is stoppage
+        return 90, m - 90
+    return m, None
+
+
+def parse_match_shot_events(shots: Dict) -> Optional[List[MatchEvent]]:
+    """Understat shots → goal events (no cards — Understat has none).
+
+    Returns None if any goal has an unusable minute (store nothing rather
+    than a half-truth timeline).
+    """
+    events: List[MatchEvent] = []
+    for side, opposite in (("h", "away"), ("a", "home")):
+        credited_same = "home" if side == "h" else "away"
+        for shot in shots.get(side) or []:
+            result = shot.get("result")
+            if result == "Goal":
+                event_type = "penalty_goal" if shot.get("situation") == "Penalty" else "goal"
+                team_side = credited_same
+            elif result == "OwnGoal":
+                event_type = "own_goal"
+                team_side = opposite  # credited to the benefiting side
+            else:
+                continue
+            norm = _normalise_understat_minute(shot.get("minute"))
+            if norm is None:
+                return None
+            minute, added = norm
+            events.append(
+                MatchEvent(
+                    event_type=event_type,
+                    minute=minute,
+                    added_time=added,
+                    team_side=team_side,
+                    player=shot.get("player"),
+                )
+            )
+    return events
 
 
 _DATES_RE = re.compile(r"datesData\s*=\s*JSON\.parse\('([^']+)'\)", re.DOTALL)

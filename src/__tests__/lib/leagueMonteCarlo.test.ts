@@ -1,5 +1,9 @@
 import {
+  MAX_CONDITION_MATCHES,
+  MAX_SAMPLED_UNIVERSES,
   runMonteCarloSimulation,
+  runMonteCarloSimulationDetailed,
+  type SampledUniverse,
   type SimulationFixture,
   type TeamData,
 } from '@/lib/simulation/leagueMonteCarlo'
@@ -324,6 +328,246 @@ describe('runMonteCarloSimulation', () => {
       expect(lockedChaser.title_probability).toBeGreaterThan(
         baselineChaser.title_probability,
       )
+    })
+  })
+
+  describe('universe sampling (runMonteCarloSimulationDetailed)', () => {
+    const midTable = () => [
+      team('A', 50, 25, 10),
+      team('B', 45, 25, 5),
+      team('C', 40, 25, 0),
+      team('D', 35, 25, -5),
+      team('E', 30, 25, -8),
+      team('F', 25, 25, -12),
+    ]
+
+    /** Shared sanity assertions for any returned universe. */
+    function expectValidUniverse(
+      u: SampledUniverse,
+      teams: TeamData[],
+      nSimulations: number,
+    ) {
+      expect(u.universe_id).toBeGreaterThanOrEqual(1)
+      expect(u.universe_id).toBeLessThanOrEqual(nSimulations)
+      expect(u.table).toHaveLength(teams.length)
+      const positions = u.table.map((row) => row.position)
+      expect(positions).toEqual(
+        Array.from({ length: teams.length }, (_, i) => i + 1),
+      )
+      // Every team appears exactly once, and never on fewer points than today.
+      const byName = new Map(teams.map((t) => [t.name, t]))
+      const seen = new Set<string>()
+      for (const row of u.table) {
+        expect(seen.has(row.team_name)).toBe(false)
+        seen.add(row.team_name)
+        const current = byName.get(row.team_name)
+        expect(current).toBeDefined()
+        expect(row.points).toBeGreaterThanOrEqual(current!.points)
+      }
+      // Table must actually be sorted by (pts, gd) — the engine's order.
+      for (let i = 1; i < u.table.length; i++) {
+        const prev = u.table[i - 1]
+        const cur = u.table[i]
+        expect(
+          prev.points > cur.points ||
+            (prev.points === cur.points && prev.gd >= cur.gd),
+        ).toBe(true)
+      }
+    }
+
+    it('legacy path is unchanged: wrapper and detailed(no options) agree exactly', () => {
+      const teams = midTable()
+      const legacy = runMonteCarloSimulation(teams, 38, 1000, 47, null, null)
+      const detailed = runMonteCarloSimulationDetailed(
+        teams,
+        38,
+        1000,
+        47,
+        null,
+        null,
+      )
+      expect(detailed.standings).toEqual(legacy)
+      expect(detailed.sampled_universes).toBeUndefined()
+      expect(detailed.condition_matches).toBeUndefined()
+      expect(detailed.condition_match_count).toBeUndefined()
+    })
+
+    it('is deterministic with sampling on — identical calls, identical universes', () => {
+      const teams = midTable()
+      const a = runMonteCarloSimulationDetailed(teams, 38, 800, 47, null, null, {
+        sampleUniverses: 12,
+      })
+      const b = runMonteCarloSimulationDetailed(teams, 38, 800, 47, null, null, {
+        sampleUniverses: 12,
+      })
+      expect(a.sampled_universes).toEqual(b.sampled_universes)
+      expect(a.standings).toEqual(b.standings)
+    })
+
+    it('reservoir bounds: returns exactly K unique universes, ids in [1, n], ascending', () => {
+      const teams = midTable()
+      const n = 200
+      const k = 10
+      const { sampled_universes } = runMonteCarloSimulationDetailed(
+        teams,
+        38,
+        n,
+        47,
+        null,
+        null,
+        { sampleUniverses: k },
+      )
+      expect(sampled_universes).toHaveLength(k)
+      const ids = sampled_universes!.map((u) => u.universe_id)
+      expect(new Set(ids).size).toBe(k)
+      expect(ids).toEqual([...ids].sort((x, y) => x - y))
+      for (const u of sampled_universes!) expectValidUniverse(u, teams, n)
+    })
+
+    it('caps the reservoir at MAX_SAMPLED_UNIVERSES and never exceeds n runs', () => {
+      const teams = midTable()
+      // Ask for far more than the cap.
+      const capped = runMonteCarloSimulationDetailed(teams, 38, 500, 47, null, null, {
+        sampleUniverses: 500,
+      })
+      expect(capped.sampled_universes).toHaveLength(MAX_SAMPLED_UNIVERSES)
+      // Fewer runs than K → every run is returned, nothing synthesized.
+      const tiny = runMonteCarloSimulationDetailed(teams, 38, 25, 47, null, null, {
+        sampleUniverses: 60,
+      })
+      expect(tiny.sampled_universes).toHaveLength(25)
+      expect(tiny.sampled_universes!.map((u) => u.universe_id)).toEqual(
+        Array.from({ length: 25 }, (_, i) => i + 1),
+      )
+    })
+
+    it('a condition run replays exactly the same seasons as a sampling-only run', () => {
+      // Condition matching consumes no PRNG draws, so with the same K the
+      // sampled universes AND the aggregate standings must be identical.
+      const teams = midTable()
+      const plain = runMonteCarloSimulationDetailed(teams, 38, 600, 47, null, null, {
+        sampleUniverses: 16,
+      })
+      const withCondition = runMonteCarloSimulationDetailed(
+        teams,
+        38,
+        600,
+        47,
+        null,
+        null,
+        { sampleUniverses: 16, conditionTeam: 'D', conditionOutcome: 'top4' },
+      )
+      expect(withCondition.sampled_universes).toEqual(plain.sampled_universes)
+      expect(withCondition.standings).toEqual(plain.standings)
+    })
+
+    it('condition matching is exact on a finished (fully deterministic) season', () => {
+      // All matches played → every run has the identical locked table:
+      // A 1st, B 2nd, C 3rd, D 4th. Conditions are therefore verifiable.
+      const teams = [
+        team('A', 90, 38, 30),
+        team('B', 80, 38, 15),
+        team('C', 70, 38, 0),
+        team('D', 60, 38, -10),
+      ]
+      const n = 100
+
+      const aChampion = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'A',
+        conditionOutcome: 'champion',
+      })
+      expect(aChampion.condition_match_count).toBe(n)
+      expect(aChampion.condition_matches).toHaveLength(MAX_CONDITION_MATCHES)
+      for (const u of aChampion.condition_matches!) {
+        expect(u.table[0].team_name).toBe('A')
+      }
+
+      const cChampion = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'C',
+        conditionOutcome: 'champion',
+      })
+      // It never happens — the true zero count is reported, nothing invented.
+      expect(cChampion.condition_match_count).toBe(0)
+      expect(cChampion.condition_matches).toEqual([])
+
+      // Bottom 3 of 4 teams are the relegation zone → B is always relegated.
+      const bRelegated = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'B',
+        conditionOutcome: 'relegated',
+      })
+      expect(bRelegated.condition_match_count).toBe(n)
+      for (const u of bRelegated.condition_matches!) {
+        const row = u.table.find((r) => r.team_name === 'B')!
+        expect(row.position).toBeGreaterThan(teams.length - 3)
+      }
+
+      // A is never relegated.
+      const aRelegated = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'A',
+        conditionOutcome: 'relegated',
+      })
+      expect(aRelegated.condition_match_count).toBe(0)
+    })
+
+    it('stochastic condition counts agree exactly with the aggregate probabilities', () => {
+      // The aggregate probabilities are computed from the very same runs the
+      // condition scans, so count/n must equal the reported probability up
+      // to its 4-decimal rounding.
+      const teams = midTable()
+      const n = 2000
+
+      const champion = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'B',
+        conditionOutcome: 'champion',
+      })
+      const bRow = champion.standings.find((t) => t.team_name === 'B')!
+      expect(
+        Math.abs(champion.condition_match_count! / n - bRow.title_probability),
+      ).toBeLessThan(0.0001)
+      expect(champion.condition_matches!.length).toBe(
+        Math.min(MAX_CONDITION_MATCHES, champion.condition_match_count!),
+      )
+      for (const u of champion.condition_matches!) {
+        expect(u.table[0].team_name).toBe('B')
+      }
+
+      const top4 = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'E',
+        conditionOutcome: 'top4',
+      })
+      const eRow = top4.standings.find((t) => t.team_name === 'E')!
+      expect(
+        Math.abs(top4.condition_match_count! / n - eRow.top_4_probability),
+      ).toBeLessThan(0.0001)
+      for (const u of top4.condition_matches!) {
+        const row = u.table.find((r) => r.team_name === 'E')!
+        expect(row.position).toBeLessThanOrEqual(4)
+      }
+
+      const relegated = runMonteCarloSimulationDetailed(teams, 38, n, 47, null, null, {
+        conditionTeam: 'C',
+        conditionOutcome: 'relegated',
+      })
+      const cRow = relegated.standings.find((t) => t.team_name === 'C')!
+      expect(
+        Math.abs(
+          relegated.condition_match_count! / n - cRow.relegation_probability,
+        ),
+      ).toBeLessThan(0.0001)
+      for (const u of relegated.condition_matches!) {
+        const row = u.table.find((r) => r.team_name === 'C')!
+        expect(row.position).toBeGreaterThan(teams.length - 3)
+      }
+    })
+
+    it('unknown condition team returns an honest zero, never a fabricated match', () => {
+      const teams = midTable()
+      const result = runMonteCarloSimulationDetailed(teams, 38, 300, 47, null, null, {
+        conditionTeam: 'Nonexistent FC',
+        conditionOutcome: 'champion',
+      })
+      expect(result.condition_match_count).toBe(0)
+      expect(result.condition_matches).toEqual([])
     })
   })
 })

@@ -7,10 +7,12 @@ import {
 } from '@/lib/observability/simulationLogger'
 import { PROBABILITY_SUM_TOLERANCE } from '@/lib/probabilityValidation'
 import {
-  runMonteCarloSimulation,
+  MAX_SAMPLED_UNIVERSES,
+  runMonteCarloSimulationDetailed,
   type SimulationFixture,
   type Standing,
   type TeamData,
+  type UniverseOutcome,
   type WhatIfOutcome,
 } from '@/lib/simulation/leagueMonteCarlo'
 
@@ -199,6 +201,21 @@ export async function GET(
       ? rawWhatIfOutcome
       : null
 
+  // Universe Browser params — all optional and additive. `universes=K` keeps
+  // K reservoir-sampled complete seasons (clamped to the engine cap);
+  // `find_team` + `find_outcome` additionally collect seasons matching the
+  // condition, replaying the same deterministic runs.
+  const rawUniverses = parseInt(searchParams.get('universes') || '0', 10)
+  const sampleUniverses = Number.isFinite(rawUniverses)
+    ? Math.max(0, Math.min(MAX_SAMPLED_UNIVERSES, rawUniverses))
+    : 0
+  const findTeam = searchParams.get('find_team') || ''
+  const rawFindOutcome = searchParams.get('find_outcome')
+  const findOutcome: UniverseOutcome | null =
+    rawFindOutcome === 'champion' || rawFindOutcome === 'top4' || rawFindOutcome === 'relegated'
+      ? rawFindOutcome
+      : null
+
   if (!espnLeagueId) {
     return NextResponse.json({ error: 'Invalid league ID' }, { status: 400 })
   }
@@ -267,14 +284,20 @@ export async function GET(
       : null
 
     const simStart = Date.now()
-    const standings = runMonteCarloSimulation(
+    const detailed = runMonteCarloSimulationDetailed(
       teams,
       totalMatchesPerSeason,
       nSimulations,
       leagueId,
       remainingFixtures,
       fixtureOverride,
+      {
+        sampleUniverses: sampleUniverses > 0 ? sampleUniverses : undefined,
+        conditionTeam: findTeam && findOutcome ? findTeam : undefined,
+        conditionOutcome: findTeam && findOutcome ? findOutcome : undefined,
+      },
     )
+    const standings = detailed.standings
     const simDurationMs = Date.now() - simStart
 
     // Observability — record the run + audit probability invariants.
@@ -333,6 +356,16 @@ export async function GET(
       likely_top_4: likelyTop4,
       relegation_candidates: relegationCandidates,
       standings,
+      // Universe Browser fields — present only when requested (additive).
+      ...(detailed.sampled_universes !== undefined
+        ? { sampled_universes: detailed.sampled_universes }
+        : {}),
+      ...(detailed.condition_matches !== undefined
+        ? {
+          condition_matches: detailed.condition_matches,
+          condition_match_count: detailed.condition_match_count,
+        }
+        : {}),
     })
   } catch {
     return NextResponse.json(

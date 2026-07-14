@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { getPredictionVerdict } from './adaptPrediction'
 import { buildModelInsights } from './insights'
 import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
+import { RarityStamp } from './RarityStamp'
 import { TopStatsPreview } from './StatsTab'
 import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
 
@@ -577,6 +578,10 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
           )}
         </div>
       )}
+
+      {/* Rarity stamp — exact-count history for the match's most dramatic
+          state; renders nothing unless the claim is countable and legible. */}
+      <RarityStamp match={match} isFinished={isFinished} />
 
       {/* Top stats preview → Stats tab */}
       <TopStatsPreview match={match} onSeeAll={() => onSelectTab('stats')} />

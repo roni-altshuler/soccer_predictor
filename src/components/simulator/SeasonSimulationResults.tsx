@@ -13,9 +13,10 @@ import {
   type NarrativeInsight,
   type ProgressionSeries,
 } from '@/components/viz'
-import type { LeagueSimulationResult } from '@/lib/api'
+import type { LeagueSimulationResult, UniverseOutcome } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
+import UniverseBrowser from './UniverseBrowser'
 import WhatIfLab, { type FixtureOverrideSelection } from './WhatIfLab'
 import PositionDistributionMatrix from './PositionDistributionMatrix'
 import PredictedStandingsTable from './PredictedStandingsTable'
@@ -118,6 +119,12 @@ interface SeasonSimulationResultsProps {
   loading: boolean
   /** Crest ids + brand colours keyed by team name (empty map is fine). */
   teamMeta: Record<string, TeamMeta>
+  /**
+   * Universe Browser search: rerun the sim with find_team/find_outcome.
+   * The browser section renders only when the payload carries sampled
+   * universes AND a caller wired this callback.
+   */
+  onFindUniverse?: (team: string, outcome: UniverseOutcome) => void
 }
 
 export default function SeasonSimulationResults({
@@ -127,6 +134,7 @@ export default function SeasonSimulationResults({
   onOverrideChange,
   loading,
   teamMeta,
+  onFindUniverse,
 }: SeasonSimulationResultsProps) {
   const [titleRaceOpen, setTitleRaceOpen] = useState(false)
 
@@ -492,6 +500,19 @@ export default function SeasonSimulationResults({
             />
           </StaggerItem>
         )}
+
+        {onFindUniverse &&
+          ((result.sampled_universes && result.sampled_universes.length > 0) ||
+            result.condition_matches !== undefined) && (
+            <StaggerItem>
+              <UniverseBrowser
+                result={result}
+                teamMeta={teamMeta}
+                loading={loading}
+                onFindUniverse={onFindUniverse}
+              />
+            </StaggerItem>
+          )}
 
         {insights.length > 0 && (
           <StaggerItem>

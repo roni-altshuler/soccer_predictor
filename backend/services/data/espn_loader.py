@@ -16,12 +16,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from backend.services.data.team_resolver import TeamResolver
-from backend.services.data.warehouse import MatchRow, Warehouse
+from backend.services.data.warehouse import MatchEvent, MatchRow, Warehouse
 from backend.services.prediction.historical_data import (
     AVAILABLE_SEASONS,
     ESPN_LEAGUES,
@@ -152,6 +153,124 @@ def _match_dict_to_row(
         attendance=_to_int(raw.get("attendance")),
         venue=raw.get("venue"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Per-match summary → minute-level events (goals + red cards)
+#
+# The summary endpoint (`.../soccer/{league}/summary?event={id}`) returns a
+# `keyEvents` list. Field names verified against live responses (2026-07):
+#   * goals:      type.type ∈ {'goal', 'goal---header', ...}, scoringPlay=True
+#   * penalties:  type.type == 'penalty---scored' (id 98), scoringPlay=True
+#   * own goals:  type.type == 'own-goal' (id 97), scoringPlay=True and
+#                 `team` is ALREADY the credited (benefiting) team
+#   * red cards:  type.type == 'red-card' (id 93)
+#   * clock.displayValue: "42'", "45'+3'", "108'" (extra time is a plain
+#     minute > 90); shootout kicks carry shootout=True / no scoringPlay
+# Home/away mapping comes from header.competitions[0].competitors[].homeAway.
+# ---------------------------------------------------------------------------
+
+ESPN_SUMMARY_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={event_id}"
+)
+
+# competition_id → ESPN league slug. Men's warehouse competition_ids ARE the
+# ESPN slug; women's differ (e.g. usa.1.w ↔ usa.nwsl).
+_WOMEN_ESPN_IDS: Dict[str, str] = {c["competition_id"]: c["espn_id"] for c in WOMEN_COMPETITIONS}
+
+
+def espn_league_for_competition(competition_id: str) -> str:
+    return _WOMEN_ESPN_IDS.get(competition_id, competition_id)
+
+
+def espn_event_id_from_match_id(match_id: str) -> Optional[str]:
+    """`espn_{competition_id}_{event_id}` → event_id (competition ids contain dots, not underscores)."""
+    if not match_id.startswith("espn_"):
+        return None
+    _, _, rest = match_id.partition("espn_")
+    _, _, event_id = rest.rpartition("_")
+    return event_id or None
+
+
+class SummaryParseError(ValueError):
+    """The summary payload is structurally unusable for event extraction."""
+
+
+_CLOCK_RE = re.compile(r"^(\d+)'(?:\s*\+\s*(\d+)'?)?$")
+
+
+def parse_clock(display_value: str) -> Tuple[int, Optional[int]]:
+    """"45'+3'" → (45, 3); "108'" → (108, None). Raises SummaryParseError."""
+    m = _CLOCK_RE.match((display_value or "").strip())
+    if not m:
+        raise SummaryParseError(f"unparseable clock {display_value!r}")
+    minute = int(m.group(1))
+    added = int(m.group(2)) if m.group(2) else None
+    if not (1 <= minute <= 120):
+        raise SummaryParseError(f"clock minute out of range: {display_value!r}")
+    return minute, added
+
+
+def _classify_key_event(ev: Dict) -> Optional[str]:
+    """Map one keyEvents entry to a warehouse event_type, or None to ignore."""
+    type_str = str(((ev.get("type") or {}).get("type")) or "")
+    if ev.get("shootout"):
+        return None  # shootout kicks are not match-minute events
+    if ev.get("scoringPlay"):
+        if type_str == "own-goal":
+            return "own_goal"
+        if type_str.startswith("penalty"):
+            return "penalty_goal"
+        return "goal"
+    if type_str == "red-card" or type_str.endswith("-red-card"):
+        return "red_card"
+    return None
+
+
+def parse_summary_events(payload: Dict) -> List[MatchEvent]:
+    """Extract goal + red-card events from an ESPN summary payload.
+
+    Returns [] when the payload simply has no keyEvents (old matches).
+    Raises SummaryParseError when data exists but can't be honestly mapped
+    (missing home/away header, unknown team id, unparseable clock) — callers
+    must then store NOTHING for the match.
+    """
+    side_by_team_id: Dict[str, str] = {}
+    try:
+        competitors = payload["header"]["competitions"][0]["competitors"]
+    except (KeyError, IndexError, TypeError):
+        competitors = []
+    for c in competitors or []:
+        team_id = str((c.get("team") or {}).get("id") or c.get("id") or "")
+        side = c.get("homeAway")
+        if team_id and side in ("home", "away"):
+            side_by_team_id[team_id] = side
+
+    key_events = payload.get("keyEvents") or []
+    events: List[MatchEvent] = []
+    for ev in key_events:
+        event_type = _classify_key_event(ev)
+        if event_type is None:
+            continue
+        if not side_by_team_id:
+            raise SummaryParseError("no home/away mapping in header.competitions")
+        team_id = str((ev.get("team") or {}).get("id") or "")
+        side = side_by_team_id.get(team_id)
+        if side is None:
+            raise SummaryParseError(f"event team id {team_id!r} not in header competitors")
+        minute, added = parse_clock((ev.get("clock") or {}).get("displayValue") or "")
+        participants = ev.get("participants") or []
+        player = ((participants[0].get("athlete") or {}).get("displayName")) if participants else None
+        events.append(
+            MatchEvent(
+                event_type=event_type,
+                minute=minute,
+                added_time=added,
+                team_side=side,
+                player=player,
+            )
+        )
+    return events
 
 
 def register_competitions(warehouse: Warehouse) -> None:

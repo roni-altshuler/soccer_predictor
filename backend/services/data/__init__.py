@@ -17,8 +17,9 @@ incremental refreshes.
 
 from backend.services.data.warehouse import (
     WAREHOUSE_PATH,
+    MatchEvent,
     Warehouse,
     open_warehouse,
 )
 
-__all__ = ["WAREHOUSE_PATH", "Warehouse", "open_warehouse"]
+__all__ = ["WAREHOUSE_PATH", "MatchEvent", "Warehouse", "open_warehouse"]

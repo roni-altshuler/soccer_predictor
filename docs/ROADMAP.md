@@ -7,15 +7,18 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 0 — The Historical Foundation
 
-- ◐ **Goal/red-card minute backfill** — `match_events` table (schema v2) + resumable
-  backfill CLI (ESPN scoringPlays, Understat, openfootball); integrity guard: stored
-  events must reproduce the final score or the match stores nothing. *Started 2026-07-14.*
-- ◐ **Rarity Engine v1** — exact-count state queries over covered matches; committed
-  artifacts (`backend/data/rarity/`); `/api/v1/rarity`; match-page rarity stamp
-  (n≥50 gate); shareable OG rarity card. *Started 2026-07-14.*
-- ◐ **Universe Browser v1** — reservoir-sampled universes from the league Monte Carlo,
-  browsable final tables with divergence deltas, "find a universe where…" condition
-  search, honest "never happened in 10,000 seasons" empty state. *Started 2026-07-14.*
+- ☑ **Goal/red-card minute backfill** — `match_events` + `match_event_coverage`
+  (schema v4) + resumable CLI (ESPN keyEvents, Understat shots; openfootball ruled out
+  — no minutes in source). Integrity guard: events must reproduce the final score or
+  nothing stores; verified-empty 0-0s tracked so denominators stay unbiased.
+  *Shipped 2026-07-14; full ESPN run (~20k matches) in progress.*
+- ☑ **Rarity Engine v1** — exact-count state queries gated on coverage membership;
+  committed artifacts; `/api/v1/rarity`; match-page rarity stamp (n≥50); OG rarity
+  card. First real claim: down 2 at 79' → 4 of 252 (1.6%). *Shipped 2026-07-14.*
+- ☑ **Universe Browser v1** — reservoir-sampled universes (same seeded PRNG,
+  deterministic), browsable tables with divergence deltas, condition search with true
+  found-in-N counts, honest never-happened empty state. On both /simulator and league
+  pages. *Shipped 2026-07-14. Knockout-bracket universes deferred.*
 - ☐ **Story page v1** — post-match acts/beats on match detail: turning points from goal
   timeline + win-prob deltas + rarity stamps. *Blocked on: backfill + rarity landing.*
 - ☐ **Full backfill runs** — ESPN (~20k matches), Understat, openfootball; scheduled

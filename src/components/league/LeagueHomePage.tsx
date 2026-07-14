@@ -9,6 +9,10 @@ import SeasonProjections from '@/components/league/SeasonProjections'
 import SeasonSimulationResults, {
   SeasonSimulationSkeleton,
 } from '@/components/simulator/SeasonSimulationResults'
+import {
+  UNIVERSE_SAMPLE_REQUEST,
+  type UniverseFindSelection,
+} from '@/components/simulator/UniverseBrowser'
 import type { FixtureOverrideSelection } from '@/components/simulator/WhatIfLab'
 import { fetchLeagueTeamMeta, type TeamMeta } from '@/components/simulator/shared'
 import type { LeagueSimulationResult } from '@/lib/api'
@@ -398,6 +402,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [simulationResults, setSimulationResults] = useState<LeagueSimulationResult | null>(null)
   const [simBaseline, setSimBaseline] = useState<LeagueSimulationResult | null>(null)
   const [simOverride, setSimOverride] = useState<FixtureOverrideSelection | null>(null)
+  const [simFind, setSimFind] = useState<UniverseFindSelection | null>(null)
   const [simError, setSimError] = useState<string | null>(null)
   const [simTeamMeta, setSimTeamMeta] = useState<Record<string, TeamMeta>>({})
   const [simRunToken, setSimRunToken] = useState(0)
@@ -416,6 +421,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     setSimulationResults(null)
     setSimBaseline(null)
     setSimOverride(null)
+    setSimFind(null)
     setSimError(null)
   }, [leagueId, selectedSeason, genderParam])
 
@@ -503,10 +509,17 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       setRunningSimulation(true)
       setSimError(null)
       try {
-        const params = new URLSearchParams({ n_simulations: String(numSimulations) })
+        const params = new URLSearchParams({
+          n_simulations: String(numSimulations),
+          universes: String(UNIVERSE_SAMPLE_REQUEST),
+        })
         if (simOverride) {
           params.set('what_if_fixture', simOverride.fixtureKey)
           params.set('what_if_outcome', simOverride.outcome)
+        }
+        if (simFind) {
+          params.set('find_team', simFind.team)
+          params.set('find_outcome', simFind.outcome)
         }
         const res = await fetch(`/api/simulation/${numericLeagueId}?${params.toString()}`, {
           signal: controller.signal,
@@ -535,13 +548,14 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       cancelled = true
       controller.abort()
     }
-  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simRunToken])
+  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simFind, simRunToken])
 
   const changeSimCount = (n: number) => {
     setNumSimulations(n)
     // A different run depth is a different baseline — clear any override.
     setSimBaseline(null)
     setSimOverride(null)
+    setSimFind(null)
   }
 
   useEffect(() => {
@@ -1449,6 +1463,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 onOverrideChange={setSimOverride}
                 loading={runningSimulation}
                 teamMeta={simTeamMeta}
+                onFindUniverse={(team, outcome) => setSimFind({ team, outcome })}
               />
             )}
           </div>
