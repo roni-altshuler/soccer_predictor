@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-07-14T08:22:13.051483",
+  "updated_at": "2026-07-14T15:25:01.394965",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
