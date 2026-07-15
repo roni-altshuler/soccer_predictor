@@ -845,12 +845,39 @@
   "M:-2:60": {
    "d": [
     {
+     "away": "VfB Stuttgart",
+     "competition_id": "ger.1",
+     "date": "2026-05-15T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Eintracht Frankfurt",
+     "match_id": "fd_bundesliga_20260516_Ein Frankfurt_Stuttgart",
+     "side": "home"
+    },
+    {
      "away": "Real Betis",
      "competition_id": "esp.1",
      "date": "2026-05-08T21:00:00+00:00",
      "final_score": "2-2",
      "home": "Real Sociedad",
      "match_id": "fd_la_liga_20260509_Sociedad_Betis",
+     "side": "home"
+    },
+    {
+     "away": "VfB Stuttgart",
+     "competition_id": "ger.1",
+     "date": "2026-05-01T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Hoffenheim",
+     "match_id": "fd_bundesliga_20260502_Hoffenheim_Stuttgart",
+     "side": "away"
+    },
+    {
+     "away": "Monaco",
+     "competition_id": "fra.1",
+     "date": "2026-04-24T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Toulouse",
+     "match_id": "fd_ligue_1_20260425_Toulouse_Monaco",
      "side": "home"
     },
     {
@@ -863,12 +890,30 @@
      "side": "away"
     },
     {
+     "away": "Udinese",
+     "competition_id": "ita.1",
+     "date": "2026-03-06T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Atalanta",
+     "match_id": "fd_serie_a_20260307_Atalanta_Udinese",
+     "side": "home"
+    },
+    {
      "away": "Sevilla",
      "competition_id": "esp.1",
      "date": "2026-02-28T22:00:00+00:00",
      "final_score": "2-2",
      "home": "Real Betis",
      "match_id": "fd_la_liga_20260301_Betis_Sevilla",
+     "side": "away"
+    },
+    {
+     "away": "Lorient",
+     "competition_id": "fra.1",
+     "date": "2026-02-21T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Nice",
+     "match_id": "fd_ligue_1_20260222_Nice_Lorient",
      "side": "away"
     },
     {
@@ -881,6 +926,15 @@
      "side": "home"
     },
     {
+     "away": "Strasbourg",
+     "competition_id": "fra.1",
+     "date": "2026-02-13T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Marseille",
+     "match_id": "fd_ligue_1_20260214_Marseille_Strasbourg",
+     "side": "away"
+    },
+    {
      "away": "Leeds United",
      "competition_id": "eng.1",
      "date": "2026-02-09T22:00:00+00:00",
@@ -890,70 +944,34 @@
      "side": "away"
     },
     {
-     "away": "FC Twente",
-     "competition_id": "ned.1",
-     "date": "2026-01-30T19:00:00+00:00",
+     "away": "Brest",
+     "competition_id": "fra.1",
+     "date": "2026-01-31T22:00:00+00:00",
      "final_score": "2-2",
-     "home": "NAC Breda",
-     "match_id": "espn_ned.1_741162",
-     "side": "home"
-    },
-    {
-     "away": "AVS",
-     "competition_id": "por.1",
-     "date": "2026-01-23T20:15:00+00:00",
-     "final_score": "3-3",
-     "home": "Casa Pia",
-     "match_id": "espn_por.1_750408",
-     "side": "away"
-    },
-    {
-     "away": "Sevilla",
-     "competition_id": "esp.1",
-     "date": "2026-01-18T22:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Elche",
-     "match_id": "fd_la_liga_20260119_Elche_Sevilla",
-     "side": "away"
-    },
-    {
-     "away": "Liverpool",
-     "competition_id": "eng.1",
-     "date": "2025-12-05T22:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Leeds United",
-     "match_id": "fd_premier_league_20251206_Leeds_Liverpool",
-     "side": "home"
-    },
-    {
-     "away": "West Ham United",
-     "competition_id": "eng.1",
-     "date": "2025-11-21T22:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Bournemouth",
-     "match_id": "fd_premier_league_20251122_Bournemouth_West Ham",
-     "side": "home"
-    },
-    {
-     "away": "Real Oviedo",
-     "competition_id": "esp.1",
-     "date": "2025-10-25T18:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Girona",
-     "match_id": "of_esp.1_2025-26_2025-10-25_110_112",
-     "side": "home"
-    },
-    {
-     "away": "Bournemouth",
-     "competition_id": "eng.1",
-     "date": "2025-10-17T21:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Crystal Palace",
-     "match_id": "fd_premier_league_20251018_Crystal Palace_Bournemouth",
+     "home": "Nice",
+     "match_id": "fd_ligue_1_20260201_Nice_Brest",
      "side": "home"
     }
    ],
    "w": [
+    {
+     "away": "Monaco",
+     "competition_id": "fra.1",
+     "date": "2026-05-16T21:00:00+00:00",
+     "final_score": "5-4",
+     "home": "Strasbourg",
+     "match_id": "fd_ligue_1_20260517_Strasbourg_Monaco",
+     "side": "home"
+    },
+    {
+     "away": "Strasbourg",
+     "competition_id": "fra.1",
+     "date": "2026-04-25T21:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Lorient",
+     "match_id": "fd_ligue_1_20260426_Lorient_Strasbourg",
+     "side": "away"
+    },
     {
      "away": "Toulouse",
      "competition_id": "fra.1",
@@ -973,12 +991,30 @@
      "side": "home"
     },
     {
+     "away": "Monaco",
+     "competition_id": "fra.1",
+     "date": "2026-02-20T22:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Lens",
+     "match_id": "fd_ligue_1_20260221_Lens_Monaco",
+     "side": "away"
+    },
+    {
      "away": "RB Salzburg",
      "competition_id": "uefa.europa",
      "date": "2026-01-29T20:00:00+00:00",
      "final_score": "3-2",
      "home": "Aston Villa",
      "match_id": "espn_uefa.europa_757939",
+     "side": "home"
+    },
+    {
+     "away": "Bologna",
+     "competition_id": "ita.1",
+     "date": "2026-01-24T22:00:00+00:00",
+     "final_score": "3-2",
+     "home": "Genoa",
+     "match_id": "fd_serie_a_20260125_Genoa_Bologna",
      "side": "home"
     },
     {
@@ -1000,6 +1036,15 @@
      "side": "away"
     },
     {
+     "away": "AC Milan",
+     "competition_id": "ita.1",
+     "date": "2025-03-07T22:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Lecce",
+     "match_id": "fd_serie_a_20250308_Lecce_Milan",
+     "side": "away"
+    },
+    {
      "away": "Real Betis",
      "competition_id": "esp.1",
      "date": "2025-02-07T22:00:00+00:00",
@@ -1016,56 +1061,20 @@
      "home": "Benfica",
      "match_id": "espn_uefa.champions_720334",
      "side": "away"
-    },
-    {
-     "away": "Shakhtar Donetsk",
-     "competition_id": "uefa.champions",
-     "date": "2024-11-27T20:00:00+00:00",
-     "final_score": "3-2",
-     "home": "PSV",
-     "match_id": "espn_uefa.champions_720408",
-     "side": "home"
-    },
-    {
-     "away": "Leicester City",
-     "competition_id": "eng.1",
-     "date": "2024-10-18T21:00:00+00:00",
-     "final_score": "2-3",
-     "home": "Southampton",
-     "match_id": "fd_premier_league_20241019_Southampton_Leicester",
-     "side": "away"
-    },
-    {
-     "away": "Bournemouth",
-     "competition_id": "eng.1",
-     "date": "2024-08-30T21:00:00+00:00",
-     "final_score": "2-3",
-     "home": "Everton",
-     "match_id": "fd_premier_league_20240831_Everton_Bournemouth",
-     "side": "away"
-    },
-    {
-     "away": "West Ham United",
-     "competition_id": "eng.1",
-     "date": "2024-03-29T21:00:00+00:00",
-     "final_score": "4-3",
-     "home": "Newcastle United",
-     "match_id": "fd_premier_league_20240330_Newcastle_West Ham",
-     "side": "home"
-    },
-    {
-     "away": "Luton",
-     "competition_id": "eng.1",
-     "date": "2024-03-12T22:00:00+00:00",
-     "final_score": "4-3",
-     "home": "Bournemouth",
-     "match_id": "fd_premier_league_20240313_Bournemouth_Luton",
-     "side": "home"
     }
    ]
   },
   "M:-2:65": {
    "d": [
+    {
+     "away": "VfB Stuttgart",
+     "competition_id": "ger.1",
+     "date": "2026-05-15T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Eintracht Frankfurt",
+     "match_id": "fd_bundesliga_20260516_Ein Frankfurt_Stuttgart",
+     "side": "home"
+    },
     {
      "away": "Real Betis",
      "competition_id": "esp.1",
@@ -1073,6 +1082,24 @@
      "final_score": "2-2",
      "home": "Real Sociedad",
      "match_id": "fd_la_liga_20260509_Sociedad_Betis",
+     "side": "home"
+    },
+    {
+     "away": "Inter",
+     "competition_id": "ita.1",
+     "date": "2026-04-25T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Torino",
+     "match_id": "fd_serie_a_20260426_Torino_Inter",
+     "side": "home"
+    },
+    {
+     "away": "Udinese",
+     "competition_id": "ita.1",
+     "date": "2026-03-06T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Atalanta",
+     "match_id": "fd_serie_a_20260307_Atalanta_Udinese",
      "side": "home"
     },
     {
@@ -1085,6 +1112,33 @@
      "side": "home"
     },
     {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2026-02-28T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Roma",
+     "match_id": "fd_serie_a_20260301_Roma_Juventus",
+     "side": "away"
+    },
+    {
+     "away": "Lorient",
+     "competition_id": "fra.1",
+     "date": "2026-02-21T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Nice",
+     "match_id": "fd_ligue_1_20260222_Nice_Lorient",
+     "side": "away"
+    },
+    {
+     "away": "Strasbourg",
+     "competition_id": "fra.1",
+     "date": "2026-02-13T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Marseille",
+     "match_id": "fd_ligue_1_20260214_Marseille_Strasbourg",
+     "side": "away"
+    },
+    {
      "away": "Leeds United",
      "competition_id": "eng.1",
      "date": "2026-02-09T22:00:00+00:00",
@@ -1092,6 +1146,15 @@
      "home": "Chelsea",
      "match_id": "fd_premier_league_20260210_Chelsea_Leeds",
      "side": "away"
+    },
+    {
+     "away": "Marseille",
+     "competition_id": "fra.1",
+     "date": "2026-01-30T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20260131_Paris FC_Marseille",
+     "side": "home"
     },
     {
      "away": "Sevilla",
@@ -1109,69 +1172,6 @@
      "final_score": "3-3",
      "home": "Leeds United",
      "match_id": "fd_premier_league_20251206_Leeds_Liverpool",
-     "side": "home"
-    },
-    {
-     "away": "West Ham United",
-     "competition_id": "eng.1",
-     "date": "2025-11-21T22:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Bournemouth",
-     "match_id": "fd_premier_league_20251122_Bournemouth_West Ham",
-     "side": "home"
-    },
-    {
-     "away": "Real Betis",
-     "competition_id": "esp.1",
-     "date": "2025-10-17T21:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Villarreal",
-     "match_id": "fd_la_liga_20251018_Villarreal_Betis",
-     "side": "away"
-    },
-    {
-     "away": "Bayer Leverkusen",
-     "competition_id": "ger.1",
-     "date": "2025-08-29T21:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Werder Bremen",
-     "match_id": "fd_bundesliga_20250830_Werder Bremen_Leverkusen",
-     "side": "home"
-    },
-    {
-     "away": "Houston Dynamo FC",
-     "competition_id": "usa.1",
-     "date": "2025-08-10T00:30:00+00:00",
-     "final_score": "2-2",
-     "home": "Austin FC",
-     "match_id": "espn_usa.1_727175",
-     "side": "away"
-    },
-    {
-     "away": "Orlando City SC",
-     "competition_id": "usa.1",
-     "date": "2025-07-05T23:15:00+00:00",
-     "final_score": "2-2",
-     "home": "Charlotte FC",
-     "match_id": "espn_usa.1_727099",
-     "side": "away"
-    },
-    {
-     "away": "Colorado Rapids",
-     "competition_id": "usa.1",
-     "date": "2025-06-28T23:30:00+00:00",
-     "final_score": "3-3",
-     "home": "New England Revolution",
-     "match_id": "espn_usa.1_727083",
-     "side": "home"
-    },
-    {
-     "away": "Houston Dynamo FC",
-     "competition_id": "usa.1",
-     "date": "2025-05-25T02:30:00+00:00",
-     "final_score": "3-3",
-     "home": "San Jose Earthquakes",
-     "match_id": "espn_usa.1_727018",
      "side": "home"
     }
    ],
@@ -1192,6 +1192,15 @@
      "final_score": "3-4",
      "home": "VfB Stuttgart",
      "match_id": "fd_bundesliga_20250316_Stuttgart_Leverkusen",
+     "side": "away"
+    },
+    {
+     "away": "AC Milan",
+     "competition_id": "ita.1",
+     "date": "2025-03-07T22:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Lecce",
+     "match_id": "fd_serie_a_20250308_Lecce_Milan",
      "side": "away"
     },
     {
@@ -1249,6 +1258,24 @@
      "side": "away"
     },
     {
+     "away": "Montpellier",
+     "competition_id": "fra.1",
+     "date": "2023-05-06T21:00:00+00:00",
+     "final_score": "5-4",
+     "home": "Lyon",
+     "match_id": "fd_ligue_1_20230507_Lyon_Montpellier",
+     "side": "home"
+    },
+    {
+     "away": "Nice",
+     "competition_id": "fra.1",
+     "date": "2022-05-20T21:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Reims",
+     "match_id": "fd_ligue_1_20220521_Reims_Nice",
+     "side": "away"
+    },
+    {
      "away": "Napoli",
      "competition_id": "ita.1",
      "date": "2022-04-24T13:00:00+00:00",
@@ -1256,38 +1283,20 @@
      "home": "Empoli",
      "match_id": "espn_ita.1_614591",
      "side": "home"
-    },
-    {
-     "away": "Juventus",
-     "competition_id": "ita.1",
-     "date": "2022-01-09T17:30:00+00:00",
-     "final_score": "3-4",
-     "home": "Roma",
-     "match_id": "espn_ita.1_614719",
-     "side": "away"
-    },
-    {
-     "away": "Borussia Dortmund",
-     "competition_id": "ger.1",
-     "date": "2022-01-07T22:00:00+00:00",
-     "final_score": "2-3",
-     "home": "Eintracht Frankfurt",
-     "match_id": "fd_bundesliga_20220108_Ein Frankfurt_Dortmund",
-     "side": "away"
-    },
-    {
-     "away": "Clermont Foot",
-     "competition_id": "fra.1",
-     "date": "2021-11-07T14:00:00+00:00",
-     "final_score": "3-2",
-     "home": "Saint-\u00c9tienne",
-     "match_id": "espn_fra.1_609404",
-     "side": "home"
     }
    ]
   },
   "M:-2:70": {
    "d": [
+    {
+     "away": "VfB Stuttgart",
+     "competition_id": "ger.1",
+     "date": "2026-05-15T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Eintracht Frankfurt",
+     "match_id": "fd_bundesliga_20260516_Ein Frankfurt_Stuttgart",
+     "side": "home"
+    },
     {
      "away": "Real Betis",
      "competition_id": "esp.1",
@@ -1298,12 +1307,48 @@
      "side": "home"
     },
     {
+     "away": "Udinese",
+     "competition_id": "ita.1",
+     "date": "2026-03-06T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Atalanta",
+     "match_id": "fd_serie_a_20260307_Atalanta_Udinese",
+     "side": "home"
+    },
+    {
      "away": "Mallorca",
      "competition_id": "esp.1",
      "date": "2026-03-06T22:00:00+00:00",
      "final_score": "2-2",
      "home": "Osasuna",
      "match_id": "fd_la_liga_20260307_Osasuna_Mallorca",
+     "side": "home"
+    },
+    {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2026-02-28T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Roma",
+     "match_id": "fd_serie_a_20260301_Roma_Juventus",
+     "side": "away"
+    },
+    {
+     "away": "Strasbourg",
+     "competition_id": "fra.1",
+     "date": "2026-02-13T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Marseille",
+     "match_id": "fd_ligue_1_20260214_Marseille_Strasbourg",
+     "side": "away"
+    },
+    {
+     "away": "Marseille",
+     "competition_id": "fra.1",
+     "date": "2026-01-30T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20260131_Paris FC_Marseille",
      "side": "home"
     },
     {
@@ -1334,67 +1379,22 @@
      "side": "away"
     },
     {
-     "away": "Bayer Leverkusen",
-     "competition_id": "ger.1",
-     "date": "2025-08-29T21:00:00+00:00",
+     "away": "Lyon",
+     "competition_id": "fra.1",
+     "date": "2025-10-28T22:00:00+00:00",
      "final_score": "3-3",
-     "home": "Werder Bremen",
-     "match_id": "fd_bundesliga_20250830_Werder Bremen_Leverkusen",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20251029_Paris FC_Lyon",
      "side": "home"
     },
     {
-     "away": "Houston Dynamo FC",
-     "competition_id": "usa.1",
-     "date": "2025-08-10T00:30:00+00:00",
+     "away": "Cagliari",
+     "competition_id": "ita.1",
+     "date": "2025-10-25T21:00:00+00:00",
      "final_score": "2-2",
-     "home": "Austin FC",
-     "match_id": "espn_usa.1_727175",
+     "home": "Verona",
+     "match_id": "fd_serie_a_20251026_Verona_Cagliari",
      "side": "away"
-    },
-    {
-     "away": "LA Galaxy",
-     "competition_id": "usa.1",
-     "date": "2025-07-20T02:30:00+00:00",
-     "final_score": "3-3",
-     "home": "LAFC",
-     "match_id": "espn_usa.1_727151",
-     "side": "away"
-    },
-    {
-     "away": "Colorado Rapids",
-     "competition_id": "usa.1",
-     "date": "2025-06-28T23:30:00+00:00",
-     "final_score": "3-3",
-     "home": "New England Revolution",
-     "match_id": "espn_usa.1_727083",
-     "side": "home"
-    },
-    {
-     "away": "Bayer Leverkusen",
-     "competition_id": "ger.1",
-     "date": "2025-05-03T21:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Freiburg",
-     "match_id": "fd_bundesliga_20250504_Freiburg_Leverkusen",
-     "side": "away"
-    },
-    {
-     "away": "Minnesota United FC",
-     "competition_id": "usa.1",
-     "date": "2025-03-16T00:15:00+00:00",
-     "final_score": "3-3",
-     "home": "Sporting Kansas City",
-     "match_id": "espn_usa.1_726850",
-     "side": "home"
-    },
-    {
-     "away": "Alav\u00e9s",
-     "competition_id": "esp.1",
-     "date": "2025-03-13T22:00:00+00:00",
-     "final_score": "2-2",
-     "home": "Las Palmas",
-     "match_id": "fd_la_liga_20250314_Las Palmas_Alaves",
-     "side": "home"
     }
    ],
    "w": [
@@ -1471,6 +1471,15 @@
      "side": "home"
     },
     {
+     "away": "Nice",
+     "competition_id": "fra.1",
+     "date": "2022-05-20T21:00:00+00:00",
+     "final_score": "2-3",
+     "home": "Reims",
+     "match_id": "fd_ligue_1_20220521_Reims_Nice",
+     "side": "away"
+    },
+    {
      "away": "Napoli",
      "competition_id": "ita.1",
      "date": "2022-04-24T13:00:00+00:00",
@@ -1496,15 +1505,6 @@
      "home": "Saint-\u00c9tienne",
      "match_id": "espn_fra.1_609404",
      "side": "home"
-    },
-    {
-     "away": "Stade de Reims",
-     "competition_id": "fra.1",
-     "date": "2021-10-31T14:00:00+00:00",
-     "final_score": "3-2",
-     "home": "Bordeaux",
-     "match_id": "espn_fra.1_609420",
-     "side": "home"
     }
    ]
   },
@@ -1529,12 +1529,30 @@
      "side": "home"
     },
     {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2026-02-28T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Roma",
+     "match_id": "fd_serie_a_20260301_Roma_Juventus",
+     "side": "away"
+    },
+    {
      "away": "Dinamo Zagreb",
      "competition_id": "uefa.europa",
      "date": "2026-02-26T20:00:00+00:00",
      "final_score": "3-3",
      "home": "Racing Genk",
      "match_id": "espn_uefa.europa_401858781",
+     "side": "home"
+    },
+    {
+     "away": "Marseille",
+     "competition_id": "fra.1",
+     "date": "2026-01-30T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20260131_Paris FC_Marseille",
      "side": "home"
     },
     {
@@ -1553,6 +1571,24 @@
      "final_score": "2-2",
      "home": "Mallorca",
      "match_id": "fd_la_liga_20251129_Mallorca_Osasuna",
+     "side": "away"
+    },
+    {
+     "away": "Lyon",
+     "competition_id": "fra.1",
+     "date": "2025-10-28T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20251029_Paris FC_Lyon",
+     "side": "home"
+    },
+    {
+     "away": "Cagliari",
+     "competition_id": "ita.1",
+     "date": "2025-10-25T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Verona",
+     "match_id": "fd_serie_a_20251026_Verona_Cagliari",
      "side": "away"
     },
     {
@@ -1581,42 +1617,6 @@
      "home": "St. Pauli",
      "match_id": "fd_bundesliga_20250823_St Pauli_Dortmund",
      "side": "home"
-    },
-    {
-     "away": "Houston Dynamo FC",
-     "competition_id": "usa.1",
-     "date": "2025-08-10T00:30:00+00:00",
-     "final_score": "2-2",
-     "home": "Austin FC",
-     "match_id": "espn_usa.1_727175",
-     "side": "away"
-    },
-    {
-     "away": "LA Galaxy",
-     "competition_id": "usa.1",
-     "date": "2025-07-20T02:30:00+00:00",
-     "final_score": "3-3",
-     "home": "LAFC",
-     "match_id": "espn_usa.1_727151",
-     "side": "away"
-    },
-    {
-     "away": "Colorado Rapids",
-     "competition_id": "usa.1",
-     "date": "2025-06-28T23:30:00+00:00",
-     "final_score": "3-3",
-     "home": "New England Revolution",
-     "match_id": "espn_usa.1_727083",
-     "side": "home"
-    },
-    {
-     "away": "Inter Miami",
-     "competition_id": "usa.1",
-     "date": "2025-05-24T23:30:00+00:00",
-     "final_score": "3-3",
-     "home": "Philadelphia Union",
-     "match_id": "espn_usa.1_727012",
-     "side": "away"
     }
    ],
    "w": [
@@ -1663,6 +1663,15 @@
      "final_score": "4-3",
      "home": "Newcastle United",
      "match_id": "fd_premier_league_20240330_Newcastle_West Ham",
+     "side": "home"
+    },
+    {
+     "away": "Frosinone",
+     "competition_id": "ita.1",
+     "date": "2023-10-28T21:00:00+00:00",
+     "final_score": "4-3",
+     "home": "Cagliari",
+     "match_id": "fd_serie_a_20231029_Cagliari_Frosinone",
      "side": "home"
     },
     {
@@ -1718,15 +1727,6 @@
      "home": "Aston Villa",
      "match_id": "fd_premier_league_20211016_Aston Villa_Wolves",
      "side": "away"
-    },
-    {
-     "away": "Vasas",
-     "competition_id": "uefa.europa",
-     "date": "2017-06-29T16:45:00+00:00",
-     "final_score": "4-3",
-     "home": "Beitar Jerusalem",
-     "match_id": "espn_uefa.europa_483137",
-     "side": "home"
     }
    ]
   },
@@ -1748,6 +1748,15 @@
      "final_score": "3-3",
      "home": "Racing Genk",
      "match_id": "espn_uefa.europa_401858781",
+     "side": "home"
+    },
+    {
+     "away": "Marseille",
+     "competition_id": "fra.1",
+     "date": "2026-01-30T22:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20260131_Paris FC_Marseille",
      "side": "home"
     },
     {
@@ -1830,15 +1839,6 @@
      "home": "Leicester City",
      "match_id": "fd_premier_league_20241208_Leicester_Brighton",
      "side": "home"
-    },
-    {
-     "away": "Feyenoord",
-     "competition_id": "uefa.champions",
-     "date": "2024-11-26T20:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Manchester City",
-     "match_id": "espn_uefa.champions_720398",
-     "side": "away"
     }
    ],
    "w": [
@@ -1894,6 +1894,15 @@
      "final_score": "4-3",
      "home": "Beitar Jerusalem",
      "match_id": "espn_uefa.europa_483137",
+     "side": "home"
+    },
+    {
+     "away": "Sassuolo",
+     "competition_id": "ita.1",
+     "date": "2016-11-19T22:00:00+00:00",
+     "final_score": "3-2",
+     "home": "Sampdoria",
+     "match_id": "fd_serie_a_20161120_Sampdoria_Sassuolo",
      "side": "home"
     },
     {
@@ -2000,21 +2009,21 @@
      "side": "away"
     },
     {
-     "away": "Fulham",
-     "competition_id": "eng.1",
-     "date": "2024-03-29T21:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Sheffield United",
-     "match_id": "fd_premier_league_20240330_Sheffield United_Fulham",
-     "side": "away"
+     "away": "Torino",
+     "competition_id": "ita.1",
+     "date": "2024-08-16T21:00:00+00:00",
+     "final_score": "2-2",
+     "home": "AC Milan",
+     "match_id": "fd_serie_a_20240817_Milan_Torino",
+     "side": "home"
     },
     {
-     "away": "Getafe",
-     "competition_id": "esp.1",
-     "date": "2023-12-19T20:30:00+00:00",
+     "away": "Salernitana",
+     "competition_id": "ita.1",
+     "date": "2024-05-24T21:00:00+00:00",
      "final_score": "3-3",
-     "home": "Atletico Madrid",
-     "match_id": "espn_esp.1_674183",
+     "home": "AC Milan",
+     "match_id": "fd_serie_a_20240525_Milan_Salernitana",
      "side": "away"
     }
    ],
@@ -2105,6 +2114,15 @@
      "side": "home"
     },
     {
+     "away": "Bologna",
+     "competition_id": "ita.1",
+     "date": "2020-07-12T18:00:00+00:00",
+     "final_score": "2-2",
+     "home": "Parma Calcio 1913",
+     "match_id": "of_ita.1_2019-20_2020-07-12_1064_50",
+     "side": "home"
+    },
+    {
      "away": "Newcastle United",
      "competition_id": "eng.1",
      "date": "2020-01-20T22:00:00+00:00",
@@ -2154,6 +2172,15 @@
   "M:-3:60": {
    "d": [
     {
+     "away": "Lyon",
+     "competition_id": "fra.1",
+     "date": "2025-10-28T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Paris FC",
+     "match_id": "fd_ligue_1_20251029_Paris FC_Lyon",
+     "side": "home"
+    },
+    {
      "away": "Minnesota United FC",
      "competition_id": "usa.1",
      "date": "2025-03-16T00:15:00+00:00",
@@ -2169,6 +2196,15 @@
      "final_score": "3-3",
      "home": "Manchester City",
      "match_id": "espn_uefa.champions_720398",
+     "side": "away"
+    },
+    {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2024-05-19T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Bologna",
+     "match_id": "fd_serie_a_20240520_Bologna_Juventus",
      "side": "away"
     },
     {
@@ -2196,6 +2232,15 @@
      "final_score": "4-4",
      "home": "Chelsea",
      "match_id": "espn_uefa.champions_557106",
+     "side": "home"
+    },
+    {
+     "away": "Atalanta",
+     "competition_id": "ita.1",
+     "date": "2019-10-18T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Lazio",
+     "match_id": "fd_serie_a_20191019_Lazio_Atalanta",
      "side": "home"
     },
     {
@@ -2233,15 +2278,17 @@
      "home": "Arsenal",
      "match_id": "espn_uefa.champions_405714",
      "side": "away"
-    },
+    }
+   ],
+   "w": [
     {
-     "away": "West Bromwich Albion",
-     "competition_id": "eng.1",
-     "date": "2011-05-22T15:00:00+00:00",
-     "final_score": "3-3",
-     "home": "Newcastle United",
-     "match_id": "espn_eng.1_292892",
-     "side": "away"
+     "away": "Frosinone",
+     "competition_id": "ita.1",
+     "date": "2023-10-28T21:00:00+00:00",
+     "final_score": "4-3",
+     "home": "Cagliari",
+     "match_id": "fd_serie_a_20231029_Cagliari_Frosinone",
+     "side": "home"
     }
    ]
   },
@@ -2275,6 +2322,15 @@
      "side": "away"
     },
     {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2024-05-19T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Bologna",
+     "match_id": "fd_serie_a_20240520_Bologna_Juventus",
+     "side": "away"
+    },
+    {
      "away": "Granada",
      "competition_id": "esp.1",
      "date": "2023-09-30T21:00:00+00:00",
@@ -2293,6 +2349,24 @@
      "side": "away"
     },
     {
+     "away": "Torino",
+     "competition_id": "ita.1",
+     "date": "2019-12-14T22:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Verona",
+     "match_id": "fd_serie_a_20191215_Verona_Torino",
+     "side": "home"
+    },
+    {
+     "away": "Atalanta",
+     "competition_id": "ita.1",
+     "date": "2019-10-18T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Lazio",
+     "match_id": "fd_serie_a_20191019_Lazio_Atalanta",
+     "side": "home"
+    },
+    {
      "away": "Arsenal",
      "competition_id": "eng.1",
      "date": "2017-01-02T22:00:00+00:00",
@@ -2300,6 +2374,26 @@
      "home": "Bournemouth",
      "match_id": "fd_premier_league_20170103_Bournemouth_Arsenal",
      "side": "away"
+    },
+    {
+     "away": "Cesena",
+     "competition_id": "ita.1",
+     "date": "2015-04-03T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Verona",
+     "match_id": "fd_serie_a_20150404_Verona_Cesena",
+     "side": "away"
+    }
+   ],
+   "w": [
+    {
+     "away": "Frosinone",
+     "competition_id": "ita.1",
+     "date": "2023-10-28T21:00:00+00:00",
+     "final_score": "4-3",
+     "home": "Cagliari",
+     "match_id": "fd_serie_a_20231029_Cagliari_Frosinone",
+     "side": "home"
     }
    ]
   },
@@ -2324,6 +2418,15 @@
      "side": "away"
     },
     {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2024-05-19T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Bologna",
+     "match_id": "fd_serie_a_20240520_Bologna_Juventus",
+     "side": "away"
+    },
+    {
      "away": "West Ham United",
      "competition_id": "eng.1",
      "date": "2020-10-17T21:00:00+00:00",
@@ -2343,6 +2446,15 @@
     }
    ],
    "w": [
+    {
+     "away": "Frosinone",
+     "competition_id": "ita.1",
+     "date": "2023-10-28T21:00:00+00:00",
+     "final_score": "4-3",
+     "home": "Cagliari",
+     "match_id": "fd_serie_a_20231029_Cagliari_Frosinone",
+     "side": "home"
+    },
     {
      "away": "Zenit St Petersburg",
      "competition_id": "uefa.europa",
@@ -2365,6 +2477,15 @@
   },
   "M:-3:75": {
    "d": [
+    {
+     "away": "Juventus",
+     "competition_id": "ita.1",
+     "date": "2024-05-19T21:00:00+00:00",
+     "final_score": "3-3",
+     "home": "Bologna",
+     "match_id": "fd_serie_a_20240520_Bologna_Juventus",
+     "side": "away"
+    },
     {
      "away": "West Ham United",
      "competition_id": "eng.1",
@@ -2401,6 +2522,6 @@
    ]
   }
  },
- "generated_at": "2026-07-15T05:57:40+00:00",
+ "generated_at": "2026-07-15T07:44:27+00:00",
  "schema": 1
 }
