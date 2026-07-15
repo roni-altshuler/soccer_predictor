@@ -154,7 +154,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add backend/data/rarity/ backend/data/justice/ \
-                  backend/data/events/ backend/data/dixon_coles_params.json
+                  backend/data/events/ backend/data/dixon_coles_params.json \
+                  backend/data/sim_priors.json
 
           # Every builder stamps generated_at; timestamp churn alone is not
           # a change worth a daily commit.
@@ -166,7 +167,8 @@ jobs:
             MSG="$MSG"$'\n\n'"Incremental timeline backfill; rarity, justice and coverage artifacts; baseline params."
             MSG="$MSG"$'\n'"$STATS"
             git commit -m "$MSG"
-            # The 3x-daily prediction bot races this push.
-            git pull --rebase origin main
+            # The 3x-daily prediction bot races this push. --autostash keeps
+            # an incidental unstaged file from aborting the rebase.
+            git pull --rebase --autostash origin main
             git push
           fi
