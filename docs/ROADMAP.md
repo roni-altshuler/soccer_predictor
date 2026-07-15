@@ -25,8 +25,12 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   *Shipped 2026-07-14.*
 - ☑ **Full backfill runs** — ESPN + Understat complete: 35,463 covered matches
   (the pre-2014 remainder has no minute-level source anywhere — honest boundary).
-  Artifacts regenerated + shipped. Remaining: pipeline-workflow continuation for
-  new matches, coverage report on /diagnostics. *2026-07-15.*
+  Artifacts regenerated + shipped. *2026-07-15.*
+- ☑ **Self-maintaining pipeline** — daily `event_backfill.yml`: ingest new
+  finished matches → incremental event backfill → regenerate all artifacts
+  (rarity, justice, coverage, params, sim priors) → coverage regression guard →
+  warehouse republish to models-latest. Coverage report live at /diagnostics
+  (sidebar + palette). No continue-on-error anywhere. *Shipped 2026-07-15.*
 - ☑ **Justice Ledger** — xPts vs actual points, ≥90% coverage gates, league-page
   section; validated against the real 2022-23 PL table. *Shipped 2026-07-15.*
 - ◐ **Name decision** — **DECIDED 2026-07-14: Pitchverse.** Remaining: trademark +
@@ -39,13 +43,20 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   gate: beat Dixon-Coles baseline on held-out Brier before any production use.
 - ☑ Dixon-Coles calibrated baseline — walk-forward backtested (beats uniform by
   0.03–0.09 Brier, trails de-vigged market by 0.005–0.014); params artifact
-  committed; NWSL fitted. *Shipped 2026-07-15.* Remaining: feed sim strength priors.
+  committed; NWSL fitted. *Shipped 2026-07-15.*
+- ☑ Sim strength priors — multi-season priors blended into league simulations
+  (prior worth 12 matches, shrinks as results accumulate); conservative alias
+  resolution, unmatched teams keep legacy behavior; pre-season title odds now
+  differentiate (eng.1: flat 5% → 40.6/36.0/9.3% top three). *Shipped 2026-07-15.*
+  Remaining: knockout brackets need cross-competition-comparable ratings first.
 - ☐ Live win probability v2 — engine rollouts + conformal intervals.
 - ☐ Match-state embeddings (match2vec) + similar-matches rail.
 - ☐ Boardroom v1 — Quant/Historian/Skeptic agents over typed artifacts; dissent index.
 - ☑ Almanac v0 — structured query builder → exact counts + precedents at /almanac
   (no LLM). *Shipped 2026-07-15.* v1 (natural-language input) awaits LLM key decision.
-- ☐ Momentum river — signature match-page visual.
+- ☑ Momentum river — stacked win/draw/loss probability bands across the match
+  timeline, exact counts only (n≥50 gates, steps only at goals + 5' buckets),
+  mounted above the story on finished-match pages. *Shipped 2026-07-15.*
 - ☐ Artifact store formalization — typed, versioned run outputs ("products talk to
   artifacts, never models").
 
