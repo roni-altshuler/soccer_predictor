@@ -23,11 +23,12 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   by exact historical win-rate swings (rarity artifact as the empirical win-prob
   function; n≥50 gates; turning point = largest counted swing ≥15pp; zero LLM calls).
   *Shipped 2026-07-14.*
-- ◐ **Full backfill runs** — ESPN full run in progress (2,978/~20k covered at last
-  check; resumable). Then: Understat long tail, rarity artifact regeneration +
-  commit, pipeline-workflow continuation, coverage report on /diagnostics.
-- ☐ **Justice Ledger** — luck-adjusted (xG) season tables + "deserved table" artifact
-  and league-page section. Data already in warehouse.
+- ☑ **Full backfill runs** — ESPN + Understat complete: 35,463 covered matches
+  (the pre-2014 remainder has no minute-level source anywhere — honest boundary).
+  Artifacts regenerated + shipped. Remaining: pipeline-workflow continuation for
+  new matches, coverage report on /diagnostics. *2026-07-15.*
+- ☑ **Justice Ledger** — xPts vs actual points, ≥90% coverage gates, league-page
+  section; validated against the real 2022-23 PL table. *Shipped 2026-07-15.*
 - ◐ **Name decision** — **DECIDED 2026-07-14: Pitchverse.** Remaining: trademark +
   domain check, brand assets; the rebrand itself ships WITH the first flagship
   feature (Rarity Engine or Counterfactual Machine), not before.
@@ -36,11 +37,14 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 - ☐ Match Engine v0 — event-stream transformer trained on StatsBomb Open Data;
   gate: beat Dixon-Coles baseline on held-out Brier before any production use.
-- ☐ Dixon-Coles calibrated baseline (the yardstick; also replaces flat pre-season sims).
+- ☑ Dixon-Coles calibrated baseline — walk-forward backtested (beats uniform by
+  0.03–0.09 Brier, trails de-vigged market by 0.005–0.014); params artifact
+  committed; NWSL fitted. *Shipped 2026-07-15.* Remaining: feed sim strength priors.
 - ☐ Live win probability v2 — engine rollouts + conformal intervals.
 - ☐ Match-state embeddings (match2vec) + similar-matches rail.
 - ☐ Boardroom v1 — Quant/Historian/Skeptic agents over typed artifacts; dissent index.
-- ☐ Almanac v1 — NL questions → exact counts with receipts.
+- ☑ Almanac v0 — structured query builder → exact counts + precedents at /almanac
+  (no LLM). *Shipped 2026-07-15.* v1 (natural-language input) awaits LLM key decision.
 - ☐ Momentum river — signature match-page visual.
 - ☐ Artifact store formalization — typed, versioned run outputs ("products talk to
   artifacts, never models").
