@@ -1,6 +1,6 @@
 {
  "tournament": "world_cup",
- "generated_at": "2026-07-15T15:27:50.328087+00:00",
+ "generated_at": "2026-07-15T22:58:05.245089+00:00",
  "n_simulations": 20000,
  "bracket_set": true,
  "teams": [
@@ -8,7 +8,7 @@
    "team_id": null,
    "name": "Spain",
    "elo": 1686,
-   "p_champion": 0.6531,
+   "p_champion": 0.606,
    "p_final": 1.0,
    "p_semi": 1.0,
    "p_quarter": 1.0,
@@ -20,8 +20,20 @@
    "team_id": null,
    "name": "Argentina",
    "elo": 1676,
-   "p_champion": 0.1935,
-   "p_final": 0.4955,
+   "p_champion": 0.394,
+   "p_final": 1.0,
+   "p_semi": 1.0,
+   "p_quarter": 1.0,
+   "p_r16": 1.0,
+   "p_r32": 1.0,
+   "most_likely_round_reached": "Final"
+  },
+  {
+   "team_id": null,
+   "name": "France",
+   "elo": 1545,
+   "p_champion": 0.0,
+   "p_final": 0.0,
    "p_semi": 1.0,
    "p_quarter": 1.0,
    "p_r16": 1.0,
@@ -32,18 +44,6 @@
    "team_id": null,
    "name": "England",
    "elo": 1592,
-   "p_champion": 0.1534,
-   "p_final": 0.5045,
-   "p_semi": 1.0,
-   "p_quarter": 1.0,
-   "p_r16": 1.0,
-   "p_r32": 1.0,
-   "most_likely_round_reached": "Semi-Finals"
-  },
-  {
-   "team_id": null,
-   "name": "France",
-   "elo": 1545,
    "p_champion": 0.0,
    "p_final": 0.0,
    "p_semi": 1.0,
@@ -677,9 +677,9 @@
      "match_id": "760515",
      "home": "England",
      "away": "Argentina",
-     "home_score": null,
-     "away_score": null,
-     "winner": null,
+     "home_score": 1,
+     "away_score": 2,
+     "winner": "Argentina",
      "date": "2026-07-15T19:00Z"
     }
    ]
@@ -691,7 +691,7 @@
     {
      "match_id": "760517",
      "home": "Spain",
-     "away": null,
+     "away": "Argentina",
      "home_score": null,
      "away_score": null,
      "winner": null,
