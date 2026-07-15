@@ -1,0 +1,316 @@
+{
+  "competitions": {
+    "eng.1": {
+      "fitted_matches": 1714,
+      "half_life_days": 390.0,
+      "home_adv": 0.165405,
+      "last_match_date": "2026-05-17T21:00:00+00:00",
+      "n_seasons": 5,
+      "rho": -0.08236,
+      "source": "fdcouk",
+      "teams": {
+        "Arsenal": {
+          "attack": 0.405293,
+          "defence": 0.413114
+        },
+        "Aston Villa": {
+          "attack": 0.200266,
+          "defence": -0.056192
+        },
+        "Bournemouth": {
+          "attack": 0.158016,
+          "defence": -0.140651
+        },
+        "Brentford": {
+          "attack": 0.198496,
+          "defence": -0.162797
+        },
+        "Brighton & Hove Albion": {
+          "attack": 0.194069,
+          "defence": -0.061701
+        },
+        "Burnley": {
+          "attack": -0.164538,
+          "defence": -0.428184
+        },
+        "Chelsea": {
+          "attack": 0.223759,
+          "defence": -0.068379
+        },
+        "Crystal Palace": {
+          "attack": -0.00272,
+          "defence": -0.094669
+        },
+        "Everton": {
+          "attack": -0.056543,
+          "defence": -0.045176
+        },
+        "Fulham": {
+          "attack": 0.031107,
+          "defence": -0.101821
+        },
+        "Ipswich": {
+          "attack": -0.290535,
+          "defence": -0.563246
+        },
+        "Leeds United": {
+          "attack": 0.018465,
+          "defence": -0.174734
+        },
+        "Leicester City": {
+          "attack": -0.286656,
+          "defence": -0.452387
+        },
+        "Liverpool": {
+          "attack": 0.423646,
+          "defence": 0.015191
+        },
+        "Luton": {
+          "attack": 0.081958,
+          "defence": -0.589639
+        },
+        "Manchester City": {
+          "attack": 0.5229,
+          "defence": 0.260874
+        },
+        "Manchester United": {
+          "attack": 0.215468,
+          "defence": -0.102441
+        },
+        "Newcastle United": {
+          "attack": 0.305275,
+          "defence": -0.117358
+        },
+        "Norwich": {
+          "attack": -0.747848,
+          "defence": -0.622153
+        },
+        "Nottingham Forest": {
+          "attack": 0.038432,
+          "defence": -0.09216
+        },
+        "Sheffield United": {
+          "attack": -0.34121,
+          "defence": -0.762887
+        },
+        "Southampton": {
+          "attack": -0.485665,
+          "defence": -0.533267
+        },
+        "Sunderland": {
+          "attack": -0.080873,
+          "defence": 0.086836
+        },
+        "Tottenham Hotspur": {
+          "attack": 0.21466,
+          "defence": -0.281082
+        },
+        "Watford": {
+          "attack": -0.536872,
+          "defence": -0.485061
+        },
+        "West Ham United": {
+          "attack": -0.01902,
+          "defence": -0.296187
+        },
+        "Wolverhampton Wanderers": {
+          "attack": -0.219327,
+          "defence": -0.314089
+        }
+      }
+    },
+    "esp.1": {
+      "fitted_matches": 1706,
+      "half_life_days": 390.0,
+      "home_adv": 0.282014,
+      "last_match_date": "2026-05-16T21:00:00+00:00",
+      "n_seasons": 5,
+      "rho": 0.034446,
+      "source": "fdcouk",
+      "teams": {
+        "Alavés": {
+          "attack": -0.071419,
+          "defence": -0.065779
+        },
+        "Almería": {
+          "attack": 0.017556,
+          "defence": -0.35107
+        },
+        "Ath Madrid": {
+          "attack": 0.346001,
+          "defence": 0.220789
+        },
+        "Athletic Bilbao": {
+          "attack": 0.018994,
+          "defence": 0.070507
+        },
+        "Barcelona": {
+          "attack": 0.679901,
+          "defence": 0.261977
+        },
+        "Celta Vigo": {
+          "attack": 0.174817,
+          "defence": -0.065726
+        },
+        "Cádiz": {
+          "attack": -0.479041,
+          "defence": -0.068141
+        },
+        "Elche": {
+          "attack": 0.069779,
+          "defence": -0.200284
+        },
+        "Espanyol": {
+          "attack": -0.01014,
+          "defence": -0.116814
+        },
+        "Getafe": {
+          "attack": -0.301618,
+          "defence": 0.216939
+        },
+        "Girona": {
+          "attack": 0.075327,
+          "defence": -0.171302
+        },
+        "Granada": {
+          "attack": -0.100377,
+          "defence": -0.435996
+        },
+        "Las Palmas": {
+          "attack": -0.226578,
+          "defence": -0.163123
+        },
+        "Leganés": {
+          "attack": -0.109441,
+          "defence": -0.133407
+        },
+        "Levante": {
+          "attack": 0.010934,
+          "defence": -0.209526
+        },
+        "Mallorca": {
+          "attack": -0.134241,
+          "defence": -0.071188
+        },
+        "Osasuna": {
+          "attack": -0.00082,
+          "defence": -0.044248
+        },
+        "Oviedo": {
+          "attack": -0.500445,
+          "defence": -0.142802
+        },
+        "Real Betis": {
+          "attack": 0.208798,
+          "defence": -0.005943
+        },
+        "Real Madrid": {
+          "attack": 0.515007,
+          "defence": 0.336962
+        },
+        "Real Sociedad": {
+          "attack": 0.119423,
+          "defence": -0.062647
+        },
+        "Sevilla": {
+          "attack": 0.000898,
+          "defence": -0.152267
+        },
+        "Valencia": {
+          "attack": -0.05028,
+          "defence": -0.088849
+        },
+        "Valladolid": {
+          "attack": -0.482078,
+          "defence": -0.552417
+        },
+        "Vallecano": {
+          "attack": -0.166766,
+          "defence": 0.070458
+        },
+        "Villarreal": {
+          "attack": 0.395811,
+          "defence": -0.052909
+        }
+      }
+    },
+    "usa.1.w": {
+      "fitted_matches": 852,
+      "half_life_days": 390.0,
+      "home_adv": 0.197989,
+      "last_match_date": "2026-05-18T00:00:00+00:00",
+      "n_seasons": 5,
+      "rho": 0.048899,
+      "source": "espn",
+      "teams": {
+        "Angel City": {
+          "attack": -0.054741,
+          "defence": -0.259137
+        },
+        "Bay FC": {
+          "attack": -0.204105,
+          "defence": -0.308993
+        },
+        "Boston Legacy FC": {
+          "attack": -0.217179,
+          "defence": -0.398267
+        },
+        "Chicago Stars FC": {
+          "attack": -0.147754,
+          "defence": -0.535073
+        },
+        "Denver Summit FC": {
+          "attack": 0.332236,
+          "defence": -0.111425
+        },
+        "Houston Dash": {
+          "attack": -0.254475,
+          "defence": -0.262578
+        },
+        "Kansas City Current": {
+          "attack": 0.272957,
+          "defence": 0.03122
+        },
+        "NJ/NY Gotham FC": {
+          "attack": -0.011102,
+          "defence": 0.298574
+        },
+        "North Carolina Courage": {
+          "attack": 0.08344,
+          "defence": -0.150392
+        },
+        "Orlando Pride": {
+          "attack": 0.069196,
+          "defence": -0.059212
+        },
+        "Portland Thorns": {
+          "attack": 0.109678,
+          "defence": 0.000312
+        },
+        "Racing Louisville FC": {
+          "attack": 0.076788,
+          "defence": -0.302981
+        },
+        "San Diego Wave FC": {
+          "attack": 0.043239,
+          "defence": -0.072637
+        },
+        "Seattle Reign FC": {
+          "attack": -0.15864,
+          "defence": -0.073007
+        },
+        "Utah Royals": {
+          "attack": -0.133675,
+          "defence": -0.148153
+        },
+        "Washington Spirit": {
+          "attack": 0.194139,
+          "defence": 0.035177
+        }
+      }
+    }
+  },
+  "generated_at": "2026-07-15T08:28:56+00:00",
+  "half_life_days": 390.0,
+  "schema": 1
+}

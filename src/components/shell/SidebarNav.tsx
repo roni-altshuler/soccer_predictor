@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Activity,
+  BookOpen,
   Brain,
   Calculator,
   CalendarDays,
@@ -47,6 +48,7 @@ const GROUPS: NavGroup[] = [
     title: 'AI',
     items: [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
+      { href: '/almanac', label: 'Almanac', icon: BookOpen },
       { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
       { href: '/history', label: 'History', icon: History },
     ],

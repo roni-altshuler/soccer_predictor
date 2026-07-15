@@ -1,0 +1,1776 @@
+{
+ "generated_at": "2026-07-15T08:29:04+00:00",
+ "schema": 1,
+ "seasons": {
+  "eng.1:2015": {
+   "coverage": 0.9621,
+   "teams": [
+    {
+     "delta": -3.4,
+     "matches": 44,
+     "pts": 82,
+     "team": "Arsenal",
+     "xpts": 85.4
+    },
+    {
+     "delta": 4.11,
+     "matches": 44,
+     "pts": 84,
+     "team": "Tottenham Hotspur",
+     "xpts": 79.89
+    },
+    {
+     "delta": 17.18,
+     "matches": 44,
+     "pts": 97,
+     "team": "Leicester City",
+     "xpts": 79.82
+    },
+    {
+     "delta": -2.12,
+     "matches": 44,
+     "pts": 77,
+     "team": "Manchester City",
+     "xpts": 79.12
+    },
+    {
+     "delta": -0.1,
+     "matches": 44,
+     "pts": 73,
+     "team": "Liverpool",
+     "xpts": 73.1
+    },
+    {
+     "delta": 5.55,
+     "matches": 44,
+     "pts": 75,
+     "team": "Southampton",
+     "xpts": 69.45
+    },
+    {
+     "delta": -8.6,
+     "matches": 44,
+     "pts": 58,
+     "team": "Chelsea",
+     "xpts": 66.6
+    },
+    {
+     "delta": 8.85,
+     "matches": 44,
+     "pts": 75,
+     "team": "Manchester United",
+     "xpts": 66.15
+    },
+    {
+     "delta": -9.61,
+     "matches": 44,
+     "pts": 55,
+     "team": "Everton",
+     "xpts": 64.61
+    },
+    {
+     "delta": 5.2,
+     "matches": 44,
+     "pts": 66,
+     "team": "West Ham United",
+     "xpts": 60.8
+    },
+    {
+     "delta": -3.6,
+     "matches": 44,
+     "pts": 54,
+     "team": "Watford",
+     "xpts": 57.6
+    },
+    {
+     "delta": 1.78,
+     "matches": 44,
+     "pts": 56,
+     "team": "Crystal Palace",
+     "xpts": 54.22
+    },
+    {
+     "delta": -4.53,
+     "matches": 44,
+     "pts": 49,
+     "team": "Bournemouth",
+     "xpts": 53.53
+    },
+    {
+     "delta": -0.69,
+     "matches": 44,
+     "pts": 50,
+     "team": "Sunderland",
+     "xpts": 50.69
+    },
+    {
+     "delta": -5.11,
+     "matches": 44,
+     "pts": 44,
+     "team": "Newcastle United",
+     "xpts": 49.11
+    },
+    {
+     "delta": 0.61,
+     "matches": 38,
+     "pts": 47,
+     "team": "Swansea City",
+     "xpts": 46.39
+    },
+    {
+     "delta": 5.34,
+     "matches": 36,
+     "pts": 51,
+     "team": "Stoke",
+     "xpts": 45.66
+    },
+    {
+     "delta": 5.93,
+     "matches": 38,
+     "pts": 51,
+     "team": "Stoke City",
+     "xpts": 45.07
+    },
+    {
+     "delta": -1.14,
+     "matches": 38,
+     "pts": 43,
+     "team": "West Bromwich Albion",
+     "xpts": 44.14
+    },
+    {
+     "delta": 2.15,
+     "matches": 36,
+     "pts": 43,
+     "team": "Swansea",
+     "xpts": 40.85
+    },
+    {
+     "delta": -6.52,
+     "matches": 38,
+     "pts": 34,
+     "team": "Norwich City",
+     "xpts": 40.52
+    },
+    {
+     "delta": -7.17,
+     "matches": 36,
+     "pts": 31,
+     "team": "Norwich",
+     "xpts": 38.17
+    },
+    {
+     "delta": -17.37,
+     "matches": 44,
+     "pts": 20,
+     "team": "Aston Villa",
+     "xpts": 37.37
+    }
+   ]
+  },
+  "eng.1:2018": {
+   "coverage": 0.9135,
+   "teams": [
+    {
+     "delta": 10.78,
+     "matches": 38,
+     "pts": 98,
+     "team": "Manchester City",
+     "xpts": 87.22
+    },
+    {
+     "delta": 17.41,
+     "matches": 38,
+     "pts": 97,
+     "team": "Liverpool",
+     "xpts": 79.59
+    },
+    {
+     "delta": 2.28,
+     "matches": 38,
+     "pts": 72,
+     "team": "Chelsea",
+     "xpts": 69.72
+    },
+    {
+     "delta": 5.23,
+     "matches": 38,
+     "pts": 66,
+     "team": "Manchester United",
+     "xpts": 60.77
+    },
+    {
+     "delta": 10.33,
+     "matches": 38,
+     "pts": 71,
+     "team": "Tottenham Hotspur",
+     "xpts": 60.67
+    },
+    {
+     "delta": -2.12,
+     "matches": 38,
+     "pts": 57,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 59.12
+    },
+    {
+     "delta": 11.76,
+     "matches": 38,
+     "pts": 70,
+     "team": "Arsenal",
+     "xpts": 58.24
+    },
+    {
+     "delta": -3.76,
+     "matches": 38,
+     "pts": 52,
+     "team": "Leicester City",
+     "xpts": 55.76
+    },
+    {
+     "delta": -1.58,
+     "matches": 38,
+     "pts": 54,
+     "team": "Everton",
+     "xpts": 55.58
+    },
+    {
+     "delta": -2.4,
+     "matches": 38,
+     "pts": 49,
+     "team": "Crystal Palace",
+     "xpts": 51.4
+    },
+    {
+     "delta": -6.4,
+     "matches": 38,
+     "pts": 45,
+     "team": "Bournemouth",
+     "xpts": 51.4
+    },
+    {
+     "delta": 2.53,
+     "matches": 38,
+     "pts": 50,
+     "team": "Watford",
+     "xpts": 47.47
+    },
+    {
+     "delta": -7.08,
+     "matches": 38,
+     "pts": 39,
+     "team": "Southampton",
+     "xpts": 46.08
+    },
+    {
+     "delta": 7.53,
+     "matches": 38,
+     "pts": 52,
+     "team": "West Ham United",
+     "xpts": 44.47
+    },
+    {
+     "delta": -2.57,
+     "matches": 38,
+     "pts": 40,
+     "team": "Burnley",
+     "xpts": 42.57
+    },
+    {
+     "delta": 4.31,
+     "matches": 38,
+     "pts": 45,
+     "team": "Newcastle United",
+     "xpts": 40.69
+    },
+    {
+     "delta": -5.66,
+     "matches": 38,
+     "pts": 34,
+     "team": "Cardiff",
+     "xpts": 39.66
+    },
+    {
+     "delta": -1.91,
+     "matches": 38,
+     "pts": 36,
+     "team": "Brighton & Hove Albion",
+     "xpts": 37.91
+    },
+    {
+     "delta": -9.98,
+     "matches": 38,
+     "pts": 26,
+     "team": "Fulham",
+     "xpts": 35.98
+    },
+    {
+     "delta": -15.84,
+     "matches": 38,
+     "pts": 16,
+     "team": "Huddersfield",
+     "xpts": 31.84
+    }
+   ]
+  },
+  "eng.1:2019": {
+   "coverage": 0.9524,
+   "teams": [
+    {
+     "delta": -2.9,
+     "matches": 38,
+     "pts": 81,
+     "team": "Manchester City",
+     "xpts": 83.9
+    },
+    {
+     "delta": 26.57,
+     "matches": 38,
+     "pts": 99,
+     "team": "Liverpool",
+     "xpts": 72.43
+    },
+    {
+     "delta": -5.71,
+     "matches": 38,
+     "pts": 66,
+     "team": "Chelsea",
+     "xpts": 71.71
+    },
+    {
+     "delta": -2.93,
+     "matches": 38,
+     "pts": 66,
+     "team": "Manchester United",
+     "xpts": 68.93
+    },
+    {
+     "delta": -3.36,
+     "matches": 38,
+     "pts": 59,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 62.36
+    },
+    {
+     "delta": 1.62,
+     "matches": 38,
+     "pts": 62,
+     "team": "Leicester City",
+     "xpts": 60.38
+    },
+    {
+     "delta": -4.01,
+     "matches": 38,
+     "pts": 52,
+     "team": "Southampton",
+     "xpts": 56.01
+    },
+    {
+     "delta": -6.29,
+     "matches": 38,
+     "pts": 49,
+     "team": "Everton",
+     "xpts": 55.29
+    },
+    {
+     "delta": 5.53,
+     "matches": 38,
+     "pts": 56,
+     "team": "Arsenal",
+     "xpts": 50.47
+    },
+    {
+     "delta": 4.41,
+     "matches": 38,
+     "pts": 54,
+     "team": "Sheffield United",
+     "xpts": 49.59
+    },
+    {
+     "delta": 9.46,
+     "matches": 38,
+     "pts": 59,
+     "team": "Tottenham Hotspur",
+     "xpts": 49.54
+    },
+    {
+     "delta": 4.72,
+     "matches": 38,
+     "pts": 54,
+     "team": "Burnley",
+     "xpts": 49.28
+    },
+    {
+     "delta": -14.22,
+     "matches": 38,
+     "pts": 34,
+     "team": "Watford",
+     "xpts": 48.22
+    },
+    {
+     "delta": -7.13,
+     "matches": 38,
+     "pts": 41,
+     "team": "Brighton & Hove Albion",
+     "xpts": 48.13
+    },
+    {
+     "delta": -7.14,
+     "matches": 38,
+     "pts": 34,
+     "team": "Bournemouth",
+     "xpts": 41.14
+    },
+    {
+     "delta": -1.61,
+     "matches": 38,
+     "pts": 39,
+     "team": "West Ham United",
+     "xpts": 40.61
+    },
+    {
+     "delta": 3.29,
+     "matches": 38,
+     "pts": 43,
+     "team": "Crystal Palace",
+     "xpts": 39.71
+    },
+    {
+     "delta": -3.93,
+     "matches": 38,
+     "pts": 35,
+     "team": "Aston Villa",
+     "xpts": 38.93
+    },
+    {
+     "delta": -13.77,
+     "matches": 38,
+     "pts": 21,
+     "team": "Norwich",
+     "xpts": 34.77
+    },
+    {
+     "delta": 9.83,
+     "matches": 38,
+     "pts": 44,
+     "team": "Newcastle United",
+     "xpts": 34.17
+    }
+   ]
+  },
+  "eng.1:2020": {
+   "coverage": 0.9524,
+   "teams": [
+    {
+     "delta": 5.45,
+     "matches": 38,
+     "pts": 86,
+     "team": "Manchester City",
+     "xpts": 80.55
+    },
+    {
+     "delta": -7.75,
+     "matches": 38,
+     "pts": 67,
+     "team": "Chelsea",
+     "xpts": 74.75
+    },
+    {
+     "delta": 1.6,
+     "matches": 38,
+     "pts": 69,
+     "team": "Liverpool",
+     "xpts": 67.4
+    },
+    {
+     "delta": 9.82,
+     "matches": 38,
+     "pts": 74,
+     "team": "Manchester United",
+     "xpts": 64.18
+    },
+    {
+     "delta": -19.45,
+     "matches": 38,
+     "pts": 41,
+     "team": "Brighton & Hove Albion",
+     "xpts": 60.45
+    },
+    {
+     "delta": 6.85,
+     "matches": 38,
+     "pts": 66,
+     "team": "Leicester City",
+     "xpts": 59.15
+    },
+    {
+     "delta": 6.87,
+     "matches": 38,
+     "pts": 65,
+     "team": "West Ham United",
+     "xpts": 58.13
+    },
+    {
+     "delta": 3.32,
+     "matches": 38,
+     "pts": 61,
+     "team": "Arsenal",
+     "xpts": 57.68
+    },
+    {
+     "delta": 0.84,
+     "matches": 38,
+     "pts": 55,
+     "team": "Aston Villa",
+     "xpts": 54.16
+    },
+    {
+     "delta": 7.93,
+     "matches": 38,
+     "pts": 62,
+     "team": "Tottenham Hotspur",
+     "xpts": 54.07
+    },
+    {
+     "delta": 7.1,
+     "matches": 38,
+     "pts": 59,
+     "team": "Leeds United",
+     "xpts": 51.9
+    },
+    {
+     "delta": 8.26,
+     "matches": 38,
+     "pts": 59,
+     "team": "Everton",
+     "xpts": 50.74
+    },
+    {
+     "delta": -2.94,
+     "matches": 38,
+     "pts": 43,
+     "team": "Southampton",
+     "xpts": 45.94
+    },
+    {
+     "delta": -0.14,
+     "matches": 38,
+     "pts": 45,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 45.14
+    },
+    {
+     "delta": -15.86,
+     "matches": 38,
+     "pts": 28,
+     "team": "Fulham",
+     "xpts": 43.86
+    },
+    {
+     "delta": 2.2,
+     "matches": 38,
+     "pts": 45,
+     "team": "Newcastle United",
+     "xpts": 42.8
+    },
+    {
+     "delta": -0.71,
+     "matches": 38,
+     "pts": 39,
+     "team": "Burnley",
+     "xpts": 39.71
+    },
+    {
+     "delta": 5.38,
+     "matches": 38,
+     "pts": 44,
+     "team": "Crystal Palace",
+     "xpts": 38.62
+    },
+    {
+     "delta": -9.48,
+     "matches": 38,
+     "pts": 23,
+     "team": "Sheffield United",
+     "xpts": 32.48
+    },
+    {
+     "delta": -5.73,
+     "matches": 38,
+     "pts": 26,
+     "team": "West Bromwich Albion",
+     "xpts": 31.73
+    }
+   ]
+  },
+  "eng.1:2021": {
+   "coverage": 0.9524,
+   "teams": [
+    {
+     "delta": 4.68,
+     "matches": 38,
+     "pts": 93,
+     "team": "Manchester City",
+     "xpts": 88.32
+    },
+    {
+     "delta": 8.29,
+     "matches": 38,
+     "pts": 92,
+     "team": "Liverpool",
+     "xpts": 83.71
+    },
+    {
+     "delta": 3.05,
+     "matches": 38,
+     "pts": 74,
+     "team": "Chelsea",
+     "xpts": 70.95
+    },
+    {
+     "delta": 6.2,
+     "matches": 38,
+     "pts": 71,
+     "team": "Tottenham Hotspur",
+     "xpts": 64.8
+    },
+    {
+     "delta": 5.76,
+     "matches": 38,
+     "pts": 69,
+     "team": "Arsenal",
+     "xpts": 63.24
+    },
+    {
+     "delta": -8.9,
+     "matches": 38,
+     "pts": 48,
+     "team": "Crystal Palace",
+     "xpts": 56.9
+    },
+    {
+     "delta": -9.11,
+     "matches": 38,
+     "pts": 46,
+     "team": "Brentford",
+     "xpts": 55.11
+    },
+    {
+     "delta": 3.49,
+     "matches": 38,
+     "pts": 58,
+     "team": "Manchester United",
+     "xpts": 54.51
+    },
+    {
+     "delta": -2.9,
+     "matches": 38,
+     "pts": 51,
+     "team": "Brighton & Hove Albion",
+     "xpts": 53.9
+    },
+    {
+     "delta": 3.13,
+     "matches": 38,
+     "pts": 56,
+     "team": "West Ham United",
+     "xpts": 52.87
+    },
+    {
+     "delta": -2.39,
+     "matches": 38,
+     "pts": 45,
+     "team": "Aston Villa",
+     "xpts": 47.39
+    },
+    {
+     "delta": -4.55,
+     "matches": 38,
+     "pts": 40,
+     "team": "Southampton",
+     "xpts": 44.55
+    },
+    {
+     "delta": -6.51,
+     "matches": 38,
+     "pts": 38,
+     "team": "Leeds United",
+     "xpts": 44.51
+    },
+    {
+     "delta": -5.45,
+     "matches": 38,
+     "pts": 39,
+     "team": "Everton",
+     "xpts": 44.45
+    },
+    {
+     "delta": 8.63,
+     "matches": 38,
+     "pts": 52,
+     "team": "Leicester City",
+     "xpts": 43.37
+    },
+    {
+     "delta": 6.22,
+     "matches": 38,
+     "pts": 49,
+     "team": "Newcastle United",
+     "xpts": 42.78
+    },
+    {
+     "delta": 9.03,
+     "matches": 38,
+     "pts": 51,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 41.97
+    },
+    {
+     "delta": -4.94,
+     "matches": 38,
+     "pts": 35,
+     "team": "Burnley",
+     "xpts": 39.94
+    },
+    {
+     "delta": -13.92,
+     "matches": 38,
+     "pts": 23,
+     "team": "Watford",
+     "xpts": 36.92
+    },
+    {
+     "delta": -6.01,
+     "matches": 38,
+     "pts": 22,
+     "team": "Norwich",
+     "xpts": 28.01
+    }
+   ]
+  },
+  "eng.1:2022": {
+   "coverage": 1.0,
+   "teams": [
+    {
+     "delta": 8.7,
+     "matches": 38,
+     "pts": 89,
+     "team": "Manchester City",
+     "xpts": 80.3
+    },
+    {
+     "delta": 13.4,
+     "matches": 38,
+     "pts": 84,
+     "team": "Arsenal",
+     "xpts": 70.6
+    },
+    {
+     "delta": 0.93,
+     "matches": 38,
+     "pts": 71,
+     "team": "Newcastle United",
+     "xpts": 70.07
+    },
+    {
+     "delta": -7.09,
+     "matches": 38,
+     "pts": 62,
+     "team": "Brighton & Hove Albion",
+     "xpts": 69.09
+    },
+    {
+     "delta": 1.13,
+     "matches": 38,
+     "pts": 67,
+     "team": "Liverpool",
+     "xpts": 65.87
+    },
+    {
+     "delta": 10.02,
+     "matches": 38,
+     "pts": 75,
+     "team": "Manchester United",
+     "xpts": 64.98
+    },
+    {
+     "delta": 2.47,
+     "matches": 38,
+     "pts": 60,
+     "team": "Tottenham Hotspur",
+     "xpts": 57.53
+    },
+    {
+     "delta": 2.02,
+     "matches": 38,
+     "pts": 59,
+     "team": "Brentford",
+     "xpts": 56.98
+    },
+    {
+     "delta": 7.48,
+     "matches": 38,
+     "pts": 61,
+     "team": "Aston Villa",
+     "xpts": 53.52
+    },
+    {
+     "delta": -8.78,
+     "matches": 38,
+     "pts": 44,
+     "team": "Chelsea",
+     "xpts": 52.78
+    },
+    {
+     "delta": -11.74,
+     "matches": 38,
+     "pts": 40,
+     "team": "West Ham United",
+     "xpts": 51.74
+    },
+    {
+     "delta": -11.45,
+     "matches": 38,
+     "pts": 34,
+     "team": "Leicester City",
+     "xpts": 45.45
+    },
+    {
+     "delta": -0.14,
+     "matches": 38,
+     "pts": 45,
+     "team": "Crystal Palace",
+     "xpts": 45.14
+    },
+    {
+     "delta": -6.15,
+     "matches": 38,
+     "pts": 36,
+     "team": "Everton",
+     "xpts": 42.15
+    },
+    {
+     "delta": -10.85,
+     "matches": 38,
+     "pts": 31,
+     "team": "Leeds United",
+     "xpts": 41.85
+    },
+    {
+     "delta": 10.98,
+     "matches": 38,
+     "pts": 52,
+     "team": "Fulham",
+     "xpts": 41.02
+    },
+    {
+     "delta": -13.32,
+     "matches": 38,
+     "pts": 25,
+     "team": "Southampton",
+     "xpts": 38.32
+    },
+    {
+     "delta": 1.05,
+     "matches": 38,
+     "pts": 38,
+     "team": "Nottingham Forest",
+     "xpts": 36.95
+    },
+    {
+     "delta": 2.11,
+     "matches": 38,
+     "pts": 39,
+     "team": "Bournemouth",
+     "xpts": 36.89
+    },
+    {
+     "delta": 4.27,
+     "matches": 38,
+     "pts": 41,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 36.73
+    }
+   ]
+  },
+  "eng.1:2023": {
+   "coverage": 0.9524,
+   "teams": [
+    {
+     "delta": 10.65,
+     "matches": 38,
+     "pts": 91,
+     "team": "Manchester City",
+     "xpts": 80.35
+    },
+    {
+     "delta": 9.26,
+     "matches": 38,
+     "pts": 89,
+     "team": "Arsenal",
+     "xpts": 79.74
+    },
+    {
+     "delta": 7.46,
+     "matches": 38,
+     "pts": 82,
+     "team": "Liverpool",
+     "xpts": 74.54
+    },
+    {
+     "delta": -3.81,
+     "matches": 38,
+     "pts": 60,
+     "team": "Newcastle United",
+     "xpts": 63.81
+    },
+    {
+     "delta": 0.12,
+     "matches": 38,
+     "pts": 63,
+     "team": "Chelsea",
+     "xpts": 62.88
+    },
+    {
+     "delta": 8.69,
+     "matches": 38,
+     "pts": 66,
+     "team": "Tottenham Hotspur",
+     "xpts": 57.31
+    },
+    {
+     "delta": 13.09,
+     "matches": 38,
+     "pts": 68,
+     "team": "Aston Villa",
+     "xpts": 54.91
+    },
+    {
+     "delta": -6.51,
+     "matches": 38,
+     "pts": 48,
+     "team": "Brighton & Hove Albion",
+     "xpts": 54.51
+    },
+    {
+     "delta": -5.64,
+     "matches": 38,
+     "pts": 48,
+     "team": "Bournemouth",
+     "xpts": 53.64
+    },
+    {
+     "delta": -14.48,
+     "matches": 38,
+     "pts": 39,
+     "team": "Brentford",
+     "xpts": 53.48
+    },
+    {
+     "delta": -4.6,
+     "matches": 38,
+     "pts": 48,
+     "team": "Everton",
+     "xpts": 52.6
+    },
+    {
+     "delta": -1.76,
+     "matches": 38,
+     "pts": 49,
+     "team": "Crystal Palace",
+     "xpts": 50.76
+    },
+    {
+     "delta": -14.39,
+     "matches": 38,
+     "pts": 36,
+     "team": "Nottingham Forest",
+     "xpts": 50.39
+    },
+    {
+     "delta": 0.83,
+     "matches": 38,
+     "pts": 47,
+     "team": "Fulham",
+     "xpts": 46.17
+    },
+    {
+     "delta": 14.87,
+     "matches": 38,
+     "pts": 60,
+     "team": "Manchester United",
+     "xpts": 45.13
+    },
+    {
+     "delta": 9.15,
+     "matches": 38,
+     "pts": 52,
+     "team": "West Ham United",
+     "xpts": 42.85
+    },
+    {
+     "delta": 4.5,
+     "matches": 38,
+     "pts": 46,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 41.5
+    },
+    {
+     "delta": -11.79,
+     "matches": 38,
+     "pts": 24,
+     "team": "Burnley",
+     "xpts": 35.79
+    },
+    {
+     "delta": -8.22,
+     "matches": 38,
+     "pts": 26,
+     "team": "Luton",
+     "xpts": 34.22
+    },
+    {
+     "delta": -14.86,
+     "matches": 38,
+     "pts": 16,
+     "team": "Sheffield United",
+     "xpts": 30.86
+    }
+   ]
+  },
+  "eng.1:2024": {
+   "coverage": 0.9524,
+   "teams": [
+    {
+     "delta": 5.45,
+     "matches": 38,
+     "pts": 84,
+     "team": "Liverpool",
+     "xpts": 78.55
+    },
+    {
+     "delta": 2.76,
+     "matches": 38,
+     "pts": 74,
+     "team": "Arsenal",
+     "xpts": 71.24
+    },
+    {
+     "delta": 6.94,
+     "matches": 38,
+     "pts": 71,
+     "team": "Manchester City",
+     "xpts": 64.06
+    },
+    {
+     "delta": -7.52,
+     "matches": 38,
+     "pts": 56,
+     "team": "Bournemouth",
+     "xpts": 63.52
+    },
+    {
+     "delta": 7.28,
+     "matches": 38,
+     "pts": 69,
+     "team": "Chelsea",
+     "xpts": 61.72
+    },
+    {
+     "delta": 4.57,
+     "matches": 38,
+     "pts": 66,
+     "team": "Newcastle United",
+     "xpts": 61.43
+    },
+    {
+     "delta": 5.61,
+     "matches": 38,
+     "pts": 66,
+     "team": "Aston Villa",
+     "xpts": 60.39
+    },
+    {
+     "delta": -4.59,
+     "matches": 38,
+     "pts": 53,
+     "team": "Crystal Palace",
+     "xpts": 57.59
+    },
+    {
+     "delta": -3.26,
+     "matches": 38,
+     "pts": 54,
+     "team": "Fulham",
+     "xpts": 57.26
+    },
+    {
+     "delta": 4.3,
+     "matches": 38,
+     "pts": 61,
+     "team": "Brighton & Hove Albion",
+     "xpts": 56.7
+    },
+    {
+     "delta": 1.63,
+     "matches": 38,
+     "pts": 56,
+     "team": "Brentford",
+     "xpts": 54.37
+    },
+    {
+     "delta": -10.7,
+     "matches": 38,
+     "pts": 42,
+     "team": "Manchester United",
+     "xpts": 52.7
+    },
+    {
+     "delta": -12.85,
+     "matches": 38,
+     "pts": 38,
+     "team": "Tottenham Hotspur",
+     "xpts": 50.85
+    },
+    {
+     "delta": 14.76,
+     "matches": 38,
+     "pts": 65,
+     "team": "Nottingham Forest",
+     "xpts": 50.24
+    },
+    {
+     "delta": -0.33,
+     "matches": 38,
+     "pts": 48,
+     "team": "Everton",
+     "xpts": 48.33
+    },
+    {
+     "delta": -0.94,
+     "matches": 38,
+     "pts": 42,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 42.94
+    },
+    {
+     "delta": 0.11,
+     "matches": 38,
+     "pts": 43,
+     "team": "West Ham United",
+     "xpts": 42.89
+    },
+    {
+     "delta": -9.39,
+     "matches": 38,
+     "pts": 22,
+     "team": "Ipswich",
+     "xpts": 31.39
+    },
+    {
+     "delta": -4.23,
+     "matches": 38,
+     "pts": 25,
+     "team": "Leicester City",
+     "xpts": 29.23
+    },
+    {
+     "delta": -13.91,
+     "matches": 38,
+     "pts": 12,
+     "team": "Southampton",
+     "xpts": 25.91
+    }
+   ]
+  },
+  "eng.1:2025": {
+   "coverage": 1.0,
+   "teams": [
+    {
+     "delta": 7.7,
+     "matches": 37,
+     "pts": 82,
+     "team": "Arsenal",
+     "xpts": 74.3
+    },
+    {
+     "delta": 7.27,
+     "matches": 36,
+     "pts": 77,
+     "team": "Manchester City",
+     "xpts": 69.73
+    },
+    {
+     "delta": 6.58,
+     "matches": 37,
+     "pts": 68,
+     "team": "Manchester United",
+     "xpts": 61.42
+    },
+    {
+     "delta": 0.06,
+     "matches": 37,
+     "pts": 59,
+     "team": "Liverpool",
+     "xpts": 58.94
+    },
+    {
+     "delta": -8.5,
+     "matches": 36,
+     "pts": 49,
+     "team": "Chelsea",
+     "xpts": 57.5
+    },
+    {
+     "delta": -1.97,
+     "matches": 36,
+     "pts": 55,
+     "team": "Bournemouth",
+     "xpts": 56.97
+    },
+    {
+     "delta": -3.77,
+     "matches": 37,
+     "pts": 52,
+     "team": "Brentford",
+     "xpts": 55.77
+    },
+    {
+     "delta": -2.14,
+     "matches": 37,
+     "pts": 53,
+     "team": "Brighton & Hove Albion",
+     "xpts": 55.14
+    },
+    {
+     "delta": -7.86,
+     "matches": 37,
+     "pts": 47,
+     "team": "Leeds United",
+     "xpts": 54.86
+    },
+    {
+     "delta": -4.8,
+     "matches": 37,
+     "pts": 49,
+     "team": "Newcastle United",
+     "xpts": 53.8
+    },
+    {
+     "delta": -8.63,
+     "matches": 37,
+     "pts": 45,
+     "team": "Crystal Palace",
+     "xpts": 53.63
+    },
+    {
+     "delta": 12.51,
+     "matches": 37,
+     "pts": 62,
+     "team": "Aston Villa",
+     "xpts": 49.49
+    },
+    {
+     "delta": 2.44,
+     "matches": 37,
+     "pts": 49,
+     "team": "Everton",
+     "xpts": 46.56
+    },
+    {
+     "delta": -6.84,
+     "matches": 36,
+     "pts": 38,
+     "team": "Tottenham Hotspur",
+     "xpts": 44.84
+    },
+    {
+     "delta": 5.13,
+     "matches": 37,
+     "pts": 49,
+     "team": "Fulham",
+     "xpts": 43.87
+    },
+    {
+     "delta": -6.34,
+     "matches": 37,
+     "pts": 36,
+     "team": "West Ham United",
+     "xpts": 42.34
+    },
+    {
+     "delta": 0.88,
+     "matches": 37,
+     "pts": 43,
+     "team": "Nottingham Forest",
+     "xpts": 42.12
+    },
+    {
+     "delta": 9.89,
+     "matches": 37,
+     "pts": 51,
+     "team": "Sunderland",
+     "xpts": 41.11
+    },
+    {
+     "delta": -15.66,
+     "matches": 37,
+     "pts": 19,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 34.66
+    },
+    {
+     "delta": -6.23,
+     "matches": 37,
+     "pts": 21,
+     "team": "Burnley",
+     "xpts": 27.23
+    }
+   ]
+  },
+  "fifa.world:2018": {
+   "coverage": 1.0,
+   "teams": [
+    {
+     "delta": -2.29,
+     "matches": 5,
+     "pts": 10,
+     "team": "Brazil",
+     "xpts": 12.29
+    },
+    {
+     "delta": 2.26,
+     "matches": 7,
+     "pts": 14,
+     "team": "Croatia",
+     "xpts": 11.74
+    },
+    {
+     "delta": 7.54,
+     "matches": 7,
+     "pts": 19,
+     "team": "France",
+     "xpts": 11.46
+    },
+    {
+     "delta": -1.2,
+     "matches": 7,
+     "pts": 10,
+     "team": "England",
+     "xpts": 11.2
+    },
+    {
+     "delta": 7.46,
+     "matches": 7,
+     "pts": 18,
+     "team": "Belgium",
+     "xpts": 10.54
+    },
+    {
+     "delta": 2.05,
+     "matches": 5,
+     "pts": 12,
+     "team": "Uruguay",
+     "xpts": 9.95
+    },
+    {
+     "delta": 0.49,
+     "matches": 5,
+     "pts": 9,
+     "team": "Sweden",
+     "xpts": 8.51
+    },
+    {
+     "delta": -1.99,
+     "matches": 4,
+     "pts": 6,
+     "team": "Spain",
+     "xpts": 7.99
+    },
+    {
+     "delta": -2.83,
+     "matches": 3,
+     "pts": 3,
+     "team": "Germany",
+     "xpts": 5.83
+    },
+    {
+     "delta": 2.44,
+     "matches": 5,
+     "pts": 8,
+     "team": "Russia",
+     "xpts": 5.56
+    },
+    {
+     "delta": -0.33,
+     "matches": 4,
+     "pts": 5,
+     "team": "Portugal",
+     "xpts": 5.33
+    },
+    {
+     "delta": -1.31,
+     "matches": 4,
+     "pts": 4,
+     "team": "Argentina",
+     "xpts": 5.31
+    },
+    {
+     "delta": -3.96,
+     "matches": 3,
+     "pts": 1,
+     "team": "Australia",
+     "xpts": 4.96
+    },
+    {
+     "delta": -0.89,
+     "matches": 3,
+     "pts": 4,
+     "team": "Senegal",
+     "xpts": 4.89
+    },
+    {
+     "delta": -0.65,
+     "matches": 4,
+     "pts": 4,
+     "team": "Japan",
+     "xpts": 4.65
+    },
+    {
+     "delta": -3.6,
+     "matches": 3,
+     "pts": 1,
+     "team": "Iceland",
+     "xpts": 4.6
+    },
+    {
+     "delta": -1.43,
+     "matches": 3,
+     "pts": 3,
+     "team": "Serbia",
+     "xpts": 4.43
+    },
+    {
+     "delta": 0.8,
+     "matches": 4,
+     "pts": 5,
+     "team": "Switzerland",
+     "xpts": 4.2
+    },
+    {
+     "delta": 2.88,
+     "matches": 4,
+     "pts": 7,
+     "team": "Colombia",
+     "xpts": 4.12
+    },
+    {
+     "delta": -2.98,
+     "matches": 3,
+     "pts": 1,
+     "team": "Morocco",
+     "xpts": 3.98
+    },
+    {
+     "delta": -0.73,
+     "matches": 3,
+     "pts": 3,
+     "team": "Poland",
+     "xpts": 3.73
+    },
+    {
+     "delta": 2.27,
+     "matches": 4,
+     "pts": 6,
+     "team": "Denmark",
+     "xpts": 3.73
+    },
+    {
+     "delta": 2.3,
+     "matches": 4,
+     "pts": 6,
+     "team": "Mexico",
+     "xpts": 3.7
+    },
+    {
+     "delta": -0.65,
+     "matches": 3,
+     "pts": 3,
+     "team": "Nigeria",
+     "xpts": 3.65
+    },
+    {
+     "delta": -0.18,
+     "matches": 3,
+     "pts": 3,
+     "team": "Saudi Arabia",
+     "xpts": 3.18
+    },
+    {
+     "delta": -0.18,
+     "matches": 3,
+     "pts": 3,
+     "team": "Tunisia",
+     "xpts": 3.18
+    },
+    {
+     "delta": 0.1,
+     "matches": 3,
+     "pts": 3,
+     "team": "Peru",
+     "xpts": 2.9
+    },
+    {
+     "delta": 1.21,
+     "matches": 3,
+     "pts": 4,
+     "team": "Iran",
+     "xpts": 2.79
+    },
+    {
+     "delta": -2.74,
+     "matches": 3,
+     "pts": 0,
+     "team": "Egypt",
+     "xpts": 2.74
+    },
+    {
+     "delta": -1.22,
+     "matches": 3,
+     "pts": 1,
+     "team": "Costa Rica",
+     "xpts": 2.22
+    },
+    {
+     "delta": 1.02,
+     "matches": 3,
+     "pts": 3,
+     "team": "South Korea",
+     "xpts": 1.98
+    },
+    {
+     "delta": -1.59,
+     "matches": 3,
+     "pts": 0,
+     "team": "Panama",
+     "xpts": 1.59
+    }
+   ]
+  },
+  "fifa.world:2022": {
+   "coverage": 1.0,
+   "teams": [
+    {
+     "delta": -0.79,
+     "matches": 7,
+     "pts": 14,
+     "team": "Argentina",
+     "xpts": 14.79
+    },
+    {
+     "delta": -1.82,
+     "matches": 5,
+     "pts": 10,
+     "team": "Brazil",
+     "xpts": 11.82
+    },
+    {
+     "delta": 5.04,
+     "matches": 7,
+     "pts": 16,
+     "team": "France",
+     "xpts": 10.96
+    },
+    {
+     "delta": 0.58,
+     "matches": 5,
+     "pts": 10,
+     "team": "England",
+     "xpts": 9.42
+    },
+    {
+     "delta": 2.07,
+     "matches": 7,
+     "pts": 11,
+     "team": "Morocco",
+     "xpts": 8.93
+    },
+    {
+     "delta": 1.16,
+     "matches": 7,
+     "pts": 10,
+     "team": "Croatia",
+     "xpts": 8.84
+    },
+    {
+     "delta": 1.21,
+     "matches": 5,
+     "pts": 9,
+     "team": "Portugal",
+     "xpts": 7.79
+    },
+    {
+     "delta": -2.72,
+     "matches": 3,
+     "pts": 4,
+     "team": "Germany",
+     "xpts": 6.72
+    },
+    {
+     "delta": 4.31,
+     "matches": 5,
+     "pts": 11,
+     "team": "Netherlands",
+     "xpts": 6.69
+    },
+    {
+     "delta": 0.1,
+     "matches": 4,
+     "pts": 6,
+     "team": "Switzerland",
+     "xpts": 5.9
+    },
+    {
+     "delta": 1.45,
+     "matches": 4,
+     "pts": 7,
+     "team": "Japan",
+     "xpts": 5.55
+    },
+    {
+     "delta": -1.5,
+     "matches": 3,
+     "pts": 4,
+     "team": "Ecuador",
+     "xpts": 5.5
+    },
+    {
+     "delta": 0.55,
+     "matches": 4,
+     "pts": 6,
+     "team": "Senegal",
+     "xpts": 5.45
+    },
+    {
+     "delta": -0.11,
+     "matches": 4,
+     "pts": 5,
+     "team": "United States",
+     "xpts": 5.11
+    },
+    {
+     "delta": -0.89,
+     "matches": 4,
+     "pts": 4,
+     "team": "Poland",
+     "xpts": 4.89
+    },
+    {
+     "delta": -0.63,
+     "matches": 4,
+     "pts": 4,
+     "team": "South Korea",
+     "xpts": 4.63
+    },
+    {
+     "delta": -4.57,
+     "matches": 3,
+     "pts": 0,
+     "team": "Canada",
+     "xpts": 4.57
+    },
+    {
+     "delta": -1.22,
+     "matches": 3,
+     "pts": 3,
+     "team": "Iran",
+     "xpts": 4.22
+    },
+    {
+     "delta": -0.08,
+     "matches": 3,
+     "pts": 4,
+     "team": "Uruguay",
+     "xpts": 4.08
+    },
+    {
+     "delta": -0.02,
+     "matches": 3,
+     "pts": 4,
+     "team": "Mexico",
+     "xpts": 4.02
+    },
+    {
+     "delta": 0.0,
+     "matches": 3,
+     "pts": 4,
+     "team": "Tunisia",
+     "xpts": 4.0
+    },
+    {
+     "delta": -2.99,
+     "matches": 3,
+     "pts": 1,
+     "team": "Denmark",
+     "xpts": 3.99
+    },
+    {
+     "delta": 0.18,
+     "matches": 3,
+     "pts": 4,
+     "team": "Belgium",
+     "xpts": 3.82
+    },
+    {
+     "delta": -0.03,
+     "matches": 3,
+     "pts": 3,
+     "team": "Ghana",
+     "xpts": 3.03
+    },
+    {
+     "delta": -1.82,
+     "matches": 3,
+     "pts": 1,
+     "team": "Wales",
+     "xpts": 2.82
+    },
+    {
+     "delta": 1.39,
+     "matches": 3,
+     "pts": 4,
+     "team": "Cameroon",
+     "xpts": 2.61
+    },
+    {
+     "delta": 3.54,
+     "matches": 4,
+     "pts": 6,
+     "team": "Australia",
+     "xpts": 2.46
+    },
+    {
+     "delta": 0.65,
+     "matches": 3,
+     "pts": 3,
+     "team": "Saudi Arabia",
+     "xpts": 2.35
+    },
+    {
+     "delta": -2.28,
+     "matches": 3,
+     "pts": 0,
+     "team": "Qatar",
+     "xpts": 2.28
+    },
+    {
+     "delta": -0.87,
+     "matches": 3,
+     "pts": 1,
+     "team": "Serbia",
+     "xpts": 1.87
+    }
+   ]
+  }
+ }
+}

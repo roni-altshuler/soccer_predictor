@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
+import JusticeLedger from '@/components/league/JusticeLedger'
 import SeasonProjections from '@/components/league/SeasonProjections'
 import SeasonSimulationResults, {
   SeasonSimulationSkeleton,
@@ -1311,6 +1312,13 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 </div>
               </div>
             )}
+
+            {/* Justice ledger — luck-adjusted table; renders nothing unless
+                this competition-season cleared the xG coverage gates. */}
+            <JusticeLedger
+              competition={genderParam === 'F' ? `${leagueId}.w` : leagueId}
+              season={selectedSeason}
+            />
           </div>
         )}
 

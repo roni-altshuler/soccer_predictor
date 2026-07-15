@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
   Activity,
+  BookOpen,
   Brain,
   Calculator,
   CalendarDays,
@@ -41,6 +42,7 @@ const PAGES = [
   { href: '/tournaments', label: 'Tournaments', icon: Medal, hint: 'Brackets + group stages' },
   { href: '/players', label: 'Players', icon: Users, hint: 'Top scorers + form' },
   { href: '/predict', label: 'AI Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
+  { href: '/almanac', label: 'Almanac', icon: BookOpen, hint: 'Ask the history for a count' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Prediction track record' },
   { href: '/history', label: 'Prediction History', icon: History, hint: 'Past picks + outcomes' },
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
