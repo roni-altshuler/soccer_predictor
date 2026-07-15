@@ -8,6 +8,7 @@ import {
   Brain,
   Calculator,
   CalendarDays,
+  Database,
   Globe2,
   History,
   Info,
@@ -47,6 +48,7 @@ const PAGES = [
   { href: '/history', label: 'Prediction History', icon: History, hint: 'Past picks + outcomes' },
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
   { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
+  { href: '/diagnostics', label: 'Data Coverage', icon: Database, hint: 'Event timeline coverage by league' },
   { href: '/about', label: 'About', icon: Info, hint: 'How Pitchwise works' },
 ]
 

@@ -19,6 +19,7 @@ import { getPredictionVerdict } from './adaptPrediction'
 import { buildModelInsights } from './insights'
 import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
 import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
+import { MomentumRiver } from './MomentumRiver'
 import { RarityStamp } from './RarityStamp'
 import { TopStatsPreview } from './StatsTab'
 import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
@@ -543,6 +544,11 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
 
   return (
     <div className="space-y-6">
+      {/* Momentum river — the story section's headline visual: stacked
+          empirical win/draw/loss bands stepping at every goal and 5-minute
+          mark. Renders nothing unless every band span clears the n-gate. */}
+      <MomentumRiver match={match} isFinished={isFinished} />
+
       {/* The story — acts, detected turning points, exact-count receipts.
           Renders nothing unless the match is finished, the events reconcile
           with the final score, and the rarity artifact has real counts. */}

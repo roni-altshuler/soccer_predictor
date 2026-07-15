@@ -6,7 +6,16 @@
  * function MUST return identical outputs (seeded xorshift32 PRNG).
  *
  * Math summary:
- *   1. Team strength = 10^(PPG / 2)  (Bradley-Terry scale)
+ *   1. Team strength = 10^(PPG / 2)  (Bradley-Terry scale). When a team
+ *      carries a historical prior (TeamData.priorPpg, from the committed
+ *      multi-season strength artifact via src/lib/simulation/teamPriors.ts),
+ *      PPG is the shrinkage blend
+ *        (K × priorPpg + played × observedPpg) / (K + played)
+ *      with K = PRIOR_EVIDENCE_MATCHES — the prior is worth K matches of
+ *      evidence, so pre-season (played = 0) it fully differentiates strong
+ *      from weak teams and it decays automatically as real results arrive.
+ *      Teams without a prior behave exactly as before (observed PPG, or the
+ *      1.3 neutral default before their first match).
  *   2. P(home win)   = (str_h × homeFactor) / (str_h × homeFactor + str_a)
  *      P(away win)   = str_a / (str_h × homeFactor + str_a)
  *      P(draw)       = baseDrawRate × (0.7 + 0.6 × strengthRatio),
@@ -37,6 +46,12 @@ export interface TeamData {
   ga: number
   gd: number
   matchesPlayed: number
+  /**
+   * Expected points per game under the committed multi-season strength
+   * artifact (see src/lib/simulation/teamPriors.ts). Optional: absent means
+   * "no prior" and the simulation behaves exactly as it always has.
+   */
+  priorPpg?: number
 }
 
 export interface SimulationFixture {
@@ -127,6 +142,49 @@ export const MAX_CONDITION_MATCHES = 12
 const RELEGATION_SLOTS = 3
 
 /**
+ * How many matches of evidence a team's historical prior is worth.
+ *
+ * K = 12 ≈ a third of a 38-match season. The prior comes from a time-decayed
+ * multi-season fit (half-life ≈ 390 days), so it is a strong read on a squad —
+ * but a season boundary brings transfers and managerial churn, so it must not
+ * outweigh a meaningful block of real results. With K = 12: pre-season the
+ * table is 100% prior; after 6 rounds it is 67% prior; by mid-season (19
+ * played) 39%; over a full 38-match season just 24%. That matches the usual
+ * football-analytics rule of thumb that team quality estimates need roughly
+ * 10-15 matches of shrinkage before raw PPG becomes reliable.
+ */
+export const PRIOR_EVIDENCE_MATCHES = 12
+
+/** PPG assumed for a team with no played matches and no prior (legacy default). */
+const DEFAULT_PPG = 1.3
+
+/**
+ * Blend observed points-per-game with an optional historical prior using
+ * effective-sample-size shrinkage. Pure and deterministic.
+ *
+ *   - no prior            → observed PPG (or the 1.3 default before round 1);
+ *                           bit-for-bit the pre-existing behaviour.
+ *   - prior, 0 played     → exactly the prior (differentiated pre-season).
+ *   - prior, n played     → (K·prior + n·observed) / (K + n): real results
+ *                           progressively drown the prior out.
+ */
+export function blendedPpg(
+  points: number,
+  matchesPlayed: number,
+  priorPpg?: number,
+): number {
+  const played = Math.max(0, matchesPlayed)
+  if (priorPpg === undefined || !Number.isFinite(priorPpg)) {
+    return played > 0 ? points / played : DEFAULT_PPG
+  }
+  const observedTerm = played > 0 ? points : 0
+  return (
+    (PRIOR_EVIDENCE_MATCHES * priorPpg + observedTerm) /
+    (PRIOR_EVIDENCE_MATCHES + played)
+  )
+}
+
+/**
  * Monte Carlo Season Simulation. Pure — same inputs → same outputs.
  * Legacy entry point: standings only, byte-for-byte unchanged behaviour.
  */
@@ -169,11 +227,12 @@ export function runMonteCarloSimulationDetailed(
   const positionCounts: number[][] = teams.map(() => new Array(numTeams).fill(0))
   const totalPointsSum: number[] = new Array(numTeams).fill(0)
 
-  // Bradley-Terry strength from current PPG.
-  const strengths = teams.map((t) => {
-    const ppg = t.matchesPlayed > 0 ? t.points / t.matchesPlayed : 1.3
-    return Math.pow(10, ppg / 2.0)
-  })
+  // Bradley-Terry strength from PPG — observed table pace blended with the
+  // historical prior when one is attached (see blendedPpg). No PRNG draws
+  // are involved, so determinism is untouched.
+  const strengths = teams.map((t) =>
+    Math.pow(10, blendedPpg(t.points, t.matchesPlayed, t.priorPpg) / 2.0),
+  )
 
   const remainingPerTeam = teams.map((t) =>
     Math.max(0, totalMatchesPerSeason - t.matchesPlayed),

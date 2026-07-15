@@ -1,0 +1,172 @@
+name: Event Backfill
+
+# Maintains the minute-level timeline foundation (VISION_2030 Phase 0) on a
+# daily cadence:
+#
+#   1. restore the gitignored warehouse from the rolling `models-latest`
+#      release (the same asset the prediction pipeline and weekly training
+#      consume);
+#   2. ingest newly finished matches so there are rows to backfill;
+#   3. incrementally backfill goal/red-card events — backfill_events only
+#      attempts matches missing from `match_event_coverage`, and its
+#      integrity guard stores NOTHING unless the events reproduce the final
+#      score, so re-runs are cheap and the corpus never degrades;
+#   4. regenerate the committed artifacts that Vercel serves (rarity state
+#      counts + precedents, justice ledger, event-coverage summary) and the
+#      Dixon-Coles baseline params;
+#   5. republish the warehouse (the coverage rows written in step 3 ARE the
+#      resumability state — without this, every run redoes the same work);
+#   6. commit artifacts only when they substantively changed (generated_at
+#      timestamp churn alone is not a change).
+#
+# HONESTY RULE (this repo once lost 3 months to a masked crash): no
+# `continue-on-error`, no `|| true`. A broken step must fail the run visibly.
+
+on:
+  schedule:
+    # Daily 08:30 UTC — after the 06:00 prediction run, and clear of the
+    # Sunday train_unified window (02:00-05:00), which also downloads and
+    # republishes warehouse.sqlite.gz on the models-latest release.
+    - cron: '30 8 * * *'
+  workflow_dispatch:
+    inputs:
+      since_days:
+        description: 'Lookback window in days for the incremental backfill'
+        required: false
+        default: '30'
+      espn_limit:
+        description: 'Max matches to attempt from the primary event source'
+        required: false
+        default: '800'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: event-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill-events:
+    runs-on: ubuntu-latest
+    # Bounded: the backfill is incremental (a normal day is a few dozen new
+    # matches) and hard-capped by --limit; the artifact builders run in
+    # seconds. The budget is dominated by the recent-season ingest.
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies (no torch — nothing here infers)
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^torch' requirements.txt > /tmp/req-no-torch.txt
+          pip install -r /tmp/req-no-torch.txt
+
+      - name: Download warehouse from models-latest release
+        # Unlike the prediction pipeline there is NO fallback here: the
+        # release warehouse carries match_event_coverage — the record of
+        # every already-verified timeline. Building from scratch instead
+        # would re-attempt the whole history and then commit regressed
+        # artifacts. Fail loudly and fix the release asset instead.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest --pattern 'warehouse.sqlite.gz' --dir /tmp --clobber
+          gunzip -f /tmp/warehouse.sqlite.gz
+          mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite
+          python -m backend.scripts.build_warehouse --stats
+
+      - name: Ingest newly finished matches
+        # The release copy is up to a week old (train_unified republishes
+        # Sundays). Both ESPN universes plus football-data.co.uk, last two
+        # season labels — the split-year window straddles the August
+        # European season rollover.
+        run: |
+          YEAR=$(date -u +%Y)
+          python -m backend.scripts.build_warehouse \
+            --espn --espn-women --football-data \
+            --min-season $((YEAR - 1)) --max-season "$YEAR"
+
+      - name: Backfill events — primary source (incremental)
+        # Only matches absent from match_event_coverage inside the lookback
+        # window are attempted; exit code 1 = polite hard-stop after
+        # consecutive 4xx refusals, which must fail the run.
+        run: |
+          SINCE=$(date -u -d "${{ github.event.inputs.since_days || '30' }} days ago" +%Y-%m-%d)
+          python -m backend.scripts.backfill_events --source espn \
+            --since "$SINCE" --sleep 0.5 \
+            --limit "${{ github.event.inputs.espn_limit || '800' }}"
+
+      - name: Backfill events — secondary source (top-5 league gaps)
+        # Covers rows the primary source has no event id for (e.g. the
+        # football-data.co.uk fixtures). Season labels flip in August.
+        run: |
+          SINCE=$(date -u -d "${{ github.event.inputs.since_days || '30' }} days ago" +%Y-%m-%d)
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%-m)
+          if [ "$MONTH" -lt 8 ]; then SEASON=$((YEAR - 1)); else SEASON=$YEAR; fi
+          python -m backend.scripts.backfill_events --source understat \
+            --season "$SEASON" --since "$SINCE" --sleep 0.5 --limit 400
+
+      - name: Regenerate committed artifacts
+        run: |
+          python -m backend.scripts.build_rarity
+          python -m backend.scripts.build_justice
+          python -m backend.scripts.build_event_coverage
+          python -m backend.scripts.train_dixon_coles
+          python -m backend.scripts.build_sim_priors
+
+      - name: Coverage regression guard
+        # matches_covered may only grow: the backfill adds coverage rows and
+        # never removes them. A drop means this run operated on a warehouse
+        # that lost its event history (e.g. the release asset was rebuilt
+        # from scratch) — committing would clobber good artifacts with a
+        # thin corpus. Fail BEFORE the publish/commit steps.
+        run: |
+          NEW=$(python -c "import json; print(json.load(open('backend/data/rarity/state_outcomes.json'))['matches_covered'])")
+          OLD=$(git show HEAD:backend/data/rarity/state_outcomes.json | python -c "import json,sys; print(json.load(sys.stdin)['matches_covered'])")
+          echo "matches_covered: HEAD=$OLD -> new=$NEW"
+          if [ "$NEW" -lt "$OLD" ]; then
+            echo "::error::Rarity corpus regressed ($OLD -> $NEW covered matches). The release warehouse is missing event history — restore a warehouse that contains match_event_coverage before re-running."
+            exit 1
+          fi
+
+      - name: Publish updated warehouse to models-latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gzip -c backend/data/warehouse.sqlite > /tmp/warehouse.sqlite.gz
+          gh release upload models-latest --clobber /tmp/warehouse.sqlite.gz
+
+      - name: Commit regenerated artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add backend/data/rarity/ backend/data/justice/ \
+                  backend/data/events/ backend/data/dixon_coles_params.json
+
+          # Every builder stamps generated_at; timestamp churn alone is not
+          # a change worth a daily commit.
+          if git diff --cached --quiet -I'"generated_at":'; then
+            echo "No substantive artifact changes — skipping commit"
+          else
+            STATS=$(git diff --cached --stat | tail -1)
+            MSG="chore: event backfill + artifact refresh [automated]"
+            MSG="$MSG"$'\n\n'"Incremental timeline backfill; rarity, justice and coverage artifacts; baseline params."
+            MSG="$MSG"$'\n'"$STATS"
+            git commit -m "$MSG"
+            # The 3x-daily prediction bot races this push.
+            git pull --rebase origin main
+            git push
+          fi

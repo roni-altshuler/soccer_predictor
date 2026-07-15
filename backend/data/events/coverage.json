@@ -1,0 +1,2615 @@
+{
+ "competitions": [
+  {
+   "competition_id": "conmebol.america",
+   "coverage": 0.9758,
+   "covered": 242,
+   "gender": "M",
+   "matches": 248,
+   "name": "Copa Am\u00e9rica",
+   "seasons": [
+    {
+     "coverage": 0.8846,
+     "covered": 23,
+     "matches": 26,
+     "season": 2001,
+     "uncovered": 3,
+     "verified_empty": 1,
+     "with_events": 22
+    },
+    {
+     "coverage": 1.0,
+     "covered": 26,
+     "matches": 26,
+     "season": 2004,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 26
+    },
+    {
+     "coverage": 0.8846,
+     "covered": 23,
+     "matches": 26,
+     "season": 2007,
+     "uncovered": 3,
+     "verified_empty": 2,
+     "with_events": 21
+    },
+    {
+     "coverage": 1.0,
+     "covered": 26,
+     "matches": 26,
+     "season": 2011,
+     "uncovered": 0,
+     "verified_empty": 5,
+     "with_events": 21
+    },
+    {
+     "coverage": 1.0,
+     "covered": 26,
+     "matches": 26,
+     "season": 2015,
+     "uncovered": 0,
+     "verified_empty": 4,
+     "with_events": 22
+    },
+    {
+     "coverage": 1.0,
+     "covered": 32,
+     "matches": 32,
+     "season": 2016,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 30
+    },
+    {
+     "coverage": 1.0,
+     "covered": 26,
+     "matches": 26,
+     "season": 2019,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 23
+    },
+    {
+     "coverage": 1.0,
+     "covered": 28,
+     "matches": 28,
+     "season": 2021,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 27
+    },
+    {
+     "coverage": 1.0,
+     "covered": 32,
+     "matches": 32,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 29
+    }
+   ],
+   "uncovered": 6,
+   "verified_empty": 21,
+   "with_events": 221
+  },
+  {
+   "competition_id": "eng.1",
+   "coverage": 0.5119,
+   "covered": 5205,
+   "gender": "M",
+   "matches": 10168,
+   "name": "Premier League",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 14,
+     "matches": 14,
+     "season": 2003,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 13
+    },
+    {
+     "coverage": 1.0,
+     "covered": 76,
+     "matches": 76,
+     "season": 2004,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 69
+    },
+    {
+     "coverage": 0.0995,
+     "covered": 40,
+     "matches": 402,
+     "season": 2005,
+     "uncovered": 362,
+     "verified_empty": 3,
+     "with_events": 37
+    },
+    {
+     "coverage": 0.0594,
+     "covered": 23,
+     "matches": 387,
+     "season": 2006,
+     "uncovered": 364,
+     "verified_empty": 3,
+     "with_events": 20
+    },
+    {
+     "coverage": 0.0808,
+     "covered": 32,
+     "matches": 396,
+     "season": 2007,
+     "uncovered": 364,
+     "verified_empty": 2,
+     "with_events": 30
+    },
+    {
+     "coverage": 0.0259,
+     "covered": 10,
+     "matches": 386,
+     "season": 2008,
+     "uncovered": 376,
+     "verified_empty": 2,
+     "with_events": 8
+    },
+    {
+     "coverage": 0.3158,
+     "covered": 216,
+     "matches": 684,
+     "season": 2009,
+     "uncovered": 468,
+     "verified_empty": 30,
+     "with_events": 186
+    },
+    {
+     "coverage": 0.1574,
+     "covered": 91,
+     "matches": 578,
+     "season": 2010,
+     "uncovered": 487,
+     "verified_empty": 3,
+     "with_events": 88
+    },
+    {
+     "coverage": 0.0525,
+     "covered": 33,
+     "matches": 628,
+     "season": 2011,
+     "uncovered": 595,
+     "verified_empty": 4,
+     "with_events": 29
+    },
+    {
+     "coverage": 0.0571,
+     "covered": 33,
+     "matches": 578,
+     "season": 2012,
+     "uncovered": 545,
+     "verified_empty": 2,
+     "with_events": 31
+    },
+    {
+     "coverage": 0.0173,
+     "covered": 10,
+     "matches": 578,
+     "season": 2013,
+     "uncovered": 568,
+     "verified_empty": 0,
+     "with_events": 10
+    },
+    {
+     "coverage": 0.6745,
+     "covered": 371,
+     "matches": 550,
+     "season": 2014,
+     "uncovered": 179,
+     "verified_empty": 30,
+     "with_events": 341
+    },
+    {
+     "coverage": 0.8635,
+     "covered": 449,
+     "matches": 520,
+     "season": 2015,
+     "uncovered": 71,
+     "verified_empty": 34,
+     "with_events": 415
+    },
+    {
+     "coverage": 0.7288,
+     "covered": 379,
+     "matches": 520,
+     "season": 2016,
+     "uncovered": 141,
+     "verified_empty": 27,
+     "with_events": 352
+    },
+    {
+     "coverage": 0.7346,
+     "covered": 382,
+     "matches": 520,
+     "season": 2017,
+     "uncovered": 138,
+     "verified_empty": 32,
+     "with_events": 350
+    },
+    {
+     "coverage": 0.8458,
+     "covered": 384,
+     "matches": 454,
+     "season": 2018,
+     "uncovered": 70,
+     "verified_empty": 23,
+     "with_events": 361
+    },
+    {
+     "coverage": 0.7987,
+     "covered": 381,
+     "matches": 477,
+     "season": 2019,
+     "uncovered": 96,
+     "verified_empty": 21,
+     "with_events": 360
+    },
+    {
+     "coverage": 0.9091,
+     "covered": 380,
+     "matches": 418,
+     "season": 2020,
+     "uncovered": 38,
+     "verified_empty": 28,
+     "with_events": 352
+    },
+    {
+     "coverage": 0.9282,
+     "covered": 388,
+     "matches": 418,
+     "season": 2021,
+     "uncovered": 30,
+     "verified_empty": 21,
+     "with_events": 367
+    },
+    {
+     "coverage": 1.0,
+     "covered": 380,
+     "matches": 380,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 23,
+     "with_events": 357
+    },
+    {
+     "coverage": 0.9187,
+     "covered": 384,
+     "matches": 418,
+     "season": 2023,
+     "uncovered": 34,
+     "verified_empty": 11,
+     "with_events": 373
+    },
+    {
+     "coverage": 0.9115,
+     "covered": 381,
+     "matches": 418,
+     "season": 2024,
+     "uncovered": 37,
+     "verified_empty": 16,
+     "with_events": 365
+    },
+    {
+     "coverage": 1.0,
+     "covered": 368,
+     "matches": 368,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 27,
+     "with_events": 341
+    }
+   ],
+   "uncovered": 4963,
+   "verified_empty": 350,
+   "with_events": 4855
+  },
+  {
+   "competition_id": "eng.1.w",
+   "coverage": 0.7472,
+   "covered": 739,
+   "gender": "F",
+   "matches": 989,
+   "name": "FA Women's Super League",
+   "seasons": [
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 59,
+     "season": 2018,
+     "uncovered": 59,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0187,
+     "covered": 2,
+     "matches": 107,
+     "season": 2019,
+     "uncovered": 105,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.0349,
+     "covered": 3,
+     "matches": 86,
+     "season": 2020,
+     "uncovered": 83,
+     "verified_empty": 0,
+     "with_events": 3
+    },
+    {
+     "coverage": 0.9851,
+     "covered": 132,
+     "matches": 134,
+     "season": 2021,
+     "uncovered": 2,
+     "verified_empty": 6,
+     "with_events": 126
+    },
+    {
+     "coverage": 1.0,
+     "covered": 130,
+     "matches": 130,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 124
+    },
+    {
+     "coverage": 0.9927,
+     "covered": 136,
+     "matches": 137,
+     "season": 2023,
+     "uncovered": 1,
+     "verified_empty": 4,
+     "with_events": 132
+    },
+    {
+     "coverage": 1.0,
+     "covered": 132,
+     "matches": 132,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 5,
+     "with_events": 127
+    },
+    {
+     "coverage": 1.0,
+     "covered": 204,
+     "matches": 204,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 10,
+     "with_events": 194
+    }
+   ],
+   "uncovered": 250,
+   "verified_empty": 31,
+   "with_events": 708
+  },
+  {
+   "competition_id": "esp.1",
+   "coverage": 0.3999,
+   "covered": 4695,
+   "gender": "M",
+   "matches": 11739,
+   "name": "La Liga",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 1,
+     "matches": 1,
+     "season": 2003,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.9761,
+     "covered": 245,
+     "matches": 251,
+     "season": 2004,
+     "uncovered": 6,
+     "verified_empty": 20,
+     "with_events": 225
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2005,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0052,
+     "covered": 2,
+     "matches": 381,
+     "season": 2006,
+     "uncovered": 379,
+     "verified_empty": 1,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.0657,
+     "covered": 26,
+     "matches": 396,
+     "season": 2007,
+     "uncovered": 370,
+     "verified_empty": 1,
+     "with_events": 25
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2008,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.2857,
+     "covered": 126,
+     "matches": 441,
+     "season": 2009,
+     "uncovered": 315,
+     "verified_empty": 7,
+     "with_events": 119
+    },
+    {
+     "coverage": 0.4103,
+     "covered": 192,
+     "matches": 468,
+     "season": 2010,
+     "uncovered": 276,
+     "verified_empty": 17,
+     "with_events": 175
+    },
+    {
+     "coverage": 0.0544,
+     "covered": 21,
+     "matches": 386,
+     "season": 2011,
+     "uncovered": 365,
+     "verified_empty": 0,
+     "with_events": 21
+    },
+    {
+     "coverage": 0.005,
+     "covered": 3,
+     "matches": 604,
+     "season": 2012,
+     "uncovered": 601,
+     "verified_empty": 0,
+     "with_events": 3
+    },
+    {
+     "coverage": 0.02,
+     "covered": 11,
+     "matches": 550,
+     "season": 2013,
+     "uncovered": 539,
+     "verified_empty": 0,
+     "with_events": 11
+    },
+    {
+     "coverage": 0.6685,
+     "covered": 369,
+     "matches": 552,
+     "season": 2014,
+     "uncovered": 183,
+     "verified_empty": 28,
+     "with_events": 341
+    },
+    {
+     "coverage": 0.6354,
+     "covered": 373,
+     "matches": 587,
+     "season": 2015,
+     "uncovered": 214,
+     "verified_empty": 22,
+     "with_events": 351
+    },
+    {
+     "coverage": 0.558,
+     "covered": 351,
+     "matches": 629,
+     "season": 2016,
+     "uncovered": 278,
+     "verified_empty": 24,
+     "with_events": 327
+    },
+    {
+     "coverage": 0.6298,
+     "covered": 364,
+     "matches": 578,
+     "season": 2017,
+     "uncovered": 214,
+     "verified_empty": 24,
+     "with_events": 340
+    },
+    {
+     "coverage": 0.5917,
+     "covered": 358,
+     "matches": 605,
+     "season": 2018,
+     "uncovered": 247,
+     "verified_empty": 27,
+     "with_events": 331
+    },
+    {
+     "coverage": 0.596,
+     "covered": 360,
+     "matches": 604,
+     "season": 2019,
+     "uncovered": 244,
+     "verified_empty": 31,
+     "with_events": 329
+    },
+    {
+     "coverage": 0.5487,
+     "covered": 355,
+     "matches": 647,
+     "season": 2020,
+     "uncovered": 292,
+     "verified_empty": 30,
+     "with_events": 325
+    },
+    {
+     "coverage": 0.5136,
+     "covered": 340,
+     "matches": 662,
+     "season": 2021,
+     "uncovered": 322,
+     "verified_empty": 37,
+     "with_events": 303
+    },
+    {
+     "coverage": 0.4606,
+     "covered": 304,
+     "matches": 660,
+     "season": 2022,
+     "uncovered": 356,
+     "verified_empty": 20,
+     "with_events": 284
+    },
+    {
+     "coverage": 0.4732,
+     "covered": 309,
+     "matches": 653,
+     "season": 2023,
+     "uncovered": 344,
+     "verified_empty": 23,
+     "with_events": 286
+    },
+    {
+     "coverage": 0.4292,
+     "covered": 294,
+     "matches": 685,
+     "season": 2024,
+     "uncovered": 391,
+     "verified_empty": 14,
+     "with_events": 280
+    },
+    {
+     "coverage": 0.4554,
+     "covered": 291,
+     "matches": 639,
+     "season": 2025,
+     "uncovered": 348,
+     "verified_empty": 8,
+     "with_events": 283
+    }
+   ],
+   "uncovered": 7044,
+   "verified_empty": 334,
+   "with_events": 4361
+  },
+  {
+   "competition_id": "fifa.world",
+   "coverage": 0.8345,
+   "covered": 373,
+   "gender": "M",
+   "matches": 447,
+   "name": "FIFA World Cup",
+   "seasons": [
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 64,
+     "season": 1998,
+     "uncovered": 64,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 1.0,
+     "covered": 63,
+     "matches": 63,
+     "season": 2002,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 60
+    },
+    {
+     "coverage": 1.0,
+     "covered": 64,
+     "matches": 64,
+     "season": 2006,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 57
+    },
+    {
+     "coverage": 0.8906,
+     "covered": 57,
+     "matches": 64,
+     "season": 2010,
+     "uncovered": 7,
+     "verified_empty": 7,
+     "with_events": 50
+    },
+    {
+     "coverage": 0.9531,
+     "covered": 61,
+     "matches": 64,
+     "season": 2014,
+     "uncovered": 3,
+     "verified_empty": 4,
+     "with_events": 57
+    },
+    {
+     "coverage": 1.0,
+     "covered": 64,
+     "matches": 64,
+     "season": 2018,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 63
+    },
+    {
+     "coverage": 1.0,
+     "covered": 64,
+     "matches": 64,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 57
+    }
+   ],
+   "uncovered": 74,
+   "verified_empty": 29,
+   "with_events": 344
+  },
+  {
+   "competition_id": "fifa.world.w",
+   "coverage": 0.98,
+   "covered": 196,
+   "gender": "F",
+   "matches": 200,
+   "name": "FIFA Women's World Cup",
+   "seasons": [
+    {
+     "coverage": 0.9062,
+     "covered": 29,
+     "matches": 32,
+     "season": 2011,
+     "uncovered": 3,
+     "verified_empty": 1,
+     "with_events": 28
+    },
+    {
+     "coverage": 0.9808,
+     "covered": 51,
+     "matches": 52,
+     "season": 2015,
+     "uncovered": 1,
+     "verified_empty": 2,
+     "with_events": 49
+    },
+    {
+     "coverage": 1.0,
+     "covered": 52,
+     "matches": 52,
+     "season": 2019,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 50
+    },
+    {
+     "coverage": 1.0,
+     "covered": 64,
+     "matches": 64,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 57
+    }
+   ],
+   "uncovered": 4,
+   "verified_empty": 12,
+   "with_events": 184
+  },
+  {
+   "competition_id": "fra.1",
+   "coverage": 0.42,
+   "covered": 4479,
+   "gender": "M",
+   "matches": 10665,
+   "name": "Ligue 1",
+   "seasons": [
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2005,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2006,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0696,
+     "covered": 27,
+     "matches": 388,
+     "season": 2007,
+     "uncovered": 361,
+     "verified_empty": 1,
+     "with_events": 26
+    },
+    {
+     "coverage": 0.0053,
+     "covered": 2,
+     "matches": 380,
+     "season": 2008,
+     "uncovered": 378,
+     "verified_empty": 1,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.4967,
+     "covered": 223,
+     "matches": 449,
+     "season": 2009,
+     "uncovered": 226,
+     "verified_empty": 24,
+     "with_events": 199
+    },
+    {
+     "coverage": 0.2938,
+     "covered": 119,
+     "matches": 405,
+     "season": 2010,
+     "uncovered": 286,
+     "verified_empty": 12,
+     "with_events": 107
+    },
+    {
+     "coverage": 0.0208,
+     "covered": 8,
+     "matches": 384,
+     "season": 2011,
+     "uncovered": 376,
+     "verified_empty": 3,
+     "with_events": 5
+    },
+    {
+     "coverage": 0.0261,
+     "covered": 10,
+     "matches": 383,
+     "season": 2012,
+     "uncovered": 373,
+     "verified_empty": 0,
+     "with_events": 10
+    },
+    {
+     "coverage": 0.0053,
+     "covered": 2,
+     "matches": 380,
+     "season": 2013,
+     "uncovered": 378,
+     "verified_empty": 1,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.6,
+     "covered": 363,
+     "matches": 605,
+     "season": 2014,
+     "uncovered": 242,
+     "verified_empty": 31,
+     "with_events": 332
+    },
+    {
+     "coverage": 0.554,
+     "covered": 395,
+     "matches": 713,
+     "season": 2015,
+     "uncovered": 318,
+     "verified_empty": 31,
+     "with_events": 364
+    },
+    {
+     "coverage": 0.5385,
+     "covered": 350,
+     "matches": 650,
+     "season": 2016,
+     "uncovered": 300,
+     "verified_empty": 26,
+     "with_events": 324
+    },
+    {
+     "coverage": 0.5807,
+     "covered": 367,
+     "matches": 632,
+     "season": 2017,
+     "uncovered": 265,
+     "verified_empty": 21,
+     "with_events": 346
+    },
+    {
+     "coverage": 0.5651,
+     "covered": 369,
+     "matches": 653,
+     "season": 2018,
+     "uncovered": 284,
+     "verified_empty": 31,
+     "with_events": 338
+    },
+    {
+     "coverage": 0.5817,
+     "covered": 267,
+     "matches": 459,
+     "season": 2019,
+     "uncovered": 192,
+     "verified_empty": 20,
+     "with_events": 247
+    },
+    {
+     "coverage": 0.5997,
+     "covered": 379,
+     "matches": 632,
+     "season": 2020,
+     "uncovered": 253,
+     "verified_empty": 25,
+     "with_events": 354
+    },
+    {
+     "coverage": 0.5787,
+     "covered": 386,
+     "matches": 667,
+     "season": 2021,
+     "uncovered": 281,
+     "verified_empty": 24,
+     "with_events": 362
+    },
+    {
+     "coverage": 0.5662,
+     "covered": 342,
+     "matches": 604,
+     "season": 2022,
+     "uncovered": 262,
+     "verified_empty": 23,
+     "with_events": 319
+    },
+    {
+     "coverage": 0.5438,
+     "covered": 273,
+     "matches": 502,
+     "season": 2023,
+     "uncovered": 229,
+     "verified_empty": 23,
+     "with_events": 250
+    },
+    {
+     "coverage": 0.537,
+     "covered": 290,
+     "matches": 540,
+     "season": 2024,
+     "uncovered": 250,
+     "verified_empty": 14,
+     "with_events": 276
+    },
+    {
+     "coverage": 0.6409,
+     "covered": 307,
+     "matches": 479,
+     "season": 2025,
+     "uncovered": 172,
+     "verified_empty": 23,
+     "with_events": 284
+    }
+   ],
+   "uncovered": 6186,
+   "verified_empty": 334,
+   "with_events": 4145
+  },
+  {
+   "competition_id": "ger.1",
+   "coverage": 0.2698,
+   "covered": 2727,
+   "gender": "M",
+   "matches": 10109,
+   "name": "Bundesliga",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 2,
+     "matches": 2,
+     "season": 2003,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 1.0,
+     "covered": 62,
+     "matches": 62,
+     "season": 2004,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 56
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 306,
+     "season": 2005,
+     "uncovered": 306,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0258,
+     "covered": 8,
+     "matches": 310,
+     "season": 2006,
+     "uncovered": 302,
+     "verified_empty": 3,
+     "with_events": 5
+    },
+    {
+     "coverage": 0.0475,
+     "covered": 15,
+     "matches": 316,
+     "season": 2007,
+     "uncovered": 301,
+     "verified_empty": 0,
+     "with_events": 15
+    },
+    {
+     "coverage": 0.0836,
+     "covered": 27,
+     "matches": 323,
+     "season": 2008,
+     "uncovered": 296,
+     "verified_empty": 1,
+     "with_events": 26
+    },
+    {
+     "coverage": 0.5085,
+     "covered": 210,
+     "matches": 413,
+     "season": 2009,
+     "uncovered": 203,
+     "verified_empty": 21,
+     "with_events": 189
+    },
+    {
+     "coverage": 0.1159,
+     "covered": 62,
+     "matches": 535,
+     "season": 2010,
+     "uncovered": 473,
+     "verified_empty": 3,
+     "with_events": 59
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 540,
+     "season": 2011,
+     "uncovered": 540,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0199,
+     "covered": 10,
+     "matches": 503,
+     "season": 2012,
+     "uncovered": 493,
+     "verified_empty": 0,
+     "with_events": 10
+    },
+    {
+     "coverage": 0.0019,
+     "covered": 1,
+     "matches": 522,
+     "season": 2013,
+     "uncovered": 521,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.3484,
+     "covered": 185,
+     "matches": 531,
+     "season": 2014,
+     "uncovered": 346,
+     "verified_empty": 11,
+     "with_events": 174
+    },
+    {
+     "coverage": 0.5122,
+     "covered": 295,
+     "matches": 576,
+     "season": 2015,
+     "uncovered": 281,
+     "verified_empty": 21,
+     "with_events": 274
+    },
+    {
+     "coverage": 0.2835,
+     "covered": 148,
+     "matches": 522,
+     "season": 2016,
+     "uncovered": 374,
+     "verified_empty": 7,
+     "with_events": 141
+    },
+    {
+     "coverage": 0.3068,
+     "covered": 154,
+     "matches": 502,
+     "season": 2017,
+     "uncovered": 348,
+     "verified_empty": 11,
+     "with_events": 143
+    },
+    {
+     "coverage": 0.3812,
+     "covered": 183,
+     "matches": 480,
+     "season": 2018,
+     "uncovered": 297,
+     "verified_empty": 8,
+     "with_events": 175
+    },
+    {
+     "coverage": 0.3108,
+     "covered": 156,
+     "matches": 502,
+     "season": 2019,
+     "uncovered": 346,
+     "verified_empty": 5,
+     "with_events": 151
+    },
+    {
+     "coverage": 0.4954,
+     "covered": 270,
+     "matches": 545,
+     "season": 2020,
+     "uncovered": 275,
+     "verified_empty": 12,
+     "with_events": 258
+    },
+    {
+     "coverage": 0.3481,
+     "covered": 197,
+     "matches": 566,
+     "season": 2021,
+     "uncovered": 369,
+     "verified_empty": 12,
+     "with_events": 185
+    },
+    {
+     "coverage": 0.3108,
+     "covered": 156,
+     "matches": 502,
+     "season": 2022,
+     "uncovered": 346,
+     "verified_empty": 6,
+     "with_events": 150
+    },
+    {
+     "coverage": 0.3537,
+     "covered": 185,
+     "matches": 523,
+     "season": 2023,
+     "uncovered": 338,
+     "verified_empty": 5,
+     "with_events": 180
+    },
+    {
+     "coverage": 0.4143,
+     "covered": 208,
+     "matches": 502,
+     "season": 2024,
+     "uncovered": 294,
+     "verified_empty": 13,
+     "with_events": 195
+    },
+    {
+     "coverage": 0.3669,
+     "covered": 193,
+     "matches": 526,
+     "season": 2025,
+     "uncovered": 333,
+     "verified_empty": 6,
+     "with_events": 187
+    }
+   ],
+   "uncovered": 7382,
+   "verified_empty": 151,
+   "with_events": 2576
+  },
+  {
+   "competition_id": "ita.1",
+   "coverage": 0.4434,
+   "covered": 5091,
+   "gender": "M",
+   "matches": 11483,
+   "name": "Serie A",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 264,
+     "matches": 264,
+     "season": 2004,
+     "uncovered": 0,
+     "verified_empty": 26,
+     "with_events": 238
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2005,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2006,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.1184,
+     "covered": 45,
+     "matches": 380,
+     "season": 2007,
+     "uncovered": 335,
+     "verified_empty": 2,
+     "with_events": 43
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 380,
+     "season": 2008,
+     "uncovered": 380,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.1854,
+     "covered": 71,
+     "matches": 383,
+     "season": 2009,
+     "uncovered": 312,
+     "verified_empty": 8,
+     "with_events": 63
+    },
+    {
+     "coverage": 0.6127,
+     "covered": 250,
+     "matches": 408,
+     "season": 2010,
+     "uncovered": 158,
+     "verified_empty": 26,
+     "with_events": 224
+    },
+    {
+     "coverage": 0.0157,
+     "covered": 6,
+     "matches": 381,
+     "season": 2011,
+     "uncovered": 375,
+     "verified_empty": 0,
+     "with_events": 6
+    },
+    {
+     "coverage": 0.0681,
+     "covered": 26,
+     "matches": 382,
+     "season": 2012,
+     "uncovered": 356,
+     "verified_empty": 2,
+     "with_events": 24
+    },
+    {
+     "coverage": 0.005,
+     "covered": 3,
+     "matches": 604,
+     "season": 2013,
+     "uncovered": 601,
+     "verified_empty": 1,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.6291,
+     "covered": 380,
+     "matches": 604,
+     "season": 2014,
+     "uncovered": 224,
+     "verified_empty": 30,
+     "with_events": 350
+    },
+    {
+     "coverage": 0.6446,
+     "covered": 390,
+     "matches": 605,
+     "season": 2015,
+     "uncovered": 215,
+     "verified_empty": 32,
+     "with_events": 358
+    },
+    {
+     "coverage": 0.6291,
+     "covered": 380,
+     "matches": 604,
+     "season": 2016,
+     "uncovered": 224,
+     "verified_empty": 20,
+     "with_events": 360
+    },
+    {
+     "coverage": 0.5446,
+     "covered": 342,
+     "matches": 628,
+     "season": 2017,
+     "uncovered": 286,
+     "verified_empty": 24,
+     "with_events": 318
+    },
+    {
+     "coverage": 0.5366,
+     "covered": 337,
+     "matches": 628,
+     "season": 2018,
+     "uncovered": 291,
+     "verified_empty": 30,
+     "with_events": 307
+    },
+    {
+     "coverage": 0.5023,
+     "covered": 324,
+     "matches": 645,
+     "season": 2019,
+     "uncovered": 321,
+     "verified_empty": 20,
+     "with_events": 304
+    },
+    {
+     "coverage": 0.5879,
+     "covered": 388,
+     "matches": 660,
+     "season": 2020,
+     "uncovered": 272,
+     "verified_empty": 19,
+     "with_events": 369
+    },
+    {
+     "coverage": 0.6266,
+     "covered": 396,
+     "matches": 632,
+     "season": 2021,
+     "uncovered": 236,
+     "verified_empty": 22,
+     "with_events": 374
+    },
+    {
+     "coverage": 0.5908,
+     "covered": 387,
+     "matches": 655,
+     "season": 2022,
+     "uncovered": 268,
+     "verified_empty": 20,
+     "with_events": 367
+    },
+    {
+     "coverage": 0.6003,
+     "covered": 377,
+     "matches": 628,
+     "season": 2023,
+     "uncovered": 251,
+     "verified_empty": 30,
+     "with_events": 347
+    },
+    {
+     "coverage": 0.6147,
+     "covered": 367,
+     "matches": 597,
+     "season": 2024,
+     "uncovered": 230,
+     "verified_empty": 26,
+     "with_events": 341
+    },
+    {
+     "coverage": 0.5466,
+     "covered": 358,
+     "matches": 655,
+     "season": 2025,
+     "uncovered": 297,
+     "verified_empty": 35,
+     "with_events": 323
+    }
+   ],
+   "uncovered": 6392,
+   "verified_empty": 373,
+   "with_events": 4718
+  },
+  {
+   "competition_id": "ned.1",
+   "coverage": 0.0993,
+   "covered": 723,
+   "gender": "M",
+   "matches": 7282,
+   "name": "Eredivisie",
+   "seasons": [
+    {
+     "coverage": 0.0779,
+     "covered": 25,
+     "matches": 321,
+     "season": 2008,
+     "uncovered": 296,
+     "verified_empty": 1,
+     "with_events": 24
+    },
+    {
+     "coverage": 0.2954,
+     "covered": 109,
+     "matches": 369,
+     "season": 2009,
+     "uncovered": 260,
+     "verified_empty": 1,
+     "with_events": 108
+    },
+    {
+     "coverage": 0.3663,
+     "covered": 137,
+     "matches": 374,
+     "season": 2010,
+     "uncovered": 237,
+     "verified_empty": 7,
+     "with_events": 130
+    },
+    {
+     "coverage": 0.0033,
+     "covered": 1,
+     "matches": 307,
+     "season": 2011,
+     "uncovered": 306,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 306,
+     "season": 2012,
+     "uncovered": 306,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0097,
+     "covered": 3,
+     "matches": 308,
+     "season": 2013,
+     "uncovered": 305,
+     "verified_empty": 1,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.0726,
+     "covered": 23,
+     "matches": 317,
+     "season": 2014,
+     "uncovered": 294,
+     "verified_empty": 2,
+     "with_events": 21
+    },
+    {
+     "coverage": 0.3097,
+     "covered": 118,
+     "matches": 381,
+     "season": 2015,
+     "uncovered": 263,
+     "verified_empty": 5,
+     "with_events": 113
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 306,
+     "season": 2016,
+     "uncovered": 306,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0225,
+     "covered": 7,
+     "matches": 311,
+     "season": 2017,
+     "uncovered": 304,
+     "verified_empty": 0,
+     "with_events": 7
+    },
+    {
+     "coverage": 0.0319,
+     "covered": 16,
+     "matches": 502,
+     "season": 2018,
+     "uncovered": 486,
+     "verified_empty": 1,
+     "with_events": 15
+    },
+    {
+     "coverage": 0.0027,
+     "covered": 1,
+     "matches": 364,
+     "season": 2019,
+     "uncovered": 363,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.2268,
+     "covered": 110,
+     "matches": 485,
+     "season": 2020,
+     "uncovered": 375,
+     "verified_empty": 3,
+     "with_events": 107
+    },
+    {
+     "coverage": 0.2874,
+     "covered": 146,
+     "matches": 508,
+     "season": 2021,
+     "uncovered": 362,
+     "verified_empty": 4,
+     "with_events": 142
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 480,
+     "season": 2022,
+     "uncovered": 480,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0054,
+     "covered": 3,
+     "matches": 557,
+     "season": 2023,
+     "uncovered": 554,
+     "verified_empty": 0,
+     "with_events": 3
+    },
+    {
+     "coverage": 0.0074,
+     "covered": 4,
+     "matches": 542,
+     "season": 2024,
+     "uncovered": 538,
+     "verified_empty": 0,
+     "with_events": 4
+    },
+    {
+     "coverage": 0.0368,
+     "covered": 20,
+     "matches": 544,
+     "season": 2025,
+     "uncovered": 524,
+     "verified_empty": 1,
+     "with_events": 19
+    }
+   ],
+   "uncovered": 6559,
+   "verified_empty": 26,
+   "with_events": 697
+  },
+  {
+   "competition_id": "por.1",
+   "coverage": 0.0996,
+   "covered": 642,
+   "gender": "M",
+   "matches": 6443,
+   "name": "Primeira Liga",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 27,
+     "matches": 27,
+     "season": 2008,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 21
+    },
+    {
+     "coverage": 1.0,
+     "covered": 72,
+     "matches": 72,
+     "season": 2009,
+     "uncovered": 0,
+     "verified_empty": 11,
+     "with_events": 61
+    },
+    {
+     "coverage": 0.681,
+     "covered": 79,
+     "matches": 116,
+     "season": 2010,
+     "uncovered": 37,
+     "verified_empty": 10,
+     "with_events": 69
+    },
+    {
+     "coverage": 0.9259,
+     "covered": 25,
+     "matches": 27,
+     "season": 2011,
+     "uncovered": 2,
+     "verified_empty": 3,
+     "with_events": 22
+    },
+    {
+     "coverage": 0.0041,
+     "covered": 1,
+     "matches": 241,
+     "season": 2012,
+     "uncovered": 240,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.0083,
+     "covered": 2,
+     "matches": 242,
+     "season": 2013,
+     "uncovered": 240,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.0934,
+     "covered": 31,
+     "matches": 332,
+     "season": 2014,
+     "uncovered": 301,
+     "verified_empty": 3,
+     "with_events": 28
+    },
+    {
+     "coverage": 0.2316,
+     "covered": 85,
+     "matches": 367,
+     "season": 2015,
+     "uncovered": 282,
+     "verified_empty": 3,
+     "with_events": 82
+    },
+    {
+     "coverage": 0.0926,
+     "covered": 30,
+     "matches": 324,
+     "season": 2016,
+     "uncovered": 294,
+     "verified_empty": 3,
+     "with_events": 27
+    },
+    {
+     "coverage": 0.0226,
+     "covered": 7,
+     "matches": 310,
+     "season": 2017,
+     "uncovered": 303,
+     "verified_empty": 0,
+     "with_events": 7
+    },
+    {
+     "coverage": 0.0137,
+     "covered": 8,
+     "matches": 584,
+     "season": 2018,
+     "uncovered": 576,
+     "verified_empty": 0,
+     "with_events": 8
+    },
+    {
+     "coverage": 0.0195,
+     "covered": 11,
+     "matches": 564,
+     "season": 2019,
+     "uncovered": 553,
+     "verified_empty": 1,
+     "with_events": 10
+    },
+    {
+     "coverage": 0.1332,
+     "covered": 77,
+     "matches": 578,
+     "season": 2020,
+     "uncovered": 501,
+     "verified_empty": 5,
+     "with_events": 72
+    },
+    {
+     "coverage": 0.1983,
+     "covered": 114,
+     "matches": 575,
+     "season": 2021,
+     "uncovered": 461,
+     "verified_empty": 2,
+     "with_events": 112
+    },
+    {
+     "coverage": 0.0697,
+     "covered": 37,
+     "matches": 531,
+     "season": 2022,
+     "uncovered": 494,
+     "verified_empty": 3,
+     "with_events": 34
+    },
+    {
+     "coverage": 0.004,
+     "covered": 2,
+     "matches": 502,
+     "season": 2023,
+     "uncovered": 500,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.0038,
+     "covered": 2,
+     "matches": 522,
+     "season": 2024,
+     "uncovered": 520,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.0605,
+     "covered": 32,
+     "matches": 529,
+     "season": 2025,
+     "uncovered": 497,
+     "verified_empty": 0,
+     "with_events": 32
+    }
+   ],
+   "uncovered": 5801,
+   "verified_empty": 50,
+   "with_events": 592
+  },
+  {
+   "competition_id": "uefa.champions",
+   "coverage": 0.9729,
+   "covered": 3267,
+   "gender": "M",
+   "matches": 3358,
+   "name": "UEFA Champions League",
+   "seasons": [
+    {
+     "coverage": 0.9942,
+     "covered": 170,
+     "matches": 171,
+     "season": 2005,
+     "uncovered": 1,
+     "verified_empty": 22,
+     "with_events": 148
+    },
+    {
+     "coverage": 0.9298,
+     "covered": 159,
+     "matches": 171,
+     "season": 2006,
+     "uncovered": 12,
+     "verified_empty": 15,
+     "with_events": 144
+    },
+    {
+     "coverage": 0.9101,
+     "covered": 162,
+     "matches": 178,
+     "season": 2007,
+     "uncovered": 16,
+     "verified_empty": 14,
+     "with_events": 148
+    },
+    {
+     "coverage": 0.8953,
+     "covered": 154,
+     "matches": 172,
+     "season": 2008,
+     "uncovered": 18,
+     "verified_empty": 18,
+     "with_events": 136
+    },
+    {
+     "coverage": 0.9255,
+     "covered": 149,
+     "matches": 161,
+     "season": 2009,
+     "uncovered": 12,
+     "verified_empty": 10,
+     "with_events": 139
+    },
+    {
+     "coverage": 0.9321,
+     "covered": 151,
+     "matches": 162,
+     "season": 2010,
+     "uncovered": 11,
+     "verified_empty": 7,
+     "with_events": 144
+    },
+    {
+     "coverage": 0.9437,
+     "covered": 151,
+     "matches": 160,
+     "season": 2011,
+     "uncovered": 9,
+     "verified_empty": 10,
+     "with_events": 141
+    },
+    {
+     "coverage": 0.9766,
+     "covered": 167,
+     "matches": 171,
+     "season": 2012,
+     "uncovered": 4,
+     "verified_empty": 7,
+     "with_events": 160
+    },
+    {
+     "coverage": 1.0,
+     "covered": 160,
+     "matches": 160,
+     "season": 2013,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 153
+    },
+    {
+     "coverage": 0.9816,
+     "covered": 160,
+     "matches": 163,
+     "season": 2014,
+     "uncovered": 3,
+     "verified_empty": 5,
+     "with_events": 155
+    },
+    {
+     "coverage": 0.9878,
+     "covered": 162,
+     "matches": 164,
+     "season": 2015,
+     "uncovered": 2,
+     "verified_empty": 11,
+     "with_events": 151
+    },
+    {
+     "coverage": 0.9939,
+     "covered": 164,
+     "matches": 165,
+     "season": 2016,
+     "uncovered": 1,
+     "verified_empty": 11,
+     "with_events": 153
+    },
+    {
+     "coverage": 0.9939,
+     "covered": 162,
+     "matches": 163,
+     "season": 2017,
+     "uncovered": 1,
+     "verified_empty": 7,
+     "with_events": 155
+    },
+    {
+     "coverage": 0.9941,
+     "covered": 168,
+     "matches": 169,
+     "season": 2018,
+     "uncovered": 1,
+     "verified_empty": 12,
+     "with_events": 156
+    },
+    {
+     "coverage": 1.0,
+     "covered": 140,
+     "matches": 140,
+     "season": 2019,
+     "uncovered": 0,
+     "verified_empty": 4,
+     "with_events": 136
+    },
+    {
+     "coverage": 1.0,
+     "covered": 136,
+     "matches": 136,
+     "season": 2020,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 130
+    },
+    {
+     "coverage": 1.0,
+     "covered": 125,
+     "matches": 125,
+     "season": 2021,
+     "uncovered": 0,
+     "verified_empty": 5,
+     "with_events": 120
+    },
+    {
+     "coverage": 1.0,
+     "covered": 125,
+     "matches": 125,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 4,
+     "with_events": 121
+    },
+    {
+     "coverage": 1.0,
+     "covered": 125,
+     "matches": 125,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 5,
+     "with_events": 120
+    },
+    {
+     "coverage": 1.0,
+     "covered": 189,
+     "matches": 189,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 9,
+     "with_events": 180
+    },
+    {
+     "coverage": 1.0,
+     "covered": 188,
+     "matches": 188,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 8,
+     "with_events": 180
+    }
+   ],
+   "uncovered": 91,
+   "verified_empty": 197,
+   "with_events": 3070
+  },
+  {
+   "competition_id": "uefa.champions.w",
+   "coverage": 0.9907,
+   "covered": 428,
+   "gender": "F",
+   "matches": 432,
+   "name": "UEFA Women's Champions League",
+   "seasons": [
+    {
+     "coverage": 0.9583,
+     "covered": 46,
+     "matches": 48,
+     "season": 2019,
+     "uncovered": 2,
+     "verified_empty": 1,
+     "with_events": 45
+    },
+    {
+     "coverage": 1.0,
+     "covered": 36,
+     "matches": 36,
+     "season": 2020,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 36
+    },
+    {
+     "coverage": 0.9872,
+     "covered": 77,
+     "matches": 78,
+     "season": 2021,
+     "uncovered": 1,
+     "verified_empty": 3,
+     "with_events": 74
+    },
+    {
+     "coverage": 1.0,
+     "covered": 61,
+     "matches": 61,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 58
+    },
+    {
+     "coverage": 1.0,
+     "covered": 44,
+     "matches": 44,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 42
+    },
+    {
+     "coverage": 0.9872,
+     "covered": 77,
+     "matches": 78,
+     "season": 2024,
+     "uncovered": 1,
+     "verified_empty": 1,
+     "with_events": 76
+    },
+    {
+     "coverage": 1.0,
+     "covered": 87,
+     "matches": 87,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 86
+    }
+   ],
+   "uncovered": 4,
+   "verified_empty": 11,
+   "with_events": 417
+  },
+  {
+   "competition_id": "uefa.euro",
+   "coverage": 0.8809,
+   "covered": 244,
+   "gender": "M",
+   "matches": 277,
+   "name": "UEFA European Championship",
+   "seasons": [
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 31,
+     "season": 2000,
+     "uncovered": 31,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 1.0,
+     "covered": 31,
+     "matches": 31,
+     "season": 2004,
+     "uncovered": 0,
+     "verified_empty": 4,
+     "with_events": 27
+    },
+    {
+     "coverage": 1.0,
+     "covered": 31,
+     "matches": 31,
+     "season": 2008,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 29
+    },
+    {
+     "coverage": 0.9355,
+     "covered": 29,
+     "matches": 31,
+     "season": 2012,
+     "uncovered": 2,
+     "verified_empty": 2,
+     "with_events": 27
+    },
+    {
+     "coverage": 1.0,
+     "covered": 51,
+     "matches": 51,
+     "season": 2016,
+     "uncovered": 0,
+     "verified_empty": 4,
+     "with_events": 47
+    },
+    {
+     "coverage": 1.0,
+     "covered": 51,
+     "matches": 51,
+     "season": 2020,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 49
+    },
+    {
+     "coverage": 1.0,
+     "covered": 51,
+     "matches": 51,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 45
+    }
+   ],
+   "uncovered": 33,
+   "verified_empty": 20,
+   "with_events": 224
+  },
+  {
+   "competition_id": "uefa.euro.w",
+   "coverage": 1.0,
+   "covered": 93,
+   "gender": "F",
+   "matches": 93,
+   "name": "UEFA Women's European Championship",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 31,
+     "matches": 31,
+     "season": 2017,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 28
+    },
+    {
+     "coverage": 1.0,
+     "covered": 31,
+     "matches": 31,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 31
+    },
+    {
+     "coverage": 1.0,
+     "covered": 31,
+     "matches": 31,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 31
+    }
+   ],
+   "uncovered": 0,
+   "verified_empty": 3,
+   "with_events": 90
+  },
+  {
+   "competition_id": "uefa.europa",
+   "coverage": 0.9576,
+   "covered": 4177,
+   "gender": "M",
+   "matches": 4362,
+   "name": "UEFA Europa League",
+   "seasons": [
+    {
+     "coverage": 0.9206,
+     "covered": 290,
+     "matches": 315,
+     "season": 2009,
+     "uncovered": 25,
+     "verified_empty": 16,
+     "with_events": 274
+    },
+    {
+     "coverage": 0.9499,
+     "covered": 322,
+     "matches": 339,
+     "season": 2010,
+     "uncovered": 17,
+     "verified_empty": 22,
+     "with_events": 300
+    },
+    {
+     "coverage": 0.8056,
+     "covered": 257,
+     "matches": 319,
+     "season": 2011,
+     "uncovered": 62,
+     "verified_empty": 20,
+     "with_events": 237
+    },
+    {
+     "coverage": 0.9938,
+     "covered": 322,
+     "matches": 324,
+     "season": 2012,
+     "uncovered": 2,
+     "verified_empty": 20,
+     "with_events": 302
+    },
+    {
+     "coverage": 0.9938,
+     "covered": 321,
+     "matches": 323,
+     "season": 2013,
+     "uncovered": 2,
+     "verified_empty": 24,
+     "with_events": 297
+    },
+    {
+     "coverage": 0.8061,
+     "covered": 237,
+     "matches": 294,
+     "season": 2014,
+     "uncovered": 57,
+     "verified_empty": 17,
+     "with_events": 220
+    },
+    {
+     "coverage": 0.9739,
+     "covered": 224,
+     "matches": 230,
+     "season": 2015,
+     "uncovered": 6,
+     "verified_empty": 11,
+     "with_events": 213
+    },
+    {
+     "coverage": 0.9903,
+     "covered": 205,
+     "matches": 207,
+     "season": 2016,
+     "uncovered": 2,
+     "verified_empty": 10,
+     "with_events": 195
+    },
+    {
+     "coverage": 0.986,
+     "covered": 281,
+     "matches": 285,
+     "season": 2017,
+     "uncovered": 4,
+     "verified_empty": 21,
+     "with_events": 260
+    },
+    {
+     "coverage": 0.9919,
+     "covered": 368,
+     "matches": 371,
+     "season": 2018,
+     "uncovered": 3,
+     "verified_empty": 23,
+     "with_events": 345
+    },
+    {
+     "coverage": 0.9881,
+     "covered": 333,
+     "matches": 337,
+     "season": 2019,
+     "uncovered": 4,
+     "verified_empty": 15,
+     "with_events": 318
+    },
+    {
+     "coverage": 0.9955,
+     "covered": 219,
+     "matches": 220,
+     "season": 2020,
+     "uncovered": 1,
+     "verified_empty": 10,
+     "with_events": 209
+    },
+    {
+     "coverage": 1.0,
+     "covered": 139,
+     "matches": 139,
+     "season": 2021,
+     "uncovered": 0,
+     "verified_empty": 8,
+     "with_events": 131
+    },
+    {
+     "coverage": 1.0,
+     "covered": 141,
+     "matches": 141,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 3,
+     "with_events": 138
+    },
+    {
+     "coverage": 1.0,
+     "covered": 141,
+     "matches": 141,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 135
+    },
+    {
+     "coverage": 1.0,
+     "covered": 189,
+     "matches": 189,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 183
+    },
+    {
+     "coverage": 1.0,
+     "covered": 188,
+     "matches": 188,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 6,
+     "with_events": 182
+    }
+   ],
+   "uncovered": 185,
+   "verified_empty": 238,
+   "with_events": 3939
+  },
+  {
+   "competition_id": "usa.1",
+   "coverage": 0.9931,
+   "covered": 1146,
+   "gender": "M",
+   "matches": 1154,
+   "name": "Major League Soccer",
+   "seasons": [
+    {
+     "coverage": 1.0,
+     "covered": 1,
+     "matches": 1,
+     "season": 2005,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.8929,
+     "covered": 25,
+     "matches": 28,
+     "season": 2006,
+     "uncovered": 3,
+     "verified_empty": 3,
+     "with_events": 22
+    },
+    {
+     "coverage": 1.0,
+     "covered": 28,
+     "matches": 28,
+     "season": 2007,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 27
+    },
+    {
+     "coverage": 1.0,
+     "covered": 5,
+     "matches": 5,
+     "season": 2008,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 5
+    },
+    {
+     "coverage": 1.0,
+     "covered": 38,
+     "matches": 38,
+     "season": 2009,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 38
+    },
+    {
+     "coverage": 1.0,
+     "covered": 2,
+     "matches": 2,
+     "season": 2011,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 2
+    },
+    {
+     "coverage": 0.9825,
+     "covered": 56,
+     "matches": 57,
+     "season": 2012,
+     "uncovered": 1,
+     "verified_empty": 2,
+     "with_events": 54
+    },
+    {
+     "coverage": 1.0,
+     "covered": 11,
+     "matches": 11,
+     "season": 2013,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 11
+    },
+    {
+     "coverage": 0.99,
+     "covered": 198,
+     "matches": 200,
+     "season": 2014,
+     "uncovered": 2,
+     "verified_empty": 8,
+     "with_events": 190
+    },
+    {
+     "coverage": 0.9775,
+     "covered": 87,
+     "matches": 89,
+     "season": 2015,
+     "uncovered": 2,
+     "verified_empty": 3,
+     "with_events": 84
+    },
+    {
+     "coverage": 1.0,
+     "covered": 3,
+     "matches": 3,
+     "season": 2016,
+     "uncovered": 0,
+     "verified_empty": 1,
+     "with_events": 2
+    },
+    {
+     "coverage": 1.0,
+     "covered": 56,
+     "matches": 56,
+     "season": 2017,
+     "uncovered": 0,
+     "verified_empty": 2,
+     "with_events": 54
+    },
+    {
+     "coverage": 1.0,
+     "covered": 10,
+     "matches": 10,
+     "season": 2018,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 10
+    },
+    {
+     "coverage": 1.0,
+     "covered": 23,
+     "matches": 23,
+     "season": 2019,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 23
+    },
+    {
+     "coverage": 1.0,
+     "covered": 96,
+     "matches": 96,
+     "season": 2020,
+     "uncovered": 0,
+     "verified_empty": 5,
+     "with_events": 91
+    },
+    {
+     "coverage": 1.0,
+     "covered": 1,
+     "matches": 1,
+     "season": 2021,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 1
+    },
+    {
+     "coverage": 1.0,
+     "covered": 11,
+     "matches": 11,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 11
+    },
+    {
+     "coverage": 1.0,
+     "covered": 97,
+     "matches": 97,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 9,
+     "with_events": 88
+    },
+    {
+     "coverage": 1.0,
+     "covered": 3,
+     "matches": 3,
+     "season": 2024,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 3
+    },
+    {
+     "coverage": 1.0,
+     "covered": 395,
+     "matches": 395,
+     "season": 2025,
+     "uncovered": 0,
+     "verified_empty": 25,
+     "with_events": 370
+    }
+   ],
+   "uncovered": 8,
+   "verified_empty": 59,
+   "with_events": 1087
+  },
+  {
+   "competition_id": "usa.1.w",
+   "coverage": 0.6658,
+   "covered": 996,
+   "gender": "F",
+   "matches": 1496,
+   "name": "NWSL",
+   "seasons": [
+    {
+     "coverage": 0.4286,
+     "covered": 24,
+     "matches": 56,
+     "season": 2013,
+     "uncovered": 32,
+     "verified_empty": 0,
+     "with_events": 24
+    },
+    {
+     "coverage": 0.2321,
+     "covered": 13,
+     "matches": 56,
+     "season": 2014,
+     "uncovered": 43,
+     "verified_empty": 0,
+     "with_events": 13
+    },
+    {
+     "coverage": 0.0233,
+     "covered": 2,
+     "matches": 86,
+     "season": 2015,
+     "uncovered": 84,
+     "verified_empty": 1,
+     "with_events": 1
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 102,
+     "season": 2016,
+     "uncovered": 102,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 122,
+     "season": 2017,
+     "uncovered": 122,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.0,
+     "covered": 0,
+     "matches": 111,
+     "season": 2018,
+     "uncovered": 111,
+     "verified_empty": 0,
+     "with_events": 0
+    },
+    {
+     "coverage": 0.982,
+     "covered": 109,
+     "matches": 111,
+     "season": 2019,
+     "uncovered": 2,
+     "verified_empty": 7,
+     "with_events": 102
+    },
+    {
+     "coverage": 0.984,
+     "covered": 123,
+     "matches": 125,
+     "season": 2021,
+     "uncovered": 2,
+     "verified_empty": 11,
+     "with_events": 112
+    },
+    {
+     "coverage": 1.0,
+     "covered": 137,
+     "matches": 137,
+     "season": 2022,
+     "uncovered": 0,
+     "verified_empty": 7,
+     "with_events": 130
+    },
+    {
+     "coverage": 1.0,
+     "covered": 137,
+     "matches": 137,
+     "season": 2023,
+     "uncovered": 0,
+     "verified_empty": 9,
+     "with_events": 128
+    },
+    {
+     "coverage": 0.9947,
+     "covered": 188,
+     "matches": 189,
+     "season": 2024,
+     "uncovered": 1,
+     "verified_empty": 11,
+     "with_events": 177
+    },
+    {
+     "coverage": 0.9962,
+     "covered": 263,
+     "matches": 264,
+     "season": 2025,
+     "uncovered": 1,
+     "verified_empty": 17,
+     "with_events": 246
+    }
+   ],
+   "uncovered": 500,
+   "verified_empty": 63,
+   "with_events": 933
+  }
+ ],
+ "generated_at": "2026-07-15T09:15:33+00:00",
+ "schema": 1,
+ "totals": {
+  "coverage": 0.4381,
+  "covered": 35463,
+  "matches": 80945,
+  "uncovered": 45482,
+  "verified_empty": 2302,
+  "with_events": 33161
+ }
+}

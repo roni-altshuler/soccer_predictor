@@ -15,6 +15,7 @@ import {
   type UniverseOutcome,
   type WhatIfOutcome,
 } from '@/lib/simulation/leagueMonteCarlo'
+import { getLeaguePriorPpg, lookupPriorPpg } from '@/lib/simulation/teamPriors'
 
 /**
  * Audit the standings array for the well-known probability invariants:
@@ -246,12 +247,18 @@ export async function GET(
       throw new Error('No standings data available')
     }
 
+    // Historical strength priors from the committed artifact (may be null —
+    // then every team simulates from the live table alone, as before).
+    const leaguePriors = getLeaguePriorPpg(espnLeagueId)
+
     // Parse ESPN standings with full stats
     const teams: TeamData[] = entries.map((entry: any) => {
       const stats = entry.stats || []
       const getStat = (name: string) => stats.find((s: any) => s.name === name)?.value || 0
+      const name = entry.team?.displayName || 'Unknown'
+      const priorPpg = lookupPriorPpg(leaguePriors, name)
       return {
-        name: entry.team?.displayName || 'Unknown',
+        name,
         points: getStat('points'),
         wins: getStat('wins'),
         draws: getStat('ties'),
@@ -260,6 +267,8 @@ export async function GET(
         ga: getStat('pointsAgainst'),
         gd: getStat('pointDifferential'),
         matchesPlayed: getStat('gamesPlayed'),
+        // Absent prior stays absent — the engine's honest fallback.
+        ...(priorPpg !== undefined ? { priorPpg } : {}),
       }
     })
 

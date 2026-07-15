@@ -47,7 +47,8 @@ const DIFF_MIN = -3
 const DIFF_MAX = 3
 const BUCKET_MAX = 90
 
-const GOAL_TYPES = new Set(['goal', 'own_goal', 'penalty_goal'])
+/** Score-changing event types — shared with `momentum.ts` (the river reuses this pipeline). */
+export const GOAL_TYPES = new Set(['goal', 'own_goal', 'penalty_goal'])
 
 /** Floor a raw minute onto the 5-minute state grid; 90+ (incl. ET) → 90. */
 export function minuteBucket(minute: number): number {
@@ -129,8 +130,11 @@ const NO_STORY: MatchStory = { acts: [], coverage: 'none' }
 // Timeline reconstruction
 // ---------------------------------------------------------------------------
 
-/** A state-changing event with its running score and home-diff transition. */
-interface AnnotatedBeat {
+/**
+ * A state-changing event with its running score and home-diff transition.
+ * Exported for `momentum.ts` — the river builds on the identical timeline.
+ */
+export interface AnnotatedBeat {
   type: StoryBeatType
   minute: number
   addedTime?: number
@@ -150,8 +154,9 @@ interface AnnotatedBeat {
  * (minute, addedTime): a 45+3 goal happened before a 46' goal even though its
  * effective minute (48) is later — first-half stoppage runs before the second
  * half kicks off. Returns null when any event can't be placed on the clock.
+ * Exported for `momentum.ts` so story and river never disagree on a timeline.
  */
-function reconstructTimeline(match: MatchDetails): AnnotatedBeat[] | null {
+export function reconstructTimeline(match: MatchDetails): AnnotatedBeat[] | null {
   const picked: Array<Omit<AnnotatedBeat, 'scoreAfter' | 'diffBefore' | 'diffAfter'>> = []
   for (const e of match.events) {
     const type = e.type as string
