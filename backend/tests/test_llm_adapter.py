@@ -169,3 +169,53 @@ def test_fake_provider_synthesizes_from_grounding_block():
     assert out["text"]
     assert set(out["implied_probs"]) == {"home", "draw", "away"}
     assert out["stance"] == "home"  # 0.5 is the max
+
+
+# --------------------------------------------------------------------------- #
+# Retired-model self-healing (gemini-1.5-flash 404s as of mid-2026)
+# --------------------------------------------------------------------------- #
+
+_GEMINI_404 = json.dumps(
+    {"error": {"code": 404, "message": "models/gemini-old-flash is not found for API version v1beta"}}
+)
+_GEMINI_LIST = json.dumps(
+    {
+        "models": [
+            {"name": "models/gemini-2.0-flash", "supportedGenerationMethods": ["generateContent"]},
+            {"name": "models/gemini-2.5-flash", "supportedGenerationMethods": ["generateContent"]},
+            {"name": "models/gemini-2.5-flash-lite", "supportedGenerationMethods": ["generateContent"]},
+            {"name": "models/gemini-2.5-pro-preview", "supportedGenerationMethods": ["generateContent"]},
+            {"name": "models/embedding-001", "supportedGenerationMethods": ["embedContent"]},
+        ]
+    }
+)
+
+
+def test_retired_model_resolves_via_list_and_retries():
+    transport = make_transport([(404, _GEMINI_404), (200, _GEMINI_LIST), (200, _GEMINI_OK)])
+    p = GeminiProvider("secret", model="gemini-old-flash", transport=transport, sleep=lambda _: None)
+    assert p.complete("hi") == "hello"
+    # POST (404) -> GET ListModels (payload None) -> POST retry on the resolved model.
+    assert len(transport.calls) == 3
+    assert transport.calls[1]["payload"] is None
+    assert p.model == "gemini-2.5-flash"  # newest stable flash wins over lite/preview
+    assert "gemini-2.5-flash:generateContent" in transport.calls[2]["url"]
+
+
+def test_retired_model_with_failed_discovery_reraises_original():
+    transport = make_transport([(404, _GEMINI_404), (500, "boom")])
+    p = GeminiProvider("secret", model="gemini-old-flash", transport=transport, sleep=lambda _: None)
+    with pytest.raises(LLMError, match="HTTP 404"):
+        p.complete("hi")
+
+
+def test_resolved_model_is_reused_for_subsequent_calls():
+    transport = make_transport(
+        [(404, _GEMINI_404), (200, _GEMINI_LIST), (200, _GEMINI_OK), (200, _GEMINI_OK)]
+    )
+    p = GeminiProvider("secret", model="gemini-old-flash", transport=transport, sleep=lambda _: None)
+    p.complete("hi")
+    p.complete("again")
+    # Second call goes straight to the resolved model: exactly 4 calls total.
+    assert len(transport.calls) == 4
+    assert "gemini-2.5-flash:generateContent" in transport.calls[3]["url"]

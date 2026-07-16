@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -48,13 +49,17 @@ class HttpResponse:
 
 # A transport is any callable (url, headers, payload, timeout) -> HttpResponse.
 # Injectable so tests can stub the network without monkeypatching urllib.
-Transport = Callable[[str, dict, dict, float], HttpResponse]
+# A ``None`` payload means a GET request (used for model discovery).
+Transport = Callable[[str, dict, Optional[dict], float], HttpResponse]
 
 
-def _urllib_transport(url: str, headers: dict, payload: dict, timeout: float) -> HttpResponse:
-    """Default transport: a single POST with a JSON body via the standard library."""
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+def _urllib_transport(url: str, headers: dict, payload: Optional[dict], timeout: float) -> HttpResponse:
+    """Default transport via the standard library: POST with a JSON body, or GET when payload is None."""
+    if payload is None:
+        req = urllib.request.Request(url, headers=headers, method="GET")
+    else:
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 (fixed hosts)
             return HttpResponse(getattr(resp, "status", 200), resp.read().decode("utf-8"))
@@ -163,14 +168,17 @@ class GeminiProvider(_RestProvider):
 
     The API key is sent via the ``x-goog-api-key`` header (not the URL query) so
     it never appears in a logged URL. ``model`` is configurable via
-    ``GEMINI_MODEL`` (default ``gemini-1.5-flash``).
+    ``GEMINI_MODEL`` (default ``gemini-2.5-flash``). Google retires model ids on
+    a cadence (gemini-1.5-flash 404s as of mid-2026), so a "model not found"
+    response triggers one ListModels lookup to resolve the newest stable Flash
+    model and a single retry — the resolved id is kept for the process.
     """
 
     name = "gemini"
     _BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
     def __init__(self, api_key: str, model: Optional[str] = None, **kwargs) -> None:
-        super().__init__(api_key, model or os.getenv("GEMINI_MODEL", "gemini-1.5-flash"), **kwargs)
+        super().__init__(api_key, model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash"), **kwargs)
 
     def complete(
         self,
@@ -180,7 +188,6 @@ class GeminiProvider(_RestProvider):
         max_tokens: int = 1024,
         temperature: float = 0.7,
     ) -> str:
-        url = f"{self._BASE}/{self.model}:generateContent"
         headers = {"Content-Type": "application/json", "x-goog-api-key": self._api_key}
         payload: dict = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -191,8 +198,66 @@ class GeminiProvider(_RestProvider):
         }
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
-        body = self._post(url, headers, payload)
+        try:
+            body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
+        except LLMError as exc:
+            if "HTTP 404" not in str(exc):
+                raise
+            resolved = self._resolve_current_flash()
+            if not resolved or resolved == self.model:
+                raise
+            logger.warning("gemini: model %r unavailable; switching to %r", self.model, resolved)
+            self.model = resolved
+            body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
         return self._extract_text(body)
+
+    def _resolve_current_flash(self) -> Optional[str]:
+        """ListModels -> newest stable Flash model that supports generateContent.
+
+        Preference order: stable ``gemini-<ver>-flash`` (highest version), then
+        stable ``gemini-<ver>-flash-lite``, then any non-preview/exp flash. None
+        when the lookup fails or nothing suitable exists — the caller re-raises
+        the original error in that case.
+        """
+        try:
+            resp = self._transport(
+                f"{self._BASE}?pageSize=200",
+                {"x-goog-api-key": self._api_key},
+                None,
+                self._timeout,
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("gemini: model discovery failed: %s", exc)
+            return None
+        if resp.status >= 400:
+            logger.warning("gemini: model discovery failed: HTTP %s", resp.status)
+            return None
+        try:
+            models = json.loads(resp.body).get("models", [])
+        except (ValueError, AttributeError):
+            return None
+
+        def rank(name: str) -> tuple:
+            m = re.match(r"^gemini-(\d+(?:\.\d+)?)-flash$", name)
+            if m:
+                return (3, float(m.group(1)))
+            m = re.match(r"^gemini-(\d+(?:\.\d+)?)-flash-lite$", name)
+            if m:
+                return (2, float(m.group(1)))
+            if "flash" in name and not any(t in name for t in ("preview", "exp")):
+                return (1, 0.0)
+            return (0, 0.0)
+
+        best: Optional[str] = None
+        best_rank = (0, 0.0)
+        for entry in models:
+            if "generateContent" not in entry.get("supportedGenerationMethods", []):
+                continue
+            name = str(entry.get("name", "")).split("/", 1)[-1]
+            r = rank(name)
+            if r > best_rank:
+                best, best_rank = name, r
+        return best if best_rank >= (1, 0.0) and best_rank != (0, 0.0) else None
 
     @staticmethod
     def _extract_text(body: str) -> str:
