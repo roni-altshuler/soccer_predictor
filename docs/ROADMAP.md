@@ -39,8 +39,17 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 1 — The Engine (months 3–9)
 
-- ☐ Match Engine v0 — event-stream transformer trained on StatsBomb Open Data;
-  gate: beat Dixon-Coles baseline on held-out Brier before any production use.
+- ◐ Match Engine v0 — built + honestly gated, NOT production. Redesigned for
+  the real hardware (no GPU): per-minute state-conditioned intensity model
+  nested on the calibrated baseline, trained on our own 35,463 timelines
+  (10× StatsBomb), exact-DP scoring, pluggable walk-forward harness that
+  reproduces the baseline byte-identically. Gate on 1,866 held-out fixtures:
+  pooled ΔBrier +0.0004 (CI straddles zero) → statistically indistinguishable,
+  gate not met; baseline stays production, artifact records `passed: false`.
+  The `rollout_from_state` kernel is the retained asset — it powers live
+  win-prob v2 and the Counterfactual Machine, where state dynamics matter
+  (at kickoff they integrate out). v1 path: StatsBomb dense pretraining.
+  *2026-07-15.*
 - ☑ Dixon-Coles calibrated baseline — walk-forward backtested (beats uniform by
   0.03–0.09 Brier, trails de-vigged market by 0.005–0.014); params artifact
   committed; NWSL fitted. *Shipped 2026-07-15.*
@@ -50,8 +59,14 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   differentiate (eng.1: flat 5% → 40.6/36.0/9.3% top three). *Shipped 2026-07-15.*
   Remaining: knockout brackets need cross-competition-comparable ratings first.
 - ☐ Live win probability v2 — engine rollouts + conformal intervals.
-- ☐ Match-state embeddings (match2vec) + similar-matches rail.
-- ☐ Boardroom v1 — Quant/Historian/Skeptic agents over typed artifacts; dissent index.
+- ☑ Match-state embeddings (match2vec) + similar-matches rail — deterministic
+  timeline vectors (team-identity-free) over all covered matches, committed
+  index, "matches that unfolded like this one" on finished-match pages;
+  regenerates daily in the pipeline. *Shipped 2026-07-15.*
+- ◐ Boardroom v1 — fully built + tested (adapter, grounded bundle, verifier
+  that rejects ungrounded numbers, persona cards + dissent meter on the
+  prediction tab, pipeline step wired). Debates start generating the moment
+  a free Gemini key lands as the GEMINI_API_KEY repo secret. *2026-07-15.*
 - ☑ Almanac v0 — structured query builder → exact counts + precedents at /almanac
   (no LLM). *Shipped 2026-07-15.* v1 (natural-language input) awaits LLM key decision.
 - ☑ Momentum river — stacked win/draw/loss probability bands across the match
