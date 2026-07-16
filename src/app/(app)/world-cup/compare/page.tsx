@@ -10,7 +10,7 @@ import { getBracketPaths } from '@/lib/server/worldCup'
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: 'Compare teams — World Cup 2026 · Pitchwise',
+  title: 'Compare teams — World Cup 2026 · Pitchverse',
   description:
     'Head-to-head comparison of any two 2026 World Cup nations: team ratings, neutral-pitch win expectancy, and tournament advancement probabilities from thousands of simulated tournament runs.',
 }

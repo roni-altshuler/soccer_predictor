@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
   // Inputs come either as ?home=&away=&hp=0.52&dp=0.21&ap=0.27&hg=2&ag=1
   // (so static link cards can be built without a DB hit) or, when only
-  // matchId is provided, we render a generic Pitchwise card.
+  // matchId is provided, we render a generic Pitchverse card.
   const home = searchParams.get('home') || 'Home'
   const away = searchParams.get('away') || 'Away'
   const league = searchParams.get('league') || ''
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             P
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ color: COLORS.text, fontWeight: 800, fontSize: 28 }}>Pitchwise</span>
+            <span style={{ color: COLORS.text, fontWeight: 800, fontSize: 28 }}>Pitchverse</span>
           </div>
           {league ? (
             <span style={{ marginLeft: 'auto', fontSize: 22, color: COLORS.textMuted }}>{league}</span>

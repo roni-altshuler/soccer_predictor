@@ -29,8 +29,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchwise.app'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Pitchwise — Calibrated football intelligence',
-    template: '%s · Pitchwise',
+    default: 'Pitchverse — Calibrated football intelligence',
+    template: '%s · Pitchverse',
   },
   description:
     'Calibrated football intelligence across the world\'s leagues. Live scores, AI match probabilities, and accuracy tracking you can verify.',
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Pitchwise',
+    title: 'Pitchverse',
   },
   icons: {
     icon: [
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    siteName: 'Pitchwise',
-    title: 'Pitchwise — Calibrated football intelligence',
+    siteName: 'Pitchverse',
+    title: 'Pitchverse — Calibrated football intelligence',
     description:
       'Calibrated football intelligence across the world\'s leagues. Live scores, AI match probabilities, and accuracy tracking.',
     url: siteUrl,
@@ -61,13 +61,13 @@ export const metadata: Metadata = {
         url: '/brand/og-default.png',
         width: 1200,
         height: 630,
-        alt: 'Pitchwise',
+        alt: 'Pitchverse',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pitchwise — Calibrated football intelligence',
+    title: 'Pitchverse — Calibrated football intelligence',
     description: 'Calibrated AI football predictions for the world\'s top leagues.',
     images: ['/brand/og-default.png'],
   },

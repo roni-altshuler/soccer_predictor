@@ -13,5 +13,5 @@ export default function TrackingRedirect() {
 }
 
 export const metadata = {
-  title: 'Tracking | Pitchwise',
+  title: 'Tracking | Pitchverse',
 }

@@ -1,4 +1,4 @@
-# Matchday — Pitchwise design language (v3)
+# Matchday — Pitchverse design language (v3)
 
 Reference class: **FotMob** (list-first scores app), **ESPN** (scoreboard hierarchy),
 **bet365** (data-grid density). This supersedes "Broadcast" (v2). Every app surface

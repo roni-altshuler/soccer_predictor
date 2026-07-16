@@ -45,7 +45,7 @@
   </g>
 
   <!-- wordmark -->
-  <text x="86" y="360" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="86" font-weight="800" letter-spacing="-3" fill="#f1f5fb">Pitchwise</text>
+  <text x="86" y="360" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="86" font-weight="800" letter-spacing="-3" fill="#f1f5fb">Pitchverse</text>
 
   <!-- tagline -->
   <text x="86" y="430" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="32" font-weight="500" fill="#a8bcdb">Calibrated football intelligence across the world&apos;s leagues</text>

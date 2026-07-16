@@ -1,0 +1,456 @@
+{
+  "baselines": {
+    "counts": {
+      "corpus_matches": 28642,
+      "cut_date": "2025-03-15T00:00:00+00:00",
+      "description": "exact W/D/L counts at (gender, clamped score diff, minute bucket), both sides pooled — the rarity empirical function, rebuilt leakage-clean",
+      "uniform_fallbacks": 0
+    },
+    "counts_committed": {
+      "corpus_matches": 35463,
+      "description": "the committed rarity artifact, which was built on ALL covered matches INCLUDING the test season — leakage favours this baseline, so it is reference-only",
+      "uniform_fallbacks": 0
+    },
+    "dc_frozen": "kickoff Dixon-Coles probabilities, state ignored"
+  },
+  "checkpoints": {
+    "15": {
+      "bootstrap_vs_counts": {
+        "ci_high": -0.03216217014943113,
+        "ci_low": -0.05672708449612291,
+        "definition": "brier(engine) - brier(counts); negative favours engine",
+        "delta_brier_mean": -0.044674288771338146,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "bootstrap_vs_dc_frozen": {
+        "ci_high": -0.017031685816920626,
+        "ci_low": -0.03734951859539804,
+        "definition": "brier(engine) - brier(dc_frozen); negative favours engine",
+        "delta_brier_mean": -0.027150097916833968,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "by_gender": {
+        "F": {
+          "bootstrap_vs_counts": {
+            "ci_high": 0.0011105622634234613,
+            "ci_low": -0.05709925415688499,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.028031067921882202,
+            "n_blocks": 45,
+            "n_boot": 10000,
+            "n_matches": 263,
+            "p_better": 0.9707
+          },
+          "counts_brier": 0.621953,
+          "counts_committed_brier": 0.62009,
+          "dc_frozen_brier": 0.630956,
+          "delta_engine_minus_counts": -0.028031,
+          "engine_brier": 0.593922,
+          "n": 263,
+          "uniform_brier": 0.666667
+        },
+        "M": {
+          "bootstrap_vs_counts": {
+            "ci_high": -0.034151544141203714,
+            "ci_low": -0.06141206379628867,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.04798030620593551,
+            "n_blocks": 189,
+            "n_boot": 10000,
+            "n_matches": 1324,
+            "p_better": 1.0
+          },
+          "counts_brier": 0.619559,
+          "counts_committed_brier": 0.61951,
+          "dc_frozen_brier": 0.596766,
+          "delta_engine_minus_counts": -0.04798,
+          "engine_brier": 0.571579,
+          "n": 1324,
+          "uniform_brier": 0.666667
+        }
+      },
+      "counts_brier": 0.619956,
+      "counts_committed_brier": 0.619606,
+      "dc_frozen_brier": 0.602432,
+      "delta_engine_minus_counts": -0.044674,
+      "engine_brier": 0.575282,
+      "n": 1587,
+      "uniform_brier": 0.666667
+    },
+    "30": {
+      "bootstrap_vs_counts": {
+        "ci_high": -0.023303019564720324,
+        "ci_low": -0.04391924089727179,
+        "definition": "brier(engine) - brier(counts); negative favours engine",
+        "delta_brier_mean": -0.033854263701400863,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "bootstrap_vs_dc_frozen": {
+        "ci_high": -0.051836851438199875,
+        "ci_low": -0.08013332722177229,
+        "definition": "brier(engine) - brier(dc_frozen); negative favours engine",
+        "delta_brier_mean": -0.0656763972927401,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "by_gender": {
+        "F": {
+          "bootstrap_vs_counts": {
+            "ci_high": 0.0033784408924025996,
+            "ci_low": -0.04708032167073002,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.021562537246965413,
+            "n_blocks": 45,
+            "n_boot": 10000,
+            "n_matches": 263,
+            "p_better": 0.9537
+          },
+          "counts_brier": 0.552629,
+          "counts_committed_brier": 0.549716,
+          "dc_frozen_brier": 0.630956,
+          "delta_engine_minus_counts": -0.021563,
+          "engine_brier": 0.531067,
+          "n": 263,
+          "uniform_brier": 0.666667
+        },
+        "M": {
+          "bootstrap_vs_counts": {
+            "ci_high": -0.024803891717281135,
+            "ci_low": -0.04762693885123191,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.03629589818592996,
+            "n_blocks": 189,
+            "n_boot": 10000,
+            "n_matches": 1324,
+            "p_better": 1.0
+          },
+          "counts_brier": 0.574181,
+          "counts_committed_brier": 0.574164,
+          "dc_frozen_brier": 0.596766,
+          "delta_engine_minus_counts": -0.036296,
+          "engine_brier": 0.537885,
+          "n": 1324,
+          "uniform_brier": 0.666667
+        }
+      },
+      "counts_brier": 0.57061,
+      "counts_committed_brier": 0.570113,
+      "dc_frozen_brier": 0.602432,
+      "delta_engine_minus_counts": -0.033854,
+      "engine_brier": 0.536755,
+      "n": 1587,
+      "uniform_brier": 0.666667
+    },
+    "45": {
+      "bootstrap_vs_counts": {
+        "ci_high": -0.013218077884390285,
+        "ci_low": -0.03033066754113962,
+        "definition": "brier(engine) - brier(counts); negative favours engine",
+        "delta_brier_mean": -0.021944040598662312,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "bootstrap_vs_dc_frozen": {
+        "ci_high": -0.0950609870040682,
+        "ci_low": -0.12919210754369642,
+        "definition": "brier(engine) - brier(dc_frozen); negative favours engine",
+        "delta_brier_mean": -0.11204287246734854,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "by_gender": {
+        "F": {
+          "bootstrap_vs_counts": {
+            "ci_high": 0.004271969071520784,
+            "ci_low": -0.03980799436013231,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.017928120496374423,
+            "n_blocks": 45,
+            "n_boot": 10000,
+            "n_matches": 263,
+            "p_better": 0.9479
+          },
+          "counts_brier": 0.514463,
+          "counts_committed_brier": 0.512678,
+          "dc_frozen_brier": 0.630956,
+          "delta_engine_minus_counts": -0.017928,
+          "engine_brier": 0.496535,
+          "n": 263,
+          "uniform_brier": 0.666667
+        },
+        "M": {
+          "bootstrap_vs_counts": {
+            "ci_high": -0.013141665880974982,
+            "ci_low": -0.032105666839806646,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.02274176490901103,
+            "n_blocks": 189,
+            "n_boot": 10000,
+            "n_matches": 1324,
+            "p_better": 1.0
+          },
+          "counts_brier": 0.51191,
+          "counts_committed_brier": 0.51191,
+          "dc_frozen_brier": 0.596766,
+          "delta_engine_minus_counts": -0.022742,
+          "engine_brier": 0.489168,
+          "n": 1324,
+          "uniform_brier": 0.666667
+        }
+      },
+      "counts_brier": 0.512333,
+      "counts_committed_brier": 0.512037,
+      "dc_frozen_brier": 0.602432,
+      "delta_engine_minus_counts": -0.021944,
+      "engine_brier": 0.490389,
+      "n": 1587,
+      "uniform_brier": 0.666667
+    },
+    "60": {
+      "bootstrap_vs_counts": {
+        "ci_high": -0.005300433938821569,
+        "ci_low": -0.018958375074956128,
+        "definition": "brier(engine) - brier(counts); negative favours engine",
+        "delta_brier_mean": -0.012241776654151987,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 0.9997
+      },
+      "bootstrap_vs_dc_frozen": {
+        "ci_high": -0.16311273223618286,
+        "ci_low": -0.2013272755989776,
+        "definition": "brier(engine) - brier(dc_frozen); negative favours engine",
+        "delta_brier_mean": -0.18250886510762915,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "by_gender": {
+        "F": {
+          "bootstrap_vs_counts": {
+            "ci_high": 0.008276142506173095,
+            "ci_low": -0.026612233133141185,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.009062958242985994,
+            "n_blocks": 45,
+            "n_boot": 10000,
+            "n_matches": 263,
+            "p_better": 0.8433
+          },
+          "counts_brier": 0.431668,
+          "counts_committed_brier": 0.430138,
+          "dc_frozen_brier": 0.630956,
+          "delta_engine_minus_counts": -0.009063,
+          "engine_brier": 0.422605,
+          "n": 263,
+          "uniform_brier": 0.666667
+        },
+        "M": {
+          "bootstrap_vs_counts": {
+            "ci_high": -0.005278215465539281,
+            "ci_low": -0.020539426063646678,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.01287321867993496,
+            "n_blocks": 189,
+            "n_boot": 10000,
+            "n_matches": 1324,
+            "p_better": 0.9998
+          },
+          "counts_brier": 0.432263,
+          "counts_committed_brier": 0.432201,
+          "dc_frozen_brier": 0.596766,
+          "delta_engine_minus_counts": -0.012873,
+          "engine_brier": 0.41939,
+          "n": 1324,
+          "uniform_brier": 0.666667
+        }
+      },
+      "counts_brier": 0.432165,
+      "counts_committed_brier": 0.431859,
+      "dc_frozen_brier": 0.602432,
+      "delta_engine_minus_counts": -0.012242,
+      "engine_brier": 0.419923,
+      "n": 1587,
+      "uniform_brier": 0.666667
+    },
+    "75": {
+      "bootstrap_vs_counts": {
+        "ci_high": -0.0007240142061346955,
+        "ci_low": -0.009835505316325127,
+        "definition": "brier(engine) - brier(counts); negative favours engine",
+        "delta_brier_mean": -0.005258087170497344,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 0.9873
+      },
+      "bootstrap_vs_dc_frozen": {
+        "ci_high": -0.23796616790013947,
+        "ci_low": -0.2855034215137977,
+        "definition": "brier(engine) - brier(dc_frozen); negative favours engine",
+        "delta_brier_mean": -0.26202265795944063,
+        "n_blocks": 234,
+        "n_boot": 10000,
+        "n_matches": 1587,
+        "p_better": 1.0
+      },
+      "by_gender": {
+        "F": {
+          "bootstrap_vs_counts": {
+            "ci_high": 0.0070206497471509,
+            "ci_low": -0.01703752666136681,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.0048558677416838825,
+            "n_blocks": 45,
+            "n_boot": 10000,
+            "n_matches": 263,
+            "p_better": 0.7907
+          },
+          "counts_brier": 0.338582,
+          "counts_committed_brier": 0.337972,
+          "dc_frozen_brier": 0.630956,
+          "delta_engine_minus_counts": -0.004856,
+          "engine_brier": 0.333727,
+          "n": 263,
+          "uniform_brier": 0.666667
+        },
+        "M": {
+          "bootstrap_vs_counts": {
+            "ci_high": -0.0002943257347249048,
+            "ci_low": -0.010516783528453028,
+            "definition": "brier(engine) - brier(counts); negative favours engine",
+            "delta_brier_mean": -0.005337984232263161,
+            "n_blocks": 189,
+            "n_boot": 10000,
+            "n_matches": 1324,
+            "p_better": 0.9817
+          },
+          "counts_brier": 0.347074,
+          "counts_committed_brier": 0.346826,
+          "dc_frozen_brier": 0.596766,
+          "delta_engine_minus_counts": -0.005338,
+          "engine_brier": 0.341736,
+          "n": 1324,
+          "uniform_brier": 0.666667
+        }
+      },
+      "counts_brier": 0.345667,
+      "counts_committed_brier": 0.345359,
+      "dc_frozen_brier": 0.602432,
+      "delta_engine_minus_counts": -0.005258,
+      "engine_brier": 0.340409,
+      "n": 1587,
+      "uniform_brier": 0.666667
+    }
+  },
+  "gate": {
+    "checkpoint_wins": {
+      "15": true,
+      "30": true,
+      "45": true,
+      "60": true,
+      "75": true
+    },
+    "criterion": "engine pooled Brier < rebuilt-count-baseline pooled Brier at a majority of checkpoints {15,30,45,60,75}, including 60 and 75",
+    "n_wins": 5,
+    "passed": true,
+    "required_checkpoints_won": true
+  },
+  "generated_at": "2026-07-16T12:32:58+00:00",
+  "overall": {
+    "counts_brier": 0.496146,
+    "counts_committed_brier": 0.495795,
+    "dc_frozen_brier": 0.602432,
+    "engine_brier": 0.472552,
+    "n_fixtures": 1587,
+    "n_states": 7935
+  },
+  "protocol": {
+    "checkpoints": [
+      15,
+      30,
+      45,
+      60,
+      75
+    ],
+    "engine_trained_until": "2025-03-15",
+    "state_source": "reconciled per-minute event grids; state at checkpoint m = cumulative goals/reds over minute bins strictly before m (added time folded into the 45'/90' bins) — identical information for every predictor",
+    "walk_forward": "same harness discipline as engine_v0_vs_dc.json: per-block DC refits on matches strictly before each matchday block, per-block engine warm-start fine-tuning, trained_until leakage guard enforced"
+  },
+  "run": {
+    "competitions": {
+      "eng.1": {
+        "gender": "M",
+        "n_scored": 356,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 0,
+        "source": "fdcouk"
+      },
+      "esp.1": {
+        "gender": "M",
+        "n_scored": 236,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 105,
+        "source": "fdcouk"
+      },
+      "fra.1": {
+        "gender": "M",
+        "n_scored": 273,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 0,
+        "source": "fdcouk"
+      },
+      "ger.1": {
+        "gender": "M",
+        "n_scored": 147,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 138,
+        "source": "fdcouk"
+      },
+      "ita.1": {
+        "gender": "M",
+        "n_scored": 312,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 35,
+        "source": "fdcouk"
+      },
+      "usa.1.w": {
+        "gender": "F",
+        "n_scored": 263,
+        "season": 2025,
+        "skipped_insufficient_history": 0,
+        "skipped_uncovered": 1,
+        "source": "espn"
+      }
+    },
+    "finetune_epochs": 2,
+    "finetune_lr": 0.0001,
+    "half_life_days": 390.0,
+    "n_boot": 10000,
+    "seasons_window": 5,
+    "wall_clock_seconds": 473.8
+  },
+  "schema": 1
+}

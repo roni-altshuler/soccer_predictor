@@ -49,7 +49,7 @@ const PAGES = [
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
   { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
   { href: '/diagnostics', label: 'Data Coverage', icon: Database, hint: 'Event timeline coverage by league' },
-  { href: '/about', label: 'About', icon: Info, hint: 'How Pitchwise works' },
+  { href: '/about', label: 'About', icon: Info, hint: 'How Pitchverse works' },
 ]
 
 interface TeamHit {

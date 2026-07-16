@@ -1,6 +1,6 @@
 # Data & methodology
 
-This document is the canonical description of where Pitchwise's data comes from and how its
+This document is the canonical description of where Pitchverse's data comes from and how its
 predictions are computed. **By policy, none of these details appear in the website UI** — the
 product speaks in plain outcomes language, `/about` carries a short plain-language explainer,
 and the Accuracy page shows results only. Keep it that way; update this file instead.
@@ -41,7 +41,7 @@ rows are never synthesized.
 - **Reference metrics** (holdout at last release): men's ~60.5% outcome accuracy across an
   11,661-match holdout; women's ~51.45% across 482 matches.
 
-## Match Engine v0 (minute process, research stage — not in production)
+## Match Engine v0 (minute process — in-match production surface; pre-match stays Dixon-Coles)
 
 The first VISION_2030 "world model" experiment: instead of predicting a final-score
 distribution directly, model the match as a discrete-time goal process over 90 regulation
@@ -88,6 +88,62 @@ minute bins (added time folds into the 45'/90' bins; knockout extra time folds i
   failed gate deliberately: pre-match 1X2 was always the *hardest* place for a
   minute-process model to add value (its state dynamics integrate out at kickoff); its
   in-match rollout surface is the asset the next iteration builds on.
+
+### In-match gate (2026-07-16): PASSED
+
+The engine's real test — state-conditional prediction — ran on the same held-out 2025
+season and the same walk-forward harness (per-block DC refits shared with the baseline,
+per-block engine warm-start fine-tuning, `trained_until` leakage guard). At checkpoint
+minutes {15, 30, 45, 60, 75}, using each covered fixture's *actual* score and red cards
+(read from the reconciled per-minute event grids), three predictors produced 1X2
+probabilities for the final outcome: the engine's exact DP from the state; the exact-count
+empirical baseline at (gender, clamped score diff, minute bucket) — the rarity function,
+**rebuilt from covered matches strictly before the earliest scored fixture** so it is
+leakage-clean and conditions on byte-identical states; and frozen kickoff Dixon-Coles
+(state ignored). 1,587 fixtures × 5 checkpoints; multiclass Brier; paired
+matchday-block bootstrap on Δ(engine − counts).
+
+| minute | engine | counts | frozen DC | Δ(engine − counts) | 95% CI |
+|---|---|---|---|---|---|
+| 15' | 0.5753 | 0.6200 | 0.6024 | −0.0447 | [−0.0567, −0.0322] |
+| 30' | 0.5368 | 0.5706 | 0.6024 | −0.0339 | [−0.0439, −0.0233] |
+| 45' | 0.4904 | 0.5123 | 0.6024 | −0.0219 | [−0.0303, −0.0132] |
+| 60' | 0.4199 | 0.4322 | 0.6024 | −0.0122 | [−0.0190, −0.0053] |
+| 75' | 0.3404 | 0.3457 | 0.6024 | −0.0053 | [−0.0098, −0.0007] |
+
+The gate (beat the counts pooled at a majority of checkpoints, including 60' and 75')
+passed 5/5 with every bootstrap CI entirely below zero. The engine also beats the
+*committed* rarity artifact (whose counts include the test season — leakage in the
+baseline's favour) at all five checkpoints, so the verdict is unambiguous in both
+directions. Per gender: men's deltas are significant at every checkpoint; women's point
+estimates favour the engine at every checkpoint but the CIs cross zero at n=263 —
+directionally consistent, underpowered. The engine's edge is exactly the designed one:
+the counts know only the state, the engine also knows *who* is playing through its
+walk-forward DC anchors. Full artifact:
+`backend/data/diagnostics/engine_v0_inmatch_gate.json`.
+
+### Exported kernel (the in-match/counterfactual serving path)
+
+Because the gate passed, the kernel ships to the frontend as a committed artifact
+(`backend/data/engine/kernel.json`, ~3.3 MB): the residual network's exact float32
+weights, the DP configuration, and walk-forward anchors `match_id → (λ, μ, ρ, gender)`
+(~31.6k ids). Anchor fits run only on the dominant covered source per
+(competition, season) — the population the gate scored; minority-source ids (cross-source
+twins, and fixtures the dominant source never listed) inherit the dominant fit evaluated
+at their teams via cross-source name resolution (ambiguity refused), so live match-page
+ids resolve directly without thin-history fits. Every anchor must pass a sanity gate
+calibrated on the dominant-fit population (λ+μ ∈ [0.5, 7.0], components ∈ [0.02, 6.0]);
+out-of-bounds fits — continental-cup groups where a qualifying-round minnow's near-empty
+history explodes the MLE — are dropped, so those matches honestly report no fork rather
+than a nonsense one. `backend/scripts/export_engine_kernel.py`
+regenerates it — torch-free on the CI path (weights re-used from the committed artifact,
+anchors refreshed daily by `event_backfill.yml`) — and a TypeScript port
+(`src/lib/engine/kernel.ts` + `src/lib/engine/params.ts`, served by
+`POST /api/v1/engine/fork`) executes the same DP on Vercel. Parity is pinned by a
+committed 21-case fixture: the TS port must match the Python reference within 1e-6 per
+probability (measured agreement ~1e-9), and pytest pins the reference against the
+production torch engine on the same cases. Pre-match production remains Dixon-Coles —
+the engine serves *state-conditional* surfaces only.
 
 ## Pipeline & public tracking
 

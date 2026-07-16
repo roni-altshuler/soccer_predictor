@@ -16,12 +16,12 @@ import {
 } from '@/components/marketing/LazyDemos'
 
 export const metadata: Metadata = {
-  title: 'Pitchwise — Football predictions you can verify',
+  title: { absolute: 'Pitchverse — Football predictions you can verify' },
   description:
     'Calibrated football intelligence: live scores, AI predictions that publish their confidence, and accuracy you can audit — for the men\'s and women\'s game.',
   alternates: { canonical: '/welcome' },
   openGraph: {
-    title: 'Pitchwise — Football predictions you can verify',
+    title: 'Pitchverse — Football predictions you can verify',
     description:
       'Live scores, calibrated AI match probabilities, and accuracy you can audit. Every major league, men\'s and women\'s.',
     url: '/welcome',

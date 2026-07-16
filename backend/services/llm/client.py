@@ -30,7 +30,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Protocol, runtime_checkable
 
-logger = logging.getLogger("pitchwise.llm")
+logger = logging.getLogger("pitchverse.llm")
 
 # HTTP statuses worth retrying with backoff (transient / rate-limit).
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}

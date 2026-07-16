@@ -5,7 +5,7 @@ import { chromium } from 'playwright'
 import { mkdirSync } from 'fs'
 
 const BASE = process.env.QA_BASE || 'http://127.0.0.1:3000'
-const OUT = process.env.QA_OUT || '/tmp/pitchwise-qa'
+const OUT = process.env.QA_OUT || '/tmp/pitchverse-qa'
 mkdirSync(OUT, { recursive: true })
 
 const VIEWPORTS = [

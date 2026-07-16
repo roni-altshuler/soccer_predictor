@@ -1,5 +1,5 @@
 /**
- * API client for Pitchwise backend
+ * API client for Pitchverse backend
  */
 
 export type {

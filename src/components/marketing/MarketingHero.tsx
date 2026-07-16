@@ -123,7 +123,7 @@ export function MarketingHero() {
             transition={reduce ? { duration: 0 } : { duration: 0.6, delay: 0.12 }}
             className="max-w-xl text-pretty text-base leading-relaxed text-[var(--text-secondary)] md:text-lg"
           >
-            Pitchwise pairs live scores with AI predictions that publish their confidence,
+            Pitchverse pairs live scores with AI predictions that publish their confidence,
             log every pick, and answer to real outcomes — updated through the day, for the men&apos;s
             and women&apos;s game alike.
           </motion.p>

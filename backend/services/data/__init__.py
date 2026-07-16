@@ -1,4 +1,4 @@
-"""Unified data warehouse and ingestion layer for FotPredict AI.
+"""Unified data warehouse and ingestion layer for Pitchverse.
 
 This package replaces the JSON-file caching that lives under
 `backend/data/historical/` with a single SQLite warehouse

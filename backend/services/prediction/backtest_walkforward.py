@@ -472,7 +472,7 @@ def write_report(league: str, report: Dict[str, Any]) -> Path:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Walk-forward backtest for FotPredict ensemble")
+    parser = argparse.ArgumentParser(description="Walk-forward backtest for Pitchverse ensemble")
     parser.add_argument("--league", help="single league key (e.g. premier_league)")
     parser.add_argument("--all", action="store_true", help="run for all known leagues")
     parser.add_argument("--warmup-seasons", type=int, default=3,

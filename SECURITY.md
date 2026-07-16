@@ -36,7 +36,7 @@ that require a compromised developer machine or privileged local access.
 
 ## Handling third-party data
 
-Pitchwise reads public endpoints (ESPN/FotMob/etc.). Per project convention, provider fields are
+Pitchverse reads public endpoints (ESPN/FotMob/etc.). Per project convention, provider fields are
 never synthesized or placeholdered; missing data is omitted and labelled via `DataSourceBadge`.
 Licensed odds ingestion stays disabled unless a provider key is configured, and is used only for
 audit-only no-vig calibration comparison — never for betting advice.

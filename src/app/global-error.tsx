@@ -37,7 +37,7 @@ export default function GlobalError({
         <div style={{ textAlign: 'center', padding: '2rem', maxWidth: 420 }}>
           <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚽</p>
           <h1 style={{ fontSize: '1.25rem', margin: '0 0 0.5rem' }}>
-            Pitchwise hit an unexpected error
+            Pitchverse hit an unexpected error
           </h1>
           <p style={{ fontSize: '0.875rem', opacity: 0.7, margin: '0 0 1.25rem' }}>
             Reload to get back to the Match Centre. If this keeps happening,

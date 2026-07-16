@@ -17,7 +17,7 @@ const PRINCIPLES = [
   {
     Icon: ShieldAlert,
     title: 'Educational only',
-    body: 'Pitchwise is a research and visualisation tool, not a betting product. We do not optimise for odds and we never give betting advice.',
+    body: 'Pitchverse is a research and visualisation tool, not a betting product. We do not optimise for odds and we never give betting advice.',
   },
 ]
 
@@ -29,7 +29,7 @@ export function TrustStrip() {
           eyebrow="What we stand for"
           titleId="trust-heading"
           title="Built to be trusted, not just believed"
-          lede="Most prediction sites show you a number and ask you to take it on faith. Pitchwise shows you the track record behind it."
+          lede="Most prediction sites show you a number and ask you to take it on faith. Pitchverse shows you the track record behind it."
         />
       </Reveal>
 
@@ -56,7 +56,7 @@ export function TrustStrip() {
               Educational only — not a betting product
             </p>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[var(--text-secondary)]">
-              Pitchwise is a personal research project for visualising calibrated football
+              Pitchverse is a personal research project for visualising calibrated football
               probabilities. It cannot foresee injuries, weather, red cards, or tactical changes —
               and even a strong prediction loses regularly. Do not use these outputs for
               betting or any financial decision.

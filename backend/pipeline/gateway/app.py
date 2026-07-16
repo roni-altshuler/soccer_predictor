@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
             if fanout is not None:
                 await fanout.stop()
 
-    app = FastAPI(title="FotPredict Gateway", lifespan=lifespan)
+    app = FastAPI(title="Pitchverse Gateway", lifespan=lifespan)
     app.state.registry = registry
     app.state.fanout = fanout
 

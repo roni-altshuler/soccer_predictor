@@ -87,13 +87,13 @@ export function SidebarNav() {
       {/* Brand */}
       <Link
         href="/"
-        aria-label="Pitchwise home"
+        aria-label="Pitchverse home"
         className="flex h-[var(--shell-topbar-h)] shrink-0 items-center gap-2.5 border-b border-[var(--nav-border)] px-4"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/logo-mark.svg" alt="" width={24} height={24} className="h-6 w-6" />
         <span className="text-[15px] font-bold tracking-tight text-[var(--text-primary)]">
-          Pitchwise
+          Pitchverse
         </span>
       </Link>
 

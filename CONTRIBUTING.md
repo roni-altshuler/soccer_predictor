@@ -1,9 +1,9 @@
-# Contributing to Pitchwise
+# Contributing to Pitchverse
 
-Thanks for your interest in improving Pitchwise. This guide covers the local setup, the
+Thanks for your interest in improving Pitchverse. This guide covers the local setup, the
 development workflow, and the conventions the project follows so your change lands smoothly.
 
-> Pitchwise is an educational/research project. Please keep contributions aligned with that
+> Pitchverse is an educational/research project. Please keep contributions aligned with that
 > intent — no betting features, and no language that frames the model as betting advice.
 
 ## Table of contents

@@ -21,7 +21,7 @@ import {
  */
 
 export const metadata = {
-  title: 'Data Coverage | Pitchwise',
+  title: 'Data Coverage | Pitchverse',
   description:
     'How much of the match history carries a verified minute-by-minute timeline, competition by competition and season by season.',
 }

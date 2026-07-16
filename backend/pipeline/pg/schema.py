@@ -1,4 +1,4 @@
-"""Canonical Postgres DDL for the FotPredict data warehouse (Phase 1).
+"""Canonical Postgres DDL for the Pitchverse data warehouse (Phase 1).
 
 Why a dedicated SQL constant file instead of SQLAlchemy / Django models:
 

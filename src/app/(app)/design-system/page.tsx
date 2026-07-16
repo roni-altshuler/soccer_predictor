@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Design System',
-  description: 'Internal gallery of Pitchwise primitives, tokens, typography, and animations.',
+  description: 'Internal gallery of Pitchverse primitives, tokens, typography, and animations.',
   robots: { index: false, follow: false },
 }
 
@@ -326,7 +326,7 @@ export default function DesignSystemPage() {
         <p className="text-caption uppercase tracking-[0.1em] text-[var(--accent-ai)]">internal · sitemap-noindex</p>
         <h1 className="text-display mt-2 text-[var(--text-primary)]">Design system</h1>
         <p className="mt-3 max-w-2xl text-body text-[var(--text-secondary)]">
-          Living gallery of every token, primitive, and animation that ships with Pitchwise&apos;s
+          Living gallery of every token, primitive, and animation that ships with Pitchverse&apos;s
           UI. Add a primitive here when you add one to the codebase; remove the entry
           when you delete it. See <code className="text-meta font-mono">docs/design-tokens.md</code> for the
           full token reference.

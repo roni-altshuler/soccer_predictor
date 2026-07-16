@@ -1,0 +1,1056 @@
+{
+ "cases": [
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.55,
+    "mu": 1.15,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.1597784584630824,
+    "expHomeGoals": 1.5410967018858543,
+    "pAway": 0.26962964060021055,
+    "pDraw": 0.28243227332290705,
+    "pHome": 0.44793808607688246,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.13381278395132984
+     },
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.09636255500634376
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.09350986718195332
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.07708940505401082
+     },
+     {
+      "away": 0,
+      "home": 2,
+      "p": 0.07611258626004548
+     }
+    ]
+   },
+   "name": "kickoff-m",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 0
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.35,
+    "mu": 1.25,
+    "rho": -0.02
+   },
+   "expected": {
+    "expAwayGoals": 1.1978346449392732,
+    "expHomeGoals": 1.2606589878047683,
+    "pAway": 0.341907577915423,
+    "pDraw": 0.2846530018767137,
+    "pHome": 0.3734394202078633,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.13574043805189068
+     },
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.10464737093706722
+     },
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.09802703209121279
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.08811770877002385
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.082465383399946
+     }
+    ]
+   },
+   "name": "kickoff-f",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 0
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.8,
+    "mu": 0.95,
+    "rho": -0.08
+   },
+   "expected": {
+    "expAwayGoals": 0.836355914673657,
+    "expHomeGoals": 1.5483246034034706,
+    "pAway": 0.18161252932089209,
+    "pDraw": 0.2930305963131137,
+    "pHome": 0.5253568743659943,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.1356961712780662
+     },
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.13063128926005
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.10854598411946695
+     },
+     {
+      "away": 0,
+      "home": 2,
+      "p": 0.10669131990134291
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.09412786225000887
+     }
+    ]
+   },
+   "name": "level-15-m",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 15
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.05,
+    "mu": 1.45,
+    "rho": 0.01
+   },
+   "expected": {
+    "expAwayGoals": 1.203863199122556,
+    "expHomeGoals": 0.8521039662417232,
+    "pAway": 0.44143298528710484,
+    "pDraw": 0.2998427651181343,
+    "pHome": 0.25872424959476087,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.15457754144059263
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.13379990391087873
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.12637584558109194
+     },
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.10935392585641061
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.0923878459932083
+     }
+    ]
+   },
+   "name": "level-15-f",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 15
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.6,
+    "mu": 1.2,
+    "rho": -0.06
+   },
+   "expected": {
+    "expAwayGoals": 0.9240196890787759,
+    "expHomeGoals": 2.145125042108912,
+    "pAway": 0.09583776175527638,
+    "pDraw": 0.2087396922121761,
+    "pHome": 0.6954225460325476,
+    "topScorelines": [
+     {
+      "away": 0,
+      "home": 2,
+      "p": 0.14210346621954245
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.1345976526967158
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.13131113372112543
+     },
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.11640147616434249
+     },
+     {
+      "away": 0,
+      "home": 3,
+      "p": 0.0843975921281076
+     }
+    ]
+   },
+   "name": "lead1-30-m",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 30
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.5,
+    "mu": 1.3,
+    "rho": -0.04
+   },
+   "expected": {
+    "expAwayGoals": 1.8926386946965048,
+    "expHomeGoals": 1.032978797608991,
+    "pAway": 0.6121238681924452,
+    "pDraw": 0.24283769567440713,
+    "pHome": 0.14503843613314762,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.15954023345636442
+     },
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.136712042075844
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.1346135339076749
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.13127066036770807
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.07721925364796384
+     }
+    ]
+   },
+   "name": "trail1-30-f",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 30
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.4,
+    "mu": 1.1,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.6197190147331444,
+    "expHomeGoals": 1.7844178576182823,
+    "pAway": 0.24994440519693872,
+    "pDraw": 0.39964892238689126,
+    "pHome": 0.35040667241616996,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.256352516667237
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.18605949312238673
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.144076046232706
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.12597673640970322
+     },
+     {
+      "away": 1,
+      "home": 3,
+      "p": 0.07236152261566435
+     }
+    ]
+   },
+   "name": "half-time-level",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 45
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 2.6,
+    "mu": 0.7,
+    "rho": -0.12
+   },
+   "expected": {
+    "expAwayGoals": 0.41161859202311507,
+    "expHomeGoals": 3.4579693088523284,
+    "pAway": 0.0023000580374635104,
+    "pDraw": 0.01723907703452688,
+    "pHome": 0.9804608649280095,
+    "topScorelines": [
+     {
+      "away": 0,
+      "home": 3,
+      "p": 0.22899743534734188
+     },
+     {
+      "away": 0,
+      "home": 4,
+      "p": 0.1664929261888412
+     },
+     {
+      "away": 0,
+      "home": 2,
+      "p": 0.14928523051683454
+     },
+     {
+      "away": 1,
+      "home": 3,
+      "p": 0.09096579629197589
+     },
+     {
+      "away": 0,
+      "home": 5,
+      "p": 0.08011272471881174
+     }
+    ]
+   },
+   "name": "half-time-2up",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 2,
+    "homeReds": 0,
+    "minute": 45
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.45,
+    "mu": 1.25,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.5314081120852017,
+    "expHomeGoals": 2.561813317289686,
+    "pAway": 0.05852983596020758,
+    "pDraw": 0.21461572281227437,
+    "pHome": 0.7268544412275181,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.33072223190876493
+     },
+     {
+      "away": 1,
+      "home": 3,
+      "p": 0.18752548119298562
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.18543167992532944
+     },
+     {
+      "away": 2,
+      "home": 3,
+      "p": 0.10101968388965657
+     },
+     {
+      "away": 1,
+      "home": 4,
+      "p": 0.0533847666860083
+     }
+    ]
+   },
+   "name": "lead1-60-m",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 2,
+    "homeReds": 0,
+    "minute": 60
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.2,
+    "mu": 1.2,
+    "rho": 0.0
+   },
+   "expected": {
+    "expAwayGoals": 2.4507609145277116,
+    "expHomeGoals": 1.4553134955204876,
+    "pAway": 0.742596322605034,
+    "pDraw": 0.2060505420649738,
+    "pHome": 0.05135313532999212,
+    "topScorelines": [
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.40112978135534516
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.18598582846237852
+     },
+     {
+      "away": 3,
+      "home": 1,
+      "p": 0.18461304841863158
+     },
+     {
+      "away": 3,
+      "home": 2,
+      "p": 0.08303775734295747
+     },
+     {
+      "away": 2,
+      "home": 3,
+      "p": 0.041330760414252654
+     }
+    ]
+   },
+   "name": "trail1-60-f",
+   "state": {
+    "awayGoals": 2,
+    "awayReds": 0,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 60
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.7,
+    "mu": 1.05,
+    "rho": -0.07
+   },
+   "expected": {
+    "expAwayGoals": 0.2819400271606252,
+    "expHomeGoals": 1.3938763226733948,
+    "pAway": 0.019611723808987267,
+    "pDraw": 0.1634937244406123,
+    "pHome": 0.8168945517504004,
+    "topScorelines": [
+     {
+      "away": 0,
+      "home": 1,
+      "p": 0.4963206408358119
+     },
+     {
+      "away": 0,
+      "home": 2,
+      "p": 0.20813125860479112
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.15605719513509306
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.054834137031606445
+     },
+     {
+      "away": 0,
+      "home": 3,
+      "p": 0.039326613080578034
+     }
+    ]
+   },
+   "name": "lead1-75-m",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 75
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.7,
+    "mu": 1.05,
+    "rho": -0.07
+   },
+   "expected": {
+    "expAwayGoals": 1.2543498702358553,
+    "expHomeGoals": 0.44529824683426705,
+    "pAway": 0.6910333237657514,
+    "pDraw": 0.25714972661017366,
+    "pHome": 0.05181694962407496,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.4780849165356568
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.2454951718137049
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.1329209602291785
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.05426198855358463
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.04404670645206065
+     }
+    ]
+   },
+   "name": "trail1-75-m",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 75
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.3,
+    "mu": 1.35,
+    "rho": -0.03
+   },
+   "expected": {
+    "expAwayGoals": 2.285076584375952,
+    "expHomeGoals": 0.279560166778625,
+    "pAway": 0.9739326322412204,
+    "pDraw": 0.023689510466203014,
+    "pHome": 0.0023778572925766,
+    "topScorelines": [
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.5679860050864919
+     },
+     {
+      "away": 3,
+      "home": 0,
+      "p": 0.16443921005267073
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.1574905124227325
+     },
+     {
+      "away": 3,
+      "home": 1,
+      "p": 0.04474779222874613
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.023047351596117947
+     }
+    ]
+   },
+   "name": "trail2-75-f",
+   "state": {
+    "awayGoals": 2,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 75
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.5,
+    "mu": 1.2,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.437773553015383,
+    "expHomeGoals": 0.7040502320148161,
+    "pAway": 0.5330559111869198,
+    "pDraw": 0.30436906482050285,
+    "pHome": 0.16257502399257742,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.1551031429655088
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.13366240033437787
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.13264868948999411
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.12052358234019646
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.08865326443143684
+     }
+    ]
+   },
+   "name": "red-down-30",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 1,
+    "minute": 30
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.5,
+    "mu": 1.2,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.2956405207048243,
+    "expHomeGoals": 1.9743889001261392,
+    "pAway": 0.09986860402985534,
+    "pDraw": 0.38198651988540205,
+    "pHome": 0.5181448760847427,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.2879251511103384
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.2697224000751104
+     },
+     {
+      "away": 1,
+      "home": 3,
+      "p": 0.13316005128740951
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.0870084887092547
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.07406617892019089
+     }
+    ]
+   },
+   "name": "red-up-60",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 1,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 60
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.25,
+    "mu": 1.3,
+    "rho": -0.02
+   },
+   "expected": {
+    "expAwayGoals": 2.1117712419339996,
+    "expHomeGoals": 0.4918030689249301,
+    "pAway": 0.8371012590018727,
+    "pDraw": 0.13080121312276338,
+    "pHome": 0.03209752787536393,
+    "topScorelines": [
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.22483067073009255
+     },
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.19818106047694825
+     },
+     {
+      "away": 3,
+      "home": 0,
+      "p": 0.12619031138993106
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.11166377859184225
+     },
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.09994024586439247
+     }
+    ]
+   },
+   "name": "two-reds-diff",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 2,
+    "minute": 50
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 3.1,
+    "mu": 0.55,
+    "rho": -0.15
+   },
+   "expected": {
+    "expAwayGoals": 0.15123948735399384,
+    "expHomeGoals": 5.840971531112901,
+    "pAway": 9.465291879479352e-09,
+    "pDraw": 3.267349552532502e-07,
+    "pHome": 0.9999996637997529,
+    "topScorelines": [
+     {
+      "away": 0,
+      "home": 5,
+      "p": 0.3703719400002724
+     },
+     {
+      "away": 0,
+      "home": 6,
+      "p": 0.3119463842766636
+     },
+     {
+      "away": 0,
+      "home": 7,
+      "p": 0.13136868125486556
+     },
+     {
+      "away": 1,
+      "home": 5,
+      "p": 0.05601436381178552
+     },
+     {
+      "away": 1,
+      "home": 6,
+      "p": 0.047178191357129355
+     }
+    ]
+   },
+   "name": "blowout-5-0",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 5,
+    "homeReds": 0,
+    "minute": 70
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 2.2,
+    "mu": 1.9,
+    "rho": -0.09
+   },
+   "expected": {
+    "expAwayGoals": 3.3357245604133356,
+    "expHomeGoals": 3.3844096132574806,
+    "pAway": 0.201631698960174,
+    "pDraw": 0.5599381131630068,
+    "pHome": 0.2384301878768193,
+    "topScorelines": [
+     {
+      "away": 3,
+      "home": 3,
+      "p": 0.49081473709601037
+     },
+     {
+      "away": 3,
+      "home": 4,
+      "p": 0.18415622696112557
+     },
+     {
+      "away": 4,
+      "home": 3,
+      "p": 0.15920350338531533
+     },
+     {
+      "away": 4,
+      "home": 4,
+      "p": 0.06683663180968391
+     },
+     {
+      "away": 3,
+      "home": 5,
+      "p": 0.034822089679037126
+     }
+    ]
+   },
+   "name": "goalfest-3-3",
+   "state": {
+    "awayGoals": 3,
+    "awayReds": 0,
+    "homeGoals": 3,
+    "homeReds": 0,
+    "minute": 80
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.6,
+    "mu": 1.1,
+    "rho": -0.06
+   },
+   "expected": {
+    "expAwayGoals": 1.1245739373366628,
+    "expHomeGoals": 1.1804658186877397,
+    "pAway": 0.09666626638783325,
+    "pDraw": 0.7581970987864554,
+    "pHome": 0.14513663482571149,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 1,
+      "p": 0.7399463368065791
+     },
+     {
+      "away": 1,
+      "home": 2,
+      "p": 0.1303761409542659
+     },
+     {
+      "away": 2,
+      "home": 1,
+      "p": 0.08932238916224564
+     },
+     {
+      "away": 2,
+      "home": 2,
+      "p": 0.018131237410631353
+     },
+     {
+      "away": 1,
+      "home": 3,
+      "p": 0.012134722239971992
+     }
+    ]
+   },
+   "name": "late-85",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 1,
+    "homeReds": 0,
+    "minute": 85
+   }
+  },
+  {
+   "anchor": {
+    "gender": "M",
+    "lambda": 1.5,
+    "mu": 1.2,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 1.0,
+    "expHomeGoals": 2.0,
+    "pAway": 0.0,
+    "pDraw": 0.0,
+    "pHome": 1.0,
+    "topScorelines": [
+     {
+      "away": 1,
+      "home": 2,
+      "p": 1.0
+     },
+     {
+      "away": 0,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 3,
+      "home": 0,
+      "p": 0.0
+     }
+    ]
+   },
+   "name": "final-whistle-90",
+   "state": {
+    "awayGoals": 1,
+    "awayReds": 0,
+    "homeGoals": 2,
+    "homeReds": 0,
+    "minute": 90
+   }
+  },
+  {
+   "anchor": {
+    "gender": "F",
+    "lambda": 1.5,
+    "mu": 1.2,
+    "rho": -0.05
+   },
+   "expected": {
+    "expAwayGoals": 0.0,
+    "expHomeGoals": 0.0,
+    "pAway": 0.0,
+    "pDraw": 1.0,
+    "pHome": 0.0,
+    "topScorelines": [
+     {
+      "away": 0,
+      "home": 0,
+      "p": 1.0
+     },
+     {
+      "away": 1,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 2,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 3,
+      "home": 0,
+      "p": 0.0
+     },
+     {
+      "away": 4,
+      "home": 0,
+      "p": 0.0
+     }
+    ]
+   },
+   "name": "stoppage-93-clamps",
+   "state": {
+    "awayGoals": 0,
+    "awayReds": 0,
+    "homeGoals": 0,
+    "homeReds": 0,
+    "minute": 93
+   }
+  }
+ ],
+ "schema": 1,
+ "tolerance": 1e-06
+}

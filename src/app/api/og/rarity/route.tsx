@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
             P
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ color: COLORS.text, fontWeight: 800, fontSize: 28 }}>Pitchwise</span>
+            <span style={{ color: COLORS.text, fontWeight: 800, fontSize: 28 }}>Pitchverse</span>
           </div>
           <span style={{ marginLeft: 'auto', fontSize: 22, color: COLORS.textMuted, letterSpacing: 4 }}>
             {league ? league.toUpperCase() : hasClaim ? 'RARITY' : ''}

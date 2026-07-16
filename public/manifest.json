@@ -1,6 +1,6 @@
 {
-  "name": "Pitchwise",
-  "short_name": "Pitchwise",
+  "name": "Pitchverse",
+  "short_name": "Pitchverse",
   "description": "Calibrated football intelligence across the world's leagues. Live scores, AI match probabilities, and accuracy tracking.",
   "start_url": "/",
   "display": "standalone",

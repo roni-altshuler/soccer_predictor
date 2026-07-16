@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Pitchwise are documented here. The format is based on
+All notable changes to Pitchverse are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/) once it reaches a 1.0 release.
 
@@ -8,7 +8,7 @@ All notable changes to Pitchwise are documented here. The format is based on
 
 ### Added
 
-- **Brand icon set** generated from the official Pitchwise mark via a reproducible script
+- **Brand icon set** generated from the official Pitchverse mark via a reproducible script
   (`scripts/generate-icons.mjs`, `npm run icons`): browser favicons (16/32), `apple-touch-icon`,
   the full maskable PWA icon set, and the 1200×630 OpenGraph / social-preview card.
 - **Flagship marketing landing page** at `/welcome` — hero, feature bento, live prediction and
@@ -21,6 +21,10 @@ All notable changes to Pitchwise are documented here. The format is based on
 
 ### Changed
 
+- **Rebrand: Pitchwise → Pitchverse.** All user-facing product naming (metadata/SEO,
+  PWA manifest, shell wordmark, marketing/about copy, brand SVGs, README/docs) now reads
+  Pitchverse. `fotpredict.*` localStorage keys and internal identifiers are intentionally
+  unchanged to preserve existing users' preferences.
 - **Route structure** split into `(app)` and `(marketing)` route groups so the marketing page can
   drop the `AppShell` chrome while the root layout stays slim and shared. **All existing URLs are
   unchanged** (`/`, `/predict`, `/accuracy`, …).

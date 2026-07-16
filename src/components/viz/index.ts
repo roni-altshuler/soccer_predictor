@@ -1,5 +1,5 @@
 /**
- * Pitchwise viz kit (Matchday v3.1) — production-grade chart and data-display
+ * Pitchverse viz kit (Matchday v3.1) — production-grade chart and data-display
  * components ported from the motorsportverse F1 project and retokenized to
  * `var(--*)`. New chart surfaces compose these instead of hand-rolling
  * recharts/divs. All components are pure-props (no fetching).

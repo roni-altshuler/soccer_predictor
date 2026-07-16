@@ -1,6 +1,6 @@
-# Pitchwise (then "FotPredict AI") Product Roadmap - May 5, 2026
+# Pitchverse (then "Pitchwise", originally "FotPredict AI") Product Roadmap - May 5, 2026
 
-This roadmap triages the next 10 product ideas by a combined score of user impact, implementation effort, model integrity, and monetization potential. The intent is to build Pitchwise like a startup-quality sports intelligence app: trustworthy data first, then deeper prediction tooling, then premium-grade personalization and market intelligence.
+This roadmap triages the next 10 product ideas by a combined score of user impact, implementation effort, model integrity, and monetization potential. The intent is to build Pitchverse like a startup-quality sports intelligence app: trustworthy data first, then deeper prediction tooling, then premium-grade personalization and market intelligence.
 
 ## Triage Order
 

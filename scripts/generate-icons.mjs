@@ -1,5 +1,5 @@
 /**
- * Generate the full Pitchwise icon set from the brand SVG sources.
+ * Generate the full Pitchverse icon set from the brand SVG sources.
  *
  * Sources (single source of truth, all in public/brand/ + public/):
  *   - public/brand/icon-maskable.svg → full-bleed gradient mark (PWA + apple)
@@ -39,7 +39,7 @@ async function render(svg, size, out) {
 }
 
 async function main() {
-  console.log('Generating Pitchwise icons…')
+  console.log('Generating Pitchverse icons…')
 
   // PWA / maskable icons — full-bleed gradient so platform masks never clip.
   for (const size of PWA_SIZES) {

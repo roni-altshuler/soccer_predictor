@@ -1,6 +1,6 @@
 # Repository Audit — 2026-06-02
 
-A production-readiness review of the Pitchwise repository, with a prioritized action plan.
+A production-readiness review of the Pitchwise (now Pitchverse) repository, with a prioritized action plan.
 Scoped to evidence gathered from the codebase; supersedes the high-level
 `docs/PROJECT_AUDIT_2026-05-03.md` for repo-hygiene concerns.
 

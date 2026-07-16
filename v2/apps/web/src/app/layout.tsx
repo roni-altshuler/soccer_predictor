@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata = {
-  title: 'Pitchwise',
+  title: 'Pitchverse',
   description: 'Calibrated football intelligence — predictions, live tracking, and league simulations.',
 };
 

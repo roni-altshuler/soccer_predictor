@@ -53,7 +53,7 @@ from backend.services.llm.grounding import (  # noqa: E402
     verify_text,
 )
 
-logger = logging.getLogger("pitchwise.boardroom")
+logger = logging.getLogger("pitchverse.boardroom")
 
 _DEFAULT_OUTPUT = _ROOT / "backend" / "data" / "boardroom" / "debates.json"
 _WAREHOUSE = _ROOT / "backend" / "data" / "warehouse.sqlite"

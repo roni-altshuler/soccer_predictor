@@ -59,7 +59,7 @@ export function MarketingNav() {
             <span className="text-sm font-black">P</span>
           </span>
           <span className="text-[15px] font-extrabold tracking-tight text-[var(--text-primary)]">
-            Pitchwise
+            Pitchverse
           </span>
         </Link>
 

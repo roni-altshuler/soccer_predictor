@@ -129,7 +129,7 @@ export async function generateMetadata({ params }: LeaguePageParams) {
   const name = config?.name || leagueId
   
   return {
-    title: `${name} · Pitchwise`,
+    title: `${name} · Pitchverse`,
     description: `AI predictions, standings, fixtures and results for ${name} — calibrated football intelligence.`,
   }
 }

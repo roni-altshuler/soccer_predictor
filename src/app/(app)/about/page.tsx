@@ -4,9 +4,9 @@ import { ShieldAlert } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 
 export const metadata = {
-  title: 'About · Pitchwise',
+  title: 'About',
   description:
-    'Pitchwise pairs live football scores with AI match predictions, honest accuracy tracking, and a single dashboard for every league.',
+    'Pitchverse pairs live football scores with AI match predictions, honest accuracy tracking, and a single dashboard for every league.',
 }
 
 const PRINCIPLES = [
@@ -20,7 +20,7 @@ const PRINCIPLES = [
   },
   {
     title: 'Educational only',
-    body: 'Pitchwise is a research and visualisation tool, not a betting product. It does not optimise for odds.',
+    body: 'Pitchverse is a research and visualisation tool, not a betting product. It does not optimise for odds.',
   },
 ]
 
@@ -36,7 +36,7 @@ export default function AboutPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-4">
       <h1 className="px-1 pb-1 text-lg font-bold tracking-tight text-[var(--text-primary)]">
-        About Pitchwise
+        About Pitchverse
       </h1>
       <p className="px-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
         Live scores for the men&apos;s and women&apos;s game, with AI match predictions
@@ -59,7 +59,7 @@ export default function AboutPage() {
             <Link href="/accuracy" className="font-semibold text-[var(--accent-primary)] hover:underline">
               Accuracy
             </Link>{' '}
-            page. Pitchwise is an educational project, not a betting product.
+            page. Pitchverse is an educational project, not a betting product.
           </p>
         </Card>
 
@@ -87,7 +87,7 @@ export default function AboutPage() {
                 Educational only — not a betting product
               </p>
               <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                Pitchwise is a personal research project for visualising football
+                Pitchverse is a personal research project for visualising football
                 probabilities. Football is unpredictable — injuries, red cards, and
                 tactical surprises happen, and even a strong prediction loses
                 regularly. Do not use these outputs for betting or any financial
@@ -100,7 +100,7 @@ export default function AboutPage() {
         {/* Where to go next — /about should open doors, not close them */}
         <Card className="overflow-hidden p-0">
           <p className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-            Explore Pitchwise
+            Explore Pitchverse
           </p>
           <ul className="divide-y divide-[var(--border-color)]/40">
             {[

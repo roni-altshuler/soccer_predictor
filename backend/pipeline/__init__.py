@@ -1,4 +1,4 @@
-"""FotPredict AI data pipeline.
+"""Pitchverse data pipeline.
 
 Houses the Postgres / Redis / Streams / WebSocket evolution of the original
 SQLite-only warehouse in `backend/services/data/`. Designed so that the legacy

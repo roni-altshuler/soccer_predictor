@@ -37,12 +37,12 @@ export function TopBar() {
         {/* Brand mark — only visible on mobile (sidebar is hidden there) */}
         <Link
           href="/"
-          aria-label="Pitchwise home"
+          aria-label="Pitchverse home"
           className="md:hidden flex items-center gap-2"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">Pitchwise</span>
+          <span className="text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
         </Link>
 
         {/* Global search trigger -> opens command palette */}

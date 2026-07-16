@@ -9,6 +9,16 @@ import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'luc
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { adaptMatchPrediction } from '@/components/match/detail/adaptPrediction'
+import {
+  CounterfactualMachine,
+  useForkAvailability,
+} from '@/components/match/detail/CounterfactualMachine'
+import {
+  WHATIF_TAB,
+  WHATIF_TAB_LABEL,
+  isForkEligible,
+  type WhatIfTab,
+} from '@/components/match/detail/counterfactual'
 import { H2HTab } from '@/components/match/detail/H2HTab'
 import { LineupsTab } from '@/components/match/detail/LineupsTab'
 import { OverviewTab } from '@/components/match/detail/OverviewTab'
@@ -149,10 +159,12 @@ export default function MatchDetailPage() {
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
 
   // ?tab= deep link is the source of truth. Legacy values
-  // (summary/ai/lineup/…) are normalised onto the new tab set.
-  const activeTab = normalizeDetailTab(searchParams.get('tab'))
+  // (summary/ai/lineup/…) are normalised onto the new tab set. The raw value
+  // is kept because the "What if" tab only exists once the match is loaded,
+  // finished AND the fork engine confirms availability.
+  const requestedTab = searchParams.get('tab')
   const selectTab = useCallback(
-    (tab: DetailTab) => {
+    (tab: DetailTab | WhatIfTab) => {
       const next = new URLSearchParams(searchParams.toString())
       next.set('tab', tab)
       router.replace(`${pathname}?${next.toString()}`, { scroll: false })
@@ -163,6 +175,17 @@ export default function MatchDetailPage() {
   // Derived state for live status - compute before hooks that depend on it
   const isLive = match?.status?.includes('IN_PROGRESS') || match?.status?.includes('HALF') || match?.status?.includes('LIVE') || false
   const isHalftime = match?.status?.toLowerCase().includes('half') && !match?.status?.toLowerCase().includes('first') && !match?.status?.toLowerCase().includes('second') || false
+  const isFinished = !!match && (match.status.includes('FINAL') || match.status.toLowerCase().includes('finished') || match.status.toLowerCase().includes('ft'))
+
+  // "What if" fork tab: eligibility is pure state math (the goal events must
+  // reproduce the final score); availability is one kickoff-state probe of
+  // the fork engine. Until BOTH hold the tab does not exist — no tab, no
+  // skeleton, nothing (the engine may legitimately decline a match).
+  const whatIfEligible = useMemo(
+    () => (match && isFinished ? isForkEligible(match) : false),
+    [match, isFinished]
+  )
+  const whatIfAvailable = useForkAvailability(whatIfEligible && match ? match.id : null)
   // Ref to the match hero <section>. StickyScoreBar uses an IntersectionObserver
   // on this to know when to slide down into view.
   const heroRef = useRef<HTMLElement | null>(null)
@@ -487,9 +510,19 @@ export default function MatchDetailPage() {
     )
   }
 
-  // Additional derived state (isLive and isHalftime already computed above before hooks)
+  // Additional derived state (isLive, isHalftime and isFinished already computed above before hooks)
   const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
-  const isFinished = match.status.includes('FINAL') || match.status.toLowerCase().includes('finished') || match.status.toLowerCase().includes('ft')
+
+  // The "What if" tab exists only for finished matches the fork engine
+  // accepted. Deep links to ?tab=whatif fall back to Overview until then.
+  const showWhatIf = whatIfEligible && whatIfAvailable === true
+  const visibleTabs: ReadonlyArray<DetailTab | WhatIfTab> = showWhatIf
+    ? [...DETAIL_TABS, WHATIF_TAB]
+    : DETAIL_TABS
+  const activeTab: DetailTab | WhatIfTab =
+    (requestedTab || '').toLowerCase() === WHATIF_TAB && showWhatIf
+      ? WHATIF_TAB
+      : normalizeDetailTab(requestedTab)
 
   // Navigate back to the league page - go directly to full league page
   const handleBack = () => {
@@ -748,7 +781,7 @@ export default function MatchDetailPage() {
           role="tablist"
           aria-label="Match sections"
         >
-          {DETAIL_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = activeTab === tab
             return (
               <button
@@ -764,7 +797,7 @@ export default function MatchDetailPage() {
                     : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
                 )}
               >
-                {DETAIL_TAB_LABELS[tab]}
+                {tab === WHATIF_TAB ? WHATIF_TAB_LABEL : DETAIL_TAB_LABELS[tab]}
                 {active && (
                   <motion.span
                     {...(reduceMotion ? {} : { layoutId: 'matchdetail-tab-active', transition: springSnappy })}
@@ -813,6 +846,8 @@ export default function MatchDetailPage() {
         {activeTab === 'h2h' && <H2HTab match={match} />}
 
         {activeTab === 'table' && <TableTab match={match} />}
+
+        {activeTab === WHATIF_TAB && showWhatIf && <CounterfactualMachine match={match} />}
       </div>
     </div>
   )

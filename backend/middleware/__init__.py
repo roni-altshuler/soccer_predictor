@@ -1,4 +1,4 @@
-"""Custom ASGI middleware for the Pitchwise API."""
+"""Custom ASGI middleware for the Pitchverse API."""
 
 from backend.middleware.rate_limit import RateLimitMiddleware
 

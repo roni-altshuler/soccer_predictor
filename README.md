@@ -1,14 +1,16 @@
 <div align="center">
 
-<img src="public/brand/pitchwise-logo-dark.png" alt="Pitchwise — Calibrated football intelligence" width="380" />
+<img src="public/brand/pitchverse-logo-dark.png" alt="Pitchverse — Calibrated football intelligence" width="380" />
 
-# Pitchwise
+# Pitchverse
 
 **Calibrated football intelligence — live scores, AI match predictions, and accuracy you can verify.**
 
-Pitchwise combines the real-time match experience of apps like FotMob with a custom-built machine
+Pitchverse combines the real-time match experience of apps like FotMob with a custom-built machine
 learning prediction engine, for both the men's and women's game. It's built for football fans who
 want live data *and* honest, data-driven insight in one interface.
+
+<sub>Formerly "FotPredict AI", then "Pitchwise" — renamed <b>Pitchverse</b> in July 2026.</sub>
 
 [![CI](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml)
 [![Backend tests](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml)
@@ -64,7 +66,7 @@ The remaining roadmap is now mostly production hardening: native Web Push delive
 
 ## The AI/ML Prediction Engine
 
-This is what differentiates Pitchwise from standard live-score apps. The prediction layer now serves through `/api/predict/unified`, which tries the neural ensemble first and falls back to the calibrated ELO-Poisson model only when a neural artifact is unavailable.
+This is what differentiates Pitchverse from standard live-score apps. The prediction layer now serves through `/api/predict/unified`, which tries the neural ensemble first and falls back to the calibrated ELO-Poisson model only when a neural artifact is unavailable.
 
 ### Model Architecture (v5.1.x)
 
@@ -488,7 +490,7 @@ The frontend is inspired by [FotMob](https://www.fotmob.com) — dark theme, mat
 - Match detail pages can add either team directly to the local watchlist.
 - Live win probability is returned and visualized only when the match is live and score, clock, pre-match model probability, and provider live stats are available.
 - The World Cup hub includes a command-center board that keeps fixtures, groups, scorer data, model readiness, scenario controls, and saved scenario cards in one workflow.
-- Tournament challenge pages can generate a Pitchwise bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
+- Tournament challenge pages can generate a Pitchverse bracket entry from current simulation probabilities; unknown matchups stay unpicked rather than fabricated.
 - Synced bracket rooms and alert queues use managed Postgres when `DATABASE_URL` or `POSTGRES_URL` is configured. `FOTPREDICT_STORE_DIR` and temp-file storage are local/staging fallbacks only.
 - Prediction cards label model outputs clearly and preserve the model version/source when provided.
 

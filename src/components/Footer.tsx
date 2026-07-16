@@ -13,7 +13,7 @@ export const Footer = () => {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-[var(--text-primary)]">Pitchwise</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
               <span className="text-[10px] text-[var(--text-tertiary)]">Calibrated football intelligence</span>
             </div>
           </div>

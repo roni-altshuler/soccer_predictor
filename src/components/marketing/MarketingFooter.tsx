@@ -42,7 +42,7 @@ export function MarketingFooter() {
                 <span className="text-sm font-black">P</span>
               </span>
               <span className="text-[15px] font-extrabold tracking-tight text-[var(--text-primary)]">
-                Pitchwise
+                Pitchverse
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--text-tertiary)]">
@@ -79,14 +79,14 @@ export function MarketingFooter() {
               aria-hidden="true"
             />
             <p className="max-w-3xl">
-              Pitchwise is a personal, educational research project for visualising calibrated
+              Pitchverse is a personal, educational research project for visualising calibrated
               football probabilities. It is <strong className="text-[var(--text-secondary)]">not a betting product</strong> and its
               outputs must not be used for betting or any financial decision. Even a
               well-calibrated model loses regularly.
             </p>
           </div>
           <p className="text-xs text-[var(--text-tertiary)]">
-            © {2026} Pitchwise · Calibrated football intelligence
+            © {2026} Pitchverse · Calibrated football intelligence
           </p>
         </div>
       </div>

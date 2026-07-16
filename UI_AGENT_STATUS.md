@@ -67,7 +67,7 @@ Concrete consequences:
 
 ### Milestone 2 — Branding & Layout (complete in files)
 
-- `public/brand/logo.svg` — full wordmark (mark + "Pitchwise"; the
+- `public/brand/logo.svg` — full wordmark (mark + "Pitchverse"; the
   "AI" pill was retired in the 2026-05-28 rebrand). Uses
   `currentColor` for the wordmark so it adapts to dark/light mode.
 - `public/brand/logo-mark.svg` — mark only (48×48 viewBox).
@@ -82,13 +82,13 @@ Concrete consequences:
 - `src/app/api/og/[matchId]/route.tsx` — Edge-runtime dynamic OG
   image route. Reads `?home=`, `?away=`, `?league=`, `?hg=`, `?ag=`,
   `?hp=`, `?dp=`, `?ap=` query params and renders a 1200×630
-  prediction share card. Falls back to a generic Pitchwise card when
+  prediction share card. Falls back to a generic Pitchverse card when
   probs are not provided.
 - `src/components/Navbar.tsx` — soccer-ball emoji swapped for
   `/brand/logo-mark.svg` in both desktop and mobile headers, with
   proper `aria-label`. GenderToggle added to both layouts.
 - `public/manifest.json` — name, description, and theme colours
-  updated to Pitchwise palette (#22c55e theme color, #07101f bg).
+  updated to Pitchverse palette (#22c55e theme color, #07101f bg).
 
 ### Milestone 3 — Toolkit additions (partial)
 

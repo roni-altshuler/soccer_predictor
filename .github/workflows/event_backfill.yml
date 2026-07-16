@@ -126,6 +126,9 @@ jobs:
           python -m backend.scripts.train_dixon_coles
           python -m backend.scripts.build_sim_priors
           python -m backend.scripts.build_match2vec
+          # Torch-free by design: re-uses the committed kernel's weights and
+          # refreshes only the walk-forward anchors from the warehouse.
+          python -m backend.scripts.export_engine_kernel --weights kernel
 
       - name: Generate boardroom debates
         # No-ops (exit 0, nothing written) until a provider key secret is
@@ -165,7 +168,8 @@ jobs:
 
           git add backend/data/rarity/ backend/data/justice/ \
                   backend/data/events/ backend/data/dixon_coles_params.json \
-                  backend/data/sim_priors.json backend/data/match2vec/
+                  backend/data/sim_priors.json backend/data/match2vec/ \
+                  backend/data/engine/
           # Debates only exist once an LLM provider key secret is configured.
           if [ -d backend/data/boardroom ]; then git add backend/data/boardroom/; fi
 

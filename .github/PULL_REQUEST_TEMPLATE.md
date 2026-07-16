@@ -1,4 +1,4 @@
-<!-- Thanks for contributing to Pitchwise! Please fill this out so reviewers have context. -->
+<!-- Thanks for contributing to Pitchverse! Please fill this out so reviewers have context. -->
 
 ## Summary
 

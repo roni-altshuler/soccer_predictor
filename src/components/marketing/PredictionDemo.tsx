@@ -158,7 +158,7 @@ function StatusPill({ status }: { status: Status }) {
           ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
           : 'bg-[var(--accent-warn)]/12 text-[var(--accent-warn)]',
       )}
-      title={live ? 'Computed live by Pitchwise' : 'Backend unreachable — showing a sample prediction'}
+      title={live ? 'Computed live by Pitchverse' : 'Backend unreachable — showing a sample prediction'}
     >
       {live ? <Wifi className="h-3 w-3" aria-hidden="true" /> : <WifiOff className="h-3 w-3" aria-hidden="true" />}
       {live ? 'Live' : 'Sample data'}
