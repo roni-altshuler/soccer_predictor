@@ -243,3 +243,40 @@ def test_build_dry_run_writes_valid_artifact(tmp_path):
         assert entry["dissent_level"] in ("low", "moderate", "high")
         for p in entry["personas"]:
             assert p["name"] and p["text"]
+
+
+# --------------------------------------------------------------------------- #
+# Request pacing (free-tier RPM budgets)
+# --------------------------------------------------------------------------- #
+
+
+def test_request_pacer_spaces_calls_to_budget():
+    from backend.scripts.build_boardroom import RequestPacer
+
+    now = [0.0]
+    slept = []
+
+    def clock():
+        return now[0]
+
+    def sleep(s):
+        slept.append(s)
+        now[0] += s
+
+    pace = RequestPacer(rpm=6, sleep=sleep, clock=clock)  # 10s interval
+    pace()  # first call: no wait
+    assert slept == []
+    now[0] += 3.0  # 3s of work
+    pace()  # must wait the remaining 7s
+    assert slept == [pytest.approx(7.0)]
+    now[0] += 12.0  # slower than the budget
+    pace()  # no wait needed
+    assert len(slept) == 1
+
+
+def test_request_pacer_zero_rpm_is_noop():
+    from backend.scripts.build_boardroom import RequestPacer
+
+    pace = RequestPacer(rpm=0, sleep=lambda s: (_ for _ in ()).throw(AssertionError), clock=lambda: 0.0)
+    pace()
+    pace()

@@ -28,9 +28,10 @@ import json
 import logging
 import sqlite3
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 # Ensure repo-root imports work when run as a script.
 _ROOT = Path(__file__).resolve().parents[2]
@@ -175,7 +176,41 @@ def _recent_miss(tracker, gender: str) -> Optional[RecentMiss]:
 # --------------------------------------------------------------------------- #
 
 
-def generate_debate(provider: Provider, bundle: BoardroomBundle) -> Optional[dict]:
+class RequestPacer:
+    """Spaces provider calls to stay under a requests-per-minute budget.
+
+    The free-tier RPM window is enforced per minute, so bounded exponential
+    backoff alone cannot recover from a sustained burst — proactive pacing can.
+    """
+
+    def __init__(
+        self,
+        rpm: float,
+        sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._interval = 60.0 / rpm if rpm > 0 else 0.0
+        self._sleep = sleep
+        self._clock = clock
+        self._last: Optional[float] = None
+
+    def __call__(self) -> None:
+        if self._interval <= 0:
+            return
+        now = self._clock()
+        if self._last is not None:
+            wait = self._interval - (now - self._last)
+            if wait > 0:
+                self._sleep(wait)
+                now = self._clock()
+        self._last = now
+
+
+def generate_debate(
+    provider: Provider,
+    bundle: BoardroomBundle,
+    pace: Callable[[], None] = lambda: None,
+) -> Optional[dict]:
     """Run the three personas over one bundle; return a debate entry or None."""
     personas: List[dict] = []
     implied: List[Dict[str, float]] = []
@@ -183,6 +218,7 @@ def generate_debate(provider: Provider, bundle: BoardroomBundle) -> Optional[dic
         system = boardroom_system_prompt(name)
         prompt = boardroom_user_prompt(bundle, name)
         try:
+            pace()
             raw = provider.complete(prompt, system=system, max_tokens=512, temperature=0.6)
         except Exception as exc:  # a single persona failing must not sink the match
             logger.warning("boardroom: %s generation failed for %s: %s", name, bundle.match_id, exc)
@@ -254,14 +290,19 @@ def build(
     dry_run: bool,
     output: Path,
     limit: Optional[int] = None,
+    rpm: float = 8.0,
 ) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
+    pace: Callable[[], None] = lambda: None
     if dry_run:
         provider: Optional[Provider] = FakeProvider()
         logger.info("boardroom: --dry-run — using FakeProvider (no network, no key)")
     else:
-        provider = get_provider()
+        # Free-tier RPM windows reset per minute; short exponential backoff
+        # cannot outlast them, so pace proactively and back off heavily.
+        provider = get_provider(base_delay=15.0, max_retries=4)
+        pace = RequestPacer(rpm)
         if provider is None:
             print(
                 "boardroom: no LLM provider key configured (set GEMINI_API_KEY or "
@@ -305,7 +346,7 @@ def build(
             away_form=_team_form(con, match.get("away_team", ""), gender, match.get("match_date", "")),
             recent_miss=miss_cache.get(gender),
         )
-        entry = generate_debate(provider, bundle)
+        entry = generate_debate(provider, bundle, pace=pace)
         if entry is None:
             dropped += 1
             continue
@@ -350,8 +391,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=_DEFAULT_OUTPUT,
         help="Artifact path (default backend/data/boardroom/debates.json).",
     )
+    parser.add_argument(
+        "--rpm",
+        type=float,
+        default=8.0,
+        help="Provider requests-per-minute budget (default 8, under the free tier's 10).",
+    )
     args = parser.parse_args(argv)
-    return build(days=args.days, dry_run=args.dry_run, output=args.output, limit=args.limit)
+    return build(
+        days=args.days, dry_run=args.dry_run, output=args.output, limit=args.limit, rpm=args.rpm
+    )
 
 
 if __name__ == "__main__":
