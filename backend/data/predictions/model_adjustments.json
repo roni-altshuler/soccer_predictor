@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-15T22:58:00.444752",
-  "total_predictions_analyzed": 1442,
-  "overall_accuracy": 0.4369,
+  "generated_at": "2026-07-16T08:26:57.812749",
+  "total_predictions_analyzed": 1444,
+  "overall_accuracy": 0.437,
   "by_league": {
     "La Liga": {
       "predictions": 164,
@@ -312,22 +312,22 @@
       }
     },
     "FIFA World Cup": {
-      "predictions": 19,
-      "accuracy": 0.6316,
-      "brier_score": 0.5389,
-      "scoreline_rate": 0.1053,
-      "actual_draw_rate": 0.1053,
-      "predicted_draw_rate": 0.2625,
-      "draw_rate_adjustment": -0.04717,
-      "actual_home_win_rate": 0.5263,
-      "predicted_home_win_rate": 0.4021,
-      "home_adv_adjustment": 0.02484,
-      "avg_goals_diff": 0.089,
-      "goals_scale_adjustment": 0.00445,
+      "predictions": 21,
+      "accuracy": 0.619,
+      "brier_score": 0.5799,
+      "scoreline_rate": 0.0952,
+      "actual_draw_rate": 0.0952,
+      "predicted_draw_rate": 0.2543,
+      "draw_rate_adjustment": -0.04771,
+      "actual_home_win_rate": 0.5714,
+      "predicted_home_win_rate": 0.3918,
+      "home_adv_adjustment": 0.03593,
+      "avg_goals_diff": 0.047,
+      "goals_scale_adjustment": 0.00233,
       "confidence_calibration": {
         "high": {
-          "count": 7,
-          "accuracy": 0.7143
+          "count": 9,
+          "accuracy": 0.6667
         },
         "medium": {
           "count": 11,
@@ -536,13 +536,13 @@
     },
     "FIFA World Cup": {
       "current": {
-        "avg_goals": 1.3023,
+        "avg_goals": 1.3068,
         "home_adv": 0.45,
         "rho": -0.09,
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.307,
+        "avg_goals": 1.309,
         "home_adv": 0.45,
         "draw_rate": 0.08,
         "rho": -0.09
