@@ -33,9 +33,12 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   (sidebar + palette). No continue-on-error anywhere. *Shipped 2026-07-15.*
 - ☑ **Justice Ledger** — xPts vs actual points, ≥90% coverage gates, league-page
   section; validated against the real 2022-23 PL table. *Shipped 2026-07-15.*
-- ◐ **Name decision** — **DECIDED 2026-07-14: Pitchverse.** Remaining: trademark +
-  domain check, brand assets; the rebrand itself ships WITH the first flagship
-  feature (Rarity Engine or Counterfactual Machine), not before.
+- ☑ **Name decision + rebrand** — **Pitchverse**, shipped with the Counterfactual
+  Machine per the decided policy (2026-07-15): wordmark, metadata, manifest, OG
+  cards, marketing, docs; `fotpredict.*` storage keys preserved. Recon: no
+  football/sports product or indexed trademark collides; **pitchverse.app appears
+  unregistered** (register it, then flip the domain strings); pitchverse.com is
+  parked/aftermarket. Remaining for the user: domain registration.
 
 ## Phase 1 — The Engine (months 3–9)
 
@@ -49,7 +52,12 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   The `rollout_from_state` kernel is the retained asset — it powers live
   win-prob v2 and the Counterfactual Machine, where state dynamics matter
   (at kickoff they integrate out). v1 path: StatsBomb dense pretraining.
-  *2026-07-15.*
+  *2026-07-15.* **In-match gate PASSED later that day**: state-conditional
+  predictions beat the exact-count baseline at all five checkpoints (15'–75',
+  1,587 held-out fixtures, every CI below zero, leakage-free count table
+  rebuilt for the comparison) — the engine is production for in-match
+  surfaces; pre-match stays with the baseline. Kernel exported + TS-ported
+  (1e-6 parity), anchors validated with hard sanity bounds.
 - ☑ Dixon-Coles calibrated baseline — walk-forward backtested (beats uniform by
   0.03–0.09 Brier, trails de-vigged market by 0.005–0.014); params artifact
   committed; NWSL fitted. *Shipped 2026-07-15.*
@@ -77,7 +85,11 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 2 — The Multiverse (months 9–18)
 
-- ☐ Counterfactual Machine — fork finished matches, braided ghost-timeline viz.
+- ☑ Counterfactual Machine — "What if" tab on covered finished matches: erase
+  real events or fork at any minute, engine plays out the rest; outcome bands,
+  projected finals, braid visual (real path splits into an honest probability
+  fan — one distribution, never a fabricated path). Pulled forward from
+  Phase 2; shipped WITH the Pitchverse rebrand. *Shipped 2026-07-15.*
 - ☐ Scorer / cards / corners predictions (engine heads).
 - ☐ Pressbox mode — live model-grounded commentary, one league first (incl. Hebrew).
 - ☐ Rung-2 data subscription (Sportmonks/API-Football) once live products need it.
