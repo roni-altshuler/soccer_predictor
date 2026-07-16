@@ -1,8 +1,8 @@
 {
   "count": 0,
   "debates": {},
-  "generated_at": "2026-07-16T14:19:47.479341+00:00",
-  "model": "gemini-1.5-flash",
+  "generated_at": "2026-07-16T14:43:52.342474+00:00",
+  "model": "gemini-2.5-flash",
   "provider": "gemini",
   "schema": 1
 }
