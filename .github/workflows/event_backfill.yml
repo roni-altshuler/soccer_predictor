@@ -125,6 +125,16 @@ jobs:
           python -m backend.scripts.build_event_coverage
           python -m backend.scripts.train_dixon_coles
           python -m backend.scripts.build_sim_priors
+          python -m backend.scripts.build_match2vec
+
+      - name: Generate boardroom debates
+        # No-ops (exit 0, nothing written) until a provider key secret is
+        # configured — the artifact simply starts appearing once it exists.
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python -m backend.scripts.build_boardroom
 
       - name: Coverage regression guard
         # matches_covered may only grow: the backfill adds coverage rows and
@@ -155,7 +165,9 @@ jobs:
 
           git add backend/data/rarity/ backend/data/justice/ \
                   backend/data/events/ backend/data/dixon_coles_params.json \
-                  backend/data/sim_priors.json
+                  backend/data/sim_priors.json backend/data/match2vec/
+          # Debates only exist once an LLM provider key secret is configured.
+          if [ -d backend/data/boardroom ]; then git add backend/data/boardroom/; fi
 
           # Every builder stamps generated_at; timestamp churn alone is not
           # a change worth a daily commit.

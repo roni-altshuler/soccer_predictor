@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "generated_at": "2026-07-15T13:07:09+00:00",
+  "smoke": false,
+  "config": {
+    "hidden": 128,
+    "n_parameters": 20993,
+    "lr": 0.0003,
+    "batch_matches": 256,
+    "epochs_run": 8,
+    "gender": "both",
+    "until": "2025-03-15",
+    "val_frac": 0.1,
+    "seed": 20260715
+  },
+  "counts": {
+    "eligible_matches": 26125,
+    "train_matches": 23513,
+    "val_matches": 2612,
+    "train_cells": 4232340,
+    "val_cells": 470160
+  },
+  "val_nll": {
+    "engine": 0.08083943111014767,
+    "homogeneous_control": 0.08284018378117183,
+    "dc_anchor_control": 0.0825246313264505,
+    "beats_homogeneous": true,
+    "beats_dc_anchor": true,
+    "overfit_floor": null,
+    "gap_to_floor": null
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "train_nll": 0.07964016483224538,
+      "val_nll": 0.0816356823144974
+    },
+    {
+      "epoch": 1,
+      "train_nll": 0.07887004917432129,
+      "val_nll": 0.08100532533837679
+    },
+    {
+      "epoch": 2,
+      "train_nll": 0.07870127463197027,
+      "val_nll": 0.0809852533031021
+    },
+    {
+      "epoch": 3,
+      "train_nll": 0.07866539064555066,
+      "val_nll": 0.0809101442853488
+    },
+    {
+      "epoch": 4,
+      "train_nll": 0.07865455929199902,
+      "val_nll": 0.08083943111014767
+    },
+    {
+      "epoch": 5,
+      "train_nll": 0.0786403510420887,
+      "val_nll": 0.08089836740475519
+    },
+    {
+      "epoch": 6,
+      "train_nll": 0.07863347766649129,
+      "val_nll": 0.08091986653998288
+    },
+    {
+      "epoch": 7,
+      "train_nll": 0.07863064530924928,
+      "val_nll": 0.08084193577171285
+    }
+  ],
+  "wall_clock_seconds": 35.8,
+  "stopped_early": true,
+  "timed_out": false
+}

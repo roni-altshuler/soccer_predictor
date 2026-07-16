@@ -21,6 +21,7 @@ import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
 import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
 import { MomentumRiver } from './MomentumRiver'
 import { RarityStamp } from './RarityStamp'
+import { SimilarMatches } from './SimilarMatches'
 import { TopStatsPreview } from './StatsTab'
 import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
 
@@ -553,6 +554,11 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
           Renders nothing unless the match is finished, the events reconcile
           with the final score, and the rarity artifact has real counts. */}
       <MatchStory match={match} isFinished={isFinished} />
+
+      {/* Similar matches — historical matches whose score-state trajectory
+          rhymed with this one. Renders nothing unless the match is finished
+          and resolvable in the committed retrieval index. */}
+      <SimilarMatches match={match} isFinished={isFinished} />
 
       {/* Momentum — real feed series when present, synthesized (labelled) otherwise */}
       {((match.momentum?.length ?? 0) > 0 || match.events.length > 0) && (

@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Brain,
@@ -12,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 
+import { BoardroomPanel } from '@/components/prediction/Boardroom'
 import {
   PredictionResult as PredictionResultViz,
   type PredictionPayload,
@@ -57,6 +59,8 @@ export function AIPredictionTab({
   const [retroLoading, setRetroLoading] = useState(false)
   const [retroError, setRetroError] = useState<string | null>(null)
   const { asQueryParam } = useGenderQuery()
+  const params = useParams()
+  const matchId = (params?.id as string) ?? ''
 
   const runRetrospective = useCallback(async () => {
     setRetroLoading(true)
@@ -86,30 +90,39 @@ export function AIPredictionTab({
     }
   }, [asQueryParam, retrospectiveContext])
 
-  // 1) The live pipeline already picked this fixture — render straight away.
+  // The prediction-tab body switches on match state; the Boardroom debate (when
+  // a committed one exists for this fixture) sits below whatever renders, and
+  // self-hides otherwise — honest absence, no chrome.
+  let body: ReactNode
   if (prediction) {
-    return <PredictionResultViz prediction={prediction} />
-  }
-
-  // 2) The user already ran a retrospective on this load — show it with a banner.
-  if (retro) {
-    return (
+    // 1) The live pipeline already picked this fixture — render straight away.
+    body = <PredictionResultViz prediction={prediction} />
+  } else if (retro) {
+    // 2) The user already ran a retrospective on this load — show it with a banner.
+    body = (
       <div className="flex flex-col gap-3">
         <RetrospectiveBanner />
         <PredictionResultViz prediction={retro} />
       </div>
     )
+  } else {
+    // 3) Otherwise — polished empty state tuned to match state.
+    body = (
+      <EmptyState
+        matchState={matchState}
+        loading={retroLoading}
+        error={retroError}
+        onRun={runRetrospective}
+        retrospectiveContext={retrospectiveContext}
+      />
+    )
   }
 
-  // 3) Otherwise — polished empty state tuned to match state.
   return (
-    <EmptyState
-      matchState={matchState}
-      loading={retroLoading}
-      error={retroError}
-      onRun={runRetrospective}
-      retrospectiveContext={retrospectiveContext}
-    />
+    <div className="flex flex-col gap-4">
+      {body}
+      <BoardroomPanel matchId={matchId} />
+    </div>
   )
 }
 
