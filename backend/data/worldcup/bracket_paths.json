@@ -1,6 +1,6 @@
 {
  "tournament": "world_cup",
- "generated_at": "2026-07-19T14:58:02.578777+00:00",
+ "generated_at": "2026-07-19T22:50:46.281276+00:00",
  "n_simulations": 20000,
  "bracket_set": true,
  "teams": [
@@ -8,7 +8,7 @@
    "team_id": null,
    "name": "Spain",
    "elo": 1686,
-   "p_champion": 0.6107,
+   "p_champion": 1.0,
    "p_final": 1.0,
    "p_semi": 1.0,
    "p_quarter": 1.0,
@@ -20,7 +20,7 @@
    "team_id": null,
    "name": "Argentina",
    "elo": 1676,
-   "p_champion": 0.3893,
+   "p_champion": 0.0,
    "p_final": 1.0,
    "p_semi": 1.0,
    "p_quarter": 1.0,
@@ -692,9 +692,9 @@
      "match_id": "760517",
      "home": "Spain",
      "away": "Argentina",
-     "home_score": null,
-     "away_score": null,
-     "winner": null,
+     "home_score": 1,
+     "away_score": 0,
+     "winner": "Spain",
      "date": "2026-07-19T19:00Z"
     }
    ]
