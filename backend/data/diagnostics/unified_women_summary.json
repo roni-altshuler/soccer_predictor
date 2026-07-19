@@ -1,7 +1,7 @@
 {
   "gender": "F",
   "model_version": "unified-multitask-1.0-women",
-  "trained_at": "2026-07-12T05:41:41.820182+00:00",
+  "trained_at": "2026-07-19T05:36:40.776428+00:00",
   "n_parameters": 93210,
   "n_features": 87,
   "vocab_sizes": {
@@ -12,39 +12,39 @@
   },
   "calibration": {
     "kind": "temp_blend_v2",
-    "temperature": 1.3050000000000002,
-    "alpha": 0.17,
+    "temperature": 1.5,
+    "alpha": 0.29,
     "isotonic_kept": false,
     "val_metrics": {
-      "nll_blend": 0.923433,
-      "ece_blend": 0.033441,
-      "nll_isotonic": 0.923433,
-      "ece_isotonic": 0.033441,
+      "nll_blend": 0.921515,
+      "ece_blend": 0.02636,
+      "nll_isotonic": 0.921515,
+      "ece_isotonic": 0.02636,
       "isotonic_kept": false
     }
   },
   "holdout": {
-    "accuracy": 0.5352697095435685,
-    "log_loss": 0.9850750027959558,
-    "brier": 0.5792523584111738,
-    "ece": 0.06553276169557416,
-    "draw_recall": 0.0,
-    "scoreline_exact_rate": 0.13070539419087138,
-    "scoreline_top5_rate": 0.46265560165975106,
-    "goals_mae": 0.9897296486491979,
+    "accuracy": 0.5381443298969072,
+    "log_loss": 0.9867134757086933,
+    "brier": 0.5809019025057032,
+    "ece": 0.05916457259914604,
+    "draw_recall": 0.01904761904761905,
+    "scoreline_exact_rate": 0.13195876288659794,
+    "scoreline_top5_rate": 0.4247422680412371,
+    "goals_mae": 1.0362177095923226,
     "calibrated": true,
-    "n": 482,
+    "n": 485,
     "uncalibrated": {
-      "accuracy": 0.533195020746888,
-      "log_loss": 1.0004351956206508,
-      "brier": 0.5895143836384042,
-      "ece": 0.03095206660412718,
-      "draw_recall": 0.09433962264150944
+      "accuracy": 0.5257731958762887,
+      "log_loss": 1.0089922318305697,
+      "brier": 0.5937299822169833,
+      "ece": 0.04892070920301882,
+      "draw_recall": 0.09523809523809523
     },
     "calibration": {
       "kind": "temp_blend_v2",
-      "temperature": 1.3050000000000002,
-      "alpha": 0.17,
+      "temperature": 1.5,
+      "alpha": 0.29,
       "isotonic_kept": false
     }
   }
