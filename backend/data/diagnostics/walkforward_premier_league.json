@@ -1,6 +1,6 @@
 {
   "league": "premier_league",
-  "generated_at": "2026-07-12T07:06:36.948481Z",
+  "generated_at": "2026-07-19T07:05:17.438120Z",
   "partial": false,
   "eval_mode": "fresh_fast_lgbm",
   "leakage_warning": null,
