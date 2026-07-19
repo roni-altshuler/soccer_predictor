@@ -89,6 +89,7 @@ class Provider(Protocol):
         system: str = "",
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        json_output: bool = False,
     ) -> str:
         ...
 
@@ -143,15 +144,22 @@ class _RestProvider:
                 )
                 return resp.body
             if resp.status in _RETRYABLE_STATUS and attempt < self._max_retries:
+                wait = delay
+                if resp.status == 429:
+                    # Providers often state their own cool-down (Google:
+                    # RetryInfo `"retryDelay": "39s"`). Honour it when longer.
+                    m = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s?"', resp.body or "")
+                    if m:
+                        wait = max(wait, float(m.group(1)) + 1.0)
                 logger.warning(
                     "llm retry provider=%s status=%s attempt=%d/%d backoff=%.2fs",
                     self.name,
                     resp.status,
                     attempt + 1,
                     self._max_retries,
-                    delay,
+                    wait,
                 )
-                self._sleep(delay)
+                self._sleep(wait)
                 delay *= 2
                 continue
             # Non-retryable, or out of retries. Body may carry a provider error
@@ -187,28 +195,44 @@ class GeminiProvider(_RestProvider):
         system: str = "",
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        json_output: bool = False,
     ) -> str:
         headers = {"Content-Type": "application/json", "x-goog-api-key": self._api_key}
+        generation_config: dict = {
+            "maxOutputTokens": max_tokens,
+            "temperature": temperature,
+            # 2.5-generation Flash models "think" by default and the thinking
+            # tokens count against maxOutputTokens — a modest budget can be
+            # consumed before a single output token, yielding empty/truncated
+            # text. This narration task hands the model every fact it needs,
+            # so thinking is disabled. (Removed on retry if a model rejects it.)
+            "thinkingConfig": {"thinkingBudget": 0},
+        }
+        if json_output:
+            generation_config["responseMimeType"] = "application/json"
         payload: dict = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "maxOutputTokens": max_tokens,
-                "temperature": temperature,
-            },
+            "generationConfig": generation_config,
         }
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
         try:
             body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
         except LLMError as exc:
-            if "HTTP 404" not in str(exc):
+            msg = str(exc)
+            if "HTTP 400" in msg and "thinking" in msg.lower():
+                # Model doesn't accept a thinking budget — retry without one.
+                generation_config.pop("thinkingConfig", None)
+                body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
+            elif "HTTP 404" in msg:
+                resolved = self._resolve_current_flash()
+                if not resolved or resolved == self.model:
+                    raise
+                logger.warning("gemini: model %r unavailable; switching to %r", self.model, resolved)
+                self.model = resolved
+                body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
+            else:
                 raise
-            resolved = self._resolve_current_flash()
-            if not resolved or resolved == self.model:
-                raise
-            logger.warning("gemini: model %r unavailable; switching to %r", self.model, resolved)
-            self.model = resolved
-            body = self._post(f"{self._BASE}/{self.model}:generateContent", headers, payload)
         return self._extract_text(body)
 
     def _resolve_current_flash(self) -> Optional[str]:
@@ -289,6 +313,7 @@ class GroqProvider(_RestProvider):
         system: str = "",
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        json_output: bool = False,
     ) -> str:
         headers = {
             "Content-Type": "application/json",
@@ -304,6 +329,8 @@ class GroqProvider(_RestProvider):
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if json_output:
+            payload["response_format"] = {"type": "json_object"}
         body = self._post(self._URL, headers, payload)
         return self._extract_text(body)
 
@@ -343,6 +370,7 @@ class FakeProvider:
         system: str = "",
         max_tokens: int = 1024,
         temperature: float = 0.7,
+        json_output: bool = False,
     ) -> str:
         if self._responses is not None:
             out = self._responses[self._i % len(self._responses)]

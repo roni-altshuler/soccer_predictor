@@ -219,3 +219,45 @@ def test_resolved_model_is_reused_for_subsequent_calls():
     # Second call goes straight to the resolved model: exactly 4 calls total.
     assert len(transport.calls) == 4
     assert "gemini-2.5-flash:generateContent" in transport.calls[3]["url"]
+
+
+# --------------------------------------------------------------------------- #
+# JSON output mode, thinking budget, and provider-stated retry delays
+# --------------------------------------------------------------------------- #
+
+
+def test_gemini_json_mode_disables_thinking_and_sets_mime():
+    transport = make_transport([(200, _GEMINI_OK)])
+    p = GeminiProvider("secret", model="gemini-2.5-flash", transport=transport, sleep=lambda _: None)
+    p.complete("hi", json_output=True, max_tokens=999)
+    cfg = transport.calls[0]["payload"]["generationConfig"]
+    assert cfg["responseMimeType"] == "application/json"
+    assert cfg["thinkingConfig"] == {"thinkingBudget": 0}
+    assert cfg["maxOutputTokens"] == 999
+
+
+def test_gemini_thinking_config_rejected_retries_without_it():
+    err = json.dumps({"error": {"code": 400, "message": "Unknown field: thinkingConfig"}})
+    transport = make_transport([(400, err), (200, _GEMINI_OK)])
+    p = GeminiProvider("secret", model="gemini-x-flash", transport=transport, sleep=lambda _: None)
+    assert p.complete("hi") == "hello"
+    assert "thinkingConfig" not in transport.calls[1]["payload"]["generationConfig"]
+
+
+def test_groq_json_mode_sets_response_format():
+    ok = json.dumps({"choices": [{"message": {"content": "hi"}}]})
+    transport = make_transport([(200, ok)])
+    p = GroqProvider("secret", transport=transport, sleep=lambda _: None)
+    p.complete("x", json_output=True)
+    assert transport.calls[0]["payload"]["response_format"] == {"type": "json_object"}
+
+
+def test_429_honors_provider_stated_retry_delay():
+    body_429 = json.dumps(
+        {"error": {"code": 429, "details": [{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "39s"}]}}
+    )
+    transport = make_transport([(429, body_429), (200, _GEMINI_OK)])
+    slept = []
+    p = GeminiProvider("secret", transport=transport, sleep=slept.append, base_delay=0.5)
+    assert p.complete("hi") == "hello"
+    assert slept == [pytest.approx(40.0)]  # provider's 39s + 1, not the 0.5s base

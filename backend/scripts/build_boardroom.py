@@ -219,7 +219,9 @@ def generate_debate(
         prompt = boardroom_user_prompt(bundle, name)
         try:
             pace()
-            raw = provider.complete(prompt, system=system, max_tokens=512, temperature=0.6)
+            raw = provider.complete(
+                prompt, system=system, max_tokens=1024, temperature=0.6, json_output=True
+            )
         except Exception as exc:  # a single persona failing must not sink the match
             logger.warning("boardroom: %s generation failed for %s: %s", name, bundle.match_id, exc)
             continue
@@ -290,7 +292,7 @@ def build(
     dry_run: bool,
     output: Path,
     limit: Optional[int] = None,
-    rpm: float = 8.0,
+    rpm: float = 5.0,
 ) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -394,8 +396,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--rpm",
         type=float,
-        default=8.0,
-        help="Provider requests-per-minute budget (default 8, under the free tier's 10).",
+        default=5.0,
+        help="Provider requests-per-minute budget (default 5 — free-tier limits vary by model).",
     )
     args = parser.parse_args(argv)
     return build(
