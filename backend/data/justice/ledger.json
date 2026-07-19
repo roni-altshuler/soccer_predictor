@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-07-18T10:05:05+00:00",
+ "generated_at": "2026-07-19T10:15:16+00:00",
  "schema": 1,
  "seasons": {
   "eng.1:2015": {
@@ -1180,6 +1180,151 @@
      "pts": 12,
      "team": "Southampton",
      "xpts": 25.91
+    }
+   ]
+  },
+  "eng.1:2025": {
+   "coverage": 0.9684,
+   "teams": [
+    {
+     "delta": 8.02,
+     "matches": 38,
+     "pts": 85,
+     "team": "Arsenal",
+     "xpts": 76.98
+    },
+    {
+     "delta": 6.38,
+     "matches": 38,
+     "pts": 78,
+     "team": "Manchester City",
+     "xpts": 71.62
+    },
+    {
+     "delta": 5.78,
+     "matches": 36,
+     "pts": 67,
+     "team": "Manchester United",
+     "xpts": 61.22
+    },
+    {
+     "delta": -1.45,
+     "matches": 36,
+     "pts": 57,
+     "team": "Liverpool",
+     "xpts": 58.45
+    },
+    {
+     "delta": -3.41,
+     "matches": 38,
+     "pts": 53,
+     "team": "Brentford",
+     "xpts": 56.41
+    },
+    {
+     "delta": -7.14,
+     "matches": 37,
+     "pts": 49,
+     "team": "Chelsea",
+     "xpts": 56.14
+    },
+    {
+     "delta": -2.59,
+     "matches": 38,
+     "pts": 53,
+     "team": "Brighton & Hove Albion",
+     "xpts": 55.59
+    },
+    {
+     "delta": -2.5,
+     "matches": 35,
+     "pts": 53,
+     "team": "Bournemouth",
+     "xpts": 55.5
+    },
+    {
+     "delta": -8.86,
+     "matches": 38,
+     "pts": 45,
+     "team": "Crystal Palace",
+     "xpts": 53.86
+    },
+    {
+     "delta": -3.65,
+     "matches": 37,
+     "pts": 49,
+     "team": "Newcastle United",
+     "xpts": 52.65
+    },
+    {
+     "delta": -8.15,
+     "matches": 38,
+     "pts": 41,
+     "team": "Tottenham Hotspur",
+     "xpts": 49.15
+    },
+    {
+     "delta": -10.66,
+     "matches": 35,
+     "pts": 38,
+     "team": "Leeds United",
+     "xpts": 48.66
+    },
+    {
+     "delta": 13.69,
+     "matches": 36,
+     "pts": 62,
+     "team": "Aston Villa",
+     "xpts": 48.31
+    },
+    {
+     "delta": 1.97,
+     "matches": 38,
+     "pts": 49,
+     "team": "Everton",
+     "xpts": 47.03
+    },
+    {
+     "delta": 6.66,
+     "matches": 37,
+     "pts": 52,
+     "team": "Fulham",
+     "xpts": 45.34
+    },
+    {
+     "delta": 11.34,
+     "matches": 37,
+     "pts": 54,
+     "team": "Sunderland",
+     "xpts": 42.66
+    },
+    {
+     "delta": -0.3,
+     "matches": 36,
+     "pts": 41,
+     "team": "Nottingham Forest",
+     "xpts": 41.3
+    },
+    {
+     "delta": -5.04,
+     "matches": 35,
+     "pts": 36,
+     "team": "West Ham United",
+     "xpts": 41.04
+    },
+    {
+     "delta": -18.08,
+     "matches": 36,
+     "pts": 17,
+     "team": "Wolverhampton Wanderers",
+     "xpts": 35.08
+    },
+    {
+     "delta": -5.46,
+     "matches": 37,
+     "pts": 22,
+     "team": "Burnley",
+     "xpts": 27.46
     }
    ]
   },
