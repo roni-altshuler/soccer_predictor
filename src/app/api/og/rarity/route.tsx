@@ -197,7 +197,7 @@ export async function GET(req: NextRequest) {
               <span style={{ color: COLORS.text, fontWeight: 700 }}>{away}</span>
             </div>
           ) : (
-            <span>pitchwise.app</span>
+            <span>pitchverse.vercel.app</span>
           )}
           <span>Counted, not estimated</span>
         </div>

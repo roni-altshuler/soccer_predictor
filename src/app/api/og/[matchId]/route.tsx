@@ -264,7 +264,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             color: COLORS.textMuted,
           }}
         >
-          <span>pitchwise.app</span>
+          <span>pitchverse.vercel.app</span>
           <span>Calibrated football intelligence</span>
         </div>
       </div>

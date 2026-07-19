@@ -24,7 +24,7 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['500', '700'],
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchwise.app'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchverse.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
