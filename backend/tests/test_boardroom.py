@@ -280,3 +280,37 @@ def test_request_pacer_zero_rpm_is_noop():
     pace = RequestPacer(rpm=0, sleep=lambda s: (_ for _ in ()).throw(AssertionError), clock=lambda: 0.0)
     pace()
     pace()
+
+
+def test_build_deadline_writes_partial_artifact(tmp_path, monkeypatch):
+    from backend.scripts import build_boardroom as bb
+
+    # Three fake fixtures; the clock jumps past the deadline after the first.
+    fixtures = [
+        {"match_id": f"m{i}", "home_team": f"H{i}", "away_team": f"A{i}", "gender": "M",
+         "match_date": "2026-07-20", "probabilities": {"home": 0.5, "draw": 0.3, "away": 0.2}}
+        for i in range(3)
+    ]
+    monkeypatch.setattr(bb, "_upcoming_fixtures", lambda tracker, days: fixtures)
+    monkeypatch.setattr(bb, "_load_rarity_states", lambda: {})
+    monkeypatch.setattr(bb, "_open_warehouse_ro", lambda: None)
+    monkeypatch.setattr(bb, "_team_form", lambda *a, **k: None)
+    monkeypatch.setattr(bb, "_recent_miss", lambda *a, **k: None)
+
+    class _Tracker:
+        def calculate_accuracy_metrics(self, gender):
+            class _M:
+                def to_dict(self):
+                    return {}
+            return _M()
+
+    import backend.services.prediction.tracker as tracker_mod
+    monkeypatch.setattr(tracker_mod, "get_prediction_tracker", lambda: _Tracker())
+
+    ticks = iter([0.0, 0.0, 10_000.0, 10_000.0, 10_000.0, 10_000.0])
+    out = tmp_path / "debates.json"
+    rc = bb.build(days=3, dry_run=True, output=out, max_minutes=1.0, _clock=lambda: next(ticks))
+    assert rc == 0
+    data = json.loads(out.read_text())
+    # First fixture generated before the clock jumped; the rest cut off.
+    assert data["count"] == 1

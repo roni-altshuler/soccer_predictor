@@ -130,15 +130,6 @@ jobs:
           # refreshes only the walk-forward anchors from the warehouse.
           python -m backend.scripts.export_engine_kernel --weights kernel
 
-      - name: Generate boardroom debates
-        # No-ops (exit 0, nothing written) until a provider key secret is
-        # configured — the artifact simply starts appearing once it exists.
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          python -m backend.scripts.build_boardroom
-
       - name: Coverage regression guard
         # matches_covered may only grow: the backfill adds coverage rows and
         # never removes them. A drop means this run operated on a warehouse
@@ -170,8 +161,6 @@ jobs:
                   backend/data/events/ backend/data/dixon_coles_params.json \
                   backend/data/sim_priors.json backend/data/match2vec/ \
                   backend/data/engine/
-          # Debates only exist once an LLM provider key secret is configured.
-          if [ -d backend/data/boardroom ]; then git add backend/data/boardroom/; fi
 
           # Every builder stamps generated_at; timestamp churn alone is not
           # a change worth a daily commit.
@@ -185,6 +174,39 @@ jobs:
             git commit -m "$MSG"
             # The 3x-daily prediction bot races this push. --autostash keeps
             # an incidental unstaged file from aborting the rebase.
+            git pull --rebase --autostash origin main
+            git push
+          fi
+
+      # The debate step sits AFTER the data commit on purpose: it depends on a
+      # metered external free tier, so it must never be able to block the core
+      # pipeline's artifacts from landing. If it fails, the run fails visibly —
+      # but the data is already on main.
+      - name: Generate boardroom debates
+        # No-ops (exit 0, nothing written) until a provider key secret is
+        # configured — the artifact simply starts appearing once it exists.
+        timeout-minutes: 30
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          # Flash-Lite: the debate text is verifier-guarded narration over
+          # facts we supply, so the smallest model suffices — and its free-tier
+          # rate budget is far roomier than full Flash's.
+          GEMINI_MODEL: gemini-2.5-flash-lite
+        run: |
+          python -m backend.scripts.build_boardroom
+
+      - name: Commit boardroom artifact
+        run: |
+          if [ ! -d backend/data/boardroom ]; then
+            echo "No boardroom artifact — nothing to commit"
+            exit 0
+          fi
+          git add backend/data/boardroom/
+          if git diff --cached --quiet -I'"generated_at":'; then
+            echo "No substantive debate changes — skipping commit"
+          else
+            git commit -m "chore: boardroom debates [automated]"
             git pull --rebase --autostash origin main
             git push
           fi

@@ -293,6 +293,8 @@ def build(
     output: Path,
     limit: Optional[int] = None,
     rpm: float = 5.0,
+    max_minutes: float = 25.0,
+    _clock: Callable[[], float] = time.monotonic,
 ) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -329,7 +331,17 @@ def build(
 
     debates: Dict[str, dict] = {}
     dropped = 0
+    deadline = _clock() + max_minutes * 60.0
     for match in fixtures:
+        # A metered free tier can stall a run indefinitely (retry cool-downs);
+        # past the deadline we ship whatever generated and stop cleanly.
+        if _clock() > deadline:
+            logger.warning(
+                "boardroom: %.0f-minute deadline reached after %d debate(s) — writing partial artifact",
+                max_minutes,
+                len(debates),
+            )
+            break
         gender = (match.get("gender") or "M").upper()
         gender = "F" if gender in ("F", "WOMEN", "W") else "M"
         if gender not in metrics_cache:
@@ -399,9 +411,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=5.0,
         help="Provider requests-per-minute budget (default 5 — free-tier limits vary by model).",
     )
+    parser.add_argument(
+        "--max-minutes",
+        type=float,
+        default=25.0,
+        help="Wall-clock budget; past it a partial artifact is written and the run ends cleanly.",
+    )
     args = parser.parse_args(argv)
     return build(
-        days=args.days, dry_run=args.dry_run, output=args.output, limit=args.limit, rpm=args.rpm
+        days=args.days,
+        dry_run=args.dry_run,
+        output=args.output,
+        limit=args.limit,
+        rpm=args.rpm,
+        max_minutes=args.max_minutes,
     )
 
 
