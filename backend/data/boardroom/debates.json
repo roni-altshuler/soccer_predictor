@@ -1,8 +1,380 @@
 {
-  "count": 0,
-  "debates": {},
-  "generated_at": "2026-07-19T10:36:28.340556+00:00",
-  "model": "gemini-2.5-flash",
+  "count": 8,
+  "debates": {
+    "401853945": {
+      "away_team": "Houston Dash",
+      "dissent_index": 0.1016,
+      "dissent_level": "moderate",
+      "gender": "F",
+      "generated_at": "2026-07-19T13:52:59.127738+00:00",
+      "home_team": "Racing Louisville FC",
+      "kickoff": "2026-07-19",
+      "league": "NWSL",
+      "match_id": "401853945",
+      "personas": [
+        {
+          "claims": [
+            "Houston Dash have a 0.3463 probability of winning compared to 0.3423 for Racing Louisville FC.",
+            "The away team has an expected goals advantage of 0.98 over the home team's 0.90.",
+            "The probability of a draw is projected at 0.3114."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "away",
+          "text": "The numbers point to a razor-thin margin, but Houston Dash hold the analytical edge with a 0.3463 probability compared to 0.3423 for Racing Louisville FC. This projection is backed by an expected goals advantage of 0.98 to 0.90 in favor of the visitors. While the draw sits at 0.3114, the slight mathematical tilt makes the away side the only logical choice in such a tightly contested matchup."
+        },
+        {
+          "claims": [
+            "There are 4904 matches in the historical dataset where teams were level at kickoff.",
+            "In those level-at-kickoff matches, 1992 resulted in a home win.",
+            "In those level-at-kickoff matches, 1992 resulted in an away win.",
+            "Exactly 920 of those comparable matches ended in a draw."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "The board is overthinking a perfectly balanced matchup. History shows us that in 4904 matches where teams were level at kickoff, they split the wins exactly down the middle with 1992 home victories and 1992 away victories. With 920 of those ending in a draw, I am banking on these two sides canceling each other out just as the historical precedent dictates."
+        },
+        {
+          "claims": [
+            "Racing Louisville FC projected expected goals are 0.9",
+            "Houston Dash projected expected goals are 0.98",
+            "High-confidence accuracy sits at exactly 50.0 percent",
+            "A recent miss backed an away winner with 67.4 percent confidence, only for the home team to win",
+            "Precedent shows 1992 draws out of 4904 matches with level kickoff lines"
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "The panel is far too eager to split hairs on a match where the projected expected goals are virtually deadlocked at 0.9 for Racing Louisville FC and 0.98 for Houston Dash. We must remember that our high-confidence calls only hit the mark 50.0 percent of the time, a reality laid bare when Boston Legacy FC pulled off an upset home win despite a 67.4 percent confidence rating backing the visitor. With a historical baseline of 1992 draws from 4904 similar level-at-kickoff precedents, expecting a decisive edge here is a fool's errand."
+        }
+      ]
+    },
+    "401853946": {
+      "away_team": "Orlando Pride",
+      "dissent_index": 0.1083,
+      "dissent_level": "moderate",
+      "gender": "F",
+      "generated_at": "2026-07-19T13:53:35.006431+00:00",
+      "home_team": "Utah Royals",
+      "kickoff": "2026-07-19",
+      "league": "NWSL",
+      "match_id": "401853946",
+      "personas": [
+        {
+          "claims": [
+            "The home win probability is 39.82% compared to the away win probability of 31.89%.",
+            "The winner accuracy rate is 48.3% over a sample of 29 games.",
+            "The home expected goals projection is 1.49 compared to the away expected goals projection of 1.32."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "home",
+          "text": "The numbers point directly to a home advantage here, with a 39.82% probability of a Utah Royals victory compared to Orlando's 31.89%. Our historical calibration shows a solid 48.3% accuracy rate on outright winners over a 29-game sample, meaning this model's lean is highly reliable. I am backing the home side to edge this based on their superior 1.49 expected goals projection against the visitors' 1.32."
+        },
+        {
+          "claims": [
+            "There are 4904 games of historical precedent for matches level at kickoff.",
+            "The historical precedent shows exactly 1992 home wins and 1992 away wins.",
+            "The historical precedent includes 920 draws.",
+            "The league base rate for both home and away wins sits at 0.4062."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "Looking at historical precedent for matches level at kickoff, we have seen 4904 games in this state, resulting in exactly 1992 home wins, 1992 away wins, and 920 draws. The base rates for this league also show a perfectly symmetrical 0.4062 split for both home and away victories. With such balanced historical numbers, I cannot back a clear favorite and expect a tightly contested stalemate."
+        },
+        {
+          "claims": [
+            "Our high-confidence accuracy sits at exactly 50.0% over a 29-game sample.",
+            "A recent 67.4% confidence prediction on Kansas City Current to win away failed when Boston Legacy FC won at home.",
+            "The projected scoreline is 1-1 with expected goals at 1.49 for the home side and 1.32 for the away side.",
+            "The overall Brier score is 0.216."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "The panel is far too confident here, but our high-confidence track record is a coin-flip at exactly 50.0% accuracy over our 29-game sample. We just saw a massive 67.4% confidence call on Kansas City Current as the away winner fall completely flat when Boston Legacy FC took the home win. With the projected scoreline sitting at 1-1 and a tight expected goals matchup of 1.49 to 1.32, expecting a clear decision in this fixture is ignoring our own 0.216 Brier score."
+        }
+      ]
+    },
+    "760517": {
+      "away_team": "Argentina",
+      "dissent_index": 0.3667,
+      "dissent_level": "high",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:55:03.858891+00:00",
+      "home_team": "Spain",
+      "kickoff": "2026-07-19",
+      "league": "FIFA World Cup",
+      "match_id": "760517",
+      "personas": [
+        {
+          "claims": [
+            "Argentina has an 84.69% probability of winning.",
+            "A recent miss occurred on a prediction with 84.7% confidence.",
+            "The high-confidence accuracy rate is 71.0% over a sample size of 1429 games.",
+            "Spain is projected for 0.75 expected goals and has a 7.79% chance of winning."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "away",
+          "text": "The numbers point to an overwhelming away victory, with the model projecting Argentina at an 84.69% probability of winning. While some might point to a recent miss where an 84.7% confidence prediction failed to deliver, our high-confidence accuracy rate of 71.0% over a 1429-game sample proves that these heavy-favorite projections are highly reliable over time. Spain is projected for a mere 0.75 expected goals, making their 7.79% chance of a home win look incredibly thin."
+        },
+        {
+          "claims": [
+            "There are 66022 matches in the historical database starting level at kickoff.",
+            "In those historical matches, the home side won 24847 times.",
+            "The away side also won exactly 24847 times in those level-kickoff matchups."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "The panel is far too quick to crown a winner here, ignoring the deep history of level kickoffs in our database. Across 66022 matches starting on equal footing, the home and away sides have won an identical 24847 times each. This dead-even split points to a much tighter battle than predicted, making a draw the most logical historical anchor."
+        },
+        {
+          "claims": [
+            "Our high-confidence accuracy is 71.0% over a sample size of 1429 matches.",
+            "The last high-confidence prediction of 84.7% for the away side in this exact fixture resulted in a home win.",
+            "The historical base rate for an away win is 37.63%."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "home",
+          "text": "The panel is far too eager to crown an away victory based on these projections, but let us not forget our high-confidence accuracy sits at 71.0% across a sample of 1429 matches. In fact, our last high-confidence call at 84.7% for this exact matchup backed the away side, only for Spain to defy the prediction and claim the win. With the historical base rate for an away win sitting at a much more modest 37.63%, expecting a blowout here is a massive stretch."
+        }
+      ]
+    },
+    "761665": {
+      "away_team": "Red Bull New York",
+      "dissent_index": 0.1564,
+      "dissent_level": "moderate",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:52:22.941387+00:00",
+      "home_team": "Philadelphia Union",
+      "kickoff": "2026-07-22",
+      "league": "MLS",
+      "match_id": "761665",
+      "personas": [
+        {
+          "claims": [
+            "Philadelphia Union has a 0.5291 win probability.",
+            "The home base rate for this league is 0.3763.",
+            "The overall winner accuracy stands at 43.6% across a sample of 1429 matches."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "home",
+          "text": "While the others chase narratives, the math is clear: Philadelphia Union holds a strong 0.5291 win probability, which sits well above the league's 0.3763 home base rate. Our historical calibration tracking shows a 43.6% accuracy rate for outright winners across a sample size of 1429 matches, proving these projections are highly reliable. Red Bull New York is facing a steep uphill battle according to these metrics."
+        },
+        {
+          "claims": [
+            "There are 66022 historical instances of teams starting level at kickoff in the database.",
+            "These historical matches resulted in exactly 24847 home wins and 24847 away wins.",
+            "The baseline draw rate for this scenario stands at 24.73%."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "The numbers show that when teams start level at kickoff, which has happened 66022 times in our historical database, the outcomes are perfectly symmetrical with 24847 home wins and 24847 away wins. This historical split indicates that the most logical expectation is a balanced stalemate, aligning closely with the baseline draw rate of 24.73%. I see no reason to deviate from these deep historical precedents for this matchup."
+        }
+      ]
+    },
+    "761666": {
+      "away_team": "Toronto FC",
+      "dissent_index": 0.1725,
+      "dissent_level": "moderate",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:51:46.868007+00:00",
+      "home_team": "New England Revolution",
+      "kickoff": "2026-07-22",
+      "league": "MLS",
+      "match_id": "761666",
+      "personas": [
+        {
+          "claims": [
+            "New England's winning probability is modeled at 0.556.",
+            "The base rate for a home win is 0.3763.",
+            "Toronto has a modeled away winning probability of 0.1411.",
+            "The overall winner accuracy is 43.6 percent."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "home",
+          "text": "The numbers strongly favor New England with a 0.556 probability of winning, which is a massive leap over the 0.3763 base rate for home teams in this setup. Toronto is left with a minimal 0.1411 chance of an away victory. While our overall winner accuracy sits at 43.6 percent, the math here points to a clear home win."
+        },
+        {
+          "claims": [
+            "There are 66022 matches in the historical sample starting level at kickoff.",
+            "Exactly 24847 of those historical matches ended in a home win.",
+            "Exactly 24847 of those historical matches ended in an away win.",
+            "Exactly 16328 of those historical matches ended in a draw."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "My colleagues are far too quick to assume a home victory here, but history demands we look at the broader picture. Across our deepest historical sample of sixty-six thousand and twenty-two matches starting level at kickoff, the home side and the away side have won the exact same number of matches at twenty-four thousand eight hundred and forty-seven apiece. With sixteen thousand three hundred and twenty-eight of those ending in draws, backing a decisive home win ignores the long-term reality of this sport."
+        },
+        {
+          "claims": [
+            "The model assigns a 0.556 probability to a New England Revolution victory.",
+            "The overall winner accuracy stands at 43.6 percent across a sample of 1429 matches.",
+            "A recent high-confidence prediction of 84.7 percent for Argentina failed when Spain won the match.",
+            "New England Revolution has an expected goals projection of 1.7."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "The model is far too confident giving New England Revolution a 0.556 probability of winning, especially when our overall winner accuracy sits at a modest 43.6 percent across 1429 matches. We cannot ignore that our last high-confidence call failed spectacularly when Argentina was backed with 84.7 percent confidence but Spain actually won the match. Given these calibration limits, expecting New England to easily outperform their 1.7 expected goals projection is a stretch, and backing a draw is the smarter, more disciplined position here."
+        }
+      ]
+    },
+    "761667": {
+      "away_team": "Chicago Fire FC",
+      "dissent_index": 0.1054,
+      "dissent_level": "moderate",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:51:10.642803+00:00",
+      "home_team": "Inter Miami CF",
+      "kickoff": "2026-07-22",
+      "league": "MLS",
+      "match_id": "761667",
+      "personas": [
+        {
+          "claims": [
+            "Inter Miami CF has a 0.4722 probability of winning.",
+            "Chicago Fire FC has a 0.3016 probability of winning.",
+            "The model's historical winner accuracy is 43.6% over a sample of 1429 matches.",
+            "Inter Miami CF has an expected goals projection of 1.78 compared to Chicago Fire FC's 1.27."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "home",
+          "text": "The numbers clearly point to Inter Miami CF, who hold a strong 0.4722 probability of winning compared to Chicago Fire FC's 0.3016. While some might hesitate given our historical winner accuracy of 43.6% over a sample of 1429 matches, the model's 1.78 to 1.27 expected goals advantage for the hosts is too significant to ignore. I am backing the home side to secure the victory based on these clear statistical margins."
+        },
+        {
+          "claims": [
+            "There are 66022 matches in the historical sample that were level at kickoff.",
+            "The historical sample yielded exactly 24847 home wins and 24847 away wins.",
+            "The base rate for both home and away wins is 0.3763."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "The panel is getting ahead of itself by favoring Inter Miami CF when the historical record points to a dead heat. Looking at our massive sample of 66022 matches that were level at kickoff, we saw exactly 24847 home wins and 24847 away wins, meaning the visitors have just as much historical precedent to claim a result here. With the base rate for both home and away victories sitting at a balanced 0.3763, expecting a clear winner is a historical misstep."
+        },
+        {
+          "claims": [
+            "Our overall accuracy across 1429 matches is 43.6%.",
+            "A recent high-confidence prediction backed the away team with 84.7% confidence but the home team won.",
+            "The model projects a 1-1 scoreline."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "The panel is far too eager to crown a winner here when our overall accuracy sits at just 43.6% across 1429 matches. We cannot ignore that our last high-confidence prediction backed the away team with 84.7% confidence, only for the home team to win. Given these blind spots, expecting a clear-cut result is foolish, and a level scoreline is the only sensible angle."
+        }
+      ]
+    },
+    "761668": {
+      "away_team": "New York City FC",
+      "dissent_index": 0.2467,
+      "dissent_level": "moderate",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:49:58.912118+00:00",
+      "home_team": "Columbus Crew",
+      "kickoff": "2026-07-22",
+      "league": "MLS",
+      "match_id": "761668",
+      "personas": [
+        {
+          "claims": [
+            "Columbus Crew has a calculated home win probability of 71.66% compared to New York City FC's 14.03%.",
+            "The home side is projected to generate 2.34 expected goals, while the away side is limited to 0.92.",
+            "High-confidence predictions have a verified accuracy rate of 71.0% across a sample of 1429 matches."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "home",
+          "text": "The numbers point to an overwhelming advantage for the home side, given their projected 2.34 expected goals compared to just 0.92 for the visitors. With a 71.66% calculated probability of a home victory, this sits comfortably in our high-confidence tier, a category that has historically converted at a 71.0% accuracy rate across 1429 analyzed matches. While the other analysts worry about potential upsets, the data shows that deviation from this baseline is mathematically highly unlikely."
+        },
+        {
+          "claims": [
+            "Historically, 66022 matches have started level in this state.",
+            "The historical sample yielded exactly 24847 home wins and 24847 away wins.",
+            "A total of 16328 matches ended in a draw under these exact starting conditions."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "The others are ignoring the massive weight of history at kickoff. In our historical sample of 66022 matches starting level, we see an exact split of 24847 home wins and 24847 away wins, making this fixture far more balanced than the current projections suggest. I am siding with the historical draw rate of 16328 matches, as these sides are much closer than they appear on paper."
+        },
+        {
+          "claims": [
+            "High-confidence accuracy sits at 71.0 percent.",
+            "A recent high-confidence miss occurred when Argentina was backed at 84.7 percent confidence but Spain won.",
+            "Overall winner accuracy is 43.6 percent across a sample of 1429 matches."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "The panel is far too eager to crown Columbus based on these projections. Let us not forget that even our high-confidence calls only hit at a 71.0 percent rate, and we recently saw a massive 84.7 percent confidence projection fail spectacularly when Argentina was tipped to win but Spain took the victory instead. With our overall winner accuracy sitting at 43.6 percent across a sample of 1429 matches, backing a heavy home favorite here ignores how often these margins shrink on matchday."
+        }
+      ]
+    },
+    "761669": {
+      "away_team": "Vancouver Whitecaps",
+      "dissent_index": 0.3221,
+      "dissent_level": "high",
+      "gender": "M",
+      "generated_at": "2026-07-19T13:50:34.804698+00:00",
+      "home_team": "FC Cincinnati",
+      "kickoff": "2026-07-22",
+      "league": "MLS",
+      "match_id": "761669",
+      "personas": [
+        {
+          "claims": [
+            "Vancouver Whitecaps have a 0.7696 probability of winning.",
+            "The overall winner accuracy is 43.6 percent.",
+            "High-confidence predictions have a 71.0 percent accuracy rate.",
+            "The projected scoreline is 0-2.",
+            "FC Cincinnati has a 0.0639 probability of winning."
+          ],
+          "key": "quant",
+          "name": "The Quant",
+          "stance": "away",
+          "text": "The numbers demand we back Vancouver, who carry a massive 0.7696 probability of winning this match. While some might hesitate because our overall winner accuracy sits at 43.6 percent, this specific prediction falls into our high-confidence tier which boasts a much stronger 71.0 percent accuracy rate. With a projected scoreline of 0-2, the math heavily favors the visitors over a home side given just a 0.0639 chance."
+        },
+        {
+          "claims": [
+            "There are 66022 historical matches in the database that started level at kickoff.",
+            "Both the home and away teams recorded exactly 24847 wins in those level-kickoff precedents.",
+            "The historical base rate for a draw in this state is 0.2473.",
+            "The overall calibration sample consists of 1429 matches."
+          ],
+          "key": "historian",
+          "name": "The Historian",
+          "stance": "draw",
+          "text": "My colleagues are getting swept up in the projected scoreline, but history demands we look at the baseline. In our database of 66022 matches that started level at kickoff, the home and away sides finished perfectly deadlocked with 24847 wins apiece. With the historical base rate for a draw sitting at 0.2473, expecting a runaway away victory ignores the sheer volume of balanced precedent we have observed over 1429 sample matches."
+        },
+        {
+          "claims": [
+            "The model projects Vancouver with 2.25 expected goals compared to 0.5 for FC Cincinnati.",
+            "The historical high-confidence accuracy rate is 71.0 percent.",
+            "A recent high-confidence prediction of 84.7 percent failed when Argentina lost to Spain.",
+            "The overall winner accuracy stands at 43.6 percent across a sample of 1429 matches."
+          ],
+          "key": "skeptic",
+          "name": "The Skeptic",
+          "stance": "draw",
+          "text": "My colleagues are far too eager to crown Vancouver based on a projected 2.25 to 0.5 expected goals advantage. They forget that our historical high-confidence accuracy sits at 71.0%, and we just saw an 84.7% confidence call on Argentina fail miserably when Spain won instead. With our overall winner accuracy at a modest 43.6% across 1429 matches, backing a lopsided away win here is a massive trap."
+        }
+      ]
+    }
+  },
+  "generated_at": "2026-07-19T14:10:01.321225+00:00",
+  "model": "gemini-3.5-flash",
   "provider": "gemini",
   "schema": 1
 }
