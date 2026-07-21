@@ -71,10 +71,10 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   timeline vectors (team-identity-free) over all covered matches, committed
   index, "matches that unfolded like this one" on finished-match pages;
   regenerates daily in the pipeline. *Shipped 2026-07-15.*
-- ◐ Boardroom v1 — fully built + tested (adapter, grounded bundle, verifier
-  that rejects ungrounded numbers, persona cards + dissent meter on the
-  prediction tab, pipeline step wired). Debates start generating the moment
-  a free Gemini key lands as the GEMINI_API_KEY repo secret. *2026-07-15.*
+- ☑ Boardroom v1 — grounded three-persona debate (Quant/Historian/Skeptic) +
+  dissent meter on the prediction tab; verifier rejects any ungrounded number.
+  **LIVE in production 2026-07-19** on the free Gemini tier (self-heals to the
+  newest Flash model; debate step isolated from the core pipeline). *Shipped.*
 - ☑ Almanac v0 — structured query builder → exact counts + precedents at /almanac
   (no LLM). *Shipped 2026-07-15.* v1 (natural-language input) awaits LLM key decision.
 - ☑ Momentum river — stacked win/draw/loss probability bands across the match
@@ -100,8 +100,15 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 3 — The Theater (18 months+)
 
+- ◐ **Match Theater v0 — SHIPPED 2026-07-19, pulled far forward.** A Canvas-2D
+  3D "win chance landscape" on finished-match Overview tabs: height = exact
+  historical win rate per (minute, score-difference) tile (green win / amber
+  level / red loss), the bright line traces the real match stepping at each
+  goal; drag to orbit, hover/tap for the counted value, reduced-motion = one
+  static interactive frame. No 3D dependency, no WebGL. The remaining Phase-3
+  theater items below (pressure fields, tracking, 2.5D) are the deeper build.
 - ☐ Pressure fields + pass-network constellations (WebGPU/R3F).
-- ☐ 2.5D Match Theater.
+- ☐ 2.5D Match Theater (event-driven player positions).
 - ☐ Tracking pilot (SkillCorner or video-mined) for one competition.
 - ☐ Set-piece intelligence (corners GNN).
 - ☐ Manager sandbox experiments (research).
