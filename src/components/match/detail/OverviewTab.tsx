@@ -11,6 +11,7 @@ import MatchEventHeatmap from '@/components/match/MatchEventHeatmap'
 import MatchMomentum from '@/components/match/MatchMomentum'
 import ShotMap from '@/components/match/ShotMap'
 import { PlayerAvatar, Prob1X2, RatingPill, TeamBadge } from '@/components/primitives'
+import { MatchTheater } from '@/components/theater/MatchTheater'
 import { NarrativeCard } from '@/components/viz'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { cn } from '@/lib/utils'
@@ -545,6 +546,14 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
 
   return (
     <div className="space-y-6">
+      {/* Win chance landscape — the showpiece. The whole counted field in 3D
+          (clock x score difference x win chance) with this match's path
+          carved across it. It is the wide-angle view; the river below is the
+          precise read of the same numbers, so the landscape leads and the
+          river answers it. Renders nothing unless every run of the path rests
+          on a counted state. */}
+      <MatchTheater match={match} isFinished={isFinished} />
+
       {/* Momentum river — the story section's headline visual: stacked
           empirical win/draw/loss bands stepping at every goal and 5-minute
           mark. Renders nothing unless every band span clears the n-gate. */}

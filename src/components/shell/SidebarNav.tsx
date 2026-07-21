@@ -51,7 +51,9 @@ const GROUPS: NavGroup[] = [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
       { href: '/almanac', label: 'Almanac', icon: BookOpen },
       { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-      { href: '/history', label: 'History', icon: History },
+      // "History" read as ambiguous next to "Accuracy"; this page is the raw
+      // per-prediction ledger, while /accuracy is the analysis of it.
+      { href: '/history', label: 'Record', icon: History },
     ],
   },
   {

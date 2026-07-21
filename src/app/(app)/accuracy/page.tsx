@@ -2,55 +2,44 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { AccuracyHero } from '@/components/accuracy/AccuracyHero'
-import {
-  AccuracyTrendChart,
-  MIN_TREND_POINTS,
-  type ConfidencePointDatum,
-  type TrendPointDatum,
-} from '@/components/accuracy/AccuracyTrendChart'
-import { CalibrationPlot } from '@/components/accuracy/CalibrationPlot'
-import { ConfidenceTiers } from '@/components/accuracy/ConfidenceTiers'
-import { LeagueTable } from '@/components/accuracy/LeagueTable'
-import { ModelExplainer } from '@/components/accuracy/ModelExplainer'
-import { OutcomeBreakdown } from '@/components/accuracy/OutcomeBreakdown'
-import { RecentPicksFeed, type RecentPick } from '@/components/accuracy/RecentPicksFeed'
-import { ScorelineStats } from '@/components/accuracy/ScorelineStats'
-import { Reveal } from '@/components/motion'
+import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
+import { AccuracyFootnote } from '@/components/accuracy/AccuracyFootnote'
+import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
+import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
+import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
+import { samplePhrase } from '@/components/accuracy/accuracyMetrics'
+import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import type { AccuracySummaryResponse, FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 /**
- * Public-facing accuracy page — the live track record users land on when
- * they ask "how accurate is the AI?". Matchday v3.1 grammar: a scoreboard
- * hero, the rolling form chart, calibration + confidence audits, the
- * per-league table, scoreline stats, and the recent-picks feed. Every
- * number comes from the tracker — nothing approximated, nothing fabricated,
- * and any section whose data is missing simply doesn't render.
+ * The public track record: how the AI's picks have actually scored.
+ *
+ * Information architecture — one narrative, top to bottom:
+ *
+ *   1. The headline rate, its sample, and the yardstick that makes it
+ *      readable (a blind three-way pick lands 1 in 3).
+ *   2. A strip of supporting numbers, each carrying its own denominator.
+ *   3. One chart, chosen because calibration is the claim this page exists
+ *      to support: stated chance against what happened, with the sample
+ *      behind every point drawn underneath it.
+ *   4. The deep cuts — per competition, per confidence tier, scorelines,
+ *      recent picks — behind tabs rather than stacked as four more cards.
+ *   5. A short footnote on how to read the page.
+ *
+ * Honesty rules that shape the layout: a section whose data is missing
+ * renders nothing, rates below their minimum sample lose their verdict
+ * chips rather than their context, and no number here is derived from
+ * anything other than the settled record.
+ *
+ * The rolling-form chart that used to sit above the calibration plot was
+ * removed rather than restyled. Its endpoint does not filter by universe,
+ * so it could only ever render for men's football — the layout silently
+ * differed between the two universes — and the series itself was a 50-pick
+ * rolling line oscillating between 30% and 70%, which carried no legible
+ * trend at the size it was given.
  */
-
-/** Rolling window shared by the form chart's two series. */
-const TREND_WINDOW = 50
-
-interface TrendResponse {
-  window: number
-  data_points: number
-  trend: TrendPointDatum[]
-  latest_accuracy: number | null
-}
-
-interface CalibrationTrendPoint extends ConfidencePointDatum {
-  date: string
-  accuracy: number
-}
-
-interface CalibrationTrendResponse {
-  window: number
-  step: number
-  data_points: number
-  trend: CalibrationTrendPoint[]
-}
 
 interface RecentResponse {
   count: number
@@ -75,9 +64,8 @@ export default function AccuracyPage() {
   const [metrics, setMetrics] = useState<FlatAccuracyResponse | null>(null)
   const [picks, setPicks] = useState<RecentPick[]>([])
   const [summary, setSummary] = useState<AccuracySummaryResponse | null>(null)
-  const [trend, setTrend] = useState<TrendResponse | null>(null)
-  const [calTrend, setCalTrend] = useState<CalibrationTrendResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -90,19 +78,13 @@ export default function AccuracyPage() {
         `/api/v1/tracking/recent?gender=${asQueryParam}&limit=30&completed_only=true`
       ),
       fetchJson<AccuracySummaryResponse>(`/api/v1/tracking/accuracy/summary?gender=${asQueryParam}`),
-      fetchJson<TrendResponse>(
-        `/api/v1/tracking/accuracy/trend?window=${TREND_WINDOW}&gender=${asQueryParam}`
-      ),
-      fetchJson<CalibrationTrendResponse>(
-        `/api/v1/tracking/calibration-trend?window=${TREND_WINDOW}&step=10&gender=${asQueryParam}`
-      ),
-    ]).then(([accuracy, recent, summaryRes, trendRes, calTrendRes]) => {
+    ]).then(([accuracy, recent, summaryRes]) => {
       if (cancelled) return
-      setMetrics(settledValue(accuracy))
+      const acc = settledValue(accuracy)
+      setMetrics(acc)
       setPicks(settledValue(recent)?.predictions ?? [])
       setSummary(settledValue(summaryRes))
-      setTrend(settledValue(trendRes))
-      setCalTrend(settledValue(calTrendRes))
+      setFailed(acc === null)
       setLoading(false)
     })
     return () => {
@@ -110,29 +92,13 @@ export default function AccuracyPage() {
     }
   }, [asQueryParam])
 
-  const completed = metrics?.completed_predictions ?? 0
+  const settled = metrics?.completed_predictions ?? 0
   const total = metrics?.total_predictions ?? 0
+  const pending = metrics?.pending_predictions ?? Math.max(0, total - settled)
 
-  // The summary / trend endpoints roll up the whole prediction pool and
-  // don't slice by universe. The men's universe is effectively that pool;
-  // the women's universe is not — so pool-level sections (form chart,
-  // league table baseline source) are gated to per-league or universe
-  // gates below rather than mislabelled.
-  const trendPoints = useMemo(
-    () => (Array.isArray(trend?.trend) ? trend.trend.filter((p) => Number.isFinite(p.accuracy)) : []),
-    [trend]
-  )
-  const confidencePoints = useMemo(
-    () =>
-      Array.isArray(calTrend?.trend)
-        ? calTrend.trend.filter((p) => Number.isFinite(p.avg_confidence))
-        : [],
-    [calTrend]
-  )
-  const showTrend = gender === 'men' && trendPoints.length >= MIN_TREND_POINTS
-
-  // Per-league rollup filtered to the active universe. League records are
-  // single-gender, so this slice is exact even though the endpoint isn't.
+  // Per-league rollup filtered to the active universe. The summary endpoint
+  // rolls up the whole pool rather than slicing by universe, but league
+  // records are single-gender, so this slice is exact.
   const leagueRows = useMemo(() => {
     if (!summary?.by_league) return []
     return Object.values(summary.by_league).filter(
@@ -140,12 +106,9 @@ export default function AccuracyPage() {
     )
   }, [summary, asQueryParam])
 
-  const calibrationBins = metrics?.calibration_bins ?? []
-  const ece = completed > 0 ? (metrics?.expected_calibration_error ?? null) : null
-
   if (loading && metrics === null) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+      <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-4">
         <PageTitle />
         <AccuracySkeleton />
       </div>
@@ -153,111 +116,72 @@ export default function AccuracyPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4">
+    <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-4">
       <PageTitle />
 
-      <div className="space-y-3">
-        {/* 1 — Performance scoreboard */}
-        <AccuracyHero
-          accuracyPct={metrics?.winner_accuracy ?? 0}
-          completedPredictions={completed}
-          totalPredictions={total}
-          brierScore={completed > 0 ? (metrics?.brier_score ?? null) : null}
-          calibrationError={ece}
-          recentAccuracy={metrics?.recent_accuracy ?? 0}
-          recentForm={metrics?.recent_form ?? []}
-          gender={gender}
+      {failed ? (
+        <EmptyState
+          heading="The record isn't loading"
+          body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
         />
+      ) : settled === 0 ? (
+        <EmptyState
+          heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
+          body={
+            total > 0 ? (
+              <>
+                {samplePhrase(total, 'pick')} recorded, none with a final result so far. The rates
+                and breakdowns appear as soon as the first match finishes.
+              </>
+            ) : (
+              <>
+                No picks recorded for {gender === 'women' ? "women's" : "men's"} football yet. Try
+                one on{' '}
+                <a
+                  className="font-semibold text-[var(--accent-primary)] hover:underline"
+                  href="/predict"
+                >
+                  AI predict
+                </a>
+                .
+              </>
+            )
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          <AccuracyHeadline
+            accuracy={metrics?.winner_accuracy ?? 0}
+            settled={settled}
+            pending={pending}
+            recentForm={metrics?.recent_form ?? []}
+            gender={gender}
+          />
 
-        {completed === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)] p-6 text-center">
-            <h2 className="text-sm font-bold text-[var(--text-primary)]">
-              Waiting on the first settled matches
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-md text-[12px] text-[var(--text-tertiary)]">
-              {total > 0 ? (
-                <>
-                  {total.toLocaleString()} pick{total === 1 ? '' : 's'} tracked, none with a final
-                  result yet. The charts and recent-picks feed appear here as soon as the first
-                  match finishes.
-                </>
-              ) : (
-                <>
-                  No picks tracked yet for this universe. Try one yourself on{' '}
-                  <a
-                    className="font-semibold text-[var(--accent-primary)] hover:underline"
-                    href="/predict"
-                  >
-                    AI predict
-                  </a>
-                  .
-                </>
-              )}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* 2 — Form over time */}
-            {showTrend && (
-              <Reveal>
-                <AccuracyTrendChart
-                  points={trendPoints}
-                  confidence={confidencePoints}
-                  baseline={summary?.overall?.winner_accuracy ?? null}
-                  window={trend?.window ?? TREND_WINDOW}
-                />
-              </Reveal>
-            )}
+          <AccuracyKpiStrip
+            settled={settled}
+            probabilityScore={metrics?.brier_score ?? null}
+            calibrationGap={metrics?.expected_calibration_error ?? null}
+            recentAccuracy={metrics?.recent_accuracy ?? 0}
+            recentWindow={Math.min(50, settled)}
+          />
 
-            {/* 3 — Calibration + confidence audit */}
-            <Reveal>
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-                <CalibrationPlot bins={calibrationBins} ece={ece} className="lg:col-span-3" />
-                <div className="flex flex-col gap-3 lg:col-span-2">
-                  <ConfidenceTiers bins={calibrationBins} />
-                  {metrics && (
-                    <OutcomeBreakdown
-                      home={{ predicted: metrics.home_win_predicted, correct: metrics.home_win_correct }}
-                      draw={{ predicted: metrics.draw_predicted, correct: metrics.draw_correct }}
-                      away={{ predicted: metrics.away_win_predicted, correct: metrics.away_win_correct }}
-                    />
-                  )}
-                </div>
-              </div>
-            </Reveal>
+          <ReliabilityPanel
+            bins={metrics?.calibration_bins ?? []}
+            gap={metrics?.expected_calibration_error ?? null}
+            settled={settled}
+          />
 
-            {/* 4 — League table (real per-league rollup) */}
-            {leagueRows.length > 0 && (
-              <Reveal>
-                <LeagueTable rows={leagueRows} overallAccuracy={metrics?.winner_accuracy ?? 0} />
-              </Reveal>
-            )}
+          <AccuracyDeepCuts
+            metrics={metrics}
+            leagueRows={leagueRows}
+            picks={picks}
+            overallAccuracy={metrics?.winner_accuracy ?? 0}
+          />
 
-            {/* 5 — Scoreline intelligence */}
-            {metrics && (
-              <Reveal>
-                <ScorelineStats
-                  exactRate={metrics.exact_scoreline_rate}
-                  exactCount={metrics.exact_scoreline_count}
-                  completed={completed}
-                  top5Rate={metrics.scoreline_top5_rate ?? 0}
-                  top5Count={metrics.scoreline_top5_count ?? 0}
-                  top5Eligible={metrics.scoreline_top5_eligible ?? 0}
-                  avgGoalsError={
-                    metrics.avg_goals_difference > 0 ? metrics.avg_goals_difference : null
-                  }
-                />
-              </Reveal>
-            )}
-
-            {/* 6 — Recent picks feed */}
-            <RecentPicksFeed picks={picks} />
-          </>
-        )}
-
-        {/* 7 — Plain-language explainer */}
-        <ModelExplainer />
-      </div>
+          <AccuracyFootnote />
+        </div>
+      )}
     </div>
   )
 }
@@ -267,39 +191,31 @@ function PageTitle() {
     <div className="px-1 pb-3">
       <h1 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">Accuracy</h1>
       <p className="text-[12px] text-[var(--text-tertiary)]">
-        How the AI&apos;s picks have actually scored, updated as results come in.
+        The full record of every pick, scored against the final result.
       </p>
     </div>
   )
 }
 
-/** Loading skeleton mirroring the final layout — hero, rail, chart, 2-col, table. */
+function EmptyState({ heading, body }: { heading: string; body: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--card-bg)] px-6 py-10 text-center">
+      <h2 className="text-sm font-bold text-[var(--text-primary)]">{heading}</h2>
+      <p className="mx-auto mt-1.5 max-w-md text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+        {body}
+      </p>
+    </div>
+  )
+}
+
+/** Loading skeleton mirroring the final layout — headline, strip, chart, tabs. */
 function AccuracySkeleton() {
   return (
     <div className="space-y-3" role="status" aria-label="Loading accuracy data">
-      {/* Hero scoreboard */}
-      <div className="skeleton-shimmer h-[132px] rounded-2xl border border-[var(--border-color)]" />
-      {/* Stat rail */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="skeleton-shimmer h-[76px] rounded-xl border border-[var(--border-color)]"
-          />
-        ))}
-      </div>
-      {/* Form chart */}
-      <div className="skeleton-shimmer h-[400px] rounded-2xl border border-[var(--border-color)]" />
-      {/* Calibration 2-col */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-        <div className="skeleton-shimmer h-[440px] rounded-2xl border border-[var(--border-color)] lg:col-span-3" />
-        <div className="flex flex-col gap-3 lg:col-span-2">
-          <div className="skeleton-shimmer h-[272px] flex-none rounded-2xl border border-[var(--border-color)]" />
-          <div className="skeleton-shimmer h-[156px] flex-none rounded-2xl border border-[var(--border-color)]" />
-        </div>
-      </div>
-      {/* League table */}
-      <div className="skeleton-shimmer h-[300px] rounded-2xl border border-[var(--border-color)]" />
+      <div className="skeleton-shimmer h-[240px] rounded-xl border border-[var(--border-color)]" />
+      <div className="skeleton-shimmer h-[300px] rounded-xl border border-[var(--border-color)] sm:h-[160px] lg:h-[92px]" />
+      <div className="skeleton-shimmer h-[440px] rounded-xl border border-[var(--border-color)]" />
+      <div className="skeleton-shimmer h-[320px] rounded-xl border border-[var(--border-color)]" />
       <span className="sr-only">Loading…</span>
     </div>
   )

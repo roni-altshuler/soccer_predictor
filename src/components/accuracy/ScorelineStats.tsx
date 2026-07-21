@@ -1,8 +1,9 @@
 'use client'
 
-import { AnimatedNumber } from '@/components/motion'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+
+import { MIN_RATE_SAMPLE, count, pct1, samplePhrase } from './accuracyMetrics'
 
 /**
  * Scoreline intelligence band — one slim card for the exact-score side of
@@ -24,6 +25,8 @@ interface ScorelineStatsProps {
   top5Eligible: number
   /** Avg absolute goals error — hidden when missing or zeroed. */
   avgGoalsError?: number | null
+  /** Render bare, without the card chrome (used inside the deep-cuts tabs). */
+  embedded?: boolean
   className?: string
 }
 
@@ -35,6 +38,7 @@ export function ScorelineStats({
   top5Count,
   top5Eligible,
   avgGoalsError,
+  embedded = false,
   className,
 }: ScorelineStatsProps) {
   const showExact = completed > 0
@@ -43,52 +47,73 @@ export function ScorelineStats({
 
   if (!showExact && !showTop5 && !showGoalsError) return null
 
-  return (
-    <Card className={cn('p-4 md:p-5', className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-        Scoreline picks
+  // The top-5 list is only stored on part of the record, so its denominator
+  // is much smaller than the settled total — often a few dozen picks. State
+  // that plainly instead of letting "50%" stand beside a 1,429-pick rate.
+  const top5Thin = showTop5 && top5Eligible < MIN_RATE_SAMPLE * 5
+
+  const body = (
+    <>
+      <p className="mb-3 text-[12px] leading-snug text-[var(--text-secondary)]">
+        Calling the winner is one thing; calling the exact score is much harder.
       </p>
-      <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {showExact && (
-          <div>
-            <p className="text-xl font-black tabular-nums leading-tight text-[var(--text-primary)]">
-              <AnimatedNumber value={exactRate * 100} decimals={1} suffix="%" />
-            </p>
-            <p className="mt-0.5 text-[12px] font-medium text-[var(--text-secondary)]">
-              Exact scoreline
-            </p>
-            <p className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
-              {exactCount.toLocaleString()} of {completed.toLocaleString()} settled picks
-            </p>
-          </div>
+          <Stat
+            value={pct1(exactRate)}
+            label="Exact final score"
+            note={`${count(exactCount)} of ${samplePhrase(completed)}`}
+          />
         )}
         {showTop5 && (
-          <div>
-            <p className="text-xl font-black tabular-nums leading-tight text-[var(--text-primary)]">
-              <AnimatedNumber value={top5Rate * 100} decimals={1} suffix="%" />
-            </p>
-            <p className="mt-0.5 text-[12px] font-medium text-[var(--text-secondary)]">
-              Final score in top 5
-            </p>
-            <p className="text-[11px] tabular-nums text-[var(--text-tertiary)]">
-              {top5Count.toLocaleString()} of {top5Eligible.toLocaleString()} eligible picks
-            </p>
-          </div>
+          <Stat
+            value={pct1(top5Rate)}
+            label="Score among the five most likely"
+            note={`${count(top5Count)} of ${count(top5Eligible)} picks that listed five`}
+            caveat={top5Thin ? 'Small sample' : undefined}
+          />
         )}
         {showGoalsError && (
-          <div>
-            <p className="text-xl font-black tabular-nums leading-tight text-[var(--text-primary)]">
-              <AnimatedNumber value={avgGoalsError} decimals={2} />
-            </p>
-            <p className="mt-0.5 text-[12px] font-medium text-[var(--text-secondary)]">
-              Avg goals error
-            </p>
-            <p className="text-[11px] text-[var(--text-tertiary)]">
-              Average distance from the real score
-            </p>
-          </div>
+          <Stat
+            value={avgGoalsError.toFixed(2)}
+            label="Average goals out"
+            note="Typical distance from the real score"
+          />
         )}
       </div>
-    </Card>
+    </>
+  )
+
+  if (embedded) return <div className={className}>{body}</div>
+
+  return <Card className={cn('p-4 md:p-5', className)}>{body}</Card>
+}
+
+function Stat({
+  value,
+  label,
+  note,
+  caveat,
+}: {
+  value: string
+  label: string
+  note: string
+  caveat?: string
+}) {
+  return (
+    <div>
+      <p className="flex flex-wrap items-baseline gap-2">
+        <span className="text-xl font-bold leading-tight tabular-nums text-[var(--text-primary)]">
+          {value}
+        </span>
+        {caveat && (
+          <span className="rounded bg-[var(--muted-bg)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
+            {caveat}
+          </span>
+        )}
+      </p>
+      <p className="mt-0.5 text-[12px] font-medium text-[var(--text-secondary)]">{label}</p>
+      <p className="text-[11px] tabular-nums text-[var(--text-tertiary)]">{note}</p>
+    </div>
   )
 }

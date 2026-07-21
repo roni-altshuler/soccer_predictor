@@ -44,8 +44,9 @@ const PAGES = [
   { href: '/players', label: 'Players', icon: Users, hint: 'Top scorers + form' },
   { href: '/predict', label: 'AI Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
   { href: '/almanac', label: 'Almanac', icon: BookOpen, hint: 'Ask the history for a count' },
-  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Prediction track record' },
-  { href: '/history', label: 'Prediction History', icon: History, hint: 'Past picks + outcomes' },
+  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'How well the calls hold up' },
+  // Keeps matching a "history" search — the palette indexes label + hint.
+  { href: '/history', label: 'Prediction Record', icon: History, hint: 'Full history: every call and its result' },
   { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
   { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
   { href: '/diagnostics', label: 'Data Coverage', icon: Database, hint: 'Event timeline coverage by league' },

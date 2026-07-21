@@ -38,18 +38,21 @@ export function TopBar() {
         <Link
           href="/"
           aria-label="Pitchverse home"
-          className="md:hidden flex items-center gap-2"
+          className="md:hidden flex shrink-0 items-center gap-2"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
           <span className="text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
         </Link>
 
-        {/* Global search trigger -> opens command palette */}
+        {/* Global search trigger -> opens command palette. min-w-0 below sm so
+            the bar can never exceed the viewport: the search field absorbs the
+            squeeze instead of pushing the right cluster off-screen (its
+            placeholder text is hidden at that width anyway). */}
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="group relative ml-auto md:ml-0 flex h-9 min-w-[160px] max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[var(--accent-primary)]/50"
+          className="group relative ml-auto md:ml-0 flex h-9 min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[var(--accent-primary)]/50 sm:min-w-[160px]"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]" />
@@ -60,7 +63,7 @@ export function TopBar() {
         </button>
 
         {/* Right cluster */}
-        <div className="ml-auto flex items-center gap-2 md:ml-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2 md:ml-3">
           <GenderToggle size="compact" iconless className="sm:hidden" />
           <GenderToggle size="default" className="hidden sm:inline-flex" />
           {isAuthenticated && user ? (

@@ -2,10 +2,11 @@
 
 import { useMemo } from 'react'
 
-import { SectionHeader } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import type { CalibrationDotPoint } from '@/lib/types/accuracy'
 import { cn } from '@/lib/utils'
+
+import { MIN_TIER_SAMPLE, count, pct0, signedPts } from './accuracyMetrics'
 
 /**
  * Confidence tiers — answers "when the model is confident, is it right?"
@@ -21,6 +22,8 @@ import { cn } from '@/lib/utils'
 interface ConfidenceTiersProps {
   /** Per-decile calibration buckets from the tracking accuracy endpoint. */
   bins: CalibrationDotPoint[]
+  /** Render bare, without the card chrome (used inside the deep-cuts tabs). */
+  embedded?: boolean
   className?: string
 }
 
@@ -54,37 +57,46 @@ function rollUp(bins: CalibrationDotPoint[]): Tier[] {
   return tiers
 }
 
-export function ConfidenceTiers({ bins, className }: ConfidenceTiersProps) {
+export function ConfidenceTiers({ bins, embedded = false, className }: ConfidenceTiersProps) {
   const tiers = useMemo(() => rollUp(bins), [bins])
 
   if (tiers.length === 0) return null
 
-  return (
-    <Card className={cn('p-4 md:p-5', className)}>
-      <SectionHeader
-        kicker="Confidence audit"
-        title="Confident picks, honest results"
-        description="Stated chance vs delivered hit rate, grouped by how sure each pick was."
-        className="mb-4"
-      />
-
+  const body = (
+    <>
+      <p className="mb-4 text-[12px] leading-snug text-[var(--text-secondary)]">
+        Picks grouped by how sure they were. &ldquo;Stated&rdquo; is the chance given up front,
+        &ldquo;delivered&rdquo; is how often those picks actually landed.
+      </p>
       <div className="space-y-4">
         {tiers.map((tier) => (
           <TierRow key={tier.key} tier={tier} />
         ))}
       </div>
-    </Card>
+    </>
   )
+
+  if (embedded) return <div className={className}>{body}</div>
+
+  return <Card className={cn('p-4 md:p-5', className)}>{body}</Card>
 }
 
 function TierRow({ tier }: { tier: Tier }) {
   const statedPct = tier.stated * 100
   const deliveredPct = tier.delivered * 100
   const deltaPts = deliveredPct - statedPct
+  // A tier this thin cannot support a stated-vs-delivered verdict: the
+  // women's universe had a six-pick tier rendering "−32.3pts" as if that
+  // were a finding. Below the threshold the bars still show, the judgement
+  // does not.
+  const readable = tier.n >= MIN_TIER_SAMPLE
   // Delivered within 2pts of (or above) stated = holding up; further below = running hot.
   const holdingUp = deltaPts >= -2
-  const deliveredTone = holdingUp ? 'var(--accent-primary)' : 'var(--accent-warn)'
-  const deltaText = `${deltaPts >= 0 ? '+' : ''}${deltaPts.toFixed(1)}pts`
+  const deliveredTone = !readable
+    ? 'var(--text-tertiary)'
+    : holdingUp
+      ? 'var(--accent-primary)'
+      : 'var(--accent-warn)'
 
   return (
     <div className="space-y-1.5">
@@ -95,17 +107,23 @@ function TierRow({ tier }: { tier: Tier }) {
         </p>
         <span className="flex shrink-0 items-center gap-1.5">
           <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">
-            n={tier.n.toLocaleString()}
+            {count(tier.n)} picks
           </span>
-          <span
-            className="rounded px-1.5 py-px text-[10px] font-semibold tabular-nums"
-            style={{
-              color: deliveredTone,
-              background: `color-mix(in srgb, ${deliveredTone} 12%, transparent)`,
-            }}
-          >
-            {deltaText}
-          </span>
+          {readable ? (
+            <span
+              className="rounded px-1.5 py-px text-[10px] font-semibold tabular-nums"
+              style={{
+                color: deliveredTone,
+                background: `color-mix(in srgb, ${deliveredTone} 12%, transparent)`,
+              }}
+            >
+              {signedPts(deltaPts)}
+            </span>
+          ) : (
+            <span className="rounded bg-[var(--muted-bg)] px-1.5 py-px text-[10px] font-medium text-[var(--text-tertiary)]">
+              too few
+            </span>
+          )}
         </span>
       </div>
 
@@ -124,7 +142,7 @@ function TierRow({ tier }: { tier: Tier }) {
             />
           </div>
           <span className="w-12 shrink-0 text-right text-[11px] tabular-nums text-[var(--text-tertiary)]">
-            {statedPct.toFixed(0)}%
+            {pct0(tier.stated)}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +159,7 @@ function TierRow({ tier }: { tier: Tier }) {
             />
           </div>
           <span className="w-12 shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-secondary)]">
-            {deliveredPct.toFixed(0)}%
+            {pct0(tier.delivered)}
           </span>
         </div>
       </div>

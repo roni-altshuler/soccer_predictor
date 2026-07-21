@@ -41,6 +41,8 @@ export interface RecentPick {
 
 interface RecentPicksFeedProps {
   picks: RecentPick[]
+  /** Render bare, without the card chrome (used inside the deep-cuts tabs). */
+  embedded?: boolean
   className?: string
 }
 
@@ -53,7 +55,7 @@ function shortDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
+export function RecentPicksFeed({ picks, embedded = false, className }: RecentPicksFeedProps) {
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [showAll, setShowAll] = useState(false)
 
@@ -77,26 +79,33 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
 
   const visible = showAll ? filtered : filtered.slice(0, 10)
 
-  return (
-    <Card className={cn('overflow-hidden p-0', className)}>
+  const body = (
+    <>
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3 md:px-5">
         <div>
-          <h3 className="text-h4 font-bold text-[var(--text-primary)]">Recent picks</h3>
-          <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+          <p className="text-[12px] text-[var(--text-tertiary)]">
             {counts.total > 0 ? (
               <>
-                <span className="text-[var(--accent-primary)]">{counts.hits} hits</span> ·{' '}
-                <span className="text-[var(--accent-loss)]">{counts.misses} misses</span>
+                <span className="tabular-nums text-[var(--accent-primary)]">
+                  {counts.hits} hits
+                </span>{' '}
+                ·{' '}
+                <span className="tabular-nums text-[var(--accent-loss)]">
+                  {counts.misses} misses
+                </span>
                 {counts.pending > 0 && (
                   <>
-                    {' '}·{' '}
-                    <span className="text-[var(--text-tertiary)]">{counts.pending} pending</span>
+                    {' '}
+                    ·{' '}
+                    <span className="tabular-nums text-[var(--text-tertiary)]">
+                      {counts.pending} pending
+                    </span>
                   </>
                 )}
               </>
             ) : (
-              <>Last settled predictions appear here as matches finish</>
+              <>Settled picks appear here as matches finish</>
             )}
           </p>
         </div>
@@ -175,8 +184,12 @@ export function RecentPicksFeed({ picks, className }: RecentPicksFeedProps) {
           {showAll ? 'Show fewer' : `Show ${filtered.length - 10} more`}
         </button>
       )}
-    </Card>
+    </>
   )
+
+  if (embedded) return <div className={cn('overflow-hidden', className)}>{body}</div>
+
+  return <Card className={cn('overflow-hidden p-0', className)}>{body}</Card>
 }
 
 function TeamLine({
@@ -272,10 +285,15 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
       <div className="min-w-0 flex-1 space-y-1 border-l border-[var(--border-color)]/60 py-0.5 pl-3">
         <TeamLine name={pick.home_team} score={homeScore} emphasis={homeEmphasis} />
         <TeamLine name={pick.away_team} score={awayScore} emphasis={awayEmphasis} />
+        {/* On narrow screens the league/date column is dropped, so the date
+            rides along under the teams instead of pushing the row wide. */}
+        <span className="block text-[10px] tabular-nums text-[var(--text-tertiary)] sm:hidden">
+          {shortDate(pick.match_date)}
+        </span>
       </div>
 
-      {/* League + date */}
-      <div className="flex shrink-0 flex-col items-end gap-1">
+      {/* League + date — dropped under 640px to keep the row inside the viewport */}
+      <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
         <LeagueBadge league={pick.league} size="sm" />
         <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">
           {shortDate(pick.match_date)}
