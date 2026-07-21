@@ -118,3 +118,52 @@ export async function fetchForkDistribution(
     return null
   }
 }
+
+/** The live roll-forward endpoint — derives the anchor from a live fixture. */
+export const ENGINE_LIVE_ENDPOINT = '/api/v1/engine/live'
+
+/** Live-fixture context the route needs to derive an anchor for itself. */
+export interface LiveEngineParams {
+  competition: string
+  homeTeam: string
+  awayTeam: string
+  state: EngineForkState
+}
+
+/** A live roll-forward result: the continuation distribution + its gender. */
+export interface LiveEngineResult {
+  distribution: ForkDistribution
+  gender: 'M' | 'F' | null
+}
+
+/**
+ * Ask the kernel to play out an IN-PROGRESS fixture from its current `state`,
+ * deriving the anchor from the committed team-strength artifact. Resolves to
+ * the distribution + gender, or `null` when unavailable for ANY reason
+ * (uncovered competition, unresolvable team, route missing, network down,
+ * malformed payload) — the caller falls back to existing behaviour, never a
+ * fabricated number.
+ */
+export async function fetchLiveEngineDistribution(
+  params: LiveEngineParams,
+  fetchImpl: EngineFetch = fetch
+): Promise<LiveEngineResult | null> {
+  try {
+    const res = await fetchImpl(ENGINE_LIVE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as
+      | { available?: unknown; distribution?: unknown; gender?: unknown }
+      | null
+    if (!json || typeof json !== 'object' || json.available !== true) return null
+    const distribution = parseDistribution(json.distribution)
+    if (!distribution) return null
+    const gender = json.gender === 'M' || json.gender === 'F' ? json.gender : null
+    return { distribution, gender }
+  } catch {
+    return null
+  }
+}

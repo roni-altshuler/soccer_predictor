@@ -6,8 +6,10 @@
  */
 import {
   ENGINE_FORK_ENDPOINT,
+  ENGINE_LIVE_ENDPOINT,
   KICKOFF_STATE,
   fetchForkDistribution,
+  fetchLiveEngineDistribution,
   type EngineFetch,
   type EngineForkState,
 } from '../engineClient'
@@ -100,5 +102,59 @@ describe('fetchForkDistribution', () => {
 
   it('exposes the kickoff probe state per the contract', () => {
     expect(KICKOFF_STATE).toEqual({ minute: 1, homeGoals: 0, awayGoals: 0, homeReds: 0, awayReds: 0 })
+  })
+})
+
+describe('fetchLiveEngineDistribution', () => {
+  const PARAMS = {
+    competition: 'eng.1',
+    homeTeam: 'Arsenal',
+    awayTeam: 'Chelsea',
+    state: STATE,
+  }
+
+  it('POSTs the live fixture context to the live endpoint', async () => {
+    const fetchImpl = fetcherReturning({ available: true, distribution: DISTRIBUTION, gender: 'M' })
+    await fetchLiveEngineDistribution(PARAMS, fetchImpl)
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchImpl.mock.calls[0]
+    expect(url).toBe(ENGINE_LIVE_ENDPOINT)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body ?? '')).toEqual(PARAMS)
+  })
+
+  it('returns the distribution and gender when available', async () => {
+    const fetchImpl = fetcherReturning({ available: true, distribution: DISTRIBUTION, gender: 'F' })
+    await expect(fetchLiveEngineDistribution(PARAMS, fetchImpl)).resolves.toEqual({
+      distribution: DISTRIBUTION,
+      gender: 'F',
+    })
+  })
+
+  it('returns a null gender when the route omits/garbles it', async () => {
+    const fetchImpl = fetcherReturning({ available: true, distribution: DISTRIBUTION })
+    await expect(fetchLiveEngineDistribution(PARAMS, fetchImpl)).resolves.toEqual({
+      distribution: DISTRIBUTION,
+      gender: null,
+    })
+  })
+
+  it('returns null when the fixture is unanchored (available: false)', async () => {
+    const fetchImpl = fetcherReturning({ available: false })
+    await expect(fetchLiveEngineDistribution(PARAMS, fetchImpl)).resolves.toBeNull()
+  })
+
+  it('returns null on non-OK, network failure, or malformed distribution', async () => {
+    await expect(
+      fetchLiveEngineDistribution(PARAMS, fetcherReturning({ available: true, distribution: DISTRIBUTION }, false))
+    ).resolves.toBeNull()
+    const throwing: EngineFetch = jest.fn(async () => {
+      throw new Error('offline')
+    })
+    await expect(fetchLiveEngineDistribution(PARAMS, throwing)).resolves.toBeNull()
+    await expect(
+      fetchLiveEngineDistribution(PARAMS, fetcherReturning({ available: true, distribution: { bad: 1 } }))
+    ).resolves.toBeNull()
   })
 })
