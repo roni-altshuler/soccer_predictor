@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 
+import { AskPanel } from '@/components/almanac/AskPanel'
 import { AnimatedNumber } from '@/components/motion'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
@@ -454,14 +455,25 @@ function AlmanacContent() {
       <div className="mx-auto w-full max-w-3xl px-3 pb-12 pt-4 sm:px-4">
         {/* Data-first title — no hero */}
         <div className="mb-4 px-1">
-          <h1 className="text-xl font-bold text-[var(--text-primary)]">Almanac</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]">Ask Pitchverse</h1>
           <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            Ask the history — every answer is a count, not a guess.
+            Ask football’s history in plain English — every answer is an exact count, not a guess.
           </p>
         </div>
 
-        {/* Starter questions */}
-        <div className="mb-4 flex flex-wrap gap-1.5">
+        {/* The natural-language front door (Almanac v1) */}
+        <AskPanel />
+
+        {/* The structured builder, kept as an advanced refine surface */}
+        <details className="group mt-8">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 rounded-lg px-1 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
+            <span className="text-[var(--text-tertiary)] transition-transform group-open:rotate-90">›</span>
+            Refine with the builder
+          </summary>
+
+          <div className="mt-4 space-y-4">
+            {/* Starter questions */}
+            <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((preset) => {
             const active = activePreset?.id === preset.id
             return (
@@ -509,7 +521,9 @@ function AlmanacContent() {
               <PrecedentsRail precedents={data.examples ?? []} />
             </>
           ) : null}
-        </div>
+          </div>
+          </div>
+        </details>
 
         <p className="mt-8 px-1 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
           Counts are exact tallies of covered matches — educational only, not betting advice.
