@@ -66,7 +66,11 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   resolution, unmatched teams keep legacy behavior; pre-season title odds now
   differentiate (eng.1: flat 5% → 40.6/36.0/9.3% top three). *Shipped 2026-07-15.*
   Remaining: knockout brackets need cross-competition-comparable ratings first.
-- ☐ Live win probability v2 — engine rollouts + conformal intervals.
+- ◐ Live win probability v2 — engine kernel drives live/in-progress win chance
+  (derives a live anchor, recomputes every 30s from minute+score+reds, base
+  rate shown alongside; honest fallback when unanchored). *Shipped 2026-07-19.*
+  Remaining: widen beyond the 3 fitted leagues (PL/La Liga/NWSL); conformal
+  interval band (needs a per-state calibration artifact — not faked meanwhile).
 - ☑ Match-state embeddings (match2vec) + similar-matches rail — deterministic
   timeline vectors (team-identity-free) over all covered matches, committed
   index, "matches that unfolded like this one" on finished-match pages;
@@ -100,13 +104,18 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 3 — The Theater (18 months+)
 
-- ◐ **Match Theater v0 — SHIPPED 2026-07-19, pulled far forward.** A Canvas-2D
-  3D "win chance landscape" on finished-match Overview tabs: height = exact
-  historical win rate per (minute, score-difference) tile (green win / amber
-  level / red loss), the bright line traces the real match stepping at each
-  goal; drag to orbit, hover/tap for the counted value, reduced-motion = one
-  static interactive frame. No 3D dependency, no WebGL. The remaining Phase-3
-  theater items below (pressure fields, tracking, 2.5D) are the deeper build.
+- ◐ **3D momentum-wave reconstruction — PROTOTYPE 2026-07-19, unlinked.** The
+  user's real Instagram reference: thousands of match events → a sweeping 3D
+  momentum landscape (time × pitch-third × attacking threat, home green/up vs
+  away red/down), orbitable, playhead sweep, goal/card poles. Runs on famous
+  matches via StatsBomb free open data (WC 2022 final, WWC 2023 final) since
+  our own fixtures lack pass data. three.js/R3F, lazy-loaded; committed
+  landscape artifacts; "Data: StatsBomb" credit (scoped license exception).
+  Behind /reconstructions, awaiting user review before nav wiring + more
+  matches. *Superseded the earlier Canvas "win-chance landscape", which was
+  removed from match pages (0205078) — it was a stand-in that missed the
+  reference.*
+- ☐ Deeper theater: pressure fields, tracking pilot, 2.5D player positions.
 - ☐ Pressure fields + pass-network constellations (WebGPU/R3F).
 - ☐ 2.5D Match Theater (event-driven player positions).
 - ☐ Tracking pilot (SkillCorner or video-mined) for one competition.
