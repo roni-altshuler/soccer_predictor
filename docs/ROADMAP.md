@@ -80,7 +80,15 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
   **LIVE in production 2026-07-19** on the free Gemini tier (self-heals to the
   newest Flash model; debate step isolated from the core pipeline). *Shipped.*
 - ☑ Almanac v0 — structured query builder → exact counts + precedents at /almanac
-  (no LLM). *Shipped 2026-07-15.* v1 (natural-language input) awaits LLM key decision.
+  (no LLM). *Shipped 2026-07-15.*
+- ☑ **Ask Pitchverse (Almanac v1)** — natural-language analyst: plain-English
+  question → constrained intent schema → deterministic exact-count compute →
+  templated + verifier-gated narration + auto chart + precedents. The AI only
+  parses/phrases; every number is computed and verified (Boardroom's verifier
+  ported to Node). Ships functional with NO key via a built-in pattern parser
+  (proven live, source:"deterministic"); understands messier phrasings when
+  GEMINI_API_KEY is set on Vercel. Quota-safe (cache + caps + graceful
+  degrade); out-of-domain → honest refusal. *Shipped 2026-07-19.*
 - ☑ Momentum river — stacked win/draw/loss probability bands across the match
   timeline, exact counts only (n≥50 gates, steps only at goals + 5' buckets),
   mounted above the story on finished-match pages. *Shipped 2026-07-15.*
