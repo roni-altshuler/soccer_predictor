@@ -16134,15 +16134,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 2,
+      "actual_winner": "draw",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 0,
       "prediction_timestamp": "2026-07-22T08:40:50.664535",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-22T15:44:17.258120"
     },
     {
       "match_id": "401853954",
@@ -16312,15 +16312,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 1,
+      "actual_away_goals": 3,
+      "actual_winner": "away",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-07-22T08:40:50.673647",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-22T15:44:17.258074"
     },
     {
       "match_id": "401853955",
@@ -16490,15 +16490,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
-      "scoreline_in_top5": null,
-      "goals_diff": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": false,
+      "scoreline_correct": false,
+      "scoreline_in_top5": false,
+      "goals_diff": 1,
       "prediction_timestamp": "2026-07-22T08:40:50.682507",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-07-22T15:44:17.258018"
     }
   ]
 }
