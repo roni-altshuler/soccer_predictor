@@ -1,0 +1,184 @@
+{
+  "month": "2026-08",
+  "count": 1,
+  "predictions": [
+    {
+      "match_id": "401853956",
+      "home_team": "North Carolina Courage",
+      "away_team": "Orlando Pride",
+      "league": "NWSL",
+      "match_date": "2026-08-01",
+      "gender": "F",
+      "predicted_home_win": 0.5145,
+      "predicted_draw": 0.278,
+      "predicted_away_win": 0.2075,
+      "predicted_home_goals": 2.16,
+      "predicted_away_goals": 1.13,
+      "predicted_scoreline": "2-1",
+      "top_scorelines": [
+        {
+          "score": "2-1",
+          "probability": 0.0962
+        },
+        {
+          "score": "1-1",
+          "probability": 0.0857
+        },
+        {
+          "score": "2-0",
+          "probability": 0.0789
+        },
+        {
+          "score": "1-0",
+          "probability": 0.0729
+        },
+        {
+          "score": "3-1",
+          "probability": 0.0719
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "h2h_matches",
+          "value": 10.0,
+          "contribution": -2.3026
+        },
+        {
+          "feature": "home_weighted_form",
+          "value": 5.3379,
+          "contribution": -2.2734
+        },
+        {
+          "feature": "away_weighted_form",
+          "value": 4.7207,
+          "contribution": -1.6813
+        },
+        {
+          "feature": "away_corner_dominance",
+          "value": 0.5274,
+          "contribution": 1.5639
+        },
+        {
+          "feature": "away_matchday_norm",
+          "value": 0.0,
+          "contribution": 1.4348
+        },
+        {
+          "feature": "home_xg_against_avg5",
+          "value": 0.0,
+          "contribution": 1.0809
+        },
+        {
+          "feature": "away_xg_for_avg5",
+          "value": 0.0,
+          "contribution": -0.9966
+        },
+        {
+          "feature": "home_matches_last_14d",
+          "value": 0.0,
+          "contribution": -0.8151
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 51.4,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "WakeMed Soccer Park",
+      "feature_vector": [
+        1541.24763,
+        1576.291593,
+        -35.043963,
+        0.6,
+        0.4,
+        0.533333,
+        0.4,
+        0.728571,
+        0.485714,
+        1.4,
+        1.2,
+        1.6,
+        1.0,
+        1.5,
+        1.2,
+        0.5,
+        0.2,
+        2.0,
+        0.6,
+        -1.0,
+        1.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        13.0,
+        12.0,
+        1.0,
+        1.6,
+        1.2,
+        0.2,
+        0.3,
+        0.2,
+        -0.2,
+        -2.0,
+        -2.0,
+        0.0,
+        0.0,
+        0.3177,
+        0.3552,
+        0.3271,
+        0.3552,
+        0.0,
+        0.537906,
+        0.390438,
+        0.558442,
+        0.378049,
+        1.92,
+        2.22,
+        0.510638,
+        0.421053,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        1.61,
+        1.044,
+        -8.510677,
+        35.043963,
+        0.231467,
+        1.353061,
+        0.832653,
+        1.0,
+        1.0,
+        1541.24763,
+        1576.291593,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-24T08:38:32.991728",
+      "outcome_timestamp": null
+    }
+  ]
+}
