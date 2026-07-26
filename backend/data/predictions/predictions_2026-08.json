@@ -1,6 +1,6 @@
 {
   "month": "2026-08",
-  "count": 19,
+  "count": 22,
   "predictions": [
     {
       "match_id": "401853956",
@@ -3382,6 +3382,540 @@
       "scoreline_in_top5": null,
       "goals_diff": null,
       "prediction_timestamp": "2026-07-25T08:18:58.594159",
+      "outcome_timestamp": null
+    },
+    {
+      "match_id": "401853961",
+      "home_team": "Washington Spirit",
+      "away_team": "San Diego Wave FC",
+      "league": "NWSL",
+      "match_date": "2026-08-02",
+      "gender": "F",
+      "predicted_home_win": 0.671,
+      "predicted_draw": 0.1863,
+      "predicted_away_win": 0.1427,
+      "predicted_home_goals": 3.04,
+      "predicted_away_goals": 1.03,
+      "predicted_scoreline": "3-1",
+      "top_scorelines": [
+        {
+          "score": "3-1",
+          "probability": 0.0822
+        },
+        {
+          "score": "2-1",
+          "probability": 0.0802
+        },
+        {
+          "score": "3-0",
+          "probability": 0.077
+        },
+        {
+          "score": "2-0",
+          "probability": 0.076
+        },
+        {
+          "score": "4-1",
+          "probability": 0.0632
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "away_matches_last_14d",
+          "value": 0.0,
+          "contribution": 1.6531
+        },
+        {
+          "feature": "home_form_10_pts",
+          "value": 21.0,
+          "contribution": -1.475
+        },
+        {
+          "feature": "home_matches_last_14d",
+          "value": 0.0,
+          "contribution": -1.4081
+        },
+        {
+          "feature": "away_corner_dominance",
+          "value": 0.6567,
+          "contribution": 1.2586
+        },
+        {
+          "feature": "home_weighted_form",
+          "value": 4.4668,
+          "contribution": -1.2273
+        },
+        {
+          "feature": "away_matchday_norm",
+          "value": 0.0033,
+          "contribution": 1.0482
+        },
+        {
+          "feature": "has_xg_data",
+          "value": 0.0,
+          "contribution": -0.8497
+        },
+        {
+          "feature": "home_xg_against_avg5",
+          "value": 0.0,
+          "contribution": 0.7697
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 67.1,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "Audi Field",
+      "feature_vector": [
+        1465.432498,
+        1563.989345,
+        -98.556847,
+        0.8,
+        0.466667,
+        0.8,
+        0.466667,
+        0.842857,
+        0.480952,
+        1.6,
+        1.2,
+        0.8,
+        1.0,
+        1.9,
+        1.2,
+        1.0,
+        0.4,
+        2.25,
+        1.6,
+        -1.0,
+        3.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        13.0,
+        15.0,
+        -2.0,
+        2.4,
+        1.4,
+        0.4,
+        0.2,
+        1.1,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.2645,
+        0.3431,
+        0.3924,
+        0.3924,
+        0.0,
+        0.553991,
+        0.599156,
+        0.607143,
+        0.636364,
+        2.16,
+        2.22,
+        0.529412,
+        0.52381,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        1.84,
+        1.044,
+        -35.668192,
+        98.556847,
+        0.222936,
+        1.565306,
+        1.030612,
+        1.0,
+        1.0,
+        1465.432498,
+        1563.989345,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-26T08:37:22.278969",
+      "outcome_timestamp": null
+    },
+    {
+      "match_id": "401853962",
+      "home_team": "Utah Royals",
+      "away_team": "Portland Thorns FC",
+      "league": "NWSL",
+      "match_date": "2026-08-02",
+      "gender": "F",
+      "predicted_home_win": 0.5267,
+      "predicted_draw": 0.2861,
+      "predicted_away_win": 0.1872,
+      "predicted_home_goals": 1.76,
+      "predicted_away_goals": 0.91,
+      "predicted_scoreline": "1-0",
+      "top_scorelines": [
+        {
+          "score": "1-0",
+          "probability": 0.1037
+        },
+        {
+          "score": "1-1",
+          "probability": 0.1036
+        },
+        {
+          "score": "2-1",
+          "probability": 0.0998
+        },
+        {
+          "score": "2-0",
+          "probability": 0.0915
+        },
+        {
+          "score": "3-1",
+          "probability": 0.0637
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "home_form_10_pts",
+          "value": 24.0,
+          "contribution": -1.5266
+        },
+        {
+          "feature": "home_xg_against_avg5",
+          "value": 0.0,
+          "contribution": 1.2599
+        },
+        {
+          "feature": "home_matches_last_14d",
+          "value": 0.0,
+          "contribution": -1.2416
+        },
+        {
+          "feature": "home_goals_against_avg5",
+          "value": 0.8,
+          "contribution": 1.1499
+        },
+        {
+          "feature": "away_form_10_pts",
+          "value": 18.0,
+          "contribution": 0.9037
+        },
+        {
+          "feature": "home_weighted_form",
+          "value": 3.7402,
+          "contribution": -0.8714
+        },
+        {
+          "feature": "away_xg_for_avg5",
+          "value": 0.0,
+          "contribution": -0.7388
+        },
+        {
+          "feature": "home_form_5_pts",
+          "value": 11.0,
+          "contribution": 0.726
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 52.7,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "America First Field",
+      "feature_vector": [
+        1408.751646,
+        1524.543412,
+        -115.791766,
+        0.466667,
+        0.333333,
+        0.666667,
+        0.4,
+        0.366667,
+        0.37619,
+        2.0,
+        1.8,
+        1.8,
+        1.6,
+        1.7,
+        1.5,
+        0.8,
+        0.2,
+        1.6,
+        1.0,
+        0.0,
+        4.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        7.0,
+        8.0,
+        -1.0,
+        2.0,
+        1.2,
+        0.4,
+        0.4,
+        0.6,
+        0.1,
+        2.0,
+        1.0,
+        2.0,
+        1.0,
+        0.2505,
+        0.3391,
+        0.4104,
+        0.4104,
+        0.0,
+        0.551867,
+        0.487013,
+        0.574713,
+        0.528302,
+        2.36,
+        1.88,
+        0.495238,
+        0.446429,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        2.3,
+        1.566,
+        1.102779,
+        -0.0,
+        0.09185,
+        0.366667,
+        0.429932,
+        1.0,
+        1.0,
+        1408.751646,
+        1524.543412,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-26T08:37:22.288065",
+      "outcome_timestamp": null
+    },
+    {
+      "match_id": "401854070",
+      "home_team": "Denver Summit FC",
+      "away_team": "Boston Legacy FC",
+      "league": "NWSL",
+      "match_date": "2026-08-03",
+      "gender": "F",
+      "predicted_home_win": 0.7131,
+      "predicted_draw": 0.1964,
+      "predicted_away_win": 0.0905,
+      "predicted_home_goals": 2.63,
+      "predicted_away_goals": 0.58,
+      "predicted_scoreline": "2-0",
+      "top_scorelines": [
+        {
+          "score": "2-0",
+          "probability": 0.1363
+        },
+        {
+          "score": "3-0",
+          "probability": 0.1194
+        },
+        {
+          "score": "1-0",
+          "probability": 0.1038
+        },
+        {
+          "score": "2-1",
+          "probability": 0.0815
+        },
+        {
+          "score": "4-0",
+          "probability": 0.0784
+        }
+      ],
+      "attribution": [
+        {
+          "feature": "away_away_win_pct",
+          "value": 0.0,
+          "contribution": -1.1077
+        },
+        {
+          "feature": "away_streak",
+          "value": -2.0,
+          "contribution": 0.7707
+        },
+        {
+          "feature": "away_away_goals_avg",
+          "value": 0.4,
+          "contribution": -0.6396
+        },
+        {
+          "feature": "h2h_avg_total_goals",
+          "value": 5.0,
+          "contribution": -0.6247
+        },
+        {
+          "feature": "away_matchday_norm",
+          "value": 0.0066,
+          "contribution": 0.6011
+        },
+        {
+          "feature": "home_goals_for_avg5",
+          "value": 2.2,
+          "contribution": 0.5457
+        },
+        {
+          "feature": "away_weighted_form",
+          "value": 0.7969,
+          "contribution": 0.5228
+        },
+        {
+          "feature": "home_form_5_pts",
+          "value": 9.0,
+          "contribution": -0.5206
+        }
+      ],
+      "predicted_winner": "home",
+      "confidence": 71.3,
+      "home_elo": 1500.0,
+      "away_elo": 1500.0,
+      "model_used": "unified-multitask-1.0-women",
+      "model_selection": null,
+      "blend_nn_weight": null,
+      "blend_elo_weight": null,
+      "blend_entropy": null,
+      "draw_min_prob": 0.24,
+      "draw_margin": 0.02,
+      "weather_factor": 1.0,
+      "referee_factor": 1.0,
+      "venue": "Centennial Stadium",
+      "feature_vector": [
+        1517.155636,
+        1530.443076,
+        -13.28744,
+        0.466667,
+        0.666667,
+        0.466667,
+        0.5,
+        0.409524,
+        0.652381,
+        1.2,
+        1.4,
+        1.6,
+        0.8,
+        1.7,
+        1.2,
+        0.4,
+        0.25,
+        1.8,
+        0.75,
+        -1.0,
+        5.0,
+        1.0,
+        0.5,
+        0.0,
+        0.85,
+        15.0,
+        8.0,
+        7.0,
+        1.4,
+        1.5,
+        0.2,
+        0.3,
+        0.1,
+        0.2,
+        1.0,
+        1.0,
+        2.0,
+        1.0,
+        0.3406,
+        0.35,
+        0.3094,
+        0.35,
+        0.0,
+        0.59919,
+        0.52381,
+        0.543478,
+        0.450549,
+        1.98,
+        2.38,
+        0.662651,
+        0.424242,
+        0.26,
+        2.65,
+        0.45,
+        0.5,
+        1.38,
+        1.218,
+        3.22695,
+        13.28744,
+        0.139484,
+        0.877551,
+        0.745578,
+        1.0,
+        1.0,
+        1517.155636,
+        1530.443076,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "nn_home_win": null,
+      "nn_draw": null,
+      "nn_away_win": null,
+      "actual_home_goals": null,
+      "actual_away_goals": null,
+      "actual_winner": null,
+      "winner_correct": null,
+      "scoreline_correct": null,
+      "scoreline_in_top5": null,
+      "goals_diff": null,
+      "prediction_timestamp": "2026-07-26T08:37:22.295071",
       "outcome_timestamp": null
     }
   ]
