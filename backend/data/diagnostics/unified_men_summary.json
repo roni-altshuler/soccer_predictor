@@ -1,7 +1,7 @@
 {
   "gender": "M",
   "model_version": "unified-multitask-1.0-men",
-  "trained_at": "2026-07-19T05:36:30.300700+00:00",
+  "trained_at": "2026-07-26T05:44:34.778210+00:00",
   "n_parameters": 120650,
   "n_features": 87,
   "vocab_sizes": {
