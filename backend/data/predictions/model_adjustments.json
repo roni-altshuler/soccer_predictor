@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-27T10:05:53.777449",
-  "total_predictions_analyzed": 1493,
-  "overall_accuracy": 0.436,
+  "generated_at": "2026-07-27T16:22:32.230718",
+  "total_predictions_analyzed": 1494,
+  "overall_accuracy": 0.4364,
   "by_league": {
     "La Liga": {
       "predictions": 164,
@@ -340,22 +340,22 @@
       }
     },
     "NWSL": {
-      "predictions": 36,
-      "accuracy": 0.4444,
-      "brier_score": 0.6701,
-      "scoreline_rate": 0.0556,
-      "actual_draw_rate": 0.1944,
-      "predicted_draw_rate": 0.268,
-      "draw_rate_adjustment": -0.02206,
-      "actual_home_win_rate": 0.7222,
-      "predicted_home_win_rate": 0.4217,
-      "home_adv_adjustment": 0.0601,
-      "avg_goals_diff": 0.387,
-      "goals_scale_adjustment": 0.01936,
+      "predictions": 37,
+      "accuracy": 0.4595,
+      "brier_score": 0.6596,
+      "scoreline_rate": 0.0541,
+      "actual_draw_rate": 0.1892,
+      "predicted_draw_rate": 0.2666,
+      "draw_rate_adjustment": -0.02324,
+      "actual_home_win_rate": 0.7297,
+      "predicted_home_win_rate": 0.4256,
+      "home_adv_adjustment": 0.06082,
+      "avg_goals_diff": 0.311,
+      "goals_scale_adjustment": 0.01553,
       "confidence_calibration": {
         "high": {
-          "count": 15,
-          "accuracy": 0.4667
+          "count": 16,
+          "accuracy": 0.5
         },
         "medium": {
           "count": 20,
@@ -557,9 +557,9 @@
         "draw_rate": 0.24
       },
       "suggested": {
-        "avg_goals": 1.369,
-        "home_adv": 0.31,
-        "draw_rate": 0.218,
+        "avg_goals": 1.366,
+        "home_adv": 0.311,
+        "draw_rate": 0.217,
         "rho": -0.13
       },
       "changed": true
