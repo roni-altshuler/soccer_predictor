@@ -282,15 +282,10 @@ def test_request_pacer_zero_rpm_is_noop():
     pace()
 
 
-def test_build_deadline_writes_partial_artifact(tmp_path, monkeypatch):
+def _patch_build_env(monkeypatch, fixtures):
+    """Stub the warehouse/tracker seams so ``build`` runs offline over ``fixtures``."""
     from backend.scripts import build_boardroom as bb
 
-    # Three fake fixtures; the clock jumps past the deadline after the first.
-    fixtures = [
-        {"match_id": f"m{i}", "home_team": f"H{i}", "away_team": f"A{i}", "gender": "M",
-         "match_date": "2026-07-20", "probabilities": {"home": 0.5, "draw": 0.3, "away": 0.2}}
-        for i in range(3)
-    ]
     monkeypatch.setattr(bb, "_upcoming_fixtures", lambda tracker, days: fixtures)
     monkeypatch.setattr(bb, "_load_rarity_states", lambda: {})
     monkeypatch.setattr(bb, "_open_warehouse_ro", lambda: None)
@@ -307,10 +302,89 @@ def test_build_deadline_writes_partial_artifact(tmp_path, monkeypatch):
     import backend.services.prediction.tracker as tracker_mod
     monkeypatch.setattr(tracker_mod, "get_prediction_tracker", lambda: _Tracker())
 
-    ticks = iter([0.0, 0.0, 10_000.0, 10_000.0, 10_000.0, 10_000.0])
+
+def _fake_fixtures(n):
+    return [
+        {"match_id": f"m{i}", "home_team": f"H{i}", "away_team": f"A{i}", "gender": "M",
+         "match_date": "2026-07-20", "probabilities": {"home": 0.5, "draw": 0.3, "away": 0.2}}
+        for i in range(n)
+    ]
+
+
+def test_build_deadline_writes_partial_artifact(tmp_path, monkeypatch):
+    import itertools
+
+    from backend.scripts import build_boardroom as bb
+
+    _patch_build_env(monkeypatch, _fake_fixtures(3))
+
+    # The deadline is now checked before every persona call, not just between
+    # fixtures. Fixture 0 reads the clock 4× while it generates (1 top-of-loop
+    # + 3 persona guards) plus 1 read to arm the guard — all must be under the
+    # 60s deadline; the clock then jumps past it before fixture 1's top-of-loop
+    # read, so exactly one debate lands. `repeat` guards against an off-by-one.
+    ticks = itertools.chain([0.0, 0.0, 0.0, 0.0, 0.0], itertools.repeat(10_000.0))
     out = tmp_path / "debates.json"
     rc = bb.build(days=3, dry_run=True, output=out, max_minutes=1.0, _clock=lambda: next(ticks))
     assert rc == 0
     data = json.loads(out.read_text())
     # First fixture generated before the clock jumped; the rest cut off.
     assert data["count"] == 1
+
+
+def test_build_stops_cleanly_when_rate_limited(tmp_path, monkeypatch):
+    """A dead free-tier quota (429 on every call) must exit 0 with a partial
+    artifact after a couple of calls — never grind through every fixture."""
+    from backend.scripts import build_boardroom as bb
+    from backend.services.llm import LLMError
+
+    _patch_build_env(monkeypatch, _fake_fixtures(6))
+
+    class _AlwaysRateLimited:
+        name = "gemini"
+        model = "test-flash-lite"
+
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, *a, **k):
+            self.calls += 1
+            raise LLMError("gemini request failed: HTTP 429 quota", status=429)
+
+    stub = _AlwaysRateLimited()
+    monkeypatch.setattr(bb, "get_provider", lambda **k: stub)
+
+    out = tmp_path / "debates.json"
+    # rpm=0 disables pacing sleeps; the guard's circuit breaker is what stops us.
+    rc = bb.build(days=3, dry_run=False, output=out, rpm=0.0, max_minutes=60.0)
+    assert rc == 0
+    data = json.loads(out.read_text())
+    assert data["count"] == 0
+    # Breaker trips at 2 consecutive 429s: quant + historian of fixture 0 only —
+    # it must NOT have called the provider 3× for all six fixtures.
+    assert stub.calls == 2
+
+
+def test_budget_guard_resets_streak_on_success():
+    from backend.scripts.build_boardroom import BudgetGuard
+
+    guard = BudgetGuard(deadline=1e9, clock=lambda: 0.0, max_consecutive_rate_limits=2)
+    guard.record_rate_limited()
+    assert not guard.should_stop()  # one 429 is not enough
+    guard.record_success()          # a live call resets the streak
+    guard.record_rate_limited()
+    assert not guard.should_stop()  # back to one
+    guard.record_rate_limited()
+    assert guard.should_stop()      # two in a row trips it
+    assert guard.stop_reason == "rate_limit"
+
+
+def test_budget_guard_stops_at_deadline():
+    from backend.scripts.build_boardroom import BudgetGuard
+
+    now = [0.0]
+    guard = BudgetGuard(deadline=100.0, clock=lambda: now[0], max_consecutive_rate_limits=2)
+    assert not guard.should_stop()
+    now[0] = 100.0
+    assert guard.should_stop()
+    assert guard.stop_reason == "deadline"

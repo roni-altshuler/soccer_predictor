@@ -180,8 +180,13 @@ jobs:
 
       # The debate step sits AFTER the data commit on purpose: it depends on a
       # metered external free tier, so it must never be able to block the core
-      # pipeline's artifacts from landing. If it fails, the run fails visibly —
-      # but the data is already on main.
+      # pipeline's artifacts from landing. A GENUINE failure (a bug, an
+      # unexpected provider error) still fails the run visibly — but the data is
+      # already on main. Running out of the day's free quota is NOT a failure:
+      # the script detects sustained 429s, ships whatever partial artifact it
+      # built, and exits 0 (see build_boardroom's BudgetGuard). `--max-minutes`
+      # is a wall-clock backstop; it self-terminates well inside timeout-minutes
+      # so a stall can never turn into a red 30-minute job timeout.
       - name: Generate boardroom debates
         # No-ops (exit 0, nothing written) until a provider key secret is
         # configured — the artifact simply starts appearing once it exists.
@@ -194,7 +199,7 @@ jobs:
           # rate budget is far roomier than full Flash's.
           GEMINI_MODEL: gemini-2.5-flash-lite
         run: |
-          python -m backend.scripts.build_boardroom
+          python -m backend.scripts.build_boardroom --max-minutes 20
 
       - name: Commit boardroom artifact
         run: |

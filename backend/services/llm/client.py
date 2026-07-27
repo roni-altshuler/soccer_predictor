@@ -38,7 +38,16 @@ _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class LLMError(RuntimeError):
-    """Raised when a provider call fails in a non-retryable way (or exhausts retries)."""
+    """Raised when a provider call fails in a non-retryable way (or exhausts retries).
+
+    ``status`` carries the terminal HTTP status when the failure was an HTTP one
+    (``None`` for transport/parse errors) so callers can distinguish a rate-limit
+    (429 — free-tier quota) from other failures without string-matching the message.
+    """
+
+    def __init__(self, *args: object, status: Optional[int] = None) -> None:
+        super().__init__(*args)
+        self.status = status
 
 
 @dataclass
@@ -166,9 +175,13 @@ class _RestProvider:
             # message but never the request headers/key.
             raise LLMError(
                 f"{self.name} request failed: HTTP {resp.status} "
-                f"{(resp.body or '')[:300]}"
+                f"{(resp.body or '')[:300]}",
+                status=resp.status,
             )
-        raise LLMError(f"{self.name} request failed after retries: HTTP {last_status}")
+        raise LLMError(
+            f"{self.name} request failed after retries: HTTP {last_status}",
+            status=last_status,
+        )
 
 
 class GeminiProvider(_RestProvider):

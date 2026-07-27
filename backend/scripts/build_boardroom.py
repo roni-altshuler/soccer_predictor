@@ -38,7 +38,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from backend.services.llm import FakeProvider, Provider, get_provider  # noqa: E402
+from backend.services.llm import FakeProvider, LLMError, Provider, get_provider  # noqa: E402
 from backend.services.llm.grounding import (  # noqa: E402
     PERSONAS,
     PERSONA_TITLES,
@@ -206,15 +206,67 @@ class RequestPacer:
         self._last = now
 
 
+class BudgetGuard:
+    """Bounds a best-effort LLM batch by wall-clock deadline AND a
+    consecutive-rate-limit circuit breaker.
+
+    A metered free tier that has hit its daily ceiling answers 429 to *every*
+    call. Retrying each one to exhaustion (the provider honours multi-second
+    ``retryDelay`` cool-downs) burns minutes per call for nothing and eventually
+    trips the CI job timeout — a red run, even though the debate artifact is a
+    non-blocking enhancement whose data already committed. Once
+    ``max_consecutive_rate_limits`` calls in a row come back 429, :meth:`should_stop`
+    latches and the batch winds down cleanly, writing whatever it produced. A
+    single success resets the streak, so an occasional 429 on a healthy run never
+    trips it.
+    """
+
+    def __init__(
+        self,
+        deadline: float,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        max_consecutive_rate_limits: int = 2,
+    ) -> None:
+        self._deadline = deadline
+        self._clock = clock
+        self._max_rl = max_consecutive_rate_limits
+        self._consecutive_rl = 0
+        self.stop_reason: Optional[str] = None
+
+    def record_success(self) -> None:
+        self._consecutive_rl = 0
+
+    def record_rate_limited(self) -> None:
+        self._consecutive_rl += 1
+
+    def should_stop(self) -> bool:
+        if self.stop_reason is not None:
+            return True
+        if self._clock() >= self._deadline:
+            self.stop_reason = "deadline"
+            return True
+        if self._max_rl > 0 and self._consecutive_rl >= self._max_rl:
+            self.stop_reason = "rate_limit"
+            return True
+        return False
+
+
 def generate_debate(
     provider: Provider,
     bundle: BoardroomBundle,
     pace: Callable[[], None] = lambda: None,
+    guard: Optional[BudgetGuard] = None,
 ) -> Optional[dict]:
     """Run the three personas over one bundle; return a debate entry or None."""
     personas: List[dict] = []
     implied: List[Dict[str, float]] = []
     for name in PERSONAS:
+        # Re-check between persona calls: on a dead free tier a single fixture is
+        # three multi-minute retry cycles, so a between-fixture check alone lets
+        # the run blow past its deadline mid-fixture.
+        if guard is not None and guard.should_stop():
+            break
         system = boardroom_system_prompt(name)
         prompt = boardroom_user_prompt(bundle, name)
         try:
@@ -222,9 +274,16 @@ def generate_debate(
             raw = provider.complete(
                 prompt, system=system, max_tokens=1024, temperature=0.6, json_output=True
             )
-        except Exception as exc:  # a single persona failing must not sink the match
+        except LLMError as exc:  # a single persona failing must not sink the match
+            if exc.status == 429 and guard is not None:
+                guard.record_rate_limited()
             logger.warning("boardroom: %s generation failed for %s: %s", name, bundle.match_id, exc)
             continue
+        except Exception as exc:  # non-HTTP failure — never sink the match
+            logger.warning("boardroom: %s generation failed for %s: %s", name, bundle.match_id, exc)
+            continue
+        if guard is not None:
+            guard.record_success()  # a live provider — reset the rate-limit streak
         parsed = parse_persona_output(raw)
         if parsed is None:
             logger.warning("boardroom: %s output unparseable for %s", name, bundle.match_id)
@@ -304,8 +363,11 @@ def build(
         logger.info("boardroom: --dry-run — using FakeProvider (no network, no key)")
     else:
         # Free-tier RPM windows reset per minute; short exponential backoff
-        # cannot outlast them, so pace proactively and back off heavily.
-        provider = get_provider(base_delay=15.0, max_retries=4)
+        # cannot outlast them, so pace proactively and back off. Retries are
+        # kept modest: on a *daily*-quota wall every call 429s no matter how
+        # long we wait, so deep per-call backoff only wastes the CI budget —
+        # the BudgetGuard circuit breaker (below) is what recovers from that.
+        provider = get_provider(base_delay=15.0, max_retries=2)
         pace = RequestPacer(rpm)
         if provider is None:
             print(
@@ -331,16 +393,25 @@ def build(
 
     debates: Dict[str, dict] = {}
     dropped = 0
-    deadline = _clock() + max_minutes * 60.0
+    guard = BudgetGuard(_clock() + max_minutes * 60.0, clock=_clock)
     for match in fixtures:
-        # A metered free tier can stall a run indefinitely (retry cool-downs);
-        # past the deadline we ship whatever generated and stop cleanly.
-        if _clock() > deadline:
-            logger.warning(
-                "boardroom: %.0f-minute deadline reached after %d debate(s) — writing partial artifact",
-                max_minutes,
-                len(debates),
-            )
+        # A metered free tier can stall a run indefinitely (retry cool-downs)
+        # or wall off the whole daily quota (429 on every call). Either way we
+        # ship whatever generated and stop cleanly rather than burn the CI
+        # budget and time the job out (a red run for a non-blocking artifact).
+        if guard.should_stop():
+            if guard.stop_reason == "rate_limit":
+                logger.warning(
+                    "boardroom: provider rate-limited (free-tier quota exhausted) after %d "
+                    "debate(s) — writing partial artifact and exiting cleanly",
+                    len(debates),
+                )
+            else:
+                logger.warning(
+                    "boardroom: %.0f-minute deadline reached after %d debate(s) — writing partial artifact",
+                    max_minutes,
+                    len(debates),
+                )
             break
         gender = (match.get("gender") or "M").upper()
         gender = "F" if gender in ("F", "WOMEN", "W") else "M"
@@ -360,7 +431,7 @@ def build(
             away_form=_team_form(con, match.get("away_team", ""), gender, match.get("match_date", "")),
             recent_miss=miss_cache.get(gender),
         )
-        entry = generate_debate(provider, bundle, pace=pace)
+        entry = generate_debate(provider, bundle, pace=pace, guard=guard)
         if entry is None:
             dropped += 1
             continue
