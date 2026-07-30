@@ -122,10 +122,12 @@ def fetch_frontend_teams(competition_id: str) -> List[Dict[str, str]]:
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
         data = json.load(resp)
+    # Conference/group-split leagues (MLS: Eastern + Western) put each group in
+    # its own child; reading only children[0] silently drops half the league.
     children = data.get("children") or []
-    entries = (
-        children[0].get("standings", {}).get("entries", []) if children else []
-    )
+    entries: List[dict] = []
+    for child in children:
+        entries.extend(child.get("standings", {}).get("entries", []) or [])
     teams: List[Dict[str, str]] = []
     for entry in entries:
         team = entry.get("team") or {}
