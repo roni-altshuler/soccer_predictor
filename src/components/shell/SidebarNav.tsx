@@ -14,6 +14,7 @@ import {
   Info,
   Medal,
   Newspaper,
+  Radio,
   TrendingUp,
   Trophy,
   Users,
@@ -39,6 +40,7 @@ const GROUPS: NavGroup[] = [
     title: 'Scores',
     items: [
       { href: '/', label: 'Matches', icon: Activity },
+      { href: '/live', label: 'Live', icon: Radio, accent: 'ai' },
       { href: '/upcoming', label: 'Fixtures', icon: CalendarDays },
       { href: '/world-cup', label: 'World Cup', icon: Globe },
       { href: '/leagues', label: 'Leagues', icon: Trophy },

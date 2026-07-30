@@ -14,6 +14,7 @@ import {
   Info,
   Medal,
   Newspaper,
+  Radio,
   TrendingUp,
   Trophy,
   UserRound,
@@ -37,6 +38,7 @@ import { useCommandPalette } from '@/store/commandPaletteStore'
 
 const PAGES = [
   { href: '/', label: 'Matches', icon: Activity, hint: 'Scores + fixtures' },
+  { href: '/live', label: 'Live Intelligence', icon: Radio, hint: 'Live win probability + the model read', accent: 'ai' as const },
   { href: '/upcoming', label: 'Fixtures', icon: CalendarDays, hint: 'Upcoming schedule' },
   { href: '/leagues', label: 'Leagues', icon: Trophy, hint: 'Browse competitions' },
   { href: '/world-cup', label: 'World Cup', icon: Globe2, hint: 'Tournament hub' },

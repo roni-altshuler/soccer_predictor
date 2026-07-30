@@ -998,3 +998,49 @@ h1, h2, h3, h4, h5, h6 {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Live Intelligence (flagship live surface) ─────────────────────────────
+   Scoped cinematic treatment for /live. This is the one surface where the
+   "tasteful AI-accent glow" is intentional — built on tokens so it stays quiet
+   in light mode, gains atmosphere in dark, and respects reduced-motion. */
+
+/* Hero band — a soft cyan/green intelligence wash over an elevated card. */
+.live-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background:
+    radial-gradient(90% 130% at 10% -20%, color-mix(in srgb, var(--accent-ai) 14%, transparent), transparent 60%),
+    radial-gradient(80% 130% at 100% 0%, color-mix(in srgb, var(--accent-primary) 9%, transparent), transparent 55%),
+    linear-gradient(160deg, color-mix(in srgb, var(--card-bg) 88%, white 12%), var(--card-bg));
+  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
+}
+.dark .live-hero {
+  background:
+    radial-gradient(90% 130% at 10% -20%, color-mix(in srgb, var(--accent-ai) 20%, transparent), transparent 60%),
+    radial-gradient(80% 130% at 100% 0%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 55%),
+    linear-gradient(160deg, color-mix(in srgb, var(--card-bg) 92%, white 8%), var(--card-bg));
+}
+
+/* Featured spotlight — persistent, restrained AI glow (no hover required). */
+.live-featured {
+  box-shadow: var(--shadow-lg), 0 0 42px -14px color-mix(in srgb, var(--accent-ai) 32%, transparent);
+}
+
+/* Corner aura behind the featured card content. */
+.live-aura::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--accent-ai) 10%, transparent), transparent 55%),
+    radial-gradient(70% 90% at 100% 100%, color-mix(in srgb, var(--accent-primary) 8%, transparent), transparent 55%);
+}
+.live-aura > * {
+  position: relative;
+  z-index: 1;
+}

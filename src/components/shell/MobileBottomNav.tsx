@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   Brain,
-  Globe,
+  Radio,
   Search,
   TrendingUp,
 } from 'lucide-react'
@@ -25,9 +25,7 @@ type Item = {
 
 const ITEMS: Item[] = [
   { href: '/', label: 'Matches', icon: Activity },
-  // Tournament-period slot — swap back to { href: '/matches', label:
-  // 'Leagues', icon: Trophy } after the 2026 final on July 19.
-  { href: '/world-cup', label: 'World Cup', icon: Globe },
+  { href: '/live', label: 'Live', icon: Radio, accent: 'ai' },
   { action: 'palette', label: 'Search', icon: Search },
   { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
