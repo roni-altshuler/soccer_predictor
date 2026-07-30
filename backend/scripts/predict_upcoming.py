@@ -172,6 +172,16 @@ _DC_MODELS: Optional[Dict] = None
 _DC_SERVED_LEAGUES: Optional[set] = None
 _DC_PARAMS_PATH = Path(__file__).resolve().parents[2] / "backend" / "data" / "dixon_coles_params.json"
 
+# Women's leagues serve under their ESPN slug (usa.nwsl, eng.w.1) while the
+# warehouse, DC params and policy key them by competition_id (usa.1.w, eng.1.w).
+# Reuse the single source of truth so DC actually matches them at serve time —
+# men's slugs already equal their competition_id, so this is identity for them.
+try:
+    from backend.services.data.espn_loader import WOMEN_COMPETITIONS as _WOMEN_COMPS
+    _ESPN_TO_COMPETITION = {c["espn_id"]: c["competition_id"] for c in _WOMEN_COMPS}
+except Exception:  # pragma: no cover - defensive
+    _ESPN_TO_COMPETITION = {}
+
 
 def _get_dc_models() -> Dict:
     """Lazily load committed Dixon-Coles models keyed by competition id."""
@@ -224,9 +234,10 @@ def _predict_dixon_coles(league_key: str, home: str, away: str) -> Optional[Dict
     """Serve a fixture with the per-league Dixon-Coles model when the policy
     selects it; otherwise return None so the caller falls through to the neural
     or legacy path."""
-    if not league_key or league_key not in _dc_served_leagues():
+    dc_key = _ESPN_TO_COMPETITION.get(league_key, league_key)
+    if not dc_key or dc_key not in _dc_served_leagues():
         return None
-    model = _get_dc_models().get(league_key)
+    model = _get_dc_models().get(dc_key)
     if model is None:
         return None
     try:

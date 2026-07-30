@@ -93,3 +93,27 @@ def test_gates_are_conservative():
     # A regression guard on the constants the safety argument rests on.
     assert GATES["min_backtest_matches"] >= 30
     assert 0.0 <= GATES["floor_tolerance"] <= 0.03
+
+
+def test_womens_leagues_resolve_to_dc_served_ids():
+    """Guard the id-resolution bug: women's leagues serve under their ESPN slug
+    (usa.nwsl, eng.w.1) but the policy/params key them by competition_id
+    (usa.1.w, eng.1.w). Without the normalization, DC silently never serves them."""
+    import json
+    from pathlib import Path
+
+    from backend.services.data.espn_loader import WOMEN_COMPETITIONS
+
+    espn_to_comp = {c["espn_id"]: c["competition_id"] for c in WOMEN_COMPETITIONS}
+    assert espn_to_comp.get("usa.nwsl") == "usa.1.w"
+    assert espn_to_comp.get("eng.w.1") == "eng.1.w"
+
+    policy_path = Path(__file__).resolve().parents[2] / "backend/data/models/model_selection.json"
+    policy = json.loads(policy_path.read_text())
+    dc_served = {
+        k for k, v in policy.get("league_decisions", {}).items()
+        if isinstance(v, dict) and v.get("decision") == "dixon_coles"
+    }
+    # The serving keys must map to competition_ids the policy actually serves DC on.
+    assert espn_to_comp["usa.nwsl"] in dc_served
+    assert espn_to_comp["eng.w.1"] in dc_served
