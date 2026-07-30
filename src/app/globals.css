@@ -124,6 +124,12 @@
   --elev-2: var(--card-bg);
   --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
   --hairline-bright: color-mix(in srgb, white 14%, transparent);
+
+  /* Ambient page wash (Matchday v4) — kept faint in light mode. */
+  --ambient-primary: color-mix(in srgb, var(--accent-primary) 4%, transparent);
+  --ambient-ai: color-mix(in srgb, var(--accent-ai) 3%, transparent);
+  /* Lifted-panel top highlight — the premium "glass edge" on cards. */
+  --panel-top-hl: color-mix(in srgb, white 55%, transparent);
   /* Team-tint hero gradient — match-detail / cards override --team-tint-home
      & --team-tint-away inline to paint a broadcast-style header. */
   --team-header-gradient: linear-gradient(
@@ -223,6 +229,11 @@
   --elev-2: var(--card-bg);
   --hairline: color-mix(in srgb, var(--border-color) 80%, transparent);
   --hairline-bright: rgba(255, 255, 255, 0.07);
+
+  /* Ambient wash — a touch stronger in dark for real atmosphere, still quiet. */
+  --ambient-primary: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+  --ambient-ai: color-mix(in srgb, var(--accent-ai) 7%, transparent);
+  --panel-top-hl: rgba(255, 255, 255, 0.07);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -230,9 +241,16 @@
    ──────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
-  /* Matchday v3: flat neutral page surface — structure comes from hairlines
-     and surface steps, not ambient color washes. */
+  /* Matchday v4 "Intelligence" — a whisper-quiet atmospheric wash (a green
+     pitch cast + a cyan AI cast, both a few % over the base) gives the page
+     real depth without the neon bloom v3 rightly removed. Fixed so it reads as
+     ambient light, not content. Restrained enough to stay legible on data. */
   background-color: var(--background);
+  background-image:
+    radial-gradient(120% 70% at 50% -8%, var(--ambient-primary), transparent 58%),
+    radial-gradient(90% 55% at 100% 0%, var(--ambient-ai), transparent 52%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text-primary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
@@ -261,10 +279,10 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 90%, white 10%), var(--card-bg));
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
   transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
-.fm-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); }
+.fm-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md), inset 0 1px 0 0 var(--panel-top-hl); }
 
 .fm-card-pop {
   background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 90%, white 10%), var(--card-bg));
@@ -284,7 +302,7 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(170deg, color-mix(in srgb, var(--card-bg) 92%, white 8%), var(--card-bg));
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
 }
 
 .fm-hero {
