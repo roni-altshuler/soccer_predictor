@@ -124,6 +124,12 @@ jobs:
           python -m backend.scripts.build_justice
           python -m backend.scripts.build_event_coverage
           python -m backend.scripts.train_dixon_coles
+          # Gate Dixon-Coles into the per-league serving policy: it takes over a
+          # league only where it clears the always-home floor AND beats the
+          # incumbent net (torch-free — pure NumPy, so it runs here). This is
+          # what stops a parity league (MLS/NWSL) from being served a model that
+          # loses to picking the home team.
+          python -m backend.scripts.build_statistical_selection
           python -m backend.scripts.build_sim_priors
           python -m backend.scripts.build_match2vec
           # Torch-free by design: re-uses the committed kernel's weights and
@@ -159,6 +165,7 @@ jobs:
 
           git add backend/data/rarity/ backend/data/justice/ \
                   backend/data/events/ backend/data/dixon_coles_params.json \
+                  backend/data/models/model_selection.json \
                   backend/data/sim_priors.json backend/data/match2vec/ \
                   backend/data/engine/
 

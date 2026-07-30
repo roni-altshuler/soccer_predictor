@@ -162,6 +162,99 @@ def _predict_neural_with_policy(registry, league_key: str, features: np.ndarray)
 
     return None, None, "elo_poisson", None
 
+
+# ── Dixon-Coles statistical serving (per-league, policy-gated) ──
+# For leagues where the nets can't beat "always pick home" (parity-heavy leagues
+# with a strong home advantage — MLS, NWSL), the benchmark-gated policy routes
+# to the per-competition Dixon-Coles model, which encodes home advantage and
+# per-team attack/defence directly. See build_statistical_selection.py.
+_DC_MODELS: Optional[Dict] = None
+_DC_SERVED_LEAGUES: Optional[set] = None
+_DC_PARAMS_PATH = Path(__file__).resolve().parents[2] / "backend" / "data" / "dixon_coles_params.json"
+
+
+def _get_dc_models() -> Dict:
+    """Lazily load committed Dixon-Coles models keyed by competition id."""
+    global _DC_MODELS
+    if _DC_MODELS is None:
+        try:
+            from backend.services.prediction.dixon_coles import DixonColesModel
+            data = json.loads(_DC_PARAMS_PATH.read_text(encoding="utf-8"))
+            _DC_MODELS = {
+                cid: DixonColesModel.from_dict(entry)
+                for cid, entry in (data.get("competitions") or {}).items()
+            }
+        except Exception as e:
+            logger.warning(f"Dixon-Coles params unavailable: {e}")
+            _DC_MODELS = {}
+    return _DC_MODELS
+
+
+def _dc_served_leagues() -> set:
+    """League keys whose serving-policy decision is Dixon-Coles."""
+    global _DC_SERVED_LEAGUES
+    if _DC_SERVED_LEAGUES is None:
+        policy = _get_model_selection_policy()
+        decisions = policy.get("league_decisions", {}) if isinstance(policy, dict) else {}
+        _DC_SERVED_LEAGUES = {
+            k for k, v in decisions.items()
+            if isinstance(v, dict) and v.get("decision") == "dixon_coles"
+        }
+    return _DC_SERVED_LEAGUES
+
+
+def _dc_resolve_team(model, name: str) -> str:
+    """Map a feed team name to a name the DC model knows (best-effort).
+
+    The DC params are fit from the same ESPN-sourced warehouse the feed uses, so
+    exact hits are the norm; a normalized fallback catches accent/casing drift.
+    An unseen team cold-starts on a neutral rating (home-advantage driven) rather
+    than crashing — the honest behaviour for a just-promoted side.
+    """
+    if model.knows_team(name):
+        return name
+    norm = _normalize_team_name(name)
+    for known in model.teams:
+        if _normalize_team_name(known) == norm:
+            return known
+    return name
+
+
+def _predict_dixon_coles(league_key: str, home: str, away: str) -> Optional[Dict]:
+    """Serve a fixture with the per-league Dixon-Coles model when the policy
+    selects it; otherwise return None so the caller falls through to the neural
+    or legacy path."""
+    if not league_key or league_key not in _dc_served_leagues():
+        return None
+    model = _get_dc_models().get(league_key)
+    if model is None:
+        return None
+    try:
+        pred = model.predict(_dc_resolve_team(model, home), _dc_resolve_team(model, away))
+    except Exception as e:
+        logger.debug(f"Dixon-Coles prediction failed for {league_key}: {e}")
+        return None
+    # argmax scoreline from the joint score matrix (tau-corrected, not raw xG).
+    matrix = pred["score_matrix"]
+    best_i = best_j = 0
+    best_p = -1.0
+    for i, row in enumerate(matrix):
+        for j, p in enumerate(row):
+            if p > best_p:
+                best_p, best_i, best_j = float(p), i, j
+    return {
+        "probs": {
+            "home_win": round(float(pred["p_home"]), 4),
+            "draw": round(float(pred["p_draw"]), 4),
+            "away_win": round(float(pred["p_away"]), 4),
+        },
+        "home_xg": float(pred["lambda_home"]),
+        "away_xg": float(pred["lambda_away"]),
+        "predicted_scoreline": f"{best_i}-{best_j}",
+        "model_used": "dixon_coles_v1",
+    }
+
+
 # Same leagues as the seed script. Keys are ESPN scoreboard league IDs.
 LEAGUES = {
     "eng.1": "Premier League",
@@ -1148,6 +1241,10 @@ async def predict_upcoming(days_ahead: int = 14):
         # Get league results for real features
         league_results = league_results_map.get(espn_id, [])
 
+        # ── Statistical (Dixon-Coles) serving — takes precedence where the
+        # policy selects it (leagues where the nets lose to the home baseline). ──
+        dc_pred = _predict_dixon_coles(league_key, m["home_team"], m["away_team"])
+
         # ── Baseline ELO prediction (always computed) ──
         elo_probs = elo.predict(m["home_team"], m["away_team"], league)
         pred_home_xg, pred_away_xg = elo.predict_goals(m["home_team"], m["away_team"], league)
@@ -1160,15 +1257,15 @@ async def predict_upcoming(days_ahead: int = 14):
             match_date=m.get("date", ""),
         )
 
-        # ── Unified multi-task model (preferred engine) ──
-        unified = _predict_unified(m, espn_id, gender)
+        # ── Unified multi-task model (preferred engine, unless DC serves) ──
+        unified = None if dc_pred is not None else _predict_unified(m, espn_id, gender)
         if unified is not None:
             unified_leagues_used.add(league)
 
-        # Upgrade candidates only ever move legacy -> unified. If the
-        # unified model can't score this fixture either, keep the
-        # existing record untouched.
-        if m.get("is_upgrade") and unified is None:
+        # Upgrade candidates only ever move legacy -> a real model. If neither
+        # DC nor the unified model can score this fixture, keep the existing
+        # record untouched.
+        if m.get("is_upgrade") and unified is None and dc_pred is None:
             continue
 
         # ── Neural model prediction (legacy fallback, when available) ──
@@ -1180,7 +1277,7 @@ async def predict_upcoming(days_ahead: int = 14):
         model_selection_meta = None
         model_used = "elo_poisson"
 
-        if unified is None and registry and league_key:
+        if unified is None and dc_pred is None and registry and league_key:
             nn_probs, nn_goals, model_used, model_selection_meta = _predict_neural_with_policy(
                 registry,
                 league_key,
@@ -1190,7 +1287,10 @@ async def predict_upcoming(days_ahead: int = 14):
                 nn_leagues_used.add(league)
 
         # ── Blend predictions ──
-        if unified is not None:
+        if dc_pred is not None:
+            probs = dc_pred["probs"]
+            model_used = dc_pred["model_used"]
+        elif unified is not None:
             probs = unified["probs"]
             model_used = unified["model_used"]
         elif nn_probs is not None:
@@ -1220,7 +1320,10 @@ async def predict_upcoming(days_ahead: int = 14):
         else:
             probs = elo_probs
 
-        if unified is not None:
+        if dc_pred is not None:
+            final_home_xg = dc_pred["home_xg"]
+            final_away_xg = dc_pred["away_xg"]
+        elif unified is not None:
             final_home_xg = unified["home_xg"]
             final_away_xg = unified["away_xg"]
         elif nn_goals is not None:
@@ -1231,7 +1334,9 @@ async def predict_upcoming(days_ahead: int = 14):
             final_home_xg = pred_home_xg
             final_away_xg = pred_away_xg
 
-        if unified is not None:
+        if dc_pred is not None:
+            pred_scoreline = dc_pred["predicted_scoreline"]
+        elif unified is not None:
             # PMF argmax, not rounded xG — the real scoreline product.
             pred_scoreline = unified["predicted_scoreline"]
         else:

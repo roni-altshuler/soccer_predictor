@@ -776,6 +776,25 @@ async def train_all_models(
                     },
                     challenger_eval,
                 )
+                # Preserve statistical (Dixon-Coles) serving decisions: this
+                # regen only ranks the neural candidates, but some leagues are
+                # served by a benchmark-gated Dixon-Coles model (see
+                # build_statistical_selection). Without this they'd silently
+                # revert to a net until the next daily selection pass re-applied
+                # them. The daily pass still re-validates them against the floor.
+                if MODEL_SELECTION_FILE.exists():
+                    try:
+                        with open(MODEL_SELECTION_FILE) as _pf:
+                            _prev = json.load(_pf)
+                        _prev_dec = _prev.get("league_decisions", {})
+                        _new_dec = promotion_policy.setdefault("league_decisions", {})
+                        for _lg, _d in _prev_dec.items():
+                            if isinstance(_d, dict) and _d.get("decision") == "dixon_coles":
+                                _new_dec[_lg] = _d
+                        if "statistical_selection" in _prev:
+                            promotion_policy["statistical_selection"] = _prev["statistical_selection"]
+                    except (OSError, ValueError):
+                        pass
                 MODEL_SELECTION_FILE.parent.mkdir(parents=True, exist_ok=True)
                 with open(MODEL_SELECTION_FILE, "w") as f:
                     json.dump(promotion_policy, f, indent=2)

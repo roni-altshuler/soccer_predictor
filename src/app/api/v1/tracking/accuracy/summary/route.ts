@@ -15,6 +15,7 @@ interface Prediction {
   away_team: string
   league: string
   match_date: string
+  model_used?: string | null
   predicted_home_win: number
   predicted_draw: number
   predicted_away_win: number
@@ -230,6 +231,14 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
   }
 }
 
+// The headline reflects the models we serve today; the retired ELO-Poisson
+// fallback (replaced by the unified net + per-league Dixon-Coles) is excluded so
+// its settled calls don't drag the number. Kept in sync with the accuracy route.
+function isRetiredModel(model?: string | null): boolean {
+  const m = (model || '').toLowerCase()
+  return m.includes('elo') || m.includes('poisson')
+}
+
 function loadAllPredictions(): Prediction[] {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return []
@@ -246,7 +255,7 @@ function loadAllPredictions(): Prediction[] {
     }
   }
 
-  return all
+  return all.filter(p => !isRetiredModel(p.model_used))
 }
 
 export async function GET() {

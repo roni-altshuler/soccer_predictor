@@ -202,8 +202,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--competitions",
         nargs="+",
-        default=["eng.1", "esp.1", "usa.1.w"],
-        help="Competition ids to fit (default: eng.1 esp.1 usa.1.w)",
+        # Club leagues with stable team pools and a real home advantage — the
+        # setting where a per-competition Dixon-Coles fit is trustworthy. This
+        # spans the leagues in season during the European summer break (MLS
+        # usa.1, NWSL usa.1.w, eng.1.w) and the majors for when they restart.
+        # Continental cups and one-off tournaments (uefa.*, fifa.world) are
+        # deliberately excluded: their team pools rotate and DC would fit on
+        # too few matches per team — those stay with the cross-league model.
+        default=[
+            "eng.1", "esp.1", "ger.1", "ita.1", "fra.1", "ned.1", "por.1",
+            "usa.1", "usa.1.w", "eng.1.w",
+        ],
+        help="Competition ids to fit (default: the club leagues listed in code)",
     )
     parser.add_argument(
         "--seasons",

@@ -8,6 +8,7 @@ interface CompletedPrediction {
   league: string
   match_date: string
   gender?: 'M' | 'F' | null
+  model_used?: string | null
   confidence: number
   predicted_home_win: number
   predicted_draw: number
@@ -26,6 +27,18 @@ interface PredictionFile {
 function normalizeConfidence(value: number): number {
   if (!Number.isFinite(value)) return 0
   return value > 1 ? value / 100 : value
+}
+
+// "How accurate is the AI" should reflect the models we actually serve today —
+// not a retired one. The legacy ELO-Poisson fallback was replaced by the
+// unified net and the per-league Dixon-Coles models; its settled predictions
+// are kept in the record files but excluded from the headline accuracy. A
+// record with no model tag is left in: those pre-date tagging and track the
+// net's own accuracy, so dropping them would shrink the sample without changing
+// the story.
+function isRetiredModel(model?: string | null): boolean {
+  const m = (model || '').toLowerCase()
+  return m.includes('elo') || m.includes('poisson')
 }
 
 function loadAll() {
@@ -61,7 +74,7 @@ export async function GET(request: NextRequest) {
   const wantedGender = gender === 'F' || gender === 'M' ? gender : null
 
   // Total includes pending; completed only those with an actual outcome.
-  let pool = loadAll()
+  let pool = loadAll().filter((p) => !isRetiredModel(p.model_used))
   if (wantedGender) {
     pool = pool.filter((p) => (p.gender || 'M').toString().toUpperCase() === wantedGender)
   }
