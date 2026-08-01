@@ -73,12 +73,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage the artifacts the orchestrator produces. Model binaries
-          # under backend/data/models/ are typically gitignored — try anyway.
+          # Stage the artifacts the orchestrator produces. Model binaries under
+          # backend/data/models/ stay gitignored; the serving policy is the one
+          # committed file there (see .gitignore) so it needs no mask.
           git add backend/data/diagnostics/ || true
           git add backend/data/training_results.json || true
-          git add backend/data/models/model_selection.json || true
-          git add backend/data/models/ || true
+          git add backend/data/models/model_selection.json
 
           if git diff --cached --quiet; then
             echo "No continuous-training artifacts changed"

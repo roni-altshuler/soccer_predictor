@@ -63,7 +63,11 @@ htmlcov/
 *.pkl
 *.pt
 backend/data/historical/
-backend/data/models/
+# Model binaries stay out; the per-league serving policy is a committed
+# artifact (Vercel reads it) and must NOT be ignored — `git add` on a tracked
+# file inside an ignored directory exits 1 and killed the daily backfill job.
+backend/data/models/*
+!backend/data/models/model_selection.json
 backend/data/warehouse.sqlite
 backend/data/warehouse.sqlite-journal
 backend/data/warehouse.sqlite-wal

@@ -69,8 +69,13 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 - ◐ Live win probability v2 — engine kernel drives live/in-progress win chance
   (derives a live anchor, recomputes every 30s from minute+score+reds, base
   rate shown alongside; honest fallback when unanchored). *Shipped 2026-07-19.*
-  Remaining: widen beyond the 3 fitted leagues (PL/La Liga/NWSL); conformal
-  interval band (needs a per-state calibration artifact — not faked meanwhile).
+  Widened from the 3 fitted leagues to **10** + conference-split roster fix
+  (`810ab96`, 2026-07-30). Dixon-Coles now also serves women's leagues at
+  runtime (`df8ed04`) and takes over any league where the nets lose to the
+  home baseline (`4c9b7c5`). Remaining: conformal interval band (needs a
+  per-state calibration artifact — not faked meanwhile).
+- ☑ **Live Intelligence surface** — `/live` flagship page (featured match +
+  live rail, gender-threaded, engine win-prob driven). *Shipped 2026-07-30.*
 - ☑ Match-state embeddings (match2vec) + similar-matches rail — deterministic
   timeline vectors (team-identity-free) over all covered matches, committed
   index, "matches that unfolded like this one" on finished-match pages;
@@ -112,6 +117,12 @@ holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped
 
 ## Phase 3 — The Theater (18 months+)
 
+- ✕ **3D momentum-wave reconstruction — REVERTED 2026-07-21 (`5addb8f`).** The
+  prototype below was backed out; `/reconstructions` no longer exists. What
+  survives on `main` is `src/components/theater/` (`MatchTheater` + `field`/
+  `projection`/`scene`, unit-tested with honesty gates) — **built but mounted
+  on zero pages** after the match-page removal in `0205078`. Either wire it or
+  delete it; leaving tested dead code is the worst of both. Original entry:
 - ◐ **3D momentum-wave reconstruction — PROTOTYPE 2026-07-19, unlinked.** The
   user's real Instagram reference: thousands of match events → a sweeping 3D
   momentum landscape (time × pitch-third × attacking threat, home green/up vs
