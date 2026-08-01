@@ -9,7 +9,7 @@ import {
   tryConsume,
 } from '@/lib/ask/llm'
 import { normalizeQuestion, parseQuestion, type DeterministicParse } from '@/lib/ask/parse'
-import { EXAMPLE_QUESTIONS } from '@/lib/ask/schema'
+import { EXAMPLE_QUESTIONS, normalizeIntent } from '@/lib/ask/schema'
 import type { AskResponse, AskSource } from '@/lib/ask/types'
 
 /**
@@ -56,6 +56,30 @@ export async function POST(request: NextRequest) {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'expected JSON body { question }' }, { status: 400 })
+  }
+
+  // Companion path: the page already knows the state, so there is nothing to
+  // parse. Skipping the model here is not an optimisation — an intent derived
+  // from the match on screen is strictly better evidence than one recovered
+  // from a sentence about it. Deterministic, instant, and immune to quota.
+  const rawIntent = (body as { intent?: unknown })?.intent
+  if (rawIntent !== undefined) {
+    const intent = normalizeIntent(rawIntent as Record<string, unknown>)
+    if (!intent) {
+      return NextResponse.json({ error: 'intent did not resolve to a valid state' }, { status: 400 })
+    }
+    const { answer, chartSpec, provenance } = computeAnswer(intent)
+    const echoed = (body as { question?: unknown })?.question
+    return json({
+      supported: true,
+      source: 'context',
+      question: typeof echoed === 'string' ? normalizeQuestion(echoed) : '',
+      intent,
+      answer,
+      chartSpec,
+      provenance,
+      examples: EXAMPLES,
+    })
   }
 
   const raw = (body as { question?: unknown })?.question
