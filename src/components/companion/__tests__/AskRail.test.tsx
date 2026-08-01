@@ -48,9 +48,11 @@ describe('AskRail — subject', () => {
     expect(screen.getByText('Arsenal v Chelsea')).toBeInTheDocument()
   })
 
-  it('falls back to the product name with no subject', () => {
+  it('invites a subject rather than echoing the product name back', () => {
+    // "Ask Pitchverse" over "Pitchverse" reads as a bug, not a heading.
     renderRail(null)
-    expect(screen.getByText('Pitchverse')).toBeInTheDocument()
+    expect(screen.getByText('Open a match to ask about it')).toBeInTheDocument()
+    expect(screen.queryByText('Pitchverse')).not.toBeInTheDocument()
   })
 })
 

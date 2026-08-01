@@ -91,7 +91,7 @@ export function AskRail() {
         )}
       >
         <RailHeader
-          subject={contextLabel(context)}
+          subject={context.kind === 'global' ? null : contextLabel(context)}
           onClose={() => setOpen(false)}
         />
         <div className="space-y-6 p-4">
@@ -130,7 +130,12 @@ export function AskRail() {
   )
 }
 
-function RailHeader({ subject, onClose }: { subject: string; onClose: () => void }) {
+/**
+ * `subject` is null with no page subject. Echoing the product name back under
+ * its own eyebrow ("Ask Pitchverse" / "Pitchverse") reads as a bug, so the
+ * global case gets the standing invitation instead.
+ */
+function RailHeader({ subject, onClose }: { subject: string | null; onClose: () => void }) {
   return (
     <header
       className={cn(
@@ -142,7 +147,16 @@ function RailHeader({ subject, onClose }: { subject: string; onClose: () => void
         <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
           {RAIL_LABEL}
         </p>
-        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{subject}</p>
+        <p
+          className={cn(
+            'truncate text-sm',
+            subject
+              ? 'font-semibold text-[var(--text-primary)]'
+              : 'text-[var(--text-secondary)]'
+          )}
+        >
+          {subject ?? 'Open a match to ask about it'}
+        </p>
       </div>
       <button
         type="button"

@@ -44,19 +44,19 @@ const accents: LeagueAccent[] = [
   { competitionId: 'por.1', displayName: 'Primeira Liga', shortName: 'Liga PT', country: 'Portugal', countryCode: 'PT', gender: 'M', accent: '#006a3d', accentBg: 'rgba(0, 106, 61, 0.12)', flag: '🇵🇹', logoUrl: ESPN_LOGO(14), matchesPerSeason: 34 },
   { competitionId: 'usa.1', displayName: 'MLS', shortName: 'MLS', country: 'USA', countryCode: 'US', gender: 'M', accent: '#1a1f2c', accentBg: 'rgba(26, 31, 44, 0.14)', flag: '🇺🇸', logoUrl: ESPN_LOGO(19), matchesPerSeason: 34 },
   // UEFA + FIFA tournaments
-  { competitionId: 'uefa.champions', displayName: 'UEFA Champions League', shortName: 'UCL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#0a1c47', accentBg: 'rgba(10, 28, 71, 0.14)', flag: '🇪🇺' },
-  { competitionId: 'uefa.europa', displayName: 'UEFA Europa League', shortName: 'UEL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#ff6900', accentBg: 'rgba(255, 105, 0, 0.12)', flag: '🇪🇺' },
-  { competitionId: 'uefa.europa.conf', displayName: 'UEFA Conference League', shortName: 'UECL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#00d647', accentBg: 'rgba(0, 214, 71, 0.12)', flag: '🇪🇺' },
-  { competitionId: 'fifa.world', displayName: 'FIFA World Cup', shortName: 'World Cup', country: 'World', countryCode: 'EARTH', gender: 'M', accent: '#5a32a3', accentBg: 'rgba(90, 50, 163, 0.12)', flag: '🌍' },
-  { competitionId: 'uefa.euro', displayName: 'UEFA European Championship', shortName: 'Euros', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#1a4b8c', accentBg: 'rgba(26, 75, 140, 0.14)', flag: '🇪🇺' },
-  { competitionId: 'conmebol.america', displayName: 'Copa América', shortName: 'Copa América', country: 'South America', countryCode: 'SA', gender: 'M', accent: '#10708f', accentBg: 'rgba(16, 112, 143, 0.12)', flag: '🌎' },
+  { competitionId: 'uefa.champions', displayName: 'UEFA Champions League', shortName: 'UCL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#0a1c47', accentBg: 'rgba(10, 28, 71, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2) },
+  { competitionId: 'uefa.europa', displayName: 'UEFA Europa League', shortName: 'UEL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#ff6900', accentBg: 'rgba(255, 105, 0, 0.12)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2310) },
+  { competitionId: 'uefa.europa.conf', displayName: 'UEFA Conference League', shortName: 'UECL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#00d647', accentBg: 'rgba(0, 214, 71, 0.12)', flag: '🇪🇺', logoUrl: ESPN_LOGO(20296) },
+  { competitionId: 'fifa.world', displayName: 'FIFA World Cup', shortName: 'World Cup', country: 'World', countryCode: 'EARTH', gender: 'M', accent: '#5a32a3', accentBg: 'rgba(90, 50, 163, 0.12)', flag: '🌍', logoUrl: ESPN_LOGO(4) },
+  { competitionId: 'uefa.euro', displayName: 'UEFA European Championship', shortName: 'Euros', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#1a4b8c', accentBg: 'rgba(26, 75, 140, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(74) },
+  { competitionId: 'conmebol.america', displayName: 'Copa América', shortName: 'Copa América', country: 'South America', countryCode: 'SA', gender: 'M', accent: '#10708f', accentBg: 'rgba(16, 112, 143, 0.12)', flag: '🌎', logoUrl: ESPN_LOGO(83) },
 
   // Women's universe — same teal/magenta family as men's parents where applicable.
-  { competitionId: 'eng.1.w', displayName: "FA Women's Super League", shortName: 'WSL', country: 'England', countryCode: 'ENG', gender: 'F', accent: '#c10078', accentBg: 'rgba(193, 0, 120, 0.12)', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { competitionId: 'usa.1.w', displayName: 'NWSL', shortName: 'NWSL', country: 'USA', countryCode: 'US', gender: 'F', accent: '#00a651', accentBg: 'rgba(0, 166, 81, 0.12)', flag: '🇺🇸' },
-  { competitionId: 'uefa.champions.w', displayName: "UEFA Women's Champions League", shortName: 'UWCL', country: 'Europe', countryCode: 'EU', gender: 'F', accent: '#3e0a78', accentBg: 'rgba(62, 10, 120, 0.16)', flag: '🇪🇺' },
-  { competitionId: 'uefa.euro.w', displayName: "UEFA Women's European Championship", shortName: 'WEuros', country: 'Europe', countryCode: 'EU', gender: 'F', accent: '#1e6e9c', accentBg: 'rgba(30, 110, 156, 0.14)', flag: '🇪🇺' },
-  { competitionId: 'fifa.world.w', displayName: "FIFA Women's World Cup", shortName: 'WWC', country: 'World', countryCode: 'EARTH', gender: 'F', accent: '#7d2b8a', accentBg: 'rgba(125, 43, 138, 0.14)', flag: '🌍' },
+  { competitionId: 'eng.1.w', displayName: "FA Women's Super League", shortName: 'WSL', country: 'England', countryCode: 'ENG', gender: 'F', accent: '#c10078', accentBg: 'rgba(193, 0, 120, 0.12)', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', logoUrl: ESPN_LOGO(2314) },
+  { competitionId: 'usa.1.w', displayName: 'NWSL', shortName: 'NWSL', country: 'USA', countryCode: 'US', gender: 'F', accent: '#00a651', accentBg: 'rgba(0, 166, 81, 0.12)', flag: '🇺🇸', logoUrl: ESPN_LOGO(2323) },
+  { competitionId: 'uefa.champions.w', displayName: "UEFA Women's Champions League", shortName: 'UWCL', country: 'Europe', countryCode: 'EU', gender: 'F', accent: '#3e0a78', accentBg: 'rgba(62, 10, 120, 0.16)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2408) },
+  { competitionId: 'uefa.euro.w', displayName: "UEFA Women's European Championship", shortName: 'WEuros', country: 'Europe', countryCode: 'EU', gender: 'F', accent: '#1e6e9c', accentBg: 'rgba(30, 110, 156, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2381) },
+  { competitionId: 'fifa.world.w', displayName: "FIFA Women's World Cup", shortName: 'WWC', country: 'World', countryCode: 'EARTH', gender: 'F', accent: '#7d2b8a', accentBg: 'rgba(125, 43, 138, 0.14)', flag: '🌍', logoUrl: ESPN_LOGO(60) },
 ]
 
 const byCompetitionId = new Map<string, LeagueAccent>(
