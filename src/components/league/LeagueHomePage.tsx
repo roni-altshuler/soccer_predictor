@@ -18,7 +18,7 @@ import type { FixtureOverrideSelection } from '@/components/simulator/WhatIfLab'
 import { fetchLeagueTeamMeta, type TeamMeta } from '@/components/simulator/shared'
 import type { LeagueSimulationResult } from '@/lib/api'
 
-import { ProbBar, SectionHeader, StatusChip, TeamBadge } from '@/components/primitives'
+import { LeagueMark, ProbBar, SectionHeader, StatusChip, TeamBadge } from '@/components/primitives'
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
@@ -878,15 +878,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
 
           <div className="flex items-center gap-3">
             {leagueLogo ? (
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--muted-bg)]/60">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={leagueLogo}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-8 w-8 object-contain"
-                />
-              </span>
+              <LeagueMark league={leagueAccent.competitionId} size="lg" />
             ) : (
               <span
                 aria-hidden

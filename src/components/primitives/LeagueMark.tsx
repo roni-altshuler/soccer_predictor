@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils'
  */
 
 const SIZES = {
+  /** Inline density — section headers and chips, which are a 32-40px line. */
+  xs: { box: 'h-5 w-5 rounded', img: 'h-3.5 w-3.5', icon: 'h-3 w-3' },
   sm: { box: 'h-7 w-7 rounded-md', img: 'h-4 w-4', icon: 'h-3.5 w-3.5' },
   md: { box: 'h-9 w-9 rounded-lg', img: 'h-6 w-6', icon: 'h-4 w-4' },
   lg: { box: 'h-11 w-11 rounded-xl', img: 'h-7 w-7', icon: 'h-5 w-5' },

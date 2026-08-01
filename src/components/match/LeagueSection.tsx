@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronRight, Trophy } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
 import { MatchRow, type MatchRowMatch } from '@/components/match/MatchRow'
+import { LeagueMark } from '@/components/primitives'
 import { Badge } from '@/components/ui/badge'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
@@ -97,13 +98,9 @@ export function LeagueSection({
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2.5} />
         )}
-        {/* Flat league identity (v3): small real logo + name, no pill chrome. */}
-        {accent.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={accent.logoUrl} alt="" className="h-4 w-4 shrink-0 object-contain" aria-hidden="true" />
-        ) : (
-          <Trophy className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden="true" />
-        )}
+        {/* Flat league identity (v3): small real logo + name, no pill chrome.
+            Seated on a light plate so dark marks stay legible — see LeagueMark. */}
+        <LeagueMark league={accent.competitionId} size="xs" />
         <span className="truncate text-[12.5px] font-semibold text-[var(--text-primary)]">
           {accent.competitionId !== 'unknown' ? accent.displayName : leagueName}
         </span>

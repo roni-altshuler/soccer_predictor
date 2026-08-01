@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
 
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
+
+import { LeagueMark } from './LeagueMark'
 
 interface LeagueChipProps {
   /** Competition id (used for accent + crest mapping). */
@@ -23,21 +24,6 @@ interface LeagueChipProps {
 }
 
 /**
- * ESPN league-logo numeric ids for competitions where a crest is trivially
- * available. Anything not listed falls back to an accent-tinted monogram.
- */
-const ESPN_LEAGUE_LOGO: Record<string, number> = {
-  'eng.1': 23,
-  'esp.1': 15,
-  'ita.1': 12,
-  'ger.1': 10,
-  'fra.1': 9,
-  'ned.1': 11,
-  'por.1': 14,
-  'usa.1': 19,
-}
-
-/**
  * LeagueChip — a league pill with crest (or accent-tinted monogram) + name.
  * No emoji. Renders as a <Link> when `href` is set, a <button> when `onClick`
  * is set, else a static <span>. Active state gets an accent ring + faint
@@ -53,38 +39,26 @@ export function LeagueChip({
   className,
 }: LeagueChipProps) {
   const accent = getLeagueAccent(leagueId ?? name)
-  const logoId = leagueId ? ESPN_LEAGUE_LOGO[leagueId] : undefined
-  const crestUrl =
-    logoId != null
-      ? `https://a.espncdn.com/i/leaguelogos/soccer/500/${logoId}.png`
-      : undefined
 
-  const [crestFailed, setCrestFailed] = useState(false)
-  const showCrest = crestUrl && !crestFailed
-
-  const mark = showCrest ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={crestUrl}
-      alt=""
-      width={16}
-      height={16}
-      className="h-4 w-4 shrink-0 object-contain"
-      loading="lazy"
-      onError={() => setCrestFailed(true)}
-    />
-  ) : (
-    <span
-      aria-hidden
-      className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-bold uppercase"
-      style={{
-        backgroundColor: `color-mix(in srgb, ${accent.accent} 22%, transparent)`,
-        color: accent.accent,
-      }}
-    >
-      {name.trim().charAt(0).toUpperCase() || '?'}
-    </span>
-  )
+  // The crest comes from `leagueAccents` — the single source of truth. This
+  // component used to keep its own ESPN id table, which had drifted to cover
+  // only the eight domestic leagues, so every cup and every women's
+  // competition silently fell back to a monogram.
+  const mark =
+    accent.competitionId !== 'unknown' && accent.logoUrl ? (
+      <LeagueMark league={accent.competitionId} size="xs" />
+    ) : (
+      <span
+        aria-hidden
+        className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-bold uppercase"
+        style={{
+          backgroundColor: `color-mix(in srgb, ${accent.accent} 22%, transparent)`,
+          color: accent.accent,
+        }}
+      >
+        {name.trim().charAt(0).toUpperCase() || '?'}
+      </span>
+    )
 
   const baseClass = cn(
     'inline-flex min-h-[40px] items-center gap-2 rounded-full border font-semibold transition-colors',

@@ -2,6 +2,7 @@
 
 import { Trophy } from 'lucide-react'
 
+import { LeagueMark } from '@/components/primitives'
 import { Badge } from '@/components/ui/badge'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
@@ -42,8 +43,11 @@ export function LeagueBadge({ league, size = 'sm', className, showGender = false
       }}
       title={`${accent.displayName}${accent.country ? ` · ${accent.country}` : ''}`}
     >
+      {/* The pill's accent tint is only ~12% opaque, so a dark competition mark
+          would still be lost on it — seat it on the same light plate the rest
+          of the app uses. */}
       {accent.logoUrl ? (
-        <img src={accent.logoUrl} alt="" className={cn(size === 'md' ? 'h-4 w-4' : 'h-3 w-3')} aria-hidden="true" />
+        <LeagueMark league={accent.competitionId} size="xs" />
       ) : (
         <Trophy className={cn(size === 'md' ? 'h-3.5 w-3.5' : 'h-2.5 w-2.5')} strokeWidth={2.5} />
       )}
