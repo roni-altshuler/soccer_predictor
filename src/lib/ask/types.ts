@@ -62,8 +62,15 @@ export interface AskProvenance {
   stateKey: string
 }
 
-/** How the intent was obtained. `cap` = LLM was available but rate/quota-gated. */
-export type AskSource = 'llm' | 'deterministic' | 'cap'
+/**
+ * How the intent was obtained.
+ * - `llm`           — the model mapped free text onto the schema.
+ * - `deterministic` — the built-in pattern parser resolved it, no key needed.
+ * - `cap`           — a key exists but the call was rate/quota-gated; parsed locally.
+ * - `context`       — the page supplied the state directly (Companion), so there
+ *                     was nothing to parse and no model was consulted at all.
+ */
+export type AskSource = 'llm' | 'deterministic' | 'cap' | 'context'
 
 export interface AskResponse {
   supported: boolean
