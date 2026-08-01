@@ -61,7 +61,7 @@ describe('AskRail — contextual questions', () => {
     renderRail(makeMatch())
     expect(screen.getByText('About this match')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: "Can Arsenal come back from 2 down at 60'?" })
+      screen.getByRole('button', { name: "Can Arsenal come back from 2 goals down at 60'?" })
     ).toBeInTheDocument()
   })
 

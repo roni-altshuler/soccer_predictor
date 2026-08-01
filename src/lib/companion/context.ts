@@ -19,6 +19,8 @@
 
 import type { Universe } from '@/lib/ask/schema'
 
+import type { MatchAnchor } from './anchor'
+
 /** Where a match is in its lifecycle. Mirrors the app's status vocabulary. */
 export type MatchPhase = 'scheduled' | 'live' | 'finished'
 
@@ -46,6 +48,13 @@ export interface MatchContext {
    * 35,463 matches and the rest have no timeline anywhere.
    */
   hasEventCoverage: boolean
+  /**
+   * For finished matches: the moment worth asking about (see `anchor.ts`).
+   * Full time has no question in it, so without this a finished match gets no
+   * contextual prompts at all. Null when the match passed through no state
+   * worth quoting — a goalless draw, or no verified timeline.
+   */
+  anchor?: MatchAnchor | null
 }
 
 export interface TeamContext {
@@ -137,6 +146,18 @@ export function contextLabel(ctx: CompanionContext): string {
  * degrade the Companion to its universal capabilities, never break the page
  * it is mounted on.
  */
+/** An anchor is all-or-nothing: a partial one would ask about a fake state. */
+function normalizeAnchor(raw: unknown): MatchAnchor | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  const fin = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  const minute = fin(o.minute)
+  const homeScore = fin(o.homeScore)
+  const awayScore = fin(o.awayScore)
+  if (minute === null || homeScore === null || awayScore === null) return null
+  return { minute, homeScore, awayScore }
+}
+
 export function normalizeContext(raw: unknown): CompanionContext {
   if (!raw || typeof raw !== 'object') return GLOBAL_CONTEXT
   const o = raw as Record<string, unknown>
@@ -166,6 +187,7 @@ export function normalizeContext(raw: unknown): CompanionContext {
         awayScore: num(o.awayScore),
         minute: num(o.minute),
         hasEventCoverage: o.hasEventCoverage === true,
+        anchor: normalizeAnchor(o.anchor),
       }
     }
     case 'team': {

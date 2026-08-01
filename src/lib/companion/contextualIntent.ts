@@ -54,7 +54,48 @@ export function diffFor(ctx: MatchContext, side: Side): number {
 }
 
 /**
- * The context's question, or `null` when the context cannot honestly pose one.
+ * The state a question is asked about: the live state, an explicitly scrubbed
+ * minute, or a finished match's anchor. Returns the match context rewritten to
+ * carry that state's score, so `trailingSide`/`diffFor` speak about the moment
+ * being asked about rather than about full time.
+ *
+ * Shared by `deriveAskIntent` and `contextualPrompts` on purpose — when they
+ * resolved the state separately, the prompt labels named the wrong team on any
+ * finished match whose lead had changed hands.
+ */
+export function resolveState(
+  ctx: CompanionContext,
+  opts: Pick<DeriveOptions, 'minute'> = {}
+): { at: MatchContext; minute: number } | null {
+  if (!isMatch(ctx)) return null
+
+  let minuteRaw: number | null
+  let state: { homeScore: number | null; awayScore: number | null }
+
+  if (opts.minute !== undefined) {
+    minuteRaw = opts.minute
+    state = ctx
+  } else if (ctx.phase === 'live') {
+    minuteRaw = ctx.minute
+    state = ctx
+  } else if (ctx.phase === 'finished' && ctx.anchor) {
+    minuteRaw = ctx.anchor.minute
+    state = ctx.anchor
+  } else {
+    return null
+  }
+
+  if (state.homeScore === null || state.awayScore === null) return null
+  if (minuteRaw === null || !Number.isFinite(minuteRaw)) return null
+
+  return {
+    at: { ...ctx, homeScore: state.homeScore, awayScore: state.awayScore },
+    minute: minuteRaw,
+  }
+}
+
+/**
+ * The context's question, or `null` when it cannot honestly pose one.
  *
  * Two gates, both deliberate:
  *
@@ -62,28 +103,26 @@ export function diffFor(ctx: MatchContext, side: Side): number {
  *    often does a side at 0-0 in minute 0 win" is a league base rate wearing a
  *    match's clothes, and presenting it as being *about this match* would be a
  *    small lie told confidently.
- * 2. **A finished match needs an explicit minute.** At full time the outcome
- *    is known, so a terminal-state rarity query answers a question nobody has
- *    — the interesting question is always "at minute M, what were the odds?".
- *    Callers scrubbing a finished timeline pass `minute`; without one we
- *    decline rather than return something vacuous.
+ * 2. **A finished match is asked about at an earlier moment.** At full time
+ *    the outcome is known, so a terminal-state query answers nothing. The
+ *    question worth asking is "at minute M, what were the odds?" — the
+ *    caller's `minute` when scrubbing, otherwise the context's `anchor` (see
+ *    `anchor.ts`). With neither, decline rather than say something vacuous.
  */
 export function deriveAskIntent(
   ctx: CompanionContext,
   opts: DeriveOptions = {}
 ): AskIntent | null {
-  if (!isMatch(ctx)) return null
-  if (ctx.homeScore === null || ctx.awayScore === null) return null
+  const resolved = resolveState(ctx, opts)
+  if (!resolved) return null
 
-  const minuteRaw = opts.minute ?? (ctx.phase === 'live' ? ctx.minute : null)
-  if (minuteRaw === null || !Number.isFinite(minuteRaw)) return null
-
-  const side: Side = opts.side === 'trailing' || !opts.side ? trailingSide(ctx) : opts.side
+  const { at, minute } = resolved
+  const side: Side = opts.side === 'trailing' || !opts.side ? trailingSide(at) : opts.side
 
   return {
-    gender: ctx.gender,
-    diff: clampDiff(diffFor(ctx, side)),
-    minute: minuteBucket(minuteRaw),
+    gender: at.gender,
+    diff: clampDiff(diffFor(at, side)),
+    minute: minuteBucket(minute),
     outcome: opts.outcome ?? 'win',
   }
 }
@@ -91,6 +130,25 @@ export function deriveAskIntent(
 /** The team name the derived intent speaks for. */
 export function subjectOf(ctx: MatchContext, side: Side): string {
   return side === 'home' ? ctx.home : ctx.away
+}
+
+/**
+ * Possessive form. Club names ending in s take a bare apostrophe — "Vancouver
+ * Whitecaps' lead", never "Whitecaps's" — and a great many of them do
+ * (Whitecaps, Rangers, Wolves, Spurs, Timbers, Sounders, Rovers).
+ */
+export function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`
+}
+
+/** How football says a deficit: "a goal down", not "1 down". */
+function deficitPhrase(goals: number): string {
+  return goals === 1 ? 'a goal down' : `${goals} goals down`
+}
+
+/** Likewise for a lead: "a one-goal lead" reads worse than "a goal ahead". */
+function leadPhrase(goals: number): string {
+  return goals === 1 ? 'one-goal' : `${goals}-goal`
 }
 
 /**
@@ -114,26 +172,39 @@ export function contextualPrompts(
   ctx: CompanionContext,
   opts: { minute?: number } = {}
 ): ContextualPrompt[] {
-  if (!isMatch(ctx)) return []
+  const resolved = resolveState(ctx, { minute: opts.minute })
+  if (!resolved) return []
 
   const base = deriveAskIntent(ctx, { side: 'trailing', minute: opts.minute })
   if (!base) return []
 
-  const side = trailingSide(ctx)
-  const subject = subjectOf(ctx, side)
-  const other = subjectOf(ctx, side === 'home' ? 'away' : 'home')
+  // Name the teams from the RESOLVED state, not from full time — on a finished
+  // match the anchor's leader is often not the eventual winner, which is
+  // precisely what makes it worth asking about.
+  const { at } = resolved
+  const side = trailingSide(at)
+  const subject = subjectOf(at, side)
+  const other = subjectOf(at, side === 'home' ? 'away' : 'home')
   const behind = Math.abs(base.diff)
   const prompts: ContextualPrompt[] = []
+
+  // A finished match is being asked about in the past; a live one is a
+  // question about right now. Same counts either way — only the tense moves.
+  const over = at.phase === 'finished'
 
   if (base.diff < 0) {
     prompts.push({
       id: 'comeback',
-      label: `Can ${subject} come back from ${behind} down at ${base.minute}'?`,
+      label: over
+        ? `${subject} were ${deficitPhrase(behind)} at ${base.minute}' — how often does that end in a win?`
+        : `Can ${subject} come back from ${deficitPhrase(behind)} at ${base.minute}'?`,
       intent: { ...base, outcome: 'win' },
     })
     prompts.push({
       id: 'rescue-point',
-      label: `Do sides in ${subject}'s position at least take a point?`,
+      label: over
+        ? 'Do sides in that position at least take a point?'
+        : `Do sides in ${possessive(subject)} position at least take a point?`,
       intent: { ...base, outcome: 'avoid_defeat' },
     })
     // The same state seen from the other bench. `base` is always derived from
@@ -142,12 +213,14 @@ export function contextualPrompts(
     // unreachable code in a registry whose value is that everything in it is real.
     prompts.push({
       id: 'hold-on',
-      label: `How safe is ${other}'s ${behind}-goal lead?`,
+      label: over
+        ? `How often did ${possessive(other)} ${leadPhrase(behind)} lead hold?`
+        : `How safe is ${possessive(other)} ${leadPhrase(behind)} lead?`,
       intent: { ...base, diff: clampDiff(-base.diff), outcome: 'win' },
     })
     prompts.push({
       id: 'throw-away',
-      label: `How often is a ${behind}-goal lead at ${base.minute}' thrown away?`,
+      label: `How often is a ${leadPhrase(behind)} lead at ${base.minute}' thrown away?`,
       intent: { ...base, diff: clampDiff(-base.diff), outcome: 'loss' },
     })
   } else {

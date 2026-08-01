@@ -17,6 +17,7 @@ import {
 import {
   WHATIF_TAB,
   WHATIF_TAB_LABEL,
+  buildForkTimeline,
   isForkEligible,
   type WhatIfTab,
 } from '@/components/match/detail/counterfactual'
@@ -39,6 +40,7 @@ import { ClubColorBar } from '@/components/motion'
 import { FlagBadge, TeamBadge } from '@/components/primitives'
 import { MatchDetailSkeleton } from '@/components/skeletons'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
+import { pickAnchor, statesBeforeGoals } from '@/lib/companion/anchor'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -187,6 +189,25 @@ export default function MatchDetailPage() {
     [match, isFinished]
   )
   const whatIfAvailable = useForkAvailability(whatIfEligible && match ? match.id : null)
+
+  // The moment this finished match is worth asking about. Full time has no
+  // question in it, so without an anchor the Companion has nothing to offer on
+  // the pages fans open most. Reuses the fork timeline rather than re-deriving
+  // goal order — that reconstruction already credits own goals and refuses to
+  // exist unless the events reproduce the final score.
+  const askAnchor = useMemo(() => {
+    if (!match || !isFinished || match.home_score === null || match.away_score === null) return null
+    const timeline = buildForkTimeline(match)
+    if (!timeline) return null
+    const states = statesBeforeGoals(
+      timeline.map((beat) => ({
+        minute: beat.minute,
+        home: beat.scoreAfter.home,
+        away: beat.scoreAfter.away,
+      }))
+    )
+    return pickAnchor(states, match.home_score, match.away_score)
+  }, [match, isFinished])
   // Ref to the match hero <section>. StickyScoreBar uses an IntersectionObserver
   // on this to know when to slide down into view.
   const heroRef = useRef<HTMLElement | null>(null)
@@ -476,6 +497,7 @@ export default function MatchDetailPage() {
           awayScore: match.away_score,
           minute: match.minute ?? null,
           hasEventCoverage: whatIfEligible,
+          anchor: askAnchor,
         }
       : null
   )
