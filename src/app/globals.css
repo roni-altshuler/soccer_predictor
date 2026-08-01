@@ -82,6 +82,8 @@
   --shell-sidebar-w-expanded: 220px;
   --shell-topbar-h: 56px;
   --shell-content-max: 1160px;
+  /* Ask Pitchverse rail: docked from xl, slide-over below it. */
+  --shell-rail-w: 340px;
 
   /* Glass / surface mix tokens used by the shell (flat in v3) */
   --glass-bg: rgba(255, 255, 255, 0.94);

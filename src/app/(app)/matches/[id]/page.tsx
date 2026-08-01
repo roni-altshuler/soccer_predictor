@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'lucide-react'
 
+import { useCompanionSubject } from '@/components/companion/CompanionProvider'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { adaptMatchPrediction } from '@/components/match/detail/adaptPrediction'
@@ -454,6 +455,30 @@ export default function MatchDetailPage() {
     const interval = setInterval(() => setRefreshKey((key) => key + 1), 30_000)
     return () => clearInterval(interval)
   }, [isLive])
+
+  // Publish this match to the Ask Pitchverse rail for as long as the page is
+  // mounted. Must sit above the loading/not-found returns below — a hook after
+  // an early return is a hook that sometimes does not run.
+  //
+  // Coverage mirrors the fork gate, the strictest of the timeline gates, so the
+  // rail can never offer a timeline capability this page would itself refuse.
+  useCompanionSubject(
+    match
+      ? {
+          kind: 'match',
+          matchId: String(matchId),
+          home: match.home_team,
+          away: match.away_team,
+          competitionId: match.leagueId ?? leagueId ?? '',
+          gender: genderParam,
+          phase: isFinished ? 'finished' : isLive ? 'live' : 'scheduled',
+          homeScore: match.home_score,
+          awayScore: match.away_score,
+          minute: match.minute ?? null,
+          hasEventCoverage: whatIfEligible,
+        }
+      : null
+  )
 
   if (loading) {
     return (
