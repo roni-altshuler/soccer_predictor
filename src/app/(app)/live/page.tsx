@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useCompanionSubject } from '@/components/companion/CompanionProvider'
 import { AnimatedNumber } from '@/components/motion'
 import { FeaturedMatch } from '@/components/live/FeaturedMatch'
 import { LiveRailCard } from '@/components/live/LiveRailCard'
@@ -26,6 +27,13 @@ function sortUpcoming(a: LiveMatch, b: LiveMatch): number {
 
 export default function LivePage() {
   const { asQueryParam } = useGenderQuery()
+
+  // Tell the Ask Pitchverse rail the fan is on the live hub, in this universe.
+  // The live board has no single subject, so the rail offers its live-aware
+  // capabilities (everything running now, the model read alongside) rather than
+  // the global default — and follows the gender toggle without a page reload.
+  useCompanionSubject({ kind: 'live', gender: asQueryParam })
+
   const [data, setData] = useState<TodaysMatchesResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)

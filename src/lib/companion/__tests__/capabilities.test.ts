@@ -15,7 +15,7 @@ import {
   groupedCapabilitiesFor,
   VERBS,
 } from '../capabilities'
-import { GLOBAL_CONTEXT, type CompanionContext, type MatchContext } from '../context'
+import { contextLabel, GLOBAL_CONTEXT, type CompanionContext, type MatchContext } from '../context'
 
 function makeMatch(over: Partial<MatchContext> = {}): MatchContext {
   return {
@@ -62,6 +62,24 @@ describe('registry hygiene', () => {
         expect(c.href(ctx)).toMatch(/^\//)
       }
     }
+  })
+})
+
+describe('live hub context', () => {
+  const LIVE: CompanionContext = { kind: 'live', gender: 'M' }
+
+  it('labels the subject "Live now"', () => {
+    expect(contextLabel(LIVE)).toBe('Live now')
+  })
+
+  it('offers the live hub and keeps the global-tier browse, without match-only gates', () => {
+    const available = ids(LIVE)
+    expect(available).toContain('live-hub')
+    // Parity with the global default: publishing a live context must not lose it.
+    expect(available).toContain('universe-browser')
+    // No single match → no score state, no timeline.
+    expect(available).not.toContain('rarity')
+    expect(available).not.toContain('fork-match')
   })
 })
 

@@ -209,7 +209,10 @@ export const CAPABILITIES: Capability[] = [
     verb: 'counterfact',
     label: 'Browse the other seasons',
     hint: 'Walk the simulated seasons where it went differently',
-    availableIn: (ctx) => isLeague(ctx) || ctx.kind === 'global',
+    // The live hub, like global, has no single subject — a fine place to offer
+    // the seasons that went differently, so publishing a live context never
+    // loses this next to the global default.
+    availableIn: (ctx) => isLeague(ctx) || ctx.kind === 'global' || ctx.kind === 'live',
     href: (ctx) =>
       isLeague(ctx) ? `/leagues/${encodeURIComponent(ctx.competitionId)}` : '/simulator',
   },
