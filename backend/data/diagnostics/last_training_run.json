@@ -1,8 +1,8 @@
 {
-  "ran_at": "2026-07-26T07:10:21.507736Z",
-  "status": "regression_handled",
+  "ran_at": "2026-08-02T07:07:15.890413Z",
+  "status": "regression_held_back",
   "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
-  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-07-26.json",
+  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-08-02.json",
   "retrained_leagues": [
     "eng.1",
     "esp.1",
@@ -21,5 +21,5 @@
   ],
   "n_wins": 6,
   "n_regressions": 3,
-  "n_held_back": 0
+  "n_held_back": 3
 }
