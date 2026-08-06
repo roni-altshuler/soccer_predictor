@@ -2100,7 +2100,7 @@
   "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
   "statistical_selection": {
     "policy_version": "2026-07-30",
-    "generated_at": "2026-08-05T11:11:52+00:00",
+    "generated_at": "2026-08-06T11:11:19+00:00",
     "gates": {
       "min_backtest_matches": 60,
       "floor_tolerance": 0.01,
