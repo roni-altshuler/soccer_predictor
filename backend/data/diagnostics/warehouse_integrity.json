@@ -1,0 +1,168 @@
+{
+  "generated_at": "2026-08-08T16:26:53.479559+00:00",
+  "database": "/home/roaltshu/code/soccer_predictor/backend/data/warehouse.sqlite",
+  "strict": false,
+  "passed": true,
+  "checks": [
+    {
+      "name": "season_team_counts",
+      "passed": true,
+      "detail": "77/77 league-seasons have the right team count",
+      "failures": [],
+      "data": {
+        "checked": 77,
+        "bad": 0
+      }
+    },
+    {
+      "name": "duplicate_fixtures",
+      "passed": true,
+      "detail": "no duplicate fixtures",
+      "failures": [],
+      "data": {
+        "groups": 0,
+        "excess_rows": 0,
+        "by_competition": {}
+      }
+    },
+    {
+      "name": "split_identities",
+      "passed": true,
+      "detail": "no split team identities",
+      "failures": [],
+      "data": {
+        "count": 0
+      }
+    },
+    {
+      "name": "orphan_teams",
+      "passed": true,
+      "detail": "no zero-match teams",
+      "failures": [],
+      "data": {
+        "count": 0
+      }
+    },
+    {
+      "name": "date_utc_sanity",
+      "passed": true,
+      "detail": "dates parse as UTC; Wave A weekend share 77.2%; 9,002 rows (28.8%) carry no kickoff time",
+      "failures": [],
+      "data": {
+        "unparsable": 0,
+        "not_utc": 0,
+        "weekday_histogram": {
+          "0": 6969,
+          "1": 840,
+          "2": 580,
+          "3": 1287,
+          "4": 340,
+          "5": 1347,
+          "6": 7936
+        },
+        "weekend_share": 0.7723,
+        "peak_dow": 6,
+        "late_kickoff_share": 0.0005,
+        "midnight_utc_rows": 9002,
+        "midnight_utc_share": 0.2877
+      }
+    },
+    {
+      "name": "season_row_counts",
+      "passed": true,
+      "detail": "all completed league-seasons within 2% of their fixture count (2 known-truncated season(s) exempted)",
+      "failures": [],
+      "data": {
+        "bad": 0,
+        "current_season": 2025,
+        "truncated_exempt": [
+          "fra.1 2019: 279 rows \u2014 abandoned 2020-03-08 (COVID-19); Ligue 1 declared final on 279 matches",
+          "ned.1 2019: 232 rows \u2014 abandoned 2020-03-08 (COVID-19); Eredivisie declared void/final on 232 matches"
+        ]
+      }
+    },
+    {
+      "name": "season_boundaries",
+      "passed": true,
+      "detail": "no season overlaps its predecessor",
+      "failures": [],
+      "data": {
+        "count": 0
+      }
+    },
+    {
+      "name": "coverage",
+      "passed": true,
+      "detail": "match_events is empty",
+      "failures": [],
+      "data": {
+        "matches": 31289,
+        "matches.home_score": {
+          "n": 31289,
+          "share": 1.0
+        },
+        "matches.date_utc": {
+          "n": 31289,
+          "share": 1.0
+        },
+        "matches.odds_home": {
+          "n": 25742,
+          "share": 0.8227
+        },
+        "matches.referee_id": {
+          "n": 4287,
+          "share": 0.137
+        },
+        "matches.home_xg": {
+          "n": 19296,
+          "share": 0.6167
+        },
+        "matches.venue": {
+          "n": 9076,
+          "share": 0.2901
+        },
+        "matches.attendance": {
+          "n": 5114,
+          "share": 0.1634
+        },
+        "weather": 12850,
+        "clubelo_ratings": 749546,
+        "referees": 144,
+        "match_events": 0,
+        "teams.venue_lat": {
+          "n": 163,
+          "share": 0.2621
+        },
+        "referee_by_competition": {
+          "eng.1": {
+            "n": 4092,
+            "share": 0.9993
+          },
+          "esp.1": {
+            "n": 72,
+            "share": 0.0177
+          },
+          "fra.1": {
+            "n": 34,
+            "share": 0.009
+          },
+          "ger.1": {
+            "n": 27,
+            "share": 0.0082
+          },
+          "ita.1": {
+            "n": 62,
+            "share": 0.0152
+          }
+        }
+      }
+    },
+    {
+      "name": "referential",
+      "passed": true,
+      "detail": "all references resolve",
+      "failures": [],
+      "data": {}
+    }
+  ]
+}

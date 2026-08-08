@@ -25,6 +25,20 @@ The resolver is intentionally conservative on the fuzzy path — if a match
 isn't strong (ratio < 0.85) it inserts a new team rather than silently
 merging two clubs. A periodic audit script can surface near-duplicates so
 the user can add overrides to the YAML.
+
+Two properties this module is responsible for (both regression-guarded by
+`backend/scripts/validate_warehouse_integrity.py`):
+
+1. **YAML overrides are lazy.** Loading `team_aliases.yml` must NOT create
+   a `teams` row. It used to, which left one orphan row per YAML entry for
+   every club that never appeared in a match — 15 zero-match women's rows
+   duplicating men's `canonical_name`s, a trap for anything joining on
+   name alone. A team is now materialised the first time a real match
+   actually resolves to it.
+2. **YAML overrides beat fuzzy matching.** The override table is consulted
+   before the fuzzy pass, so a pinned spelling can never be swallowed by a
+   coincidentally similar club (football-data's "Heidenheim" scores 0.70
+   against "Hoffenheim", "Paderborn" 0.55 against "Werder Bremen").
 """
 
 from __future__ import annotations
@@ -118,10 +132,21 @@ class TeamResolver:
         self.warehouse = warehouse
         self.gender_default = gender_default
         self._cache: Dict[Tuple[str, str], int] = {}
-        self._yaml_overrides: Dict[Tuple[str, str], Tuple[str, Optional[str]]] = {}
+        # (normalised alias, gender) -> (canonical, country, [all aliases])
+        self._yaml_overrides: Dict[Tuple[str, str], Tuple[str, Optional[str], Tuple[str, ...]]] = {}
+        # (new_name, existing_name, score) for every 0.85..0.92 near-miss this
+        # resolver created a separate team for. Loaders surface these so a
+        # human can decide whether they need pinning in the YAML.
+        self.near_duplicates: List[Tuple[str, str, float]] = []
         self._load_overrides()
 
     def _load_overrides(self) -> None:
+        """Read `team_aliases.yml` into memory.
+
+        Deliberately writes NOTHING to the warehouse. Materialising a team
+        here would create a row for every pinned club whether or not it
+        ever plays a match; see the module docstring.
+        """
         if not ALIASES_FILE.exists():
             return
         try:
@@ -148,16 +173,25 @@ class TeamResolver:
             aliases = entry.get("aliases", []) or []
             if not canonical or gender not in ("M", "F"):
                 continue
-            team_id = self.warehouse.upsert_team(
-                canonical_name=canonical, gender=gender, country=country
+            spellings = tuple(
+                [canonical] + [a for a in aliases if isinstance(a, str) and a.strip()]
             )
-            self.warehouse.add_alias(canonical, team_id, gender)
-            for alias in aliases:
-                if not isinstance(alias, str):
-                    continue
-                self.warehouse.add_alias(alias, team_id, gender)
-                self._yaml_overrides[(_normalise(alias), gender)] = (canonical, country)
-            self._cache[(_normalise(canonical), gender)] = team_id
+            payload = (canonical, country, spellings)
+            # The canonical spelling resolves to itself, as does every alias.
+            for spelling in spellings:
+                self._yaml_overrides[(_normalise(spelling), gender)] = payload
+
+    def _materialise_override(
+        self, canonical: str, country: Optional[str], spellings: Tuple[str, ...], gender: str
+    ) -> int:
+        """Create the pinned team (if needed) and register all its spellings."""
+        team_id = self.warehouse.upsert_team(
+            canonical_name=canonical, gender=gender, country=country
+        )
+        for spelling in spellings:
+            self.warehouse.add_alias(spelling, team_id, gender)
+            self._cache[(_normalise(spelling), gender)] = team_id
+        return team_id
 
     def resolve(
         self,
@@ -184,7 +218,22 @@ class TeamResolver:
                 created=False,
             )
 
-        # 2. YAML override (loaded into warehouse aliases; query as alias).
+        # 2. YAML override — absolute precedence, and the only path allowed
+        #    to run before the fuzzy pass. Materialises the team on first use.
+        override = self._yaml_overrides.get(key)
+        if override is not None:
+            canonical, country_hint, spellings = override
+            team_id = self._materialise_override(
+                canonical, country or country_hint, spellings, gender
+            )
+            return TeamResolution(
+                team_id=team_id,
+                canonical_name=canonical,
+                confidence=1.0,
+                created=False,
+            )
+
+        # 3. Warehouse alias table (spellings learned on earlier passes).
         team_id = self.warehouse.find_team_id_by_alias(name, gender)
         if team_id is not None:
             self._cache[key] = team_id
@@ -195,7 +244,7 @@ class TeamResolver:
                 created=False,
             )
 
-        # 3. Try a normalised alias lookup (e.g. ESPN "Real Madrid" vs FD "Real Madrid CF").
+        # 4. Try a normalised alias lookup (e.g. ESPN "Real Madrid" vs FD "Real Madrid CF").
         team_id = self.warehouse.find_team_id_by_alias(_normalise(name), gender)
         if team_id is not None:
             self._cache[key] = team_id
@@ -207,7 +256,7 @@ class TeamResolver:
                 created=False,
             )
 
-        # 4. Fuzzy scan against existing teams of the same gender.
+        # 5. Fuzzy scan against existing teams of the same gender.
         candidates = self._fuzzy_candidates(name, gender)
         if candidates:
             best_id, best_name, best_score = candidates[0]
@@ -221,14 +270,18 @@ class TeamResolver:
                     created=False,
                 )
             if best_score >= 0.85:
-                logger.info(
-                    "Fuzzy match %r ~ %r (score=%.2f); creating new team to be safe",
+                logger.warning(
+                    "Near-duplicate team %r ~ %r (score=%.2f); creating a NEW team. "
+                    "If these are the same club, pin the spelling in "
+                    "backend/data/team_aliases.yml — an unpinned split identity "
+                    "silently halves that club's Elo/form/h2h history.",
                     name,
                     best_name,
                     best_score,
                 )
+                self.near_duplicates.append((name, best_name, best_score))
 
-        # 5. Create new team.
+        # 6. Create new team.
         team_id = self.warehouse.upsert_team(
             canonical_name=name.strip(), gender=gender, country=country
         )

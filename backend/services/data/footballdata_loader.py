@@ -20,15 +20,42 @@ Strategy
   any other source-specific data already present.
 * If no ESPN match exists (some lower leagues are FD-only), insert a
   fresh `source='fdcouk'` row.
+
+Timestamps — read this before touching `_parse_fd_date`
+-------------------------------------------------------
+football-data.co.uk's `Date` column is a **local calendar date with no
+time and no timezone** (`04/03/2026`). `HistoricalDataCollector` turns it
+into a naive `datetime` at local midnight.
+
+Calling `.astimezone(timezone.utc)` on a naive datetime does NOT treat it
+as UTC — Python assumes it is in the *host machine's* zone and converts.
+On the Asia/Jerusalem box this warehouse was built on, every football-data
+row was therefore shifted back by 2–3 hours across midnight: a 2026-03-04
+fixture was stored as `2026-03-03T22:00:00+00:00`. That moved the calendar
+date *and* the weekday back by one day for 86% of Wave A, which is why the
+Wave A weekday histogram peaked Friday/Saturday instead of Saturday/Sunday
+and why every day-of-week feature was wrong.
+
+The date is now anchored to UTC explicitly. Where football-data also
+publishes a `Time` column (all leagues, 2019-20 season onward) we fetch it
+and convert the venue-local kickoff to a real UTC instant, so those rows
+carry a genuine kickoff rather than a midnight placeholder. Rows without a
+`Time` keep 00:00:00Z, which callers must read as "date known, kickoff
+unknown" — never as a real midnight kickoff.
 """
 
 from __future__ import annotations
 
 import asyncio
+import csv
+import io
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Set, Tuple
+from zoneinfo import ZoneInfo
+
+import httpx
 
 from backend.services.data.team_resolver import TeamResolver
 from backend.services.data.warehouse import MatchRow, Warehouse
@@ -51,6 +78,34 @@ FD_TO_COMPETITION_ID: Dict[str, str] = {
     "primeira_liga": "por.1",
 }
 
+# Venue-local timezone for each domestic league. football-data's `Time`
+# column is local wall-clock at the ground, so we need this to recover a
+# true UTC instant (and to get BST/CEST transitions right).
+FD_LEAGUE_TIMEZONE: Dict[str, str] = {
+    "premier_league": "Europe/London",
+    "la_liga": "Europe/Madrid",
+    "bundesliga": "Europe/Berlin",
+    "serie_a": "Europe/Rome",
+    "ligue_1": "Europe/Paris",
+    "eredivisie": "Europe/Amsterdam",
+    "primeira_liga": "Europe/Lisbon",
+}
+
+# Clubs whose home ground is NOT in their league's mainland timezone.
+# Getting these wrong would put the kickoff an hour out, so they are named
+# explicitly rather than absorbed into the league default. Keyed by the
+# football-data spelling of the HOME team.
+FD_VENUE_TIMEZONE_OVERRIDES: Dict[Tuple[str, str], str] = {
+    ("la_liga", "Las Palmas"): "Atlantic/Canary",
+    ("la_liga", "Tenerife"): "Atlantic/Canary",
+    ("primeira_liga", "Maritimo"): "Atlantic/Madeira",
+    ("primeira_liga", "Nacional"): "Atlantic/Madeira",
+    ("primeira_liga", "Uniao Madeira"): "Atlantic/Madeira",
+    ("primeira_liga", "Santa Clara"): "Atlantic/Azores",
+}
+
+FD_CSV_URL = "https://www.football-data.co.uk/mmz4281/{season_code}/{code}.csv"
+
 
 @dataclass
 class LoadStats:
@@ -60,6 +115,8 @@ class LoadStats:
     enriched: int  # existing rows updated
     inserted: int  # rows created because no ESPN match was found
     error: Optional[str] = None
+    kickoffs_applied: int = 0  # rows given a real UTC kickoff from `Time`
+    duplicates_skipped: int = 0  # same fixture already present under other ids
 
 
 def _to_float(v) -> Optional[float]:
@@ -77,10 +134,92 @@ def _to_int(v) -> Optional[int]:
 
 
 def _parse_fd_date(date_iso: str) -> Optional[datetime]:
+    """football-data's local calendar date → a UTC-anchored datetime.
+
+    A naive input is anchored to UTC, NOT converted from the host
+    machine's local zone — see the module docstring for the bug that
+    caused. An input that already carries an offset is converted normally.
+    """
     try:
-        return datetime.fromisoformat(date_iso.replace("Z", "+00:00")).astimezone(timezone.utc)
+        parsed = datetime.fromisoformat(str(date_iso).replace("Z", "+00:00"))
     except (ValueError, TypeError):
         return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _season_code(season: int) -> str:
+    """2019 → '1920' (football-data's split-season directory name)."""
+    return f"{season % 100:02d}{(season + 1) % 100:02d}"
+
+
+def _venue_timezone(league: str, home_team: str) -> ZoneInfo:
+    tz_name = FD_VENUE_TIMEZONE_OVERRIDES.get(
+        (league, (home_team or "").strip())
+    ) or FD_LEAGUE_TIMEZONE.get(league)
+    return ZoneInfo(tz_name) if tz_name else ZoneInfo("UTC")
+
+
+def _combine_local_kickoff(
+    date_utc_midnight: datetime, hhmm: str, tz: ZoneInfo
+) -> Optional[datetime]:
+    """(date, 'HH:MM', venue tz) → real UTC instant, or None if unusable."""
+    try:
+        hour, minute = (int(p) for p in hhmm.strip().split(":")[:2])
+    except (ValueError, TypeError, AttributeError):
+        return None
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        return None
+    local = datetime(
+        date_utc_midnight.year, date_utc_midnight.month, date_utc_midnight.day,
+        hour, minute, tzinfo=tz,
+    )
+    return local.astimezone(timezone.utc)
+
+
+async def fetch_kickoff_times(
+    client: httpx.AsyncClient, league: str, season: int
+) -> Dict[Tuple[str, str, str], str]:
+    """(date 'YYYY-MM-DD', home, away) → local 'HH:MM' for one season file.
+
+    Returns {} when football-data publishes no `Time` column for that
+    season — it appears from 2019-20 onward and is absent before that.
+    Never raises: a missing kickoff is genuine missingness, not an error.
+    """
+    code = FOOTBALL_DATA_LEAGUES.get(league)
+    if not code:
+        return {}
+    url = FD_CSV_URL.format(season_code=_season_code(season), code=code)
+    try:
+        resp = await client.get(url, timeout=30)
+    except Exception as exc:
+        logger.debug("FD kickoff fetch failed %s/%s: %s", league, season, exc)
+        return {}
+    if resp.status_code != 200:
+        return {}
+
+    out: Dict[Tuple[str, str, str], str] = {}
+    reader = csv.DictReader(io.StringIO(resp.text))
+    if not reader.fieldnames or "Time" not in reader.fieldnames:
+        return {}
+    for row in reader:
+        raw_time = (row.get("Time") or "").strip()
+        raw_date = (row.get("Date") or "").strip()
+        home = (row.get("HomeTeam") or "").strip()
+        away = (row.get("AwayTeam") or "").strip()
+        if not raw_time or not raw_date or not home or not away:
+            continue
+        for fmt in ("%d/%m/%Y", "%d/%m/%y"):
+            try:
+                day = datetime.strptime(raw_date, fmt)
+                break
+            except ValueError:
+                day = None
+        if day is None:
+            continue
+        out[(day.strftime("%Y-%m-%d"), home, away)] = raw_time
+    return out
 
 
 def _find_existing_match(
@@ -107,6 +246,37 @@ def _find_existing_match(
             LIMIT 1
             """,
             (competition_id, home_team_id, away_team_id, lo, hi, target_date.isoformat()),
+        )
+        row = cur.fetchone()
+        return row["match_id"] if row else None
+
+
+def _find_fixture_in_season(
+    warehouse: Warehouse,
+    *,
+    competition_id: str,
+    season: int,
+    home_team_id: int,
+    away_team_id: int,
+) -> Optional[str]:
+    """Same fixture anywhere in the season, ignoring the date entirely.
+
+    The ±2-day window above is the normal path, but ESPN and football-data
+    occasionally disagree about a postponed fixture's date by more than two
+    days. Every competition this loader handles is a double round-robin, so
+    (competition, season, home, away) identifies at most one real fixture —
+    finding one here means the fixture already exists and inserting would
+    create a duplicate. This is the ingest-side uniqueness guard.
+    """
+    with warehouse._lock:  # noqa: SLF001
+        cur = warehouse._conn.execute(  # noqa: SLF001
+            """
+            SELECT match_id FROM matches
+            WHERE competition_id = ? AND season = ?
+              AND home_team_id = ? AND away_team_id = ?
+            ORDER BY date_utc ASC LIMIT 1
+            """,
+            (competition_id, season, home_team_id, away_team_id),
         )
         row = cur.fetchone()
         return row["match_id"] if row else None
@@ -206,6 +376,7 @@ async def _load_one(
     league: str,
     season: int,
     force: bool,
+    kickoffs: Optional[Dict[Tuple[str, str, str], str]] = None,
 ) -> LoadStats:
     competition_id = FD_TO_COMPETITION_ID.get(league)
     if not competition_id:
@@ -219,8 +390,13 @@ async def _load_one(
         logger.warning("FD fetch failed %s/%s: %s", competition_id, season, exc)
         return LoadStats(competition_id, season, 0, 0, 0, error=str(exc))
 
+    kickoffs = kickoffs or {}
     enriched = 0
+    kickoffs_applied = 0
+    duplicates_skipped = 0
     new_rows: List[MatchRow] = []
+    # Guard against the source file itself listing a fixture twice.
+    seen_fixtures: Set[Tuple[int, int]] = set()
 
     for raw in raw_matches:
         date_obj = _parse_fd_date(str(raw.get("date") or ""))
@@ -231,8 +407,25 @@ async def _load_one(
         if not home_name or not away_name:
             continue
 
+        # Upgrade midnight-UTC to the real kickoff where football-data
+        # publishes one (2019-20 onward). Absent → stays 00:00:00Z, meaning
+        # "date known, kickoff unknown".
+        hhmm = kickoffs.get((date_obj.strftime("%Y-%m-%d"), home_name.strip(), away_name.strip()))
+        if hhmm:
+            precise = _combine_local_kickoff(
+                date_obj, hhmm, _venue_timezone(league, home_name)
+            )
+            if precise is not None:
+                date_obj = precise
+                kickoffs_applied += 1
+
         home_id = resolver.resolve(home_name, gender="M").team_id
         away_id = resolver.resolve(away_name, gender="M").team_id
+
+        if (home_id, away_id) in seen_fixtures:
+            duplicates_skipped += 1
+            continue
+        seen_fixtures.add((home_id, away_id))
 
         ref_name = raw.get("referee")
         ref_id = warehouse.upsert_referee(ref_name) if ref_name else None
@@ -244,6 +437,19 @@ async def _load_one(
             away_team_id=away_id,
             target_date=date_obj,
         )
+        if existing_id is None:
+            # Date disagreement wider than the ±2-day window — still the
+            # same fixture. Enrich it instead of inserting a duplicate.
+            existing_id = _find_fixture_in_season(
+                warehouse,
+                competition_id=competition_id,
+                season=season,
+                home_team_id=home_id,
+                away_team_id=away_id,
+            )
+            if existing_id is not None:
+                duplicates_skipped += 1
+
         if existing_id:
             _enrich_match(warehouse, existing_id, raw, referee_id=ref_id)
             enriched += 1
@@ -268,6 +474,8 @@ async def _load_one(
         fetched=len(raw_matches),
         enriched=enriched,
         inserted=inserted,
+        kickoffs_applied=kickoffs_applied,
+        duplicates_skipped=duplicates_skipped,
     )
 
 
@@ -278,13 +486,27 @@ async def load_football_data(
     max_season: Optional[int] = None,
     leagues: Optional[Iterable[str]] = None,
     force: bool = False,
+    with_kickoff_times: bool = True,
 ) -> List[LoadStats]:
-    """Backfill football-data.co.uk odds+stats into the warehouse."""
+    """Backfill football-data.co.uk odds+stats into the warehouse.
+
+    `with_kickoff_times` fetches the raw season CSV a second time to read
+    its `Time` column (present 2019-20 onward). That is one extra small
+    HTTP GET per league-season; set it False for an offline/cached run.
+    """
     resolver = TeamResolver(warehouse, gender_default="M")
     collector = HistoricalDataCollector()
     requested = set(leagues) if leagues else None
 
     stats: List[LoadStats] = []
+    client = (
+        httpx.AsyncClient(
+            headers={"User-Agent": "SoccerPredictor/4.0 (+research)"},
+            follow_redirects=True,
+        )
+        if with_kickoff_times
+        else None
+    )
     try:
         for league, _fd_code in FOOTBALL_DATA_LEAGUES.items():
             if requested and FD_TO_COMPETITION_ID.get(league) not in requested:
@@ -294,19 +516,37 @@ async def load_football_data(
                     continue
                 if max_season is not None and season > max_season:
                     continue
+                kickoffs = (
+                    await fetch_kickoff_times(client, league, season)
+                    if client is not None
+                    else {}
+                )
                 stat = await _load_one(
                     collector, warehouse, resolver,
                     league=league, season=season, force=force,
+                    kickoffs=kickoffs,
                 )
                 stats.append(stat)
                 if stat.enriched or stat.inserted:
                     logger.info(
-                        "FD %s %s → %d enriched, %d inserted (of %d fetched)",
+                        "FD %s %s → %d enriched, %d inserted, %d kickoffs, "
+                        "%d dupes skipped (of %d fetched)",
                         stat.competition_id, season,
-                        stat.enriched, stat.inserted, stat.fetched,
+                        stat.enriched, stat.inserted, stat.kickoffs_applied,
+                        stat.duplicates_skipped, stat.fetched,
                     )
     finally:
         await collector.close()
+        if client is not None:
+            await client.aclose()
+
+    if resolver.near_duplicates:
+        logger.warning(
+            "football-data introduced %d near-duplicate team name(s) that were "
+            "NOT merged. Pin them in backend/data/team_aliases.yml: %s",
+            len(resolver.near_duplicates),
+            ", ".join(f"{n!r}~{e!r}({s:.2f})" for n, e, s in resolver.near_duplicates[:20]),
+        )
     return stats
 
 

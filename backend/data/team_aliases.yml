@@ -12,8 +12,20 @@
 #   country:   ISO 3166-1 alpha-2 (optional but useful)
 #   aliases:   list of strings exactly as sources spell them
 #
-# When this file grows, run `python -m backend.scripts.build_warehouse --refresh-aliases`
-# (or just rerun the full build) to push entries into the warehouse.
+# Entries are read into memory by every TeamResolver and consulted BEFORE
+# the fuzzy pass, so a pinned spelling always wins. Nothing here creates a
+# `teams` row on its own — a team is materialised only when a real match
+# resolves to it, which is what stopped this file leaving one zero-match
+# orphan row per pinned club.
+#
+# Adding an entry only affects matches ingested afterwards. To fold an
+# already-split club together in an existing warehouse, add it to
+# SPLIT_IDENTITIES in `backend/scripts/repair_warehouse.py` as well, then
+# re-run that script.
+#
+# `backend/scripts/validate_warehouse_integrity.py` fails the build if two
+# teams in one competition look like the same club, which is how a missing
+# entry here gets noticed.
 
 teams:
   # ---- England, Men ----
@@ -156,7 +168,7 @@ teams:
   - canonical: RB Leipzig
     gender: M
     country: DE
-    aliases: [Leipzig, RBLeipzig]
+    aliases: [Leipzig, RBLeipzig, RasenBallsport Leipzig]
   - canonical: Bayer Leverkusen
     gender: M
     country: DE
@@ -168,7 +180,7 @@ teams:
   - canonical: Borussia Monchengladbach
     gender: M
     country: DE
-    aliases: ["M'gladbach", Mönchengladbach, Bor. Mönchengladbach, Bor. Monchengladbach]
+    aliases: ["M'gladbach", Mönchengladbach, Bor. Mönchengladbach, Bor. Monchengladbach, Borussia M.Gladbach]
   - canonical: VfB Stuttgart
     gender: M
     country: DE
@@ -651,3 +663,38 @@ teams:
     gender: M
     country: PT
     aliases: [Farense]
+
+  # =====================================================================
+  # Understat spellings (added 2026-08-08)
+  #
+  # Understat's own team titles differ again from both ESPN and
+  # football-data. Each unpinned spelling below created a THIRD teams row
+  # with zero matches, so `_find_warehouse_match` had nothing to join to
+  # and that club's xG was silently dropped. Enumerated exhaustively from
+  # the 55 cached getLeagueData responses — these were the only 9 of 163
+  # Understat names that did not already resolve.
+  # =====================================================================
+  - canonical: Huesca
+    gender: M
+    country: ES
+    aliases: [SD Huesca]
+  - canonical: Hamburg SV
+    gender: M
+    country: DE
+    aliases: [Hamburger SV, Hamburg]
+  - canonical: Mainz
+    gender: M
+    country: DE
+    aliases: [Mainz 05, "1. FSV Mainz 05", FSV Mainz 05]
+  - canonical: Parma
+    gender: M
+    country: IT
+    aliases: [Parma Calcio 1913]
+  - canonical: SPAL
+    gender: M
+    country: IT
+    aliases: [SPAL 2013]
+  - canonical: Bastia
+    gender: M
+    country: FR
+    aliases: [SC Bastia]

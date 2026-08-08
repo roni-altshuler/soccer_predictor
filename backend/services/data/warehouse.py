@@ -822,6 +822,268 @@ class Warehouse:
                 (team_id, date_utc, squad_form, missing_top3, total_xg_available),
             )
 
+    # ---- venues ----
+
+    def set_team_venue(
+        self,
+        team_id: int,
+        *,
+        venue_lat: Optional[float],
+        venue_lon: Optional[float],
+        venue_indoor: bool = False,
+    ) -> None:
+        """Set (not COALESCE) a team's home-venue coordinates.
+
+        `upsert_team` only ever fills NULLs, which makes it impossible to
+        correct a wrong coordinate. The venue loader needs an authoritative
+        write, so it uses this. Passing None genuinely clears the value —
+        an unresolved venue must stay missing, never be back-filled with a
+        city centre or a neighbouring ground.
+        """
+        with self._lock, self._conn:
+            self._conn.execute(
+                """
+                UPDATE teams
+                SET venue_lat = ?, venue_lon = ?, venue_indoor = ?
+                WHERE team_id = ?
+                """,
+                (venue_lat, venue_lon, 1 if venue_indoor else 0, team_id),
+            )
+
+    # ---- integrity repair ----
+    #
+    # These exist because a warehouse built before the 2026-08-08 ingest
+    # fixes carries damage that a re-run of the loaders cannot undo on its
+    # own (rows are keyed by match_id, so a duplicate inserted under a
+    # split team identity survives any number of idempotent re-runs).
+
+    # Columns worth counting when deciding which of two duplicate rows is
+    # the "richer" one, and which get coalesced into the survivor.
+    _MERGEABLE_COLUMNS: Tuple[str, ...] = (
+        "home_score", "away_score", "phase", "referee_id",
+        "home_shots", "away_shots", "home_sot", "away_sot",
+        "home_corners", "away_corners", "home_yellows", "away_yellows",
+        "home_reds", "away_reds", "home_xg", "away_xg", "attendance",
+        "odds_home", "odds_draw", "odds_away", "odds_over_2_5", "venue",
+    )
+
+    def merge_teams(self, src_team_id: int, dst_team_id: int) -> Dict[str, int]:
+        """Repoint everything owned by `src_team_id` onto `dst_team_id`, then
+        delete the source team.
+
+        Used to heal split identities, where football-data's spelling of a
+        club created a second `teams` row and half its history landed there.
+        Does NOT deduplicate the fixtures the split produced — call
+        `merge_duplicate_fixtures()` afterwards, since repointing is exactly
+        what makes those duplicates visible.
+        """
+        if src_team_id == dst_team_id:
+            return {"matches": 0, "aliases": 0, "clubelo": 0, "player_form": 0}
+        counts: Dict[str, int] = {}
+        with self._lock, self._conn:
+            row = self._conn.execute(
+                "SELECT canonical_name, gender FROM teams WHERE team_id = ?", (src_team_id,)
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"source team {src_team_id} does not exist")
+            dst = self._conn.execute(
+                "SELECT gender FROM teams WHERE team_id = ?", (dst_team_id,)
+            ).fetchone()
+            if dst is None:
+                raise ValueError(f"destination team {dst_team_id} does not exist")
+            if dst["gender"] != row["gender"]:
+                raise ValueError(
+                    f"refusing to merge across genders: {src_team_id} is "
+                    f"{row['gender']}, {dst_team_id} is {dst['gender']}"
+                )
+
+            cur = self._conn.execute(
+                "UPDATE matches SET home_team_id = ? WHERE home_team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            moved = cur.rowcount
+            cur = self._conn.execute(
+                "UPDATE matches SET away_team_id = ? WHERE away_team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["matches"] = moved + cur.rowcount
+
+            # The old spelling becomes an alias of the surviving team so a
+            # later ingest resolves it correctly even without the YAML pin.
+            self._conn.execute(
+                "INSERT OR IGNORE INTO team_aliases(alias, gender, team_id) VALUES (?, ?, ?)",
+                (row["canonical_name"], row["gender"], dst_team_id),
+            )
+            cur = self._conn.execute(
+                "UPDATE OR IGNORE team_aliases SET team_id = ? WHERE team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["aliases"] = cur.rowcount
+            self._conn.execute("DELETE FROM team_aliases WHERE team_id = ?", (src_team_id,))
+
+            cur = self._conn.execute(
+                "UPDATE OR IGNORE clubelo_ratings SET team_id = ? WHERE team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["clubelo"] = cur.rowcount
+            self._conn.execute("DELETE FROM clubelo_ratings WHERE team_id = ?", (src_team_id,))
+
+            cur = self._conn.execute(
+                "UPDATE OR IGNORE player_form SET team_id = ? WHERE team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["player_form"] = cur.rowcount
+            self._conn.execute("DELETE FROM player_form WHERE team_id = ?", (src_team_id,))
+
+            self._conn.execute("DELETE FROM teams WHERE team_id = ?", (src_team_id,))
+        return counts
+
+    def find_duplicate_fixtures(self) -> List[Dict[str, Any]]:
+        """Groups of >1 row sharing (competition, season, home, away)."""
+        with self._lock:
+            cur = self._conn.execute(
+                """
+                SELECT competition_id, season, home_team_id, away_team_id,
+                       COUNT(*) AS n, GROUP_CONCAT(match_id, '|') AS match_ids
+                FROM matches
+                GROUP BY competition_id, season, home_team_id, away_team_id
+                HAVING n > 1
+                ORDER BY n DESC, competition_id, season
+                """
+            )
+            out = []
+            for r in cur.fetchall():
+                d = dict(r)
+                d["match_ids"] = (d.pop("match_ids") or "").split("|")
+                out.append(d)
+            return out
+
+    def merge_duplicate_fixtures(self, *, dry_run: bool = False) -> Dict[str, Any]:
+        """Collapse duplicate (competition, season, home, away) rows.
+
+        The survivor is the row with the most populated columns, tie-broken
+        toward `source='espn'` because ESPN rows carry a true UTC kickoff
+        while football-data rows only know the calendar date. Every column
+        the survivor is missing is then coalesced in from the rows being
+        dropped, so nothing (odds, referee, shots, xG) is lost — "keep the
+        richest row" is implemented as "keep one row and make it the union".
+        """
+        groups = self.find_duplicate_fixtures()
+        removed: List[str] = []
+        fields_filled = 0
+
+        for group in groups:
+            with self._lock:
+                rows = self._conn.execute(
+                    f"""
+                    SELECT match_id, source, date_utc, {", ".join(self._MERGEABLE_COLUMNS)}
+                    FROM matches
+                    WHERE competition_id = ? AND season = ?
+                      AND home_team_id = ? AND away_team_id = ?
+                    """,
+                    (
+                        group["competition_id"], group["season"],
+                        group["home_team_id"], group["away_team_id"],
+                    ),
+                ).fetchall()
+            if len(rows) < 2:
+                continue
+
+            def richness(r: sqlite3.Row) -> Tuple[int, int, str]:
+                filled = sum(1 for c in self._MERGEABLE_COLUMNS if r[c] is not None)
+                # espn wins ties: it is the only source with a real kickoff.
+                return (filled, 1 if r["source"] == "espn" else 0, r["match_id"])
+
+            ordered = sorted(rows, key=richness, reverse=True)
+            keeper, losers = ordered[0], ordered[1:]
+
+            patch: Dict[str, Any] = {}
+            for column in self._MERGEABLE_COLUMNS:
+                if keeper[column] is not None:
+                    continue
+                for loser in losers:
+                    if loser[column] is not None:
+                        patch[column] = loser[column]
+                        break
+            loser_ids = [r["match_id"] for r in losers]
+
+            if dry_run:
+                removed.extend(loser_ids)
+                fields_filled += len(patch)
+                continue
+
+            with self._lock, self._conn:
+                if patch:
+                    assignments = ", ".join(f"{c} = ?" for c in patch)
+                    self._conn.execute(
+                        f"UPDATE matches SET {assignments} WHERE match_id = ?",
+                        (*patch.values(), keeper["match_id"]),
+                    )
+                    fields_filled += len(patch)
+                placeholders = ", ".join(["?"] * len(loser_ids))
+                # Dependent rows first; match_events has no FK to cascade.
+                self._conn.execute(
+                    f"DELETE FROM match_events WHERE match_id IN ({placeholders})", loser_ids
+                )
+                self._conn.execute(
+                    f"DELETE FROM match_event_coverage WHERE match_id IN ({placeholders})",
+                    loser_ids,
+                )
+                self._conn.execute(
+                    f"DELETE FROM weather WHERE match_id IN ({placeholders})", loser_ids
+                )
+                self._conn.execute(
+                    f"DELETE FROM matches WHERE match_id IN ({placeholders})", loser_ids
+                )
+            removed.extend(loser_ids)
+
+        return {
+            "groups": len(groups),
+            "rows_removed": len(removed),
+            "fields_coalesced": fields_filled,
+            "removed_ids": removed,
+        }
+
+    def find_orphan_teams(self) -> List[Dict[str, Any]]:
+        """Teams with no match on either side."""
+        with self._lock:
+            cur = self._conn.execute(
+                """
+                SELECT t.team_id, t.canonical_name, t.gender
+                FROM teams t
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM matches m
+                    WHERE m.home_team_id = t.team_id OR m.away_team_id = t.team_id
+                )
+                ORDER BY t.team_id
+                """
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    def delete_orphan_teams(self) -> int:
+        """Remove zero-match teams (and their aliases/ratings).
+
+        These are created by eagerly materialising every `team_aliases.yml`
+        entry. The resolver no longer does that, so this is a one-off clean
+        of warehouses built before the fix.
+        """
+        orphans = [t["team_id"] for t in self.find_orphan_teams()]
+        if not orphans:
+            return 0
+        placeholders = ", ".join(["?"] * len(orphans))
+        with self._lock, self._conn:
+            self._conn.execute(
+                f"DELETE FROM team_aliases WHERE team_id IN ({placeholders})", orphans
+            )
+            self._conn.execute(
+                f"DELETE FROM clubelo_ratings WHERE team_id IN ({placeholders})", orphans
+            )
+            self._conn.execute(
+                f"DELETE FROM player_form WHERE team_id IN ({placeholders})", orphans
+            )
+            self._conn.execute(f"DELETE FROM teams WHERE team_id IN ({placeholders})", orphans)
+        return len(orphans)
+
     # ---- introspection ----
 
     def stats_by_competition(self) -> List[Dict[str, Any]]:

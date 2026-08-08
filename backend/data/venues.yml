@@ -1,0 +1,1328 @@
+# Static home-venue coordinates for Wave A clubs.
+# Generated 2026-08-08 from OpenStreetMap Nominatim; committed so builds/CI are
+# offline and reproducible. lat/lon are WGS84 decimal degrees.
+# `indoor: true` only for genuinely roofed stadiums where weather is irrelevant.
+venues:
+  - team: "Arsenal"
+    league: eng.1
+    venue: "Emirates Stadium"
+    lat: 51.55504
+    lon: -0.10840
+    indoor: false
+    source: osm
+    osm_name: "Emirates Stadium, 75, Drayton Park, Finsbury Park, London Borough of Islington, Greater London, England, N5 1BU, United Kingdom"
+  - team: "Aston Villa"
+    league: eng.1
+    venue: "Villa Park"
+    lat: 52.50913
+    lon: -1.88504
+    indoor: false
+    source: osm
+    osm_name: "Villa Park, Trinity Road, Aston, Birmingham, West Midlands, England, B6 6HE, United Kingdom"
+  - team: "Bournemouth"
+    league: eng.1
+    venue: "Vitality Stadium"
+    lat: 50.73518
+    lon: -1.83833
+    indoor: false
+    source: osm
+    osm_name: "Vitality Stadium, Middleton Gardens, Littledown, Bournemouth, Bournemouth, Christchurch and Poole, England, BH7 7AF, United Kingdom"
+  - team: "Brentford"
+    league: eng.1
+    venue: "Gtech Community Stadium"
+    lat: 51.49071
+    lon: -0.28898
+    indoor: false
+    source: osm
+    osm_name: "Gtech Community Stadium, Lionel Road South, Strand-on-the-Green, Brentford, Greater London, England, TW8 0NT, United Kingdom"
+  - team: "Brighton & Hove Albion"
+    league: eng.1
+    venue: "American Express Stadium"
+    lat: 50.86155
+    lon: -0.08369
+    indoor: false
+    source: osm
+    osm_name: "American Express Stadium, Village Way, Coldean, Brighton, Brighton and Hove, England, BN1 9BL, United Kingdom"
+  - team: "Burnley"
+    league: eng.1
+    venue: "Turf Moor"
+    lat: 53.78936
+    lon: -2.22985
+    indoor: false
+    source: osm
+    osm_name: "Turf Moor, Harry Potts Way, Pike Hill, Fulledge, Burnley, Lancashire, England, BB10 4AX, United Kingdom"
+  - team: "Cardiff City"
+    league: eng.1
+    venue: "Cardiff City Stadium"
+    lat: 51.47282
+    lon: -3.20296
+    indoor: false
+    source: osm
+    osm_name: "Cardiff City Stadium, Leckwith Road, Canton, Cardiff, Wales, CF11 8AZ, United Kingdom"
+    note: "ESPN venue was null; used the club's ground, Cardiff City Stadium (Wales)."
+  - team: "Chelsea"
+    league: eng.1
+    venue: "Stamford Bridge"
+    lat: 51.48169
+    lon: -0.19103
+    indoor: false
+    source: osm
+    osm_name: "Stamford Bridge, Britannia Gate, Walham Green, Fulham, London Borough of Hammersmith and Fulham, Greater London, England, SW6 1HD, United Kingdom"
+  - team: "Crystal Palace"
+    league: eng.1
+    venue: "Selhurst Park"
+    lat: 51.39824
+    lon: -0.08526
+    indoor: false
+    source: osm
+    osm_name: "Selhurst Park, Whitehorse Lane, Thornton Heath, London Borough of Croydon, Greater London, England, SE25 6PU, United Kingdom"
+  - team: "Everton"
+    league: eng.1
+    venue: "Goodison Park"
+    lat: 53.43869
+    lon: -2.96642
+    indoor: false
+    source: osm
+    osm_name: "Goodison Park, Goodison Road, Walton, Liverpool, Liverpool City Region, England, L4 4EL, United Kingdom"
+    note: "Goodison Park is correct for the historical corpus, but Everton moved to the Hill Dickinson Stadium (Bramley-Moore Dock, ~2.5 km north) from 2025-26. Revisit this row before using it for current-season fixtures."
+  - team: "Fulham"
+    league: eng.1
+    venue: "Craven Cottage"
+    lat: 51.47492
+    lon: -0.22174
+    indoor: false
+    source: osm
+    osm_name: "Craven Cottage, Stevenage Road, Fulham, London Borough of Hammersmith and Fulham, Greater London, England, SW6 6HH, United Kingdom"
+  - team: "Huddersfield Town"
+    league: eng.1
+    venue: "Accu Stadium"
+    lat: 53.65435
+    lon: -1.76830
+    indoor: false
+    source: osm
+    osm_name: "Accu Stadium, Stadium Way, Aspley, Huddersfield, Kirklees, West Yorkshire, England, HD1 6PG, United Kingdom"
+    note: "'Accu Stadium' is the current sponsor name of the Kirklees/John Smith's Stadium; geocoded under the OSM-known name."
+  - team: "Hull City"
+    league: eng.1
+    venue: "The MKM Stadium"
+    lat: 53.74623
+    lon: -0.36782
+    indoor: false
+    source: osm
+    osm_name: "MKM Stadium, The Circle, Avenues, Hull, Kingston upon Hull, Hull and East Yorkshire, England, HU3 6HU, United Kingdom"
+  - team: "Ipswich Town"
+    league: eng.1
+    venue: "Portman Road"
+    lat: 52.05495
+    lon: 1.14528
+    indoor: false
+    source: osm
+    osm_name: "Portman Road Stadium, Portman Road, Stoke, Ipswich, Suffolk, England, IP1 2DA, United Kingdom"
+  - team: "Leeds United"
+    league: eng.1
+    venue: "Elland Road"
+    lat: 53.77786
+    lon: -1.57218
+    indoor: false
+    source: osm
+    osm_name: "Elland Road Stadium, Elland Road, Islington, Beeston, Leeds, West Yorkshire, England, LS11 0ES, United Kingdom"
+  - team: "Leicester City"
+    league: eng.1
+    venue: "King Power Stadium"
+    lat: 52.62040
+    lon: -1.14234
+    indoor: false
+    source: osm
+    osm_name: "King Power Stadium, Filbert Way, Bede Island, Leicester, City of Leicester, England, LE2 7FL, United Kingdom"
+  - team: "Liverpool"
+    league: eng.1
+    venue: "Anfield"
+    lat: 53.43090
+    lon: -2.96097
+    indoor: false
+    source: osm
+    osm_name: "Anfield, Anfield Road, Anfield, Liverpool, Liverpool City Region, England, L4 0TH, United Kingdom"
+  - team: "Luton Town"
+    league: eng.1
+    venue: "Kenilworth Road"
+    lat: 51.88413
+    lon: -0.43167
+    indoor: false
+    source: osm
+    osm_name: "Kenilworth Road Stadium, Hatters Way, Bury Park, Luton, Borough of Luton, England, LU4 8BG, United Kingdom"
+  - team: "Manchester City"
+    league: eng.1
+    venue: "Etihad Stadium"
+    lat: 53.48314
+    lon: -2.20053
+    indoor: false
+    source: osm
+    osm_name: "Etihad Stadium, Joe Mercer Way, Bradford, Manchester, Greater Manchester, England, M11 3FF, United Kingdom"
+  - team: "Manchester United"
+    league: eng.1
+    venue: "Old Trafford"
+    lat: 53.46311
+    lon: -2.29139
+    indoor: false
+    source: osm
+    osm_name: "Old Trafford, Sir Matt Busby Way, Wharfside, Stretford, Trafford, Greater Manchester, England, M16 0RA, United Kingdom"
+  - team: "Middlesbrough"
+    league: eng.1
+    venue: "Riverside Stadium"
+    lat: 54.57831
+    lon: -1.21692
+    indoor: false
+    source: osm
+    osm_name: "Riverside stadium, The Leeway, Middlehaven, Middlesbrough, Tees Valley, England, TS3 6RS, United Kingdom"
+  - team: "Newcastle United"
+    league: eng.1
+    venue: "St. James' Park"
+    lat: 54.97547
+    lon: -1.62187
+    indoor: false
+    source: osm
+    osm_name: "St. James' Park, Barrack Road, Grainger Town, Newcastle upon Tyne, Tyne and Wear, North East, England, NE1 4ST, United Kingdom"
+  - team: "Norwich City"
+    league: eng.1
+    venue: "Carrow Road"
+    lat: 52.62203
+    lon: 1.30932
+    indoor: false
+    source: osm
+    osm_name: "Carrow Road Stadium, Koblenz Avenue, Thorpe Hamlet, Norwich, Norfolk, England, NR1 1JE, United Kingdom"
+  - team: "Nottingham Forest"
+    league: eng.1
+    venue: "The City Ground"
+    lat: 52.93994
+    lon: -1.13290
+    indoor: false
+    source: osm
+    osm_name: "The City Ground, Pavilion Road, Lady Bay, West Bridgford, Nottingham, Nottinghamshire, East Midlands, England, NG2 5FJ, United Kingdom"
+  - team: "Sheffield United"
+    league: eng.1
+    venue: "Bramall Lane"
+    lat: 53.37034
+    lon: -1.47071
+    indoor: false
+    source: osm
+    osm_name: "Bramall Lane, Moorfoot, Cultural Industries Quarter, Highfield, Sheffield, South Yorkshire, England, S2 4SU, United Kingdom"
+  - team: "Southampton"
+    league: eng.1
+    venue: "St. Mary's Stadium"
+    lat: 50.90586
+    lon: -1.39088
+    indoor: false
+    source: osm
+    osm_name: "St. Mary's Stadium, Britannia Road, Belvidere, Northam, Southampton, England, SO14 5FP, United Kingdom"
+  - team: "Stoke City"
+    league: eng.1
+    venue: "bet365 Stadium"
+    lat: 52.98834
+    lon: -2.17559
+    indoor: false
+    source: osm
+    osm_name: "bet365 Stadium, Stanley Matthews Way, Sideway, Fenton, Stoke-on-Trent, England, ST4 4EG, United Kingdom"
+  - team: "Sunderland"
+    league: eng.1
+    venue: "Stadium of Light"
+    lat: 54.91440
+    lon: -1.38826
+    indoor: false
+    source: osm
+    osm_name: "Stadium of Light, Vaux Brewery Way, Millfield, Sunderland, Tyne and Wear, North East, England, SR5 1SU, United Kingdom"
+  - team: "Swansea City"
+    league: eng.1
+    venue: "Swansea.com Stadium"
+    lat: 51.64281
+    lon: -3.93474
+    indoor: false
+    source: osm
+    osm_name: "Swansea.com Stadium, Brunel Way, Plasmarl, Landore, Swansea, Wales, SA1 2FA, United Kingdom"
+  - team: "Tottenham Hotspur"
+    league: eng.1
+    venue: "Tottenham Hotspur Stadium"
+    lat: 51.60416
+    lon: -0.06626
+    indoor: false
+    source: osm
+    osm_name: "Tottenham Hotspur Stadium, Paxton Place, London Borough of Haringey, Greater London, England, N17 0FH, United Kingdom"
+  - team: "Watford"
+    league: eng.1
+    venue: "Vicarage Road"
+    lat: 51.64976
+    lon: -0.40135
+    indoor: false
+    source: osm
+    osm_name: "Vicarage Road Stadium, Vicarage Road, Holywell Estate, Watford, Hertfordshire, England, WD18 0GN, United Kingdom"
+  - team: "West Bromwich Albion"
+    league: eng.1
+    venue: "The Hawthorns"
+    lat: 52.50917
+    lon: -1.96366
+    indoor: false
+    source: osm
+    osm_name: "The Hawthorns, Birmingham Road, West Bromwich, Sandwell, West Midlands, England, B71 4LF, United Kingdom"
+  - team: "West Ham United"
+    league: eng.1
+    venue: "London Stadium"
+    lat: 51.53862
+    lon: -0.01662
+    indoor: false
+    source: osm
+    osm_name: "London Stadium, Gate 1 Access Road, Stratford, London Borough of Newham, Greater London, England, E20 2ST, United Kingdom"
+  - team: "Wolverhampton Wanderers"
+    league: eng.1
+    venue: "Molineux Stadium"
+    lat: 52.59027
+    lon: -2.13041
+    indoor: false
+    source: osm
+    osm_name: "Molineux Stadium, Waterloo Road, Springfield, Heath Town, Park Village, Wolverhampton, West Midlands, England, WV1 4QR, United Kingdom"
+  - team: "Alavés"
+    league: esp.1
+    venue: "Mendizorroza"
+    lat: 42.83705
+    lon: -2.68826
+    indoor: false
+    source: osm
+    osm_name: "Mendizorrotza, Amadeo Garcia de Salazar plaza, Batan, Mendizorrotza, Vitoria-Gasteiz, Gasteizko kuadrilla, Álava, Autonomous Community of the Basque Country, 01007, Spain"
+  - team: "Almería"
+    league: esp.1
+    venue: "UD Almería Stadium"
+    lat: 36.84007
+    lon: -2.43547
+    indoor: false
+    source: osm
+    osm_name: "Power Horse Stadium, Calle Santiago Martinez Cabrejas, El Ingenio, Almeria, Andalusia, 04006, Spain"
+  - team: "Athletic Bilbao"
+    league: esp.1
+    venue: "San Mamés"
+    lat: 43.26420
+    lon: -2.94939
+    indoor: false
+    source: osm
+    osm_name: "San Mames, Telmo Zarra kalea, Basurtu, Basurtu-Zorrotza, Bilbao, Biscay, Autonomous Community of the Basque Country, 48014, Spain"
+  - team: "Atletico Madrid"
+    league: esp.1
+    venue: "Riyadh Air Metropolitano"
+    lat: 40.43601
+    lon: -3.59970
+    indoor: false
+    source: osm
+    osm_name: "Riyadh Air Metropolitano, Avenida 26 de Abril, Rosas, San Blas - Canillejas, Madrid, Community of Madrid, 28022, Spain"
+    note: "'Riyadh Air Metropolitano' is the current sponsor name of Estadio Metropolitano; geocoded under the OSM-known name."
+  - team: "Barcelona"
+    league: esp.1
+    venue: "Spotify Camp Nou"
+    lat: 41.38088
+    lon: 2.12282
+    indoor: false
+    source: osm
+    osm_name: "Spotify Camp Nou, Avinguda de Joan XXIII, la Maternitat, la Maternitat i Sant Ramon, les Corts, Barcelona, Barcelonès, Barcelona, Catalonia, 08028, Spain"
+  - team: "Celta Vigo"
+    league: esp.1
+    venue: "Estadio Abanca-Balaídos"
+    lat: 42.21177
+    lon: -8.73967
+    indoor: false
+    source: osm
+    osm_name: "Estadio Abanca-Balaídos, Avenida Citroen, A Carballa, Balaídos, Vigo, Pereiró, Vigo, Pontevedra, Galicia, 36210, Spain"
+  - team: "Cádiz"
+    league: esp.1
+    venue: "Nuevo Mirandilla"
+    lat: 36.50260
+    lon: -6.27302
+    indoor: false
+    source: osm
+    osm_name: "Estadio Nuevo Mirandilla, Plaza de Madrid, La Laguna, Cádiz, Bay of Cádiz, Cádiz, Andalusia, 11010, Spain"
+  - team: "Deportivo La Coruña"
+    league: esp.1
+    venue: "ABANCA-Riazor"
+    lat: 43.36872
+    lon: -8.41751
+    indoor: false
+    source: osm
+    osm_name: "Estadio ABANCA-RIAZOR, 1, Rúa Manuel Murguía, San Roque de Fóra, Riazor, A Coruña, Galicia, 15011, Spain"
+  - team: "Eibar"
+    league: esp.1
+    venue: "Ipurua"
+    lat: 43.18172
+    lon: -2.47588
+    indoor: false
+    source: osm
+    osm_name: "Ipurua Municipal Stadium, 2, Indalezio Ojanguren kalea, Egigurentarren, Ipurua, Otaola-Kiñarra, Eibar, Gipuzkoa, Autonomous Community of the Basque Country, 20600, Spain"
+  - team: "Elche"
+    league: esp.1
+    venue: "Martínez Valero"
+    lat: 38.26704
+    lon: -0.66331
+    indoor: false
+    source: osm
+    osm_name: "Estadi Manuel Martínez Valero, avinguda Manuel Martínez Valero, Camp de Futbol, Urbanització Les Atzavares, Elx / Elche, el Baix Vinalopó, Alacant / Alicante, Valencian Community, 03202, Spain"
+  - team: "Espanyol"
+    league: esp.1
+    venue: "RCDE Stadium"
+    lat: 41.34786
+    lon: 2.07646
+    indoor: false
+    source: osm
+    osm_name: "RCDE Stadium, Splau parking, Cornellà de Llobregat, Baix Llobregat, Barcelona, Catalonia, 08940, Spain"
+  - team: "Getafe"
+    league: esp.1
+    venue: "Estadio Coliseum"
+    lat: 40.32572
+    lon: -3.71493
+    indoor: false
+    source: osm
+    osm_name: "Coliseum, Avenida Teresa de Calcuta, Los Espartales, Getafe Norte, Getafe, Community of Madrid, 28903, Spain"
+  - team: "Girona"
+    league: esp.1
+    venue: "Municipal de Montilivi"
+    lat: 41.96123
+    lon: 2.82900
+    indoor: false
+    source: osm
+    osm_name: "Estadi Municipal de Montilivi, Avinguda de Montilivi, Disseminat de la Creu de Palau, Palau, Girona, Gironès, Girona, Catalonia, 17003, Spain"
+  - team: "Granada"
+    league: esp.1
+    venue: "Nuevo Los Cármenes"
+    lat: 37.15289
+    lon: -3.59589
+    indoor: false
+    source: osm
+    osm_name: "Estadio Municipal Nuevo Los Cármenes, Calle Pintor Manuel Maldonado, Santa Adela, Zaidín - Vergeles, Zaidín, Granada, Comarca de la Vega de Granada, Granada, Andalusia, 18007, Spain"
+  - team: "Huesca"
+    league: esp.1
+    venue: "El Alcoraz"
+    lat: 42.13184
+    lon: -0.42415
+    indoor: false
+    source: osm
+    osm_name: "Estadio El Alcoraz, Camino de Cocorón, Barrio de la Encarnación, La Encarnación, Huesca, Hoya de Huesca / Plana de Uesca, Huesca, Aragon, 22004, Spain"
+  - team: "Las Palmas"
+    league: esp.1
+    venue: "Estadio Gran Canaria"
+    lat: 28.10023
+    lon: -15.45672
+    indoor: false
+    source: osm
+    osm_name: "Estadio de Gran Canaria, Calle Fondos del Segura, Siete Palmas, Las Palmas, Canary Islands, 35019, Spain"
+  - team: "Leganés"
+    league: esp.1
+    venue: "Estadio Ontime Butarque"
+    lat: 40.34056
+    lon: -3.76064
+    indoor: false
+    source: osm
+    osm_name: "Ontime Butarque, Calle Minería, Quinto Centenario, Zarzaquemada, Leganés, Community of Madrid, 28913, Spain"
+  - team: "Levante"
+    league: esp.1
+    venue: "Ciutat de Valencia"
+    lat: 39.49464
+    lon: -0.36386
+    indoor: false
+    source: osm
+    osm_name: "Estadi Ciutat de València, Carrer de Santiago Rusiñol, Sant Llorenç, Rascanya, Valencia, Comarca de València, Valencia, Valencian Community, 46019, Spain"
+  - team: "Mallorca"
+    league: esp.1
+    venue: "Estadi Mallorca Son Moix"
+    lat: 39.58993
+    lon: 2.63012
+    indoor: false
+    source: osm
+    osm_name: "Mallorca Son Moix Stadium, Camí dels Reis, Can Valero, Son Peretó, Districte de Ponent, Palma de Mallorca, Palma, Balearic Islands, 07013, Spain"
+  - team: "Málaga"
+    league: esp.1
+    venue: "La Rosaleda"
+    lat: 36.73494
+    lon: -4.42653
+    indoor: false
+    source: osm
+    osm_name: "Estadio La Rosaleda, Paseo Martiricos, Martiricos, Palma-Palmilla, Málaga, Málaga-Costa del Sol, Malaga, Andalusia, 29011, Spain"
+  - team: "Osasuna"
+    league: esp.1
+    venue: "El Sadar"
+    lat: 42.79666
+    lon: -1.63713
+    indoor: false
+    source: osm
+    osm_name: "El Sadar Stadium, Sadar kalea, Arrosadia, Milagrosa-Arrosadia, Pamplona, Iruñerria, Navarre, 31006, Spain"
+  - team: "Rayo Vallecano"
+    league: esp.1
+    venue: "Estadio de Vallecas"
+    lat: 40.39176
+    lon: -3.65874
+    indoor: false
+    source: osm
+    osm_name: "Campo de Fútbol de Vallecas, Calle del Arroyo del Olivar, Palomeras Bajas, Vallecas, Madrid, Community of Madrid, 28018, Spain"
+  - team: "Real Betis"
+    league: esp.1
+    venue: "Benito Villamarín"
+    lat: 37.35645
+    lon: -5.98092
+    indoor: false
+    source: osm
+    osm_name: "Estadio Benito Villamarín, Avenida Padre García Tejero, Heliópolis, Distrito Bellavista-La Palmera, Seville, Sevilla, Andalusia, 41012, Spain"
+  - team: "Real Madrid"
+    league: esp.1
+    venue: "Estadio Bernabéu"
+    lat: 40.45304
+    lon: -3.68820
+    indoor: false
+    source: osm
+    osm_name: "Bernabéu, Calle del Padre Damián, Hispanoamérica, Chamartín, Madrid, Community of Madrid, 28020, Spain"
+  - team: "Real Oviedo"
+    league: esp.1
+    venue: "Estadio Carlos Tartiere"
+    lat: 43.36087
+    lon: -5.87033
+    indoor: false
+    source: osm
+    osm_name: "Estadio Municipal Carlos Tartiere, Calle Isidro Lángara / Cai Isidro Lángara, La Iría, Oviedo / Uviéu, Oviedo, Asturias, 33013, Spain"
+  - team: "Real Sociedad"
+    league: esp.1
+    venue: "Estadio Municipal de Anoeta"
+    lat: 43.30139
+    lon: -1.97357
+    indoor: false
+    source: osm
+    osm_name: "Estadio Municipal de Anoeta, 1, Anoeta pasealekua, Amaraberri, Anoeta, Amara Berri, Centro, San Sebastián, Gipuzkoa, Autonomous Community of the Basque Country, 20014, Spain"
+  - team: "Real Valladolid"
+    league: esp.1
+    venue: "José Zorrilla"
+    lat: 41.64458
+    lon: -4.76126
+    indoor: false
+    source: osm
+    osm_name: "José Zorrilla Stadium, Avenida del Real Valladolid, Villa del Prado, Huerta del Rey, Valladolid, Castile and León, 47016, Spain"
+  - team: "Sevilla"
+    league: esp.1
+    venue: "Ramón Sánchez-Pizjuán"
+    lat: 37.38409
+    lon: -5.97063
+    indoor: false
+    source: osm
+    osm_name: "Estadio Ramón Sánchez-Pizjuán, Calle Sevilla Futbol Club, La Buhaira, Nervión, Seville, Sevilla, Andalusia, 41018, Spain"
+  - team: "Sporting Gijón"
+    league: esp.1
+    venue: "El Molinón - Enrique Castro Quini"
+    lat: 43.53627
+    lon: -5.63748
+    indoor: false
+    source: osm
+    osm_name: "Estadio El Molinón-Enrique Castro “Quini”, Paseo del Doctor Fleming, La Guía, Somió, Gijón / Xixón, Gijón, Asturias, 33203, Spain"
+  - team: "Valencia"
+    league: esp.1
+    venue: "Mestalla"
+    lat: 39.47453
+    lon: -0.35816
+    indoor: false
+    source: osm
+    osm_name: "Mestalla, Avinguda de Suècia, Mestalla, el Pla del Real, Valencia, Comarca de València, Valencia, Valencian Community, 46010, Spain"
+  - team: "Villarreal"
+    league: esp.1
+    venue: "Estadio de la Cerámica"
+    lat: 39.94421
+    lon: -0.10340
+    indoor: false
+    source: osm
+    osm_name: "Estadio de la Cerámica, Carrer del Riu Millars, Vila-real, la Plana Baixa, Castelló / Castellón, Valencian Community, 12540, Spain"
+  - team: "AJ Auxerre"
+    league: fra.1
+    venue: "Stade de l'Abbé-Deschamps"
+    lat: 47.78678
+    lon: 3.58862
+    indoor: false
+    source: osm
+    osm_name: "Stade Abbé-Deschamps, Route de Vaux, La Noue, Auxerre, Yonne, Bourgogne – Franche-Comté, Metropolitan France, 89000, France"
+  - team: "Ajaccio"
+    league: fra.1
+    venue: "Stade François Coty"
+    lat: 41.93083
+    lon: 8.77679
+    indoor: false
+    source: osm
+    osm_name: "Stade Michel-Moretti, Route du Docteur Jean Paul de Rocca Serra, Zone industrielle du Vazzio, Stiletto, Ajaccio, South Corsica, Corsica, Metropolitan France, 20090, France"
+    note: "ESPN venue was null; used AC Ajaccio's ground, Stade François Coty (Corsica)."
+  - team: "Angers"
+    league: fra.1
+    venue: "Stade Raymond Kopa"
+    lat: 47.46055
+    lon: -0.53069
+    indoor: false
+    source: osm
+    osm_name: "Stade Raymond-Kopa, 11, Boulevard Pierre de Coubertin, Justices - Madeleine - Saint-Léonard, Angers, Maine-et-Loire, Pays de la Loire, Metropolitan France, 49000, France"
+    note: "ESPN listed 'Ibrox Stadium' (Rangers FC, Glasgow) - clearly wrong. Replaced with Angers SCO's ground, Stade Raymond Kopa."
+  - team: "Bastia"
+    league: fra.1
+    venue: "Stade Armand-Cesari"
+    lat: 42.65148
+    lon: 9.44272
+    indoor: false
+    source: osm
+    osm_name: "Stade Armand-Cesari, Via Hans Ruech, Camera, Lotissement Volpaghjolu, Furiani, Bastia, Upper Corsica, Corsica, Metropolitan France, 20600, France"
+  - team: "Bordeaux"
+    league: fra.1
+    venue: "Matmut Atlantique"
+    lat: 44.89756
+    lon: -0.56163
+    indoor: false
+    source: osm
+    osm_name: "Stade Atlantique, Avenue de la Jallère, Le Lac, Bordeaux Maritime, Bordeaux, Gironde, Nouvelle-Aquitaine, Metropolitan France, 33300, France"
+    note: "Nominatim does not index the sponsor name 'Matmut Atlantique'; matched the same ground under its OSM name 'Stade Atlantique' (Avenue de la Jallère, Bordeaux Lac)."
+  - team: "Brest"
+    league: fra.1
+    venue: "Stade Francis-Le Blé"
+    lat: 48.40304
+    lon: -4.46136
+    indoor: false
+    source: osm
+    osm_name: "Stade Francis-Le Blé, Rue de l'Île de Sein, Le Petit Paris, Kerbernard, Brest, Finistère, Brittany, Metropolitan France, 29200, France"
+  - team: "Caen"
+    league: fra.1
+    venue: "Stade Michel-d'Ornano"
+    lat: 49.17949
+    lon: -0.39695
+    indoor: false
+    source: osm
+    osm_name: "Stade Michel-d’Ornano, Boulevard Georges Pompidou, Beaulieu, Quartier Malherbe, Caen, Calvados, Normandy, Metropolitan France, 14000, France"
+  - team: "Clermont Foot"
+    league: fra.1
+    venue: "Stade Gabriel-Montpied"
+    lat: 45.81588
+    lon: 3.12150
+    indoor: false
+    source: osm
+    osm_name: "Stade Gabriel-Montpied, Rue Robert Lemoy, Clermont-Ferrand, Puy-de-Dôme, Auvergne-Rhône-Alpes, Metropolitan France, 63118, France"
+  - team: "Dijon FCO"
+    league: fra.1
+    venue: "Stade Gaston-Gérard"
+    lat: 47.32431
+    lon: 5.06834
+    indoor: false
+    source: osm
+    osm_name: "Stade Gaston-Gérard, Rue du Stade, Montmuzard, Dijon, Côte-d'Or, Bourgogne – Franche-Comté, Metropolitan France, 21000, France"
+    note: "ESPN venue was an empty string; used Dijon FCO's ground, Stade Gaston-Gérard."
+  - team: "GFC Ajaccio"
+    league: fra.1
+    venue: "Stade Ange-Casanova"
+    lat: 41.95133
+    lon: 8.77195
+    indoor: false
+    source: osm
+    osm_name: "Stade Ange Casanova, Chemin du Stade, Stiletto, Ajaccio, South Corsica, Corsica, Metropolitan France, 20090, France"
+  - team: "Guingamp"
+    league: fra.1
+    venue: "Stade Municipal de Roudourou"
+    lat: 48.56602
+    lon: -3.16445
+    indoor: false
+    source: osm
+    osm_name: "Stade de Roudourou, Rue du Manoir, Roudourou, Guingamp, Côtes-d'Armor, Brittany, Metropolitan France, 22200, France"
+  - team: "Le Havre AC"
+    league: fra.1
+    venue: "Stade Océane"
+    lat: 49.49875
+    lon: 0.16946
+    indoor: false
+    source: osm
+    osm_name: "Stade CMA CGM Océane, Parvis, Champs Barets, Le Havre, Seine-Maritime, Normandy, Metropolitan France, 76610, France"
+  - team: "Lens"
+    league: fra.1
+    venue: "Stade Félix Bollaert-Delélis"
+    lat: 50.43282
+    lon: 2.81499
+    indoor: false
+    source: osm
+    osm_name: "Stade Bollaert-Delelis, Avenue Alfred Maës, Cité n°4, Lens, Pas-de-Calais, Hauts-de-France, Metropolitan France, 62300, France"
+  - team: "Lille"
+    league: fra.1
+    venue: "Decathlon Arena - Stade Pierre-Mauroy"
+    lat: 50.61190
+    lon: 3.13051
+    indoor: true
+    source: osm
+    osm_name: "Decathlon Arena-Pierre Mauroy Stadium, Boulevard de Tournai, Hôtel-de-Ville, Saint-Sauveur, Villeneuve-d'Ascq, Lille, Nord, Hauts-de-France, Metropolitan France, 59491, France"
+  - team: "Lorient"
+    league: fra.1
+    venue: "Stade du Moustoir - Yves Allainmat"
+    lat: 47.74880
+    lon: -3.36954
+    indoor: false
+    source: osm
+    osm_name: "Stade du Moustoir – Yves Allainmat, Rue Sarah Bernhardt, Eau Courante, La Villeneuve, Lorient, Morbihan, Brittany, Metropolitan France, 56100, France"
+  - team: "Lyon"
+    league: fra.1
+    venue: "Groupama Stadium"
+    lat: 45.76536
+    lon: 4.98205
+    indoor: false
+    source: osm
+    osm_name: "Groupama Stadium, Allée Sud-Ouest, Le Grand Montout, Charpieu, Décines-Charpieu, Lyon, Métropole de Lyon, Rhône, Auvergne-Rhône-Alpes, Metropolitan France, 69150, France"
+  - team: "Marseille"
+    league: fra.1
+    venue: "Orange Vélodrome"
+    lat: 43.26985
+    lon: 5.39591
+    indoor: false
+    source: osm
+    osm_name: "CEPAC Vélodrome, 3, Boulevard Michelet, Saint-Giniez, 8th Arrondissement, Marseille, Bouches-du-Rhône, Provence-Alpes-Côte d'Azur, Metropolitan France, 13008, France"
+  - team: "Metz"
+    league: fra.1
+    venue: "Stade Saint-Symphorien"
+    lat: 49.10964
+    lon: 6.15960
+    indoor: false
+    source: osm
+    osm_name: "Stade Saint-Symphorien, Rue du Stade, Longeville-lès-Metz, Metz, Moselle, Grand Est, Metropolitan France, 57050, France"
+  - team: "Monaco"
+    league: fra.1
+    venue: "Stade Louis II"
+    lat: 43.72757
+    lon: 7.41546
+    indoor: false
+    source: osm
+    osm_name: "Louis II Stadium, Avenue des Castelans, Fontvieille, Monaco, 98020, Monaco"
+  - team: "Montpellier"
+    league: fra.1
+    venue: "Stade de la Mosson"
+    lat: 43.62202
+    lon: 3.81209
+    indoor: false
+    source: osm
+    osm_name: "Stade de la Mosson, Rue de Liège, La Paillade, Mosson, Montpellier, Hérault, Occitania, Metropolitan France, 34080, France"
+  - team: "Nancy"
+    league: fra.1
+    venue: "Stade Marcel-Picot"
+    lat: 48.69572
+    lon: 6.21054
+    indoor: false
+    source: osm
+    osm_name: "Stade Marcel-Picot, Boulevard Jean Jaurès, Tomblaine, Nancy, Meurthe-et-Moselle, Grand Est, Metropolitan France, 54510, France"
+    note: "ESPN venue was null; used AS Nancy-Lorraine's ground, Stade Marcel-Picot (Tomblaine, suburb of Nancy)."
+  - team: "Nantes"
+    league: fra.1
+    venue: "La Beaujoire-Louis-Fonteneau"
+    lat: 47.25601
+    lon: -1.52476
+    indoor: false
+    source: osm
+    osm_name: "Stade de La Beaujoire - Louis Fonteneau, Périphérique Extérieur, La Halvêque, Beaujoire - Halvèque, Nantes Erdre, Nantes, Loire-Atlantique, Pays de la Loire, Metropolitan France, 44300, France"
+  - team: "Nice"
+    league: fra.1
+    venue: "Allianz Riviera"
+    lat: 43.70515
+    lon: 7.19260
+    indoor: false
+    source: osm
+    osm_name: "Allianz Riviera, Allée Camille Muffat, Saint-Isidore, Nice, Maritime Alps, Provence-Alpes-Côte d'Azur, Metropolitan France, 06284, France"
+  - team: "Nimes"
+    league: fra.1
+    venue: "Stade des Costières"
+    lat: 43.81603
+    lon: 4.35927
+    indoor: false
+    source: osm
+    osm_name: "Stade des Costières, Avenue François Mitterrand, Costières, Nîmes, Gard, Occitania, Metropolitan France, 30947, France"
+  - team: "Paris FC"
+    league: fra.1
+    venue: "Stade Jean Bouin"
+    lat: 48.84332
+    lon: 2.25296
+    indoor: false
+    source: osm
+    osm_name: "Stade Jean-Bouin, 20 - 40, Avenue du Général Sarrail, Quartier d'Auteuil, 16th Arrondissement, Paris, Ile-de-France, Metropolitan France, 75016, France"
+  - team: "Paris Saint-Germain"
+    league: fra.1
+    venue: "Parc des Princes"
+    lat: 48.84136
+    lon: 2.25307
+    indoor: false
+    source: osm
+    osm_name: "Parc des Princes, 24, Rue du Commandant Guilbaud, Quartier d'Auteuil, 16th Arrondissement, Paris, Ile-de-France, Metropolitan France, 75016, France"
+  - team: "Rennes"
+    league: fra.1
+    venue: "Roazhon Park"
+    lat: 48.10757
+    lon: -1.71265
+    indoor: false
+    source: osm
+    osm_name: "Roazhon Park, Rue de Lorient, Moulin du Comte, Bourg l'Évesque - La Touche - Moulin du Comte, Quartiers Ouest, Rennes, Ille-et-Vilaine, Brittany, Metropolitan France, 35000, France"
+  - team: "SC Amiens"
+    league: fra.1
+    venue: "Stade Crédit Agricole de la Licorne"
+    lat: 49.89399
+    lon: 2.26347
+    indoor: false
+    source: osm
+    osm_name: "Stade de la Licorne, Rue Émile Francfort, ZAC Renancourt, Amiens, Somme, Hauts-de-France, Metropolitan France, 80000, France"
+  - team: "Saint-Étienne"
+    league: fra.1
+    venue: "Stade Geoffroy-Guichard"
+    lat: 45.46076
+    lon: 4.39009
+    indoor: false
+    source: osm
+    osm_name: "Stade Geoffroy-Guichard, 14, Rue Paul et Pierre Guichard, Le Marais, Montreynaud, Saint-Étienne, Loire, Auvergne-Rhône-Alpes, Metropolitan France, 42000, France"
+  - team: "Stade de Reims"
+    league: fra.1
+    venue: "Stade Auguste-Delaune II"
+    lat: 49.24708
+    lon: 4.02479
+    indoor: false
+    source: osm
+    osm_name: "Stade Auguste-Delaune, Coulée Verte de Reims, Port Sec, Reims, Marne, Grand Est, Metropolitan France, 51100, France"
+  - team: "Strasbourg"
+    league: fra.1
+    venue: "Stade de la Meinau"
+    lat: 48.55995
+    lon: 7.75512
+    indoor: false
+    source: osm
+    osm_name: "Stade de la Meinau, Piste Georges Speicher, Meinau, Strasbourg, Bas-Rhin, European Collectivity of Alsace, Grand Est, Metropolitan France, 67100, France"
+  - team: "Toulouse"
+    league: fra.1
+    venue: "Stadium de Toulouse"
+    lat: 43.58323
+    lon: 1.43406
+    indoor: false
+    source: osm
+    osm_name: "Stadium de Toulouse, 1bis, Allée Gabriel Biénès, Empalot, Saint-Michel / Saint-Agne / Empalot / Le Busca / Île du Ramier / Montplaisir, Toulouse, Haute-Garonne, Occitania, Metropolitan France, 31028, France"
+  - team: "Troyes"
+    league: fra.1
+    venue: "Stade de l'Aube"
+    lat: 48.30752
+    lon: 4.09852
+    indoor: false
+    source: osm
+    osm_name: "Stade de l’Aube, Avenue Robert Schumann, Troyes, Aube, Grand Est, Metropolitan France, 10000, France"
+  - team: "1. FC Nürnberg"
+    league: ger.1
+    venue: "Max-Morlock-Stadion"
+    lat: 49.42626
+    lon: 11.12567
+    indoor: false
+    source: osm
+    osm_name: "Max-Morlock-Stadion, 1, Max-Morlock-Platz, Dutzendteich, Südöstliche Außenstadt, Nuremberg, Bavaria, 90471, Germany"
+    note: "ESPN venue was null; used 1. FC Nürnberg's ground, Max-Morlock-Stadion."
+  - team: "1. FC Union Berlin"
+    league: ger.1
+    venue: "Stadion An der Alten Försterei"
+    lat: 52.45697
+    lon: 13.56808
+    indoor: false
+    source: osm
+    osm_name: "Stadion An der Alten Försterei, 263, An der Wuhlheide, Köpenick, Treptow-Köpenick, Berlin, 12555, Germany"
+  - team: "Arminia Bielefeld"
+    league: ger.1
+    venue: "SchücoArena"
+    lat: 52.03203
+    lon: 8.51678
+    indoor: false
+    source: osm
+    osm_name: "SchücoArena, 31a, Melanchthonstraße, Mitte, Bielefeld, North Rhine-Westphalia, 33615, Germany"
+  - team: "Bayer Leverkusen"
+    league: ger.1
+    venue: "BayArena"
+    lat: 51.03814
+    lon: 7.00310
+    indoor: false
+    source: osm
+    osm_name: "BayArena, 122-124, Bismarckstraße, Küppersteg, Stadtbezirk II, Leverkusen, North Rhine-Westphalia, 51373, Germany"
+  - team: "Bayern Munich"
+    league: ger.1
+    venue: "Allianz Arena"
+    lat: 48.21879
+    lon: 11.62362
+    indoor: false
+    source: osm
+    osm_name: "Allianz Arena, 5, Werner-Heisenberg-Allee, Fröttmaning, Schwabing-Freimann, Munich, Bavaria, 80939, Germany"
+  - team: "Borussia Dortmund"
+    league: ger.1
+    venue: "SIGNAL IDUNA PARK"
+    lat: 51.49249
+    lon: 7.45185
+    indoor: false
+    source: osm
+    osm_name: "SIGNAL IDUNA PARK, 50, Strobelallee, Innenstadt West, Dortmund, North Rhine-Westphalia, 44139, Germany"
+  - team: "Borussia Monchengladbach"
+    league: ger.1
+    venue: "BORUSSIA-PARK"
+    lat: 51.17462
+    lon: 6.38541
+    indoor: false
+    source: osm
+    osm_name: "ista-Borussia-Park, Hennes-Weisweiler-Allee, Rheindahlen-Land, West, Mönchengladbach, North Rhine-Westphalia, 41179, Germany"
+  - team: "Eintracht Frankfurt"
+    league: ger.1
+    venue: "Deutsche Bank Park"
+    lat: 50.06861
+    lon: 8.64542
+    indoor: false
+    source: osm
+    osm_name: "Deutsche Bank Park, 362, Mörfelder Landstraße, Sachsenhausen Süd, Sachsenhausen, Süd, Frankfurt, Hesse, 60528, Germany"
+  - team: "FC Augsburg"
+    league: ger.1
+    venue: "WWK Arena"
+    lat: 48.32312
+    lon: 10.88588
+    indoor: false
+    source: osm
+    osm_name: "WWK ARENA, 90, Bürgermeister-Ulrich-Straße, Universitätsviertel, Augsburg, Bavaria, 86199, Germany"
+  - team: "FC Cologne"
+    league: ger.1
+    venue: "RheinEnergieStadion"
+    lat: 50.93351
+    lon: 6.87512
+    indoor: false
+    source: osm
+    osm_name: "RheinEnergieSTADION, 999, Aachener Straße, Müngersdorf, Lindenthal, Cologne, North Rhine-Westphalia, 50933, Germany"
+  - team: "FC Ingolstadt 04"
+    league: ger.1
+    venue: "Audi Sportpark"
+    lat: 48.74528
+    lon: 11.48553
+    indoor: false
+    source: osm
+    osm_name: "Audi Sportpark, Am Sportpark, Gewerbegebiet SO, Südost, Ingolstadt, Bavaria, 85053, Germany"
+  - team: "Fortuna Düsseldorf"
+    league: ger.1
+    venue: "Merkur Spiel-Arena"
+    lat: 51.26163
+    lon: 6.73315
+    indoor: true
+    source: osm
+    osm_name: "Merkur Spiel-Arena, 1, Arena-Straße, Stockum, Stadtbezirk 5, Dusseldorf, North Rhine-Westphalia, 40474, Germany"
+  - team: "Hamburg SV"
+    league: ger.1
+    venue: "Volksparkstadion"
+    lat: 53.58715
+    lon: 9.89871
+    indoor: false
+    source: osm
+    osm_name: "Volksparkstadion, 9, Uwe-Seeler-Allee, Bahrenfeld, Altona, Hamburg, 22525, Germany"
+  - team: "Hannover 96"
+    league: ger.1
+    venue: "Heinz von Heiden-Arena"
+    lat: 52.36003
+    lon: 9.73102
+    indoor: false
+    source: osm
+    osm_name: "Heinz-von-Heiden-Arena, 3, Robert-Enke-Straße, Calenberger Neustadt, Centre, Hanover, Region Hannover, Lower Saxony, 30169, Germany"
+  - team: "Heidenheim"
+    league: ger.1
+    venue: "Voith-Arena"
+    lat: 48.66852
+    lon: 10.13930
+    indoor: false
+    source: osm
+    osm_name: "Voith-Arena, 160, Schloßhaustraße, Mergelstetten, Heidenheim an der Brenz, VVG der Stadt Heidenheim an der Brenz, Landkreis Heidenheim, Baden-Württemberg, 89522, Germany"
+    note: "ESPN venue was null; used 1. FC Heidenheim's ground, Voith-Arena."
+  - team: "Hertha Berlin"
+    league: ger.1
+    venue: "Olympiastadion Berlin"
+    lat: 52.51458
+    lon: 13.23981
+    indoor: false
+    source: osm
+    osm_name: "Berlin Olympic Stadium, 3, Olympischer Platz, Ostpreußenviertel, Westend, Charlottenburg-Wilmersdorf, Berlin, 14053, Germany"
+  - team: "Hoffenheim"
+    league: ger.1
+    venue: "PreZero Arena"
+    lat: 49.23806
+    lon: 8.88666
+    indoor: false
+    source: osm
+    osm_name: "SNP Arena, 1, Dietmar-Hopp-Straße, Sinsheim, VVG der Stadt Sinsheim, Rhein-Neckar-Kreis, Baden-Württemberg, 74889, Germany"
+  - team: "Holstein Kiel"
+    league: ger.1
+    venue: "Holstein-Stadion"
+    lat: 54.34921
+    lon: 10.12376
+    indoor: false
+    source: osm
+    osm_name: "Holstein-Stadion, Westring, Wik, Kiel, Schleswig-Holstein, 24106, Germany"
+    note: "ESPN venue was null; used Holstein Kiel's ground, Holstein-Stadion."
+  - team: "Mainz"
+    league: ger.1
+    venue: "MEWA ARENA"
+    lat: 49.98395
+    lon: 8.22447
+    indoor: false
+    source: osm
+    osm_name: "Mewa Arena, 1, Eugen-Salomon-Straße, Bretzenheim, Mainz, Rhineland-Palatinate, 55128, Germany"
+  - team: "Paderborn"
+    league: ger.1
+    venue: "Home Deluxe Arena"
+    lat: 51.73090
+    lon: 8.71096
+    indoor: false
+    source: osm
+    osm_name: "Home Deluxe Arena, 1, Wilfried-Finke-Allee, Schloß Neuhaus, Paderborn, Kreis Paderborn, North Rhine-Westphalia, 33104, Germany"
+    note: "ESPN venue was null; used SC Paderborn 07's ground, Home Deluxe Arena (formerly Benteler-Arena)."
+  - team: "RB Leipzig"
+    league: ger.1
+    venue: "Red Bull Arena"
+    lat: 51.34571
+    lon: 12.34824
+    indoor: false
+    source: osm
+    osm_name: "Red Bull Arena, Am Sportforum, Centre North West, Mitte, Leipzig, Saxony, 04105, Germany"
+  - team: "SC Freiburg"
+    league: ger.1
+    venue: "Europa-Park Stadion"
+    lat: 48.02138
+    lon: 7.82982
+    indoor: false
+    source: osm
+    osm_name: "Europa-Park Stadion, 1, Achim-Stocker-Straße, Brühl-Industriegebiet, Brühl, Freiburg im Breisgau, Baden-Württemberg, 79108, Germany"
+  - team: "SV Darmstadt 98"
+    league: ger.1
+    venue: "Merck-Stadion am Böllenfalltor"
+    lat: 49.85771
+    lon: 8.67241
+    indoor: false
+    source: osm
+    osm_name: "Merck-Stadion am Böllenfalltor, Waldlaufbahn, An den Lichtwiesen, Darmstadt-Ost, Darmstadt, Hesse, 64287, Germany"
+  - team: "Schalke 04"
+    league: ger.1
+    venue: "VELTINS-Arena"
+    lat: 51.55459
+    lon: 7.06760
+    indoor: true
+    source: osm
+    osm_name: "VELTINS-Arena, 1, Rudi-Assauer-Platz, Erle-Berger Feld, Erle, Gelsenkirchen-Ost, Gelsenkirchen, North Rhine-Westphalia, 45891, Germany"
+  - team: "SpVgg Greuther Fürth"
+    league: ger.1
+    venue: "Sportpark Ronhof | Thomas Sommer"
+    lat: 49.48715
+    lon: 10.99889
+    indoor: false
+    source: osm
+    osm_name: "Sportpark Ronhof | Thomas Sommer, 60, Laubenweg, Nordstadt, Ronhof, Kronach, Nord-Ost, Fürth, Bavaria, 90765, Germany"
+  - team: "St. Pauli"
+    league: ger.1
+    venue: "Millerntor-Stadion"
+    lat: 53.55456
+    lon: 9.96778
+    indoor: false
+    source: osm
+    osm_name: "Millerntor-Stadion, Budapester Straße, St. Pauli, Hamburg-Mitte, Hamburg, 20359, Germany"
+  - team: "VfB Stuttgart"
+    league: ger.1
+    venue: "MHPArena"
+    lat: 48.79225
+    lon: 9.23209
+    indoor: false
+    source: osm
+    osm_name: "MHPArena, 87, Mercedesstraße, Wasen, Bad Cannstatt, Stuttgart, Baden-Württemberg, 70372, Germany"
+  - team: "VfL Bochum"
+    league: ger.1
+    venue: "Vonovia Ruhrstadion"
+    lat: 51.49008
+    lon: 7.23651
+    indoor: false
+    source: osm
+    osm_name: "Vonovia Ruhrstadion, 145, Castroper Straße, Innenstadt, Bochum-Mitte, Bochum, North Rhine-Westphalia, 44791, Germany"
+  - team: "VfL Wolfsburg"
+    league: ger.1
+    venue: "Volkswagen Arena"
+    lat: 52.43265
+    lon: 10.80382
+    indoor: false
+    source: osm
+    osm_name: "Volkswagen Arena, 1, In den Allerwiesen, Hellwinkel, Wolfsburg, Lower Saxony, 38448, Germany"
+  - team: "Werder Bremen"
+    league: ger.1
+    venue: "Weserstadion"
+    lat: 53.06645
+    lon: 8.83767
+    indoor: false
+    source: osm
+    osm_name: "Weserstadion, 7, Franz-Böhmert-Straße, Peterswerder, Östliche Vorstadt, Bremen-Ost, Bremen, 28205, Germany"
+  - team: "AC Milan"
+    league: ita.1
+    venue: "Stadio Giuseppe Meazza"
+    lat: 45.47820
+    lon: 9.12396
+    indoor: false
+    source: osm
+    osm_name: "Giuseppe Meazza Stadium, Via dei Piccolomini, Quartiere Harar, San Siro, Municipio 7, Milan, Lombardy, 20148, Italy"
+  - team: "Atalanta"
+    league: ita.1
+    venue: "New Balance Arena"
+    lat: 45.70921
+    lon: 9.68083
+    indoor: false
+    source: osm
+    osm_name: "New Balance Arena, 18, Viale Giulio Cesare, Borgo Santa Caterina, Bergamo, Lombardy, 24124, Italy"
+    note: "'New Balance Arena' is the current sponsor name of Stadio Atleti Azzurri d'Italia (Gewiss Stadium); geocoded under the OSM-known name."
+  - team: "Benevento"
+    league: ita.1
+    venue: "Ciro Vigorito"
+    lat: 41.11659
+    lon: 14.78108
+    indoor: false
+    source: osm
+    osm_name: "Stadio Ciro Vigorito, Via Stadio, Piano Morra, Benevento, Campania, 82100, Italy"
+  - team: "Bologna"
+    league: ita.1
+    venue: "Renato Dall'Ara"
+    lat: 44.49232
+    lon: 11.31000
+    indoor: false
+    source: osm
+    osm_name: "Stadio Renato Dall'Ara, Via Pietro De Coubertin, Meloncello, Saragozza, Porto-Saragozza, Bologna, Emilia-Romagna, 40134, Italy"
+  - team: "Brescia"
+    league: ita.1
+    venue: "Stadio Mario Rigamonti"
+    lat: 45.57072
+    lon: 10.23698
+    indoor: false
+    source: osm
+    osm_name: "Mario Rigamonti Stadium, Via Benedetto Castelli, Villaggio Giorgio Montini, Mompiano, Zona Nord, Brescia, Lombardy, 25154, Italy"
+  - team: "Cagliari"
+    league: ita.1
+    venue: "Unipol Domus"
+    lat: 39.19919
+    lon: 9.13743
+    indoor: false
+    source: osm
+    osm_name: "Unipol Domus, Via Raimondo Carta Raspi, Nuovo Borgo Sant'Elia, Cagliari, Casteddu/Cagliari, Sardinia, 09126, Italy"
+  - team: "Carpi"
+    league: ita.1
+    venue: "Alberto Braglia"
+    lat: 44.65343
+    lon: 10.92309
+    indoor: false
+    source: osm
+    osm_name: "Stadio Alberto Braglia, Viale Monte Kosica, Quartiere Cittanova, Cittadella, Centro storico, Modena, Emilia-Romagna, 41121, Italy"
+    note: "Stadio Alberto Braglia is in Modena, not Carpi. Verified correct: Carpi played their 2015-16 Serie A home matches at Modena's Braglia because Stadio Sandro Cabassi was not top-flight compliant. Kept as-is."
+  - team: "Chievo Verona"
+    league: ita.1
+    venue: "Stadio Marcantonio Bentegodi"
+    lat: 45.43533
+    lon: 10.96743
+    indoor: false
+    source: osm
+    osm_name: "Marcantonio Bentegodi Stadium, Piazzale Olimpia, Borgo Milano, Ovest, Verona, Veneto, 37138, Italy"
+  - team: "Como"
+    league: ita.1
+    venue: "Giuseppe Sinigaglia"
+    lat: 45.81383
+    lon: 9.07232
+    indoor: false
+    source: osm
+    osm_name: "Stadio Giuseppe Sinigaglia, 2, Via Giuseppe Sinigaglia, Stadio, Vico, Como, Lombardy, 22100, Italy"
+  - team: "Cremonese"
+    league: ita.1
+    venue: "Stadio Giovanni Zini"
+    lat: 45.14004
+    lon: 10.03500
+    indoor: false
+    source: osm
+    osm_name: "Stadio Giovanni Zini, 19, Via Persico, San Bernardo, Vecchia Dogana, Cremona, Lombardy, 26100, Italy"
+  - team: "Crotone"
+    league: ita.1
+    venue: "Ezio Scida"
+    lat: 39.07926
+    lon: 17.11628
+    indoor: false
+    source: osm
+    osm_name: "Stadio Ezio Scida, Via Giovanni Paolo II, Scintille, Crotone, Calabria, 88900, Italy"
+  - team: "Empoli"
+    league: ita.1
+    venue: "Stadio Carlo Castellani – Computer Gross Arena"
+    lat: 43.72655
+    lon: 10.95473
+    indoor: false
+    source: osm
+    osm_name: "Stadio Carlo Castellani - Computer Gross Arena, Via del Pentathlon, Naiana, Serravalle, Empoli, Unione dei Comuni Circondario dell'Empolese Valdelsa, Florence, Tuscany, 50053, Italy"
+  - team: "Fiorentina"
+    league: ita.1
+    venue: "Artemio Franchi"
+    lat: 43.78088
+    lon: 11.28282
+    indoor: false
+    source: osm
+    osm_name: "Stadio comunale Artemio Franchi, Piazzale Campioni del '56, Campo di Marte, Quartiere 2, Florence, Tuscany, 50137, Italy"
+  - team: "Frosinone"
+    league: ita.1
+    venue: "Stadio Benito Stirpe"
+    lat: 41.63401
+    lon: 13.32180
+    indoor: false
+    source: osm
+    osm_name: "Stadio Benito Stirpe, Viale Olimpia, Casaleno, Frosinone, Lazio, 03100, Italy"
+    note: "ESPN listed 'Matusa' - Stadio Matusa was Frosinone's ground until 2017 and has since been demolished. Replaced with the club's current ground, Stadio Benito Stirpe (same city, ~1.5 km away)."
+  - team: "Genoa"
+    league: ita.1
+    venue: "Luigi Ferraris"
+    lat: 44.41648
+    lon: 8.95253
+    indoor: false
+    source: osm
+    osm_name: "Luigi Ferraris Stadium, Via Casata Centuriona, Marassi, Bassa Val Bisagno, Genoa, Liguria, 16139, Italy"
+  - team: "Hellas Verona"
+    league: ita.1
+    venue: "Stadio Marcantonio Bentegodi"
+    lat: 45.43533
+    lon: 10.96743
+    indoor: false
+    source: osm
+    osm_name: "Marcantonio Bentegodi Stadium, Piazzale Olimpia, Borgo Milano, Ovest, Verona, Veneto, 37138, Italy"
+  - team: "Inter"
+    league: ita.1
+    venue: "Stadio Giuseppe Meazza"
+    lat: 45.47820
+    lon: 9.12396
+    indoor: false
+    source: osm
+    osm_name: "Giuseppe Meazza Stadium, Via dei Piccolomini, Quartiere Harar, San Siro, Municipio 7, Milan, Lombardy, 20148, Italy"
+  - team: "Juventus"
+    league: ita.1
+    venue: "Allianz Stadium"
+    lat: 45.10958
+    lon: 7.64213
+    indoor: false
+    source: osm
+    osm_name: "Allianz Stadium, Via Druento, Continassa, Vallette, Circoscrizione 5, Turin, Piedmont, 10151, Italy"
+  - team: "Lazio"
+    league: ita.1
+    venue: "Stadio Olimpico"
+    lat: 41.93368
+    lon: 12.45393
+    indoor: false
+    source: osm
+    osm_name: "Tribuna Monte Mario, 9, Municipio Roma XV, Rome, Roma Capitale, Lazio, 00194, Italy"
+    note: "Nominatim's search index does not return the Stadio Olimpico polygon for any name variant tried (plain, bounded-viewbox, structured and 'stadium in Rome' queries all miss it; 'Stadio Olimpico' resolves to a motorway junction or to Torino's ground). Matched instead on 'Tribuna Monte Mario', the named west stand of the Stadio Olimpico, which sits inside the ground about 70 m west of the pitch centre. This is the stadium itself, not a city-centre substitute."
+  - team: "Lecce"
+    league: ita.1
+    venue: "Via Del Mare"
+    lat: 40.36511
+    lon: 18.20892
+    indoor: false
+    source: osm
+    osm_name: "Via del Mare Stadium, Viale della Libertà, Lecce, Apulia, 73100, Italy"
+  - team: "Monza"
+    league: ita.1
+    venue: "U-Power Stadium"
+    lat: 45.58311
+    lon: 9.30793
+    indoor: false
+    source: osm
+    osm_name: "Stadio Brianteo, 4, Via Franco Tognini, Cristo Re, Monza, Monza and Brianza, Lombardy, 20900, Italy"
+  - team: "Napoli"
+    league: ita.1
+    venue: "Diego Armando Maradona"
+    lat: 40.82798
+    lon: 14.19289
+    indoor: false
+    source: osm
+    osm_name: "Stadio Diego Armando Maradona, Via Luigi Tansillo, Rione Lauro, Fuorigrotta, Municipalità 10, Naples, Campania, 80125, Italy"
+  - team: "Palermo"
+    league: ita.1
+    venue: "Renzo Barbera"
+    lat: 38.15282
+    lon: 13.34201
+    indoor: false
+    source: osm
+    osm_name: "Stadio Renzo Barbera, 11, Viale del Fante, Resuttana, San Lorenzo, VI Circoscrizione, Palermo, Sicily, 90146, Italy"
+  - team: "Parma"
+    league: ita.1
+    venue: "Ennio Tardini"
+    lat: 44.79476
+    lon: 10.33837
+    indoor: false
+    source: osm
+    osm_name: "Stadio Ennio Tardini, Via Pomponio Torelli, Cittadella, Parma, Emilia-Romagna, 43121, Italy"
+  - team: "Pescara"
+    league: ita.1
+    venue: "Stadio Adriatico"
+    lat: 42.45530
+    lon: 14.22970
+    indoor: false
+    source: osm
+    osm_name: "Stadio Adriatico-Giovanni Cornacchia, Viale Vittorio Pepe, Porta Nuova, Pescara, Abruzzo, 65126, Italy"
+  - team: "Pisa"
+    league: ita.1
+    venue: "Arena Garibaldi - Stadio Romeo Anconetani"
+    lat: 43.72528
+    lon: 10.40012
+    indoor: false
+    source: osm
+    osm_name: "Cetilar® Arena, 61, Via Antonio Rosmini, Porta a Lucca, Pisa, Tuscany, 56123, Italy"
+  - team: "Roma"
+    league: ita.1
+    venue: "Stadio Olimpico"
+    lat: 41.93368
+    lon: 12.45393
+    indoor: false
+    source: osm
+    osm_name: "Tribuna Monte Mario, 9, Municipio Roma XV, Rome, Roma Capitale, Lazio, 00194, Italy"
+    note: "Nominatim's search index does not return the Stadio Olimpico polygon for any name variant tried (plain, bounded-viewbox, structured and 'stadium in Rome' queries all miss it; 'Stadio Olimpico' resolves to a motorway junction or to Torino's ground). Matched instead on 'Tribuna Monte Mario', the named west stand of the Stadio Olimpico, which sits inside the ground about 70 m west of the pitch centre. This is the stadium itself, not a city-centre substitute."
+  - team: "SPAL"
+    league: ita.1
+    venue: "Paolo Mazza"
+    lat: 44.84011
+    lon: 11.60792
+    indoor: false
+    source: osm
+    osm_name: "Stadio Paolo Mazza, Via Fortezza, Centro cittadino, Giardino, Ferrara, Emilia-Romagna, 44122, Italy"
+  - team: "Salernitana"
+    league: ita.1
+    venue: "Arechi"
+    lat: 40.64556
+    lon: 14.82359
+    indoor: false
+    source: osm
+    osm_name: "Stadio Arechi, Piazzale Rinaldo Settembrino, Salerno, Campania, 84131, Italy"
+  - team: "Sampdoria"
+    league: ita.1
+    venue: "Luigi Ferraris"
+    lat: 44.41648
+    lon: 8.95253
+    indoor: false
+    source: osm
+    osm_name: "Luigi Ferraris Stadium, Via Casata Centuriona, Marassi, Bassa Val Bisagno, Genoa, Liguria, 16139, Italy"
+  - team: "Sassuolo"
+    league: ita.1
+    venue: "Mapei Stadium"
+    lat: 44.71455
+    lon: 10.64973
+    indoor: false
+    source: osm
+    osm_name: "MAPEI STADIUM - Città del Tricolore, Viale Severino Taddei, Castello di Mancasale, Mancasale, Reggio nell'Emilia, Emilia-Romagna, 42100, Italy"
+    note: "Mapei Stadium is in Reggio Emilia, not Sassuolo. Verified correct: Sassuolo has played its top-flight home matches there since 2013. Kept as-is."
+  - team: "Spezia"
+    league: ita.1
+    venue: "Alberto Picco"
+    lat: 44.10212
+    lon: 9.80932
+    indoor: false
+    source: osm
+    osm_name: "Stadio Alberto Picco, 18, Viale Nicolò Fieschi, Buggi, Fabiano Basso, Ceppo, Fabiano Alto, La Spezia, Liguria, 19123, Italy"
+  - team: "Torino"
+    league: ita.1
+    venue: "Olimpico Grande Torino"
+    lat: 45.04174
+    lon: 7.65002
+    indoor: false
+    source: osm
+    osm_name: "Stadio Olimpico Grande Torino, Corso Giovanni Agnelli, Santa Rita, Circoscrizione 2, Turin, Piedmont, 10134, Italy"
+  - team: "Udinese"
+    league: ita.1
+    venue: "Bluenergy Stadium"
+    lat: 46.08140
+    lon: 13.19974
+    indoor: false
+    source: osm
+    osm_name: "Bluenergy Stadium, Viale Pier Paolo Pasolini, Villaggio del Sole, Rizzi / I Riçs, Udine, Udine / Udin / Videm, Friuli – Venezia Giulia, 33100, Italy"
+  - team: "Venezia"
+    league: ita.1
+    venue: "Pier Luigi Penzo"
+    lat: 45.42771
+    lon: 12.36402
+    indoor: false
+    source: osm
+    osm_name: "Stadio Pier Luigi Penzo, 5, Fondamenta Sant'Elena, Sant'Elena, Venezia-Murano-Burano, Lido, Venice, Venezia, Veneto, 30132, Italy"
