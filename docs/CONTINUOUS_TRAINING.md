@@ -41,21 +41,41 @@ log-loss decreased, brier decreased) hold.
 
 ## Promotion gates
 
-Promotion verdicts (advisory — surfaced in the drift report; the existing
-`model_selection.json` machinery handles runtime selection):
+Promotion verdicts are **enforced**, not advisory. The verdict is decided purely
+by the regression thresholds:
 
-| Verdict                  | Condition                                            |
-|--------------------------|------------------------------------------------------|
-| `promoted`               | win, or neutral (no regression)                      |
-| `promoted_with_caution`  | regression detected but existing gates still pass    |
-| `held_back`              | regression AND no valid policy decision (gates fail) |
-| `skipped`                | walk-forward errored (e.g. insufficient seasons)     |
+| Verdict     | Condition                                                      |
+|-------------|----------------------------------------------------------------|
+| `promoted`  | win, or neutral (no regression beyond thresholds)                |
+| `held_back` | regression beyond any threshold — production artifact restored   |
+| `skipped`   | walk-forward errored (e.g. insufficient seasons)                 |
 
-**Hold-back semantics — advisory only.** No model files are deleted or rolled
-back. The new artifact is always saved by `train_models.py`. The hold-back is a
-signal in the drift report and the rolling history — inference logic can
-optionally consult `held_back` decisions, but the canonical promotion gate at
-runtime is the existing `model_selection.json` policy.
+`n_regressions == n_held_back` holds by construction.
+
+**A regression blocks promotion.** Production artifacts are snapshotted before
+retraining and restored for any league that regresses, fail-closed: an abort
+between retrain and gate rolls everything back rather than leaving an
+unevaluated model in place. Each held-back league carries
+`regression_reasons` naming the threshold it broke.
+
+**`serving_policy` is context, never a verdict.** The drift report carries the
+`model_selection.json` decision (`league` / `global` / `blend` / `dixon_coles`)
+for context only. It answers "which artifact should the runtime serve?" and
+says nothing about whether a retrained candidate got worse. It must never be
+read as a promotion gate.
+
+> **History.** It was, from 2026-06-07 to 2026-08-02. The gate tested
+> `serving_policy.decision in {"league","global","blend"}`, which every healthy
+> league satisfied, so regressions were relabelled `promoted_with_caution` and
+> counted as promoted — nine consecutive weeks reporting
+> `"status": "regression"` with `n_held_back: 0`. It only started working when
+> the Dixon-Coles floor introduced a fourth enum value that happened to fall
+> outside the hardcoded set. The `promoted_with_caution` verdict was removed
+> because that state *was* the loophole.
+
+**Exit codes.** `ok` and `gate_enforced` exit 0 — a working guardrail is not a
+build failure. Only `systemic_regression` (every comparable league regressed)
+or an error/failed rollback exits 1.
 
 ## CLI flags
 

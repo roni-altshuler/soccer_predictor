@@ -3,58 +3,74 @@
 @tailwind utilities;
 
 /* ────────────────────────────────────────────────────────────
-   Design tokens — brand palette, semantic colors, surfaces.
-   shadcn/ui primitives read these via tailwind.config.js so the
-   theme adapts automatically when `.dark` is toggled on <html>.
+   Design tokens — Bugatti, dark only.
+   shadcn/ui primitives read these via tailwind.config.js. There is
+   no light theme and no toggle: :root is the single source of truth.
    ──────────────────────────────────────────────────────────── */
 :root {
-  /* Surfaces — Matchday v3: neutral cool-whites, no blue undertone */
-  --background: #f2f3f5;
-  --background-secondary: #f7f8f9;
-  --background-tertiary: #e9eaee;
-  --card-bg: #ffffff;
-  --card-hover: #f2f4f7;
-  --input-bg: #f4f5f7;
-  --muted-bg: #eef0f2;
-  --nav-bg: rgba(255, 255, 255, 0.92);
-  --nav-border: #e3e5e9;
+  /* ────────────────────────────────────────────────────────────
+     Bugatti palette — dark only.
+
+     Ported from the sibling RaceIQ project (f1_predictions). Pure black
+     canvas, hairline borders, no gradients, no shadows, no chrome. Colour
+     carries MEANING only — live state, positive/negative, positional tier —
+     never decoration. Every token name from the old Matchday v3 theme is
+     preserved and repointed, so components keep compiling untouched.
+
+     Light mode is gone. The reference is dark-only and the second theme was
+     an entire axis of complexity serving a product that no longer exists.
+     `.dark` below is kept as an alias so `<html class="dark">` is harmless.
+     ──────────────────────────────────────────────────────────── */
+  --background: #000000;
+  --background-secondary: #0d0d0d;
+  --background-tertiary: #141414;
+  --card-bg: #0d0d0d;
+  --card-hover: #141414;
+  --input-bg: #141414;
+  --muted-bg: #1f1f1f;
+  --nav-bg: #000000;
+  --nav-border: #262626;
 
   /* Text */
-  --text-primary: #131316;
-  --text-secondary: #45454e;
-  --text-tertiary: #6d6d78;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
 
-  /* Brand accents — one green; cyan reserved for AI-pick data only */
-  --accent-primary: #0a9950;          /* green for wins / primary actions */
-  --accent-primary-soft: #2fb26d;
-  --accent-ai: #0891b2;               /* cyan for AI / predictions */
-  --accent-ai-soft: #22b8d4;
-  --accent-warn: #f59e0b;              /* amber for draws / uncertainty */
-  --accent-warn-soft: #fbbf24;
-  --accent-loss: #ef4444;             /* red for losses */
-  --accent-loss-soft: #f87171;
-  --accent-market: #6d28d9;           /* purple for market / betting intelligence */
-  --accent-market-soft: #8b5cf6;
-  --accent-info: #2563eb;             /* blue for draws-in-form-legends / H2H / informational */
-  --accent-info-soft: #3b82f6;
-  --accent-women: #db2777;            /* pink for women's-universe brand signal */
-  --accent-women-soft: #ec4899;
+  /* Accents carry meaning, not decoration. The old palette ran nine hues at
+     full saturation; Bugatti keeps four muted signals and points the rest at
+     them so nothing in the codebase breaks while the surface goes quiet. */
+  --accent-primary: #5fa657;          /* positive / win / model-favoured */
+  --accent-primary-soft: #7cbb74;
+  --accent-warn: #d4a017;             /* draw / uncertainty */
+  --accent-warn-soft: #e0b545;
+  --accent-loss: #c1443c;             /* negative / loss / live */
+  --accent-loss-soft: #d4655e;
+  --accent-info: #c3d9f3;             /* links, informational — the ice-blue */
+  --accent-info-soft: #d6e5f7;
+  /* Retired hues, aliased so legacy consumers stay calm rather than neon. */
+  --accent-ai: var(--accent-info);
+  --accent-ai-soft: var(--accent-info-soft);
+  --accent-market: var(--accent-info);
+  --accent-market-soft: var(--accent-info-soft);
+  --accent-women: var(--accent-info);
+  --accent-women-soft: var(--accent-info-soft);
 
   /* Borders & shadows — flat product: hairlines carry the structure */
-  --border-color: #e3e5e9;
-  --border-hover: #c9ccd3;
-  --shadow-sm: 0 1px 2px rgba(19, 19, 22, 0.05);
-  --shadow-md: 0 4px 12px rgba(19, 19, 22, 0.07);
-  --shadow-lg: 0 12px 24px rgba(19, 19, 22, 0.10);
+  --border-color: #262626;
+  --border-hover: #3a3a3a;
+  /* Shadows are nuked. Depth comes from hairlines, never from bloom. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
 
   /* Status surfaces */
   --success: var(--accent-primary);
   --warning: var(--accent-warn);
   --danger: var(--accent-loss);
   --info: var(--accent-ai);
-  --live-bg: rgba(239, 68, 68, 0.08);
-  --live-border: rgba(239, 68, 68, 0.25);
-  --live-text: #dc2626;
+  --live-bg: rgba(193, 68, 60, 0.12);
+  --live-border: rgba(193, 68, 60, 0.35);
+  --live-text: #d4655e;
 
   /* Backwards-compat token aliases (existing components depend on these) */
   --accent-secondary: var(--accent-primary-soft);
@@ -68,11 +84,11 @@
   /* Theme tokens added during the light-mode sweep — see Stream B of the
      bug-fix + FotMob polish plan. Components should pick from these tokens
      instead of hard-coding Tailwind grays / `text-white` / `bg-black`. */
-  --accent-on-primary: #04120a;       /* high-contrast text on green/cyan CTAs */
-  --overlay-bg: rgba(15, 26, 44, 0.45); /* page-loader, modal backdrops */
-  --pitch-bg: #0d2918;                 /* lineup pitch surface (dark in both modes) */
-  --pitch-text: #f1f5fb;
-  --ticker-bg: linear-gradient(to right, #14223a, #1c2c4d);
+  --accent-on-primary: #000000;       /* text on a filled accent */
+  --overlay-bg: rgba(0, 0, 0, 0.72);  /* page-loader, modal backdrops */
+  --pitch-bg: #0d0d0d;                 /* lineup pitch surface — flat, hairline-drawn */
+  --pitch-text: #cccccc;
+  --ticker-bg: #0d0d0d;                /* was a two-stop gradient; Bugatti has none */
 
   /* shadcn radius tokens */
   --radius: 0.75rem;
@@ -94,9 +110,9 @@
   --logo-plate-ring: rgba(19, 19, 22, 0.12);
 
   /* Glass / surface mix tokens used by the shell (flat in v3) */
-  --glass-bg: rgba(255, 255, 255, 0.94);
-  --glass-border: #e3e5e9;
-  --glass-blur: blur(10px);
+  --glass-bg: #0d0d0d;   /* no glassmorphism — flat surface */
+  --glass-border: #262626;
+  --glass-blur: none;
   --bento-hl: color-mix(in srgb, var(--accent-ai) 16%, transparent);
   --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 16%, transparent);
 
@@ -135,19 +151,18 @@
   --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
   --hairline-bright: color-mix(in srgb, white 14%, transparent);
 
-  /* Ambient page wash (Matchday v4) — kept faint in light mode. */
-  --ambient-primary: color-mix(in srgb, var(--accent-primary) 4%, transparent);
-  --ambient-ai: color-mix(in srgb, var(--accent-ai) 3%, transparent);
-  /* Lifted-panel top highlight — the premium "glass edge" on cards. */
-  --panel-top-hl: color-mix(in srgb, white 55%, transparent);
+  /* Ambient washes and the lifted-panel "glass edge" are retired — Bugatti
+     has no bloom and no premium sheen. Kept as transparent so any lingering
+     consumer paints nothing. */
+  --ambient-primary: transparent;
+  --ambient-ai: transparent;
+  --panel-top-hl: transparent;
   /* Team-tint hero gradient — match-detail / cards override --team-tint-home
      & --team-tint-away inline to paint a broadcast-style header. */
-  --team-header-gradient: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--team-tint-home) 30%, var(--background-tertiary)) 0%,
-    var(--background-tertiary) 50%,
-    color-mix(in srgb, var(--team-tint-away) 30%, var(--background-tertiary)) 100%
-  );
+  /* Was a 135° three-stop team-tinted wash. Bugatti has no gradients, so the
+     match header is a flat surface and club identity is carried by the crest
+     and the score, not by a painted background. */
+  --team-header-gradient: var(--background-secondary);
 
   /* ────────────────────────────────────────────────────────────
      Marketing landing tokens (used by /welcome). Spacing rhythm is
@@ -160,95 +175,19 @@
 }
 
 .dark {
-  /* Matchday v3.1 dark — lifted charcoal with a faint pitch-green cast
-     (hue ~150, sat 4-6%): lighter than v3 per product direction, and the
-     undertone quietly says "football" without reading as a colored theme. */
-  --background: #171a18;
-  --background-secondary: #1b1e1c;
-  --background-tertiary: #242825;
-  --card-bg: #1f2320;
-  --card-hover: #272b28;
-  --input-bg: #252927;
-  --muted-bg: #272b28;
-  --nav-bg: rgba(28, 32, 29, 0.94);
-  --nav-border: #333835;
-
-  /* Stays light in dark mode on purpose — see the :root note. Slightly off
-     pure white so it reads as a seated tile rather than a hole in the page. */
-  --logo-plate: #f4f6f4;
-  --logo-plate-ring: rgba(255, 255, 255, 0.14);
-
-  --text-primary: #f6f7f6;
-  --text-secondary: #b2b6b3;
-  --text-tertiary: #7f847f;
-
-  --accent-primary: #00c060;
-  --accent-primary-soft: #34d380;
-  --accent-ai: #27c4f5;
-  --accent-ai-soft: #67d9f9;
-  --accent-warn: #f5b021;
-  --accent-warn-soft: #fbcb52;
-  --accent-loss: #ff5c5c;
-  --accent-loss-soft: #ff8a8a;
-  --accent-market: #a58bff;
-  --accent-market-soft: #c4b5fd;
-  --accent-info: #6ba6f8;
-  --accent-info-soft: #93c5fd;
-  --accent-women: #f871b0;
-  --accent-women-soft: #f9a8d4;
-
-  --border-color: #333835;
-  --border-hover: #464c47;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
-
-  --live-bg: rgba(255, 92, 92, 0.10);
-  --live-border: rgba(255, 92, 92, 0.30);
-  --live-text: #ff7070;
-
-  --tab-active-bg: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-  --surface-highlight: color-mix(in srgb, var(--accent-ai) 14%, transparent);
-  --surface-glow: color-mix(in srgb, var(--accent-primary) 22%, transparent);
-
-  /* Dark-mode equivalents of the Stream B tokens. */
-  --accent-on-primary: #04120a;
-  --overlay-bg: rgba(0, 0, 0, 0.55);
-  --pitch-bg: #0a1e10;
-  --pitch-text: #f1f5fb;
-  --ticker-bg: linear-gradient(to right, #07101f, #14223a);
-
-  /* Dark-mode glass overrides (flat in v3) */
-  --glass-bg: rgba(31, 35, 32, 0.94);
-  --glass-border: #333835;
-  --bento-hl: color-mix(in srgb, var(--accent-ai) 22%, transparent);
-  --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 22%, transparent);
-
-  /* FotMob-redesign token overrides (Phase 0.A) — only the slots whose
-     dark-mode value differs from light. Pitch-line, ratings, and team-tints
-     work the same in both modes. */
-  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 28%, transparent);
-  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 28%, transparent);
-  --headshot-ring: rgba(241, 245, 251, 0.22);
-  --score-numeric-shadow: none;
-  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 60%, transparent);
-
-  /* Matchday v3: no neon bloom in dark mode either. */
-  --glow-ai: 0 0 0 1px var(--border-color);
-  --glow-primary: 0 0 0 1px var(--border-color);
-  --glow-loss: 0 0 0 1px var(--border-color);
-  --aurora-1: transparent;
-  --aurora-2: transparent;
-  --aurora-3: transparent;
-  --elev-1: var(--card-bg);
-  --elev-2: var(--card-bg);
-  --hairline: color-mix(in srgb, var(--border-color) 80%, transparent);
-  --hairline-bright: rgba(255, 255, 255, 0.07);
-
-  /* Ambient wash — a touch stronger in dark for real atmosphere, still quiet. */
-  --ambient-primary: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-  --ambient-ai: color-mix(in srgb, var(--accent-ai) 7%, transparent);
-  --panel-top-hl: rgba(255, 255, 255, 0.07);
+  /*
+   * Intentionally empty.
+   *
+   * The app hardcodes <html class="dark"> (src/app/layout.tsx) and there is no
+   * theme provider or toggle, so this block always won — it used to override
+   * every token in :root with the Matchday v3.1 charcoal palette. Bugatti is
+   * dark-only, so the single source of truth now lives in :root and this
+   * selector is kept purely so the hardcoded class stays harmless.
+   *
+   * If a light mode ever returns, invert this: put the light values in :root
+   * and the dark ones here. Do not reintroduce a second full palette without
+   * a theme provider to switch it.
+   */
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -256,29 +195,40 @@
    ──────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
-  /* Matchday v4 "Intelligence" — a whisper-quiet atmospheric wash (a green
-     pitch cast + a cyan AI cast, both a few % over the base) gives the page
-     real depth without the neon bloom v3 rightly removed. Fixed so it reads as
-     ambient light, not content. Restrained enough to stay legible on data. */
+  /* Flat black. The two radial ambient washes are gone — Bugatti's only depth
+     element is photography, and a data grid does not need atmosphere. */
   background-color: var(--background);
-  background-image:
-    radial-gradient(120% 70% at 50% -8%, var(--ambient-primary), transparent 58%),
-    radial-gradient(90% 55% at 100% 0%, var(--ambient-ai), transparent 52%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
-  transition: background-color 0.2s, color 0.2s;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-h1, h2, h3, h4, h5, h6 {
+/* Display type is the loudest thing on the page: white, uppercase, widely
+   letterspaced. It is what makes the restraint elsewhere read as deliberate
+   rather than unfinished. Note the POSITIVE tracking — the old theme used
+   -0.02em, which is the opposite instinct. */
+h1, h2, h3 {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
   color: var(--text-primary);
+}
+
+h4, h5, h6 {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+/* Nav, buttons, captions and every number run monospace — the tabular figures
+   keep score columns and probability tables from shifting as digits change. */
+nav, button, .caption, th, [role='tab'] {
+  font-family: var(--font-mono-numeric), ui-monospace, monospace;
+  letter-spacing: 0.04em;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

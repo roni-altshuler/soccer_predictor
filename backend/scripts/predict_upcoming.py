@@ -1353,20 +1353,19 @@ async def predict_upcoming(days_ahead: int = 14):
         else:
             pred_scoreline = poisson_scoreline(final_home_xg, final_away_xg)
 
-        # Tuned draw decision: predict draw when draw probability is both
-        # materially high and close to the strongest win probability.
+        # Plain argmax. The tuned draw gate that used to sit here was measured
+        # against the settled record and was a net loss: it overrode argmax on
+        # 355 of 1,530 settled picks and was right on 94 of them where argmax
+        # got 135 (.4359 vs .4627 label accuracy). Removed 2026-08-08.
         draw_min_prob = float(league_tuning.get("draw_min_prob", 0.24))
         draw_margin = float(league_tuning.get("draw_margin", 0.02))
-        max_non_draw = max(probs["home_win"], probs["away_win"])
 
-        if probs["draw"] >= draw_min_prob and probs["draw"] + draw_margin >= max_non_draw:
+        if probs["draw"] > probs["home_win"] and probs["draw"] > probs["away_win"]:
             pred_winner = "draw"
         elif probs["home_win"] >= probs["away_win"]:
             pred_winner = "home"
-        elif probs["away_win"] > probs["home_win"]:
-            pred_winner = "away"
         else:
-            pred_winner = "draw"
+            pred_winner = "away"
 
         record = {
             "match_id": m["id"],
@@ -1394,8 +1393,14 @@ async def predict_upcoming(days_ahead: int = 14):
             "blend_entropy": round(blend_entropy, 4) if blend_entropy is not None else None,
             "draw_min_prob": round(draw_min_prob, 4),
             "draw_margin": round(draw_margin, 4),
-            "weather_factor": 1.0,
-            "referee_factor": 1.0,
+            # weather_factor / referee_factor were hardcoded 1.0 on every record
+            # ever written. They implied inputs that do not exist: the `weather`
+            # table holds 0 rows, and referee_id is populated for eng.1 only.
+            # Emitted as null so the absence is visible instead of dressed up as
+            # a neutral measurement. Restore real values only when the ingest
+            # fixes in docs/PIVOT_2026-08.md §4c land.
+            "weather_factor": None,
+            "referee_factor": None,
             "venue": m.get("venue", ""),
             "feature_vector": [round(float(v), 6) for v in features.ravel().tolist()],
             # Neural model raw probs (if available)

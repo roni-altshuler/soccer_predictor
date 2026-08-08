@@ -57,6 +57,14 @@ pytest>=7.4.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
 
+# Statistical challenger models — the floor the in-house engine must beat.
+# Ships Dixon-Coles, bivariate/zero-inflated Poisson, Weibull copula and
+# hierarchical Bayesian goal models, plus Elo/Massey/Colley/Pi ratings and
+# RPS/Brier scoring. Measured 2026-08-08 on 12,289 walk-forward Wave A
+# fixtures: Dixon-Coles .5977 Brier vs market .5770 (+.0207), against the
+# in-house neural ensemble's +.0599. See backend/scripts/benchmark_dc_challenger.py.
+penaltyblog>=1.11.0
+
 # Optional but recommended
 ipython>=8.0.0  # For interactive exploration
 jupyter>=1.0.0  # For notebooks

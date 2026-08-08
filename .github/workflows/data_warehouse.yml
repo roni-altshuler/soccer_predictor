@@ -1,26 +1,88 @@
 name: Data Warehouse Refresh
 
-# Builds the local SQLite match warehouse on a weekly cadence and uploads
-# `unified_*_holdout.json` from a smoke training run so accuracy drift is
-# visible in the Actions UI. The full ML retrain still runs locally /
-# from prediction_pipeline.yml; this job exists to keep the warehouse
-# loaders honest (the ETL is slow and breaks silently when a source's
-# HTML / CSV layout changes).
+# Builds the local SQLite match warehouse and uploads it so accuracy drift and
+# loader breakage are visible in the Actions UI. The full ML retrain still runs
+# locally / from prediction_pipeline.yml; this job exists to keep the warehouse
+# loaders honest (the ETL is slow and breaks silently when a source's HTML /
+# CSV layout changes).
+#
+# ── Why this workflow is split in two (2026-08) ─────────────────────────────
+# Run 30797305086 (2026-08-03) was cancelled at the 90-minute job cap. The
+# trend was 45m -> 54m -> cancelled: a single job running every loader from a
+# cold start was outgrowing its budget, and it grows further every week as more
+# seasons and teams accumulate.
+#
+# The loaders are NOT independent, so a matrix job per loader does not work:
+#   * ESPN + football-data CREATE the `matches` and `teams` rows.
+#   * ClubElo iterates `SELECT team_id FROM teams WHERE gender='M'` — it needs
+#     teams to already exist.
+#   * FBref and Understat ENRICH existing match rows with xG — they need
+#     matches to already exist.
+# Sharding by loader would mean rebuilding the expensive base warehouse inside
+# every shard (the warehouse is gitignored, so each job starts from nothing),
+# which costs more total minutes than it saves.
+#
+# Restoring backend/data/cache/ via actions/cache was also rejected: this job's
+# stated purpose is to detect when an upstream source changes its HTML/CSV
+# layout, and serving those pages from a warm cache is exactly what would hide
+# that breakage.
+#
+# So the split is by CADENCE and DEPENDENCY ORDER instead — the simplest thing
+# that fits the budget and preserves the ordering the loaders require:
+#
+#   core    weekly (Mondays). ESPN + football-data only. These are plain JSON
+#           and CSV endpoints, they are the two most likely to break on an
+#           upstream layout change, and they are what the canary is really for.
+#           Budget: 60 min.
+#   enrich  monthly (1st). Downloads core's warehouse and layers on the three
+#           slow scrapers, each of which is rate-limit-bound rather than
+#           CPU-bound: ClubElo sleeps 1.5s per team (and the team count grows
+#           every season), FBref sleeps 6s per league-season, Understat 3s.
+#           They change slowly enough that monthly is plenty.
+#           Budget: 150 min, and it is its own job so it can no longer eat the
+#           core refresh's budget or be guillotined alongside it.
+#
+# Both jobs carry an explicit timeout-minutes well under the 6h runner cap, so
+# a hung request fails fast with a clear message instead of being cancelled at
+# an arbitrary boundary.
 
 on:
   schedule:
-    - cron: '0 5 * * 1'   # Mondays 05:00 UTC
+    - cron: '0 5 * * 1'   # Mondays 05:00 UTC — fast loaders only
+    - cron: '0 3 1 * *'   # 1st of the month 03:00 UTC — + slow scrapers
   workflow_dispatch:
     inputs:
-      sources:
-        description: 'Sources to refresh (comma-separated). Default: --espn --football-data --clubelo'
+      core_sources:
+        description: 'Fast loaders for the core job.'
         required: false
-        default: '--espn --football-data --clubelo'
+        default: '--espn --football-data'
+      enrich_sources:
+        description: 'Slow scrapers for the enrichment job.'
+        required: false
+        default: '--clubelo --fbref --understat'
+      run_enrichment:
+        description: 'Also run the slow scrapers (they are monthly on a schedule).'
+        required: false
+        default: false
+        type: boolean
+      min_season:
+        description: 'Earliest season to load.'
+        required: false
+        default: '2018'
+
+concurrency:
+  group: data-warehouse
+  cancel-in-progress: false
+
+env:
+  MIN_SEASON: ${{ github.event.inputs.min_season || '2018' }}
 
 jobs:
-  refresh:
+  # ── Fast loaders: create matches + teams. Runs on every trigger. ──────────
+  core:
+    name: Core loaders (ESPN + football-data)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -38,24 +100,78 @@ jobs:
           grep -v '^torch' requirements.txt > /tmp/req-no-torch.txt
           pip install -r /tmp/req-no-torch.txt
 
-      - name: Refresh selected warehouse sources
+      - name: Refresh core warehouse sources
         run: |
-          # Default to the fast, network-resilient sources. The slower
-          # scrapers (FBref, Understat, Open-Meteo) can be opted in via
-          # workflow_dispatch inputs.
           python -m backend.scripts.build_warehouse \
-            ${{ github.event.inputs.sources || '--espn --football-data --clubelo' }} \
-            --min-season 2018 \
+            ${{ github.event.inputs.core_sources || '--espn --football-data' }} \
+            --min-season "$MIN_SEASON" \
             --verbose
 
       - name: Show warehouse stats
         run: python -m backend.scripts.build_warehouse --stats
 
-      - name: Upload warehouse stats
+      # Handed to the enrich job so the slow scrapers have matches and teams to
+      # attach to, instead of rebuilding the base themselves.
+      - name: Upload core warehouse
         uses: actions/upload-artifact@v4
         with:
-          name: warehouse-stats
+          name: warehouse-core
           path: |
             backend/data/warehouse.sqlite
             backend/data/cache/
           retention-days: 30
+          if-no-files-found: error
+
+  # ── Slow scrapers: enrich what `core` built. Monthly, or on request. ──────
+  enrich:
+    name: Slow scrapers (ClubElo + FBref + Understat)
+    needs: core
+    if: >-
+      github.event.schedule == '0 3 1 * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_enrichment == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies (without torch)
+        run: |
+          python -m pip install --upgrade pip
+          grep -v '^torch' requirements.txt > /tmp/req-no-torch.txt
+          pip install -r /tmp/req-no-torch.txt
+
+      # Restores warehouse.sqlite + cache/ under backend/data/, so ClubElo sees
+      # the team table and FBref/Understat see the match rows they enrich.
+      - name: Download core warehouse
+        uses: actions/download-artifact@v4
+        with:
+          name: warehouse-core
+          path: backend/data
+
+      - name: Enrich with slow sources
+        run: |
+          python -m backend.scripts.build_warehouse \
+            ${{ github.event.inputs.enrich_sources || '--clubelo --fbref --understat' }} \
+            --min-season "$MIN_SEASON" \
+            --verbose
+
+      - name: Show warehouse stats
+        run: python -m backend.scripts.build_warehouse --stats
+
+      - name: Upload enriched warehouse
+        uses: actions/upload-artifact@v4
+        with:
+          name: warehouse-enriched
+          path: |
+            backend/data/warehouse.sqlite
+            backend/data/cache/
+          retention-days: 30
+          if-no-files-found: error

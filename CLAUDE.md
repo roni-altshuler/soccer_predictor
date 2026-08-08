@@ -4,75 +4,94 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this app is
 
-Pitchverse (renamed from "Pitchwise" in July 2026; originally "FotPredict AI" until 2026-05-28) is a Next.js 15 + FastAPI app that combines FotMob-style live scores with a custom ML prediction engine. The frontend is deployed on Vercel; the backend is a Python service. Two ML models ship: `unified_men.pt` (60.56% test accuracy across 13 men's competitions, 11,661-match holdout) and `unified_women.pt` (51.45% across 5 women's competitions). Personal/educational project — no license, not for betting. Tagline: "Calibrated football intelligence." Note that localStorage keys still use the `fotpredict.*` prefix to preserve existing users' preferences across the rebrands.
+**Pitchverse** is a soccer match-prediction dashboard: Next.js 15 frontend, Python/FastAPI backend, ML prediction engine. Deployed on Vercel.
+
+It does **three things**, and nothing else (see [docs/PIVOT_2026-08.md](docs/PIVOT_2026-08.md)):
+
+1. **Match outcome prediction** — 1X2 and scoreline, calibrated, scored against closing odds.
+2. **Season projections** — title, relegation and final table, updated as the season runs.
+3. **A value surface** — model probability vs no-vig implied probability, with EV and Kelly staking.
+
+If a proposed feature is none of those three, it does not belong here. The project pivoted on 2026-08-08 away from a sprawling "world model of football" (VISION_2030) that had grown to 26 pages and 131k lines while the prediction engine regressed for nine straight weeks.
+
+**This is a betting-adjacent product.** The former "educational only, no betting recommendations" constraint is retired. That raises the evidentiary bar rather than lowering it — see Standing rules below.
+
+## Standing rules — read before changing anything
+
+- **The market is the benchmark.** Any accuracy claim is stated as paired Brier/log-loss against closing odds on named fixtures, or it is not stated. Measured target on our own corpus: **market Brier .5666** over 25,746 fixtures (ECE .0049).
+- **Calibration gates the product.** A league with no evidence ships no value flags. Displayed confidence never exceeds measured confidence.
+- **Baselines are never deleted.** Constant base rate, Elo and Dixon-Coles stay live as yardsticks. A model that cannot beat them does not serve.
+- **A regression blocks promotion.** No recording a regression and shipping anyway.
+- **No fabricated data.** Sparse coverage stays genuinely missing; never impute a plausible value.
+- **Features must earn their place** via temporal-split ablation against the market row. Adding all 53 candidate features *degraded* Brier by .0052.
+
+## Current measured state (2026-08-08)
+
+| forecaster | Brier | notes |
+|---|---|---|
+| Market (closing line, Shin de-vig) | **.5666** | the target; ECE .0049 |
+| Dixon-Coles (`penaltyblog`, off-the-shelf) | .5977 | +.0207 to market; **the serving floor** |
+| 30-feature logreg baseline | .5876 | closes 84% of the constant→market gap |
+| Constant base rate | .6468 | |
+| In-house neural ensemble | .6396 | +.0599 to market — captures ~17% of signal |
+
+**Dixon-Coles is the serving default for Wave A.** The neural stack does not serve in a league until it beats DC out-of-sample there. It currently beats DC in zero leagues.
+
+A goal-model bake-off (`backend/scripts/bakeoff_goal_models.py`) found all six penaltyblog goal models within .0017 Brier of each other and **every blend worse than Dixon-Coles alone** — their errors are too correlated for ensembling to help. Do not add a hybrid without new evidence.
+
+## League scope — Wave A only
+
+Premier League (`eng.1`), La Liga (`esp.1`), Bundesliga (`ger.1`), Serie A (`ita.1`), Ligue 1 (`fra.1`).
+
+MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advances only on measured evidence. Women's competitions were dropped in the pivot — a real cost, to be revisited on the same evidence gate.
+
+## Known landmines
+
+- **Train/serve skew (fixed 2026-08-08, understand it anyway).** Market features were in `FEATURE_NAMES` and populated for 96.1% of training rows, while `unified_inference.py` synthesised the live row with `NULL AS odds_home`. Every served prediction saw 0.0. Brier .5801 → .6561, *below* the constant base rate. This was the entire 60.56%-holdout / 46%-live gap. The schema guard could not catch it because feature **names** matched — only **values** differed. `_warn_on_dead_feature_blocks()` in `unified_inference.py` is the guard that does catch it. **Never put a feature in the served vector that the serving path cannot populate.**
+- **Data integrity.** 55 of 77 league-seasons have the wrong distinct-team count (season-label disagreement between ESPN and football-data). Six clubs have split identities. The `weather` table has 0 rows, `referee_id` exists for `eng.1` only, `teams.venue_lat/lon` are NULL for all 692 teams, xG is 0 rows. Several "features" are therefore constants. See PIVOT §4c.
+- **The prediction pipeline bot** commits to `main` 3×/day. Rebase feature branches often.
+- **Vercel escalates ESLint warnings to errors.** Run `npx next lint` before pushing; `npm run build` is not enough.
 
 ## Common commands
 
 | Task | Command |
 |---|---|
-| Run both servers (FE + BE) | `npm run dev` (concurrently boots `uvicorn backend.main:app` on :8000 + `next dev` on :3000) |
-| Or via script | `./run_app.sh` |
-| Production build | `npm run build` (Next.js) |
-| Lint | `npm run lint` (`next lint`) — **also runs in Vercel CI as a hard gate** |
-| Jest (FE) | `npm test` / `npm run test:watch` / `npm run test:coverage` |
-| Pytest (BE) | `pytest backend/tests/` from repo root |
-| Single pytest test | `pytest backend/tests/test_warehouse.py::test_migration_is_idempotent -v` |
-| A11y audit | `npm run a11y` (axe against http://localhost:3000) |
-| Validate historical data | `npm run data:quality` |
-| Settle prediction backlog | `python -m backend.scripts.fetch_outcomes` |
-| Generate predictions for next 7 days | `python -m backend.scripts.predict_upcoming --days 7` |
-| Full warehouse rebuild | `python -m backend.scripts.build_warehouse --full` |
-| Retrain unified model | `python -m backend.scripts.train_unified --gender M\|F` |
+| Run both servers | `npm run dev` |
+| Production build | `npm run build` |
+| Lint (Vercel hard gate) | `npx next lint` |
+| Frontend tests | `npm test` |
+| Backend tests | `.venv/bin/python -m pytest backend/tests/` |
+| Market benchmark | `.venv/bin/python -m backend.scripts.benchmark_market` |
+| Dixon-Coles challenger | `.venv/bin/python -m backend.scripts.benchmark_dc_challenger` |
+| Goal-model bake-off | `.venv/bin/python -m backend.scripts.bakeoff_goal_models` |
+| Feature ablation | `.venv/bin/python -m backend.scripts.ablate_features` |
+| Season projection backtest | `.venv/bin/python -m backend.scripts.backtest_season_projections` |
+| Warehouse rebuild (with odds) | `.venv/bin/python -m backend.scripts.build_warehouse --espn --football-data` |
 
-**Vercel/local divergence:** `next build` locally treats most ESLint findings as warnings; Vercel escalates `prefer-const`, `no-unused-vars`, etc. to **errors** that fail the deploy. Always run `npx next lint` before pushing to `main` — `npm run build` is not enough.
+**Use `.venv/bin/python`** — the system Python lacks the dependencies.
 
 ## Architecture
 
-Two streams that share one repo:
-
 ### Backend (`backend/`)
-- **FastAPI app** at `backend/main.py` exposes `/api/v1/*` routes from `backend/api/v1/{predictions,tracking,matches,leagues,teams,...}.py` plus a few legacy unscoped routes (`/api/todays_matches`, etc.).
-- **Services** in `backend/services/`:
-  - `prediction/` — `unified_inference.py` loads the PyTorch artefacts (`unified_men.pt`, `unified_women.pt`) and serves `MatchPrediction`. `model.py` is the legacy ELO-Poisson fallback. `tracker.py` writes `PredictionRecord` JSON to `backend/data/predictions/predictions_YYYY-MM.json` and computes accuracy metrics (gender-aware).
-  - `data/` — the **SQLite match warehouse** at `backend/data/warehouse.sqlite` plus seven ingestion loaders (ESPN, football-data.co.uk, ClubElo, OpenFootball, FBref, Understat, Open-Meteo) and the cross-source `team_resolver.py`. Schema in `warehouse.py`.
-  - `espn/`, `fotmob/` — third-party API clients (men's-leaning). Women's data goes through ESPN women's league IDs (`usa.nwsl`, `eng.w.1`, etc.) — see `WOMEN_COMPETITIONS` in `backend/services/data/espn_loader.py`.
-- **Models** under `backend/models/` are Pydantic schemas (`MatchPrediction`, `OutcomeProbabilities`, `PredictionFactors`, …) shared between routes and the inference layer.
-- **Scripts** in `backend/scripts/` are CLI entry points: ETL (`build_warehouse.py`), training (`train_unified.py`, `train_models.py`), pipeline ops (`fetch_outcomes.py`, `predict_upcoming.py`, `train_feedback.py`), audit (`model_audit.py`, `validate_data_quality.py`).
+- **FastAPI** at `backend/main.py`, routes under `backend/api/v1/`.
+- **`services/prediction/`** — `unified_inference.py` (PyTorch artifacts), `dixon_coles.py`, `model.py` (legacy ELO-Poisson fallback), `market.py` (de-vigging, EV, Kelly, RPS/Brier — cross-validated against penaltyblog), `feature_builder_v2.py` (81 served features + a separate 6-feature market block), `features_v2.py` (candidate features with structurally-enforced point-in-time correctness), `tracker.py`.
+- **`services/data/`** — SQLite warehouse at `backend/data/warehouse.sqlite` (**gitignored**) plus ingestion loaders and `team_resolver.py`.
+- **`services/simulation/league_simulator.py`** — Monte Carlo season projections. Beats its naive baseline at every matchday; title Brier ≤.02 from matchday 10, relegation ≤.05 from matchday 26. **Overconfident in the 70–90% band** (says 80%, happens 69.8%) — do not print those raw.
 
 ### Frontend (`src/`)
-- Next.js 15 App Router. Every user-facing page is under `src/app/`: `page.tsx` (home Match Centre), `predict/`, `accuracy/`, `diagnostics/`, `matches/`, `matches/[id]/`, `leagues/[leagueId]/`, `news/`, `simulator/`, `tracking/` (redirects to `/accuracy`).
-- **Node-runtime API routes** in `src/app/api/` proxy ESPN/FotMob and read the committed prediction JSON files for Vercel (the FastAPI backend isn't deployed there). Notably `/api/todays_matches`, `/api/v1/tracking/accuracy`, `/api/v1/tracking/recent`.
-- **Components** in `src/components/`:
-  - `ui/` — shadcn primitives (Card, Button, Tabs, Dialog, Tooltip, etc.).
-  - `match/` — `MatchRow`, `LeagueSection`, `MatchCenterHeader`, `LeagueBadge`, `TeamFormPill`, `ConfidenceIndicator`, `SplitStatBar`.
-  - `prediction/PredictionResult.tsx` — the showcase outcome+xG+scoreline+factors viz used on `/predict` and the match-detail "AI Prediction" tab.
-  - `accuracy/` — public-facing /accuracy components (AccuracyHero, CalibrationPlot, ConfusionHeatmap, RecentPicksFeed, ModelExplainer).
-  - `home/`, `league/`, `tournament/`, `worldcup/`, `tracking/` — page-specific.
-- **Hooks** in `src/hooks/`: `useGenderQuery` (canonical wrapper around `useGenderPreference` — every fetch call should append `?gender=${asQueryParam}`).
-- **`src/lib/leagueAccents.ts`** — `competition_id` → `{ displayName, country, gender, accent, accentBg }`. Single source of truth for league brand colours.
+Next.js 15 App Router, **10 pages** (was 26), **45 API routes** (was 67).
 
-### Gender universes (cross-cutting)
-Two parallel ML models. The `GenderToggle` component (`src/components/GenderToggle.tsx`) persists choice via `localStorage` (`fotpredict.gender`). Default is `'men'`. **When toggled to women's, the experience is strictly single-universe** — only women's leagues / matches / accuracy. Every data-fetching call site must thread `?gender=` via `useGenderQuery`; missing the param means the women's toggle is cosmetic for that surface.
+Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_predictions`): pure black `#000`, surfaces `#0d0d0d`/`#141414`, hairlines `#262626`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No gradients, no shadows, no glassmorphism, no chrome.** Colour carries meaning only — never decoration.
 
-The warehouse and backend tracker are fully gender-aware (`PredictionRecord.gender`, `Warehouse.iter_matches(gender=)`, `/api/v1/tracking/accuracy?gender=`); the legacy `/api/standings`, `/api/news`, `/api/tournament` Next.js routes accept the param but currently ignore it — they route to ESPN's women's league IDs implicitly via the league_id encoded in their URL.
+**Dark-only.** `<html class="dark">` is hardcoded and there is no theme provider; `:root` in `globals.css` is the single source of truth and the `.dark` block is intentionally empty.
 
-## ML pipeline & data flow
+### Conventions
+- **CSS variables, never Tailwind colours** — `text-[var(--text-primary)]`, `bg-[var(--card-bg)]`, `border-[var(--border-color)]`. Hardcoded `text-white`/`bg-black`/`text-gray-400` bypass the token layer.
+- **No bot attribution in commits** — no "Co-Authored-By: Claude" or "Generated with Claude Code" trailers in this repo.
+- **Feature branches** for long-lived work; small fixes straight to `main`.
+- Backend tests use absolute imports (`from backend.services...`); root `conftest.py` makes that work.
+- `localStorage` keys still use the `fotpredict.*` prefix, preserving preferences across two rebrands.
 
-Three GitHub Actions workflows:
+## Deleted in the pivot — do not resurrect without a decision
 
-1. **`prediction_pipeline.yml`** runs **3× daily** (06:00, 14:00, 22:00 UTC). Settles pending predictions (`fetch_outcomes`), generates next-7-day picks (`predict_upcoming`), runs online learning (`train_feedback`), then auto-commits `backend/data/predictions/*.json` and `backend/data/league_params.json` back to `main` as `chore: update predictions [automated]`. **Don't fight the bot** — when working on a feature branch, always be ready to rebase against fresh pipeline commits.
-2. **`test_backend.yml`** runs `pytest backend/tests/` on every backend or `requirements.txt` change.
-3. **`data_warehouse.yml`** weekly warehouse refresh.
-
-The unified PyTorch model artefacts (`unified_*.pt`, `*_scaler.pkl`, `*_calibrator.pkl`, `*_metadata.json`) are **gitignored** — train them locally via `python -m backend.scripts.train_unified` and the FastAPI inference layer picks them up automatically from `backend/data/models/`.
-
-`PredictionRecord` JSON files **are** committed (under `backend/data/predictions/`) and that's what the Vercel-deployed `/api/v1/tracking/*` Node routes read. So `/accuracy` works on Vercel even though FastAPI doesn't.
-
-## Key conventions
-
-- **Data-provenance honesty**: never fabricate data — no synthesized match rows, no placeholder fills for missing provider fields. `DataSourceBadge` no longer exists: provenance and methodology are documented in README/`docs/methodology.md` and MUST NOT appear in the website UI (provider names, algorithm/method names, pipeline details) outside a short plain-language note on `/about`.
-- **Accuracy disclaimers**: predictions are educational only; the README pins this explicitly. Don't add betting language.
-- **No bot attribution in commits**: the user explicitly doesn't want "Co-Authored-By: Claude" or "Generated with Claude Code" trailers in this repo.
-- **CSS variables over Tailwind colours**: use `text-[var(--text-primary)]`, `bg-[var(--card-bg)]`, `border-[var(--border-color)]`, etc. Hardcoded `text-white` / `bg-black` / `text-gray-400` will break light mode — tokens are defined in `src/app/globals.css` under `:root` (light) and `.dark` (dark).
-- **Feature branches**: long-lived rebuild work goes on `feat/*` branches with descriptive names; small bug fixes go straight to `main`. The 3×/day prediction pipeline only runs on `main`.
-- **Backend tests live under `backend/tests/`** and use absolute imports like `from backend.services.data.warehouse import ...`. The root `conftest.py` makes that work without an editable install.
+Counterfactual Machine · Rarity Engine · Story Compiler · Boardroom agents · Almanac / Ask Pitchverse · match2vec · 3D Match Theater · Universe Browser · Justice Ledger · bracket challenge · news feed · players pages · world-cup hub · design-system page · the entire `services/llm/` layer (which also removes the Gemini free-tier quota failures from the critical path).

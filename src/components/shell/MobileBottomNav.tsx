@@ -6,9 +6,9 @@ import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   Brain,
-  Radio,
   Search,
   TrendingUp,
+  Trophy,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -24,8 +24,8 @@ type Item = {
 }
 
 const ITEMS: Item[] = [
-  { href: '/', label: 'Matches', icon: Activity },
-  { href: '/live', label: 'Live', icon: Radio, accent: 'ai' },
+  { href: '/', label: 'Today', icon: Activity },
+  { href: '/leagues', label: 'Standings', icon: Trophy },
   { action: 'palette', label: 'Search', icon: Search },
   { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },

@@ -1,0 +1,3743 @@
+{
+  "artifact": "season_projection_backtest",
+  "version": 1,
+  "generated_at": "2026-08-08T12:01:12.196948+00:00",
+  "generator": "backend/scripts/backtest_season_projections.py",
+  "subject": "backend/services/simulation/league_simulator.py",
+  "config": {
+    "leagues": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "fra.1",
+      "ita.1"
+    ],
+    "season": null,
+    "n_seasons": 10,
+    "iterations": 500,
+    "matchday_step": 1,
+    "min_completeness": 0.95,
+    "log_loss_eps": 1e-06,
+    "elo_mode": "point-in-time",
+    "seed": 20260808,
+    "warehouse": "/home/roaltshu/code/soccer_predictor/backend/data/warehouse.sqlite"
+  },
+  "definitions": {
+    "matchday": "cut index over date-gap matchday blocks (>1 blank day starts a new block), mirroring _backtest_core.matchday_blocks. matchday 0 is the pre-season projection with zero information.",
+    "relegation": "bottom 3 of the final table \u2014 the simulator's own hardcoded definition. Bundesliga / Ligue 1 relegation play-off seasons genuinely differ; scoring the simulator against a rule it does not implement would measure the wrong event.",
+    "top_4": "top 4 of the final table",
+    "brier": "mean over teams of (p_team - y_team)^2, so leagues of different size are on one scale; 0 is perfect",
+    "title_log_loss": "-log P(actual champion) with the title race as one multiclass event over the league's teams; probabilities clipped to log_loss_eps and renormalised",
+    "position_mae": "mean |avg_final_position - actual final position|",
+    "relegation_recall": "share of the actually-relegated teams inside the 3 highest relegation probabilities",
+    "baseline": "naive carry-forward: today's leader wins the league (p=1), today's bottom three go down (p=1), every team finishes where it currently stands",
+    "margin": "baseline - simulator for Brier / MAE / log loss, simulator - baseline for hit rates. POSITIVE ALWAYS MEANS THE SIMULATOR IS BETTER.",
+    "tiebreak": "tables order on (points, goal difference, goals for, name); real head-to-head tiebreaks are not modelled"
+  },
+  "coverage": {
+    "leagues_requested": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "fra.1",
+      "ita.1"
+    ],
+    "warehouse_readable": true,
+    "warehouse_matches": 32569,
+    "n_league_seasons_scored": 27,
+    "n_projection_points": 1048,
+    "seasons_scored": [
+      {
+        "competition_id": "fra.1",
+        "season": 2016,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 380,
+        "expected_matches": 380,
+        "completeness": 1.0,
+        "min_team_matches": 38,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Monaco",
+        "n_matchdays": 44,
+        "n_projection_points": 44
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2016,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayern Munich",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2016,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 362,
+        "expected_matches": 380,
+        "completeness": 0.952632,
+        "min_team_matches": 33,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Juventus",
+        "n_matchdays": 41,
+        "n_projection_points": 41
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2017,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 367,
+        "expected_matches": 380,
+        "completeness": 0.965789,
+        "min_team_matches": 34,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Manchester City",
+        "n_matchdays": 40,
+        "n_projection_points": 40
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2017,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 373,
+        "expected_matches": 380,
+        "completeness": 0.981579,
+        "min_team_matches": 36,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Barcelona",
+        "n_matchdays": 39,
+        "n_projection_points": 39
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2017,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 376,
+        "expected_matches": 380,
+        "completeness": 0.989474,
+        "min_team_matches": 36,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Paris Saint-Germain",
+        "n_matchdays": 43,
+        "n_projection_points": 43
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2017,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 299,
+        "expected_matches": 306,
+        "completeness": 0.977124,
+        "min_team_matches": 32,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayern Munich",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2017,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 373,
+        "expected_matches": 380,
+        "completeness": 0.981579,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Juventus",
+        "n_matchdays": 41,
+        "n_projection_points": 41
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2018,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 370,
+        "expected_matches": 380,
+        "completeness": 0.973684,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Barcelona",
+        "n_matchdays": 39,
+        "n_projection_points": 39
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2018,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 361,
+        "expected_matches": 380,
+        "completeness": 0.95,
+        "min_team_matches": 34,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Paris Saint-Germain",
+        "n_matchdays": 50,
+        "n_projection_points": 50
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2018,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 298,
+        "expected_matches": 306,
+        "completeness": 0.973856,
+        "min_team_matches": 32,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Borussia Dortmund",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2019,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 365,
+        "expected_matches": 380,
+        "completeness": 0.960526,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Liverpool",
+        "n_matchdays": 37,
+        "n_projection_points": 37
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2019,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 369,
+        "expected_matches": 380,
+        "completeness": 0.971053,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Real Madrid",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2019,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayern Munich",
+        "n_matchdays": 36,
+        "n_projection_points": 36
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2019,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 373,
+        "expected_matches": 380,
+        "completeness": 0.981579,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Juventus",
+        "n_matchdays": 38,
+        "n_projection_points": 38
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2022,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 377,
+        "expected_matches": 380,
+        "completeness": 0.992105,
+        "min_team_matches": 37,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Paris Saint-Germain",
+        "n_matchdays": 40,
+        "n_projection_points": 40
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2022,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayern Munich",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2023,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 362,
+        "expected_matches": 380,
+        "completeness": 0.952632,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Manchester City",
+        "n_matchdays": 43,
+        "n_projection_points": 43
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2023,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 372,
+        "expected_matches": 380,
+        "completeness": 0.978947,
+        "min_team_matches": 36,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Real Madrid",
+        "n_matchdays": 39,
+        "n_projection_points": 39
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2023,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Paris Saint-Germain",
+        "n_matchdays": 40,
+        "n_projection_points": 40
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2023,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 304,
+        "expected_matches": 306,
+        "completeness": 0.993464,
+        "min_team_matches": 33,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayer Leverkusen",
+        "n_matchdays": 36,
+        "n_projection_points": 36
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2023,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 378,
+        "expected_matches": 380,
+        "completeness": 0.994737,
+        "min_team_matches": 36,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Inter",
+        "n_matchdays": 42,
+        "n_projection_points": 42
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2024,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 366,
+        "expected_matches": 380,
+        "completeness": 0.963158,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Liverpool",
+        "n_matchdays": 43,
+        "n_projection_points": 43
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2024,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 368,
+        "expected_matches": 380,
+        "completeness": 0.968421,
+        "min_team_matches": 35,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Real Madrid",
+        "n_matchdays": 37,
+        "n_projection_points": 37
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2024,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Paris Saint-Germain",
+        "n_matchdays": 36,
+        "n_projection_points": 36
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2024,
+        "source": "fdcouk",
+        "n_teams": 18,
+        "n_matches": 306,
+        "expected_matches": 306,
+        "completeness": 1.0,
+        "min_team_matches": 34,
+        "max_team_matches": 34,
+        "reconstructed_champion": "Bayern Munich",
+        "n_matchdays": 34,
+        "n_projection_points": 34
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2024,
+        "source": "fdcouk",
+        "n_teams": 20,
+        "n_matches": 374,
+        "expected_matches": 380,
+        "completeness": 0.984211,
+        "min_team_matches": 36,
+        "max_team_matches": 38,
+        "reconstructed_champion": "Napoli",
+        "n_matchdays": 40,
+        "n_projection_points": 40
+      }
+    ],
+    "seasons_skipped": [
+      {
+        "competition_id": "eng.1",
+        "season": 2025,
+        "source": "fdcouk",
+        "n_matches": 283,
+        "expected_matches": 380,
+        "completeness": 0.744737,
+        "reason": "season 74.5% complete (283/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2022,
+        "source": "fdcouk",
+        "n_matches": 356,
+        "expected_matches": 380,
+        "completeness": 0.936842,
+        "reason": "season 93.7% complete (356/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2021,
+        "source": "fdcouk",
+        "n_matches": 274,
+        "expected_matches": 380,
+        "completeness": 0.721053,
+        "reason": "season 72.1% complete (274/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2020,
+        "source": "fdcouk",
+        "n_matches": 270,
+        "expected_matches": 380,
+        "completeness": 0.710526,
+        "reason": "season 71.1% complete (270/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2018,
+        "source": "fdcouk",
+        "n_matches": 347,
+        "expected_matches": 380,
+        "completeness": 0.913158,
+        "reason": "season 91.3% complete (347/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2016,
+        "source": "fdcouk",
+        "n_matches": 357,
+        "expected_matches": 380,
+        "completeness": 0.939474,
+        "reason": "season 93.9% complete (357/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "eng.1",
+        "season": 2015,
+        "source": "fdcouk",
+        "n_matches": 248,
+        "expected_matches": 380,
+        "completeness": 0.652632,
+        "reason": "season 65.3% complete (248/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2025,
+        "source": "fdcouk",
+        "n_matches": 238,
+        "expected_matches": 380,
+        "completeness": 0.626316,
+        "reason": "season 62.6% complete (238/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2022,
+        "source": "fdcouk",
+        "n_matches": 360,
+        "expected_matches": 380,
+        "completeness": 0.947368,
+        "reason": "season 94.7% complete (360/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2021,
+        "source": "fdcouk",
+        "n_matches": 265,
+        "expected_matches": 380,
+        "completeness": 0.697368,
+        "reason": "season 69.7% complete (265/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2020,
+        "source": "fdcouk",
+        "n_matches": 284,
+        "expected_matches": 380,
+        "completeness": 0.747368,
+        "reason": "season 74.7% complete (284/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2016,
+        "source": "fdcouk",
+        "n_matches": 360,
+        "expected_matches": 380,
+        "completeness": 0.947368,
+        "reason": "season 94.7% complete (360/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": 2015,
+        "source": "fdcouk",
+        "n_matches": 293,
+        "expected_matches": 380,
+        "completeness": 0.771053,
+        "reason": "season 77.1% complete (293/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2025,
+        "source": "fdcouk",
+        "n_matches": 200,
+        "expected_matches": 306,
+        "completeness": 0.653595,
+        "reason": "season 65.4% complete (200/306 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2021,
+        "source": "fdcouk",
+        "n_matches": 274,
+        "expected_matches": 306,
+        "completeness": 0.895425,
+        "reason": "season 89.5% complete (274/306 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2020,
+        "source": "fdcouk",
+        "n_matches": 212,
+        "expected_matches": 306,
+        "completeness": 0.69281,
+        "reason": "season 69.3% complete (212/306 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ger.1",
+        "season": 2015,
+        "source": "fdcouk",
+        "n_matches": 217,
+        "expected_matches": 306,
+        "completeness": 0.70915,
+        "reason": "season 70.9% complete (217/306 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2025,
+        "source": "fdcouk",
+        "n_matches": 192,
+        "expected_matches": 306,
+        "completeness": 0.627451,
+        "reason": "season 62.7% complete (192/306 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2021,
+        "source": "fdcouk",
+        "n_matches": 226,
+        "expected_matches": 380,
+        "completeness": 0.594737,
+        "reason": "season 59.5% complete (226/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2020,
+        "source": "fdcouk",
+        "n_matches": 324,
+        "expected_matches": 380,
+        "completeness": 0.852632,
+        "reason": "season 85.3% complete (324/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2019,
+        "source": "fdcouk",
+        "n_matches": 279,
+        "expected_matches": 380,
+        "completeness": 0.734211,
+        "reason": "season 73.4% complete (279/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": 2015,
+        "source": "fdcouk",
+        "n_matches": 241,
+        "expected_matches": 380,
+        "completeness": 0.634211,
+        "reason": "season 63.4% complete (241/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2025,
+        "source": "fdcouk",
+        "n_matches": 257,
+        "expected_matches": 380,
+        "completeness": 0.676316,
+        "reason": "season 67.6% complete (257/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2022,
+        "source": "fdcouk",
+        "n_matches": 347,
+        "expected_matches": 380,
+        "completeness": 0.913158,
+        "reason": "season 91.3% complete (347/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2021,
+        "source": "fdcouk",
+        "n_matches": 229,
+        "expected_matches": 380,
+        "completeness": 0.602632,
+        "reason": "season 60.3% complete (229/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2020,
+        "source": "fdcouk",
+        "n_matches": 287,
+        "expected_matches": 380,
+        "completeness": 0.755263,
+        "reason": "season 75.5% complete (287/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2018,
+        "source": "fdcouk",
+        "n_matches": 356,
+        "expected_matches": 380,
+        "completeness": 0.936842,
+        "reason": "season 93.7% complete (356/380 matches), below --min-completeness 95%"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": 2015,
+        "source": "fdcouk",
+        "n_matches": 314,
+        "expected_matches": 380,
+        "completeness": 0.826316,
+        "reason": "season 82.6% complete (314/380 matches), below --min-completeness 95%"
+      }
+    ],
+    "elo_history_matches": 28981
+  },
+  "overall": {
+    "n_projection_points": 1048,
+    "simulator": {
+      "title_brier": 0.0149,
+      "relegation_brier": 0.069397,
+      "top_4_brier": 0.048858,
+      "position_mae": 1.84134,
+      "title_log_loss": 0.613074,
+      "champion_hit": 0.793893,
+      "relegation_recall": 0.663486
+    },
+    "baseline": {
+      "title_brier": 0.027311,
+      "relegation_brier": 0.109542,
+      "top_4_brier": 0.086938,
+      "position_mae": 2.127142,
+      "title_log_loss": 3.66482,
+      "champion_hit": 0.734733,
+      "relegation_recall": 0.646311
+    },
+    "margin": {
+      "title_brier": 0.012411,
+      "relegation_brier": 0.040145,
+      "top_4_brier": 0.03808,
+      "position_mae": 0.285802,
+      "title_log_loss": 3.051746,
+      "champion_hit": 0.05916,
+      "relegation_recall": 0.017176
+    },
+    "share_simulator_better": {
+      "title_brier": 0.265267,
+      "relegation_brier": 0.700382,
+      "top_4_brier": 0.583969,
+      "position_mae": 0.645992,
+      "title_log_loss": 0.265267,
+      "champion_hit": 0.119275,
+      "relegation_recall": 0.142176
+    },
+    "share_tied": {
+      "title_brier": 0.218511,
+      "relegation_brier": 0.021947,
+      "top_4_brier": 0.049618,
+      "position_mae": 0.000954,
+      "title_log_loss": 0.189885,
+      "champion_hit": 0.820611,
+      "relegation_recall": 0.760496
+    }
+  },
+  "convergence": {
+    "by_matchday": [
+      {
+        "matchday": 0,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.0,
+        "simulator": {
+          "title_brier": 0.039572,
+          "relegation_brier": 0.137639,
+          "top_4_brier": 0.103626,
+          "position_mae": 3.450142,
+          "title_log_loss": 2.454577,
+          "champion_hit": 0.444444,
+          "relegation_recall": 0.320987
+        },
+        "baseline": {
+          "title_brier": 0.099588,
+          "relegation_brier": 0.252675,
+          "top_4_brier": 0.278189,
+          "position_mae": 6.133745,
+          "title_log_loss": 13.303844,
+          "champion_hit": 0.037037,
+          "relegation_recall": 0.185185
+        },
+        "margin": {
+          "title_brier": 0.060017,
+          "relegation_brier": 0.115036,
+          "top_4_brier": 0.174564,
+          "position_mae": 2.683603,
+          "title_log_loss": 10.849266,
+          "champion_hit": 0.407407,
+          "relegation_recall": 0.135802
+        }
+      },
+      {
+        "matchday": 1,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.02767,
+        "simulator": {
+          "title_brier": 0.039302,
+          "relegation_brier": 0.131158,
+          "top_4_brier": 0.095196,
+          "position_mae": 3.283565,
+          "title_log_loss": 2.034907,
+          "champion_hit": 0.444444,
+          "relegation_recall": 0.419753
+        },
+        "baseline": {
+          "title_brier": 0.083951,
+          "relegation_brier": 0.238272,
+          "top_4_brier": 0.204115,
+          "position_mae": 4.707407,
+          "title_log_loss": 11.257101,
+          "champion_hit": 0.185185,
+          "relegation_recall": 0.234568
+        },
+        "margin": {
+          "title_brier": 0.044649,
+          "relegation_brier": 0.107113,
+          "top_4_brier": 0.108919,
+          "position_mae": 1.423843,
+          "title_log_loss": 9.222194,
+          "champion_hit": 0.259259,
+          "relegation_recall": 0.185185
+        }
+      },
+      {
+        "matchday": 2,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.056046,
+        "simulator": {
+          "title_brier": 0.03498,
+          "relegation_brier": 0.126635,
+          "top_4_brier": 0.087301,
+          "position_mae": 3.163706,
+          "title_log_loss": 1.634078,
+          "champion_hit": 0.481481,
+          "relegation_recall": 0.432099
+        },
+        "baseline": {
+          "title_brier": 0.072839,
+          "relegation_brier": 0.218518,
+          "top_4_brier": 0.185597,
+          "position_mae": 4.337037,
+          "title_log_loss": 9.722045,
+          "champion_hit": 0.296296,
+          "relegation_recall": 0.296296
+        },
+        "margin": {
+          "title_brier": 0.03786,
+          "relegation_brier": 0.091884,
+          "top_4_brier": 0.098295,
+          "position_mae": 1.173331,
+          "title_log_loss": 8.087966,
+          "champion_hit": 0.185185,
+          "relegation_recall": 0.135802
+        }
+      },
+      {
+        "matchday": 3,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.083514,
+        "simulator": {
+          "title_brier": 0.032279,
+          "relegation_brier": 0.120298,
+          "top_4_brier": 0.081072,
+          "position_mae": 3.037921,
+          "title_log_loss": 1.695076,
+          "champion_hit": 0.518519,
+          "relegation_recall": 0.419753
+        },
+        "baseline": {
+          "title_brier": 0.042387,
+          "relegation_brier": 0.188889,
+          "top_4_brier": 0.158436,
+          "position_mae": 3.865021,
+          "title_log_loss": 5.62856,
+          "champion_hit": 0.592593,
+          "relegation_recall": 0.395062
+        },
+        "margin": {
+          "title_brier": 0.010108,
+          "relegation_brier": 0.068591,
+          "top_4_brier": 0.077364,
+          "position_mae": 0.8271,
+          "title_log_loss": 3.933484,
+          "champion_hit": -0.074074,
+          "relegation_recall": 0.024691
+        }
+      },
+      {
+        "matchday": 4,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.111487,
+        "simulator": {
+          "title_brier": 0.029894,
+          "relegation_brier": 0.114452,
+          "top_4_brier": 0.077323,
+          "position_mae": 2.871034,
+          "title_log_loss": 1.381678,
+          "champion_hit": 0.555556,
+          "relegation_recall": 0.419753
+        },
+        "baseline": {
+          "title_brier": 0.046091,
+          "relegation_brier": 0.168724,
+          "top_4_brier": 0.14609,
+          "position_mae": 3.541152,
+          "title_log_loss": 6.140245,
+          "champion_hit": 0.555556,
+          "relegation_recall": 0.45679
+        },
+        "margin": {
+          "title_brier": 0.016197,
+          "relegation_brier": 0.054272,
+          "top_4_brier": 0.068768,
+          "position_mae": 0.670119,
+          "title_log_loss": 4.758567,
+          "champion_hit": 0.0,
+          "relegation_recall": -0.037037
+        }
+      },
+      {
+        "matchday": 5,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.13948,
+        "simulator": {
+          "title_brier": 0.025245,
+          "relegation_brier": 0.112299,
+          "top_4_brier": 0.073777,
+          "position_mae": 2.755561,
+          "title_log_loss": 1.095161,
+          "champion_hit": 0.703704,
+          "relegation_recall": 0.45679
+        },
+        "baseline": {
+          "title_brier": 0.050617,
+          "relegation_brier": 0.173251,
+          "top_4_brier": 0.149383,
+          "position_mae": 3.381482,
+          "title_log_loss": 6.651931,
+          "champion_hit": 0.518519,
+          "relegation_recall": 0.444444
+        },
+        "margin": {
+          "title_brier": 0.025373,
+          "relegation_brier": 0.060952,
+          "top_4_brier": 0.075606,
+          "position_mae": 0.62592,
+          "title_log_loss": 5.55677,
+          "champion_hit": 0.185185,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "matchday": 6,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.165036,
+        "simulator": {
+          "title_brier": 0.024923,
+          "relegation_brier": 0.105742,
+          "top_4_brier": 0.073041,
+          "position_mae": 2.612439,
+          "title_log_loss": 0.945825,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.518519
+        },
+        "baseline": {
+          "title_brier": 0.034568,
+          "relegation_brier": 0.173251,
+          "top_4_brier": 0.150617,
+          "position_mae": 3.074486,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.444444
+        },
+        "margin": {
+          "title_brier": 0.009645,
+          "relegation_brier": 0.067509,
+          "top_4_brier": 0.077577,
+          "position_mae": 0.462047,
+          "title_log_loss": 3.659364,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.074074
+        }
+      },
+      {
+        "matchday": 7,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.191744,
+        "simulator": {
+          "title_brier": 0.023737,
+          "relegation_brier": 0.107345,
+          "top_4_brier": 0.072421,
+          "position_mae": 2.550223,
+          "title_log_loss": 0.925669,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.506173
+        },
+        "baseline": {
+          "title_brier": 0.031687,
+          "relegation_brier": 0.158025,
+          "top_4_brier": 0.13251,
+          "position_mae": 2.897531,
+          "title_log_loss": 4.093503,
+          "champion_hit": 0.703704,
+          "relegation_recall": 0.493827
+        },
+        "margin": {
+          "title_brier": 0.00795,
+          "relegation_brier": 0.05068,
+          "top_4_brier": 0.060089,
+          "position_mae": 0.347308,
+          "title_log_loss": 3.167834,
+          "champion_hit": 0.037037,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "matchday": 8,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.219415,
+        "simulator": {
+          "title_brier": 0.023336,
+          "relegation_brier": 0.100914,
+          "top_4_brier": 0.066157,
+          "position_mae": 2.487661,
+          "title_log_loss": 0.849908,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.481482
+        },
+        "baseline": {
+          "title_brier": 0.034979,
+          "relegation_brier": 0.153909,
+          "top_4_brier": 0.120165,
+          "position_mae": 2.874074,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.506173
+        },
+        "margin": {
+          "title_brier": 0.011643,
+          "relegation_brier": 0.052996,
+          "top_4_brier": 0.054008,
+          "position_mae": 0.386413,
+          "title_log_loss": 3.755281,
+          "champion_hit": 0.074074,
+          "relegation_recall": -0.024691
+        }
+      },
+      {
+        "matchday": 9,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.246964,
+        "simulator": {
+          "title_brier": 0.02364,
+          "relegation_brier": 0.092529,
+          "top_4_brier": 0.061745,
+          "position_mae": 2.332393,
+          "title_log_loss": 0.927794,
+          "champion_hit": 0.703704,
+          "relegation_recall": 0.530864
+        },
+        "baseline": {
+          "title_brier": 0.038683,
+          "relegation_brier": 0.133745,
+          "top_4_brier": 0.116049,
+          "position_mae": 2.630864,
+          "title_log_loss": 5.116874,
+          "champion_hit": 0.62963,
+          "relegation_recall": 0.567901
+        },
+        "margin": {
+          "title_brier": 0.015043,
+          "relegation_brier": 0.041216,
+          "top_4_brier": 0.054305,
+          "position_mae": 0.298472,
+          "title_log_loss": 4.18908,
+          "champion_hit": 0.074074,
+          "relegation_recall": -0.037037
+        }
+      },
+      {
+        "matchday": 10,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.273437,
+        "simulator": {
+          "title_brier": 0.018464,
+          "relegation_brier": 0.089145,
+          "top_4_brier": 0.057263,
+          "position_mae": 2.245695,
+          "title_log_loss": 0.725258,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.54321
+        },
+        "baseline": {
+          "title_brier": 0.034979,
+          "relegation_brier": 0.14609,
+          "top_4_brier": 0.108642,
+          "position_mae": 2.576543,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.530864
+        },
+        "margin": {
+          "title_brier": 0.016515,
+          "relegation_brier": 0.056945,
+          "top_4_brier": 0.051379,
+          "position_mae": 0.330849,
+          "title_log_loss": 3.879931,
+          "champion_hit": 0.111111,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "matchday": 11,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.300384,
+        "simulator": {
+          "title_brier": 0.015963,
+          "relegation_brier": 0.086225,
+          "top_4_brier": 0.054806,
+          "position_mae": 2.180257,
+          "title_log_loss": 0.596531,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.592593
+        },
+        "baseline": {
+          "title_brier": 0.034979,
+          "relegation_brier": 0.153909,
+          "top_4_brier": 0.100823,
+          "position_mae": 2.504115,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.506173
+        },
+        "margin": {
+          "title_brier": 0.019017,
+          "relegation_brier": 0.067685,
+          "top_4_brier": 0.046017,
+          "position_mae": 0.323858,
+          "title_log_loss": 4.008657,
+          "champion_hit": 0.148148,
+          "relegation_recall": 0.08642
+        }
+      },
+      {
+        "matchday": 12,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.328258,
+        "simulator": {
+          "title_brier": 0.013881,
+          "relegation_brier": 0.084002,
+          "top_4_brier": 0.056719,
+          "position_mae": 2.137025,
+          "title_log_loss": 0.54353,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.592593
+        },
+        "baseline": {
+          "title_brier": 0.034979,
+          "relegation_brier": 0.138683,
+          "top_4_brier": 0.10535,
+          "position_mae": 2.407407,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.555556
+        },
+        "margin": {
+          "title_brier": 0.021098,
+          "relegation_brier": 0.054681,
+          "top_4_brier": 0.048631,
+          "position_mae": 0.270382,
+          "title_log_loss": 4.061659,
+          "champion_hit": 0.148148,
+          "relegation_recall": 0.037037
+        }
+      },
+      {
+        "matchday": 13,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.355887,
+        "simulator": {
+          "title_brier": 0.014961,
+          "relegation_brier": 0.082699,
+          "top_4_brier": 0.056209,
+          "position_mae": 2.094356,
+          "title_log_loss": 0.569762,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.580247
+        },
+        "baseline": {
+          "title_brier": 0.026749,
+          "relegation_brier": 0.130864,
+          "top_4_brier": 0.100411,
+          "position_mae": 2.330864,
+          "title_log_loss": 3.581817,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.580247
+        },
+        "margin": {
+          "title_brier": 0.011788,
+          "relegation_brier": 0.048165,
+          "top_4_brier": 0.044202,
+          "position_mae": 0.236508,
+          "title_log_loss": 3.012055,
+          "champion_hit": 0.037037,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 14,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.382153,
+        "simulator": {
+          "title_brier": 0.015146,
+          "relegation_brier": 0.078793,
+          "top_4_brier": 0.057321,
+          "position_mae": 2.076965,
+          "title_log_loss": 0.577229,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.604938
+        },
+        "baseline": {
+          "title_brier": 0.026337,
+          "relegation_brier": 0.114815,
+          "top_4_brier": 0.104115,
+          "position_mae": 2.267901,
+          "title_log_loss": 3.581817,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.62963
+        },
+        "margin": {
+          "title_brier": 0.011191,
+          "relegation_brier": 0.036021,
+          "top_4_brier": 0.046794,
+          "position_mae": 0.190937,
+          "title_log_loss": 3.004588,
+          "champion_hit": 0.074074,
+          "relegation_recall": -0.024691
+        }
+      },
+      {
+        "matchday": 15,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.407545,
+        "simulator": {
+          "title_brier": 0.015103,
+          "relegation_brier": 0.080082,
+          "top_4_brier": 0.053805,
+          "position_mae": 2.036603,
+          "title_log_loss": 0.533082,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.580247
+        },
+        "baseline": {
+          "title_brier": 0.026337,
+          "relegation_brier": 0.125926,
+          "top_4_brier": 0.093004,
+          "position_mae": 2.241152,
+          "title_log_loss": 3.581817,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.592593
+        },
+        "margin": {
+          "title_brier": 0.011235,
+          "relegation_brier": 0.045844,
+          "top_4_brier": 0.039199,
+          "position_mae": 0.204549,
+          "title_log_loss": 3.048735,
+          "champion_hit": 0.037037,
+          "relegation_recall": -0.012346
+        }
+      },
+      {
+        "matchday": 16,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.432425,
+        "simulator": {
+          "title_brier": 0.013165,
+          "relegation_brier": 0.070368,
+          "top_4_brier": 0.053006,
+          "position_mae": 1.968919,
+          "title_log_loss": 0.52436,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.617284
+        },
+        "baseline": {
+          "title_brier": 0.033745,
+          "relegation_brier": 0.09465,
+          "top_4_brier": 0.096708,
+          "position_mae": 2.094239,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.691358
+        },
+        "margin": {
+          "title_brier": 0.02058,
+          "relegation_brier": 0.024282,
+          "top_4_brier": 0.043701,
+          "position_mae": 0.125319,
+          "title_log_loss": 4.080828,
+          "champion_hit": 0.222222,
+          "relegation_recall": -0.074074
+        }
+      },
+      {
+        "matchday": 17,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.457677,
+        "simulator": {
+          "title_brier": 0.013453,
+          "relegation_brier": 0.067564,
+          "top_4_brier": 0.050509,
+          "position_mae": 1.915287,
+          "title_log_loss": 0.514714,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.703704
+        },
+        "baseline": {
+          "title_brier": 0.022634,
+          "relegation_brier": 0.1107,
+          "top_4_brier": 0.072839,
+          "position_mae": 2.014403,
+          "title_log_loss": 3.070132,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.641975
+        },
+        "margin": {
+          "title_brier": 0.009181,
+          "relegation_brier": 0.043136,
+          "top_4_brier": 0.02233,
+          "position_mae": 0.099116,
+          "title_log_loss": 2.555418,
+          "champion_hit": 0.037037,
+          "relegation_recall": 0.061728
+        }
+      },
+      {
+        "matchday": 18,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.481204,
+        "simulator": {
+          "title_brier": 0.012528,
+          "relegation_brier": 0.067225,
+          "top_4_brier": 0.053438,
+          "position_mae": 1.942416,
+          "title_log_loss": 0.461588,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.703704
+        },
+        "baseline": {
+          "title_brier": 0.030041,
+          "relegation_brier": 0.102469,
+          "top_4_brier": 0.072839,
+          "position_mae": 2.004115,
+          "title_log_loss": 4.093503,
+          "champion_hit": 0.703704,
+          "relegation_recall": 0.666667
+        },
+        "margin": {
+          "title_brier": 0.017513,
+          "relegation_brier": 0.035244,
+          "top_4_brier": 0.019402,
+          "position_mae": 0.0617,
+          "title_log_loss": 3.631914,
+          "champion_hit": 0.111111,
+          "relegation_recall": 0.037037
+        }
+      },
+      {
+        "matchday": 19,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.506567,
+        "simulator": {
+          "title_brier": 0.0103,
+          "relegation_brier": 0.061437,
+          "top_4_brier": 0.049437,
+          "position_mae": 1.837024,
+          "title_log_loss": 0.403233,
+          "champion_hit": 0.925926,
+          "relegation_recall": 0.691358
+        },
+        "baseline": {
+          "title_brier": 0.026337,
+          "relegation_brier": 0.105761,
+          "top_4_brier": 0.072839,
+          "position_mae": 1.935802,
+          "title_log_loss": 3.581817,
+          "champion_hit": 0.740741,
+          "relegation_recall": 0.654321
+        },
+        "margin": {
+          "title_brier": 0.016037,
+          "relegation_brier": 0.044324,
+          "top_4_brier": 0.023402,
+          "position_mae": 0.098779,
+          "title_log_loss": 3.178585,
+          "champion_hit": 0.185185,
+          "relegation_recall": 0.037037
+        }
+      },
+      {
+        "matchday": 20,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.532023,
+        "simulator": {
+          "title_brier": 0.00818,
+          "relegation_brier": 0.060485,
+          "top_4_brier": 0.044713,
+          "position_mae": 1.748574,
+          "title_log_loss": 0.302004,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.703704
+        },
+        "baseline": {
+          "title_brier": 0.014815,
+          "relegation_brier": 0.087654,
+          "top_4_brier": 0.065844,
+          "position_mae": 1.81893,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.716049
+        },
+        "margin": {
+          "title_brier": 0.006635,
+          "relegation_brier": 0.027169,
+          "top_4_brier": 0.021131,
+          "position_mae": 0.070356,
+          "title_log_loss": 1.744757,
+          "champion_hit": 0.037037,
+          "relegation_recall": -0.012346
+        }
+      },
+      {
+        "matchday": 21,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.557879,
+        "simulator": {
+          "title_brier": 0.007725,
+          "relegation_brier": 0.062043,
+          "top_4_brier": 0.044188,
+          "position_mae": 1.70602,
+          "title_log_loss": 0.278576,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.691358
+        },
+        "baseline": {
+          "title_brier": 0.011111,
+          "relegation_brier": 0.098765,
+          "top_4_brier": 0.065844,
+          "position_mae": 1.746914,
+          "title_log_loss": 1.535075,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.679013
+        },
+        "margin": {
+          "title_brier": 0.003387,
+          "relegation_brier": 0.036723,
+          "top_4_brier": 0.021656,
+          "position_mae": 0.040894,
+          "title_log_loss": 1.256499,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "matchday": 22,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.583169,
+        "simulator": {
+          "title_brier": 0.007024,
+          "relegation_brier": 0.060092,
+          "top_4_brier": 0.042709,
+          "position_mae": 1.624445,
+          "title_log_loss": 0.253423,
+          "champion_hit": 0.925926,
+          "relegation_recall": 0.679012
+        },
+        "baseline": {
+          "title_brier": 0.011111,
+          "relegation_brier": 0.106173,
+          "top_4_brier": 0.058025,
+          "position_mae": 1.674074,
+          "title_log_loss": 1.535075,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.654321
+        },
+        "margin": {
+          "title_brier": 0.004087,
+          "relegation_brier": 0.046081,
+          "top_4_brier": 0.015316,
+          "position_mae": 0.049629,
+          "title_log_loss": 1.281653,
+          "champion_hit": 0.037037,
+          "relegation_recall": 0.024691
+        }
+      },
+      {
+        "matchday": 23,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.610008,
+        "simulator": {
+          "title_brier": 0.00617,
+          "relegation_brier": 0.056465,
+          "top_4_brier": 0.041539,
+          "position_mae": 1.528858,
+          "title_log_loss": 0.224728,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.71605
+        },
+        "baseline": {
+          "title_brier": 0.011111,
+          "relegation_brier": 0.087654,
+          "top_4_brier": 0.053909,
+          "position_mae": 1.554321,
+          "title_log_loss": 1.535075,
+          "champion_hit": 0.888889,
+          "relegation_recall": 0.71605
+        },
+        "margin": {
+          "title_brier": 0.004942,
+          "relegation_brier": 0.03119,
+          "top_4_brier": 0.01237,
+          "position_mae": 0.025463,
+          "title_log_loss": 1.310347,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 24,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.634831,
+        "simulator": {
+          "title_brier": 0.006089,
+          "relegation_brier": 0.056386,
+          "top_4_brier": 0.038436,
+          "position_mae": 1.500572,
+          "title_log_loss": 0.214164,
+          "champion_hit": 0.962963,
+          "relegation_recall": 0.691358
+        },
+        "baseline": {
+          "title_brier": 0.007407,
+          "relegation_brier": 0.079835,
+          "top_4_brier": 0.054321,
+          "position_mae": 1.488477,
+          "title_log_loss": 1.02339,
+          "champion_hit": 0.925926,
+          "relegation_recall": 0.740741
+        },
+        "margin": {
+          "title_brier": 0.001318,
+          "relegation_brier": 0.023449,
+          "top_4_brier": 0.015885,
+          "position_mae": -0.012095,
+          "title_log_loss": 0.809226,
+          "champion_hit": 0.037037,
+          "relegation_recall": -0.049383
+        }
+      },
+      {
+        "matchday": 25,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.660424,
+        "simulator": {
+          "title_brier": 0.009387,
+          "relegation_brier": 0.050639,
+          "top_4_brier": 0.038024,
+          "position_mae": 1.419105,
+          "title_log_loss": 0.291748,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.777778
+        },
+        "baseline": {
+          "title_brier": 0.015226,
+          "relegation_brier": 0.075309,
+          "top_4_brier": 0.058436,
+          "position_mae": 1.401235,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.753087
+        },
+        "margin": {
+          "title_brier": 0.005839,
+          "relegation_brier": 0.024669,
+          "top_4_brier": 0.020412,
+          "position_mae": -0.01787,
+          "title_log_loss": 1.755012,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.024691
+        }
+      },
+      {
+        "matchday": 26,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.683866,
+        "simulator": {
+          "title_brier": 0.009576,
+          "relegation_brier": 0.047349,
+          "top_4_brier": 0.032356,
+          "position_mae": 1.382393,
+          "title_log_loss": 0.297974,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.777778
+        },
+        "baseline": {
+          "title_brier": 0.014815,
+          "relegation_brier": 0.07572,
+          "top_4_brier": 0.046502,
+          "position_mae": 1.412757,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.753087
+        },
+        "margin": {
+          "title_brier": 0.005239,
+          "relegation_brier": 0.028371,
+          "top_4_brier": 0.014146,
+          "position_mae": 0.030365,
+          "title_log_loss": 1.748787,
+          "champion_hit": -0.037037,
+          "relegation_recall": 0.024691
+        }
+      },
+      {
+        "matchday": 27,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.708417,
+        "simulator": {
+          "title_brier": 0.008946,
+          "relegation_brier": 0.046122,
+          "top_4_brier": 0.033707,
+          "position_mae": 1.344948,
+          "title_log_loss": 0.283072,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.777778
+        },
+        "baseline": {
+          "title_brier": 0.014815,
+          "relegation_brier": 0.072016,
+          "top_4_brier": 0.038683,
+          "position_mae": 1.327572,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.765432
+        },
+        "margin": {
+          "title_brier": 0.005869,
+          "relegation_brier": 0.025894,
+          "top_4_brier": 0.004976,
+          "position_mae": -0.017376,
+          "title_log_loss": 1.763688,
+          "champion_hit": -0.037037,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "matchday": 28,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.729476,
+        "simulator": {
+          "title_brier": 0.010609,
+          "relegation_brier": 0.0433,
+          "top_4_brier": 0.034944,
+          "position_mae": 1.277428,
+          "title_log_loss": 0.313277,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.814815
+        },
+        "baseline": {
+          "title_brier": 0.022222,
+          "relegation_brier": 0.057202,
+          "top_4_brier": 0.042798,
+          "position_mae": 1.269959,
+          "title_log_loss": 3.070132,
+          "champion_hit": 0.777778,
+          "relegation_recall": 0.814815
+        },
+        "margin": {
+          "title_brier": 0.011613,
+          "relegation_brier": 0.013902,
+          "top_4_brier": 0.007855,
+          "position_mae": -0.007469,
+          "title_log_loss": 2.756855,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 29,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.755945,
+        "simulator": {
+          "title_brier": 0.010566,
+          "relegation_brier": 0.038483,
+          "top_4_brier": 0.034072,
+          "position_mae": 1.219851,
+          "title_log_loss": 0.309552,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.814815
+        },
+        "baseline": {
+          "title_brier": 0.01893,
+          "relegation_brier": 0.05679,
+          "top_4_brier": 0.050617,
+          "position_mae": 1.220165,
+          "title_log_loss": 2.558446,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.814815
+        },
+        "margin": {
+          "title_brier": 0.008364,
+          "relegation_brier": 0.018307,
+          "top_4_brier": 0.016546,
+          "position_mae": 0.000314,
+          "title_log_loss": 2.248894,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 30,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.781797,
+        "simulator": {
+          "title_brier": 0.011079,
+          "relegation_brier": 0.040444,
+          "top_4_brier": 0.030106,
+          "position_mae": 1.156281,
+          "title_log_loss": 0.337742,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.802469
+        },
+        "baseline": {
+          "title_brier": 0.014815,
+          "relegation_brier": 0.060905,
+          "top_4_brier": 0.039095,
+          "position_mae": 1.17037,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.802469
+        },
+        "margin": {
+          "title_brier": 0.003736,
+          "relegation_brier": 0.020461,
+          "top_4_brier": 0.008989,
+          "position_mae": 0.014089,
+          "title_log_loss": 1.709019,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 31,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.806136,
+        "simulator": {
+          "title_brier": 0.010114,
+          "relegation_brier": 0.035237,
+          "top_4_brier": 0.030352,
+          "position_mae": 1.101108,
+          "title_log_loss": 0.291674,
+          "champion_hit": 0.814815,
+          "relegation_recall": 0.851852
+        },
+        "baseline": {
+          "title_brier": 0.014815,
+          "relegation_brier": 0.042387,
+          "top_4_brier": 0.038683,
+          "position_mae": 1.085597,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.864198
+        },
+        "margin": {
+          "title_brier": 0.004701,
+          "relegation_brier": 0.00715,
+          "top_4_brier": 0.008332,
+          "position_mae": -0.015511,
+          "title_log_loss": 1.755087,
+          "champion_hit": -0.037037,
+          "relegation_recall": -0.012346
+        }
+      },
+      {
+        "matchday": 32,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.834031,
+        "simulator": {
+          "title_brier": 0.009192,
+          "relegation_brier": 0.031339,
+          "top_4_brier": 0.025117,
+          "position_mae": 0.995248,
+          "title_log_loss": 0.260883,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.864198
+        },
+        "baseline": {
+          "title_brier": 0.015226,
+          "relegation_brier": 0.038683,
+          "top_4_brier": 0.038683,
+          "position_mae": 0.990123,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.876543
+        },
+        "margin": {
+          "title_brier": 0.006035,
+          "relegation_brier": 0.007344,
+          "top_4_brier": 0.013566,
+          "position_mae": -0.005124,
+          "title_log_loss": 1.785878,
+          "champion_hit": 0.0,
+          "relegation_recall": -0.012346
+        }
+      },
+      {
+        "matchday": 33,
+        "n_league_seasons": 27,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.860195,
+        "simulator": {
+          "title_brier": 0.009726,
+          "relegation_brier": 0.029567,
+          "top_4_brier": 0.022561,
+          "position_mae": 0.87578,
+          "title_log_loss": 0.264785,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.851852
+        },
+        "baseline": {
+          "title_brier": 0.015226,
+          "relegation_brier": 0.046502,
+          "top_4_brier": 0.042798,
+          "position_mae": 0.915638,
+          "title_log_loss": 2.046761,
+          "champion_hit": 0.851852,
+          "relegation_recall": 0.851852
+        },
+        "margin": {
+          "title_brier": 0.005501,
+          "relegation_brier": 0.016935,
+          "top_4_brier": 0.020237,
+          "position_mae": 0.039858,
+          "title_log_loss": 1.781976,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 34,
+        "n_league_seasons": 21,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.852855,
+        "simulator": {
+          "title_brier": 0.007776,
+          "relegation_brier": 0.029941,
+          "top_4_brier": 0.019386,
+          "position_mae": 0.905605,
+          "title_log_loss": 0.224594,
+          "champion_hit": 0.857143,
+          "relegation_recall": 0.888889
+        },
+        "baseline": {
+          "title_brier": 0.014286,
+          "relegation_brier": 0.039153,
+          "top_4_brier": 0.033862,
+          "position_mae": 0.917989,
+          "title_log_loss": 1.973663,
+          "champion_hit": 0.857143,
+          "relegation_recall": 0.873016
+        },
+        "margin": {
+          "title_brier": 0.006509,
+          "relegation_brier": 0.009212,
+          "top_4_brier": 0.014476,
+          "position_mae": 0.012384,
+          "title_log_loss": 1.749069,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.015873
+        }
+      },
+      {
+        "matchday": 35,
+        "n_league_seasons": 21,
+        "n_leagues": 5,
+        "mean_fraction_complete": 0.877728,
+        "simulator": {
+          "title_brier": 0.006711,
+          "relegation_brier": 0.031684,
+          "top_4_brier": 0.01681,
+          "position_mae": 0.806366,
+          "title_log_loss": 0.195271,
+          "champion_hit": 0.857143,
+          "relegation_recall": 0.84127
+        },
+        "baseline": {
+          "title_brier": 0.014286,
+          "relegation_brier": 0.043915,
+          "top_4_brier": 0.02381,
+          "position_mae": 0.821164,
+          "title_log_loss": 1.973663,
+          "champion_hit": 0.857143,
+          "relegation_recall": 0.857143
+        },
+        "margin": {
+          "title_brier": 0.007574,
+          "relegation_brier": 0.012232,
+          "top_4_brier": 0.007,
+          "position_mae": 0.014798,
+          "title_log_loss": 1.778392,
+          "champion_hit": 0.0,
+          "relegation_recall": -0.015873
+        }
+      },
+      {
+        "matchday": 36,
+        "n_league_seasons": 18,
+        "n_leagues": 4,
+        "mean_fraction_complete": 0.890162,
+        "simulator": {
+          "title_brier": 0.00085,
+          "relegation_brier": 0.024389,
+          "top_4_brier": 0.016101,
+          "position_mae": 0.77943,
+          "title_log_loss": 0.055091,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.870371
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.038889,
+          "top_4_brier": 0.033333,
+          "position_mae": 0.792593,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.870371
+        },
+        "margin": {
+          "title_brier": -0.00085,
+          "relegation_brier": 0.0145,
+          "top_4_brier": 0.017232,
+          "position_mae": 0.013163,
+          "title_log_loss": -0.055072,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 37,
+        "n_league_seasons": 16,
+        "n_leagues": 4,
+        "mean_fraction_complete": 0.903677,
+        "simulator": {
+          "title_brier": 0.001765,
+          "relegation_brier": 0.024086,
+          "top_4_brier": 0.013912,
+          "position_mae": 0.743622,
+          "title_log_loss": 0.082022,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.8125
+        },
+        "baseline": {
+          "title_brier": 0.00625,
+          "relegation_brier": 0.04375,
+          "top_4_brier": 0.025,
+          "position_mae": 0.779167,
+          "title_log_loss": 0.863488,
+          "champion_hit": 0.9375,
+          "relegation_recall": 0.854167
+        },
+        "margin": {
+          "title_brier": 0.004485,
+          "relegation_brier": 0.019664,
+          "top_4_brier": 0.011088,
+          "position_mae": 0.035544,
+          "title_log_loss": 0.781466,
+          "champion_hit": 0.0625,
+          "relegation_recall": -0.041667
+        }
+      },
+      {
+        "matchday": 38,
+        "n_league_seasons": 15,
+        "n_leagues": 4,
+        "mean_fraction_complete": 0.919841,
+        "simulator": {
+          "title_brier": 0.001235,
+          "relegation_brier": 0.027376,
+          "top_4_brier": 0.011976,
+          "position_mae": 0.71285,
+          "title_log_loss": 0.057742,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.844445
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.046667,
+          "top_4_brier": 0.02,
+          "position_mae": 0.757778,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.844445
+        },
+        "margin": {
+          "title_brier": -0.001235,
+          "relegation_brier": 0.01929,
+          "top_4_brier": 0.008024,
+          "position_mae": 0.044927,
+          "title_log_loss": -0.057723,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 39,
+        "n_league_seasons": 12,
+        "n_leagues": 3,
+        "mean_fraction_complete": 0.928833,
+        "simulator": {
+          "title_brier": 0.000845,
+          "relegation_brier": 0.023966,
+          "top_4_brier": 0.010972,
+          "position_mae": 0.695885,
+          "title_log_loss": 0.05071,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.888889
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.05,
+          "top_4_brier": 0.008333,
+          "position_mae": 0.69537,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.833334
+        },
+        "margin": {
+          "title_brier": -0.000845,
+          "relegation_brier": 0.026034,
+          "top_4_brier": -0.002638,
+          "position_mae": -0.000515,
+          "title_log_loss": -0.050691,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.055556
+        }
+      },
+      {
+        "matchday": 40,
+        "n_league_seasons": 8,
+        "n_leagues": 3,
+        "mean_fraction_complete": 0.931054,
+        "simulator": {
+          "title_brier": 0.000444,
+          "relegation_brier": 0.024585,
+          "top_4_brier": 0.014867,
+          "position_mae": 0.70125,
+          "title_log_loss": 0.027813,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.916667
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0375,
+          "top_4_brier": 0.025,
+          "position_mae": 0.725,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.875
+        },
+        "margin": {
+          "title_brier": -0.000444,
+          "relegation_brier": 0.012915,
+          "top_4_brier": 0.010133,
+          "position_mae": 0.02375,
+          "title_log_loss": -0.027794,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.041667
+        }
+      },
+      {
+        "matchday": 41,
+        "n_league_seasons": 6,
+        "n_leagues": 3,
+        "mean_fraction_complete": 0.935906,
+        "simulator": {
+          "title_brier": 5.2e-05,
+          "relegation_brier": 0.012092,
+          "top_4_brier": 0.014217,
+          "position_mae": 0.564033,
+          "title_log_loss": 0.009624,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.944445
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.016667,
+          "top_4_brier": 0.016667,
+          "position_mae": 0.55,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.944445
+        },
+        "margin": {
+          "title_brier": -5.2e-05,
+          "relegation_brier": 0.004574,
+          "top_4_brier": 0.00245,
+          "position_mae": -0.014033,
+          "title_log_loss": -0.009605,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 42,
+        "n_league_seasons": 5,
+        "n_leagues": 2,
+        "mean_fraction_complete": 0.945215,
+        "simulator": {
+          "title_brier": 5e-05,
+          "relegation_brier": 0.005778,
+          "top_4_brier": 0.016898,
+          "position_mae": 0.54848,
+          "title_log_loss": 0.010277,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.02,
+          "position_mae": 0.52,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": -5e-05,
+          "relegation_brier": -0.005778,
+          "top_4_brier": 0.003102,
+          "position_mae": -0.02848,
+          "title_log_loss": -0.010258,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 43,
+        "n_league_seasons": 2,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.918975,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.015112,
+          "top_4_brier": 0.000534,
+          "position_mae": 0.5468,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.45,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.015112,
+          "top_4_brier": -0.000534,
+          "position_mae": -0.0968,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 44,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.867036,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.007044,
+          "top_4_brier": 0.000609,
+          "position_mae": 0.643,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.6,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.007044,
+          "top_4_brier": -0.000609,
+          "position_mae": -0.043,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 45,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.886427,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.003086,
+          "top_4_brier": 3e-06,
+          "position_mae": 0.6294,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.7,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.003086,
+          "top_4_brier": -3e-06,
+          "position_mae": 0.0706,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 46,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.889197,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.004689,
+          "top_4_brier": 3.6e-05,
+          "position_mae": 0.5928,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.6,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.004689,
+          "top_4_brier": -3.6e-05,
+          "position_mae": 0.0072,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 47,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.916898,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.005402,
+          "top_4_brier": 0.0,
+          "position_mae": 0.5786,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.5,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.005402,
+          "top_4_brier": 0.0,
+          "position_mae": -0.0786,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 48,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.944598,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.038459,
+          "top_4_brier": 0.0,
+          "position_mae": 0.7556,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.666667
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.1,
+          "top_4_brier": 0.0,
+          "position_mae": 0.7,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 0.666667
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.061541,
+          "top_4_brier": 0.0,
+          "position_mae": -0.0556,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "matchday": 49,
+        "n_league_seasons": 1,
+        "n_leagues": 1,
+        "mean_fraction_complete": 0.972299,
+        "simulator": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.012375,
+          "top_4_brier": 0.0,
+          "position_mae": 0.5576,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "baseline": {
+          "title_brier": 0.0,
+          "relegation_brier": 0.0,
+          "top_4_brier": 0.0,
+          "position_mae": 0.4,
+          "title_log_loss": 1.9e-05,
+          "champion_hit": 1.0,
+          "relegation_recall": 1.0
+        },
+        "margin": {
+          "title_brier": 0.0,
+          "relegation_brier": -0.012375,
+          "top_4_brier": 0.0,
+          "position_mae": -0.1576,
+          "title_log_loss": 0.0,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      }
+    ],
+    "by_season_fraction": [
+      {
+        "bucket": 0,
+        "range": [
+          0.0,
+          0.05
+        ],
+        "n_projection_points": 54,
+        "simulator": {
+          "title_brier": 0.039437,
+          "relegation_brier": 0.134398,
+          "top_4_brier": 0.099411,
+          "position_mae": 3.366853,
+          "title_log_loss": 2.244742,
+          "champion_hit": 0.444444,
+          "relegation_recall": 0.37037
+        },
+        "baseline": {
+          "title_brier": 0.09177,
+          "relegation_brier": 0.245473,
+          "top_4_brier": 0.241152,
+          "position_mae": 5.420576,
+          "title_log_loss": 12.280473,
+          "champion_hit": 0.111111,
+          "relegation_recall": 0.209876
+        },
+        "margin": {
+          "title_brier": 0.052333,
+          "relegation_brier": 0.111075,
+          "top_4_brier": 0.141741,
+          "position_mae": 2.053723,
+          "title_log_loss": 10.03573,
+          "champion_hit": 0.333333,
+          "relegation_recall": 0.160494
+        }
+      },
+      {
+        "bucket": 1,
+        "range": [
+          0.05,
+          0.1
+        ],
+        "n_projection_points": 54,
+        "simulator": {
+          "title_brier": 0.033629,
+          "relegation_brier": 0.123466,
+          "top_4_brier": 0.084187,
+          "position_mae": 3.100814,
+          "title_log_loss": 1.664577,
+          "champion_hit": 0.5,
+          "relegation_recall": 0.425926
+        },
+        "baseline": {
+          "title_brier": 0.057613,
+          "relegation_brier": 0.203704,
+          "top_4_brier": 0.172016,
+          "position_mae": 4.101029,
+          "title_log_loss": 7.675302,
+          "champion_hit": 0.444444,
+          "relegation_recall": 0.345679
+        },
+        "margin": {
+          "title_brier": 0.023984,
+          "relegation_brier": 0.080237,
+          "top_4_brier": 0.08783,
+          "position_mae": 1.000215,
+          "title_log_loss": 6.010725,
+          "champion_hit": 0.055556,
+          "relegation_recall": 0.080247
+        }
+      },
+      {
+        "bucket": 2,
+        "range": [
+          0.1,
+          0.15
+        ],
+        "n_projection_points": 55,
+        "simulator": {
+          "title_brier": 0.028563,
+          "relegation_brier": 0.114763,
+          "top_4_brier": 0.076077,
+          "position_mae": 2.821899,
+          "title_log_loss": 1.288778,
+          "champion_hit": 0.618182,
+          "relegation_recall": 0.436364
+        },
+        "baseline": {
+          "title_brier": 0.047475,
+          "relegation_brier": 0.171515,
+          "top_4_brier": 0.148687,
+          "position_mae": 3.492929,
+          "title_log_loss": 6.279796,
+          "champion_hit": 0.545455,
+          "relegation_recall": 0.448485
+        },
+        "margin": {
+          "title_brier": 0.018912,
+          "relegation_brier": 0.056752,
+          "top_4_brier": 0.07261,
+          "position_mae": 0.67103,
+          "title_log_loss": 4.991018,
+          "champion_hit": 0.072727,
+          "relegation_recall": -0.012121
+        }
+      },
+      {
+        "bucket": 3,
+        "range": [
+          0.15,
+          0.2
+        ],
+        "n_projection_points": 46,
+        "simulator": {
+          "title_brier": 0.024297,
+          "relegation_brier": 0.10482,
+          "top_4_brier": 0.072867,
+          "position_mae": 2.609086,
+          "title_log_loss": 0.960586,
+          "champion_hit": 0.695652,
+          "relegation_recall": 0.507246
+        },
+        "baseline": {
+          "title_brier": 0.027295,
+          "relegation_brier": 0.163768,
+          "top_4_brier": 0.137681,
+          "position_mae": 2.992995,
+          "title_log_loss": 3.604065,
+          "champion_hit": 0.73913,
+          "relegation_recall": 0.471014
+        },
+        "margin": {
+          "title_brier": 0.002998,
+          "relegation_brier": 0.058948,
+          "top_4_brier": 0.064814,
+          "position_mae": 0.38391,
+          "title_log_loss": 2.643478,
+          "champion_hit": -0.043478,
+          "relegation_recall": 0.036232
+        }
+      },
+      {
+        "bucket": 4,
+        "range": [
+          0.2,
+          0.25
+        ],
+        "n_projection_points": 52,
+        "simulator": {
+          "title_brier": 0.022983,
+          "relegation_brier": 0.099903,
+          "top_4_brier": 0.064059,
+          "position_mae": 2.444985,
+          "title_log_loss": 0.877067,
+          "champion_hit": 0.75,
+          "relegation_recall": 0.5
+        },
+        "baseline": {
+          "title_brier": 0.036325,
+          "relegation_brier": 0.155342,
+          "top_4_brier": 0.122436,
+          "position_mae": 2.83718,
+          "title_log_loss": 4.782311,
+          "champion_hit": 0.653846,
+          "relegation_recall": 0.5
+        },
+        "margin": {
+          "title_brier": 0.013342,
+          "relegation_brier": 0.055439,
+          "top_4_brier": 0.058377,
+          "position_mae": 0.392194,
+          "title_log_loss": 3.905243,
+          "champion_hit": 0.096154,
+          "relegation_recall": 0.0
+        }
+      },
+      {
+        "bucket": 5,
+        "range": [
+          0.25,
+          0.3
+        ],
+        "n_projection_points": 51,
+        "simulator": {
+          "title_brier": 0.018332,
+          "relegation_brier": 0.089762,
+          "top_4_brier": 0.059709,
+          "position_mae": 2.231533,
+          "title_log_loss": 0.710692,
+          "champion_hit": 0.764706,
+          "relegation_recall": 0.54902
+        },
+        "baseline": {
+          "title_brier": 0.035076,
+          "relegation_brier": 0.134423,
+          "top_4_brier": 0.111111,
+          "position_mae": 2.519826,
+          "title_log_loss": 4.605189,
+          "champion_hit": 0.666667,
+          "relegation_recall": 0.568628
+        },
+        "margin": {
+          "title_brier": 0.016744,
+          "relegation_brier": 0.04466,
+          "top_4_brier": 0.051402,
+          "position_mae": 0.288292,
+          "title_log_loss": 3.894496,
+          "champion_hit": 0.098039,
+          "relegation_recall": -0.019608
+        }
+      },
+      {
+        "bucket": 6,
+        "range": [
+          0.3,
+          0.35
+        ],
+        "n_projection_points": 47,
+        "simulator": {
+          "title_brier": 0.016264,
+          "relegation_brier": 0.080167,
+          "top_4_brier": 0.054654,
+          "position_mae": 2.133379,
+          "title_log_loss": 0.62118,
+          "champion_hit": 0.765957,
+          "relegation_recall": 0.595745
+        },
+        "baseline": {
+          "title_brier": 0.030733,
+          "relegation_brier": 0.13617,
+          "top_4_brier": 0.101891,
+          "position_mae": 2.407565,
+          "title_log_loss": 4.115277,
+          "champion_hit": 0.702128,
+          "relegation_recall": 0.560284
+        },
+        "margin": {
+          "title_brier": 0.014469,
+          "relegation_brier": 0.056003,
+          "top_4_brier": 0.047237,
+          "position_mae": 0.274186,
+          "title_log_loss": 3.494097,
+          "champion_hit": 0.06383,
+          "relegation_recall": 0.035461
+        }
+      },
+      {
+        "bucket": 7,
+        "range": [
+          0.35,
+          0.4
+        ],
+        "n_projection_points": 52,
+        "simulator": {
+          "title_brier": 0.015771,
+          "relegation_brier": 0.081356,
+          "top_4_brier": 0.051586,
+          "position_mae": 2.094009,
+          "title_log_loss": 0.580084,
+          "champion_hit": 0.807692,
+          "relegation_recall": 0.589744
+        },
+        "baseline": {
+          "title_brier": 0.035684,
+          "relegation_brier": 0.133547,
+          "top_4_brier": 0.094231,
+          "position_mae": 2.355983,
+          "title_log_loss": 4.782311,
+          "champion_hit": 0.653846,
+          "relegation_recall": 0.570513
+        },
+        "margin": {
+          "title_brier": 0.019912,
+          "relegation_brier": 0.052191,
+          "top_4_brier": 0.042645,
+          "position_mae": 0.261974,
+          "title_log_loss": 4.202226,
+          "champion_hit": 0.153846,
+          "relegation_recall": 0.019231
+        }
+      },
+      {
+        "bucket": 8,
+        "range": [
+          0.4,
+          0.45
+        ],
+        "n_projection_points": 61,
+        "simulator": {
+          "title_brier": 0.013396,
+          "relegation_brier": 0.073266,
+          "top_4_brier": 0.052915,
+          "position_mae": 1.973474,
+          "title_log_loss": 0.503234,
+          "champion_hit": 0.852459,
+          "relegation_recall": 0.639344
+        },
+        "baseline": {
+          "title_brier": 0.031512,
+          "relegation_brier": 0.116576,
+          "top_4_brier": 0.09235,
+          "position_mae": 2.117304,
+          "title_log_loss": 4.30321,
+          "champion_hit": 0.688525,
+          "relegation_recall": 0.622951
+        },
+        "margin": {
+          "title_brier": 0.018116,
+          "relegation_brier": 0.043309,
+          "top_4_brier": 0.039434,
+          "position_mae": 0.143831,
+          "title_log_loss": 3.799977,
+          "champion_hit": 0.163934,
+          "relegation_recall": 0.016393
+        }
+      },
+      {
+        "bucket": 9,
+        "range": [
+          0.45,
+          0.5
+        ],
+        "n_projection_points": 48,
+        "simulator": {
+          "title_brier": 0.013686,
+          "relegation_brier": 0.066161,
+          "top_4_brier": 0.045597,
+          "position_mae": 1.868812,
+          "title_log_loss": 0.48741,
+          "champion_hit": 0.8125,
+          "relegation_recall": 0.673611
+        },
+        "baseline": {
+          "title_brier": 0.027315,
+          "relegation_brier": 0.101852,
+          "top_4_brier": 0.073611,
+          "position_mae": 1.943287,
+          "title_log_loss": 3.741719,
+          "champion_hit": 0.729167,
+          "relegation_recall": 0.666667
+        },
+        "margin": {
+          "title_brier": 0.013629,
+          "relegation_brier": 0.035691,
+          "top_4_brier": 0.028014,
+          "position_mae": 0.074475,
+          "title_log_loss": 3.254309,
+          "champion_hit": 0.083333,
+          "relegation_recall": 0.006944
+        }
+      },
+      {
+        "bucket": 10,
+        "range": [
+          0.5,
+          0.55
+        ],
+        "n_projection_points": 56,
+        "simulator": {
+          "title_brier": 0.00831,
+          "relegation_brier": 0.066549,
+          "top_4_brier": 0.048101,
+          "position_mae": 1.800046,
+          "title_log_loss": 0.287387,
+          "champion_hit": 0.875,
+          "relegation_recall": 0.666667
+        },
+        "baseline": {
+          "title_brier": 0.016468,
+          "relegation_brier": 0.106151,
+          "top_4_brier": 0.06131,
+          "position_mae": 1.849603,
+          "title_log_loss": 2.220368,
+          "champion_hit": 0.839286,
+          "relegation_recall": 0.654762
+        },
+        "margin": {
+          "title_brier": 0.008159,
+          "relegation_brier": 0.039602,
+          "top_4_brier": 0.013208,
+          "position_mae": 0.049557,
+          "title_log_loss": 1.932982,
+          "champion_hit": 0.035714,
+          "relegation_recall": 0.011905
+        }
+      },
+      {
+        "bucket": 11,
+        "range": [
+          0.55,
+          0.6
+        ],
+        "n_projection_points": 53,
+        "simulator": {
+          "title_brier": 0.006151,
+          "relegation_brier": 0.062113,
+          "top_4_brier": 0.042203,
+          "position_mae": 1.63376,
+          "title_log_loss": 0.222836,
+          "champion_hit": 0.924528,
+          "relegation_recall": 0.698113
+        },
+        "baseline": {
+          "title_brier": 0.01153,
+          "relegation_brier": 0.094549,
+          "top_4_brier": 0.061216,
+          "position_mae": 1.648428,
+          "title_log_loss": 1.564038,
+          "champion_hit": 0.886792,
+          "relegation_recall": 0.691824
+        },
+        "margin": {
+          "title_brier": 0.005379,
+          "relegation_brier": 0.032436,
+          "top_4_brier": 0.019013,
+          "position_mae": 0.014668,
+          "title_log_loss": 1.341202,
+          "champion_hit": 0.037736,
+          "relegation_recall": 0.006289
+        }
+      },
+      {
+        "bucket": 12,
+        "range": [
+          0.6,
+          0.65
+        ],
+        "n_projection_points": 56,
+        "simulator": {
+          "title_brier": 0.005698,
+          "relegation_brier": 0.054861,
+          "top_4_brier": 0.040351,
+          "position_mae": 1.509866,
+          "title_log_loss": 0.213807,
+          "champion_hit": 0.964286,
+          "relegation_recall": 0.714286
+        },
+        "baseline": {
+          "title_brier": 0.007143,
+          "relegation_brier": 0.080952,
+          "top_4_brier": 0.054167,
+          "position_mae": 1.484325,
+          "title_log_loss": 0.986841,
+          "champion_hit": 0.928571,
+          "relegation_recall": 0.738095
+        },
+        "margin": {
+          "title_brier": 0.001445,
+          "relegation_brier": 0.026091,
+          "top_4_brier": 0.013816,
+          "position_mae": -0.02554,
+          "title_log_loss": 0.773033,
+          "champion_hit": 0.035714,
+          "relegation_recall": -0.02381
+        }
+      },
+      {
+        "bucket": 13,
+        "range": [
+          0.65,
+          0.7
+        ],
+        "n_projection_points": 56,
+        "simulator": {
+          "title_brier": 0.010627,
+          "relegation_brier": 0.042358,
+          "top_4_brier": 0.032383,
+          "position_mae": 1.39372,
+          "title_log_loss": 0.333891,
+          "champion_hit": 0.803571,
+          "relegation_recall": 0.803572
+        },
+        "baseline": {
+          "title_brier": 0.019643,
+          "relegation_brier": 0.070833,
+          "top_4_brier": 0.044444,
+          "position_mae": 1.451389,
+          "title_log_loss": 2.71378,
+          "champion_hit": 0.803571,
+          "relegation_recall": 0.767857
+        },
+        "margin": {
+          "title_brier": 0.009016,
+          "relegation_brier": 0.028476,
+          "top_4_brier": 0.012061,
+          "position_mae": 0.057669,
+          "title_log_loss": 2.379888,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.035714
+        }
+      },
+      {
+        "bucket": 14,
+        "range": [
+          0.7,
+          0.75
+        ],
+        "n_projection_points": 55,
+        "simulator": {
+          "title_brier": 0.009684,
+          "relegation_brier": 0.041385,
+          "top_4_brier": 0.030211,
+          "position_mae": 1.293103,
+          "title_log_loss": 0.294551,
+          "champion_hit": 0.818182,
+          "relegation_recall": 0.824243
+        },
+        "baseline": {
+          "title_brier": 0.018384,
+          "relegation_brier": 0.06,
+          "top_4_brier": 0.041616,
+          "position_mae": 1.302222,
+          "title_log_loss": 2.51193,
+          "champion_hit": 0.818182,
+          "relegation_recall": 0.806061
+        },
+        "margin": {
+          "title_brier": 0.008699,
+          "relegation_brier": 0.018615,
+          "top_4_brier": 0.011405,
+          "position_mae": 0.009119,
+          "title_log_loss": 2.217379,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.018182
+        }
+      },
+      {
+        "bucket": 15,
+        "range": [
+          0.75,
+          0.8
+        ],
+        "n_projection_points": 60,
+        "simulator": {
+          "title_brier": 0.009021,
+          "relegation_brier": 0.033842,
+          "top_4_brier": 0.031096,
+          "position_mae": 1.173839,
+          "title_log_loss": 0.281265,
+          "champion_hit": 0.85,
+          "relegation_recall": 0.866667
+        },
+        "baseline": {
+          "title_brier": 0.013333,
+          "relegation_brier": 0.03963,
+          "top_4_brier": 0.041852,
+          "position_mae": 1.198889,
+          "title_log_loss": 1.842087,
+          "champion_hit": 0.866667,
+          "relegation_recall": 0.872222
+        },
+        "margin": {
+          "title_brier": 0.004312,
+          "relegation_brier": 0.005787,
+          "top_4_brier": 0.010756,
+          "position_mae": 0.02505,
+          "title_log_loss": 1.560821,
+          "champion_hit": -0.016667,
+          "relegation_recall": -0.005556
+        }
+      },
+      {
+        "bucket": 16,
+        "range": [
+          0.8,
+          0.85
+        ],
+        "n_projection_points": 50,
+        "simulator": {
+          "title_brier": 0.007338,
+          "relegation_brier": 0.029957,
+          "top_4_brier": 0.03242,
+          "position_mae": 1.025844,
+          "title_log_loss": 0.214679,
+          "champion_hit": 0.86,
+          "relegation_recall": 0.853333
+        },
+        "baseline": {
+          "title_brier": 0.01,
+          "relegation_brier": 0.036889,
+          "top_4_brier": 0.037556,
+          "position_mae": 1.014889,
+          "title_log_loss": 1.38157,
+          "champion_hit": 0.9,
+          "relegation_recall": 0.88
+        },
+        "margin": {
+          "title_brier": 0.002662,
+          "relegation_brier": 0.006932,
+          "top_4_brier": 0.005136,
+          "position_mae": -0.010955,
+          "title_log_loss": 1.166891,
+          "champion_hit": -0.04,
+          "relegation_recall": -0.026667
+        }
+      },
+      {
+        "bucket": 17,
+        "range": [
+          0.85,
+          0.9
+        ],
+        "n_projection_points": 54,
+        "simulator": {
+          "title_brier": 0.004602,
+          "relegation_brier": 0.035372,
+          "top_4_brier": 0.022358,
+          "position_mae": 0.873197,
+          "title_log_loss": 0.144056,
+          "champion_hit": 0.907407,
+          "relegation_recall": 0.802469
+        },
+        "baseline": {
+          "title_brier": 0.013169,
+          "relegation_brier": 0.057407,
+          "top_4_brier": 0.040535,
+          "position_mae": 0.877778,
+          "title_log_loss": 1.790918,
+          "champion_hit": 0.87037,
+          "relegation_recall": 0.814815
+        },
+        "margin": {
+          "title_brier": 0.008567,
+          "relegation_brier": 0.022035,
+          "top_4_brier": 0.018177,
+          "position_mae": 0.004581,
+          "title_log_loss": 1.646862,
+          "champion_hit": 0.037037,
+          "relegation_recall": -0.012346
+        }
+      },
+      {
+        "bucket": 18,
+        "range": [
+          0.9,
+          0.95
+        ],
+        "n_projection_points": 54,
+        "simulator": {
+          "title_brier": 0.005315,
+          "relegation_brier": 0.027755,
+          "top_4_brier": 0.017622,
+          "position_mae": 0.71944,
+          "title_log_loss": 0.145368,
+          "champion_hit": 0.925926,
+          "relegation_recall": 0.864198
+        },
+        "baseline": {
+          "title_brier": 0.005761,
+          "relegation_brier": 0.045885,
+          "top_4_brier": 0.02963,
+          "position_mae": 0.719547,
+          "title_log_loss": 0.767547,
+          "champion_hit": 0.944444,
+          "relegation_recall": 0.851852
+        },
+        "margin": {
+          "title_brier": 0.000446,
+          "relegation_brier": 0.01813,
+          "top_4_brier": 0.012008,
+          "position_mae": 0.000107,
+          "title_log_loss": 0.622178,
+          "champion_hit": -0.018519,
+          "relegation_recall": 0.012346
+        }
+      },
+      {
+        "bucket": 19,
+        "range": [
+          0.95,
+          1.0
+        ],
+        "n_projection_points": 34,
+        "simulator": {
+          "title_brier": 0.003258,
+          "relegation_brier": 0.016963,
+          "top_4_brier": 0.011707,
+          "position_mae": 0.477061,
+          "title_log_loss": 0.088501,
+          "champion_hit": 0.970588,
+          "relegation_recall": 0.931373
+        },
+        "baseline": {
+          "title_brier": 0.003268,
+          "relegation_brier": 0.021895,
+          "top_4_brier": 0.021569,
+          "position_mae": 0.448366,
+          "title_log_loss": 0.406357,
+          "champion_hit": 0.970588,
+          "relegation_recall": 0.931373
+        },
+        "margin": {
+          "title_brier": 1e-05,
+          "relegation_brier": 0.004932,
+          "top_4_brier": 0.009862,
+          "position_mae": -0.028695,
+          "title_log_loss": 0.317856,
+          "champion_hit": 0.0,
+          "relegation_recall": 0.0
+        }
+      }
+    ],
+    "thresholds": {
+      "definition": "earliest matchday from which the condition holds at EVERY later matchday in the pooled convergence curve; null = never",
+      "title_brier_le_0.05": 0,
+      "title_brier_le_0.02": 10,
+      "title_brier_le_0.01": 32,
+      "relegation_brier_le_0.05": 26,
+      "beats_naive_baseline_on_title_brier": null,
+      "champion_always_argmax": 36
+    }
+  },
+  "by_league": [
+    {
+      "competition_id": "eng.1",
+      "league_name": "Premier League",
+      "n_seasons": 4,
+      "n_projection_points": 163,
+      "simulator": {
+        "title_brier": 0.013358,
+        "relegation_brier": 0.061831,
+        "top_4_brier": 0.048068,
+        "position_mae": 1.707778,
+        "title_log_loss": 0.565593,
+        "champion_hit": 0.785276,
+        "relegation_recall": 0.687117
+      },
+      "baseline": {
+        "title_brier": 0.025153,
+        "relegation_brier": 0.104294,
+        "top_4_brier": 0.08589,
+        "position_mae": 2.019018,
+        "title_log_loss": 3.475086,
+        "champion_hit": 0.748466,
+        "relegation_recall": 0.652352
+      },
+      "margin": {
+        "title_brier": 0.011795,
+        "relegation_brier": 0.042463,
+        "top_4_brier": 0.037821,
+        "position_mae": 0.31124,
+        "title_log_loss": 2.909493,
+        "champion_hit": 0.03681,
+        "relegation_recall": 0.034765
+      }
+    },
+    {
+      "competition_id": "esp.1",
+      "league_name": "La Liga",
+      "n_seasons": 5,
+      "n_projection_points": 188,
+      "simulator": {
+        "title_brier": 0.020553,
+        "relegation_brier": 0.070112,
+        "top_4_brier": 0.03249,
+        "position_mae": 2.053618,
+        "title_log_loss": 0.810336,
+        "champion_hit": 0.718085,
+        "relegation_recall": 0.654255
+      },
+      "baseline": {
+        "title_brier": 0.037234,
+        "relegation_brier": 0.103191,
+        "top_4_brier": 0.065426,
+        "position_mae": 2.37234,
+        "title_log_loss": 5.144092,
+        "champion_hit": 0.62766,
+        "relegation_recall": 0.656028
+      },
+      "margin": {
+        "title_brier": 0.016681,
+        "relegation_brier": 0.033079,
+        "top_4_brier": 0.032936,
+        "position_mae": 0.318722,
+        "title_log_loss": 4.333756,
+        "champion_hit": 0.090426,
+        "relegation_recall": -0.001773
+      }
+    },
+    {
+      "competition_id": "fra.1",
+      "league_name": "Ligue 1",
+      "n_seasons": 6,
+      "n_projection_points": 253,
+      "simulator": {
+        "title_brier": 0.006699,
+        "relegation_brier": 0.067713,
+        "top_4_brier": 0.045769,
+        "position_mae": 1.823512,
+        "title_log_loss": 0.258949,
+        "champion_hit": 0.916996,
+        "relegation_recall": 0.683795
+      },
+      "baseline": {
+        "title_brier": 0.016513,
+        "relegation_brier": 0.115854,
+        "top_4_brier": 0.072508,
+        "position_mae": 2.11906,
+        "title_log_loss": 2.184289,
+        "champion_hit": 0.841897,
+        "relegation_recall": 0.625824
+      },
+      "margin": {
+        "title_brier": 0.009814,
+        "relegation_brier": 0.048141,
+        "top_4_brier": 0.026739,
+        "position_mae": 0.295548,
+        "title_log_loss": 1.92534,
+        "champion_hit": 0.075099,
+        "relegation_recall": 0.057971
+      }
+    },
+    {
+      "competition_id": "ger.1",
+      "league_name": "Bundesliga",
+      "n_seasons": 7,
+      "n_projection_points": 242,
+      "simulator": {
+        "title_brier": 0.015313,
+        "relegation_brier": 0.070685,
+        "top_4_brier": 0.068391,
+        "position_mae": 1.86247,
+        "title_log_loss": 0.556836,
+        "champion_hit": 0.805785,
+        "relegation_recall": 0.680441
+      },
+      "baseline": {
+        "title_brier": 0.02663,
+        "relegation_brier": 0.111111,
+        "top_4_brier": 0.118457,
+        "position_mae": 2.042241,
+        "title_log_loss": 3.311173,
+        "champion_hit": 0.760331,
+        "relegation_recall": 0.666667
+      },
+      "margin": {
+        "title_brier": 0.011317,
+        "relegation_brier": 0.040426,
+        "top_4_brier": 0.050066,
+        "position_mae": 0.17977,
+        "title_log_loss": 2.754337,
+        "champion_hit": 0.045455,
+        "relegation_recall": 0.013774
+      }
+    },
+    {
+      "competition_id": "ita.1",
+      "league_name": "Serie A",
+      "n_seasons": 5,
+      "n_projection_points": 202,
+      "simulator": {
+        "title_brier": 0.02066,
+        "relegation_brier": 0.075401,
+        "top_4_brier": 0.045197,
+        "position_mae": 1.748564,
+        "title_log_loss": 0.978706,
+        "champion_hit": 0.70297,
+        "relegation_recall": 0.607261
+      },
+      "baseline": {
+        "title_brier": 0.034158,
+        "relegation_brier": 0.109901,
+        "top_4_brier": 0.088119,
+        "position_mae": 2.09802,
+        "title_log_loss": 4.719179,
+        "champion_hit": 0.658416,
+        "relegation_recall": 0.633663
+      },
+      "margin": {
+        "title_brier": 0.013498,
+        "relegation_brier": 0.0345,
+        "top_4_brier": 0.042922,
+        "position_mae": 0.349455,
+        "title_log_loss": 3.740472,
+        "champion_hit": 0.044554,
+        "relegation_recall": -0.026403
+      }
+    }
+  ],
+  "calibration": {
+    "note": "pooled over every projected title / relegation / top-4 probability at every scored matchday; observed_frequency is what actually happened for the teams in that bucket",
+    "overall": {
+      "n": 60972,
+      "ece": 0.011051,
+      "bins": [
+        {
+          "bin": 0,
+          "range": [
+            0.0,
+            0.1
+          ],
+          "n": 46794,
+          "mean_predicted": 0.00636,
+          "observed_frequency": 0.01263,
+          "gap": 0.006269
+        },
+        {
+          "bin": 1,
+          "range": [
+            0.1,
+            0.2
+          ],
+          "n": 2548,
+          "mean_predicted": 0.143619,
+          "observed_frequency": 0.158556,
+          "gap": 0.014936
+        },
+        {
+          "bin": 2,
+          "range": [
+            0.2,
+            0.3
+          ],
+          "n": 1725,
+          "mean_predicted": 0.246099,
+          "observed_frequency": 0.249275,
+          "gap": 0.003177
+        },
+        {
+          "bin": 3,
+          "range": [
+            0.3,
+            0.4
+          ],
+          "n": 1273,
+          "mean_predicted": 0.347136,
+          "observed_frequency": 0.319717,
+          "gap": -0.027419
+        },
+        {
+          "bin": 4,
+          "range": [
+            0.4,
+            0.5
+          ],
+          "n": 1093,
+          "mean_predicted": 0.447438,
+          "observed_frequency": 0.393413,
+          "gap": -0.054026
+        },
+        {
+          "bin": 5,
+          "range": [
+            0.5,
+            0.6
+          ],
+          "n": 963,
+          "mean_predicted": 0.548453,
+          "observed_frequency": 0.514019,
+          "gap": -0.034434
+        },
+        {
+          "bin": 6,
+          "range": [
+            0.6,
+            0.7
+          ],
+          "n": 851,
+          "mean_predicted": 0.649662,
+          "observed_frequency": 0.620447,
+          "gap": -0.029215
+        },
+        {
+          "bin": 7,
+          "range": [
+            0.7,
+            0.8
+          ],
+          "n": 900,
+          "mean_predicted": 0.749578,
+          "observed_frequency": 0.697778,
+          "gap": -0.0518
+        },
+        {
+          "bin": 8,
+          "range": [
+            0.8,
+            0.9
+          ],
+          "n": 955,
+          "mean_predicted": 0.848151,
+          "observed_frequency": 0.77801,
+          "gap": -0.07014
+        },
+        {
+          "bin": 9,
+          "range": [
+            0.9,
+            1.0
+          ],
+          "n": 3870,
+          "mean_predicted": 0.981739,
+          "observed_frequency": 0.963307,
+          "gap": -0.018431
+        }
+      ]
+    },
+    "by_metric": {
+      "relegation": {
+        "n": 20324,
+        "ece": 0.022429,
+        "bins": [
+          {
+            "bin": 0,
+            "range": [
+              0.0,
+              0.1
+            ],
+            "n": 14159,
+            "mean_predicted": 0.009647,
+            "observed_frequency": 0.022671,
+            "gap": 0.013024
+          },
+          {
+            "bin": 1,
+            "range": [
+              0.1,
+              0.2
+            ],
+            "n": 1339,
+            "mean_predicted": 0.14445,
+            "observed_frequency": 0.174757,
+            "gap": 0.030308
+          },
+          {
+            "bin": 2,
+            "range": [
+              0.2,
+              0.3
+            ],
+            "n": 917,
+            "mean_predicted": 0.245439,
+            "observed_frequency": 0.248637,
+            "gap": 0.003197
+          },
+          {
+            "bin": 3,
+            "range": [
+              0.3,
+              0.4
+            ],
+            "n": 679,
+            "mean_predicted": 0.347246,
+            "observed_frequency": 0.32106,
+            "gap": -0.026186
+          },
+          {
+            "bin": 4,
+            "range": [
+              0.4,
+              0.5
+            ],
+            "n": 590,
+            "mean_predicted": 0.446986,
+            "observed_frequency": 0.379661,
+            "gap": -0.067325
+          },
+          {
+            "bin": 5,
+            "range": [
+              0.5,
+              0.6
+            ],
+            "n": 482,
+            "mean_predicted": 0.548091,
+            "observed_frequency": 0.495851,
+            "gap": -0.052241
+          },
+          {
+            "bin": 6,
+            "range": [
+              0.6,
+              0.7
+            ],
+            "n": 398,
+            "mean_predicted": 0.649116,
+            "observed_frequency": 0.562814,
+            "gap": -0.086302
+          },
+          {
+            "bin": 7,
+            "range": [
+              0.7,
+              0.8
+            ],
+            "n": 421,
+            "mean_predicted": 0.74752,
+            "observed_frequency": 0.660333,
+            "gap": -0.087188
+          },
+          {
+            "bin": 8,
+            "range": [
+              0.8,
+              0.9
+            ],
+            "n": 398,
+            "mean_predicted": 0.847864,
+            "observed_frequency": 0.758794,
+            "gap": -0.08907
+          },
+          {
+            "bin": 9,
+            "range": [
+              0.9,
+              1.0
+            ],
+            "n": 941,
+            "mean_predicted": 0.972089,
+            "observed_frequency": 0.930925,
+            "gap": -0.041165
+          }
+        ]
+      },
+      "title": {
+        "n": 20324,
+        "ece": 0.003261,
+        "bins": [
+          {
+            "bin": 0,
+            "range": [
+              0.0,
+              0.1
+            ],
+            "n": 18612,
+            "mean_predicted": 0.002359,
+            "observed_frequency": 0.0036,
+            "gap": 0.00124
+          },
+          {
+            "bin": 1,
+            "range": [
+              0.1,
+              0.2
+            ],
+            "n": 314,
+            "mean_predicted": 0.143427,
+            "observed_frequency": 0.127389,
+            "gap": -0.016038
+          },
+          {
+            "bin": 2,
+            "range": [
+              0.2,
+              0.3
+            ],
+            "n": 182,
+            "mean_predicted": 0.243956,
+            "observed_frequency": 0.225275,
+            "gap": -0.018681
+          },
+          {
+            "bin": 3,
+            "range": [
+              0.3,
+              0.4
+            ],
+            "n": 128,
+            "mean_predicted": 0.351359,
+            "observed_frequency": 0.382812,
+            "gap": 0.031453
+          },
+          {
+            "bin": 4,
+            "range": [
+              0.4,
+              0.5
+            ],
+            "n": 105,
+            "mean_predicted": 0.443867,
+            "observed_frequency": 0.457143,
+            "gap": 0.013276
+          },
+          {
+            "bin": 5,
+            "range": [
+              0.5,
+              0.6
+            ],
+            "n": 124,
+            "mean_predicted": 0.549694,
+            "observed_frequency": 0.459677,
+            "gap": -0.090016
+          },
+          {
+            "bin": 6,
+            "range": [
+              0.6,
+              0.7
+            ],
+            "n": 118,
+            "mean_predicted": 0.647169,
+            "observed_frequency": 0.686441,
+            "gap": 0.039271
+          },
+          {
+            "bin": 7,
+            "range": [
+              0.7,
+              0.8
+            ],
+            "n": 120,
+            "mean_predicted": 0.749833,
+            "observed_frequency": 0.733333,
+            "gap": -0.0165
+          },
+          {
+            "bin": 8,
+            "range": [
+              0.8,
+              0.9
+            ],
+            "n": 151,
+            "mean_predicted": 0.848636,
+            "observed_frequency": 0.781457,
+            "gap": -0.067179
+          },
+          {
+            "bin": 9,
+            "range": [
+              0.9,
+              1.0
+            ],
+            "n": 470,
+            "mean_predicted": 0.979617,
+            "observed_frequency": 0.976596,
+            "gap": -0.003021
+          }
+        ]
+      },
+      "top_4": {
+        "n": 20324,
+        "ece": 0.010074,
+        "bins": [
+          {
+            "bin": 0,
+            "range": [
+              0.0,
+              0.1
+            ],
+            "n": 14023,
+            "mean_predicted": 0.008352,
+            "observed_frequency": 0.014476,
+            "gap": 0.006124
+          },
+          {
+            "bin": 1,
+            "range": [
+              0.1,
+              0.2
+            ],
+            "n": 895,
+            "mean_predicted": 0.142445,
+            "observed_frequency": 0.145251,
+            "gap": 0.002807
+          },
+          {
+            "bin": 2,
+            "range": [
+              0.2,
+              0.3
+            ],
+            "n": 626,
+            "mean_predicted": 0.247687,
+            "observed_frequency": 0.257188,
+            "gap": 0.009502
+          },
+          {
+            "bin": 3,
+            "range": [
+              0.3,
+              0.4
+            ],
+            "n": 466,
+            "mean_predicted": 0.345815,
+            "observed_frequency": 0.300429,
+            "gap": -0.045386
+          },
+          {
+            "bin": 4,
+            "range": [
+              0.4,
+              0.5
+            ],
+            "n": 398,
+            "mean_predicted": 0.44905,
+            "observed_frequency": 0.396985,
+            "gap": -0.052065
+          },
+          {
+            "bin": 5,
+            "range": [
+              0.5,
+              0.6
+            ],
+            "n": 357,
+            "mean_predicted": 0.54851,
+            "observed_frequency": 0.557423,
+            "gap": 0.008913
+          },
+          {
+            "bin": 6,
+            "range": [
+              0.6,
+              0.7
+            ],
+            "n": 335,
+            "mean_predicted": 0.651188,
+            "observed_frequency": 0.665672,
+            "gap": 0.014484
+          },
+          {
+            "bin": 7,
+            "range": [
+              0.7,
+              0.8
+            ],
+            "n": 359,
+            "mean_predicted": 0.751905,
+            "observed_frequency": 0.729805,
+            "gap": -0.0221
+          },
+          {
+            "bin": 8,
+            "range": [
+              0.8,
+              0.9
+            ],
+            "n": 406,
+            "mean_predicted": 0.848251,
+            "observed_frequency": 0.795567,
+            "gap": -0.052685
+          },
+          {
+            "bin": 9,
+            "range": [
+              0.9,
+              1.0
+            ],
+            "n": 2459,
+            "mean_predicted": 0.985837,
+            "observed_frequency": 0.97316,
+            "gap": -0.012677
+          }
+        ]
+      }
+    }
+  },
+  "notes": [],
+  "warnings": [
+    "20 of 27 scored league-seasons are missing fixtures in the warehouse (see per_season.completeness). The final table \u2014 and therefore the ground truth every metric is scored against \u2014 is reconstructed from the fixtures that ARE present, so a season with a tight title or relegation race can be reconstructed wrongly. Raise --min-completeness once the loaders are complete."
+  ],
+  "runtime_seconds": 581.43,
+  "per_season_omitted": {
+    "reason": "Per-season per-team projection detail is the bulk of the artifact (1.5MB) and is not read by anything. Regenerate with backend/scripts/backtest_season_projections.py.",
+    "n_season_rows": 27
+  }
+}

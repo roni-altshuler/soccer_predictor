@@ -93,3 +93,14 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/swe-worker-*.js
 public/swe-worker-*.js.map
+
+# Bulk diagnostics. Only the heavy per-season/per-team dump is ignored — the
+# committed `season_projection_summary.json` carries the convergence curve,
+# calibration table and per-league results, which is everything the pivot doc
+# cites. Regenerate the full artifact with:
+#   .venv/bin/python -m backend.scripts.backtest_season_projections
+#
+# Do NOT blanket-ignore backend/data/diagnostics/ — walkforward_summary.json is
+# read at runtime by src/app/api/v1/ai/walkforward/route.ts, and FastAPI is not
+# deployed on Vercel, so ignoring it breaks the deployed AI pages.
+backend/data/diagnostics/season_projection_backtest.json

@@ -35,36 +35,28 @@ type NavGroup = {
   items: NavItem[]
 }
 
+// Three sections for the three things this product does (PIVOT_2026-08 §2):
+// what's on, what the model says, and how right it has been.
 const GROUPS: NavGroup[] = [
   {
-    title: 'Scores',
+    title: 'Matches',
     items: [
-      { href: '/', label: 'Matches', icon: Activity },
-      { href: '/live', label: 'Live', icon: Radio, accent: 'ai' },
+      { href: '/', label: 'Today', icon: Activity },
       { href: '/upcoming', label: 'Fixtures', icon: CalendarDays },
-      { href: '/world-cup', label: 'World Cup', icon: Globe },
-      { href: '/leagues', label: 'Leagues', icon: Trophy },
-      { href: '/news', label: 'News', icon: Newspaper },
+      { href: '/leagues', label: 'Standings', icon: Trophy },
     ],
   },
   {
-    title: 'AI',
+    title: 'Model',
     items: [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
-      { href: '/almanac', label: 'Almanac', icon: BookOpen },
-      { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-      // "History" read as ambiguous next to "Accuracy"; this page is the raw
-      // per-prediction ledger, while /accuracy is the analysis of it.
-      { href: '/history', label: 'Record', icon: History },
+      { href: '/simulator', label: 'Title & Relegation', icon: Calculator },
     ],
   },
   {
-    title: 'More',
+    title: 'Evidence',
     items: [
-      { href: '/simulator', label: 'Simulator', icon: Calculator },
-      { href: '/tournaments', label: 'Tournaments', icon: Medal },
-      { href: '/players', label: 'Players', icon: Users },
-      { href: '/diagnostics', label: 'Data Coverage', icon: Database },
+      { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
       { href: '/about', label: 'About', icon: Info },
     ],
   },
