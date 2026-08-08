@@ -6,21 +6,9 @@ import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'lucide-react'
 
-import { useCompanionSubject } from '@/components/companion/CompanionProvider'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { adaptMatchPrediction } from '@/components/match/detail/adaptPrediction'
-import {
-  CounterfactualMachine,
-  useForkAvailability,
-} from '@/components/match/detail/CounterfactualMachine'
-import {
-  WHATIF_TAB,
-  WHATIF_TAB_LABEL,
-  buildForkTimeline,
-  isForkEligible,
-  type WhatIfTab,
-} from '@/components/match/detail/counterfactual'
 import { H2HTab } from '@/components/match/detail/H2HTab'
 import { LineupsTab } from '@/components/match/detail/LineupsTab'
 import { OverviewTab } from '@/components/match/detail/OverviewTab'
@@ -40,7 +28,6 @@ import { ClubColorBar } from '@/components/motion'
 import { FlagBadge, TeamBadge } from '@/components/primitives'
 import { MatchDetailSkeleton } from '@/components/skeletons'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
-import { pickAnchor, statesBeforeGoals } from '@/lib/companion/anchor'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -162,12 +149,10 @@ export default function MatchDetailPage() {
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
 
   // ?tab= deep link is the source of truth. Legacy values
-  // (summary/ai/lineup/…) are normalised onto the new tab set. The raw value
-  // is kept because the "What if" tab only exists once the match is loaded,
-  // finished AND the fork engine confirms availability.
+  // (summary/ai/lineup/…) are normalised onto the new tab set.
   const requestedTab = searchParams.get('tab')
   const selectTab = useCallback(
-    (tab: DetailTab | WhatIfTab) => {
+    (tab: DetailTab) => {
       const next = new URLSearchParams(searchParams.toString())
       next.set('tab', tab)
       router.replace(`${pathname}?${next.toString()}`, { scroll: false })
@@ -180,34 +165,6 @@ export default function MatchDetailPage() {
   const isHalftime = match?.status?.toLowerCase().includes('half') && !match?.status?.toLowerCase().includes('first') && !match?.status?.toLowerCase().includes('second') || false
   const isFinished = !!match && (match.status.includes('FINAL') || match.status.toLowerCase().includes('finished') || match.status.toLowerCase().includes('ft'))
 
-  // "What if" fork tab: eligibility is pure state math (the goal events must
-  // reproduce the final score); availability is one kickoff-state probe of
-  // the fork engine. Until BOTH hold the tab does not exist — no tab, no
-  // skeleton, nothing (the engine may legitimately decline a match).
-  const whatIfEligible = useMemo(
-    () => (match && isFinished ? isForkEligible(match) : false),
-    [match, isFinished]
-  )
-  const whatIfAvailable = useForkAvailability(whatIfEligible && match ? match.id : null)
-
-  // The moment this finished match is worth asking about. Full time has no
-  // question in it, so without an anchor the Companion has nothing to offer on
-  // the pages fans open most. Reuses the fork timeline rather than re-deriving
-  // goal order — that reconstruction already credits own goals and refuses to
-  // exist unless the events reproduce the final score.
-  const askAnchor = useMemo(() => {
-    if (!match || !isFinished || match.home_score === null || match.away_score === null) return null
-    const timeline = buildForkTimeline(match)
-    if (!timeline) return null
-    const states = statesBeforeGoals(
-      timeline.map((beat) => ({
-        minute: beat.minute,
-        home: beat.scoreAfter.home,
-        away: beat.scoreAfter.away,
-      }))
-    )
-    return pickAnchor(states, match.home_score, match.away_score)
-  }, [match, isFinished])
   // Ref to the match hero <section>. StickyScoreBar uses an IntersectionObserver
   // on this to know when to slide down into view.
   const heroRef = useRef<HTMLElement | null>(null)
@@ -477,31 +434,6 @@ export default function MatchDetailPage() {
     return () => clearInterval(interval)
   }, [isLive])
 
-  // Publish this match to the Ask Pitchverse rail for as long as the page is
-  // mounted. Must sit above the loading/not-found returns below — a hook after
-  // an early return is a hook that sometimes does not run.
-  //
-  // Coverage mirrors the fork gate, the strictest of the timeline gates, so the
-  // rail can never offer a timeline capability this page would itself refuse.
-  useCompanionSubject(
-    match
-      ? {
-          kind: 'match',
-          matchId: String(matchId),
-          home: match.home_team,
-          away: match.away_team,
-          competitionId: match.leagueId ?? leagueId ?? '',
-          gender: genderParam,
-          phase: isFinished ? 'finished' : isLive ? 'live' : 'scheduled',
-          homeScore: match.home_score,
-          awayScore: match.away_score,
-          minute: match.minute ?? null,
-          hasEventCoverage: whatIfEligible,
-          anchor: askAnchor,
-        }
-      : null
-  )
-
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
@@ -560,16 +492,8 @@ export default function MatchDetailPage() {
   // Additional derived state (isLive, isHalftime and isFinished already computed above before hooks)
   const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
 
-  // The "What if" tab exists only for finished matches the fork engine
-  // accepted. Deep links to ?tab=whatif fall back to Overview until then.
-  const showWhatIf = whatIfEligible && whatIfAvailable === true
-  const visibleTabs: ReadonlyArray<DetailTab | WhatIfTab> = showWhatIf
-    ? [...DETAIL_TABS, WHATIF_TAB]
-    : DETAIL_TABS
-  const activeTab: DetailTab | WhatIfTab =
-    (requestedTab || '').toLowerCase() === WHATIF_TAB && showWhatIf
-      ? WHATIF_TAB
-      : normalizeDetailTab(requestedTab)
+  const visibleTabs: ReadonlyArray<DetailTab> = DETAIL_TABS
+  const activeTab: DetailTab = normalizeDetailTab(requestedTab)
 
   // Navigate back to the league page - go directly to full league page
   const handleBack = () => {
@@ -844,7 +768,7 @@ export default function MatchDetailPage() {
                     : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
                 )}
               >
-                {tab === WHATIF_TAB ? WHATIF_TAB_LABEL : DETAIL_TAB_LABELS[tab]}
+                {DETAIL_TAB_LABELS[tab]}
                 {active && (
                   <motion.span
                     {...(reduceMotion ? {} : { layoutId: 'matchdetail-tab-active', transition: springSnappy })}
@@ -893,8 +817,6 @@ export default function MatchDetailPage() {
         {activeTab === 'h2h' && <H2HTab match={match} />}
 
         {activeTab === 'table' && <TableTab match={match} />}
-
-        {activeTab === WHATIF_TAB && showWhatIf && <CounterfactualMachine match={match} />}
       </div>
     </div>
   )

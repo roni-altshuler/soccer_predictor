@@ -80,9 +80,6 @@ FEATURE_NAMES: Tuple[str, ...] = (
     "home_sot_ratio", "away_sot_ratio",
     "home_discipline_score", "away_discipline_score",
     "home_corner_dominance", "away_corner_dominance",
-    # --- market-implied (5) ---
-    "implied_home_prob", "implied_draw_prob", "implied_away_prob",
-    "implied_over_2_5", "market_overround",
     # --- calendar / burnout (8) ---
     "home_days_rest", "away_days_rest", "rest_diff",
     "home_matches_last_14d", "away_matches_last_14d",
@@ -101,7 +98,7 @@ FEATURE_NAMES: Tuple[str, ...] = (
     # --- motivation / cup context (4) ---
     "is_knockout", "is_2leg_aggregate", "home_motivation", "away_motivation",
     # --- interactions (3) ---
-    "elo_x_form_diff", "elo_x_h2h", "implied_home_x_form",
+    "elo_x_form_diff", "elo_x_h2h",
     # --- expected goals (7) — Understat/FBref via warehouse matches.home_xg ---
     # Coverage is partial (top European leagues + enriched women's data), so
     # every xG feature defaults to 0 and `has_xg_data` tells the model when
@@ -113,6 +110,36 @@ FEATURE_NAMES: Tuple[str, ...] = (
 )
 
 assert len(FEATURE_NAMES) == len(set(FEATURE_NAMES)), "duplicate feature names"
+
+# ---------- market features: deliberately NOT in the default vector ----------
+#
+# These were in FEATURE_NAMES until 2026-08-08 and caused the worst bug in the
+# project's history. They are built from `matches.odds_*`, populated for 96.1%
+# of Wave A training rows — but `unified_inference` synthesises the live match
+# row with `NULL AS odds_home, ...`, so every served prediction saw 0.0 where
+# training saw a real market probability. Measured on 8,664 out-of-sample Wave A
+# fixtures: .5801 Brier served WITH odds, .6561 served with zeros — a 9.5-point
+# accuracy collapse to below the constant base rate. That is the entire
+# 60.56%-holdout / 46%-live gap.
+#
+# The schema guard in unified_inference could never catch it: the feature NAMES
+# matched perfectly, only the VALUES differed. See _assert_live_blocks_populated
+# there for the guard that actually detects this class of bug.
+#
+# Two models, per docs/PIVOT_2026-08.md §3.1:
+#   Model B (default, market-blind) — serves today, and is the ONLY thing that
+#     may feed EV/Kelly. A model that reads the closing line agrees with it by
+#     construction and can never find a +EV bet.
+#   Model A (market-informed) — for the accuracy-optimised dashboard, and only
+#     once a LIVE odds feed exists for upcoming fixtures. football-data.co.uk
+#     publishes odds for played matches only, so Model A is not buildable today.
+MARKET_FEATURE_NAMES: Tuple[str, ...] = (
+    "implied_home_prob", "implied_draw_prob", "implied_away_prob",
+    "implied_over_2_5", "market_overround",
+    "implied_home_x_form",
+)
+
+FEATURE_NAMES_WITH_MARKET: Tuple[str, ...] = FEATURE_NAMES + MARKET_FEATURE_NAMES
 
 
 # ---------- output containers ----------

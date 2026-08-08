@@ -1,0 +1,2158 @@
+{
+  "generated_at": "2026-08-08T12:37:25.457188+00:00",
+  "method": {
+    "split": "rolling-origin temporal; fold k trains on all seasons < k, tests on season k",
+    "shuffling": "none \u2014 no random k-fold anywhere",
+    "same_day_leakage_guard": "features for every fixture on a calendar day are emitted before any of that day's results are folded into state",
+    "brier_convention": "multiclass sum of squared errors; uniform 1/3 = 0.6667",
+    "feature_source": "backend/services/prediction/features_v2.py"
+  },
+  "scope": {
+    "emit_competitions": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "ita.1",
+      "fra.1"
+    ],
+    "observe_competitions": [
+      "eng.1",
+      "esp.1",
+      "fra.1",
+      "ger.1",
+      "ita.1",
+      "uefa.champions",
+      "uefa.europa",
+      "uefa.europa.conf"
+    ],
+    "min_season": 2015,
+    "test_seasons": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "selection_seasons": [
+      2021,
+      2022,
+      2023
+    ],
+    "final_seasons": [
+      2024,
+      2025
+    ],
+    "n_rows": 17898,
+    "n_rows_with_closing_odds": 17433
+  },
+  "group_coverage": {
+    "baseline": {
+      "n_features": 30,
+      "n_constant_features": 0,
+      "usable": true
+    },
+    "venue": {
+      "n_features": 8,
+      "n_constant_features": 0,
+      "usable": true
+    },
+    "referee": {
+      "n_features": 11,
+      "n_constant_features": 0,
+      "usable": true,
+      "coverage_flag": "ref_has_referee",
+      "coverage_rate": 0.2073
+    },
+    "weather": {
+      "n_features": 7,
+      "n_constant_features": 7,
+      "usable": false,
+      "coverage_flag": "wx_has_weather",
+      "coverage_rate": 0.0
+    },
+    "calendar": {
+      "n_features": 12,
+      "n_constant_features": 0,
+      "usable": true,
+      "coverage_flag": "cal_has_real_kickoff_time",
+      "coverage_rate": 0.1072
+    },
+    "h2h_deep": {
+      "n_features": 9,
+      "n_constant_features": 0,
+      "usable": true
+    },
+    "congestion": {
+      "n_features": 13,
+      "n_constant_features": 0,
+      "usable": true
+    },
+    "xg_form": {
+      "n_features": 9,
+      "n_constant_features": 9,
+      "usable": false,
+      "coverage_flag": "xg_has_data",
+      "coverage_rate": 0.0
+    },
+    "clubelo": {
+      "n_features": 4,
+      "n_constant_features": 0,
+      "usable": true,
+      "coverage_flag": "ce_has_rating",
+      "coverage_rate": 0.3895
+    },
+    "market": {
+      "n_features": 6,
+      "n_constant_features": 0,
+      "usable": true,
+      "coverage_flag": "mkt_has_odds",
+      "coverage_rate": 0.974
+    },
+    "news_sentiment_proxy": {
+      "n_features": 4,
+      "n_constant_features": 0,
+      "usable": true
+    }
+  },
+  "references": {
+    "uniform_third": {
+      "brier": 0.666667,
+      "log_loss": 1.098612,
+      "accuracy": 0.434903,
+      "rps": 0.235515,
+      "n": 8664,
+      "paired_vs_market": {
+        "brier": 0.666667,
+        "log_loss": 1.098612,
+        "accuracy": 0.435589,
+        "rps": 0.235551,
+        "n": 8407
+      }
+    },
+    "constant_base_rate_train": {
+      "brier": 0.64967,
+      "log_loss": 1.073587,
+      "accuracy": 0.434903,
+      "rps": 0.23018,
+      "n": 8664,
+      "paired_vs_market": {
+        "brier": 0.649442,
+        "log_loss": 1.073268,
+        "accuracy": 0.435589,
+        "rps": 0.230122,
+        "n": 8407
+      }
+    },
+    "market_closing_novig": {
+      "brier": 0.575695,
+      "log_loss": 0.968338,
+      "accuracy": 0.539194,
+      "rps": 0.194741,
+      "n": 8407,
+      "note": "de-vigged (proportional) closing line, rows with a price only"
+    },
+    "label_permutation_control": {
+      "brier": 0.648788,
+      "log_loss": 1.072681,
+      "accuracy": 0.441251,
+      "rps": 0.229896,
+      "n": 8664,
+      "expected_brier_if_clean": 0.64967,
+      "gap_vs_base_rate": -0.000882,
+      "leakage_suspected": false,
+      "note": "baseline refit on permuted labels; must land on the constant base rate"
+    }
+  },
+  "variants": {
+    "logreg": {
+      "baseline": {
+        "variant": "baseline",
+        "groups": [
+          "baseline"
+        ],
+        "n_features": 30,
+        "brier": 0.588055,
+        "log_loss": 0.98669,
+        "accuracy": 0.527701,
+        "rps": 0.200336,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.594132,
+            "log_loss": 0.997526,
+            "accuracy": 0.525866,
+            "rps": 0.201806,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.590769,
+            "log_loss": 0.991041,
+            "accuracy": 0.529794,
+            "rps": 0.204374,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581608,
+            "log_loss": 0.974791,
+            "accuracy": 0.528677,
+            "rps": 0.194652,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587167,
+            "log_loss": 0.984094,
+            "accuracy": 0.530148,
+            "rps": 0.200624,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.584849,
+            "log_loss": 0.983562,
+            "accuracy": 0.522936,
+            "rps": 0.199662,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587615,
+          "log_loss": 0.985938,
+          "accuracy": 0.52825,
+          "rps": 0.200173,
+          "n": 8407
+        }
+      },
+      "baseline+venue": {
+        "variant": "baseline+venue",
+        "groups": [
+          "baseline",
+          "venue"
+        ],
+        "n_features": 38,
+        "brier": 0.589119,
+        "log_loss": 0.98864,
+        "accuracy": 0.526662,
+        "rps": 0.200712,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.59606,
+            "log_loss": 1.000721,
+            "accuracy": 0.518835,
+            "rps": 0.202672,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.590971,
+            "log_loss": 0.991447,
+            "accuracy": 0.529252,
+            "rps": 0.204181,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.582888,
+            "log_loss": 0.977471,
+            "accuracy": 0.532652,
+            "rps": 0.195158,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.586792,
+            "log_loss": 0.983316,
+            "accuracy": 0.531854,
+            "rps": 0.200567,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.587453,
+            "log_loss": 0.98848,
+            "accuracy": 0.519878,
+            "rps": 0.200505,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.588703,
+          "log_loss": 0.987917,
+          "accuracy": 0.527656,
+          "rps": 0.200555,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.001064,
+          "log_loss": 0.00195,
+          "accuracy": -0.001039,
+          "rps": 0.000376
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.995
+      },
+      "baseline+referee": {
+        "variant": "baseline+referee",
+        "groups": [
+          "baseline",
+          "referee"
+        ],
+        "n_features": 41,
+        "brier": 0.588977,
+        "log_loss": 0.987928,
+        "accuracy": 0.527008,
+        "rps": 0.200783,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.594569,
+            "log_loss": 0.998141,
+            "accuracy": 0.523355,
+            "rps": 0.202086,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.591763,
+            "log_loss": 0.992386,
+            "accuracy": 0.528711,
+            "rps": 0.204884,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.582432,
+            "log_loss": 0.976164,
+            "accuracy": 0.531516,
+            "rps": 0.194922,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.588036,
+            "log_loss": 0.985076,
+            "accuracy": 0.530717,
+            "rps": 0.20107,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.586608,
+            "log_loss": 0.985764,
+            "accuracy": 0.519113,
+            "rps": 0.200516,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.588522,
+          "log_loss": 0.987146,
+          "accuracy": 0.527537,
+          "rps": 0.200616,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000922,
+          "log_loss": 0.001238,
+          "accuracy": -0.000693,
+          "rps": 0.000447
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.9805
+      },
+      "baseline+weather": {
+        "variant": "baseline+weather",
+        "groups": [
+          "baseline",
+          "weather"
+        ],
+        "n_features": 37,
+        "brier": 0.588055,
+        "log_loss": 0.98669,
+        "accuracy": 0.527701,
+        "rps": 0.200336,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.594132,
+            "log_loss": 0.997526,
+            "accuracy": 0.525866,
+            "rps": 0.201806,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.590769,
+            "log_loss": 0.991041,
+            "accuracy": 0.529794,
+            "rps": 0.204374,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581608,
+            "log_loss": 0.974791,
+            "accuracy": 0.528677,
+            "rps": 0.194652,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587167,
+            "log_loss": 0.984094,
+            "accuracy": 0.530148,
+            "rps": 0.200624,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.584849,
+            "log_loss": 0.983562,
+            "accuracy": 0.522936,
+            "rps": 0.199662,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587615,
+          "log_loss": 0.985938,
+          "accuracy": 0.52825,
+          "rps": 0.200173,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.0,
+          "log_loss": 0.0,
+          "accuracy": 0.0,
+          "rps": 0.0
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.32
+      },
+      "baseline+calendar": {
+        "variant": "baseline+calendar",
+        "groups": [
+          "baseline",
+          "calendar"
+        ],
+        "n_features": 42,
+        "brier": 0.588923,
+        "log_loss": 0.988153,
+        "accuracy": 0.524584,
+        "rps": 0.20073,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.597458,
+            "log_loss": 1.003531,
+            "accuracy": 0.515319,
+            "rps": 0.203257,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.591557,
+            "log_loss": 0.991775,
+            "accuracy": 0.530878,
+            "rps": 0.204853,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581562,
+            "log_loss": 0.974853,
+            "accuracy": 0.531516,
+            "rps": 0.194703,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.586885,
+            "log_loss": 0.983731,
+            "accuracy": 0.526735,
+            "rps": 0.200411,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.584864,
+            "log_loss": 0.983481,
+            "accuracy": 0.517584,
+            "rps": 0.19961,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.588456,
+          "log_loss": 0.987339,
+          "accuracy": 0.52599,
+          "rps": 0.200547,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000868,
+          "log_loss": 0.001463,
+          "accuracy": -0.003117,
+          "rps": 0.000394
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.984
+      },
+      "baseline+h2h_deep": {
+        "variant": "baseline+h2h_deep",
+        "groups": [
+          "baseline",
+          "h2h_deep"
+        ],
+        "n_features": 39,
+        "brier": 0.590591,
+        "log_loss": 0.991234,
+        "accuracy": 0.52747,
+        "rps": 0.201163,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.599835,
+            "log_loss": 1.007913,
+            "accuracy": 0.516826,
+            "rps": 0.203584,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.592259,
+            "log_loss": 0.993969,
+            "accuracy": 0.535753,
+            "rps": 0.204914,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.582682,
+            "log_loss": 0.977203,
+            "accuracy": 0.535491,
+            "rps": 0.195075,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587275,
+            "log_loss": 0.983919,
+            "accuracy": 0.530717,
+            "rps": 0.200841,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.589273,
+            "log_loss": 0.99071,
+            "accuracy": 0.51682,
+            "rps": 0.200814,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.590235,
+          "log_loss": 0.990614,
+          "accuracy": 0.52825,
+          "rps": 0.201024,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.002536,
+          "log_loss": 0.004544,
+          "accuracy": -0.000231,
+          "rps": 0.000827
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 1.0
+      },
+      "baseline+congestion": {
+        "variant": "baseline+congestion",
+        "groups": [
+          "baseline",
+          "congestion"
+        ],
+        "n_features": 43,
+        "brier": 0.588298,
+        "log_loss": 0.987138,
+        "accuracy": 0.527816,
+        "rps": 0.200394,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.595264,
+            "log_loss": 0.999057,
+            "accuracy": 0.524862,
+            "rps": 0.202136,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.589726,
+            "log_loss": 0.99002,
+            "accuracy": 0.530336,
+            "rps": 0.204083,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581484,
+            "log_loss": 0.974407,
+            "accuracy": 0.527541,
+            "rps": 0.19472,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587762,
+            "log_loss": 0.985079,
+            "accuracy": 0.531854,
+            "rps": 0.200725,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.585572,
+            "log_loss": 0.984837,
+            "accuracy": 0.5237,
+            "rps": 0.199726,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587846,
+          "log_loss": 0.986377,
+          "accuracy": 0.528488,
+          "rps": 0.200239,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000243,
+          "log_loss": 0.000448,
+          "accuracy": 0.000115,
+          "rps": 5.8e-05
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.774
+      },
+      "baseline+xg_form": {
+        "variant": "baseline+xg_form",
+        "groups": [
+          "baseline",
+          "xg_form"
+        ],
+        "n_features": 39,
+        "brier": 0.588055,
+        "log_loss": 0.98669,
+        "accuracy": 0.527701,
+        "rps": 0.200336,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.594132,
+            "log_loss": 0.997526,
+            "accuracy": 0.525866,
+            "rps": 0.201806,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.590769,
+            "log_loss": 0.991041,
+            "accuracy": 0.529794,
+            "rps": 0.204374,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581608,
+            "log_loss": 0.974791,
+            "accuracy": 0.528677,
+            "rps": 0.194652,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587167,
+            "log_loss": 0.984094,
+            "accuracy": 0.530148,
+            "rps": 0.200624,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.584849,
+            "log_loss": 0.983562,
+            "accuracy": 0.522936,
+            "rps": 0.199662,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587615,
+          "log_loss": 0.985938,
+          "accuracy": 0.52825,
+          "rps": 0.200173,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.0,
+          "log_loss": 0.0,
+          "accuracy": 0.0,
+          "rps": 0.0
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.067
+      },
+      "baseline+clubelo": {
+        "variant": "baseline+clubelo",
+        "groups": [
+          "baseline",
+          "clubelo"
+        ],
+        "n_features": 34,
+        "brier": 0.588617,
+        "log_loss": 0.987517,
+        "accuracy": 0.529548,
+        "rps": 0.20058,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.593937,
+            "log_loss": 0.997434,
+            "accuracy": 0.522853,
+            "rps": 0.201759,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.591742,
+            "log_loss": 0.992448,
+            "accuracy": 0.531419,
+            "rps": 0.204775,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.581943,
+            "log_loss": 0.975357,
+            "accuracy": 0.532084,
+            "rps": 0.194835,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.588584,
+            "log_loss": 0.985992,
+            "accuracy": 0.53413,
+            "rps": 0.201191,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.585138,
+            "log_loss": 0.983881,
+            "accuracy": 0.527523,
+            "rps": 0.199779,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.588181,
+          "log_loss": 0.986796,
+          "accuracy": 0.530272,
+          "rps": 0.200424,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000562,
+          "log_loss": 0.000827,
+          "accuracy": 0.001847,
+          "rps": 0.000244
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.946
+      },
+      "baseline+market": {
+        "variant": "baseline+market",
+        "groups": [
+          "baseline",
+          "market"
+        ],
+        "n_features": 36,
+        "brier": 0.580102,
+        "log_loss": 0.975189,
+        "accuracy": 0.530817,
+        "rps": 0.196549,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.590761,
+            "log_loss": 0.991996,
+            "accuracy": 0.510296,
+            "rps": 0.200179,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.585447,
+            "log_loss": 0.98369,
+            "accuracy": 0.530878,
+            "rps": 0.201617,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.567167,
+            "log_loss": 0.954445,
+            "accuracy": 0.541738,
+            "rps": 0.187945,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.574637,
+            "log_loss": 0.966216,
+            "accuracy": 0.53868,
+            "rps": 0.195006,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.581095,
+            "log_loss": 0.977598,
+            "accuracy": 0.536697,
+            "rps": 0.197531,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.577388,
+          "log_loss": 0.971318,
+          "accuracy": 0.535506,
+          "rps": 0.195352,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.007953,
+          "log_loss": -0.011501,
+          "accuracy": 0.003116,
+          "rps": -0.003787
+        },
+        "verdict": "HELPS",
+        "p_not_better_than_baseline": 0.0
+      },
+      "baseline+news_sentiment_proxy": {
+        "variant": "baseline+news_sentiment_proxy",
+        "groups": [
+          "baseline",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 34,
+        "brier": 0.588219,
+        "log_loss": 0.987035,
+        "accuracy": 0.527239,
+        "rps": 0.200379,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.594221,
+            "log_loss": 0.997901,
+            "accuracy": 0.524862,
+            "rps": 0.201831,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.591252,
+            "log_loss": 0.991937,
+            "accuracy": 0.528711,
+            "rps": 0.204444,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.58153,
+            "log_loss": 0.974678,
+            "accuracy": 0.529245,
+            "rps": 0.194674,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.587461,
+            "log_loss": 0.984495,
+            "accuracy": 0.530148,
+            "rps": 0.200725,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.584826,
+            "log_loss": 0.983626,
+            "accuracy": 0.522171,
+            "rps": 0.199649,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587782,
+          "log_loss": 0.986269,
+          "accuracy": 0.528012,
+          "rps": 0.200222,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000164,
+          "log_loss": 0.000345,
+          "accuracy": -0.000462,
+          "rps": 4.3e-05
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.8965
+      },
+      "baseline+ALL": {
+        "variant": "baseline+ALL",
+        "groups": [
+          "baseline",
+          "venue",
+          "referee",
+          "weather",
+          "calendar",
+          "h2h_deep",
+          "congestion",
+          "xg_form",
+          "clubelo",
+          "market",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 113,
+        "brier": 0.584598,
+        "log_loss": 0.983014,
+        "accuracy": 0.522738,
+        "rps": 0.198247,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.597901,
+            "log_loss": 1.005084,
+            "accuracy": 0.498744,
+            "rps": 0.202748,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.588624,
+            "log_loss": 0.988706,
+            "accuracy": 0.516251,
+            "rps": 0.20299,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.570539,
+            "log_loss": 0.962131,
+            "accuracy": 0.541738,
+            "rps": 0.1895,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.576686,
+            "log_loss": 0.968718,
+            "accuracy": 0.53413,
+            "rps": 0.195805,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.588227,
+            "log_loss": 0.988714,
+            "accuracy": 0.527523,
+            "rps": 0.199758,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.58153,
+          "log_loss": 0.978621,
+          "accuracy": 0.528369,
+          "rps": 0.196915,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.003457,
+          "log_loss": -0.003676,
+          "accuracy": -0.004963,
+          "rps": -0.002089
+        },
+        "verdict": "HELPS"
+      },
+      "baseline+ALL_no_market": {
+        "variant": "baseline+ALL_no_market",
+        "groups": [
+          "baseline",
+          "venue",
+          "referee",
+          "weather",
+          "calendar",
+          "h2h_deep",
+          "congestion",
+          "xg_form",
+          "clubelo",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 107,
+        "brier": 0.593223,
+        "log_loss": 0.995551,
+        "accuracy": 0.520776,
+        "rps": 0.202394,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.602424,
+            "log_loss": 1.012872,
+            "accuracy": 0.507785,
+            "rps": 0.20493,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.594671,
+            "log_loss": 0.9971,
+            "accuracy": 0.52221,
+            "rps": 0.206208,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.584953,
+            "log_loss": 0.982097,
+            "accuracy": 0.528109,
+            "rps": 0.196261,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.589783,
+            "log_loss": 0.987155,
+            "accuracy": 0.52901,
+            "rps": 0.201785,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.592931,
+            "log_loss": 0.996401,
+            "accuracy": 0.517584,
+            "rps": 0.20223,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.592755,
+          "log_loss": 0.994774,
+          "accuracy": 0.522303,
+          "rps": 0.202231,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.005168,
+          "log_loss": 0.008861,
+          "accuracy": -0.006925,
+          "rps": 0.002058
+        },
+        "verdict": "HARMFUL"
+      }
+    },
+    "hgb": {
+      "baseline": {
+        "variant": "baseline",
+        "groups": [
+          "baseline"
+        ],
+        "n_features": 30,
+        "brier": 0.601664,
+        "log_loss": 1.010105,
+        "accuracy": 0.505194,
+        "rps": 0.204771,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.611243,
+            "log_loss": 1.027681,
+            "accuracy": 0.488197,
+            "rps": 0.207276,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.607123,
+            "log_loss": 1.020099,
+            "accuracy": 0.510834,
+            "rps": 0.210012,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591509,
+            "log_loss": 0.991395,
+            "accuracy": 0.512777,
+            "rps": 0.197532,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.597588,
+            "log_loss": 1.002322,
+            "accuracy": 0.510808,
+            "rps": 0.204366,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.598528,
+            "log_loss": 1.0049,
+            "accuracy": 0.505352,
+            "rps": 0.203851,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.60115,
+          "log_loss": 1.009273,
+          "accuracy": 0.50684,
+          "rps": 0.204582,
+          "n": 8407
+        }
+      },
+      "baseline+venue": {
+        "variant": "baseline+venue",
+        "groups": [
+          "baseline",
+          "venue"
+        ],
+        "n_features": 38,
+        "brier": 0.602597,
+        "log_loss": 1.012589,
+        "accuracy": 0.512235,
+        "rps": 0.205146,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.614417,
+            "log_loss": 1.03381,
+            "accuracy": 0.498242,
+            "rps": 0.209196,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.607046,
+            "log_loss": 1.021867,
+            "accuracy": 0.510834,
+            "rps": 0.209706,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.594456,
+            "log_loss": 0.997265,
+            "accuracy": 0.521295,
+            "rps": 0.198299,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.596052,
+            "log_loss": 0.99924,
+            "accuracy": 0.519909,
+            "rps": 0.203581,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.598085,
+            "log_loss": 1.005767,
+            "accuracy": 0.512997,
+            "rps": 0.203867,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.602282,
+          "log_loss": 1.011866,
+          "accuracy": 0.512549,
+          "rps": 0.20502,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000933,
+          "log_loss": 0.002484,
+          "accuracy": 0.007041,
+          "rps": 0.000375
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.7755
+      },
+      "baseline+referee": {
+        "variant": "baseline+referee",
+        "groups": [
+          "baseline",
+          "referee"
+        ],
+        "n_features": 41,
+        "brier": 0.603117,
+        "log_loss": 1.012339,
+        "accuracy": 0.51108,
+        "rps": 0.205342,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.613808,
+            "log_loss": 1.030988,
+            "accuracy": 0.496735,
+            "rps": 0.208524,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.609783,
+            "log_loss": 1.025004,
+            "accuracy": 0.510293,
+            "rps": 0.210864,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591368,
+            "log_loss": 0.991062,
+            "accuracy": 0.523566,
+            "rps": 0.197238,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.598214,
+            "log_loss": 1.00355,
+            "accuracy": 0.517634,
+            "rps": 0.20441,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.599845,
+            "log_loss": 1.006537,
+            "accuracy": 0.50841,
+            "rps": 0.204865,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.602536,
+          "log_loss": 1.011234,
+          "accuracy": 0.512549,
+          "rps": 0.205116,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.001453,
+          "log_loss": 0.002234,
+          "accuracy": 0.005886,
+          "rps": 0.000571
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.8945
+      },
+      "baseline+weather": {
+        "variant": "baseline+weather",
+        "groups": [
+          "baseline",
+          "weather"
+        ],
+        "n_features": 37,
+        "brier": 0.601664,
+        "log_loss": 1.010105,
+        "accuracy": 0.505194,
+        "rps": 0.204771,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.611243,
+            "log_loss": 1.027681,
+            "accuracy": 0.488197,
+            "rps": 0.207276,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.607123,
+            "log_loss": 1.020099,
+            "accuracy": 0.510834,
+            "rps": 0.210012,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591509,
+            "log_loss": 0.991395,
+            "accuracy": 0.512777,
+            "rps": 0.197532,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.597588,
+            "log_loss": 1.002322,
+            "accuracy": 0.510808,
+            "rps": 0.204366,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.598528,
+            "log_loss": 1.0049,
+            "accuracy": 0.505352,
+            "rps": 0.203851,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.60115,
+          "log_loss": 1.009273,
+          "accuracy": 0.50684,
+          "rps": 0.204582,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.0,
+          "log_loss": 0.0,
+          "accuracy": 0.0,
+          "rps": 0.0
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 1.0
+      },
+      "baseline+calendar": {
+        "variant": "baseline+calendar",
+        "groups": [
+          "baseline",
+          "calendar"
+        ],
+        "n_features": 42,
+        "brier": 0.60179,
+        "log_loss": 1.010295,
+        "accuracy": 0.509811,
+        "rps": 0.204775,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.613954,
+            "log_loss": 1.031225,
+            "accuracy": 0.493722,
+            "rps": 0.208816,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.606126,
+            "log_loss": 1.018253,
+            "accuracy": 0.503792,
+            "rps": 0.209537,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591875,
+            "log_loss": 0.992252,
+            "accuracy": 0.521863,
+            "rps": 0.19743,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.596395,
+            "log_loss": 1.000675,
+            "accuracy": 0.525597,
+            "rps": 0.203602,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.597753,
+            "log_loss": 1.004427,
+            "accuracy": 0.505352,
+            "rps": 0.203367,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.601034,
+          "log_loss": 1.008937,
+          "accuracy": 0.511241,
+          "rps": 0.20449,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.000126,
+          "log_loss": 0.00019,
+          "accuracy": 0.004617,
+          "rps": 4e-06
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.5415
+      },
+      "baseline+h2h_deep": {
+        "variant": "baseline+h2h_deep",
+        "groups": [
+          "baseline",
+          "h2h_deep"
+        ],
+        "n_features": 39,
+        "brier": 0.602554,
+        "log_loss": 1.011869,
+        "accuracy": 0.509695,
+        "rps": 0.204973,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.609605,
+            "log_loss": 1.026439,
+            "accuracy": 0.498744,
+            "rps": 0.207184,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.60906,
+            "log_loss": 1.021805,
+            "accuracy": 0.508126,
+            "rps": 0.210214,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.594028,
+            "log_loss": 0.996068,
+            "accuracy": 0.515616,
+            "rps": 0.197594,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.598368,
+            "log_loss": 1.004433,
+            "accuracy": 0.517065,
+            "rps": 0.20505,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.59974,
+            "log_loss": 1.006934,
+            "accuracy": 0.510703,
+            "rps": 0.204044,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.602135,
+          "log_loss": 1.011047,
+          "accuracy": 0.510527,
+          "rps": 0.204823,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.00089,
+          "log_loss": 0.001764,
+          "accuracy": 0.004501,
+          "rps": 0.000202
+        },
+        "verdict": "HARMFUL",
+        "p_not_better_than_baseline": 0.781
+      },
+      "baseline+congestion": {
+        "variant": "baseline+congestion",
+        "groups": [
+          "baseline",
+          "congestion"
+        ],
+        "n_features": 43,
+        "brier": 0.601743,
+        "log_loss": 1.010505,
+        "accuracy": 0.509234,
+        "rps": 0.204646,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.611454,
+            "log_loss": 1.027914,
+            "accuracy": 0.495229,
+            "rps": 0.207167,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.607834,
+            "log_loss": 1.02228,
+            "accuracy": 0.514626,
+            "rps": 0.209617,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.593356,
+            "log_loss": 0.993392,
+            "accuracy": 0.523566,
+            "rps": 0.19822,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.595546,
+            "log_loss": 0.999982,
+            "accuracy": 0.511377,
+            "rps": 0.203743,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.597983,
+            "log_loss": 1.004572,
+            "accuracy": 0.500765,
+            "rps": 0.203658,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.601175,
+          "log_loss": 1.00953,
+          "accuracy": 0.509932,
+          "rps": 0.204391,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 7.9e-05,
+          "log_loss": 0.0004,
+          "accuracy": 0.00404,
+          "rps": -0.000125
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.538
+      },
+      "baseline+xg_form": {
+        "variant": "baseline+xg_form",
+        "groups": [
+          "baseline",
+          "xg_form"
+        ],
+        "n_features": 39,
+        "brier": 0.601664,
+        "log_loss": 1.010105,
+        "accuracy": 0.505194,
+        "rps": 0.204771,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.611243,
+            "log_loss": 1.027681,
+            "accuracy": 0.488197,
+            "rps": 0.207276,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.607123,
+            "log_loss": 1.020099,
+            "accuracy": 0.510834,
+            "rps": 0.210012,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591509,
+            "log_loss": 0.991395,
+            "accuracy": 0.512777,
+            "rps": 0.197532,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.597588,
+            "log_loss": 1.002322,
+            "accuracy": 0.510808,
+            "rps": 0.204366,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.598528,
+            "log_loss": 1.0049,
+            "accuracy": 0.505352,
+            "rps": 0.203851,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.60115,
+          "log_loss": 1.009273,
+          "accuracy": 0.50684,
+          "rps": 0.204582,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.0,
+          "log_loss": 0.0,
+          "accuracy": 0.0,
+          "rps": 0.0
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 1.0
+      },
+      "baseline+clubelo": {
+        "variant": "baseline+clubelo",
+        "groups": [
+          "baseline",
+          "clubelo"
+        ],
+        "n_features": 34,
+        "brier": 0.600907,
+        "log_loss": 1.009792,
+        "accuracy": 0.511657,
+        "rps": 0.204373,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.612364,
+            "log_loss": 1.031545,
+            "accuracy": 0.495229,
+            "rps": 0.207998,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.606849,
+            "log_loss": 1.020212,
+            "accuracy": 0.516251,
+            "rps": 0.209286,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.590411,
+            "log_loss": 0.989587,
+            "accuracy": 0.515048,
+            "rps": 0.197279,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.593719,
+            "log_loss": 0.996868,
+            "accuracy": 0.520478,
+            "rps": 0.203101,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.598879,
+            "log_loss": 1.006546,
+            "accuracy": 0.513761,
+            "rps": 0.20318,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.600508,
+          "log_loss": 1.008958,
+          "accuracy": 0.512668,
+          "rps": 0.204228,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.000757,
+          "log_loss": -0.000313,
+          "accuracy": 0.006463,
+          "rps": -0.000398
+        },
+        "verdict": "HELPS",
+        "p_not_better_than_baseline": 0.2375
+      },
+      "baseline+market": {
+        "variant": "baseline+market",
+        "groups": [
+          "baseline",
+          "market"
+        ],
+        "n_features": 36,
+        "brier": 0.58947,
+        "log_loss": 0.992824,
+        "accuracy": 0.5247,
+        "rps": 0.199154,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.597964,
+            "log_loss": 1.00881,
+            "accuracy": 0.51331,
+            "rps": 0.201111,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.595491,
+            "log_loss": 1.002162,
+            "accuracy": 0.524919,
+            "rps": 0.204362,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.578984,
+            "log_loss": 0.974281,
+            "accuracy": 0.538898,
+            "rps": 0.192039,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.585527,
+            "log_loss": 0.985561,
+            "accuracy": 0.525028,
+            "rps": 0.198924,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.587463,
+            "log_loss": 0.990037,
+            "accuracy": 0.522171,
+            "rps": 0.198713,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.587968,
+          "log_loss": 0.99051,
+          "accuracy": 0.526585,
+          "rps": 0.198538,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.012194,
+          "log_loss": -0.017281,
+          "accuracy": 0.019506,
+          "rps": -0.005617
+        },
+        "verdict": "HELPS",
+        "p_not_better_than_baseline": 0.0
+      },
+      "baseline+news_sentiment_proxy": {
+        "variant": "baseline+news_sentiment_proxy",
+        "groups": [
+          "baseline",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 34,
+        "brier": 0.601217,
+        "log_loss": 1.009983,
+        "accuracy": 0.51385,
+        "rps": 0.204458,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.611931,
+            "log_loss": 1.030092,
+            "accuracy": 0.49121,
+            "rps": 0.207737,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.606015,
+            "log_loss": 1.019094,
+            "accuracy": 0.516251,
+            "rps": 0.209101,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.591218,
+            "log_loss": 0.990363,
+            "accuracy": 0.529813,
+            "rps": 0.19724,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.5949,
+            "log_loss": 0.998689,
+            "accuracy": 0.522184,
+            "rps": 0.203093,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.600088,
+            "log_loss": 1.008107,
+            "accuracy": 0.512232,
+            "rps": 0.204462,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.601064,
+          "log_loss": 1.009626,
+          "accuracy": 0.514452,
+          "rps": 0.204405,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.000447,
+          "log_loss": -0.000122,
+          "accuracy": 0.008656,
+          "rps": -0.000313
+        },
+        "verdict": "neutral",
+        "p_not_better_than_baseline": 0.3305
+      },
+      "baseline+ALL": {
+        "variant": "baseline+ALL",
+        "groups": [
+          "baseline",
+          "venue",
+          "referee",
+          "weather",
+          "calendar",
+          "h2h_deep",
+          "congestion",
+          "xg_form",
+          "clubelo",
+          "market",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 113,
+        "brier": 0.592006,
+        "log_loss": 0.995319,
+        "accuracy": 0.521814,
+        "rps": 0.200598,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.603607,
+            "log_loss": 1.016819,
+            "accuracy": 0.503767,
+            "rps": 0.205277,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.602569,
+            "log_loss": 1.012139,
+            "accuracy": 0.512459,
+            "rps": 0.207023,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.578934,
+            "log_loss": 0.971817,
+            "accuracy": 0.534355,
+            "rps": 0.192112,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.584533,
+            "log_loss": 0.983034,
+            "accuracy": 0.534699,
+            "rps": 0.198441,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.587087,
+            "log_loss": 0.987008,
+            "accuracy": 0.528287,
+            "rps": 0.198735,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.590439,
+          "log_loss": 0.992749,
+          "accuracy": 0.52373,
+          "rps": 0.199968,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": -0.009658,
+          "log_loss": -0.014786,
+          "accuracy": 0.01662,
+          "rps": -0.004173
+        },
+        "verdict": "HELPS"
+      },
+      "baseline+ALL_no_market": {
+        "variant": "baseline+ALL_no_market",
+        "groups": [
+          "baseline",
+          "venue",
+          "referee",
+          "weather",
+          "calendar",
+          "h2h_deep",
+          "congestion",
+          "xg_form",
+          "clubelo",
+          "news_sentiment_proxy"
+        ],
+        "n_features": 107,
+        "brier": 0.603032,
+        "log_loss": 1.012182,
+        "accuracy": 0.509695,
+        "rps": 0.205736,
+        "n": 8664,
+        "per_fold": [
+          {
+            "test_season": 2021,
+            "brier": 0.61537,
+            "log_loss": 1.034075,
+            "accuracy": 0.493219,
+            "rps": 0.210621,
+            "n": 1991
+          },
+          {
+            "test_season": 2022,
+            "brier": 0.610155,
+            "log_loss": 1.025249,
+            "accuracy": 0.507584,
+            "rps": 0.210371,
+            "n": 1846
+          },
+          {
+            "test_season": 2023,
+            "brier": 0.595426,
+            "log_loss": 0.996223,
+            "accuracy": 0.513913,
+            "rps": 0.199042,
+            "n": 1761
+          },
+          {
+            "test_season": 2024,
+            "brier": 0.594596,
+            "log_loss": 0.998202,
+            "accuracy": 0.51934,
+            "rps": 0.20393,
+            "n": 1758
+          },
+          {
+            "test_season": 2025,
+            "brier": 0.595777,
+            "log_loss": 1.000691,
+            "accuracy": 0.519113,
+            "rps": 0.203196,
+            "n": 1308
+          }
+        ],
+        "paired_vs_market": {
+          "brier": 0.602426,
+          "log_loss": 1.011098,
+          "accuracy": 0.510646,
+          "rps": 0.205546,
+          "n": 8407
+        },
+        "delta_vs_baseline": {
+          "brier": 0.001368,
+          "log_loss": 0.002077,
+          "accuracy": 0.004501,
+          "rps": 0.000965
+        },
+        "verdict": "HARMFUL"
+      }
+    }
+  },
+  "greedy_forward_selection": {
+    "model": "logreg",
+    "selection_seasons": [
+      2021,
+      2022,
+      2023
+    ],
+    "selected_groups": [
+      "baseline",
+      "market"
+    ],
+    "trail": [
+      {
+        "step": 0,
+        "added": null,
+        "selection_brier": 0.589083
+      },
+      {
+        "step": 1,
+        "added": "market",
+        "selection_brier": 0.581587,
+        "all_candidates": [
+          {
+            "group": "market",
+            "selection_brier": 0.581587
+          },
+          {
+            "group": "weather",
+            "selection_brier": 0.589083
+          },
+          {
+            "group": "xg_form",
+            "selection_brier": 0.589083
+          },
+          {
+            "group": "congestion",
+            "selection_brier": 0.589103
+          },
+          {
+            "group": "news_sentiment_proxy",
+            "selection_brier": 0.589249
+          },
+          {
+            "group": "clubelo",
+            "selection_brier": 0.58944
+          },
+          {
+            "group": "referee",
+            "selection_brier": 0.589826
+          },
+          {
+            "group": "venue",
+            "selection_brier": 0.590238
+          },
+          {
+            "group": "calendar",
+            "selection_brier": 0.590511
+          },
+          {
+            "group": "h2h_deep",
+            "selection_brier": 0.591941
+          }
+        ]
+      },
+      {
+        "step": 2,
+        "added": null,
+        "stopped": true,
+        "best_rejected": "weather",
+        "best_rejected_brier": 0.581587,
+        "selection_brier": 0.581587
+      }
+    ],
+    "final_holdout": {
+      "seasons": [
+        2024,
+        2025
+      ],
+      "baseline": {
+        "brier": 0.586178,
+        "log_loss": 0.983867,
+        "accuracy": 0.527071,
+        "rps": 0.200213,
+        "n": 3066
+      },
+      "selected": {
+        "brier": 0.577392,
+        "log_loss": 0.971072,
+        "accuracy": 0.537834,
+        "rps": 0.196083,
+        "n": 3066
+      },
+      "delta_brier": -0.008786,
+      "delta_log_loss": -0.012795,
+      "delta_accuracy": 0.010763,
+      "p_not_better_than_baseline": 0.0,
+      "note": "selection never saw these seasons"
+    }
+  },
+  "warnings": [
+    "groups with no varying feature in this scope (result is 'no data', not 'no signal'): ['weather', 'xg_form']"
+  ],
+  "harmful_groups": [
+    {
+      "model": "logreg",
+      "variant": "baseline+venue",
+      "delta_brier": 0.001064
+    },
+    {
+      "model": "logreg",
+      "variant": "baseline+referee",
+      "delta_brier": 0.000922
+    },
+    {
+      "model": "logreg",
+      "variant": "baseline+calendar",
+      "delta_brier": 0.000868
+    },
+    {
+      "model": "logreg",
+      "variant": "baseline+h2h_deep",
+      "delta_brier": 0.002536
+    },
+    {
+      "model": "logreg",
+      "variant": "baseline+clubelo",
+      "delta_brier": 0.000562
+    },
+    {
+      "model": "logreg",
+      "variant": "baseline+ALL_no_market",
+      "delta_brier": 0.005168
+    },
+    {
+      "model": "hgb",
+      "variant": "baseline+venue",
+      "delta_brier": 0.000933
+    },
+    {
+      "model": "hgb",
+      "variant": "baseline+referee",
+      "delta_brier": 0.001453
+    },
+    {
+      "model": "hgb",
+      "variant": "baseline+h2h_deep",
+      "delta_brier": 0.00089
+    },
+    {
+      "model": "hgb",
+      "variant": "baseline+ALL_no_market",
+      "delta_brier": 0.001368
+    }
+  ]
+}

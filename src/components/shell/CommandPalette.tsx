@@ -37,22 +37,13 @@ import { leaguesForGender } from '@/lib/leagueAccents'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
 const PAGES = [
-  { href: '/', label: 'Matches', icon: Activity, hint: 'Scores + fixtures' },
-  { href: '/live', label: 'Live Intelligence', icon: Radio, hint: 'Live win probability + the model read', accent: 'ai' as const },
+  { href: '/', label: 'Today', icon: Activity, hint: 'Scores + fixtures' },
   { href: '/upcoming', label: 'Fixtures', icon: CalendarDays, hint: 'Upcoming schedule' },
-  { href: '/leagues', label: 'Leagues', icon: Trophy, hint: 'Browse competitions' },
-  { href: '/world-cup', label: 'World Cup', icon: Globe2, hint: 'Tournament hub' },
-  { href: '/tournaments', label: 'Tournaments', icon: Medal, hint: 'Brackets + group stages' },
-  { href: '/players', label: 'Players', icon: Users, hint: 'Top scorers + form' },
-  { href: '/predict', label: 'AI Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
-  { href: '/almanac', label: 'Almanac', icon: BookOpen, hint: 'Ask the history for a count' },
-  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'How well the calls hold up' },
-  // Keeps matching a "history" search — the palette indexes label + hint.
-  { href: '/history', label: 'Prediction Record', icon: History, hint: 'Full history: every call and its result' },
-  { href: '/simulator', label: 'Simulator', icon: Calculator, hint: 'Run scenarios' },
-  { href: '/news', label: 'News', icon: Newspaper, hint: 'Latest stories' },
-  { href: '/diagnostics', label: 'Data Coverage', icon: Database, hint: 'Event timeline coverage by league' },
-  { href: '/about', label: 'About', icon: Info, hint: 'How Pitchverse works' },
+  { href: '/leagues', label: 'Standings', icon: Trophy, hint: 'Tables + projected finish' },
+  { href: '/predict', label: 'Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
+  { href: '/simulator', label: 'Title & Relegation', icon: Calculator, hint: 'How the season ends' },
+  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Track record vs the market' },
+  { href: '/about', label: 'About', icon: Info, hint: 'Methodology + model card' },
 ]
 
 interface TeamHit {

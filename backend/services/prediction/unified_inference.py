@@ -34,7 +34,7 @@ import pickle
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -243,6 +243,48 @@ def _synthetic_match_row(
     return cur.fetchone()
 
 
+# Feature blocks that are meaningless when uniformly zero at serve time. Each
+# entry is (label, predicate over feature name). A block that is entirely zero
+# on a live fixture but was populated during training is a train/serve skew —
+# the model leans on a signal it is no longer being given.
+_LIVE_BLOCK_CHECKS: Tuple[Tuple[str, str], ...] = (
+    ("market", "implied_"),
+    ("weather", "weather_"),
+    ("referee", "referee_"),
+)
+
+_dead_block_warned: set = set()
+
+
+def _warn_on_dead_feature_blocks(dense: List[float], match_id: int) -> None:
+    """
+    Catch the class of bug that cost this project nine months of accuracy.
+
+    The schema guard in `_load` compares feature *names*, so it is blind to a
+    block whose names match but whose values are all zero at serve. That is
+    exactly how the market block broke: trained on real implied probabilities
+    for 96.1% of rows, served as 0.0 on every live prediction, dropping Brier
+    from .5801 to .6561 — below the constant base rate.
+
+    Warns once per block per process rather than per prediction, so a genuinely
+    absent block does not drown the logs.
+    """
+    by_name = dict(zip(FEATURE_NAMES, dense))
+    for label, prefix in _LIVE_BLOCK_CHECKS:
+        block = [v for name, v in by_name.items() if name.startswith(prefix)]
+        if not block:
+            continue  # block is not in the served vector at all — by design
+        if all(v == 0.0 for v in block) and label not in _dead_block_warned:
+            _dead_block_warned.add(label)
+            logger.warning(
+                "Feature block %r is all-zero at serve time (%d features, first "
+                "seen on match %s). If the model was trained on non-zero values "
+                "for this block, every prediction is degraded. See "
+                "docs/PIVOT_2026-08.md §4a.",
+                label, len(block), match_id,
+            )
+
+
 def predict_one(
     *,
     warehouse: Warehouse,
@@ -281,6 +323,7 @@ def predict_one(
         phase=phase, referee_id=referee_id,
     )
     built = builder.build_from_row(row)
+    _warn_on_dead_feature_blocks(built.dense, match_id)
 
     dense = np.asarray(built.dense, dtype=np.float32).reshape(1, -1)
     dense = store.scaler.transform(dense).astype(np.float32)

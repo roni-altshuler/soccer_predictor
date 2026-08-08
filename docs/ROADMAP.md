@@ -1,9 +1,19 @@
-# Execution tracker — VISION_2030.md
+# Execution tracker — VISION_2030.md  ⚠️ SUPERSEDED
 
-*Living checklist for the expansion program. Update statuses as work lands;
-keep one line per item. Companion to [VISION_2030.md](VISION_2030.md), which
-holds the reasoning. Statuses: ☐ not started · ◐ in progress · ☑ shipped ·
-✕ dropped (say why).*
+> **This roadmap is no longer active.** The project pivoted on 2026-08-08.
+> The live plan is [PIVOT_2026-08.md](PIVOT_2026-08.md).
+>
+> Almost everything ticked ☑ below was **deleted** in the pivot —
+> Counterfactual Machine, Rarity Engine, Story Compiler, Boardroom, Almanac,
+> match2vec, Match Theater, Universe Browser, Justice Ledger. They shipped
+> while the prediction engine regressed for nine consecutive weeks and served
+> every prediction with its market features zeroed out.
+>
+> This file is kept as a record of what was attempted and what it cost. Do not
+> pick work up from it. Nothing here is a commitment.
+
+*Historical checklist for the expansion program. Statuses: ☐ not started ·
+◐ in progress · ☑ shipped · ✕ dropped (say why).*
 
 ## Phase 0 — The Historical Foundation
 

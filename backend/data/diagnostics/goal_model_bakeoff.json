@@ -1,0 +1,282 @@
+{
+  "overall": {
+    "poisson": {
+      "n": 12289,
+      "brier": 0.5989,
+      "log_loss": 1.0055,
+      "rps": 0.2058,
+      "accuracy": 0.5137
+    },
+    "dixon_coles": {
+      "n": 12289,
+      "brier": 0.5977,
+      "log_loss": 1.0026,
+      "rps": 0.2053,
+      "accuracy": 0.5138
+    },
+    "bivariate_poisson": {
+      "n": 12289,
+      "brier": 0.5987,
+      "log_loss": 1.005,
+      "rps": 0.2057,
+      "accuracy": 0.5139
+    },
+    "negative_binomial": {
+      "n": 12289,
+      "brier": 0.5994,
+      "log_loss": 1.0061,
+      "rps": 0.2059,
+      "accuracy": 0.5136
+    },
+    "zero_inflated": {
+      "n": 12289,
+      "brier": 0.5989,
+      "log_loss": 1.0055,
+      "rps": 0.2058,
+      "accuracy": 0.5137
+    },
+    "market": {
+      "n": 12289,
+      "brier": 0.577,
+      "log_loss": 0.971,
+      "rps": 0.1954,
+      "accuracy": 0.5351
+    },
+    "blend_all_equal": {
+      "n": 12289,
+      "brier": 0.5985,
+      "log_loss": 1.0041,
+      "rps": 0.2056,
+      "accuracy": 0.5134
+    },
+    "blend_dc_bivpois": {
+      "n": 12289,
+      "brier": 0.598,
+      "log_loss": 1.0032,
+      "rps": 0.2054,
+      "accuracy": 0.5135
+    }
+  },
+  "per_league": {
+    "Premier League": {
+      "poisson": {
+        "n": 2614,
+        "brier": 0.5869,
+        "log_loss": 0.986,
+        "rps": 0.2058,
+        "accuracy": 0.526
+      },
+      "dixon_coles": {
+        "n": 2614,
+        "brier": 0.5871,
+        "log_loss": 0.9867,
+        "rps": 0.2058,
+        "accuracy": 0.5256
+      },
+      "bivariate_poisson": {
+        "n": 2614,
+        "brier": 0.5871,
+        "log_loss": 0.9865,
+        "rps": 0.2059,
+        "accuracy": 0.5252
+      },
+      "negative_binomial": {
+        "n": 2614,
+        "brier": 0.5869,
+        "log_loss": 0.986,
+        "rps": 0.2058,
+        "accuracy": 0.526
+      },
+      "zero_inflated": {
+        "n": 2614,
+        "brier": 0.5869,
+        "log_loss": 0.986,
+        "rps": 0.2058,
+        "accuracy": 0.526
+      },
+      "market": {
+        "n": 2614,
+        "brier": 0.5658,
+        "log_loss": 0.9555,
+        "rps": 0.1954,
+        "accuracy": 0.5513
+      }
+    },
+    "La Liga": {
+      "poisson": {
+        "n": 2670,
+        "brier": 0.5959,
+        "log_loss": 0.9994,
+        "rps": 0.2003,
+        "accuracy": 0.5154
+      },
+      "dixon_coles": {
+        "n": 2670,
+        "brier": 0.5956,
+        "log_loss": 0.9988,
+        "rps": 0.2002,
+        "accuracy": 0.5161
+      },
+      "bivariate_poisson": {
+        "n": 2670,
+        "brier": 0.5955,
+        "log_loss": 0.999,
+        "rps": 0.2002,
+        "accuracy": 0.5157
+      },
+      "negative_binomial": {
+        "n": 2670,
+        "brier": 0.5959,
+        "log_loss": 0.9994,
+        "rps": 0.2003,
+        "accuracy": 0.5154
+      },
+      "zero_inflated": {
+        "n": 2670,
+        "brier": 0.5959,
+        "log_loss": 0.9994,
+        "rps": 0.2003,
+        "accuracy": 0.5154
+      },
+      "market": {
+        "n": 2670,
+        "brier": 0.5814,
+        "log_loss": 0.9773,
+        "rps": 0.1938,
+        "accuracy": 0.5307
+      }
+    },
+    "Bundesliga": {
+      "poisson": {
+        "n": 2026,
+        "brier": 0.6014,
+        "log_loss": 1.0066,
+        "rps": 0.2081,
+        "accuracy": 0.501
+      },
+      "dixon_coles": {
+        "n": 2026,
+        "brier": 0.6003,
+        "log_loss": 1.0053,
+        "rps": 0.2079,
+        "accuracy": 0.5
+      },
+      "bivariate_poisson": {
+        "n": 2026,
+        "brier": 0.6013,
+        "log_loss": 1.0065,
+        "rps": 0.2081,
+        "accuracy": 0.501
+      },
+      "negative_binomial": {
+        "n": 2026,
+        "brier": 0.6014,
+        "log_loss": 1.0066,
+        "rps": 0.2081,
+        "accuracy": 0.501
+      },
+      "zero_inflated": {
+        "n": 2026,
+        "brier": 0.6014,
+        "log_loss": 1.0066,
+        "rps": 0.2081,
+        "accuracy": 0.501
+      },
+      "market": {
+        "n": 2026,
+        "brier": 0.5798,
+        "log_loss": 0.9762,
+        "rps": 0.198,
+        "accuracy": 0.5281
+      }
+    },
+    "Serie A": {
+      "poisson": {
+        "n": 2565,
+        "brier": 0.5915,
+        "log_loss": 0.9915,
+        "rps": 0.1987,
+        "accuracy": 0.5275
+      },
+      "dixon_coles": {
+        "n": 2565,
+        "brier": 0.5905,
+        "log_loss": 0.9896,
+        "rps": 0.1985,
+        "accuracy": 0.5287
+      },
+      "bivariate_poisson": {
+        "n": 2565,
+        "brier": 0.5908,
+        "log_loss": 0.9903,
+        "rps": 0.1986,
+        "accuracy": 0.5275
+      },
+      "negative_binomial": {
+        "n": 2565,
+        "brier": 0.5915,
+        "log_loss": 0.9915,
+        "rps": 0.1987,
+        "accuracy": 0.5275
+      },
+      "zero_inflated": {
+        "n": 2565,
+        "brier": 0.5915,
+        "log_loss": 0.9915,
+        "rps": 0.1987,
+        "accuracy": 0.5275
+      },
+      "market": {
+        "n": 2565,
+        "brier": 0.5701,
+        "log_loss": 0.96,
+        "rps": 0.189,
+        "accuracy": 0.5435
+      }
+    },
+    "Ligue 1": {
+      "poisson": {
+        "n": 2414,
+        "brier": 0.6212,
+        "log_loss": 1.0474,
+        "rps": 0.2174,
+        "accuracy": 0.4946
+      },
+      "dixon_coles": {
+        "n": 2414,
+        "brier": 0.617,
+        "log_loss": 1.0355,
+        "rps": 0.2153,
+        "accuracy": 0.4942
+      },
+      "bivariate_poisson": {
+        "n": 2414,
+        "brier": 0.6208,
+        "log_loss": 1.0461,
+        "rps": 0.2171,
+        "accuracy": 0.4959
+      },
+      "negative_binomial": {
+        "n": 2414,
+        "brier": 0.6235,
+        "log_loss": 1.0506,
+        "rps": 0.218,
+        "accuracy": 0.4942
+      },
+      "zero_inflated": {
+        "n": 2414,
+        "brier": 0.6212,
+        "log_loss": 1.0474,
+        "rps": 0.2174,
+        "accuracy": 0.4946
+      },
+      "market": {
+        "n": 2414,
+        "brier": 0.5893,
+        "log_loss": 0.9881,
+        "rps": 0.2019,
+        "accuracy": 0.5195
+      }
+    }
+  }
+}

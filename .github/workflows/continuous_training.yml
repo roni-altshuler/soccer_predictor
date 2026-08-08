@@ -45,6 +45,13 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      # Note on where the promotion gate actually bites: backend/data/models/*
+      # is gitignored, so the binaries trained here never leave the runner and
+      # the gate's artifact rollback is a no-op on CI. What this job publishes
+      # is the *evidence* — the drift report and model_selection.json — plus a
+      # pass/fail signal. The rollback matters when the same command is run
+      # where the models are served from, which is why it lives in the
+      # orchestrator rather than in this workflow.
       - name: Run continuous training orchestrator
         id: orchestrator
         run: |
@@ -91,7 +98,24 @@ jobs:
             git push
           fi
 
-      - name: Fail job with accurate status
+      # The orchestrator is the single source of truth for pass/fail. It already
+      # emits the ::notice:: / ::error:: annotations and the job summary table,
+      # so this step only translates its exit code into the job's status.
+      #
+      # The contract (see backend/scripts/continuous_training.py):
+      #   status=ok                   nothing regressed                    -> 0
+      #   status=gate_enforced        some held back, some promoted. The
+      #                               guardrail worked; production kept the
+      #                               previous artifacts for the held-back
+      #                               leagues. NOT a build failure          -> 0
+      #   status=systemic_regression  every comparable league regressed,
+      #                               which means the pipeline is broken    -> 1
+      #   status=error                crash, or a rollback that failed      -> 1
+      #
+      # Previously this step failed the job whenever held_back > 0. That made a
+      # working guardrail indistinguishable from a broken build and trained the
+      # maintainer to ignore red runs on this workflow.
+      - name: Report orchestrator status
         if: always()
         run: |
           RC="${{ steps.orchestrator.outputs.exit_code }}"
@@ -99,32 +123,9 @@ jobs:
           echo "Orchestrator exit code: $RC"
           echo "Orchestrator summary : $SUMMARY"
 
-          HELD=$(echo "$SUMMARY" | grep -oE "held_back=[0-9]+" | cut -d= -f2 | head -1)
-          REG=$(echo "$SUMMARY" | grep -oE "regressions=[0-9]+" | cut -d= -f2 | head -1)
-
-          # A crash during retrain (e.g. an sklearn API break) is always a failure.
-          if echo "$SUMMARY" | grep -q "status=error"; then
-            STAGE=$(echo "$SUMMARY" | grep -oE "stage=[^ ]+" | head -1)
-            MSG=$(echo "$SUMMARY" | sed -E 's/.*msg=//' | head -1)
-            echo "::error::Continuous training crashed during ${STAGE:-unknown}: ${MSG:-no message}"
+          if [ -z "$SUMMARY" ]; then
+            echo "::error::Continuous training produced no CONTINUOUS_TRAINING_SUMMARY line (exit ${RC:-unknown}). The run died before it could report — check the orchestrator output above."
             exit 1
           fi
 
-          # A held-back candidate is a true regression that failed the gates —
-          # production kept the prior model. That's the actionable case.
-          if [ "${HELD:-0}" -gt 0 ]; then
-            echo "::error::Continuous training held back ${HELD} regressed model(s) — see backend/data/diagnostics/training_drift_*.json."
-            exit 1
-          fi
-
-          # A regression that still passed the gates was promoted with caution
-          # (compensating metrics improved). Surface it as a non-failing warning.
-          if [ "${REG:-0}" -gt 0 ]; then
-            echo "::warning::Continuous training auto-handled ${REG} regression(s) (promoted with caution). No action required — see backend/data/diagnostics/training_drift_*.json."
-          fi
-
-          if [ "${RC:-1}" = "0" ]; then
-            exit 0
-          fi
-          echo "::error::Continuous training failed with RC=$RC and no structured summary. Check the orchestrator output above."
-          exit 1
+          exit "${RC:-1}"

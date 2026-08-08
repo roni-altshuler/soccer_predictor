@@ -110,7 +110,7 @@ teams:
   - canonical: Atletico Madrid
     gender: M
     country: ES
-    aliases: [Atlético Madrid, Atl Madrid, Atletico, Atlético, AtletiMadrid]
+    aliases: [Atlético Madrid, Atl Madrid, Atletico, Atlético, AtletiMadrid, Ath Madrid]
   - canonical: Athletic Bilbao
     gender: M
     country: ES
@@ -286,7 +286,7 @@ teams:
   - canonical: Sporting CP
     gender: M
     country: PT
-    aliases: [Sporting Lisbon, Sporting, Sporting Clube de Portugal]
+    aliases: [Sporting Lisbon, Sporting, Sporting Clube de Portugal, Sp Lisbon]
 
   # ---- USA / MLS, Men ----
   - canonical: LA Galaxy
@@ -371,3 +371,283 @@ teams:
     gender: F
     country: US
     aliases: [Gotham FC, Sky Blue FC]
+
+  # =====================================================================
+  # football-data.co.uk spellings (added 2026-08-08)
+  #
+  # football-data.co.uk uses terse, ASCII-only club names ("Swansea",
+  # "Ath Madrid", "Sp Lisbon") that the fuzzy resolver scores well BELOW
+  # its 0.92 auto-merge threshold against the ESPN spelling. Every miss
+  # created a SECOND teams row, and because the FD loader looks for an
+  # existing fixture by (competition, home_team_id, away_team_id) it then
+  # failed to find the ESPN row and inserted a duplicate match. That is
+  # the root cause of both the inflated per-season team counts and the
+  # duplicate fixtures. These pins close it at ingest.
+  #
+  # Verified against the FD-only / ESPN-only split in the 2026-08-08
+  # warehouse: every entry below had one FD-only id and one ESPN-only id
+  # for the same club in the same competition.
+  # =====================================================================
+
+  # ---- England ----
+  - canonical: Swansea City
+    gender: M
+    country: GB
+    aliases: [Swansea]
+  - canonical: Norwich City
+    gender: M
+    country: GB
+    aliases: [Norwich]
+  - canonical: Stoke City
+    gender: M
+    country: GB
+    aliases: [Stoke]
+  - canonical: West Bromwich Albion
+    gender: M
+    country: GB
+    aliases: [West Brom, West Bromwich]
+  - canonical: Hull City
+    gender: M
+    country: GB
+    aliases: [Hull]
+  - canonical: Huddersfield Town
+    gender: M
+    country: GB
+    aliases: [Huddersfield]
+  - canonical: Cardiff City
+    gender: M
+    country: GB
+    aliases: [Cardiff]
+  - canonical: Luton Town
+    gender: M
+    country: GB
+    aliases: [Luton]
+  - canonical: Ipswich Town
+    gender: M
+    country: GB
+    aliases: [Ipswich]
+
+  # ---- Spain ----
+  # "Ath Madrid" is Atletico (pinned on the Atletico Madrid entry above);
+  # "Ath Bilbao" is Athletic. Keep them apart.
+  - canonical: Deportivo La Coruña
+    gender: M
+    country: ES
+    aliases: [La Coruna, Deportivo, Dep La Coruna]
+  - canonical: Rayo Vallecano
+    gender: M
+    country: ES
+    aliases: [Vallecano]
+  - canonical: Sporting Gijón
+    gender: M
+    country: ES
+    aliases: [Sp Gijon, Sporting Gijon]
+  - canonical: Real Valladolid
+    gender: M
+    country: ES
+    aliases: [Valladolid]
+  - canonical: Real Oviedo
+    gender: M
+    country: ES
+    aliases: [Oviedo]
+
+  # ---- Germany ----
+  - canonical: Hertha Berlin
+    gender: M
+    country: DE
+    aliases: [Hertha, Hertha BSC]
+  - canonical: SV Darmstadt 98
+    gender: M
+    country: DE
+    aliases: [Darmstadt]
+  - canonical: Hannover 96
+    gender: M
+    country: DE
+    aliases: [Hannover]
+  - canonical: FC Ingolstadt 04
+    gender: M
+    country: DE
+    aliases: [Ingolstadt]
+  - canonical: FC Cologne
+    gender: M
+    country: DE
+    aliases: [FC Koln, Koln, "1. FC Köln", "FC Köln", Cologne]
+  - canonical: SC Freiburg
+    gender: M
+    country: DE
+    aliases: [Freiburg]
+  - canonical: 1. FC Nürnberg
+    gender: M
+    country: DE
+    aliases: [Nurnberg, "Nürnberg", Nuremberg]
+  - canonical: 1. FC Union Berlin
+    gender: M
+    country: DE
+    aliases: [Union Berlin]
+  - canonical: Arminia Bielefeld
+    gender: M
+    country: DE
+    aliases: [Bielefeld]
+  - canonical: SpVgg Greuther Fürth
+    gender: M
+    country: DE
+    aliases: [Greuther Furth, "Greuther Fürth"]
+  # Genuine FD-only clubs ESPN never covered — pinned so the fuzzy pass
+  # cannot swallow them into a similarly-spelled club (Heidenheim scored
+  # 0.70 against Hoffenheim, Paderborn 0.55 against Werder Bremen).
+  - canonical: SC Paderborn 07
+    gender: M
+    country: DE
+    aliases: [Paderborn]
+  - canonical: 1. FC Heidenheim
+    gender: M
+    country: DE
+    aliases: [Heidenheim]
+  - canonical: Holstein Kiel
+    gender: M
+    country: DE
+    aliases: [Kiel]
+
+  # ---- Italy ----
+  # Verona = Hellas Verona. Chievo Verona is a DIFFERENT club that shared
+  # the Bentegodi; football-data spells it "Chievo".
+  - canonical: Hellas Verona
+    gender: M
+    country: IT
+    aliases: [Verona]
+  - canonical: Chievo Verona
+    gender: M
+    country: IT
+    aliases: [Chievo]
+
+  # ---- France ----
+  # Two Ajaccio clubs: AC Ajaccio (FD "Ajaccio") and Gazélec GFC Ajaccio
+  # (FD "Ajaccio GFCO"). They must never be merged.
+  - canonical: GFC Ajaccio
+    gender: M
+    country: FR
+    aliases: [Ajaccio GFCO, Gazelec Ajaccio, "Gazélec Ajaccio"]
+  - canonical: AC Ajaccio
+    gender: M
+    country: FR
+    aliases: [Ajaccio]
+  - canonical: Stade de Reims
+    gender: M
+    country: FR
+    aliases: [Reims]
+  - canonical: Saint-Étienne
+    gender: M
+    country: FR
+    aliases: [St Etienne, Saint-Etienne, Saint Etienne, "AS Saint-Étienne"]
+  - canonical: Dijon FCO
+    gender: M
+    country: FR
+    aliases: [Dijon]
+  - canonical: SC Amiens
+    gender: M
+    country: FR
+    aliases: [Amiens]
+  - canonical: Clermont Foot
+    gender: M
+    country: FR
+    aliases: [Clermont]
+  - canonical: AJ Auxerre
+    gender: M
+    country: FR
+    aliases: [Auxerre]
+  - canonical: AS Nancy Lorraine
+    gender: M
+    country: FR
+    aliases: [Nancy]
+
+  # ---- Netherlands ----
+  - canonical: Roda JC Kerkrade
+    gender: M
+    country: NL
+    aliases: [Roda, Roda JC]
+  - canonical: Heracles Almelo
+    gender: M
+    country: NL
+    aliases: [Heracles]
+  - canonical: ADO Den Haag
+    gender: M
+    country: NL
+    aliases: [Den Haag]
+  - canonical: De Graafschap
+    gender: M
+    country: NL
+    aliases: [Graafschap]
+  - canonical: NEC Nijmegen
+    gender: M
+    country: NL
+    aliases: [Nijmegen, NEC]
+  - canonical: PEC Zwolle
+    gender: M
+    country: NL
+    aliases: [Zwolle]
+  - canonical: SC Cambuur
+    gender: M
+    country: NL
+    aliases: [Cambuur]
+  - canonical: Fortuna Sittard
+    gender: M
+    country: NL
+    aliases: [For Sittard]
+  - canonical: RKC Waalwijk
+    gender: M
+    country: NL
+    aliases: [Waalwijk]
+  - canonical: Almere City
+    gender: M
+    country: NL
+    aliases: [Almere]
+
+  # ---- Portugal ----
+  # "Sp Lisbon" is Sporting CP (pinned on the Sporting CP entry above);
+  # "Sp Braga" is Sporting Braga — different clubs sharing the prefix.
+  - canonical: Braga
+    gender: M
+    country: PT
+    aliases: [Sp Braga, Sporting Braga, SC Braga]
+  - canonical: Vitória de Guimaraes
+    gender: M
+    country: PT
+    aliases: [Guimaraes, "Vitória de Guimarães", Vitoria Guimaraes]
+  - canonical: Vitoria Setubal
+    gender: M
+    country: PT
+    aliases: [Setubal, "Vitória de Setúbal"]
+  - canonical: C.D. Nacional
+    gender: M
+    country: PT
+    aliases: [Nacional, CD Nacional]
+  - canonical: Uniao da Madeira
+    gender: M
+    country: PT
+    aliases: [Uniao Madeira, "União da Madeira"]
+  - canonical: Paços de Ferreira
+    gender: M
+    country: PT
+    aliases: [Pacos Ferreira, Pacos de Ferreira]
+  - canonical: Academica de Coimbra
+    gender: M
+    country: PT
+    aliases: [Academica, "Académica de Coimbra"]
+  - canonical: GD Chaves
+    gender: M
+    country: PT
+    aliases: [Chaves]
+  # Desportivo das Aves (dissolved 2020, FD "Aves") is NOT AVS Futebol SAD
+  # (promoted 2024, FD "AVS"), though they share a ground.
+  - canonical: Desportivo Aves
+    gender: M
+    country: PT
+    aliases: [Aves, CD Aves]
+  - canonical: AVS
+    gender: M
+    country: PT
+    aliases: [AVS Futebol SAD]
+  - canonical: SC Farense
+    gender: M
+    country: PT
+    aliases: [Farense]
