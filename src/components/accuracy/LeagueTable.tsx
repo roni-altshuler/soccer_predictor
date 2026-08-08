@@ -8,7 +8,15 @@ import { getLeagueAccent } from '@/lib/leagueAccents'
 import type { LeagueAccuracySummary } from '@/lib/types/accuracy'
 import { cn } from '@/lib/utils'
 
-import { MIN_LEAGUE_SAMPLE, count, pct0, samplePhrase, score3, signedPts } from './accuracyMetrics'
+import {
+  BRIER_SUMMED_FROM_MEAN,
+  MIN_LEAGUE_SAMPLE,
+  count,
+  pct0,
+  samplePhrase,
+  score3,
+  signedPts,
+} from './accuracyMetrics'
 
 /**
  * Per-league record. Dense table grammar: 13px, tabular-nums, right-aligned
@@ -238,7 +246,9 @@ function LeagueRow({
         </span>
       </td>
       <td className="px-2 py-2.5 text-right tabular-nums text-[var(--text-tertiary)]">
-        {score3(row.brier_score)}
+        {/* Route emits mean-form Brier; scale to the summed convention used
+            everywhere else on this page. See accuracyMetrics.ts. */}
+        {score3(row.brier_score * BRIER_SUMMED_FROM_MEAN)}
       </td>
       {showDelta && (
         <td className="px-4 py-2.5 md:px-5">

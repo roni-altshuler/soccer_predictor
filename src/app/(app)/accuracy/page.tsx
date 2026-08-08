@@ -6,6 +6,7 @@ import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
 import { AccuracyFootnote } from '@/components/accuracy/AccuracyFootnote'
 import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
+import { MarketBenchmarkPanel } from '@/components/accuracy/MarketBenchmarkPanel'
 import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
 import { samplePhrase } from '@/components/accuracy/accuracyMetrics'
 import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
@@ -165,6 +166,11 @@ export default function AccuracyPage() {
             recentAccuracy={metrics?.recent_accuracy ?? 0}
             recentWindow={Math.min(50, settled)}
           />
+
+          {/* Sits directly under the headline because it is what makes the
+              headline readable. A hit rate is meaningless without the closing
+              line beside it. Renders nothing if the benchmark has never run. */}
+          <MarketBenchmarkPanel />
 
           <ReliabilityPanel
             bins={metrics?.calibration_bins ?? []}

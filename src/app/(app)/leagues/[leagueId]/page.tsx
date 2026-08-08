@@ -1,5 +1,6 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { LeagueTrackRecord } from '@/components/accuracy/LeagueTrackRecord'
 
 /**
  * Wave A only.
@@ -41,6 +42,15 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
             { label: config.name },
           ]}
         />
+      </div>
+      {/* The league's report card sits here, OUTSIDE LeagueHomePage, on
+          purpose. That component gates everything behind a loading state fed
+          by live ESPN calls, so anything inside it disappears whenever the
+          feed is slow or down — precisely when a reader most wants to see
+          something solid. The track record is a committed static artifact and
+          depends on no live provider, so it renders regardless. */}
+      <div className="mx-auto max-w-6xl px-4 pt-2">
+        <LeagueTrackRecord leagueId={leagueId} />
       </div>
       <LeagueHomePage
         leagueId={leagueId}

@@ -26,15 +26,30 @@
 export const RANDOM_WINNER_RATE = 1 / 3
 
 /**
- * Probability score of an even-odds forecast, under the same mean-over-
- * three-outcomes definition the tracking route uses. Exactly 2/9.
+ * Probability score of an even-odds forecast: the standard multiclass Brier,
+ * summed over the three outcomes. Exactly 2/3.
  *
- * This is the honest yardstick. The previous copy claimed guessing scored
- * "about 0.667" — that is the *summed* form, not the mean form the route
- * emits, and it made a 0.210 score look ~3x better than even odds when the
- * real margin is a few hundredths.
+ * CONVENTION — read before changing. Brier has two forms in circulation:
+ * summed over classes (uniform = .667) and mean over classes (uniform = .222,
+ * i.e. summed / 3). Both are correct; mixing them on one page is not.
+ *
+ * The whole project uses the SUMMED form — the market benchmark, the .5666
+ * closing-line target, penaltyblog's `multiclass_brier_score`, the pivot doc,
+ * README and CLAUDE.md. This page previously used the mean form, which put
+ * "0.212" next to a panel saying "0.637" for the same underlying quantity.
+ *
+ * The tracking route still emits the MEAN form, so callers must scale by
+ * BRIER_SUMMED_FROM_MEAN before displaying. Change the value and the scale
+ * together or you reintroduce the bug where a score looks ~3x better than the
+ * yardstick it is printed beside.
  */
-export const EVEN_ODDS_PROBABILITY_SCORE = 2 / 9
+export const EVEN_ODDS_PROBABILITY_SCORE = 2 / 3
+
+/**
+ * The tracking API divides its Brier by 3 (`tracker.py`: `brier_sum += … / 3`).
+ * Multiply by this at the display boundary to reach the summed convention.
+ */
+export const BRIER_SUMMED_FROM_MEAN = 3
 
 /** A calibration bucket below this many picks is noise — no verdict, muted. */
 export const MIN_BIN_SAMPLE = 20

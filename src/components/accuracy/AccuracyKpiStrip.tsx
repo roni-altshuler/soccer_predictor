@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 import {
+  BRIER_SUMMED_FROM_MEAN,
   EVEN_ODDS_PROBABILITY_SCORE,
   MIN_RATE_SAMPLE,
   count,
@@ -61,12 +62,16 @@ export function AccuracyKpiStrip({
   })
 
   if (probabilityScore !== null) {
+    // The tracking route emits the mean-over-classes Brier; scale it to the
+    // summed convention the rest of the project uses, so this cell and the
+    // market-benchmark panel below it are the same quantity on the same axis.
+    const summed = probabilityScore * BRIER_SUMMED_FROM_MEAN
     // Lower is better, so an improvement is a negative delta.
-    const delta = probabilityScore - EVEN_ODDS_PROBABILITY_SCORE
+    const delta = summed - EVEN_ODDS_PROBABILITY_SCORE
     cells.push({
       key: 'probability',
       label: 'Probability score',
-      value: score3(probabilityScore),
+      value: score3(summed),
       sub: `Lower is better · even odds scores ${score3(EVEN_ODDS_PROBABILITY_SCORE)}`,
       chip: {
         text: `${delta < 0 ? '−' : '+'}${Math.abs(delta).toFixed(3)}`,

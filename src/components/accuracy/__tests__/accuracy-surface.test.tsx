@@ -6,6 +6,7 @@ import { ConfidenceTiers } from '../ConfidenceTiers'
 import { OutcomeBreakdown } from '../OutcomeBreakdown'
 import { ReliabilityPanel } from '../ReliabilityPanel'
 import {
+  BRIER_SUMMED_FROM_MEAN,
   EVEN_ODDS_PROBABILITY_SCORE,
   MIN_BIN_SAMPLE,
   RANDOM_WINNER_RATE,
@@ -32,14 +33,21 @@ function bin(lower: number, count: number, actual: number): CalibrationDotPoint 
 }
 
 describe('accuracyMetrics', () => {
-  it('derives the even-odds probability score as exactly 2/9', () => {
-    // Mirrors the route's own formula: mean squared error over three
-    // outcomes for a (1/3, 1/3, 1/3) forecast. The old UI copy claimed
-    // ~0.667, which is the summed form and overstated the model's edge.
+  it('derives the even-odds probability score as exactly 2/3 (summed Brier)', () => {
+    // Standard multiclass Brier: squared error SUMMED over the three outcomes
+    // for a (1/3, 1/3, 1/3) forecast. This is the convention used by the market
+    // benchmark, penaltyblog, and every number in the docs — including the
+    // .5666 closing-line target — so the whole surface must speak it.
     const p = 1 / 3
-    const expected = ((p - 0) ** 2 + (p - 0) ** 2 + (p - 1) ** 2) / 3
+    const expected = (p - 0) ** 2 + (p - 0) ** 2 + (p - 1) ** 2
     expect(EVEN_ODDS_PROBABILITY_SCORE).toBeCloseTo(expected, 12)
-    expect(EVEN_ODDS_PROBABILITY_SCORE).toBeCloseTo(0.2222, 4)
+    expect(EVEN_ODDS_PROBABILITY_SCORE).toBeCloseTo(0.6667, 4)
+  })
+
+  it('scales the route\'s mean-form Brier onto the summed convention', () => {
+    // The tracking route still divides by 3. Display code must scale, or a
+    // score gets printed ~3x better than the yardstick beside it.
+    expect(BRIER_SUMMED_FROM_MEAN * (2 / 9)).toBeCloseTo(EVEN_ODDS_PROBABILITY_SCORE, 12)
   })
 
   it('uses one in three as the uninformed winner rate', () => {
@@ -105,8 +113,10 @@ describe('AccuracyKpiStrip', () => {
         recentWindow={50}
       />
     )
-    expect(screen.getByText('0.210')).toBeInTheDocument()
-    expect(screen.getByText(/even odds scores 0\.222/i)).toBeInTheDocument()
+    // The route emits mean-form Brier (0.21); the strip displays the summed
+    // convention (0.630) against a 0.667 yardstick, matching the market panel.
+    expect(screen.getByText('0.630')).toBeInTheDocument()
+    expect(screen.getByText(/even odds scores 0\.667/i)).toBeInTheDocument()
     expect(screen.getByText('±3.9 pts')).toBeInTheDocument()
   })
 
