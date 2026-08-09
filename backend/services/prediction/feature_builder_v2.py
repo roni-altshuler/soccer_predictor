@@ -13,9 +13,9 @@ fields the model embeds (league_id, team_ids, referee_id, phase_id).
 
 Feature inventory
 -----------------
-Total target: ~80 dense features. Categorical embeddings live separately
-on the model. Features are grouped so that callers (and the test suite)
-can reason about gaps:
+75 dense features. Categorical embeddings live separately on the model.
+Features are grouped so that callers (and the test suite) can reason about
+gaps:
 
 * ELO + ratings (4)
 * Recent form / rolling stats (16)
@@ -23,15 +23,24 @@ can reason about gaps:
 * Head-to-head (5)
 * Season position & momentum (8)
 * Tactical rolling stats (8)
-* Market-implied probabilities (5) — these can be zeroed at inference
-  when no licensed odds feed is configured
-* Calendar / burnout (8)
+* Calendar / burnout (7)
 * Weather (5)
 * Referee tendencies (3)
-* Player availability / squad form (4)
-* Travel / venue (3)
+* Travel / venue (2)
 * Motivation / cup context (4)
-* Interactions (3)
+* Interactions (2)
+* Expected goals (7)
+
+Market-implied probabilities are NOT here — see MARKET_FEATURE_NAMES below
+and the comment above it, which is the most expensive lesson in this file.
+
+Six features were removed on 2026-08-09 after measuring that they were
+*constant* across a 600-fixture Wave A sample, so they contributed nothing
+but parameters: `is_post_intl_break` (never derived), `home_squad_form` /
+`away_squad_form` / `home_missing_top3` / `away_missing_top3` (the
+`player_form` table has 0 rows and no loader fills it), and
+`venue_altitude_m` (no altitude source; inventing one would be fabricated
+data). Re-audit with a zero-variance check before adding anything here.
 
 The feature names live in `FEATURE_NAMES` (the canonical training order).
 """
@@ -83,19 +92,24 @@ FEATURE_NAMES: Tuple[str, ...] = (
     # --- calendar / burnout (8) ---
     "home_days_rest", "away_days_rest", "rest_diff",
     "home_matches_last_14d", "away_matches_last_14d",
-    "is_midweek", "is_post_intl_break",
+    "is_midweek",
     "season_stage",
     # --- weather (5) ---
     "weather_temp_c", "weather_precip_mm", "weather_wind_kmh",
     "weather_humidity", "is_outdoor_venue",
     # --- referee tendencies (3) ---
     "referee_avg_cards", "referee_home_win_rate", "referee_draw_rate",
-    # --- player availability (4) ---
-    "home_squad_form", "away_squad_form",
-    "home_missing_top3", "away_missing_top3",
-    # --- travel / venue (3) ---
-    "away_travel_km", "venue_altitude_m", "is_neutral_venue",
+    # --- travel / venue (2) ---
+    # away_travel_km is real from 2026-08-09: great-circle km between the two
+    # clubs' grounds, resolving for 100% of Wave A fixtures (median 311 km,
+    # max 2,260 km). It was hardcoded 0.0 for every row before that.
+    "away_travel_km", "is_neutral_venue",
     # --- motivation / cup context (4) ---
+    # is_neutral_venue, is_knockout and is_2leg_aggregate are constant 0 across
+    # Wave A and are kept anyway: they are constant *by construction* in
+    # domestic league play and go live the moment Wave C tournaments land. That
+    # is a different thing from a feature that is constant because nothing
+    # feeds it, which is what the six removed above were.
     "is_knockout", "is_2leg_aggregate", "home_motivation", "away_motivation",
     # --- interactions (3) ---
     "elo_x_form_diff", "elo_x_h2h",
@@ -531,6 +545,48 @@ def _latest_clubelo(conn: sqlite3.Connection, team_id: int, as_of: datetime) -> 
     return float(row["elo"]) if row else None
 
 
+_EARTH_RADIUS_KM = 6371.0088
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in km between two venue coordinates."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = p2 - p1
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * _EARTH_RADIUS_KM * math.asin(math.sqrt(a))
+
+
+def _venue_coords(
+    conn: sqlite3.Connection, team_id: int
+) -> Optional[Tuple[float, float]]:
+    row = conn.execute(
+        "SELECT venue_lat, venue_lon FROM teams WHERE team_id = ?", (team_id,)
+    ).fetchone()
+    if row is None or row["venue_lat"] is None or row["venue_lon"] is None:
+        return None
+    return float(row["venue_lat"]), float(row["venue_lon"])
+
+
+def _away_travel_km(
+    conn: sqlite3.Connection, home_id: int, away_id: int
+) -> Optional[float]:
+    """How far the away side travelled, home venue to home venue.
+
+    Approximates the trip by the distance between the two clubs' own grounds,
+    which is exact for a normal league fixture and wrong only for a neutral
+    venue — of which Wave A has none. Returns None when either club has no
+    coordinates rather than a plausible zero: a real 0 km means a derby, and
+    conflating "derby" with "unknown" is the kind of quiet imputation the
+    standing rules forbid.
+    """
+    a = _venue_coords(conn, home_id)
+    b = _venue_coords(conn, away_id)
+    if a is None or b is None:
+        return None
+    return _haversine_km(a[0], a[1], b[0], b[1])
+
+
 def _league_id_map(warehouse: Warehouse) -> Dict[str, int]:
     """Return a {competition_id: dense_id} mapping using insertion order.
 
@@ -673,7 +729,6 @@ class FeatureBuilderV2:
         market = self._market_implied(match_row)
 
         # --- player_form table is sparse; pull what's there ---
-        player_features = self._player_form_features(home_id, away_id, as_of)
 
         # --- motivation: heuristic from season_progress and tier ---
         comp_tier = self.conn.execute(
@@ -749,15 +804,19 @@ class FeatureBuilderV2:
             "home_matches_last_14d": float(home_stats.matches_last_14d),
             "away_matches_last_14d": float(away_stats.matches_last_14d),
             "is_midweek": 1.0 if as_of.weekday() in (1, 2, 3) else 0.0,
-            "is_post_intl_break": 0.0,  # TODO: derive from international calendar
             "season_stage": season_progress,
 
             **weather_features,
             **referee_features,
-            **player_features,
 
-            "away_travel_km": 0.0,  # TODO: compute from venue lat/lon once geocoded
-            "venue_altitude_m": 0.0,
+            # Real now that `teams` carries venue coordinates: 100% of Wave A
+            # fixtures resolve. It was hardcoded 0.0 for every row, so the
+            # dimension was dead weight in training and in serving alike.
+            # Scaled to thousands of km so it sits in the same rough range as
+            # the other continuous features instead of dominating them.
+            "away_travel_km": _coalesce(
+                _away_travel_km(self.conn, home_id, away_id), 0.0
+            ) / 1000.0,
             "is_neutral_venue": 1.0 if is_knockout and tier == 0 else 0.0,
 
             "is_knockout": is_knockout,
@@ -862,28 +921,5 @@ class FeatureBuilderV2:
             "implied_over_2_5": (1.0 / ou) if (ou and ou > 0) else 0.0,
             "market_overround": total - 1.0,
         }
-
-    def _player_form_features(
-        self, home_id: int, away_id: int, as_of: datetime
-    ) -> Dict[str, float]:
-        def latest(team_id: int) -> Tuple[float, int]:
-            row = self.conn.execute(
-                """SELECT squad_form, missing_top3 FROM player_form
-                   WHERE team_id = ? AND date <= ?
-                   ORDER BY date DESC LIMIT 1""",
-                (team_id, as_of.isoformat()),
-            ).fetchone()
-            if not row:
-                return 0.5, 0
-            return float(row["squad_form"] or 0.5), int(row["missing_top3"] or 0)
-        h_form, h_miss = latest(home_id)
-        a_form, a_miss = latest(away_id)
-        return {
-            "home_squad_form": h_form,
-            "away_squad_form": a_form,
-            "home_missing_top3": float(h_miss),
-            "away_missing_top3": float(a_miss),
-        }
-
 
 __all__ = ["FEATURE_NAMES", "FeatureBuilderV2", "BuiltFeatures", "MatchContext"]

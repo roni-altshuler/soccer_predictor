@@ -1,0 +1,222 @@
+{
+  "artifact": "unified_vs_dc",
+  "version": 1,
+  "gender": "M",
+  "convention": "Multiclass Brier summed over outcomes; uniform 1/3 = 0.6667. Lower is better.",
+  "method": "Chronological holdout from train_unified (same split), scored paired against walk-forward Dixon-Coles, the de-vigged closing line and the training-slice base rate on identical fixtures.",
+  "test_from": "2024-10-06",
+  "n_scored": 2264,
+  "n_skipped": 2430,
+  "pooled": {
+    "unified_nn": {
+      "n": 2264,
+      "brier": 0.6014,
+      "log_loss": 1.0073,
+      "accuracy": 0.5128
+    },
+    "dixon_coles": {
+      "n": 2264,
+      "brier": 0.6044,
+      "log_loss": 1.0114,
+      "accuracy": 0.4969
+    },
+    "market": {
+      "n": 2264,
+      "brier": 0.5848,
+      "log_loss": 0.9828,
+      "accuracy": 0.5252
+    },
+    "base_rate": {
+      "n": 2264,
+      "brier": 0.6498,
+      "log_loss": 1.0733,
+      "accuracy": 0.432
+    }
+  },
+  "by_league": {
+    "eng.1": {
+      "unified_nn": {
+        "n": 504,
+        "brier": 0.6288,
+        "log_loss": 1.0464,
+        "accuracy": 0.4901
+      },
+      "dixon_coles": {
+        "n": 504,
+        "brier": 0.65,
+        "log_loss": 1.0739,
+        "accuracy": 0.4464
+      },
+      "market": {
+        "n": 504,
+        "brier": 0.6288,
+        "log_loss": 1.0457,
+        "accuracy": 0.4841
+      },
+      "base_rate": {
+        "n": 504,
+        "brier": 0.6534,
+        "log_loss": 1.0779,
+        "accuracy": 0.4167
+      },
+      "unified_beats_dc": true,
+      "unified_vs_dc_bootstrap": {
+        "mean_diff": -0.02123,
+        "ci95_low": -0.04502,
+        "ci95_high": 0.00183,
+        "p_a_better": 0.9648,
+        "significant": false
+      }
+    },
+    "esp.1": {
+      "unified_nn": {
+        "n": 397,
+        "brier": 0.5898,
+        "log_loss": 0.9907,
+        "accuracy": 0.5264
+      },
+      "dixon_coles": {
+        "n": 397,
+        "brier": 0.575,
+        "log_loss": 0.9745,
+        "accuracy": 0.5164
+      },
+      "market": {
+        "n": 397,
+        "brier": 0.563,
+        "log_loss": 0.9546,
+        "accuracy": 0.5441
+      },
+      "base_rate": {
+        "n": 397,
+        "brier": 0.6391,
+        "log_loss": 1.0595,
+        "accuracy": 0.4736
+      },
+      "unified_beats_dc": false,
+      "unified_vs_dc_bootstrap": {
+        "mean_diff": 0.01479,
+        "ci95_low": -0.00371,
+        "ci95_high": 0.03267,
+        "p_a_better": 0.0544,
+        "significant": false
+      }
+    },
+    "fra.1": {
+      "unified_nn": {
+        "n": 389,
+        "brier": 0.5948,
+        "log_loss": 0.9986,
+        "accuracy": 0.5219
+      },
+      "dixon_coles": {
+        "n": 389,
+        "brier": 0.5872,
+        "log_loss": 0.988,
+        "accuracy": 0.5373
+      },
+      "market": {
+        "n": 389,
+        "brier": 0.5702,
+        "log_loss": 0.9637,
+        "accuracy": 0.5424
+      },
+      "base_rate": {
+        "n": 389,
+        "brier": 0.6312,
+        "log_loss": 1.046,
+        "accuracy": 0.4807
+      },
+      "unified_beats_dc": false,
+      "unified_vs_dc_bootstrap": {
+        "mean_diff": 0.00757,
+        "ci95_low": -0.00986,
+        "ci95_high": 0.02495,
+        "p_a_better": 0.1975,
+        "significant": false
+      }
+    },
+    "ger.1": {
+      "unified_nn": {
+        "n": 428,
+        "brier": 0.6075,
+        "log_loss": 1.0186,
+        "accuracy": 0.4953
+      },
+      "dixon_coles": {
+        "n": 428,
+        "brier": 0.6091,
+        "log_loss": 1.0194,
+        "accuracy": 0.4836
+      },
+      "market": {
+        "n": 428,
+        "brier": 0.5863,
+        "log_loss": 0.9844,
+        "accuracy": 0.528
+      },
+      "base_rate": {
+        "n": 428,
+        "brier": 0.6559,
+        "log_loss": 1.082,
+        "accuracy": 0.4136
+      },
+      "unified_beats_dc": true,
+      "unified_vs_dc_bootstrap": {
+        "mean_diff": -0.00159,
+        "ci95_low": -0.01952,
+        "ci95_high": 0.01646,
+        "p_a_better": 0.5684,
+        "significant": false
+      }
+    },
+    "ita.1": {
+      "unified_nn": {
+        "n": 546,
+        "brier": 0.5846,
+        "log_loss": 0.9807,
+        "accuracy": 0.5311
+      },
+      "dixon_coles": {
+        "n": 546,
+        "brier": 0.5923,
+        "log_loss": 0.9909,
+        "accuracy": 0.511
+      },
+      "market": {
+        "n": 546,
+        "brier": 0.5691,
+        "log_loss": 0.9574,
+        "accuracy": 0.5348
+      },
+      "base_rate": {
+        "n": 546,
+        "brier": 0.6626,
+        "log_loss": 1.0917,
+        "accuracy": 0.3956
+      },
+      "unified_beats_dc": true,
+      "unified_vs_dc_bootstrap": {
+        "mean_diff": -0.00769,
+        "ci95_low": -0.01978,
+        "ci95_high": 0.00447,
+        "p_a_better": 0.8855,
+        "significant": false
+      }
+    }
+  },
+  "unified_vs_dc_pooled_bootstrap": {
+    "mean_diff": -0.00299,
+    "ci95_low": -0.01118,
+    "ci95_high": 0.00514,
+    "p_a_better": 0.7768,
+    "significant": false
+  },
+  "unified_beats_dc_in": [
+    "eng.1",
+    "ger.1",
+    "ita.1"
+  ],
+  "unified_beats_dc_significant_in": [],
+  "serving_recommendation": "Dixon-Coles remains the serving default \u2014 no league's margin survives a paired bootstrap"
+}

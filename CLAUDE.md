@@ -25,19 +25,54 @@ If a proposed feature is none of those three, it does not belong here. The proje
 - **No fabricated data.** Sparse coverage stays genuinely missing; never impute a plausible value.
 - **Features must earn their place** via temporal-split ablation against the market row. Adding all 53 candidate features *degraded* Brier by .0052.
 
-## Current measured state (2026-08-08)
+## Current measured state (2026-08-09)
 
-| forecaster | Brier | notes |
+Two separate corpora, so read the columns not the rows. The first is the full
+market benchmark; the second is the 2,264-fixture paired holdout from
+`benchmark_unified_vs_dc` (2024-10 onward, Wave A, priced fixtures only).
+
+| forecaster | Brier (full corpus) | Brier (paired holdout) |
 |---|---|---|
-| Market (closing line, Shin de-vig) | **.5666** | the target; ECE .0049 |
-| Dixon-Coles (`penaltyblog`, off-the-shelf) | .5977 | +.0207 to market; **the serving floor** |
-| 30-feature logreg baseline | .5876 | closes 84% of the constant→market gap |
-| Constant base rate | .6468 | |
-| In-house neural ensemble | .6396 | +.0599 to market — captures ~17% of signal |
+| Market (closing line, Shin de-vig) | **.5666** | **.5848** |
+| Neural stack, 75 features | — | .6014 |
+| Dixon-Coles (`penaltyblog`, off-the-shelf) | .5977 | .6044 |
+| 30-feature logreg baseline | .5871 | — |
+| Constant base rate | .6468 | .6498 |
 
-**Dixon-Coles is the serving default for Wave A.** The neural stack does not serve in a league until it beats DC out-of-sample there. It currently beats DC in zero leagues.
+**Dixon-Coles remains the serving default for Wave A.** The retrained neural
+stack is ahead of it on the point estimate (−.0030 pooled, and ahead in eng.1,
+ger.1, ita.1) — and **that lead does not survive a paired bootstrap**. Pooled
+95% CI [−.0112, +.0051], p(NN better) = .78; every individual league's interval
+straddles zero, including the Premier League's −.0212. Three point-estimate
+wins, zero significant ones. Re-run
+`benchmark_unified_vs_dc` after any retrain; promote only on
+`unified_beats_dc_significant_in`, never on the sign of the difference.
 
 A goal-model bake-off (`backend/scripts/bakeoff_goal_models.py`) found all six penaltyblog goal models within .0017 Brier of each other and **every blend worse than Dixon-Coles alone** — their errors are too correlated for ensembling to help. Do not add a hybrid without new evidence.
+
+### What the features are worth (ablation, 2026-08-09, 75-feature vector)
+
+Rolling-origin folds, greedy selection on early folds and scored on later ones
+it never saw. Δ is against the 30-feature logreg baseline; negative helps.
+
+| group | Δ Brier | |
+|---|---|---|
+| market | **−.0102** | helps, but **cannot serve** — see the train/serve landmine |
+| xg_form | **−.0011** | helps |
+| news_sentiment_proxy | +.0001 | neutral |
+| congestion | +.0004 | neutral |
+| weather | +.0006 | harmful |
+| clubelo | +.0007 | harmful |
+| calendar | +.0007 | harmful |
+| venue | +.0012 | harmful |
+| referee | +.0015 | harmful |
+| h2h_deep | +.0023 | harmful |
+
+Greedy forward selection picked **one** group: market. Head-to-head, venue
+records, referee effects, weather and kickoff timing all make the model worse
+out of sample. This is the measured answer to "what else can give it an edge":
+nothing in the current candidate set, and the remaining ceiling is in the data
+rather than the feature list.
 
 ## League scope — Wave A only
 
@@ -51,7 +86,8 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 - **Data integrity — fixed 2026-08-08, guard it.** The warehouse had 1,278 duplicate-fixture groups, 27 orphan team rows, and 60 of 77 league-seasons with the wrong team count. **One bug caused nearly all of it:** football-data's terse club names ("Ath Madrid", "Sp Lisbon") scored below `team_resolver`'s 0.92 fuzzy threshold, creating a second `teams` row, so `_find_existing_match` missed the ESPN fixture and inserted a duplicate. Dortmund "won" the 2018-19 Bundesliga because a 7-0 was counted twice. A second one-line bug — a naive local-midnight datetime run through `.astimezone(utc)` on an `Asia/Jerusalem` host — shifted every football-data kickoff back across midnight, making day-of-week wrong for 86% of Wave A.
 
   **Run `.venv/bin/python -m backend.scripts.validate_warehouse_integrity` after any ingest change.** 9 checks, exits non-zero. Prefer adding a spelling to `team_aliases.yml` over lowering the fuzzy threshold.
-- **What is still genuinely missing.** Referees outside England are a *source* limitation — football-data publishes `Referee` for England only, and ESPN carries officials only from 2022-23 — so esp/ger/ita/fra sit at 0.8–1.8% and referee features stay untestable there. Kickoff times before 2019 do not exist upstream. `feature_builder_v2` still hardcodes weather defaults and `away_travel_km = 0.0` even though both are now computable; wiring them and re-running the ablation is the next modelling task.
+- **What is still genuinely missing.** Referees outside England are a *source* limitation — football-data publishes `Referee` for England only, and ESPN carries officials only from 2022-23 — so esp/ger/ita/fra sit at 0.8–1.8% and referee features stay untestable there. Kickoff times before 2019 do not exist upstream. Weather covers 66.6% of Wave A. There is no injury or lineup source at all: `player_form` and `match_events` are empty tables.
+- **A constant feature is not free.** A zero-variance audit over 600 Wave A fixtures on 2026-08-09 found 9 of 81 served features constant. Six were constant because nothing fed them — `is_post_intl_break` (never derived), `home_squad_form` / `away_squad_form` / `home_missing_top3` / `away_missing_top3` (empty `player_form` table), `venue_altitude_m` (no source) — and were removed, 81 → 75. Three (`is_knockout`, `is_2leg_aggregate`, `is_neutral_venue`) are constant *by construction* in league play and go live in Wave C, so they stay. `away_travel_km` was in the first category until it was wired to the venue coordinates that now exist; it is real (median 311 km, max 2,260 km, 100% of Wave A). **Re-run the zero-variance check before adding a feature, and treat a permanently-constant column as a bug.**
 - **ESPN host — use `site.web.api.espn.com`, never `site.api.espn.com`.** The two serve
   byte-identical payloads. Akamai answers `site.api` with **403 Access Denied** from
   datacentre IPs (Vercel, GitHub Actions) and its error page carries no CORS headers, so a
@@ -86,6 +122,7 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 | Backend tests | `.venv/bin/python -m pytest backend/tests/` |
 | Market benchmark | `.venv/bin/python -m backend.scripts.benchmark_market` |
 | Dixon-Coles challenger | `.venv/bin/python -m backend.scripts.benchmark_dc_challenger` |
+| Neural vs DC (promotion gate) | `.venv/bin/python -m backend.scripts.benchmark_unified_vs_dc` |
 | Goal-model bake-off | `.venv/bin/python -m backend.scripts.bakeoff_goal_models` |
 | Feature ablation | `.venv/bin/python -m backend.scripts.ablate_features` |
 | Season projection backtest | `.venv/bin/python -m backend.scripts.backtest_season_projections` |
@@ -97,7 +134,7 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 
 ### Backend (`backend/`)
 - **FastAPI** at `backend/main.py`, routes under `backend/api/v1/`.
-- **`services/prediction/`** — `unified_inference.py` (PyTorch artifacts), `dixon_coles.py`, `model.py` (legacy ELO-Poisson fallback), `market.py` (de-vigging, EV, Kelly, RPS/Brier — cross-validated against penaltyblog), `feature_builder_v2.py` (81 served features + a separate 6-feature market block), `features_v2.py` (candidate features with structurally-enforced point-in-time correctness), `tracker.py`.
+- **`services/prediction/`** — `unified_inference.py` (PyTorch artifacts), `dixon_coles.py`, `model.py` (legacy ELO-Poisson fallback), `market.py` (de-vigging, EV, Kelly, RPS/Brier — cross-validated against penaltyblog), `feature_builder_v2.py` (75 served features + a separate 6-feature market block), `features_v2.py` (candidate features with structurally-enforced point-in-time correctness), `tracker.py`.
 - **`services/data/`** — SQLite warehouse at `backend/data/warehouse.sqlite` (**gitignored**) plus ingestion loaders and `team_resolver.py`.
 - **`services/simulation/league_simulator.py`** — Monte Carlo season projections. Beats its naive baseline at every matchday; title Brier ≤.02 from matchday 10, relegation ≤.05 from matchday 26. **Overconfident in the 70–90% band** (says 80%, happens 69.8%) — do not print those raw.
 

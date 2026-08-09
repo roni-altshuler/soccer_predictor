@@ -416,7 +416,12 @@ def predict_one(
         away_form_score=min(max(feat_by_name["away_form_5_pts"] / 15.0, 0.0), 1.0),
         home_advantage=0.25,
         h2h_advantage=feat_by_name["h2h_home_advantage"],
-        injury_impact=feat_by_name["away_squad_form"] - feat_by_name["home_squad_form"],
+        # No injury source exists: the warehouse's `player_form` table has zero
+        # rows and no loader fills it. This was already always 0.0 — it read
+        # two squad-form features that were both hardcoded 0.5 — so the value
+        # is unchanged, only the pretence is gone. UI treats |x| < 0.03 as "no
+        # absence signal" and says nothing, which is the honest render.
+        injury_impact=0.0,
         rest_days_diff=int(feat_by_name["rest_diff"]),
         importance_factor=1.0,
     )
