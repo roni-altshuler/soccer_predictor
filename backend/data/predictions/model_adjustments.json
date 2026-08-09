@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-09T14:36:25.917682",
-  "total_predictions_analyzed": 1543,
-  "overall_accuracy": 0.4349,
+  "generated_at": "2026-08-09T22:29:05.289342",
+  "total_predictions_analyzed": 1549,
+  "overall_accuracy": 0.4345,
   "by_league": {
     "La Liga": {
       "predictions": 164,
@@ -88,26 +88,26 @@
       }
     },
     "Eredivisie": {
-      "predictions": 148,
-      "accuracy": 0.4459,
-      "brier_score": 0.6419,
-      "scoreline_rate": 0.1081,
-      "actual_draw_rate": 0.2703,
-      "predicted_draw_rate": 0.2956,
-      "draw_rate_adjustment": -0.00759,
-      "actual_home_win_rate": 0.4122,
-      "predicted_home_win_rate": 0.4123,
-      "home_adv_adjustment": -2e-05,
-      "avg_goals_diff": -0.022,
-      "goals_scale_adjustment": -0.00108,
+      "predictions": 150,
+      "accuracy": 0.44,
+      "brier_score": 0.6438,
+      "scoreline_rate": 0.1067,
+      "actual_draw_rate": 0.2667,
+      "predicted_draw_rate": 0.2953,
+      "draw_rate_adjustment": -0.00859,
+      "actual_home_win_rate": 0.4133,
+      "predicted_home_win_rate": 0.4118,
+      "home_adv_adjustment": 0.00031,
+      "avg_goals_diff": -0.045,
+      "goals_scale_adjustment": -0.00226,
       "confidence_calibration": {
         "high": {
           "count": 22,
           "accuracy": 0.5455
         },
         "medium": {
-          "count": 126,
-          "accuracy": 0.4286
+          "count": 128,
+          "accuracy": 0.4219
         },
         "low": {
           "count": 0,
@@ -144,26 +144,26 @@
       }
     },
     "Primeira Liga": {
-      "predictions": 150,
-      "accuracy": 0.4267,
-      "brier_score": 0.6151,
-      "scoreline_rate": 0.0933,
-      "actual_draw_rate": 0.2733,
-      "predicted_draw_rate": 0.3372,
-      "draw_rate_adjustment": -0.01916,
-      "actual_home_win_rate": 0.44,
-      "predicted_home_win_rate": 0.3827,
-      "home_adv_adjustment": 0.01145,
-      "avg_goals_diff": -0.059,
-      "goals_scale_adjustment": -0.00293,
+      "predictions": 154,
+      "accuracy": 0.4286,
+      "brier_score": 0.6163,
+      "scoreline_rate": 0.1039,
+      "actual_draw_rate": 0.2792,
+      "predicted_draw_rate": 0.3338,
+      "draw_rate_adjustment": -0.01637,
+      "actual_home_win_rate": 0.4416,
+      "predicted_home_win_rate": 0.3888,
+      "home_adv_adjustment": 0.01055,
+      "avg_goals_diff": -0.055,
+      "goals_scale_adjustment": -0.00273,
       "confidence_calibration": {
         "high": {
-          "count": 17,
-          "accuracy": 0.8824
+          "count": 19,
+          "accuracy": 0.8421
         },
         "medium": {
-          "count": 124,
-          "accuracy": 0.3871
+          "count": 126,
+          "accuracy": 0.3889
         },
         "low": {
           "count": 9,
@@ -422,7 +422,7 @@
         "draw_rate": 0.08
       },
       "suggested": {
-        "avg_goals": 1.449,
+        "avg_goals": 1.448,
         "home_adv": 0.24,
         "draw_rate": 0.08,
         "rho": -0.11
