@@ -78,27 +78,10 @@ export function LiveWinProbabilityPanel({ match }: { match: MatchDetails }) {
           return
         }
         setEngineProbabilities(distributionToProbabilities(result.distribution))
-
-        // Historical base rate for the current live state (home-side view).
-        if (!result.gender) {
-          setBaseRate(null)
-          return
-        }
-        const diff = engineState.homeGoals - engineState.awayGoals
-        try {
-          const res = await fetch(
-            `/api/v1/rarity?gender=${result.gender}&diff=${diff}&minute=${engineState.minute}`,
-            { signal: controller.signal },
-          )
-          if (!res.ok) {
-            if (!cancelled) setBaseRate(null)
-            return
-          }
-          const counts = (await res.json()) as RarityCountsResponse | null
-          if (!cancelled) setBaseRate(rarityToBaseRate(counts))
-        } catch {
-          if (!cancelled) setBaseRate(null)
-        }
+        // The historical base rate for the live state came from the Rarity
+        // Engine, which the pivot removed. Nothing is shown in its place
+        // rather than a made-up comparison.
+        if (!cancelled) setBaseRate(null)
       })
       .catch(() => {
         if (!cancelled) {

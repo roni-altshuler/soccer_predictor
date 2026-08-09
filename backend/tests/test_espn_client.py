@@ -28,7 +28,7 @@ async def test_espn_client_initialization():
     """Test that ESPN client initializes correctly."""
     client = ESPNClient()
     assert client is not None
-    assert client.BASE_URL == "https://site.api.espn.com/apis/site/v2/sports/soccer"
+    assert client.BASE_URL == "https://site.web.api.espn.com/apis/site/v2/sports/soccer"
     assert client.default_ttl == 300
     assert client.live_ttl == 30
     await client.close()

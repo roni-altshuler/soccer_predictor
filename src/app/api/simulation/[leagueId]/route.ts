@@ -7,15 +7,14 @@ import {
 } from '@/lib/observability/simulationLogger'
 import { PROBABILITY_SUM_TOLERANCE } from '@/lib/probabilityValidation'
 import {
-  MAX_SAMPLED_UNIVERSES,
   runMonteCarloSimulationDetailed,
   type SimulationFixture,
   type Standing,
   type TeamData,
-  type UniverseOutcome,
   type WhatIfOutcome,
 } from '@/lib/simulation/leagueMonteCarlo'
 import { getLeaguePriorPpg, lookupPriorPpg } from '@/lib/simulation/teamPriors'
+import { ESPN_SITE, ESPN_V2 } from '@/lib/espnHost'
 
 /**
  * Audit the standings array for the well-known probability invariants:
@@ -102,10 +101,25 @@ function resolveTeamIndex(candidates: string[], lookup: Map<string, number>): nu
   return null
 }
 
+/**
+ * Days of schedule to ask ESPN for. A domestic season runs ~10 months, so 330
+ * days reaches the final matchday from any point in it — including the day
+ * before it starts, which is exactly when the old +100-day window failed.
+ */
+const SCHEDULE_LOOKAHEAD_DAYS = 330
+
+/**
+ * ESPN's scoreboard defaults to **100 events** and says nothing about it.
+ * Without an explicit limit, a 20-team league asking for its whole remaining
+ * season silently got the next 100 fixtures, and the Monte Carlo happily
+ * projected a "final table" from a quarter of a season. Anything at or above
+ * one season of fixtures (380 for a 20-team league) is enough.
+ */
+const SCHEDULE_LIMIT = 1000
+
 async function fetchRemainingFixtures(
   espnLeagueId: string,
   teams: TeamData[],
-  leagueId: number,
 ): Promise<SimulationFixture[]> {
   const lookup = new Map<string, number>()
   teams.forEach((team, idx) => {
@@ -114,11 +128,11 @@ async function fetchRemainingFixtures(
 
   const today = new Date()
   const future = new Date(today)
-  future.setDate(future.getDate() + (leagueId === 130 ? 240 : 100))
+  future.setDate(future.getDate() + SCHEDULE_LOOKAHEAD_DAYS)
   const dateRange = `${formatESPNDate(today)}-${formatESPNDate(future)}`
 
   const response = await fetch(
-    `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${dateRange}`,
+    `${ESPN_SITE}/${espnLeagueId}/scoreboard?dates=${dateRange}&limit=${SCHEDULE_LIMIT}`,
     {
       headers: {
         Accept: 'application/json',
@@ -178,6 +192,9 @@ async function fetchRemainingFixtures(
     })
   }
 
+  // Chronological, so the caller can take exactly the current season's tail
+  // and drop anything ESPN has already published for the season after it.
+  fixtures.sort((a, b) => String(a.date ?? '').localeCompare(String(b.date ?? '')))
   return fixtures
 }
 
@@ -202,21 +219,6 @@ export async function GET(
       ? rawWhatIfOutcome
       : null
 
-  // Universe Browser params — all optional and additive. `universes=K` keeps
-  // K reservoir-sampled complete seasons (clamped to the engine cap);
-  // `find_team` + `find_outcome` additionally collect seasons matching the
-  // condition, replaying the same deterministic runs.
-  const rawUniverses = parseInt(searchParams.get('universes') || '0', 10)
-  const sampleUniverses = Number.isFinite(rawUniverses)
-    ? Math.max(0, Math.min(MAX_SAMPLED_UNIVERSES, rawUniverses))
-    : 0
-  const findTeam = searchParams.get('find_team') || ''
-  const rawFindOutcome = searchParams.get('find_outcome')
-  const findOutcome: UniverseOutcome | null =
-    rawFindOutcome === 'champion' || rawFindOutcome === 'top4' || rawFindOutcome === 'relegated'
-      ? rawFindOutcome
-      : null
-
   if (!espnLeagueId) {
     return NextResponse.json({ error: 'Invalid league ID' }, { status: 400 })
   }
@@ -226,7 +228,7 @@ export async function GET(
   try {
     // Fetch current standings from ESPN
     const standingsRes = await fetch(
-      `https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`,
+      `${ESPN_V2}/${espnLeagueId}/standings`,
       {
         headers: {
           'Accept': 'application/json',
@@ -278,16 +280,47 @@ export async function GET(
       return b.gd - a.gd
     })
 
-    let remainingFixtures: SimulationFixture[] = []
+    // How many matches the table says are still to be played. This is the
+    // arithmetic truth and the yardstick the scheduled list is checked against.
+    const expectedRemaining = Math.max(
+      0,
+      Math.round(
+        teams.reduce(
+          (sum, team) => sum + Math.max(0, totalMatchesPerSeason - team.matchesPlayed),
+          0,
+        ) / 2,
+      ),
+    )
+
+    let scheduled: SimulationFixture[] = []
     try {
-      remainingFixtures = await fetchRemainingFixtures(espnLeagueId, teams, leagueId)
+      scheduled = await fetchRemainingFixtures(espnLeagueId, teams)
     } catch {
-      remainingFixtures = []
+      scheduled = []
     }
 
-    const availableFixtures = remainingFixtures.length > 0
-      ? remainingFixtures
+    // A partial schedule is the dangerous case, not the empty one. The engine
+    // plays whatever list it is handed and reports the result as the final
+    // table, so handing it 100 of 380 fixtures projects a season that stops in
+    // November — silently, and looking entirely plausible. Two guards:
+    //
+    //   too many  → ESPN has already published next season; the current season
+    //               is the first `expectedRemaining` fixtures by date.
+    //   too few   → do not part-simulate. Fall back to the engine's generated
+    //               schedule, which at least gives every team its real number
+    //               of matches left.
+    //
+    // SCHEDULE_COVERAGE_FLOOR allows for the handful of cup-postponed fixtures
+    // a provider carries as TBD mid-season without tipping into the fallback.
+    const SCHEDULE_COVERAGE_FLOOR = 0.95
+    const coverage = expectedRemaining > 0 ? scheduled.length / expectedRemaining : 0
+    const scheduleUsable = expectedRemaining > 0 && coverage >= SCHEDULE_COVERAGE_FLOOR
+
+    const remainingFixtures: SimulationFixture[] = scheduleUsable
+      ? scheduled.slice(0, expectedRemaining)
       : []
+
+    const availableFixtures = remainingFixtures
     const fixtureOverride = whatIfFixture && whatIfOutcome
       ? { fixtureKey: whatIfFixture, outcome: whatIfOutcome }
       : null
@@ -300,11 +333,6 @@ export async function GET(
       leagueId,
       remainingFixtures,
       fixtureOverride,
-      {
-        sampleUniverses: sampleUniverses > 0 ? sampleUniverses : undefined,
-        conditionTeam: findTeam && findOutcome ? findTeam : undefined,
-        conditionOutcome: findTeam && findOutcome ? findOutcome : undefined,
-      },
     )
     const standings = detailed.standings
     const simDurationMs = Date.now() - simStart
@@ -324,11 +352,10 @@ export async function GET(
     })
     auditProbabilities(standings, leagueId)
 
-    const generatedRemainingMatches = Math.max(
-      0,
-      Math.round(teams.reduce((sum, team) => sum + Math.max(0, totalMatchesPerSeason - team.matchesPlayed), 0) / 2),
-    )
-    const remainingMatches = remainingFixtures.length > 0 ? remainingFixtures.length : generatedRemainingMatches
+    // Either branch plays a whole season, so the count is the same either way.
+    const remainingMatches = remainingFixtures.length > 0
+      ? remainingFixtures.length
+      : expectedRemaining
     const mostLikelyChampion = standings[0]?.team_name || 'Unknown'
     const championProbability = standings[0]?.title_probability || 0
 
@@ -365,18 +392,15 @@ export async function GET(
       likely_top_4: likelyTop4,
       relegation_candidates: relegationCandidates,
       standings,
-      // Universe Browser fields — present only when requested (additive).
-      ...(detailed.sampled_universes !== undefined
-        ? { sampled_universes: detailed.sampled_universes }
-        : {}),
-      ...(detailed.condition_matches !== undefined
-        ? {
-          condition_matches: detailed.condition_matches,
-          condition_match_count: detailed.condition_match_count,
-        }
-        : {}),
     })
-  } catch {
+  } catch (err) {
+    // Log the cause. A bare `catch {}` here is how an ESPN 403 spent weeks
+    // surfacing to users as an unexplained "Simulation unavailable" with
+    // nothing in the server output to point at the host.
+    console.error(
+      `[simulation] league=${leagueId} espn=${espnLeagueId} failed:`,
+      err instanceof Error ? err.message : err,
+    )
     return NextResponse.json(
       { error: 'Failed to fetch league standings. Please try again later.' },
       { status: 500 }

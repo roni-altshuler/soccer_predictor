@@ -171,7 +171,7 @@ def _match_dict_to_row(
 # ---------------------------------------------------------------------------
 
 ESPN_SUMMARY_URL = (
-    "https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={event_id}"
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={event_id}"
 )
 
 # competition_id → ESPN league slug. Men's warehouse competition_ids ARE the

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDays, MousePointerClick } from 'lucide-react';
 import Link from 'next/link';
+import { ESPN_SITE } from '@/lib/espnHost'
 
 interface Match {
   id: string;
@@ -55,7 +56,7 @@ export default function MatchCalendar({ leagueId, leagueName }: MatchCalendarPro
       try {
         // ESPN scoreboard endpoint provides current/recent matches
         const res = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueId}/scoreboard?dates=${formatDateESPN(startDate)}-${formatDateESPN(endDate)}`
+          `${ESPN_SITE}/${leagueId}/scoreboard?dates=${formatDateESPN(startDate)}-${formatDateESPN(endDate)}`
         );
         
         if (res.ok) {

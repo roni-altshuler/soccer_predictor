@@ -1,4 +1,5 @@
 import type { Standing } from '@/lib/api'
+import { ESPN_V2 } from '@/lib/espnHost'
 
 /**
  * Shared helpers for the /simulator surfaces — probability formatting,
@@ -127,7 +128,7 @@ export async function fetchLeagueTeamMeta(
 ): Promise<Record<string, TeamMeta>> {
   try {
     const res = await fetch(
-      `https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings`,
+      `${ESPN_V2}/${espnLeagueId}/standings`,
       { signal },
     )
     if (!res.ok) return {}

@@ -3,7 +3,8 @@ import path from 'path'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getLeagueAccent } from '@/lib/leagueAccents'
+import { getLeagueAccent, WAVE_A_COMPETITION_IDS } from '@/lib/leagueAccents'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -136,21 +137,15 @@ function attachPredictions(matches: Match[], preds: CommittedPrediction[]): void
   }
 }
 
-// ESPN league IDs for men's leagues (the default).
-const MENS_ESPN_LEAGUES = [
-  { id: 'eng.1', name: 'Premier League' },
-  { id: 'esp.1', name: 'La Liga' },
-  { id: 'ita.1', name: 'Serie A' },
-  { id: 'ger.1', name: 'Bundesliga' },
-  { id: 'fra.1', name: 'Ligue 1' },
-  { id: 'ned.1', name: 'Eredivisie' },
-  { id: 'por.1', name: 'Primeira Liga' },
-  { id: 'usa.1', name: 'MLS' },
-  { id: 'uefa.champions', name: 'UEFA Champions League' },
-  { id: 'uefa.europa', name: 'UEFA Europa League' },
-  { id: 'uefa.europa.conf', name: 'UEFA Conference League' },
-  { id: 'fifa.world', name: 'FIFA World Cup 2026' },
-]
+// Wave A — the five leagues the model has been scored on. The other seven
+// competitions this route used to fetch (Eredivisie, Primeira Liga, MLS, the
+// UEFA cups, the World Cup) still resolved to badges and still got an "AI"
+// scoreline chip on the matches list, from a model with no measured record in
+// any of them. Coverage is defined in one place now: src/lib/leagueAccents.ts.
+const MENS_ESPN_LEAGUES = WAVE_A_COMPETITION_IDS.map((id) => ({
+  id,
+  name: getLeagueAccent(id).displayName,
+}))
 
 // ESPN league IDs for women's competitions. The warehouse + unified women's
 // model are trained on this set; see backend/services/data/espn_loader.py.
@@ -190,7 +185,7 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
   const settled = await Promise.allSettled(
     leaguesToFetch.map((league) =>
       fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.id}/scoreboard?dates=${targetDateStr}`,
+        `${ESPN_SITE}/${league.id}/scoreboard?dates=${targetDateStr}`,
         {
           headers: {
             'Accept': 'application/json',

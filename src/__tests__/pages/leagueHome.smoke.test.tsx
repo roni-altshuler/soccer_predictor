@@ -83,8 +83,10 @@ describe('LeagueHomePage', () => {
     expect(screen.getByText(/England · PL/i)).toBeInTheDocument()
     // Tab navigation present with role=tablist.
     expect(screen.getByRole('tablist', { name: /League sections/i })).toBeInTheDocument()
-    // All six tabs are rendered.
-    for (const label of ['Overview', 'Standings', 'Top Scorers', 'Fixtures', 'Simulator', 'News']) {
+    // Five tabs. News went with the pivot — the league page covers matches,
+    // the table and the season projection, and nothing else.
+    expect(screen.queryByRole('tab', { name: /News/i })).not.toBeInTheDocument()
+    for (const label of ['Overview', 'Standings', 'Top Scorers', 'Fixtures', 'Simulator']) {
       expect(
         screen.getByRole('tab', { name: new RegExp(label, 'i') }),
       ).toBeInTheDocument()

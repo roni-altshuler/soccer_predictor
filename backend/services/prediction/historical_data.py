@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # Directory for cached historical data
 HISTORICAL_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "historical"
 
-ESPN_BASE = "https://site.api.espn.com/apis"
+ESPN_BASE = "https://site.web.api.espn.com/apis"
 ESPN_LEAGUES = {
     "premier_league": "eng.1",
     "la_liga": "esp.1",

@@ -52,6 +52,26 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 
   **Run `.venv/bin/python -m backend.scripts.validate_warehouse_integrity` after any ingest change.** 9 checks, exits non-zero. Prefer adding a spelling to `team_aliases.yml` over lowering the fuzzy threshold.
 - **What is still genuinely missing.** Referees outside England are a *source* limitation — football-data publishes `Referee` for England only, and ESPN carries officials only from 2022-23 — so esp/ger/ita/fra sit at 0.8–1.8% and referee features stay untestable there. Kickoff times before 2019 do not exist upstream. `feature_builder_v2` still hardcodes weather defaults and `away_travel_km = 0.0` even though both are now computable; wiring them and re-running the ablation is the next modelling task.
+- **ESPN host — use `site.web.api.espn.com`, never `site.api.espn.com`.** The two serve
+  byte-identical payloads. Akamai answers `site.api` with **403 Access Denied** from
+  datacentre IPs (Vercel, GitHub Actions) and its error page carries no CORS headers, so a
+  browser fetch dies with `net::ERR_FAILED`. Measured 2026-08-09: every `site.api` request
+  returned 403 while the same path on `site.web.api` returned 200 with
+  `access-control-allow-origin: *`. This is what made the season simulation "unavailable"
+  and blanked live standings/fixtures on all five league pages. The host is named once, in
+  [`src/lib/espnHost.ts`](src/lib/espnHost.ts) (`ESPN_SITE` / `ESPN_V2`) and once in
+  `backend/services/espn/client.py`. Do not hardcode it anywhere else.
+- **ESPN's scoreboard silently caps at 100 events.** No error, no field saying so. Asking
+  for a whole remaining season without `&limit=` returned the next 100 fixtures, and the
+  Monte Carlo projected a "final table" from a quarter of a season. Any scoreboard call
+  spanning more than a few weeks must pass an explicit `limit`.
+- **An unmatched simulator prior is a silent, visible bug.** `build_sim_priors` resolves
+  Dixon-Coles team names onto ESPN `displayName`s. A team it cannot match gets no prior and
+  falls back to neutral — and at preseason the prior is the *only* signal, so the league's
+  best clubs vanish from the title race. With `Inter` and `Roma` unresolved the Serie A
+  projection made **Como** the favourite. The script now prints suggested
+  `MANUAL_OVERRIDES` entries; check `unmatched_frontend_teams` after every rebuild and
+  treat anything that is not a genuine promotion as a bug.
 - **The prediction pipeline bot** commits to `main` 3×/day. Rebase feature branches often.
 - **Vercel escalates ESLint warnings to errors.** Run `npx next lint` before pushing; `npm run build` is not enough.
 
@@ -82,7 +102,7 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 - **`services/simulation/league_simulator.py`** — Monte Carlo season projections. Beats its naive baseline at every matchday; title Brier ≤.02 from matchday 10, relegation ≤.05 from matchday 26. **Overconfident in the 70–90% band** (says 80%, happens 69.8%) — do not print those raw.
 
 ### Frontend (`src/`)
-Next.js 15 App Router, **10 pages** (was 26), **45 API routes** (was 67).
+Next.js 15 App Router, **10 pages** (was 26), **32 API routes** (was 67).
 
 Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_predictions`): pure black `#000`, surfaces `#0d0d0d`/`#141414`, hairlines `#262626`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No gradients, no shadows, no glassmorphism, no chrome.** Colour carries meaning only — never decoration.
 
@@ -98,3 +118,10 @@ Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_p
 ## Deleted in the pivot — do not resurrect without a decision
 
 Counterfactual Machine · Rarity Engine · Story Compiler · Boardroom agents · Almanac / Ask Pitchverse · match2vec · 3D Match Theater · Universe Browser · Justice Ledger · bracket challenge · news feed · players pages · world-cup hub · design-system page · the entire `services/llm/` layer (which also removes the Gemini free-tier quota failures from the critical path).
+
+The first sweep deleted the backends and left the callers. On 2026-08-09 a second pass
+removed the frontends that were still fetching those dead endpoints and silently rendering
+nothing: `JusticeLedger`, `RarityStamp`, `SimilarMatches`, `BoardroomPanel`,
+`CounterfactualMachine`, `LiveMatchTracker`, `UniverseBrowser`, the league News tab, and 17
+orphaned API routes. **When deleting a feature, grep for its fetch URL, not just its
+module** — a component whose endpoint 404s looks identical to one with no data.

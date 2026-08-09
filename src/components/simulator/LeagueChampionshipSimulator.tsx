@@ -9,7 +9,6 @@ import type { LeagueSimulationResult } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 import SeasonSimulationResults, { SeasonSimulationSkeleton } from './SeasonSimulationResults'
-import { UNIVERSE_SAMPLE_REQUEST, type UniverseFindSelection } from './UniverseBrowser'
 import { type FixtureOverrideSelection } from './WhatIfLab'
 import { fetchLeagueTeamMeta, type TeamMeta } from './shared'
 
@@ -17,17 +16,16 @@ import { fetchLeagueTeamMeta, type TeamMeta } from './shared'
 // existing imports (and the buildTitleRace unit tests) keep their path.
 export { buildTitleRace, type TitleRaceRow } from './SeasonSimulationResults'
 
-// League options for simulation. `competitionId` drives the LeagueChip crest
-// + accent (matches src/lib/leagueAccents.ts ids).
+// Wave A only. Eredivisie, Primeira Liga and MLS were offered here with no
+// measured record behind them; they come back when their wave's evidence gate
+// is met (docs/PIVOT_2026-08.md §5). `id` is the FotMob numeric the simulation
+// route keys on; `competitionId` drives the LeagueChip crest + accent.
 const SIMULATION_LEAGUES = [
   { id: 47, name: 'Premier League', competitionId: 'eng.1' },
   { id: 87, name: 'La Liga', competitionId: 'esp.1' },
   { id: 55, name: 'Serie A', competitionId: 'ita.1' },
   { id: 54, name: 'Bundesliga', competitionId: 'ger.1' },
   { id: 53, name: 'Ligue 1', competitionId: 'fra.1' },
-  { id: 57, name: 'Eredivisie', competitionId: 'ned.1' },
-  { id: 61, name: 'Primeira Liga', competitionId: 'por.1' },
-  { id: 130, name: 'MLS', competitionId: 'usa.1' },
 ]
 
 /**
@@ -42,7 +40,6 @@ export default function LeagueChampionshipSimulator() {
   const [result, setResult] = useState<LeagueSimulationResult | null>(null)
   const [baseline, setBaseline] = useState<LeagueSimulationResult | null>(null)
   const [override, setOverride] = useState<FixtureOverrideSelection | null>(null)
-  const [findUniverse, setFindUniverse] = useState<UniverseFindSelection | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [teamMeta, setTeamMeta] = useState<Record<string, TeamMeta>>({})
@@ -68,15 +65,10 @@ export default function LeagueChampionshipSimulator() {
       try {
         const params = new URLSearchParams({
           n_simulations: String(nSimulations),
-          universes: String(UNIVERSE_SAMPLE_REQUEST),
         })
         if (override) {
           params.set('what_if_fixture', override.fixtureKey)
           params.set('what_if_outcome', override.outcome)
-        }
-        if (findUniverse) {
-          params.set('find_team', findUniverse.team)
-          params.set('find_outcome', findUniverse.outcome)
         }
         const response = await fetch(
           `/api/simulation/${selectedLeague.id}?${params.toString()}`,
@@ -106,7 +98,7 @@ export default function LeagueChampionshipSimulator() {
       cancelled = true
       controller.abort()
     }
-  }, [selectedLeague, nSimulations, override, findUniverse, runToken])
+  }, [selectedLeague, nSimulations, override, runToken])
 
   const selectLeague = (league: (typeof SIMULATION_LEAGUES)[number]) => {
     if (league.id === selectedLeague.id) return
@@ -114,7 +106,6 @@ export default function LeagueChampionshipSimulator() {
     setResult(null)
     setBaseline(null)
     setOverride(null)
-    setFindUniverse(null)
   }
 
   const changeSimCount = (n: number) => {
@@ -122,7 +113,6 @@ export default function LeagueChampionshipSimulator() {
     // A different run depth is a different baseline — clear any override.
     setBaseline(null)
     setOverride(null)
-    setFindUniverse(null)
   }
 
   return (
@@ -217,7 +207,6 @@ export default function LeagueChampionshipSimulator() {
           onOverrideChange={setOverride}
           loading={loading}
           teamMeta={teamMeta}
-          onFindUniverse={(team, outcome) => setFindUniverse({ team, outcome })}
         />
       )}
     </div>

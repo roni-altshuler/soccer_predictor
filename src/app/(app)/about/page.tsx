@@ -52,14 +52,15 @@ export default function AboutPage() {
         <Card className="p-4">
           <SectionTitle>How predictions work</SectionTitle>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            Predictions come from machine-learning models trained on years of match
-            history across the men&apos;s and women&apos;s game. Every prediction is recorded
+            Predictions come from a Dixon-Coles goal model fitted on years of match
+            history in the five leagues Pitchverse covers. Every prediction is recorded
             before kick-off and publicly scored once the result is in — the running
             tally lives on the{' '}
             <Link href="/accuracy" className="font-semibold text-[var(--accent-primary)] hover:underline">
               Accuracy
             </Link>{' '}
-            page. Pitchverse is an educational project, not a betting product.
+            page, alongside the same numbers for the bookmaker&apos;s closing price. The
+            model currently trails that closing price, and the page says so.
           </p>
         </Card>
 

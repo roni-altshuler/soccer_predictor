@@ -1,3 +1,4 @@
+import { ESPN_SITE } from '@/lib/espnHost'
 /**
  * Server-side ESPN team-overview fetch + normalization.
  *
@@ -9,11 +10,11 @@
  */
 
 const TEAM_META_URL = (teamId: string) =>
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/${teamId}`
+  `${ESPN_SITE}/all/teams/${teamId}`
 const TEAM_SCHEDULE_URL = (slug: string, teamId: string) =>
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams/${teamId}/schedule`
+  `${ESPN_SITE}/${slug}/teams/${teamId}/schedule`
 const TEAM_ROSTER_URL = (slug: string, teamId: string) =>
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams/${teamId}/roster`
+  `${ESPN_SITE}/${slug}/teams/${teamId}/roster`
 
 type Json = Record<string, unknown>
 

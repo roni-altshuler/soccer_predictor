@@ -57,7 +57,7 @@ DEFAULT_OUTPUT = ROOT / "backend" / "data" / "sim_priors.json"
 
 SCHEMA_VERSION = 1
 
-STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/{slug}/standings"
+STANDINGS_URL = "https://site.web.api.espn.com/apis/v2/sports/soccer/{slug}/standings"
 HTTP_HEADERS = {
     "Accept": "application/json",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -76,6 +76,14 @@ ESPN_SLUGS: Dict[str, str] = {
 # Explicit params-name -> ESPN displayName bindings for spellings the
 # conservative normalizer cannot (and must not) bridge on its own.
 # Keyed by competition id, then by the params (warehouse-canonical) name.
+#
+# An unmatched team is NOT a cosmetic gap. A team with no prior falls back to
+# the simulator's neutral default, so at the start of a season — when the table
+# carries no information and the prior is the only signal — the strongest clubs
+# in the league simply vanish from the title race. Measured 2026-08-08 with
+# `Inter` and `Roma` unresolved: the Serie A projection made **Como** the
+# favourite at 24%. Check `unmatched_frontend_teams` in the artifact after
+# every rebuild; anything there that is not a genuine promotion is a bug.
 MANUAL_OVERRIDES: Dict[str, Dict[str, str]] = {
     "eng.1": {
         "Ipswich": "Ipswich Town",
@@ -84,6 +92,41 @@ MANUAL_OVERRIDES: Dict[str, Dict[str, str]] = {
         "Ath Madrid": "Atlético Madrid",
         "Athletic Bilbao": "Athletic Club",
         "Vallecano": "Rayo Vallecano",
+    },
+    # ESPN spells Italian clubs out in full; football-data uses the short form.
+    "ita.1": {
+        "Inter": "Internazionale",
+        "Roma": "AS Roma",
+    },
+    # Same split in France, plus Rennes/Rennais, which no normalizer can bridge.
+    "fra.1": {
+        "Auxerre": "AJ Auxerre",
+        "Monaco": "AS Monaco",
+        "Rennes": "Stade Rennais",
+    },
+    # German clubs carry their legal-form prefix on ESPN (TSG, 1. FC) and
+    # Köln is anglicised.
+    "ger.1": {
+        "FC Koln": "FC Cologne",
+        "Hoffenheim": "TSG Hoffenheim",
+        "Union Berlin": "1. FC Union Berlin",
+    },
+    # Dutch and Portuguese clubs are the same story: football-data drops the
+    # city, ESPN keeps it. Not Wave A, but left resolved so a rebuild stays
+    # quiet and the leagues are correct if the waves ever reach them.
+    "ned.1": {
+        "Ajax": "Ajax Amsterdam",
+        "Feyenoord": "Feyenoord Rotterdam",
+        "For Sittard": "Fortuna Sittard",
+        "Nijmegen": "NEC Nijmegen",
+        "PSV": "PSV Eindhoven",
+        "Zwolle": "PEC Zwolle",
+    },
+    "por.1": {
+        "Guimaraes": "Vitória de Guimaraes",
+        "Nacional": "C.D. Nacional",
+        "Sp Braga": "Braga",
+        "Sp Lisbon": "Sporting CP",
     },
     "usa.1.w": {
         "NJ/NY Gotham FC": "Gotham FC",
@@ -238,6 +281,43 @@ def compute_prior_ppg(
     return {name: points[name] / matches_each for name in names}
 
 
+def suggest_overrides(
+    competition_id: str,
+    params_only: Sequence[str],
+    frontend_only: Sequence[str],
+) -> List[str]:
+    """Flag unmatched pairs that look like the same club spelled two ways.
+
+    The normalizer is deliberately conservative, so a real club can sit on both
+    unmatched lists under two spellings and the run still exits 0 — which is
+    how ``Inter``/``Internazionale`` and ``Roma``/``AS Roma`` went unnoticed
+    long enough to make Como the Serie A favourite. This does not resolve
+    anything; it prints the candidate so a human can add a deliberate entry to
+    MANUAL_OVERRIDES. Suggestions are one-sided substring containment of the
+    normalized names, which is strict enough to stay quiet on genuine
+    promotions and loose enough to catch prefix/suffix club-form differences.
+    """
+    lines: List[str] = []
+    for fe in frontend_only:
+        fe_n = normalize_team_name(fe)
+        if not fe_n:
+            continue
+        for po in params_only:
+            po_n = normalize_team_name(po)
+            if not po_n or po_n == fe_n:
+                continue
+            if po_n in fe_n.split() or fe_n in po_n.split():
+                hit = True
+            else:
+                hit = (po_n in fe_n or fe_n in po_n) and min(len(po_n), len(fe_n)) >= 4
+            if hit:
+                lines.append(
+                    f'      ?? likely the same club — add to MANUAL_OVERRIDES'
+                    f'["{competition_id}"]: "{po}" -> "{fe}"'
+                )
+    return lines
+
+
 def build_competition_entry(
     competition_id: str,
     comp_params: Dict[str, object],
@@ -313,6 +393,12 @@ def build_artifact(
             print(f"      params-only (no prior emitted): {name}")
         for name in entry["unmatched_frontend_teams"]:  # type: ignore[union-attr]
             print(f"      frontend-only (simulates without prior): {name}")
+        for line in suggest_overrides(
+            comp,
+            entry["unmatched_params_teams"],  # type: ignore[arg-type]
+            entry["unmatched_frontend_teams"],  # type: ignore[arg-type]
+        ):
+            print(line)
     return {
         "schema": SCHEMA_VERSION,
         "generated_at": now

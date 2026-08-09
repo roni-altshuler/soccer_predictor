@@ -9,7 +9,7 @@ any paid provider (Opta, StatsBomb, etc.).
 
 Source priority (in order of attempt):
   1. ESPN public site API
-     - Endpoint: site.api.espn.com summary?event=<id>
+     - Endpoint: site.web.api.espn.com summary?event=<id>
      - Already used by backend.services.espn.client (ESPNClient.get_match_details)
      - Public JSON, no auth.  Reuse rate limiter and singleton.
   2. FotMob public site API
@@ -19,7 +19,7 @@ Source priority (in order of attempt):
 
 ToS / robots.txt posture
 ------------------------
-- ESPN's site.api.espn.com is consumed at a polite rate (<=1 req/sec via the
+- ESPN's site.web.api.espn.com is consumed at a polite rate (<=1 req/sec via the
   existing token-bucket limiter) and only for personal/non-commercial research.
 - FotMob's /api endpoints are likewise consumed at <=1 req/sec.  If either
   source returns 403/429 or its robots.txt disallows the endpoint at request

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 // ESPN league slug mapping
 const ESPN_LEAGUE_MAP: Record<string, string> = {
@@ -180,7 +181,7 @@ async function fetchESPNScorers(espnSlug: string, season: string): Promise<Score
   // Try ESPN leaders endpoint
   try {
     const res = await fetch(
-      withSeason(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/leaders`, season),
+      withSeason(`${ESPN_SITE}/${espnSlug}/leaders`, season),
       { next: { revalidate: 1800 } }
     )
     if (res.ok) {
@@ -235,7 +236,7 @@ async function fetchESPNScorers(espnSlug: string, season: string): Promise<Score
   if (scorers.length === 0) {
     try {
       const res = await fetch(
-        withSeason(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnSlug}/statistics`, season),
+        withSeason(`${ESPN_SITE}/${espnSlug}/statistics`, season),
         { next: { revalidate: 1800 } }
       )
       if (res.ok) {

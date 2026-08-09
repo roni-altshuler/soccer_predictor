@@ -358,7 +358,7 @@ export default function Home() {
         {/* Disclaimer — one quiet line, not a banner */}
         <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
-            Predictions are educational only — not betting advice.
+            Model probabilities, scored against the closing line on the accuracy page.
           </p>
         </div>
       </div>

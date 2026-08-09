@@ -5,15 +5,10 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import MatchCalendar from '@/components/match/MatchCalendar'
-import JusticeLedger from '@/components/league/JusticeLedger'
 import SeasonProjections from '@/components/league/SeasonProjections'
 import SeasonSimulationResults, {
   SeasonSimulationSkeleton,
 } from '@/components/simulator/SeasonSimulationResults'
-import {
-  UNIVERSE_SAMPLE_REQUEST,
-  type UniverseFindSelection,
-} from '@/components/simulator/UniverseBrowser'
 import type { FixtureOverrideSelection } from '@/components/simulator/WhatIfLab'
 import { fetchLeagueTeamMeta, type TeamMeta } from '@/components/simulator/shared'
 import type { LeagueSimulationResult } from '@/lib/api'
@@ -22,6 +17,7 @@ import { LeagueMark, ProbBar, SectionHeader, StatusChip, TeamBadge } from '@/com
 import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
+import { ESPN_SITE, ESPN_V2 } from '@/lib/espnHost'
 
 interface Standing {
   position: number
@@ -124,26 +120,6 @@ interface RawScorerRow {
   matches?: number | null
 }
 
-interface RawNewsItem {
-  headline?: string
-  title?: string
-  description?: string
-  summary?: string
-  links?: { web?: { href?: string } }
-  url?: string
-  images?: Array<{ url?: string }>
-  image?: string
-  published?: string
-}
-
-interface NewsItem {
-  headline: string
-  description: string
-  link?: string
-  image?: string
-  published: string
-}
-
 interface LeagueHomeData {
   leagueId: number
   leagueName: string
@@ -154,7 +130,6 @@ interface LeagueHomeData {
   topScorerSource?: string
   upcomingMatches: UpcomingMatch[]
   recentResults: RecentMatch[]
-  news: NewsItem[]
   simulation?: {
     mostLikelyChampion: string
     championProbability: number
@@ -392,7 +367,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [picks, setPicks] = useState<Record<string, CommittedPick>>({})
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator' | 'news'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator'>('overview')
   const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
   const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
@@ -403,7 +378,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [simulationResults, setSimulationResults] = useState<LeagueSimulationResult | null>(null)
   const [simBaseline, setSimBaseline] = useState<LeagueSimulationResult | null>(null)
   const [simOverride, setSimOverride] = useState<FixtureOverrideSelection | null>(null)
-  const [simFind, setSimFind] = useState<UniverseFindSelection | null>(null)
   const [simError, setSimError] = useState<string | null>(null)
   const [simTeamMeta, setSimTeamMeta] = useState<Record<string, TeamMeta>>({})
   const [simRunToken, setSimRunToken] = useState(0)
@@ -422,7 +396,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     setSimulationResults(null)
     setSimBaseline(null)
     setSimOverride(null)
-    setSimFind(null)
     setSimError(null)
   }, [leagueId, selectedSeason, genderParam])
 
@@ -512,15 +485,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       try {
         const params = new URLSearchParams({
           n_simulations: String(numSimulations),
-          universes: String(UNIVERSE_SAMPLE_REQUEST),
         })
         if (simOverride) {
           params.set('what_if_fixture', simOverride.fixtureKey)
           params.set('what_if_outcome', simOverride.outcome)
-        }
-        if (simFind) {
-          params.set('find_team', simFind.team)
-          params.set('find_outcome', simFind.outcome)
         }
         const res = await fetch(`/api/simulation/${numericLeagueId}?${params.toString()}`, {
           signal: controller.signal,
@@ -549,14 +517,13 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       cancelled = true
       controller.abort()
     }
-  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simFind, simRunToken])
+  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simRunToken])
 
   const changeSimCount = (n: number) => {
     setNumSimulations(n)
     // A different run depth is a different baseline — clear any override.
     setSimBaseline(null)
     setSimOverride(null)
-    setSimFind(null)
   }
 
   useEffect(() => {
@@ -575,9 +542,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           : leagueId
         
         // Fetch data from existing endpoints in parallel
-        const [standingsRes, newsRes] = await Promise.allSettled([
+        const [standingsRes] = await Promise.allSettled([
           fetch(`/api/standings?league=${leagueParam}&gender=${genderParam}`),
-          fetch(`/api/news?league=${leagueParam}&gender=${genderParam}`),
         ])
         
         // Also fetch from ESPN for real-time data including top scorers
@@ -598,8 +564,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         // Leaders goes through our own /api/leagues/leaders proxy: ESPN's
         // leaders endpoint has no CORS headers, so a browser fetch dies.
         const espnResults = await Promise.allSettled([
-          fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnLeagueId}/standings${seasonParam}`),
-          fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/scoreboard?dates=${scoreboardDateRange}`),
+          fetch(`${ESPN_V2}/${espnLeagueId}/standings${seasonParam}`),
+          fetch(`${ESPN_SITE}/${espnLeagueId}/scoreboard?dates=${scoreboardDateRange}`),
           fetch(`/api/leagues/leaders?league=${encodeURIComponent(espnLeagueId)}${selectedSeason ? `&season=${encodeURIComponent(selectedSeason)}` : ''}`),
         ])
 
@@ -612,7 +578,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           topScorers: [],
           upcomingMatches: [],
           recentResults: [],
-          news: [],
         }
 
         // PRIORITIZE ESPN data for accurate real-time standings
@@ -779,36 +744,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           }
         }
 
-        // Process league-specific news from ESPN
-        try {
-          const espnNewsRes = await fetch(
-            `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeagueId}/news`,
-            { next: { revalidate: 300 } }
-          )
-          if (espnNewsRes.ok) {
-            const espnNewsData = await espnNewsRes.json()
-            leagueData.news = (espnNewsData.articles || []).slice(0, 8).map((n: RawNewsItem) => ({
-              headline: n.headline || '',
-              description: n.description || '',
-              link: n.links?.web?.href || '',
-              image: n.images?.[0]?.url || '',
-              published: n.published || '',
-            }))
-          }
-        } catch {
-          // Fallback to general news
-          if (newsRes.status === 'fulfilled' && newsRes.value.ok) {
-            const newsJson = await newsRes.value.json()
-            leagueData.news = (newsJson.articles || newsJson.news || []).slice(0, 5).map((n: RawNewsItem) => ({
-              headline: n.headline || n.title || '',
-              description: n.description || n.summary || '',
-              link: n.links?.web?.href || n.url || '',
-              image: n.images?.[0]?.url || n.image || '',
-              published: n.published || '',
-            }))
-          }
-        }
-
         // Committed model picks for this league (from the tracked prediction
         // JSON) — keyed by provider match id so fixture rows can render the
         // signature ProbBar + AI scoreline chip / correct-incorrect chip.
@@ -930,7 +865,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           aria-label="League sections"
           className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator', 'news'] as const).map((tab) => {
+          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator'] as const).map((tab) => {
             const active = activeTab === tab
             return (
               <button
@@ -1069,44 +1004,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 </div>
               </div>
 
-              {/* Latest News */}
-              {data?.news && data.news.length > 0 && (
-                <div className="bg-[var(--card-bg)] rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                  <SectionHeader
-                    kicker="Coverage"
-                    title="Latest News"
-                    className="p-4 border-b border-[var(--border-color)]"
-                  />
-                  <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
-                    {data.news.filter(item => item.link).slice(0, 3).map((item, idx) => (
-                      <a
-                        key={idx}
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-4 hover:bg-[var(--muted-bg)] transition-colors group"
-                      >
-                        {item.image && (
-                          /* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */
-                          <img
-                            src={item.image}
-                            alt={item.headline}
-                            className="w-full h-32 object-cover rounded-lg mb-2"
-                          />
-                        )}
-                        <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] line-clamp-2">
-                          {item.headline}
-                        </p>
-                        {item.published && (
-                          <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
-                          </p>
-                        )}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1304,13 +1201,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 </div>
               </div>
             )}
-
-            {/* Justice ledger — luck-adjusted table; renders nothing unless
-                this competition-season cleared the xG coverage gates. */}
-            <JusticeLedger
-              competition={genderParam === 'F' ? `${leagueId}.w` : leagueId}
-              season={selectedSeason}
-            />
           </div>
         )}
 
@@ -1463,56 +1353,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 onOverrideChange={setSimOverride}
                 loading={runningSimulation}
                 teamMeta={simTeamMeta}
-                onFindUniverse={(team, outcome) => setSimFind({ team, outcome })}
               />
             )}
           </div>
         )}
 
-        {activeTab === 'news' && (
-          data?.news && data.news.filter(item => item.link).length > 0 ? (
-            <div className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-              <ul className="divide-y divide-[var(--border-color)]/40">
-                {data.news.filter(item => item.link).map((item, idx) => (
-                  <li key={idx}>
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
-                    >
-                      {item.image ? (
-                        /* eslint-disable-next-line @next/next/no-img-element -- remote ESPN news art, host not whitelisted for next/image */
-                        <img
-                          src={item.image}
-                          alt=""
-                          loading="lazy"
-                          className="aspect-video w-24 flex-shrink-0 rounded-md object-cover sm:w-28"
-                        />
-                      ) : (
-                        <span className="aspect-video w-24 flex-shrink-0 rounded-md bg-[var(--muted-bg)] sm:w-28" aria-hidden="true" />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
-                          {item.headline}
-                        </span>
-                        {item.published && (
-                          <span className="mt-1 block text-[11px] text-[var(--text-tertiary)]">
-                            {formatDistanceToNow(new Date(item.published), { addSuffix: true })}
-                          </span>
-                        )}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="bg-[var(--card-bg)] border rounded-xl p-8 text-center" style={{ borderColor: 'var(--border-color)' }}>
-              <p className="text-[var(--text-tertiary)]">No news available</p>
-            </div>
-          )
-        )}
       </div>
     </div>
   )

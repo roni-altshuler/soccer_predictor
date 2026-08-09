@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
@@ -316,7 +317,7 @@ async function fetchTeamForm(teamName: string, leagueKey?: string): Promise<numb
     const now = new Date()
     const past = new Date(now); past.setDate(past.getDate() - 30)
     const fmt = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
-    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnId}/scoreboard?dates=${fmt(past)}-${fmt(now)}&limit=100`
+    const url = `${ESPN_SITE}/${espnId}/scoreboard?dates=${fmt(past)}-${fmt(now)}&limit=100`
     const res = await fetch(url, { signal: AbortSignal.timeout(5000), next: { revalidate: 3600 } })
     if (!res.ok) return 0
     const data = await res.json()

@@ -32,6 +32,7 @@ import { getLeagueAccent } from '@/lib/leagueAccents'
 import { springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
+import { ESPN_V2 } from '@/lib/espnHost'
 
 /**
  * Competitions contested by national teams — identities resolve to real
@@ -327,7 +328,7 @@ export default function MatchDetailPage() {
         if (data.leagueId) {
           try {
             const standingsRes = await fetch(
-              `https://site.api.espn.com/apis/v2/sports/soccer/${data.leagueId}/standings`
+              `${ESPN_V2}/${data.leagueId}/standings`
             )
             if (standingsRes.ok) {
               const standingsData = await standingsRes.json()

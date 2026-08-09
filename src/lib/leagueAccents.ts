@@ -163,6 +163,45 @@ export function getLeagueAccent(idOrName: string | null | undefined): LeagueAcce
   return FALLBACK
 }
 
+/**
+ * The competitions the product actually covers.
+ *
+ * The registry above stays complete — a fixture from any competition still
+ * resolves to a badge and an accent, which is what keeps a Champions League
+ * row in a search result from rendering blank. Coverage is a narrower thing:
+ * a league is in Wave A only once the model has been scored against that
+ * league's closing line, which so far is the five big European men's leagues
+ * (docs/PIVOT_2026-08.md §5). MLS is Wave B; UCL/UEL/Euros/World Cup/Copa
+ * América are Wave C. Each advances on measured evidence, not on ambition.
+ *
+ * Every league picker in the product reads this list. Listing a competition
+ * we have never scored, next to five we have, invites the reader to trust all
+ * six equally.
+ */
+export const WAVE_A_COMPETITION_IDS = [
+  'eng.1',
+  'esp.1',
+  'ger.1',
+  'ita.1',
+  'fra.1',
+] as const
+
+export type WaveACompetitionId = (typeof WAVE_A_COMPETITION_IDS)[number]
+
+/** Covered competitions, in the order league pickers should show them. */
+export function coveredLeagues(): LeagueAccent[] {
+  return WAVE_A_COMPETITION_IDS.map((id) => byCompetitionId.get(id)).filter(
+    (a): a is LeagueAccent => a !== undefined,
+  )
+}
+
+/** Is this competition inside the current coverage wave? */
+export function isCovered(idOrName: string | null | undefined): boolean {
+  if (!idOrName) return false
+  const accent = getLeagueAccent(idOrName)
+  return (WAVE_A_COMPETITION_IDS as readonly string[]).includes(accent.competitionId)
+}
+
 /** Return all registered accents for a given gender (preserves order). */
 export function leaguesForGender(gender: Gender): LeagueAccent[] {
   return accents.filter((a) => a.gender === gender)

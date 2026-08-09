@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -96,7 +97,7 @@ async function fetchJson(url: string): Promise<any | null> {
 }
 
 async function resolveTeamInLeague(league: string, teamName: string): Promise<{ id: string; name: string } | null> {
-  const teamsData = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams?limit=300`)
+  const teamsData = await fetchJson(`${ESPN_SITE}/${league}/teams?limit=300`)
   const teams = teamsData?.sports?.[0]?.leagues?.[0]?.teams || []
   if (!Array.isArray(teams) || teams.length === 0) return null
 
@@ -266,7 +267,7 @@ export async function GET(
       const resolvedTeam = await resolveTeamInLeague(leagueId, decodedTeam)
       if (!resolvedTeam) continue
 
-      const scheduleData = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueId}/teams/${resolvedTeam.id}/schedule`)
+      const scheduleData = await fetchJson(`${ESPN_SITE}/${leagueId}/teams/${resolvedTeam.id}/schedule`)
       if (!scheduleData) continue
 
       const matches = buildTeamMatches(scheduleData, resolvedTeam.name, resolvedTeam.id)

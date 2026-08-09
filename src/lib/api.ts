@@ -12,8 +12,8 @@ export type {
   AccuracyPolicy,
   RecentPredictionSummary,
 } from './types/accuracy';
-import type { SampledUniverse, Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
-export type { SampledUniverse, Standing, UniverseOutcome, UniverseTableRow, WhatIfOutcome } from './simulation/leagueMonteCarlo';
+import type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
+export type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_V1 = `${API_BASE}/api/v1`;
@@ -213,12 +213,6 @@ export interface LeagueSimulationResult {
   likely_top_4: string[];
   relegation_candidates: string[];
   standings: Standing[];
-  /** Universe Browser: K complete seasons reservoir-sampled from the runs (only when `universes=K` was requested). */
-  sampled_universes?: SampledUniverse[];
-  /** Universe Browser: first-found seasons matching find_team/find_outcome (≤12, never synthesized). */
-  condition_matches?: SampledUniverse[];
-  /** True number of runs matching the condition, out of n_simulations. */
-  condition_match_count?: number;
 }
 
 export const leaguesApi = {

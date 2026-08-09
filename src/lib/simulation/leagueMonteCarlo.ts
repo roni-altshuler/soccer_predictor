@@ -24,16 +24,6 @@
  *      sort by (pts, GD) → record final position.
  *   4. Aggregate position frequencies into probabilities.
  *
- * Universe sampling (the Tournament Multiverse):
- *   `runMonteCarloSimulationDetailed` can additionally keep K complete
- *   simulated seasons ("universes") via classic reservoir sampling
- *   (Algorithm R) over the run index, and/or collect up to 12 seasons
- *   matching a condition on one team's finish. Reservoir replacement draws
- *   come from the SAME seeded PRNG, so runs stay fully deterministic; when
- *   the options are absent no extra draws are consumed and the outputs are
- *   byte-for-byte identical to the legacy behaviour. Condition matching
- *   consumes NO randomness, so a condition run replays exactly the same
- *   seasons as a sampling-only run with the same K.
  */
 
 export interface TeamData {
@@ -85,61 +75,9 @@ export interface Standing {
   position_distribution: Record<number, number>
 }
 
-// ---------------------------------------------------------------------------
-// Universe sampling types
-// ---------------------------------------------------------------------------
-
-/** One row of a single simulated season's final table. */
-export interface UniverseTableRow {
-  team_name: string
-  points: number
-  gd: number
-  position: number
-}
-
-/** One complete simulated season, compact — no per-match logs. */
-export interface SampledUniverse {
-  /** 1-based run index within the n_simulations runs (Universe #237 = run 237). */
-  universe_id: number
-  /** Full final table, sorted by final position (1 first). */
-  table: UniverseTableRow[]
-}
-
-export type UniverseOutcome = 'champion' | 'top4' | 'relegated'
-
-export interface UniverseSamplingOptions {
-  /**
-   * Keep this many complete seasons, reservoir-sampled uniformly from the
-   * n_simulations runs. Capped at 60.
-   */
-  sampleUniverses?: number
-  /** Team name (must match TeamData.name exactly) for condition matching. */
-  conditionTeam?: string
-  /** Outcome the condition team must achieve for a run to match. */
-  conditionOutcome?: UniverseOutcome
-}
-
 export interface DetailedLeagueSimulation {
   standings: Standing[]
-  /** Present iff sampleUniverses > 0 was requested. Sorted by universe_id. */
-  sampled_universes?: SampledUniverse[]
-  /**
-   * Present iff conditionTeam + conditionOutcome were given: the first-found
-   * matching seasons, at most 12. Never synthesized — if fewer matches exist
-   * in n runs, fewer are returned.
-   */
-  condition_matches?: SampledUniverse[]
-  /** True total number of matching runs out of n_simulations. */
-  condition_match_count?: number
 }
-
-/** Hard cap on reservoir size — keeps the payload bounded. */
-export const MAX_SAMPLED_UNIVERSES = 60
-/** At most this many condition-matching universes are returned. */
-export const MAX_CONDITION_MATCHES = 12
-
-/** Relegation slots mirrored from the aggregate probability computation. */
-const RELEGATION_SLOTS = 3
 
 /**
  * How many matches of evidence a team's historical prior is worth.
@@ -207,10 +145,8 @@ export function runMonteCarloSimulation(
 }
 
 /**
- * Monte Carlo Season Simulation with optional universe sampling and
- * condition matching. Pure and deterministic — same inputs (including
- * options) → same outputs. With no options this is exactly the legacy
- * simulation: the sampling code consumes zero PRNG draws when disabled.
+ * Monte Carlo season simulation. Pure and deterministic — same inputs →
+ * same outputs, from a fixed-seed xorshift32.
  */
 export function runMonteCarloSimulationDetailed(
   teams: TeamData[],
@@ -219,7 +155,6 @@ export function runMonteCarloSimulationDetailed(
   leagueId: number,
   remainingFixtures: SimulationFixture[] | null = null,
   fixtureOverride: FixtureOverride | null = null,
-  options: UniverseSamplingOptions | null = null,
 ): DetailedLeagueSimulation {
   const numTeams = teams.length
   if (numTeams === 0) return { standings: [] }
@@ -290,23 +225,6 @@ export function runMonteCarloSimulationDetailed(
     return (seed >>> 0) / 4294967296
   }
 
-  // Universe sampling setup. Everything below is inert (zero PRNG draws,
-  // zero allocations per run) unless the options are actually provided.
-  const sampleCap = Math.max(
-    0,
-    Math.min(MAX_SAMPLED_UNIVERSES, Math.floor(options?.sampleUniverses ?? 0)),
-  )
-  const reservoir: SampledUniverse[] = []
-  const conditionRequested = Boolean(
-    options?.conditionTeam && options?.conditionOutcome,
-  )
-  const conditionOutcome = options?.conditionOutcome ?? null
-  const conditionIdx = conditionRequested
-    ? teams.findIndex((t) => t.name === options?.conditionTeam)
-    : -1
-  const conditionMatches: SampledUniverse[] = []
-  let conditionMatchCount = 0
-
   for (let sim = 0; sim < nSimulations; sim++) {
     const simPoints = teams.map((t) => t.points)
     const simGD = teams.map((t) => t.gd)
@@ -365,49 +283,6 @@ export function runMonteCarloSimulationDetailed(
       if (simPoints[b] !== simPoints[a]) return simPoints[b] - simPoints[a]
       return simGD[b] - simGD[a]
     })
-
-    // Compact snapshot of this run's final table — built only when kept.
-    const captureUniverse = (): SampledUniverse => ({
-      universe_id: sim + 1,
-      table: indices.map((teamIdx, pos) => ({
-        team_name: teams[teamIdx].name,
-        points: simPoints[teamIdx],
-        gd: simGD[teamIdx],
-        position: pos + 1,
-      })),
-    })
-
-    // Reservoir sampling (Algorithm R): run i < K fills the reservoir; run
-    // i ≥ K draws j uniform on [0, i] and replaces slot j if j < K. Every
-    // run therefore survives with probability K/n. The replacement draw
-    // comes from the same seeded PRNG — deterministic, and consumed only
-    // when sampling is enabled.
-    if (sampleCap > 0) {
-      if (sim < sampleCap) {
-        reservoir.push(captureUniverse())
-      } else {
-        const j = Math.floor(rand() * (sim + 1))
-        if (j < sampleCap) reservoir[j] = captureUniverse()
-      }
-    }
-
-    // Condition matching — pure inspection of the finished table, no PRNG
-    // draws, so it never perturbs the simulated seasons.
-    if (conditionRequested && conditionIdx >= 0 && conditionOutcome) {
-      const conditionPos = indices.indexOf(conditionIdx) + 1
-      const matched =
-        conditionOutcome === 'champion'
-          ? conditionPos === 1
-          : conditionOutcome === 'top4'
-            ? conditionPos <= 4
-            : conditionPos > numTeams - RELEGATION_SLOTS
-      if (matched) {
-        conditionMatchCount++
-        if (conditionMatches.length < MAX_CONDITION_MATCHES) {
-          conditionMatches.push(captureUniverse())
-        }
-      }
-    }
 
     for (let pos = 0; pos < indices.length; pos++) {
       const teamIdx = indices[pos]
@@ -470,16 +345,5 @@ export function runMonteCarloSimulationDetailed(
 
   standings.sort((a, b) => a.avg_final_position - b.avg_final_position)
 
-  const detailed: DetailedLeagueSimulation = { standings }
-  if (sampleCap > 0) {
-    // Reservoir order is arbitrary after replacements — sort by run index
-    // so the browser reads chronologically.
-    reservoir.sort((a, b) => a.universe_id - b.universe_id)
-    detailed.sampled_universes = reservoir
-  }
-  if (conditionRequested) {
-    detailed.condition_matches = conditionMatches
-    detailed.condition_match_count = conditionMatchCount
-  }
-  return detailed
+  return { standings }
 }

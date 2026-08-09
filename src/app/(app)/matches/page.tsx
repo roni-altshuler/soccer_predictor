@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
-import { getLeagueAccent, leaguesForGender } from '@/lib/leagueAccents'
+import { coveredLeagues, getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
 
 /**
@@ -102,8 +102,10 @@ function MatchesContent() {
     () => dateOptions.find((d) => d.isToday)?.date || dateOptions[3]?.date
   )
 
-  // League chips — every competition in the active gender universe.
-  const leagues = useMemo(() => leaguesForGender(asQueryParam), [asQueryParam])
+  // League chips — the covered competitions only. The feed behind this page
+  // fetches Wave A, so chips for the other nine competitions filtered a set
+  // that could never contain them and always came back empty.
+  const leagues = useMemo(() => coveredLeagues(), [])
 
   // Selected chip is a canonical competitionId ('all' = no filter). The
   // ?league= param deep-links a chip; unknown ids fall back to All.
@@ -297,7 +299,7 @@ function MatchesContent() {
         {/* Disclaimer — one quiet line, not a banner */}
         <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
-            Predictions are educational only — not betting advice.
+            Model probabilities, scored against the closing line on the accuracy page.
           </p>
         </div>
       </div>

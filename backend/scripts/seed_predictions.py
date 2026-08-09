@@ -200,7 +200,7 @@ async def fetch_league_matches(
         fmt = lambda d: f"{d.year}{d.month:02d}{d.day:02d}"
         date_range = f"{fmt(start)}-{fmt(end)}"
 
-        url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{espn_id}/scoreboard?dates={date_range}&limit=100"
+        url = f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{espn_id}/scoreboard?dates={date_range}&limit=100"
         try:
             resp = await client.get(url, timeout=15)
             if resp.status_code != 200:

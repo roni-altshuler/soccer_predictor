@@ -134,14 +134,9 @@ describe('prior blending in the league Monte Carlo', () => {
       team('Mid', 8, 6, 1.4),
       team('Weak', 3, 6, 0.8),
     ]
-    const a = runMonteCarloSimulationDetailed(teams, 38, 1500, 47, null, null, {
-      sampleUniverses: 8,
-    })
-    const b = runMonteCarloSimulationDetailed(teams, 38, 1500, 47, null, null, {
-      sampleUniverses: 8,
-    })
+    const a = runMonteCarloSimulationDetailed(teams, 38, 1500, 47, null, null)
+    const b = runMonteCarloSimulationDetailed(teams, 38, 1500, 47, null, null)
     expect(a.standings).toEqual(b.standings)
-    expect(a.sampled_universes).toEqual(b.sampled_universes)
   })
 
   it('teams with no prior are bit-for-bit unchanged (zero behaviour change)', () => {

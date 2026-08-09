@@ -22,8 +22,8 @@ export const Footer = () => {
           <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
             <Link href="/leagues" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Leagues</Link>
             <Link href="/predict" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-ai)] hover:border-[var(--accent-ai)]/40 transition-colors">AI Predict</Link>
-            <Link href="/tracking" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Accuracy</Link>
-            <Link href="/news" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">News</Link>
+            <Link href="/accuracy" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Accuracy</Link>
+            <Link href="/simulator" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">Title &amp; Relegation</Link>
             <Link href="/about" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]/40 transition-colors">About</Link>
           </div>
         </div>
@@ -33,9 +33,19 @@ export const Footer = () => {
           <p className="text-[10px] text-[var(--text-tertiary)]">
             &copy; {new Date().getFullYear()} Ron Oshri Altshuler. All Rights Reserved.
           </p>
+          {/* The old "educational and entertainment purposes only" line was
+              retired with the pivot (docs/PIVOT_2026-08.md): the product now
+              shows model probability against the market, so pretending it is
+              not decision-relevant would be the dishonest option. What
+              replaces it is the measured position — the model trails the
+              closing line — with a link to the page that proves it. */}
           <p className="text-[10px] text-[var(--text-tertiary)] flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" aria-hidden />
-            For educational and entertainment purposes only.
+            Probability estimates, not advice. Every pick is{' '}
+            <Link href="/accuracy" className="underline underline-offset-2 hover:text-[var(--text-secondary)]">
+              scored against the closing line
+            </Link>
+            .
           </p>
         </div>
       </div>

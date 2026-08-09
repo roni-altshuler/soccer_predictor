@@ -97,8 +97,14 @@ class ESPNClient:
     - League schedules and news
     """
     
-    BASE_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer"
-    
+    # `site.web.api`, NOT `site.api`. The two hosts serve byte-identical
+    # payloads, but Akamai answers `site.api.espn.com` with 403 Access Denied
+    # from datacentre IPs (Vercel, GitHub Actions) and its error page carries
+    # no CORS headers. Measured 2026-08-08: every `site.api` request from this
+    # machine returned 403 while the identical path on `site.web.api` returned
+    # 200 with `access-control-allow-origin: *`. Mirrored in src/lib/espnHost.ts.
+    BASE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/soccer"
+
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "application/json",
@@ -288,7 +294,7 @@ class ESPNClient:
     
     # ESPN quietly emptied the site/v2 standings endpoint (returns "{}");
     # the apis/v2 host serves the same children/entries/stats structure.
-    V2_STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/{espn_id}/standings"
+    V2_STANDINGS_URL = "https://site.web.api.espn.com/apis/v2/sports/soccer/{espn_id}/standings"
 
     async def get_standings_raw(self, league_key: str) -> Optional[Dict]:
         """Raw standings payload with `children` groups (keeps group names)."""

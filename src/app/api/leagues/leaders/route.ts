@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 /**
  * Server-side proxy for ESPN's league leaders endpoints.
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid league slug' }, { status: 400 })
   }
   const seasonParam = SEASON_RE.test(season) ? `?season=${season}` : ''
-  const base = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}`
+  const base = `${ESPN_SITE}/${league}`
 
   // Primary: the leaders endpoint.
   try {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 /**
  * Referee data API route.
@@ -118,7 +119,7 @@ function lookupReferee(name: string): RefStats | null {
 async function fetchRefereeName(matchId: string): Promise<{ name: string | null; leagueId: string | null }> {
   for (const league of LEAGUE_ENDPOINTS) {
     try {
-      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/summary?event=${matchId}`
+      const url = `${ESPN_SITE}/${league}/summary?event=${matchId}`
       const resp = await fetch(url, { signal: AbortSignal.timeout(8000), next: { revalidate: 300 } })
       if (!resp.ok) continue
       const data = await resp.json()

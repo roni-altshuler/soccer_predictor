@@ -92,7 +92,7 @@ def fetch_outcomes() -> int:
             end_date = dates[-1].replace("-", "")
 
             url = (
-                f"https://site.api.espn.com/apis/site/v2/sports/soccer/"
+                f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/"
                 f"{espn_id}/scoreboard?dates={start_date}-{end_date}&limit=100"
             )
 

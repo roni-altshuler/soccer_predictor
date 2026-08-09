@@ -501,7 +501,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
 
       <Separator className="opacity-50" />
       <p className="text-center text-[10px] text-[var(--text-tertiary)]">
-        Predictions are for educational/entertainment purposes only. Not intended for betting.
+        A model probability, not a recommendation. Scored against the closing line on the accuracy page.
       </p>
     </motion.div>
   )

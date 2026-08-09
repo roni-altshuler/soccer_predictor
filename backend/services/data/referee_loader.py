@@ -23,7 +23,7 @@ loader bug and no amount of parsing will produce it.
 ESPN does publish it, but only on the per-match summary endpoint
 (`/summary?event=<id>`), not on the scoreboard feed the ESPN loader uses:
 
-    GET https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={id}
+    GET https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={id}
     → {"gameInfo": {"officials": [{"fullName": "Mario Melero López", ...}], ...}}
 
 That is one request per match, so this is a slow loader and is opt-in.
@@ -63,7 +63,7 @@ from backend.services.data.warehouse import Warehouse
 logger = logging.getLogger(__name__)
 
 SUMMARY_URL = (
-    "https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={event}"
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/summary?event={event}"
 )
 CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "cache" / "espn_summary"
 

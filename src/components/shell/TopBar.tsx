@@ -5,7 +5,6 @@ import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { AuthModal } from '@/components/AuthModal'
-import { GenderToggle } from '@/components/GenderToggle'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCommandPalette } from '@/store/commandPaletteStore'
 
@@ -64,8 +63,13 @@ export function TopBar() {
 
         {/* Right cluster */}
         <div className="ml-auto flex shrink-0 items-center gap-2 md:ml-3">
-          <GenderToggle size="compact" iconless className="sm:hidden" />
-          <GenderToggle size="default" className="hidden sm:inline-flex" />
+          {/* The men's/women's switch is not rendered while women's
+              competitions sit outside the coverage waves (docs/PIVOT_2026-08.md
+              §5). The preference plumbing stays — every fetch still threads
+              `gender`, defaulting to 'men' — so restoring the control is a
+              one-line change when the evidence gate opens. Offering the switch
+              today would advertise five competitions the model has never been
+              scored on. */}
           {isAuthenticated && user ? (
             <div className="relative">
               <button

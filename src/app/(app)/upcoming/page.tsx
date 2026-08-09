@@ -312,7 +312,7 @@ export default function UpcomingFixturesPage() {
 
         {/* Disclaimer — one quiet line, not a banner */}
         <p className="mt-3 px-1 text-right text-[10px] text-[var(--text-tertiary)]">
-          Predictions are educational only — not betting advice.
+          Model probabilities, scored against the closing line on the accuracy page.
         </p>
       </div>
     </div>

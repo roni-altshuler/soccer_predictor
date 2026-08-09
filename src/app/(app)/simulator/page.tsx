@@ -2,6 +2,7 @@
 
 import { SectionHeader } from '@/components/primitives'
 import LeagueChampionshipSimulator from '@/components/simulator/LeagueChampionshipSimulator'
+import { ProjectionCalibrationNote } from '@/components/simulator/ProjectionCalibrationNote'
 
 /**
  * Title & relegation projections.
@@ -10,11 +11,11 @@ import LeagueChampionshipSimulator from '@/components/simulator/LeagueChampionsh
  * (docs/PIVOT_2026-08.md §5) — this page is now one of the three things the
  * product does: project how the season ends for the five Wave A leagues.
  *
- * NOTE: the projections rendered here are not yet calibrated. The matchday-by-
- * matchday backtest in backend/scripts/backtest_season_projections.py exists to
- * establish how many matchdays it takes before these numbers are trustworthy.
- * Until that convergence curve is published, this page must not imply more
- * confidence than has been measured.
+ * The projections are measurably overconfident above ~40%, so
+ * ProjectionCalibrationNote prints that miss — read live from the backtest
+ * artifact — underneath them. That is the standing rule in practice: displayed
+ * confidence never exceeds measured confidence. Do not remove the note without
+ * removing the overconfidence it describes.
  */
 export default function SimulatorPage() {
   return (
@@ -30,6 +31,8 @@ export default function SimulatorPage() {
         </div>
 
         <LeagueChampionshipSimulator />
+
+        <ProjectionCalibrationNote />
 
         <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
           <SectionHeader kicker="Good to know" title="How it works" className="mb-3" />

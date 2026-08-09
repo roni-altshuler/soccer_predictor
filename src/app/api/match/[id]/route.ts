@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
 import type { AttributionItem } from '@/lib/types/attribution'
+import { ESPN_SITE } from '@/lib/espnHost'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -346,7 +347,7 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
   
   for (const league of leaguesToTry) {
     try {
-      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/summary?event=${matchId}`, {
+      const res = await fetch(`${ESPN_SITE}/${league}/summary?event=${matchId}`, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -1172,7 +1173,7 @@ async function fetchH2H(homeTeam: string, awayTeam: string, leagueId?: string): 
           chunkStart.setFullYear(chunkStart.getFullYear() - 1)
 
           const res = await fetch(
-            `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?dates=${formatDate(chunkStart)}-${formatDate(chunkEnd)}&limit=300`,
+            `${ESPN_SITE}/${league}/scoreboard?dates=${formatDate(chunkStart)}-${formatDate(chunkEnd)}&limit=300`,
             {
               headers: {
                 Accept: 'application/json',

@@ -13,10 +13,9 @@ import {
   type NarrativeInsight,
   type ProgressionSeries,
 } from '@/components/viz'
-import type { LeagueSimulationResult, UniverseOutcome } from '@/lib/api'
+import type { LeagueSimulationResult } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-import UniverseBrowser from './UniverseBrowser'
 import WhatIfLab, { type FixtureOverrideSelection } from './WhatIfLab'
 import PositionDistributionMatrix from './PositionDistributionMatrix'
 import PredictedStandingsTable from './PredictedStandingsTable'
@@ -119,12 +118,6 @@ interface SeasonSimulationResultsProps {
   loading: boolean
   /** Crest ids + brand colours keyed by team name (empty map is fine). */
   teamMeta: Record<string, TeamMeta>
-  /**
-   * Universe Browser search: rerun the sim with find_team/find_outcome.
-   * The browser section renders only when the payload carries sampled
-   * universes AND a caller wired this callback.
-   */
-  onFindUniverse?: (team: string, outcome: UniverseOutcome) => void
 }
 
 export default function SeasonSimulationResults({
@@ -134,7 +127,6 @@ export default function SeasonSimulationResults({
   onOverrideChange,
   loading,
   teamMeta,
-  onFindUniverse,
 }: SeasonSimulationResultsProps) {
   const [titleRaceOpen, setTitleRaceOpen] = useState(false)
 
@@ -195,6 +187,15 @@ export default function SeasonSimulationResults({
     const list: NarrativeInsight[] = []
     const standings = result.standings
 
+    // Before a ball is kicked every team is on 0 points and `current_position`
+    // is just the order the provider happened to return — usually alphabetical.
+    // Every "climb from Nth today" line is then pure noise dressed as insight:
+    // measured at the 2026-27 preseason this produced "AFC Bournemouth drop
+    // from 1st to a projected 11th", where 1st meant nothing but the letter A.
+    // So the position-movement and points-gap claims are suppressed until the
+    // table carries real information.
+    const tableHasPlay = standings.some((t) => t.matches_played > 0)
+
     const byTitle = [...standings].sort((a, b) => b.title_probability - a.title_probability)
     const [first, second] = byTitle
     if (first && second) {
@@ -209,16 +210,19 @@ export default function SeasonSimulationResults({
         list.push({
           tone: 'watch',
           title: 'Tight at the top',
-          detail: `${first.team_name} (${(first.title_probability * 100).toFixed(0)}%) and ${second.team_name} (${(second.title_probability * 100).toFixed(0)}%) are ${ptsGap} point${ptsGap === 1 ? '' : 's'} apart today.`,
+          detail: tableHasPlay
+            ? `${first.team_name} (${(first.title_probability * 100).toFixed(0)}%) and ${second.team_name} (${(second.title_probability * 100).toFixed(0)}%) are ${ptsGap} point${ptsGap === 1 ? '' : 's'} apart today.`
+            : `${first.team_name} (${(first.title_probability * 100).toFixed(0)}%) and ${second.team_name} (${(second.title_probability * 100).toFixed(0)}%) start the season near-inseparable.`,
         })
       }
     }
 
+    // Position movement needs a table that means something — see above.
     let riser: (typeof standings)[number] | null = null
     let riserGain = 1.5
     let faller: (typeof standings)[number] | null = null
     let fallerDrop = 1.5
-    for (const team of standings) {
+    for (const team of tableHasPlay ? standings : []) {
       const gain = team.current_position - team.avg_final_position
       if (gain > riserGain) {
         riser = team
@@ -500,19 +504,6 @@ export default function SeasonSimulationResults({
             />
           </StaggerItem>
         )}
-
-        {onFindUniverse &&
-          ((result.sampled_universes && result.sampled_universes.length > 0) ||
-            result.condition_matches !== undefined) && (
-            <StaggerItem>
-              <UniverseBrowser
-                result={result}
-                teamMeta={teamMeta}
-                loading={loading}
-                onFindUniverse={onFindUniverse}
-              />
-            </StaggerItem>
-          )}
 
         {insights.length > 0 && (
           <StaggerItem>

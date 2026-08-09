@@ -20,8 +20,6 @@ import { buildModelInsights } from './insights'
 import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
 import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
 import { MomentumRiver } from './MomentumRiver'
-import { RarityStamp } from './RarityStamp'
-import { SimilarMatches } from './SimilarMatches'
 import { TopStatsPreview } from './StatsTab'
 import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
 
@@ -558,7 +556,6 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
       {/* Similar matches — historical matches whose score-state trajectory
           rhymed with this one. Renders nothing unless the match is finished
           and resolvable in the committed retrieval index. */}
-      <SimilarMatches match={match} isFinished={isFinished} />
 
       {/* Momentum — real feed series when present, synthesized (labelled) otherwise */}
       {((match.momentum?.length ?? 0) > 0 || match.events.length > 0) && (
@@ -604,7 +601,6 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
 
       {/* Rarity stamp — exact-count history for the match's most dramatic
           state; renders nothing unless the claim is countable and legible. */}
-      <RarityStamp match={match} isFinished={isFinished} />
 
       {/* Top stats preview → Stats tab */}
       <TopStatsPreview match={match} onSeeAll={() => onSelectTab('stats')} />

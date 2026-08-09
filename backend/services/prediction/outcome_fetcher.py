@@ -18,7 +18,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 # ESPN scoreboard base URL
-ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer"
+ESPN_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/soccer"
 
 # Map league identifiers to ESPN league slugs
 LEAGUE_ESPN_MAP = {

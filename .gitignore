@@ -100,7 +100,9 @@ public/swe-worker-*.js.map
 # cites. Regenerate the full artifact with:
 #   .venv/bin/python -m backend.scripts.backtest_season_projections
 #
-# Do NOT blanket-ignore backend/data/diagnostics/ — walkforward_summary.json is
-# read at runtime by src/app/api/v1/ai/walkforward/route.ts, and FastAPI is not
-# deployed on Vercel, so ignoring it breaks the deployed AI pages.
+# Do NOT blanket-ignore backend/data/diagnostics/. FastAPI is not deployed on
+# Vercel, so the deployed evidence pages read committed JSON out of this
+# directory directly: league_track_record.json (every league page) and
+# market_benchmark.json (the accuracy page). Ignoring the directory blanks
+# them in production while everything still works locally.
 backend/data/diagnostics/season_projection_backtest.json

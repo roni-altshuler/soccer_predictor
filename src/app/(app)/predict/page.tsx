@@ -23,7 +23,6 @@ import {
   type TeamPick,
 } from '@/components/TeamSelector'
 import { AsyncSection, FlagBadge } from '@/components/primitives'
-import { GenderToggle } from '@/components/GenderToggle'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AttributionItem } from '@/lib/types/attribution'
@@ -363,7 +362,7 @@ function PredictPageContent() {
               Pick two teams — calibrated win/draw/loss, scoreline, and the factors behind it.
             </p>
           </div>
-          <GenderToggle size="default" />
+          {/* Gender toggle removed with the coverage waves — see TopBar. */}
         </div>
 
         {/* Matchup builder */}

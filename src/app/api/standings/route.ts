@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ESPN_V2 } from '@/lib/espnHost'
 
 interface TeamStanding {
   position: number
@@ -101,7 +102,7 @@ async function fetchESPNStandings(espnId: string, season?: string): Promise<Team
   try {
     const seasonParam = season ? `?season=${season}` : ''
     const res = await fetch(
-      `https://site.api.espn.com/apis/v2/sports/soccer/${espnId}/standings${seasonParam}`,
+      `${ESPN_V2}/${espnId}/standings${seasonParam}`,
       { next: { revalidate: 300 }, signal: AbortSignal.timeout(10000) }
     )
     if (!res.ok) return []

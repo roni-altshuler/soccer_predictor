@@ -12,9 +12,19 @@ describe('Footer', () => {
     render(<Footer />)
     expect(screen.getByText('Leagues')).toBeInTheDocument()
     expect(screen.getByText('AI Predict')).toBeInTheDocument()
-    expect(screen.getByText('Accuracy')).toBeInTheDocument()
-    expect(screen.getByText('News')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Accuracy' })).toBeInTheDocument()
+    expect(screen.getByText(/Title & Relegation/)).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
+  })
+
+  it('links only to pages that exist', () => {
+    // Regression guard: the footer shipped dead links to /news and /tracking
+    // for the whole of the pivot. Anything added here must be a real route.
+    const LIVE_ROUTES = ['/leagues', '/predict', '/accuracy', '/simulator', '/about']
+    render(<Footer />)
+    for (const link of screen.getAllByRole('link')) {
+      expect(LIVE_ROUTES).toContain(link.getAttribute('href'))
+    }
   })
 
   it('displays copyright information', () => {
@@ -31,8 +41,13 @@ describe('Footer', () => {
     expect(screen.queryByRole('link', { name: /ESPN/i })).not.toBeInTheDocument()
   })
 
-  it('displays educational disclaimer', () => {
+  it('states the honest disclaimer, not the retired educational one', () => {
+    // The pivot made this a betting-adjacent product, so "educational and
+    // entertainment purposes only" became untrue rather than cautious.
     render(<Footer />)
-    expect(screen.getByText(/For educational and entertainment purposes only/i)).toBeInTheDocument()
+    expect(screen.getByText(/Probability estimates, not advice/i)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/educational and entertainment/i),
+    ).not.toBeInTheDocument()
   })
 })

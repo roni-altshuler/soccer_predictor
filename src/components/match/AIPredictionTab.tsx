@@ -13,7 +13,6 @@ import {
   X,
 } from 'lucide-react'
 
-import { BoardroomPanel } from '@/components/prediction/Boardroom'
 import {
   PredictionResult as PredictionResultViz,
   type PredictionPayload,
@@ -121,7 +120,6 @@ export function AIPredictionTab({
   return (
     <div className="flex flex-col gap-4">
       {body}
-      <BoardroomPanel matchId={matchId} />
     </div>
   )
 }
