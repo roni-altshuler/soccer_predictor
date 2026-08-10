@@ -1729,10 +1729,10 @@
   },
   {
    "competition_id": "uefa.champions",
-   "coverage": 0.9729,
+   "coverage": 0.9726,
    "covered": 3267,
    "gender": "M",
-   "matches": 3358,
+   "matches": 3359,
    "name": "UEFA Champions League",
    "seasons": [
     {
@@ -1916,16 +1916,16 @@
      "with_events": 180
     },
     {
-     "coverage": 1.0,
+     "coverage": 0.9947,
      "covered": 188,
-     "matches": 188,
+     "matches": 189,
      "season": 2025,
-     "uncovered": 0,
+     "uncovered": 1,
      "verified_empty": 8,
      "with_events": 180
     }
    ],
-   "uncovered": 91,
+   "uncovered": 92,
    "verified_empty": 197,
    "with_events": 3070
   },
@@ -2123,10 +2123,10 @@
   },
   {
    "competition_id": "uefa.europa",
-   "coverage": 0.9576,
+   "coverage": 0.9574,
    "covered": 4177,
    "gender": "M",
-   "matches": 4362,
+   "matches": 4363,
    "name": "UEFA Europa League",
    "seasons": [
     {
@@ -2274,16 +2274,16 @@
      "with_events": 183
     },
     {
-     "coverage": 1.0,
+     "coverage": 0.9947,
      "covered": 188,
-     "matches": 188,
+     "matches": 189,
      "season": 2025,
-     "uncovered": 0,
+     "uncovered": 1,
      "verified_empty": 6,
      "with_events": 182
     }
    ],
-   "uncovered": 185,
+   "uncovered": 186,
    "verified_empty": 238,
    "with_events": 3939
   },
@@ -2602,13 +2602,13 @@
    "with_events": 933
   }
  ],
- "generated_at": "2026-08-08T09:20:53+00:00",
+ "generated_at": "2026-08-10T10:37:32+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4378,
   "covered": 35463,
-  "matches": 80997,
-  "uncovered": 45534,
+  "matches": 80999,
+  "uncovered": 45536,
   "verified_empty": 2302,
   "with_events": 33161
  }
