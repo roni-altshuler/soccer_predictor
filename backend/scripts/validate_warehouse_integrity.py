@@ -178,9 +178,17 @@ class CheckResult:
 
 
 class IntegrityValidator:
-    def __init__(self, warehouse: Warehouse, *, strict: bool = False):
+    def __init__(self, warehouse: Warehouse, *, strict: bool = False,
+                 min_season: Optional[int] = None):
         self.wh = warehouse
         self.strict = strict
+        # Season-shape checks below this are skipped. Upstream history is
+        # genuinely partial before 2005 — football-data.co.uk starts there, and
+        # ESPN later still for some leagues — so "eng.1 2003: 14 rows, expected
+        # ~380" is a report that the season was never ingested, not that the
+        # warehouse is corrupt. Conflating the two makes the guard cry wolf on
+        # something no repair can fix, which is how a guard stops being read.
+        self.min_season = min_season
         self.results: List[CheckResult] = []
 
     def _q(self, sql: str, args: Tuple = ()) -> List:
@@ -202,6 +210,8 @@ class IntegrityValidator:
             tuple(LEAGUE_SIZE),
         )
         failures, checked = [], 0
+        if self.min_season is not None:
+            rows = [r for r in rows if r["season"] >= self.min_season]
         for r in rows:
             sizes = LEAGUE_SIZE[r["competition_id"]]
             expected = sizes.get(str(r["season"]), sizes["default"])
@@ -460,6 +470,8 @@ class IntegrityValidator:
         current_season = int(latest[:4]) - (0 if latest[5:7] >= "08" else 1) if latest else 0
 
         failures, truncated = [], []
+        if self.min_season is not None:
+            rows = [r for r in rows if r["season"] >= self.min_season]
         for r in rows:
             if r["season"] >= current_season:
                 continue  # in-progress season is legitimately short
@@ -698,6 +710,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--db", type=Path, default=WAREHOUSE_PATH)
     parser.add_argument("--strict", action="store_true", help="Treat coverage warnings as failures.")
     parser.add_argument("--json", type=Path, help="Write the full report here.")
+    parser.add_argument(
+        "--min-season", type=int, default=None,
+        help="Skip season-shape checks before this season. Upstream history is "
+             "partial before 2005, so those seasons report as short forever. "
+             "Use 2005 to check only what a repair could actually fix.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="List every failure.")
     args = parser.parse_args(argv)
 
@@ -710,7 +728,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         if wh._conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0] == 0:  # noqa: SLF001
             print("warehouse contains no matches", file=sys.stderr)
             return 2
-        results = IntegrityValidator(wh, strict=args.strict).run_all()
+        results = IntegrityValidator(
+            wh, strict=args.strict, min_season=args.min_season
+        ).run_all()
     finally:
         wh.close()
 

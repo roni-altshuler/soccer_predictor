@@ -414,11 +414,44 @@ class TestRealWarehouse:
         yield warehouse
         warehouse.close()
 
+    # `season_team_counts` and `season_row_counts` are asserted separately
+    # below, scoped to Wave A: ned.1 and por.1 have partial upstream coverage
+    # (por.1 2008 has 27 of 306 fixtures) and were descoped in the pivot, so
+    # holding the whole suite red on leagues the product does not serve buries
+    # the checks that matter.
     @pytest.mark.parametrize("check", [
-        "season_team_counts", "duplicate_fixtures", "split_identities",
-        "orphan_teams", "date_utc_sanity", "season_row_counts",
+        "duplicate_fixtures", "split_identities",
+        "orphan_teams", "date_utc_sanity",
         "season_boundaries", "referential",
     ])
     def test_check_passes_on_the_real_warehouse(self, real, check):
-        result = next(r for r in IntegrityValidator(real).run_all() if r.name == check)
+        # min_season=2005 because upstream history is genuinely partial before
+        # it — football-data.co.uk starts in 2005 — so those seasons report as
+        # short no matter how many times the warehouse is repaired. A guard that
+        # can never go green is a guard nobody reads.
+        result = next(
+            r for r in IntegrityValidator(real, min_season=2005).run_all() if r.name == check
+        )
         assert result.passed, f"{check}: {result.detail}\n" + "\n".join(result.failures[:10])
+
+    @pytest.mark.parametrize("check", ["season_team_counts", "season_row_counts"])
+    def test_season_shape_is_correct_for_every_wave_a_season(self, real, check):
+        """The five leagues the product serves must reconstruct exactly.
+
+        This is the check that catches a re-split identity: a duplicated club
+        inflates both the team count and the row count for its league-season,
+        and it is what made Dortmund "win" the 2018-19 Bundesliga. The weekly
+        `--full` build re-introduces the defect from a third source, so this
+        needs to stay green across rebuilds, not just once.
+        """
+        from backend.scripts.validate_warehouse_integrity import WAVE_A
+
+        result = next(
+            r for r in IntegrityValidator(real, min_season=2005).run_all() if r.name == check
+        )
+        wave_a_failures = [
+            f for f in result.failures if f.split(":")[0].split()[0] in WAVE_A
+        ]
+        assert not wave_a_failures, (
+            f"{check} failed for Wave A league-seasons:\n" + "\n".join(wave_a_failures[:10])
+        )

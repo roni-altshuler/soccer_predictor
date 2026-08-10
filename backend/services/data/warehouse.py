@@ -946,6 +946,13 @@ class Warehouse:
             self._conn.execute("DELETE FROM teams WHERE team_id = ?", (src_team_id,))
         return counts
 
+    def _existing_tables(self, wanted: set) -> set:
+        """Which of `wanted` actually exist in this database."""
+        rows = self._conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+        return {r["name"] for r in rows} & wanted
+
     def _repoint_player_tables(self, src_team_id: int, dst_team_id: int) -> Dict[str, int]:
         """Move players, appearances and lineups off a club about to be deleted.
 
@@ -964,18 +971,30 @@ class Warehouse:
         """
         counts: Dict[str, int] = {}
 
-        cur = self._conn.execute(
-            "UPDATE player_match_stats SET team_id = ? WHERE team_id = ?",
-            (dst_team_id, src_team_id),
-        )
-        counts["player_match_stats"] = cur.rowcount
+        # These tables arrived after `matches` and `teams`, so a warehouse
+        # built from an older schema — or a minimal fixture in a test — may not
+        # have them. Absent means nothing to repoint, not a failure.
+        present = self._existing_tables({"players", "player_match_stats", "lineups"})
+        if not present:
+            return counts
 
-        cur = self._conn.execute(
-            "UPDATE OR IGNORE lineups SET team_id = ? WHERE team_id = ?",
-            (dst_team_id, src_team_id),
-        )
-        counts["lineups"] = cur.rowcount
-        self._conn.execute("DELETE FROM lineups WHERE team_id = ?", (src_team_id,))
+        if "player_match_stats" in present:
+            cur = self._conn.execute(
+                "UPDATE player_match_stats SET team_id = ? WHERE team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["player_match_stats"] = cur.rowcount
+
+        if "lineups" in present:
+            cur = self._conn.execute(
+                "UPDATE OR IGNORE lineups SET team_id = ? WHERE team_id = ?",
+                (dst_team_id, src_team_id),
+            )
+            counts["lineups"] = cur.rowcount
+            self._conn.execute("DELETE FROM lineups WHERE team_id = ?", (src_team_id,))
+
+        if "players" not in present:
+            return counts
 
         cur = self._conn.execute(
             "UPDATE OR IGNORE players SET current_team_id = ? WHERE current_team_id = ?",
@@ -1007,6 +1026,8 @@ class Warehouse:
                 )
                 continue
             for table in ("player_match_stats", "lineups"):
+                if table not in present:
+                    continue
                 self._conn.execute(
                     f"UPDATE OR IGNORE {table} SET player_id = ? WHERE player_id = ?",
                     (survivor["player_id"], dup["player_id"]),
@@ -1169,11 +1190,13 @@ class Warehouse:
             # set makes the DELETE below raise FOREIGN KEY constraint failed.
             # Detach rather than delete: the club is going away, the player is
             # not.
-            self._conn.execute(
-                f"UPDATE players SET current_team_id = NULL "
-                f"WHERE current_team_id IN ({placeholders})",
-                orphans,
-            )
+            present = self._existing_tables({"players", "player_match_stats", "lineups"})
+            if "players" in present:
+                self._conn.execute(
+                    f"UPDATE players SET current_team_id = NULL "
+                    f"WHERE current_team_id IN ({placeholders})",
+                    orphans,
+                )
             # Appearances and lineups can also still point at an orphan, and
             # such a row is incoherent by definition: it credits a player to a
             # club that is not one of the two sides in that match. Measured on
@@ -1183,6 +1206,8 @@ class Warehouse:
             # rows kept the dead id. They carry no recoverable information, so
             # they go with the club.
             for table in ("player_match_stats", "lineups"):
+                if table not in present:
+                    continue
                 self._conn.execute(
                     f"DELETE FROM {table} WHERE team_id IN ({placeholders})", orphans
                 )
