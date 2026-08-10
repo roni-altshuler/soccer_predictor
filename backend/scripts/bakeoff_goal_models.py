@@ -8,9 +8,18 @@ and blends can be computed after the fact from the stored vectors.
 Walk-forward: for each league and each test season, fit on every season strictly
 before it. Nothing about the test season reaches the fit.
 
-    .venv/bin/python -m backend.scripts.bakeoff_goal_models --leagues eng.1,esp.1
+    python3 -m backend.scripts.bakeoff_goal_models --leagues eng.1,esp.1
 
 Writes backend/data/diagnostics/goal_model_bakeoff.json.
+
+**`--bayesian` is not runnable over the full corpus.** Measured 2026-08-10 on
+the repaired warehouse: the very first and *cheapest* fold (eng.1 2007, three
+training seasons) took `BayesianGoalModel` **2,345 seconds** at penaltyblog's
+default sampler — 4 chains x 2,000 draws plus 1,000 burn. Full Wave A is 97
+folds and the training set grows to 20 seasons, so the full run is on the order
+of a hundred hours, not the ninety minutes it was first given. Use
+`--min-season` and `--mcmc-*` to buy a scoped answer, and state the scope
+alongside the numbers.
 """
 from __future__ import annotations
 
@@ -116,7 +125,7 @@ def metrics(vectors: list[list[float]], outcomes: list[int]) -> dict:
     }
 
 
-def fit_predict(model_cls, train, test):
+def fit_predict(model_cls, train, test, fit_kwargs: dict | None = None):
     """Fit one model on `train`, return {fixture_index: prob_vector} for `test`."""
     dates = np.array([np.datetime64(r[1][:10]) for r in train])
     age = (dates.max() - dates).astype("timedelta64[D]").astype(float)
@@ -129,7 +138,7 @@ def fit_predict(model_cls, train, test):
         teams_away=[r[3] for r in train],
         weights=weights,
     )
-    model.fit()
+    model.fit(**(fit_kwargs or {}))
 
     out = {}
     for i, row in enumerate(test):
@@ -155,6 +164,17 @@ def main() -> int:
                     help="include the Bayesian and hierarchical Bayesian goal models "
                          "(minutes per league-season — they fit by sampling)")
     ap.add_argument("--min-train", type=int, default=500)
+    ap.add_argument("--min-season", type=int, default=None,
+                    help="skip test seasons before this one. The samplers cost minutes "
+                         "to hours per fold, so a scoped window is often the only "
+                         "affordable way to run them at all.")
+    ap.add_argument("--mcmc-samples", type=int, default=None,
+                    help="MCMC draws per chain for the Bayesian models "
+                         "(penaltyblog defaults: 2000 / 3000)")
+    ap.add_argument("--mcmc-burn", type=int, default=None,
+                    help="MCMC burn-in draws to discard (defaults: 1000 / 1500)")
+    ap.add_argument("--mcmc-chains", type=int, default=None,
+                    help="parallel MCMC chains (default: 4)")
     ap.add_argument("--output", default=str(OUT))
     args = ap.parse_args()
 
@@ -163,6 +183,19 @@ def main() -> int:
         models.update(SLOW_MODELS)
     if args.bayesian:
         models.update(BAYESIAN_MODELS)
+
+    # Sampler settings apply only to the models that sample. Passing n_samples to
+    # a closed-form fit is a TypeError, so key the kwargs by model name.
+    mcmc: dict = {}
+    if args.mcmc_samples is not None:
+        mcmc["n_samples"] = args.mcmc_samples
+    if args.mcmc_burn is not None:
+        mcmc["burn"] = args.mcmc_burn
+    if args.mcmc_chains is not None:
+        mcmc["n_chains"] = args.mcmc_chains
+    fit_kwargs = {name: (mcmc if name in BAYESIAN_MODELS else {}) for name in models}
+    if mcmc:
+        print(f"sampler override for {sorted(BAYESIAN_MODELS)}: {mcmc}", file=sys.stderr)
 
     if not DB.exists() or DB.stat().st_size == 0:
         print("warehouse missing or empty — nothing to score", file=sys.stderr)
@@ -175,6 +208,7 @@ def main() -> int:
     pooled: dict[str, list[list[float]]] = defaultdict(list)
     outcomes: list[int] = []
     per_league: dict[str, dict] = {}
+    folds_scored = 0
 
     for comp in comps:
         rows = load(conn, comp)
@@ -183,6 +217,8 @@ def main() -> int:
         lg_out: list[int] = []
 
         for test_season in seasons[3:]:
+            if args.min_season is not None and int(test_season) < args.min_season:
+                continue
             train = [r for r in rows if r[0] < test_season]
             test = [r for r in rows if r[0] == test_season]
             if len(train) < args.min_train or not test:
@@ -192,7 +228,7 @@ def main() -> int:
             for name, cls in models.items():
                 t0 = time.time()
                 try:
-                    got[name] = fit_predict(cls, train, test)
+                    got[name] = fit_predict(cls, train, test, fit_kwargs.get(name))
                 except Exception as exc:  # noqa: BLE001
                     print(f"  ! {comp} {test_season} {name}: {exc}", file=sys.stderr)
                     got[name] = {}
@@ -204,6 +240,8 @@ def main() -> int:
 
             # Keep only fixtures every model priced — exact pairing.
             common = set.intersection(*(set(v) for v in got.values())) if got else set()
+            if common:
+                folds_scored += 1
             for i in sorted(common):
                 _s, _d, _h, _a, hs, a_s, oh, od, oa = test[i]
                 lg_out.append(0 if hs > a_s else (2 if a_s > hs else 1))
@@ -248,9 +286,21 @@ def main() -> int:
         print(f"{name:<22}{m['n']:>7}{m['brier']:>9.4f}{m['log_loss']:>10.4f}"
               f"{m['rps']:>8.4f}{m['accuracy']:>8.4f}{gap:>+9.4f}")
 
+    # The scope travels with the numbers. A Bayesian run is affordable only on a
+    # window, and a windowed Brier read as a full-corpus one is a false claim.
+    scope = {
+        "leagues": comps,
+        "min_season": args.min_season,
+        "min_train": args.min_train,
+        "models": sorted(models),
+        "folds_scored": folds_scored,
+        "sampler_overrides": mcmc or None,
+    }
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps({"overall": overall, "per_league": per_league}, indent=2))
+    out_path.write_text(
+        json.dumps({"scope": scope, "overall": overall, "per_league": per_league}, indent=2)
+    )
     print(f"\nwrote {out_path}")
     return 0
 
