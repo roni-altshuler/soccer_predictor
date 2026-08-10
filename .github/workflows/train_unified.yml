@@ -24,7 +24,10 @@ concurrency:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # 180 left no room once the repair+verify steps went in: refresh 40 +
+    # repair 25 + train M 75 + train F 30 is already 170 before the install,
+    # release download, promotion gates and publish.
+    timeout-minutes: 210
 
     steps:
       - name: Checkout repository
@@ -91,7 +94,7 @@ jobs:
       # none. A single pass leaves 1,498 defects behind, because each merge
       # exposes duplicates that expose further split identities.
       - name: Repair the warehouse to a fixpoint
-        timeout-minutes: 30
+        timeout-minutes: 25
         run: python -m backend.scripts.repair_warehouse --fixpoint
 
       # Blocks training on corrupt data instead of discovering it in a
