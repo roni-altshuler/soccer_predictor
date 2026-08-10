@@ -3,18 +3,24 @@
 import { useEffect, useState } from 'react'
 
 /**
- * The measured overconfidence of the season projections, printed next to them.
+ * The measured overconfidence of the season projections — and the note that it
+ * is now corrected for rather than merely disclosed.
  *
- * The Monte Carlo will happily say a team is 86% down. The matchday-by-matchday
- * backtest says that when this model has said ~85%, it happened ~78% of the
- * time. Both numbers are real; showing the first without the second is the
- * failure mode the standing rule exists to prevent — displayed confidence must
- * never exceed measured confidence.
+ * This used to be the whole remedy: the Monte Carlo said 86%, the backtest said
+ * that band lands at 78%, and the page printed both and left the reader to
+ * reconcile them. Disclosure is the right answer for an error you cannot fix.
+ * This one is fixable — `backend/scripts/fit_projection_calibrator.py` turns
+ * the same measurement into an isotonic map, and
+ * `src/lib/simulation/projectionCalibration.ts` applies it before the table
+ * renders.
  *
- * It is deliberately a sentence and not a chart. The reader needs the size of
- * the miss and the sample behind it, and then to get back to the table. The
- * numbers come from the artifact rather than JSX so they cannot drift away
- * from the backtest that produced them.
+ * The note stays, for two reasons. The reader should know a correction is
+ * being applied and how big it was, and the backtest deliberately keeps
+ * scoring the RAW simulator — so this number remains a live measure of the
+ * error being corrected, not a self-congratulatory score of the correction.
+ *
+ * It is deliberately a sentence and not a chart. The numbers come from the
+ * artifact rather than JSX so they cannot drift away from the backtest.
  */
 
 interface Bin {
@@ -64,17 +70,22 @@ export function ProjectionCalibrationNote() {
       <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
         {data.overstates ? (
           <>
-            These projections run <strong className="text-[var(--text-primary)]">high at the
-            confident end</strong>. Across{' '}
-            <span className="font-mono tabular-nums">{data.n?.toLocaleString()}</span> scored
-            projections, when this model said{' '}
+            The raw simulation runs{' '}
+            <strong className="text-[var(--text-primary)]">high at the confident end</strong>:
+            across <span className="font-mono tabular-nums">{data.n?.toLocaleString()}</span>{' '}
+            scored projections, when it said{' '}
             <span className="font-mono tabular-nums">{pct(w.stated)}</span> the thing happened{' '}
             <span className="font-mono tabular-nums">{pct(w.happened)}</span> of the time
             &mdash; <span className="font-mono tabular-nums">{Math.abs(Math.round(w.gap * 100))} points</span>{' '}
             short, over <span className="font-mono tabular-nums">{w.n.toLocaleString()}</span>{' '}
-            cases in that band. Read anything above{' '}
-            <span className="font-mono tabular-nums">{pct(w.range[0])}</span> as a little less
-            certain than it looks.
+            cases in that band.{' '}
+            <strong className="text-[var(--text-primary)]">
+              The percentages above have that correction applied.
+            </strong>{' '}
+            Each one is mapped through the curve this backtest measured, then rescaled so the
+            column still adds up to one champion and three relegations. The backtest keeps
+            scoring the uncorrected simulator, so this number stays an honest measure of what
+            is being corrected rather than a score of the correction itself.
           </>
         ) : (
           <>

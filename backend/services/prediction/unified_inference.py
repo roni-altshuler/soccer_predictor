@@ -256,7 +256,19 @@ _LIVE_BLOCK_CHECKS: Tuple[Tuple[str, str], ...] = (
 _dead_block_warned: set = set()
 
 
-def _warn_on_dead_feature_blocks(dense: List[float], match_id: int) -> None:
+class DeadFeatureBlock(RuntimeError):
+    """A feature block the model was trained on is all-zero at serve time."""
+
+    def __init__(self, label: str, n_features: int, match_id: int) -> None:
+        self.label = label
+        self.n_features = n_features
+        super().__init__(
+            f"feature block {label!r} ({n_features} features) is all-zero at serve "
+            f"time on match {match_id}; refusing to serve a degraded prediction"
+        )
+
+
+def _check_live_feature_blocks(dense: List[float], match_id: int) -> None:
     """
     Catch the class of bug that cost this project nine months of accuracy.
 
@@ -266,23 +278,32 @@ def _warn_on_dead_feature_blocks(dense: List[float], match_id: int) -> None:
     for 96.1% of rows, served as 0.0 on every live prediction, dropping Brier
     from .5801 to .6561 — below the constant base rate.
 
-    Warns once per block per process rather than per prediction, so a genuinely
-    absent block does not drown the logs.
+    THIS RAISES RATHER THAN WARNING, and the change is the point. The original
+    version logged and served the degraded prediction anyway. A warning is what
+    this project already had, in a different form, for the nine consecutive
+    weeks that `training_drift_*.json` recorded `"status": "regression"` while
+    the gate promoted every model regardless. Nobody reads a log line that
+    accompanies a plausible-looking number.
+
+    The caller falls back to Dixon-Coles, which is the serving default anyway
+    and is measured. Serving nothing from the net is strictly better than
+    serving a prediction we can prove is missing an input it was fitted on.
     """
     by_name = dict(zip(FEATURE_NAMES, dense))
     for label, prefix in _LIVE_BLOCK_CHECKS:
         block = [v for name, v in by_name.items() if name.startswith(prefix)]
         if not block:
             continue  # block is not in the served vector at all — by design
-        if all(v == 0.0 for v in block) and label not in _dead_block_warned:
-            _dead_block_warned.add(label)
-            logger.warning(
-                "Feature block %r is all-zero at serve time (%d features, first "
-                "seen on match %s). If the model was trained on non-zero values "
-                "for this block, every prediction is degraded. See "
-                "docs/PIVOT_2026-08.md §4a.",
-                label, len(block), match_id,
-            )
+        if all(v == 0.0 for v in block):
+            if label not in _dead_block_warned:
+                _dead_block_warned.add(label)
+                logger.error(
+                    "Feature block %r is all-zero at serve time (%d features, "
+                    "first seen on match %s). The net will not serve while this "
+                    "holds; Dixon-Coles takes over. See docs/PIVOT_2026-08.md §4a.",
+                    label, len(block), match_id,
+                )
+            raise DeadFeatureBlock(label, len(block), match_id)
 
 
 def predict_one(
@@ -323,7 +344,12 @@ def predict_one(
         phase=phase, referee_id=referee_id,
     )
     built = builder.build_from_row(row)
-    _warn_on_dead_feature_blocks(built.dense, match_id)
+    try:
+        _check_live_feature_blocks(built.dense, match_id)
+    except DeadFeatureBlock:
+        # Returning None is the documented "fall back to the measured baseline"
+        # signal this function already uses for a missing artifact.
+        return None
 
     dense = np.asarray(built.dense, dtype=np.float32).reshape(1, -1)
     dense = store.scaler.transform(dense).astype(np.float32)

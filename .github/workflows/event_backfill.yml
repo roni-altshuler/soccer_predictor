@@ -119,22 +119,20 @@ jobs:
             --season "$SEASON" --since "$SINCE" --sleep 0.5 --limit 400
 
       - name: Regenerate committed artifacts
+        # The pivot (2026-08-08) deleted build_rarity, build_justice,
+        # build_match2vec and export_engine_kernel along with the features they
+        # fed. This step kept calling them and the job failed every day from
+        # then on. What survives is the part that serves the prediction engine.
         run: |
-          python -m backend.scripts.build_rarity
-          python -m backend.scripts.build_justice
           python -m backend.scripts.build_event_coverage
           python -m backend.scripts.train_dixon_coles
           # Gate Dixon-Coles into the per-league serving policy: it takes over a
           # league only where it clears the always-home floor AND beats the
           # incumbent net (torch-free — pure NumPy, so it runs here). This is
-          # what stops a parity league (MLS/NWSL) from being served a model that
-          # loses to picking the home team.
+          # what stops a parity league from being served a model that loses to
+          # picking the home team.
           python -m backend.scripts.build_statistical_selection
           python -m backend.scripts.build_sim_priors
-          python -m backend.scripts.build_match2vec
-          # Torch-free by design: re-uses the committed kernel's weights and
-          # refreshes only the walk-forward anchors from the warehouse.
-          python -m backend.scripts.export_engine_kernel --weights kernel
 
       - name: Coverage regression guard
         # matches_covered may only grow: the backfill adds coverage rows and
@@ -142,12 +140,16 @@ jobs:
         # that lost its event history (e.g. the release asset was rebuilt
         # from scratch) — committing would clobber good artifacts with a
         # thin corpus. Fail BEFORE the publish/commit steps.
+        #
+        # Reads the event-coverage summary directly. It used to read the rarity
+        # artifact, which measured the same corpus only as a side effect of
+        # being built from it — and which no longer exists.
         run: |
-          NEW=$(python -c "import json; print(json.load(open('backend/data/rarity/state_outcomes.json'))['matches_covered'])")
-          OLD=$(git show HEAD:backend/data/rarity/state_outcomes.json | python -c "import json,sys; print(json.load(sys.stdin)['matches_covered'])")
+          NEW=$(python -c "import json; print(json.load(open('backend/data/events/coverage.json'))['totals']['covered'])")
+          OLD=$(git show HEAD:backend/data/events/coverage.json | python -c "import json,sys; print(json.load(sys.stdin)['totals']['covered'])")
           echo "matches_covered: HEAD=$OLD -> new=$NEW"
           if [ "$NEW" -lt "$OLD" ]; then
-            echo "::error::Rarity corpus regressed ($OLD -> $NEW covered matches). The release warehouse is missing event history — restore a warehouse that contains match_event_coverage before re-running."
+            echo "::error::Event corpus regressed ($OLD -> $NEW covered matches). The release warehouse is missing event history — restore a warehouse that contains match_event_coverage before re-running."
             exit 1
           fi
 
@@ -163,11 +165,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add backend/data/rarity/ backend/data/justice/ \
-                  backend/data/events/ backend/data/dixon_coles_params.json \
+          git add backend/data/events/ backend/data/dixon_coles_params.json \
                   backend/data/models/model_selection.json \
-                  backend/data/sim_priors.json backend/data/match2vec/ \
-                  backend/data/engine/
+                  backend/data/sim_priors.json
 
           # Every builder stamps generated_at; timestamp churn alone is not
           # a change worth a daily commit.
@@ -176,49 +176,11 @@ jobs:
           else
             STATS=$(git diff --cached --stat | tail -1)
             MSG="chore: event backfill + artifact refresh [automated]"
-            MSG="$MSG"$'\n\n'"Incremental timeline backfill; rarity, justice and coverage artifacts; baseline params."
+            MSG="$MSG"$'\n\n'"Incremental timeline backfill; event coverage; Dixon-Coles params, serving policy and simulator priors."
             MSG="$MSG"$'\n'"$STATS"
             git commit -m "$MSG"
             # The 3x-daily prediction bot races this push. --autostash keeps
             # an incidental unstaged file from aborting the rebase.
-            git pull --rebase --autostash origin main
-            git push
-          fi
-
-      # The debate step sits AFTER the data commit on purpose: it depends on a
-      # metered external free tier, so it must never be able to block the core
-      # pipeline's artifacts from landing. A GENUINE failure (a bug, an
-      # unexpected provider error) still fails the run visibly — but the data is
-      # already on main. Running out of the day's free quota is NOT a failure:
-      # the script detects sustained 429s, ships whatever partial artifact it
-      # built, and exits 0 (see build_boardroom's BudgetGuard). `--max-minutes`
-      # is a wall-clock backstop; it self-terminates well inside timeout-minutes
-      # so a stall can never turn into a red 30-minute job timeout.
-      - name: Generate boardroom debates
-        # No-ops (exit 0, nothing written) until a provider key secret is
-        # configured — the artifact simply starts appearing once it exists.
-        timeout-minutes: 30
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          # Flash-Lite: the debate text is verifier-guarded narration over
-          # facts we supply, so the smallest model suffices — and its free-tier
-          # rate budget is far roomier than full Flash's.
-          GEMINI_MODEL: gemini-2.5-flash-lite
-        run: |
-          python -m backend.scripts.build_boardroom --max-minutes 20
-
-      - name: Commit boardroom artifact
-        run: |
-          if [ ! -d backend/data/boardroom ]; then
-            echo "No boardroom artifact — nothing to commit"
-            exit 0
-          fi
-          git add backend/data/boardroom/
-          if git diff --cached --quiet -I'"generated_at":'; then
-            echo "No substantive debate changes — skipping commit"
-          else
-            git commit -m "chore: boardroom debates [automated]"
             git pull --rebase --autostash origin main
             git push
           fi

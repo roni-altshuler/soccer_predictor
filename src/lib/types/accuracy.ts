@@ -125,6 +125,8 @@ export interface AccuracySummaryResponse {
   recent_predictions: RecentPredictionSummary[]
 }
 
+import type { ScopeCounts } from '@/lib/predictionScope'
+
 /** Confidence-bucket counts on the flat /accuracy endpoint. */
 export interface ConfidenceBucketRollup {
   total: number
@@ -162,4 +164,10 @@ export interface FlatAccuracyResponse
     medium: ConfidenceBucketRollup
     low: ConfidenceBucketRollup
   }
+  /**
+   * What the scope filters removed, so the surface can state its own
+   * denominator. A record covering 33 of 1,244 stored picks is honest only if
+   * it says which 33 and why the rest are absent.
+   */
+  scope?: ScopeCounts
 }

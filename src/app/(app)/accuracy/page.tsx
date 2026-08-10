@@ -8,6 +8,7 @@ import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
 import { MarketBenchmarkPanel } from '@/components/accuracy/MarketBenchmarkPanel'
 import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
+import { ScopeNote } from '@/components/accuracy/ScopeNote'
 import { samplePhrase } from '@/components/accuracy/accuracyMetrics'
 import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
@@ -126,7 +127,9 @@ export default function AccuracyPage() {
           body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
         />
       ) : settled === 0 ? (
-        <EmptyState
+        <div className="space-y-3">
+          <ScopeNote scope={metrics?.scope} />
+          <EmptyState
           heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
           body={
             total > 0 ? (
@@ -135,20 +138,15 @@ export default function AccuracyPage() {
                 and breakdowns appear as soon as the first match finishes.
               </>
             ) : (
-              <>
-                No picks recorded for {gender === 'women' ? "women's" : "men's"} football yet. Try
-                one on{' '}
-                <a
-                  className="font-semibold text-[var(--accent-primary)] hover:underline"
-                  href="/predict"
-                >
-                  AI predict
-                </a>
-                .
+                            <>
+                Nothing in scope has been settled yet. The record covers the model serving today
+                in the five covered leagues, and that intersection is currently empty &mdash; see
+                the note above for what is being held out and why.
               </>
             )
           }
-        />
+          />
+        </div>
       ) : (
         <div className="space-y-3">
           <AccuracyHeadline
@@ -177,6 +175,8 @@ export default function AccuracyPage() {
             gap={metrics?.expected_calibration_error ?? null}
             settled={settled}
           />
+
+          <ScopeNote scope={metrics?.scope} />
 
           <AccuracyDeepCuts
             metrics={metrics}

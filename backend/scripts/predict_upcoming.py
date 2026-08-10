@@ -266,13 +266,36 @@ def _predict_dixon_coles(league_key: str, home: str, away: str) -> Optional[Dict
     }
 
 
-# Same leagues as the seed script. Keys are ESPN scoreboard league IDs.
+# Keys are ESPN scoreboard league IDs.
+#
+# WAVE A ONLY. The pivot narrowed the product to the five leagues below, and
+# `src/lib/leagueAccents.ts:WAVE_A_COMPETITION_IDS` is the frontend's copy of
+# this list — but this script kept predicting all nineteen competitions three
+# times a day and committing them. On 2026-08-10 that was 65 of 94 rows in the
+# current file for competitions no page renders, and it was those rows that
+# made up 43.7% of the sample behind the published accuracy number.
+#
+# Predicting a league the product does not show is not free. It commits
+# artifacts nobody reads, it burns pipeline minutes, and every one of those
+# rows is a prediction with no measured record standing next to a number that
+# implies one.
+#
+# The out-of-scope entries are kept below, commented, because they are the
+# Wave B and Wave C list — each returns when its wave's evidence gate is met,
+# not before. See docs/PIVOT_2026-08.md §5.
 LEAGUES = {
     "eng.1": "Premier League",
     "esp.1": "La Liga",
     "ger.1": "Bundesliga",
     "ita.1": "Serie A",
     "fra.1": "Ligue 1",
+}
+
+# Wave B (MLS) and Wave C (continental + international), plus the women's
+# universe dropped in the pivot. Restoring one means moving it into LEAGUES
+# above AND adding it to WAVE_A_COMPETITION_IDS on the frontend, together, so
+# the two can never disagree about what is covered.
+DEFERRED_LEAGUES = {
     "usa.1": "MLS",
     "uefa.champions": "Champions League",
     "uefa.europa": "Europa League",
@@ -282,8 +305,6 @@ LEAGUES = {
     "fifa.world": "FIFA World Cup",
     "uefa.euro": "UEFA European Championship",
     "conmebol.america": "Copa America",
-    # Women's universe — first-class in the live pipeline. ESPN IDs from
-    # WOMEN_COMPETITIONS in backend/services/data/espn_loader.py.
     "usa.nwsl": "NWSL",
     "eng.w.1": "FA Women's Super League",
     "uefa.wchampions": "UEFA Women's Champions League",
@@ -541,22 +562,22 @@ def is_derby_fixture(home_team: str, away_team: str) -> float:
 
 
 def load_learned_adjustments() -> Dict:
-    """Load parameter adjustments from train_feedback.py output."""
-    if not ADJUSTMENTS_FILE.exists():
-        return {}
-    try:
-        with open(ADJUSTMENTS_FILE) as f:
-            data = json.load(f)
-        suggestions = data.get("suggested_params", {})
-        applied = {}
-        for league, s in suggestions.items():
-            if s.get("changed"):
-                applied[league] = s["suggested"]
-        if applied:
-            logger.info(f"Loaded learned adjustments for {len(applied)} leagues")
-        return applied
-    except Exception:
-        return {}
+    """Returns nothing. Kept so callers need no change.
+
+    This used to apply `model_adjustments.json`'s `suggested_params` on top of
+    `league_params.json` at serve time — a SECOND drift path into the serving
+    parameters, running the same unconverging nudge-and-clamp arithmetic as the
+    first, and overriding the file that is now fitted from data.
+
+    `league_params.json` is the single source of truth and is measured from
+    completed matches by `backend.scripts.fit_league_params`. An override that
+    is never scored against anything does not get to sit on top of it.
+
+    `train_feedback` still reports per-league accuracy diagnostics — predicted
+    versus actual draw rate and so on — which remain worth reading. It just no
+    longer turns them into serving parameters behind the model's back.
+    """
+    return {}
 
 
 def _load_model_tuning() -> Dict:

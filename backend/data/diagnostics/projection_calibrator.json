@@ -1,0 +1,184 @@
+{
+  "artifact": "projection_calibrator",
+  "version": 1,
+  "generated_at": "2026-08-10T07:07:13.617391+00:00",
+  "generator": "backend/scripts/fit_projection_calibrator.py",
+  "source": "season_projection_summary.json",
+  "source_generated_at": "2026-08-08T12:01:12.196948+00:00",
+  "method": "isotonic regression of observed frequency on stated probability, weighted by bin population, anchored at (0,0) and (1,1)",
+  "how_to_apply": "piecewise-linear interpolation between knots, then rescale the league's calibrated values so they sum to renormalise_to",
+  "in_sample_warning": "ece_after_in_sample is fitted on the same bins it is scored on and is therefore optimistic; the honest test is the next backtest run, which scores the RAW simulator output",
+  "metrics": {
+    "title": {
+      "knots": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.002359,
+          0.0036
+        ],
+        [
+          0.143427,
+          0.127389
+        ],
+        [
+          0.243956,
+          0.225275
+        ],
+        [
+          0.351359,
+          0.382812
+        ],
+        [
+          0.443867,
+          0.457143
+        ],
+        [
+          0.549694,
+          0.459677
+        ],
+        [
+          0.647169,
+          0.686441
+        ],
+        [
+          0.749833,
+          0.733333
+        ],
+        [
+          0.848636,
+          0.781457
+        ],
+        [
+          0.979617,
+          0.976596
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "n": 20324,
+      "ece_before": 0.003262,
+      "ece_after_in_sample": 0.0,
+      "largest_correction": 0.090017,
+      "renormalise_to": 1.0
+    },
+    "relegation": {
+      "knots": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.009647,
+          0.022671
+        ],
+        [
+          0.14445,
+          0.174757
+        ],
+        [
+          0.245439,
+          0.248637
+        ],
+        [
+          0.347246,
+          0.32106
+        ],
+        [
+          0.446986,
+          0.379661
+        ],
+        [
+          0.548091,
+          0.495851
+        ],
+        [
+          0.649116,
+          0.562814
+        ],
+        [
+          0.74752,
+          0.660333
+        ],
+        [
+          0.847864,
+          0.758794
+        ],
+        [
+          0.972089,
+          0.930925
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "n": 20324,
+      "ece_before": 0.022429,
+      "ece_after_in_sample": 0.0,
+      "largest_correction": 0.08907,
+      "renormalise_to": 3.0
+    },
+    "top_4": {
+      "knots": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.008352,
+          0.014476
+        ],
+        [
+          0.142445,
+          0.145251
+        ],
+        [
+          0.247687,
+          0.257188
+        ],
+        [
+          0.345815,
+          0.300429
+        ],
+        [
+          0.44905,
+          0.396985
+        ],
+        [
+          0.54851,
+          0.557423
+        ],
+        [
+          0.651188,
+          0.665672
+        ],
+        [
+          0.751905,
+          0.729805
+        ],
+        [
+          0.848251,
+          0.795567
+        ],
+        [
+          0.985837,
+          0.97316
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "n": 20324,
+      "ece_before": 0.010074,
+      "ece_after_in_sample": 0.0,
+      "largest_correction": 0.052684,
+      "renormalise_to": 4.0
+    }
+  }
+}

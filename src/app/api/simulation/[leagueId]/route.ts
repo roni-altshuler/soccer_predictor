@@ -13,6 +13,8 @@ import {
   type TeamData,
   type WhatIfOutcome,
 } from '@/lib/simulation/leagueMonteCarlo'
+import { loadProjectionCalibrator } from '@/lib/simulation/loadProjectionCalibrator'
+import { calibrateProjection } from '@/lib/simulation/projectionCalibration'
 import { getLeaguePriorPpg, lookupPriorPpg } from '@/lib/simulation/teamPriors'
 import { ESPN_SITE, ESPN_V2 } from '@/lib/espnHost'
 
@@ -334,7 +336,13 @@ export async function GET(
       remainingFixtures,
       fixtureOverride,
     )
-    const standings = detailed.standings
+    // Apply the measured calibration before anything downstream reads the
+    // probabilities. The backtest says this simulator's 85% happens 78% of the
+    // time; that correction used to be printed as a caveat beside the table
+    // and is now applied to it. The mapping is monotone and mass-preserving,
+    // so the ordering and the "exactly one champion" invariant both survive —
+    // `auditProbabilities` below still checks that, on the calibrated numbers.
+    const standings = calibrateProjection(detailed.standings, loadProjectionCalibrator())
     const simDurationMs = Date.now() - simStart
 
     // Observability — record the run + audit probability invariants.

@@ -192,6 +192,376 @@ def merge_identities(wh: Warehouse, *, dry_run: bool) -> Dict[str, int]:
     return {"merged": merged, "skipped": skipped, "matches_moved": matches_moved}
 
 
+def merge_normalised_identities(wh: Warehouse, *, dry_run: bool) -> Dict[str, int]:
+    """Merge clubs whose names normalise identically inside one competition.
+
+    `SPLIT_IDENTITIES` above is hand-verified and therefore permanently behind
+    reality: it was written for the five Wave A leagues on 2026-08-08, so a
+    warehouse carrying more competitions, or a provider that changes a spelling
+    next season, re-splits identities that nobody has listed yet. On the
+    2026-08-10 warehouse the hand list healed 27 clubs and left 74 splits
+    standing — 'Alavés'/'CD Alavés', 'Celta Vigo'/'RC Celta de Vigo' and so on.
+
+    This closes the loop by merging exactly what
+    `validate_warehouse_integrity.check_split_identities` flags in its first
+    pass, reusing that module's own `_norm` so the repair and the guard can
+    never drift apart.
+
+    Two passes, mirroring the validator's own two:
+
+    1. Exact normalised equality — 'Alavés' / 'CD Alavés'. Unambiguous.
+    2. One normalised name a prefix of the other — 'Blackburn' / 'Blackburn
+       Rovers'. This is where genuinely distinct clubs live ('AC Ajaccio' vs
+       'GFC Ajaccio', 'Serbia' vs 'Serbia & Montenegro'), so it carries an
+       extra proof obligation: **the two identities must never have played
+       each other.** A club cannot be its own opponent, so a single head-to-head
+       is conclusive evidence they are two different clubs. `DISTINCT_CLUB_PAIRS`
+       is honoured on top of that as a second belt.
+
+    Why this cannot be left to the hand list: `train_unified.yml` runs
+    `build_warehouse --full` every Sunday, and `--full` includes the OpenFootball
+    loader, which spells clubs its own way ('Real Sociedad de Fútbol', 'Angers
+    SCO', 'Nîmes Olympique'). Those spellings score below `team_resolver`'s 0.92
+    threshold against the ESPN name, so a second `teams` row appears and the
+    fixture is inserted twice — the exact mechanism the 2026-08-08 repair fixed
+    for football-data. The warehouse therefore re-splits weekly, and a static
+    list of names can never catch up with it.
+    """
+    # Imported here rather than at module scope: the validator imports nothing
+    # from this module, and keeping the dependency one-way means running the
+    # repair can never be blocked by a syntax error in the guard.
+    from backend.scripts.validate_warehouse_integrity import (
+        DISTINCT_CLUB_PAIRS,
+        _norm,
+        _same_club_shape,
+    )
+
+    rows = wh._conn.execute(  # noqa: SLF001
+        """
+        SELECT DISTINCT t.team_id, t.canonical_name, t.gender, m.competition_id,
+               COUNT(*) OVER (PARTITION BY t.team_id) AS appearances
+        FROM teams t
+        JOIN matches m
+          ON m.home_team_id = t.team_id OR m.away_team_id = t.team_id
+        """
+    ).fetchall()
+
+    buckets: Dict[Tuple[str, str, str], List[Tuple[int, str]]] = {}
+    for r in rows:
+        key = (r["competition_id"], r["gender"], _norm(r["canonical_name"]))
+        if not key[2]:
+            continue
+        buckets.setdefault(key, []).append((r["team_id"], r["canonical_name"]))
+
+    def _appearances(tid: int) -> int:
+        return wh._conn.execute(  # noqa: SLF001
+            "SELECT COUNT(*) AS n FROM matches "
+            "WHERE home_team_id = ? OR away_team_id = ?",
+            (tid, tid),
+        ).fetchone()["n"]
+
+    def _have_met(a: int, b: int) -> bool:
+        return wh._conn.execute(  # noqa: SLF001
+            "SELECT 1 FROM matches WHERE (home_team_id = ? AND away_team_id = ?) "
+            "OR (home_team_id = ? AND away_team_id = ?) LIMIT 1",
+            (a, b, b, a),
+        ).fetchone() is not None
+
+    merged = matches_moved = skipped_distinct = skipped_met = 0
+
+    def _merge_group(competition: str, unique: Dict[int, str]) -> None:
+        nonlocal merged, matches_moved
+        # Survivor = the identity carrying the most history; the longer
+        # spelling breaks ties, since the terse one is the provider artefact.
+        ranked = sorted(
+            unique.items(), key=lambda it: (_appearances(it[0]), len(it[1])), reverse=True
+        )
+        dst_id, dst_name = ranked[0]
+        for src_id, src_name in ranked[1:]:
+            if dry_run:
+                n = _appearances(src_id)
+                logger.info("[dry-run] %s: %r(id=%d, %d matches) -> %r(id=%d)",
+                            competition, src_name, src_id, n, dst_name, dst_id)
+                matches_moved += n
+                merged += 1
+                continue
+            counts = wh.merge_teams(src_id, dst_id)
+            matches_moved += counts["matches"]
+            merged += 1
+            logger.info("%s: merged %r(id=%d) into %r(id=%d) — %d matches",
+                        competition, src_name, src_id, dst_name, dst_id,
+                        counts["matches"])
+
+    def _pinned_distinct(names: List[str]) -> bool:
+        return any(
+            frozenset((a, b)) in DISTINCT_CLUB_PAIRS
+            for i, a in enumerate(names)
+            for b in names[i + 1:]
+        )
+
+    # -- pass 1: exact normalised equality ---------------------------------
+    for (competition, _gender, _norm_name), members in sorted(buckets.items()):
+        unique = {tid: name for tid, name in members}
+        if len(unique) < 2:
+            continue
+        if _pinned_distinct(list(unique.values())):
+            skipped_distinct += 1
+            logger.info("%s: leaving %s alone — pinned as distinct clubs",
+                        competition, ", ".join(repr(n) for n in unique.values()))
+            continue
+        _merge_group(competition, unique)
+
+    if dry_run:
+        # Pass 2 reads state pass 1 would have written, so its findings would
+        # be wrong on an unrepaired warehouse. Report pass 1 only.
+        return {
+            "merged": merged, "matches_moved": matches_moved,
+            "skipped_distinct": skipped_distinct, "skipped_met": 0,
+        }
+
+    # -- pass 2: containment, gated on never having met --------------------
+    by_comp: Dict[Tuple[str, str], List[Tuple[int, str, str]]] = {}
+    for r in wh._conn.execute(  # noqa: SLF001
+        """
+        SELECT DISTINCT t.team_id, t.canonical_name, t.gender, m.competition_id
+        FROM teams t
+        JOIN matches m
+          ON m.home_team_id = t.team_id OR m.away_team_id = t.team_id
+        """
+    ).fetchall():
+        by_comp.setdefault((r["competition_id"], r["gender"]), []).append(
+            (r["team_id"], r["canonical_name"], _norm(r["canonical_name"]))
+        )
+
+    for (competition, _g), members in sorted(by_comp.items()):
+        for i, (id_a, name_a, norm_a) in enumerate(members):
+            for id_b, name_b, norm_b in members[i + 1:]:
+                if id_a == id_b or not norm_a or not norm_b or norm_a == norm_b:
+                    continue
+                if not _same_club_shape(name_a, name_b):
+                    continue
+                if _pinned_distinct([name_a, name_b]):
+                    skipped_distinct += 1
+                    continue
+                if _have_met(id_a, id_b):
+                    skipped_met += 1
+                    logger.info(
+                        "%s: %r(id=%d) and %r(id=%d) have played each other — "
+                        "two different clubs, not a split identity",
+                        competition, name_a, id_a, name_b, id_b,
+                    )
+                    continue
+                if _appearances(id_a) == 0 or _appearances(id_b) == 0:
+                    continue  # already folded away by an earlier pair
+                _merge_group(competition, {id_a: name_a, id_b: name_b})
+
+    return {
+        "merged": merged,
+        "matches_moved": matches_moved,
+        "skipped_distinct": skipped_distinct,
+        "skipped_met": skipped_met,
+    }
+
+
+def merge_schedule_twins(wh: Warehouse, *, dry_run: bool, min_overlap: float = 0.9,
+                         min_matches: int = 10,
+                         min_pair_coverage: float = 0.6) -> Dict[str, int]:
+    """Merge clubs proven identical by their fixture list rather than their name.
+
+    Name matching has a floor it cannot pass. 'FC Cologne' and '1. FC Köln' are
+    one club in two languages; 'Hertha Berlin' and 'Hertha BSC', 'Brest' and
+    'Stade Brestois 29', 'Rennes' and 'Stade Rennais FC 1901' likewise. No
+    normaliser, fuzzy ratio or token-subset rule will ever fold those together,
+    and each one silently doubles a club's fixtures.
+
+    The schedule proves what the name cannot. Two clubs in the same
+    league-season that
+
+      * never played each other, and
+      * played on the same dates, home and away, with >=90% overlap
+
+    are one club — **but only in a round-robin, where every pair is required to
+    meet.** That precondition is not optional and is measured, not assumed:
+
+        ONLY APPLIES TO ROUND-ROBIN SEASONS. In a group-stage competition two
+        clubs in different groups also never meet AND also play on identical
+        matchdays, because the whole round is scheduled on one date. Run
+        without the guard, this rule merged 'Feyenoord' into 'FC Astana' and
+        'Olympiacos' into 'VfL Wolfsburg' across the Europa League — 19 merges,
+        every one of them wrong. A season therefore qualifies only if at least
+        `min_pair_coverage` of its team pairs actually played each other.
+
+    `DISTINCT_CLUB_PAIRS` vetoes on top of that — 'AC Ajaccio' and 'GFC Ajaccio'
+    hit this rule in fra.1 2015 because only one of them was in Ligue 1 that
+    season and the other name was misapplied, which is a resolver bug to fix at
+    the source rather than a merge to perform here.
+    """
+    from backend.scripts.validate_warehouse_integrity import DISTINCT_CLUB_PAIRS
+
+    def _schedule(tid: int, comp: str, season: int) -> set:
+        return {
+            (r["date_utc"][:10], r["home_team_id"] == tid)
+            for r in wh._conn.execute(  # noqa: SLF001
+                "SELECT date_utc, home_team_id FROM matches "
+                "WHERE competition_id = ? AND season = ? "
+                "AND (home_team_id = ? OR away_team_id = ?)",
+                (comp, season, tid, tid),
+            )
+        }
+
+    merged = matches_moved = vetoed = skipped_format = 0
+    pairs_done: set = set()
+    # Every proven-identical pair, gathered before anything is written. Ids
+    # change as merges land, so decisions are made against one consistent
+    # snapshot and then resolved through a union-find.
+    to_merge: List[Tuple[int, int]] = []
+
+    season_rows = wh._conn.execute(  # noqa: SLF001
+        "SELECT DISTINCT competition_id, season FROM matches ORDER BY competition_id, season"
+    ).fetchall()
+
+    for sr in season_rows:
+        comp, season = sr["competition_id"], sr["season"]
+        teams = wh._conn.execute(  # noqa: SLF001
+            """
+            SELECT t.team_id, t.canonical_name, COUNT(*) AS n
+            FROM matches m
+            JOIN teams t ON t.team_id IN (m.home_team_id, m.away_team_id)
+            WHERE m.competition_id = ? AND m.season = ?
+            GROUP BY t.team_id
+            HAVING n >= ?
+            """,
+            (comp, season, min_matches),
+        ).fetchall()
+
+        if len(teams) < 4:
+            continue
+
+        # Is this season a round-robin? Count the share of team pairs that
+        # actually met. A double round-robin scores ~1.0; a group stage scores
+        # roughly 1/n_groups. Everything below the floor is skipped entirely,
+        # because "never met" carries no information there.
+        #
+        # Counted over EVERY participant, not the >=min_matches subset above:
+        # restricted to clubs with a deep European run, a knockout bracket
+        # looks fully connected and scores ~1.0. That mistake let three
+        # Champions/Europa League pairs through on the first attempt.
+        all_ids = [
+            r["team_id"]
+            for r in wh._conn.execute(  # noqa: SLF001
+                "SELECT DISTINCT t.team_id FROM matches m "
+                "JOIN teams t ON t.team_id IN (m.home_team_id, m.away_team_id) "
+                "WHERE m.competition_id = ? AND m.season = ?",
+                (comp, season),
+            )
+        ]
+        met_pairs = {
+            frozenset((r["home_team_id"], r["away_team_id"]))
+            for r in wh._conn.execute(  # noqa: SLF001
+                "SELECT home_team_id, away_team_id FROM matches "
+                "WHERE competition_id = ? AND season = ?",
+                (comp, season),
+            )
+        }
+        possible = len(all_ids) * (len(all_ids) - 1) / 2
+        coverage = len(met_pairs) / possible if possible else 0.0
+        if coverage < min_pair_coverage:
+            logger.debug(
+                "%s %s: %.0f%% of %d participants' pairs met — not a round-robin, skipping",
+                comp, season, coverage * 100, len(all_ids),
+            )
+            skipped_format += 1
+            continue
+
+        schedules = {t["team_id"]: _schedule(t["team_id"], comp, season) for t in teams}
+        for i, a in enumerate(teams):
+            for b in teams[i + 1:]:
+                pair = frozenset((a["team_id"], b["team_id"]))
+                if pair in pairs_done:
+                    continue
+                met = wh._conn.execute(  # noqa: SLF001
+                    "SELECT 1 FROM matches WHERE competition_id = ? AND season = ? "
+                    "AND ((home_team_id = ? AND away_team_id = ?) "
+                    "  OR (home_team_id = ? AND away_team_id = ?)) LIMIT 1",
+                    (comp, season, a["team_id"], b["team_id"], b["team_id"], a["team_id"]),
+                ).fetchone()
+                if met:
+                    continue
+                sa, sb = schedules[a["team_id"]], schedules[b["team_id"]]
+                if not sa or not sb:
+                    continue
+                overlap = len(sa & sb) / len(sa | sb)
+                if overlap < min_overlap:
+                    continue
+                pairs_done.add(pair)
+                if frozenset((a["canonical_name"], b["canonical_name"])) in DISTINCT_CLUB_PAIRS:
+                    vetoed += 1
+                    logger.warning(
+                        "%s %s: %r(id=%d) and %r(id=%d) share %.0f%% of a schedule and never "
+                        "met, but are pinned as distinct clubs — one of the two names is "
+                        "misapplied in this season; fix the resolver, not the warehouse",
+                        comp, season, a["canonical_name"], a["team_id"],
+                        b["canonical_name"], b["team_id"], overlap * 100,
+                    )
+                    continue
+                logger.info("%s %s: %r(id=%d) and %r(id=%d) share %.0f%% of a schedule "
+                            "and never met — one club",
+                            comp, season, a["canonical_name"], a["team_id"],
+                            b["canonical_name"], b["team_id"], overlap * 100)
+                to_merge.append((a["team_id"], b["team_id"]))
+
+    # Union-find over the collected pairs, so a club split three ways collapses
+    # to one survivor rather than a chain of stale ids.
+    parent: Dict[int, int] = {}
+
+    def find(x: int) -> int:
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def total_matches(tid: int) -> int:
+        return wh._conn.execute(  # noqa: SLF001
+            "SELECT COUNT(*) AS n FROM matches WHERE home_team_id = ? OR away_team_id = ?",
+            (tid, tid),
+        ).fetchone()["n"]
+
+    for a_id, b_id in to_merge:
+        ra, rb = find(a_id), find(b_id)
+        if ra == rb:
+            continue
+        # Root the group at the identity with the most history.
+        keep, drop = (ra, rb) if total_matches(ra) >= total_matches(rb) else (rb, ra)
+        parent[drop] = keep
+
+    groups: Dict[int, List[int]] = {}
+    for tid in parent:
+        groups.setdefault(find(tid), []).append(tid)
+
+    for dst_id, members in groups.items():
+        for src_id in members:
+            if src_id == dst_id:
+                continue
+            name = wh._conn.execute(  # noqa: SLF001
+                "SELECT canonical_name FROM teams WHERE team_id = ?", (src_id,)
+            ).fetchone()
+            if name is None:
+                continue
+            if dry_run:
+                logger.info("[dry-run] merge %r(id=%d) -> id=%d", name[0], src_id, dst_id)
+                merged += 1
+                continue
+            counts = wh.merge_teams(src_id, dst_id)
+            matches_moved += counts["matches"]
+            merged += 1
+            logger.info("merged %r(id=%d) into id=%d — %d matches",
+                        name[0], src_id, dst_id, counts["matches"])
+
+    return {"merged": merged, "matches_moved": matches_moved, "vetoed": vetoed,
+            "skipped_format": skipped_format}
+
+
 def rename_canonicals(wh: Warehouse, *, dry_run: bool) -> int:
     renamed = 0
     for old, new in CANONICAL_RENAMES:
@@ -490,9 +860,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Timezone the damaged warehouse was built in (fix-dates).")
     parser.add_argument(
         "--only",
-        choices=("merge-identities", "rename-canonicals", "fix-dates",
-                 "fix-seasons", "drop-non-participants", "dedupe-fixtures",
-                 "drop-orphans", "backfill-kickoffs"),
+        choices=("merge-identities", "merge-normalised", "merge-schedule-twins",
+                 "rename-canonicals", "fix-dates", "fix-seasons",
+                 "drop-non-participants", "dedupe-fixtures", "drop-orphans",
+                 "backfill-kickoffs"),
         action="append",
         help="Run only these steps (repeatable).",
     )
@@ -509,7 +880,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     steps = set(args.only) if args.only else {
-        "merge-identities", "rename-canonicals", "fix-dates", "fix-seasons",
+        "merge-identities", "merge-normalised", "merge-schedule-twins",
+        "rename-canonicals", "fix-dates", "fix-seasons",
         "drop-non-participants", "dedupe-fixtures", "drop-orphans",
     }
     wh = Warehouse(args.db)
@@ -521,6 +893,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             r = merge_identities(wh, dry_run=args.dry_run)
             print(f"  merge-identities   : {r['merged']} merged, {r['skipped']} already clean, "
                   f"{r['matches_moved']:,} matches repointed")
+
+        if "merge-normalised" in steps:
+            r = merge_normalised_identities(wh, dry_run=args.dry_run)
+            print(f"  merge-normalised   : {r['merged']} merged, "
+                  f"{r['matches_moved']:,} matches repointed, "
+                  f"{r['skipped_distinct']} pinned distinct, "
+                  f"{r['skipped_met']} proven distinct by a head-to-head")
 
         if "rename-canonicals" in steps:
             n = rename_canonicals(wh, dry_run=args.dry_run)
@@ -547,6 +926,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"  dedupe-fixtures    : {r['groups']} duplicate groups, "
                   f"{r['rows_removed']:,} rows removed, "
                   f"{r['fields_coalesced']:,} fields coalesced into survivors")
+
+        # Runs AFTER dedupe on purpose. Its round-robin precondition is measured
+        # from the season itself, and a season still carrying split identities
+        # and duplicate rows does not look like a round-robin — so run early, it
+        # disqualifies exactly the seasons it exists to repair.
+        if "merge-schedule-twins" in steps:
+            r = merge_schedule_twins(wh, dry_run=args.dry_run)
+            print(f"  merge-schedule-twins: {r['merged']} merged, "
+                  f"{r['matches_moved']:,} matches repointed, "
+                  f"{r['vetoed']} vetoed as pinned-distinct, "
+                  f"{r['skipped_format']} season(s) skipped as not round-robin")
 
         if "backfill-kickoffs" in steps:
             r = backfill_kickoffs(wh, dry_run=args.dry_run)

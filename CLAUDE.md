@@ -25,7 +25,29 @@ If a proposed feature is none of those three, it does not belong here. The proje
 - **No fabricated data.** Sparse coverage stays genuinely missing; never impute a plausible value.
 - **Features must earn their place** via temporal-split ablation against the market row. Adding all 53 candidate features *degraded* Brier by .0052.
 
-## Current measured state (2026-08-09)
+## Current measured state (2026-08-10)
+
+The warehouse was repaired again on 2026-08-10 and the numbers below moved with
+it — re-derive rather than copy them forward.
+
+| | before repair | after repair |
+|---|---|---|
+| Market corpus (Wave A, priced fixtures) | 25,746 | **37,981** |
+| Market Brier / ECE | .5666 / .0049 | **.5793 / .0030** |
+| Dixon-Coles walk-forward, scored fixtures | 12,289 | **31,247** |
+| Dixon-Coles gap to close | +.0207 | **+.0177** |
+
+**The data repair alone moved Dixon-Coles .0030 closer to the market on 2.5x the
+sample.** No modelling changed. That is the ratio worth remembering when
+choosing between a feature idea and a data-integrity fix.
+
+**Live record: none.** `paired_benchmark` is n=0 by construction — it is now
+scoped to the serving model (`dixon_coles`) in the five covered leagues, and
+that intersection was empty on 2026-08-10 because Dixon-Coles had only just
+become the default and Wave A was between seasons. `/accuracy` says so rather
+than filling the space with a retired model's number.
+
+## Superseded measured state (2026-08-09)
 
 Two separate corpora, so read the columns not the rows. The first is the full
 market benchmark; the second is the 2,264-fixture paired holdout from
@@ -108,6 +130,34 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   projection made **Como** the favourite. The script now prints suggested
   `MANUAL_OVERRIDES` entries; check `unmatched_frontend_teams` after every rebuild and
   treat anything that is not a genuine promotion as a bug.
+- **The weekly `--full` warehouse build re-splits club identities.** `train_unified.yml`
+  runs `build_warehouse --full`, and `--full` includes the OpenFootball loader, whose
+  spellings ('Real Sociedad de Fútbol', '1899 Hoffenheim', 'Angers SCO') score below
+  `team_resolver`'s 0.92 threshold against the ESPN name. A second `teams` row appears, the
+  fixture is inserted twice, and the 2026-08-08 repair's hand-written `SPLIT_IDENTITIES`
+  list — written for two sources — never catches up. On 2026-08-10 the local warehouse had
+  **42 of 55 Wave A league-seasons since 2015 carrying the wrong team count**.
+
+  `repair_warehouse` now heals this structurally, in three passes, and **must be run to a
+  fixpoint** — each merge exposes duplicates that expose more identities:
+  `merge-normalised` (exact normalised equality, then token-subset gated on the two clubs
+  never having met), then `dedupe-fixtures`, then `merge-schedule-twins`.
+
+  **`merge-schedule-twins` only applies to round-robin seasons, and that guard is not
+  optional.** Two clubs in the same league that never met and share ≥90% of a home/away
+  calendar are one club — but in a GROUP STAGE two clubs in different groups also never meet
+  and also play on identical matchdays. Without the round-robin precondition the rule merged
+  `Feyenoord` into `FC Astana` and `Olympiacos` into `VfL Wolfsburg`: 19 merges, all wrong.
+  The precondition is measured from the season (share of team pairs that actually met) and
+  must be counted over EVERY participant — restricted to clubs with a deep European run, a
+  knockout bracket looks fully connected and passes.
+- **`merge_teams` and `delete_orphan_teams` must repoint every table that references
+  `teams`.** `players`, `player_match_stats` and `lineups` carry no `ON DELETE CASCADE`, so
+  one surviving row makes the final DELETE raise `FOREIGN KEY constraint failed` and aborts
+  the whole repair. The 2026-08-08 run never hit this because that machine's player tables
+  were empty. `players` is `UNIQUE(name, gender, current_team_id)`, so a repointed player can
+  collide with their own twin — fold them together rather than deleting, or the delete
+  cascades their appearances away.
 - **The prediction pipeline bot** commits to `main` 3×/day. Rebase feature branches often.
 - **Vercel escalates ESLint warnings to errors.** Run `npx next lint` before pushing; `npm run build` is not enough.
 

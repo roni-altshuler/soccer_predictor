@@ -46,6 +46,16 @@ FAST_MODELS = {
     "negative_binomial": pb.models.NegativeBinomialGoalModel,
     "zero_inflated": pb.models.ZeroInflatedPoissonGoalsModel,
 }
+# Named in docs/PIVOT_2026-08.md §3.1 as the next challengers to run, and
+# never run: "the hierarchical Bayesian model in particular pools strength
+# across teams, which is exactly what thin-data leagues need." Separated from
+# --slow because these fit by sampling and cost minutes per league-season, not
+# seconds.
+BAYESIAN_MODELS = {
+    "bayesian": pb.models.BayesianGoalModel,
+    "hierarchical_bayesian": pb.models.HierarchicalBayesianGoalModel,
+}
+
 SLOW_MODELS = {
     "weibull_copula": pb.models.WeibullCopulaGoalsModel,
 }
@@ -141,6 +151,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--leagues", default=",".join(LEAGUES))
     ap.add_argument("--slow", action="store_true", help="include Weibull copula")
+    ap.add_argument("--bayesian", action="store_true",
+                    help="include the Bayesian and hierarchical Bayesian goal models "
+                         "(minutes per league-season — they fit by sampling)")
     ap.add_argument("--min-train", type=int, default=500)
     ap.add_argument("--output", default=str(OUT))
     args = ap.parse_args()
@@ -148,6 +161,8 @@ def main() -> int:
     models = dict(FAST_MODELS)
     if args.slow:
         models.update(SLOW_MODELS)
+    if args.bayesian:
+        models.update(BAYESIAN_MODELS)
 
     if not DB.exists() or DB.stat().st_size == 0:
         print("warehouse missing or empty — nothing to score", file=sys.stderr)

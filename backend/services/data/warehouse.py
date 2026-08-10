@@ -935,7 +935,90 @@ class Warehouse:
             counts["player_form"] = cur.rowcount
             self._conn.execute("DELETE FROM player_form WHERE team_id = ?", (src_team_id,))
 
+            # The remaining three tables that point at teams(team_id). None of
+            # them carries ON DELETE CASCADE, so a single surviving row makes
+            # the final DELETE raise "FOREIGN KEY constraint failed" and aborts
+            # the whole merge. That is exactly what happened re-running the
+            # 2026-08-08 repair against a warehouse whose player tables were
+            # populated — the repair machine's were empty, so it never fired.
+            counts.update(self._repoint_player_tables(src_team_id, dst_team_id))
+
             self._conn.execute("DELETE FROM teams WHERE team_id = ?", (src_team_id,))
+        return counts
+
+    def _repoint_player_tables(self, src_team_id: int, dst_team_id: int) -> Dict[str, int]:
+        """Move players, appearances and lineups off a club about to be deleted.
+
+        Each table needs different care because each has a different key:
+
+        - `player_match_stats` is keyed (match_id, player_id), so `team_id` is
+          never part of a uniqueness constraint and a plain UPDATE is safe.
+        - `lineups` is keyed (match_id, team_id, player_id), so the same player
+          in the same match under both club spellings collides. That only
+          happens on a duplicated fixture, where the leftover row is a genuine
+          duplicate and dropping it loses nothing.
+        - `players` is UNIQUE(name, gender, current_team_id), so the same
+          person exists twice — once under each spelling. The loser must be
+          *folded* into the survivor rather than deleted, because deleting it
+          would cascade its appearances and lineups away with it.
+        """
+        counts: Dict[str, int] = {}
+
+        cur = self._conn.execute(
+            "UPDATE player_match_stats SET team_id = ? WHERE team_id = ?",
+            (dst_team_id, src_team_id),
+        )
+        counts["player_match_stats"] = cur.rowcount
+
+        cur = self._conn.execute(
+            "UPDATE OR IGNORE lineups SET team_id = ? WHERE team_id = ?",
+            (dst_team_id, src_team_id),
+        )
+        counts["lineups"] = cur.rowcount
+        self._conn.execute("DELETE FROM lineups WHERE team_id = ?", (src_team_id,))
+
+        cur = self._conn.execute(
+            "UPDATE OR IGNORE players SET current_team_id = ? WHERE current_team_id = ?",
+            (dst_team_id, src_team_id),
+        )
+        counts["players"] = cur.rowcount
+
+        # Whatever still points at the source club is a name collision with a
+        # twin already sitting on the destination. Fold each loser into its
+        # twin, then remove the now-empty duplicate row.
+        folded = 0
+        stragglers = self._conn.execute(
+            "SELECT player_id, name, gender FROM players WHERE current_team_id = ?",
+            (src_team_id,),
+        ).fetchall()
+        for dup in stragglers:
+            survivor = self._conn.execute(
+                "SELECT player_id FROM players "
+                "WHERE name = ? AND gender = ? AND current_team_id = ?",
+                (dup["name"], dup["gender"], dst_team_id),
+            ).fetchone()
+            if survivor is None:
+                # No twin after all — the UPDATE was ignored for some other
+                # reason. Detach rather than delete: a player with no current
+                # club is a known state, a deleted player is lost history.
+                self._conn.execute(
+                    "UPDATE players SET current_team_id = NULL WHERE player_id = ?",
+                    (dup["player_id"],),
+                )
+                continue
+            for table in ("player_match_stats", "lineups"):
+                self._conn.execute(
+                    f"UPDATE OR IGNORE {table} SET player_id = ? WHERE player_id = ?",
+                    (survivor["player_id"], dup["player_id"]),
+                )
+                self._conn.execute(
+                    f"DELETE FROM {table} WHERE player_id = ?", (dup["player_id"],)
+                )
+            self._conn.execute(
+                "DELETE FROM players WHERE player_id = ?", (dup["player_id"],)
+            )
+            folded += 1
+        counts["players_folded"] = folded
         return counts
 
     def find_duplicate_fixtures(self) -> List[Dict[str, Any]]:
@@ -1081,6 +1164,28 @@ class Warehouse:
             self._conn.execute(
                 f"DELETE FROM player_form WHERE team_id IN ({placeholders})", orphans
             )
+            # A team with no matches can still be some player's current club —
+            # `players.current_team_id` has no ON DELETE CASCADE, so leaving it
+            # set makes the DELETE below raise FOREIGN KEY constraint failed.
+            # Detach rather than delete: the club is going away, the player is
+            # not.
+            self._conn.execute(
+                f"UPDATE players SET current_team_id = NULL "
+                f"WHERE current_team_id IN ({placeholders})",
+                orphans,
+            )
+            # Appearances and lineups can also still point at an orphan, and
+            # such a row is incoherent by definition: it credits a player to a
+            # club that is not one of the two sides in that match. Measured on
+            # the 2026-08-10 warehouse there were 504, every one of them
+            # attached to a LIVE match whose participants were the surviving
+            # merged identities — the club merge repointed `matches` but these
+            # rows kept the dead id. They carry no recoverable information, so
+            # they go with the club.
+            for table in ("player_match_stats", "lineups"):
+                self._conn.execute(
+                    f"DELETE FROM {table} WHERE team_id IN ({placeholders})", orphans
+                )
             self._conn.execute(f"DELETE FROM teams WHERE team_id IN ({placeholders})", orphans)
         return len(orphans)
 

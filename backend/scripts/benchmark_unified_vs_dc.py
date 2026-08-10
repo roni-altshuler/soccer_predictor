@@ -57,6 +57,7 @@ from backend.scripts.train_unified import (  # noqa: E402
     _collect_outputs,
     _to_tensors,
 )
+from backend.services.prediction.feature_builder_v2 import FEATURE_NAMES
 from backend.services.data.warehouse import Warehouse  # noqa: E402
 from backend.services.prediction.calibration import apply_calibration  # noqa: E402
 from backend.services.prediction.unified_model import UnifiedMatchModel  # noqa: E402
@@ -239,6 +240,28 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.info("train base rate: %.3f / %.3f / %.3f", *base_p)
 
     model, scaler, calibration = _load_artifact(args.gender)
+
+    # A stale artifact is the likeliest reason this script fails, and sklearn's
+    # own message ("X has 75 features, but StandardScaler is expecting 87") does
+    # not say which side is stale or what to do. The served vector shrank 81->75
+    # on 2026-08-09 when six permanently-constant features were removed; every
+    # artifact trained before that is unusable and `unified_inference._load`
+    # already refuses it at serve time, silently falling back to Dixon-Coles.
+    expected = getattr(scaler, "n_features_in_", None)
+    if expected is not None and expected != len(FEATURE_NAMES):
+        print(
+            f"\nSTALE ARTIFACT: backend/data/models/unified_{args.gender.lower()}_scaler.pkl "
+            f"expects {expected} features, the live FeatureBuilderV2 produces "
+            f"{len(FEATURE_NAMES)}.\n"
+            f"The net cannot be benchmarked — or served — until it is retrained on the "
+            f"current vector. `unified_inference` is already refusing to load it, which is "
+            f"why Dixon-Coles is serving.\n"
+            f"Fix: run the weekly train_unified workflow, or "
+            f"`python -m backend.scripts.train_unified`, then re-run this.\n",
+            file=sys.stderr,
+        )
+        return 3
+
     tensors = _to_tensors(test_rows, torch.device("cpu"), scaler)
     outputs = _collect_outputs(model, tensors)
     probs = apply_calibration(outputs["logits"], outputs["pmf_probs"], calibration)

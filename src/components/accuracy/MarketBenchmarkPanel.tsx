@@ -231,6 +231,58 @@ export function MarketBenchmarkPanel() {
     pUniform && { label: 'Blind 1-in-3 guess', value: pUniform.brier, color: 'var(--text-tertiary)' },
   ].filter(Boolean) as { label: string; value: number; color: string }[]
 
+  // No paired record yet. This is a real state, not an error: the benchmark is
+  // scoped to the serving model in the covered leagues, and on 2026-08-10 that
+  // intersection was empty — Dixon-Coles had become the default only days
+  // earlier and Wave A was between seasons. The previous artifact filled this
+  // space with a retired model's .6371, which read as a current claim.
+  //
+  // The target is still worth showing. What we cannot yet show is our distance
+  // from it, and saying so is the whole point of the page.
+  if (!pModel || !pMarket) {
+    return (
+      <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
+        <header className="mb-4">
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--text-primary)]">
+            Against the closing line
+          </h2>
+          <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
+            The bookmaker&rsquo;s closing price is the best public forecast of a football match, so
+            it is the yardstick we score against.
+          </p>
+        </header>
+        {marketCorpus && (
+          <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-[var(--border-color)] pb-4">
+            <div>
+              <div className="font-mono text-3xl tabular-nums text-[var(--text-primary)]">
+                {num(marketCorpus.brier, 4)}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                the target &mdash; closing-line Brier
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-3xl tabular-nums text-[var(--text-primary)]">
+                {data.market_corpus?.overall?.n?.toLocaleString() ?? ''}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                fixtures behind it
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="mt-4 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+          The model serving today has no settled fixture that the market also priced, so there is
+          no paired comparison to draw. That number appears here when it exists and not before &mdash;
+          a gap measured on a retired model is not this model&rsquo;s gap.
+        </p>
+        <p className="mt-3 border-t border-[var(--border-color)] pt-3 text-[10px] leading-relaxed text-[var(--text-tertiary)]">
+          Value flags stay switched off in every league until that comparison exists and closes.
+        </p>
+      </section>
+    )
+  }
+
   return (
     <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
       <header className="mb-4">

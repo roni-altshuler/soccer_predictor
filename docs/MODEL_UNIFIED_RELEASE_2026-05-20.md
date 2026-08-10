@@ -1,5 +1,17 @@
 # Unified Multi-Task Model — May 20, 2026 Release
 
+> [!WARNING]
+> **RETRACTED 2026-08-08.** The 60.56% test accuracy below is not a result. The unified model
+> was trained with market features (`implied_home_prob` and four others) that the serving path
+> populated with zeros, so the holdout saw information live never had. Measured on 8,664
+> out-of-sample fixtures: Brier .5801 served with odds, .6561 served with zeros — the latter
+> *below* a constant base rate, and exactly where the 46% live accuracy sat.
+>
+> This document is kept as a record of what was claimed and when. Do not cite any number in it.
+> Current measured state: [CLAUDE.md](../CLAUDE.md) and [PIVOT_2026-08.md](PIVOT_2026-08.md).
+
+
+
 ## Headline
 
 The unified PyTorch multi-task model now **beats every per-league
