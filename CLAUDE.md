@@ -47,11 +47,50 @@ that intersection was empty on 2026-08-10 because Dixon-Coles had only just
 become the default and Wave A was between seasons. `/accuracy` says so rather
 than filling the space with a retired model's number.
 
+### Neural stack vs Dixon-Coles, retrained on the repaired warehouse
+
+Artifacts retrained 2026-08-10 (75 features, no market block, test ECE .0044)
+and scored by `benchmark_unified_vs_dc` on 5,320 paired Wave A fixtures:
+
+| forecaster | Brier | log loss | accuracy | gap to close |
+|---|---|---|---|---|
+| Market (closing line) | **.5757** | .9680 | .5387 | — |
+| Dixon-Coles | .5897 | .9896 | .5226 | +.0140 |
+| Neural stack, 75 features | .5925 | .9924 | .5205 | +.0168 |
+| Constant base rate | .6526 | 1.0777 | .4312 | +.0769 |
+
+**Dixon-Coles keeps serving.** NN−DC is +.0028 in Dixon-Coles' favour, 95% CI
+[−.0015, +.0070], p(NN better) = .103. Ahead in 1 of 5 leagues on the point
+estimate, 0 of 5 on the bootstrap; eng.1 favours Dixon-Coles significantly.
+
+**Read that table only with the two benchmark bugs in mind — before they were
+fixed the same artifacts scored NN−DC at −.0450, "significant in 3 of 5", which
+would have promoted the net.** Both bugs handicapped everything except the net:
+
+1. `_chronological_split` re-sorts by `(date_utc, competition_id)` while
+   `iter_matches` yields `(date_utc, match_id)`. The warehouse rows were sliced
+   positionally against the re-sorted split, so any fixture sharing a date with
+   another was scored against a different fixture's closing price and a
+   different fixture's team names. The market read .6911 instead of .5757 and
+   70% of the corpus was dropped as unpredictable (1,533 scored, not 5,320).
+   The old assert compared the *pre-split* lists, so it passed throughout.
+2. Dixon-Coles was fitted once at the split date and then used across a
+   three-year test window. It now refits every calendar month.
+
+**Whenever a challenger beats the closing line, suspect the harness first.** A
+model with no market features cannot out-predict the market by .027 Brier; that
+number was the bug announcing itself.
+
 ## Superseded measured state (2026-08-09)
 
 Two separate corpora, so read the columns not the rows. The first is the full
 market benchmark; the second is the 2,264-fixture paired holdout from
 `benchmark_unified_vs_dc` (2024-10 onward, Wave A, priced fixtures only).
+
+**The paired-holdout column is WRONG and is kept only as a record.** It was
+produced by the mis-paired harness described above, which is why its market
+Brier (.5848) sits .019 worse than the same market measured directly (.5666).
+The −.0030 NN-vs-DC verdict below came from the same run. Do not cite either.
 
 | forecaster | Brier (full corpus) | Brier (paired holdout) |
 |---|---|---|

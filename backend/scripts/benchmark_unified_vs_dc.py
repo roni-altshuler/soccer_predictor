@@ -13,8 +13,9 @@ Method
   are precisely the ones the model never saw.
 * Score four forecasters on the identical fixture set:
     - the saved `unified_<gender>` artifact (with its fitted calibration),
-    - walk-forward Dixon-Coles, fit on every match strictly before the test
-      slice begins,
+    - walk-forward Dixon-Coles, refitted each calendar month on every match
+      strictly before that month (a single fit at the split date freezes
+      team strengths for the whole window and flatters the net),
     - the de-vigged closing line,
     - the constant base rate, computed on the training slice only.
 * Report pooled and per-league, and restrict the market comparison to rows
@@ -221,6 +222,28 @@ def main(argv: Optional[List[str]] = None) -> int:
     rows, _builder = _build_training_rows(
         warehouse, gender=args.gender, min_season=args.min_season
     )
+    # Pair each TrainingRow with its warehouse row BEFORE splitting, and carry
+    # the pairing through the sort.
+    #
+    # `_build_training_rows` yields `iter_matches` order — (date_utc, match_id)
+    # — but `_chronological_split` re-sorts by (date_utc, competition_id). The
+    # test slice therefore comes back in a DIFFERENT order from the warehouse
+    # list it was being indexed against positionally, so every fixture sharing a
+    # date with another was scored against some other fixture's closing price
+    # and some other fixture's team names. Only the neural net was unaffected,
+    # because it reads the TrainingRow alone — which is exactly the shape of
+    # error that makes a challenger look good.
+    #
+    # Measured on the 2026-08-10 artifacts: the market scored .6911 on the test
+    # slice under the old pairing and .5752 under this one, against .5752-.5938
+    # computed independently per year. The mis-pairing was worth .116 Brier of
+    # handicap to every yardstick the net is judged against.
+    paired = sorted(
+        zip(rows, _warehouse_rows(warehouse, args.gender, args.min_season)),
+        key=lambda p: (p[0].date_utc, p[0].competition_id),
+    )
+    rows = [p[0] for p in paired]
+    wh_sorted = [p[1] for p in paired]
     train_rows, _val_rows, test_rows = _chronological_split(rows)
     if not test_rows:
         logger.error("no test rows")
@@ -272,22 +295,48 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Positional companion to `rows`, carrying the warehouse ids the model row
     # has lost. Assert the alignment rather than trusting it — a silent
     # off-by-one here would score every fixture against the wrong price.
-    wh_rows = _warehouse_rows(warehouse, args.gender, args.min_season)
-    if len(wh_rows) != len(rows):
+    if len(wh_sorted) != len(rows):
         logger.error(
             "warehouse/model row mismatch (%d vs %d) — cannot pair safely",
-            len(wh_rows), len(rows),
+            len(wh_sorted), len(rows),
         )
         return 2
-    for a, b in zip(wh_rows, rows):
-        assert a["date_utc"] == b.date_utc and a["competition_id"] == b.competition_id
     n_train_val = len(rows) - len(test_rows)
-    wh_test = wh_rows[n_train_val:]
+    wh_test = wh_sorted[n_train_val:]
+    # Assert on the SPLIT slice, not the pre-split list. The old assert ran
+    # against the unsorted rows, so it passed while the slice it was vouching
+    # for had been reordered underneath it. Scores are compared too: date and
+    # competition alone cannot tell two same-day fixtures in one league apart.
+    for a, b in zip(wh_test, test_rows):
+        assert a["date_utc"] == b.date_utc and a["competition_id"] == b.competition_id
+        assert (int(a["home_score"]), int(a["away_score"])) == (b.home_goals, b.away_goals), (
+            f"paired the wrong fixture at {b.date_utc} {b.competition_id}: "
+            f"warehouse {a['home_score']}-{a['away_score']} vs row {b.home_goals}-{b.away_goals}"
+        )
 
-    dc_models = {
-        comp: _fit_dixon_coles(conn, comp, split_date)
-        for comp in sorted({r.competition_id for r in test_rows} & set(WAVE_A))
-    }
+    # Refit Dixon-Coles as the test walks, not once at the split.
+    #
+    # A single fit at `split_date` freezes team strengths for the whole test
+    # window. Over the 8,738-fixture slice that is three years — promotions,
+    # relegations and squad turnover all unmodelled — and the neural net beats
+    # a baseline that is predicting 2026 with May-2023 ratings. Measured
+    # 2026-08-10, the artefact is worth more than the model: the same
+    # artifacts scored NN-DC at -.0450 (significant in 3 of 5 leagues) on the
+    # three-year window and +.0014 (significant in none) once the window
+    # shrinks to four months. The verdict was an artefact of baseline staleness.
+    #
+    # A month is short enough that a frozen fit costs little and cheap enough
+    # to be free: a Dixon-Coles fit is ~0.2s, so a three-year window over five
+    # leagues is well under a minute.
+    dc_cache: Dict[Tuple[str, str], Optional[object]] = {}
+
+    def _dc_for(comp: str, date_utc: str):
+        """Dixon-Coles for `comp` fitted on everything before `date_utc`'s month."""
+        month_start = f"{date_utc[:7]}-01"
+        key = (comp, month_start)
+        if key not in dc_cache:
+            dc_cache[key] = _fit_dixon_coles(conn, comp, month_start)
+        return dc_cache[key]
 
     # Team names for the Dixon-Coles lookup, by warehouse team_id.
     names = {
@@ -306,7 +355,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         oh, od, oa = wh["odds_home"], wh["odds_draw"], wh["odds_away"]
         price = (oh, od, oa) if None not in (oh, od, oa) and min(oh, od, oa) > 1.0 else None
-        dc = dc_models.get(comp)
+        dc = _dc_for(comp, row.date_utc) if comp in WAVE_A else None
         dc_p = None
         if dc is not None:
             try:
