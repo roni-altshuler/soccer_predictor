@@ -1,50 +1,50 @@
 {
   "gender": "M",
   "model_version": "unified-multitask-1.0-men",
-  "trained_at": "2026-08-09T04:44:32.279058+00:00",
-  "n_parameters": 106746,
+  "trained_at": "2026-08-10T10:46:48.587800+00:00",
+  "n_parameters": 112010,
   "n_features": 75,
   "vocab_sizes": {
     "leagues": 19,
-    "teams": 623,
-    "referees": 145,
+    "teams": 794,
+    "referees": 119,
     "phases": 7
   },
   "calibration": {
     "kind": "temp_blend_v2",
-    "temperature": 0.79,
-    "alpha": 0.13,
+    "temperature": 0.93,
+    "alpha": 0.24,
     "isotonic_kept": true,
     "val_metrics": {
-      "nll_blend": 0.965216,
-      "ece_blend": 0.01604,
-      "nll_isotonic": 0.953393,
-      "ece_isotonic": 0.004728,
+      "nll_blend": 0.983118,
+      "ece_blend": 0.014212,
+      "nll_isotonic": 0.977228,
+      "ece_isotonic": 0.009188,
       "isotonic_kept": true
     }
   },
   "holdout": {
-    "accuracy": 0.5236472092032382,
-    "log_loss": 1.0029019608229726,
-    "brier": 0.5947127811458459,
-    "ece": 0.026406759339164927,
-    "draw_recall": 0.0,
-    "scoreline_exact_rate": 0.11525351512569237,
-    "scoreline_top5_rate": 0.46655304644226675,
-    "goals_mae": 0.9391402187223479,
+    "accuracy": 0.5262073701075761,
+    "log_loss": 0.9856248366950983,
+    "brier": 0.5865457106485639,
+    "ece": 0.004366411893777914,
+    "draw_recall": 0.0013799448022079118,
+    "scoreline_exact_rate": 0.11879148546578164,
+    "scoreline_top5_rate": 0.475394827191577,
+    "goals_mae": 0.9267173482381825,
     "calibrated": true,
-    "n": 4694,
+    "n": 8738,
     "uncalibrated": {
-      "accuracy": 0.5149126544524926,
-      "log_loss": 0.9994331424299984,
-      "brier": 0.5956494876039793,
-      "ece": 0.015398728541306674,
-      "draw_recall": 0.008841732979664015
+      "accuracy": 0.516365300984207,
+      "log_loss": 0.9938301235757293,
+      "brier": 0.5924768342354527,
+      "ece": 0.021525740524387067,
+      "draw_recall": 0.023459061637534497
     },
     "calibration": {
       "kind": "temp_blend_v2",
-      "temperature": 0.79,
-      "alpha": 0.13,
+      "temperature": 0.93,
+      "alpha": 0.24,
       "isotonic_kept": true
     }
   }
