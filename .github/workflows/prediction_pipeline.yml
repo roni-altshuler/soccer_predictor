@@ -73,6 +73,22 @@ jobs:
         working-directory: ${{ github.workspace }}
         continue-on-error: true
 
+      - name: Fit per-league goal / home-advantage / draw parameters
+        # Must run BEFORE predict_upcoming, which reads league_params.json.
+        # Measured from completed matches in the warehouse, not nudged from the
+        # last run's error — the nudge loop that used to own this file walked
+        # every league onto a clamp (Premier League at avg_goals 0.75,
+        # home_adv 0.05) and served it. --strict fails the step if a fitted
+        # value lands on a sanity rail, which now means the estimator is wrong.
+        # Skipped, not failed, when the warehouse could not be restored.
+        run: |
+          if [ -f backend/data/warehouse.sqlite ]; then
+            python -m backend.scripts.fit_league_params --strict
+          else
+            echo "No warehouse — leaving league_params.json as committed"
+          fi
+        working-directory: ${{ github.workspace }}
+
       - name: Generate new predictions
         run: python -m backend.scripts.predict_upcoming --days 7
         working-directory: ${{ github.workspace }}
@@ -83,14 +99,6 @@ jobs:
         working-directory: ${{ github.workspace }}
         continue-on-error: true
 
-      - name: Export World Cup simulation snapshot
-        # Vercel serves AI tournament projections from this committed JSON
-        # (no FastAPI backend there). The script refuses to overwrite a
-        # good snapshot with an empty one on transient ESPN failures.
-        run: python -m backend.scripts.export_worldcup_sim --simulations 20000
-        working-directory: ${{ github.workspace }}
-        continue-on-error: true
-
       - name: Commit updated predictions
         run: |
           git config user.name "github-actions[bot]"
@@ -98,7 +106,6 @@ jobs:
           
           # Only add files that exist and are tracked (models/ is gitignored)
           git add backend/data/predictions/ backend/data/league_params.json || true
-          git add backend/data/worldcup/ || true
           if [ -f backend/data/training_results.json ]; then
             git add backend/data/training_results.json || true
           fi

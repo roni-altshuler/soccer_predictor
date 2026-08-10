@@ -1,15 +1,30 @@
 """
-Training Feedback Loop — Analyze prediction outcomes and adjust model parameters.
+Training Feedback Loop — report how predictions scored, and update the nets.
 
-Reads completed predictions, calculates league-specific accuracy metrics,
-and computes gradient-based adjustments to LEAGUE_PARAMS in probabilistic.py.
+Reads completed predictions and calculates per-league accuracy, Brier, and the
+gap between predicted and actual draw / home-win rates. Those diagnostics land
+in `model_adjustments.json` and are worth reading: a league whose draws are
+systematically over-predicted is telling you something.
 
-This creates a feedback cycle:
   1. predict_upcoming.py stores pre-match predictions
   2. fetch-outcomes API (or this script) fills in real results
-  3. This script analyzes accuracy and adjusts league parameters
+  3. This script reports per-league accuracy and calibration gaps
   4. Neural heads are updated from stored real feature vectors
-  5. Next run of predict_upcoming.py uses improved parameters
+
+WHAT IT NO LONGER DOES, and why (2026-08-10). Steps 3 and 5 used to close a
+loop: the measured gap was multiplied by a small learning rate and added to
+`avg_goals`, `home_adv` and `draw_rate`, then clamped, then served. Nothing
+compared the result to the truth, so the update had no reason to converge —
+and it did not. Every one of the fourteen leagues walked to a clamp and stayed
+there: the Premier League ended at `avg_goals` 0.75 and `home_adv` 0.05, which
+says a top-flight match finishes 0.8-0.75. Those values were live on
+`/predict`. A second copy of the same arithmetic reached serving through
+`suggested_params` -> `predict_upcoming.load_learned_adjustments`.
+
+Both paths are closed. Those three parameters are directly observable, so
+`backend/scripts/fit_league_params.py` measures them from completed matches in
+the warehouse instead — idempotent, convergent by construction, and loud when
+an estimate lands on a sanity rail.
 
 Usage:
     python -m backend.scripts.train_feedback
@@ -28,16 +43,11 @@ logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).parent.parent / "data" / "predictions"
 ADJUSTMENTS_FILE = DATA_DIR / "model_adjustments.json"
 
-MIN_AVG_GOALS = 0.75
-MAX_AVG_GOALS = 2.25
-MIN_HOME_ADV = 0.05
-MAX_HOME_ADV = 0.45
-MIN_DRAW_RATE = 0.08
-MAX_DRAW_RATE = 0.38
-
-
-def _clamp(value: float, lower: float, upper: float) -> float:
-    return max(lower, min(upper, value))
+# The per-league goal/home-advantage/draw parameters this module used to write
+# now live in backend/scripts/fit_league_params.py, which MEASURES them from
+# completed matches rather than nudging them. Its sanity rails are defined
+# there, where a value reaching one is treated as an estimator bug rather than
+# a resting place. See _update_league_params() below for what went wrong.
 
 
 def load_completed_predictions() -> List[dict]:
@@ -160,50 +170,21 @@ def _calibration_bucket(preds: List[dict], min_conf: float, max_conf: float) -> 
 
 
 def suggested_params(adjustments: Dict[str, Dict]) -> Dict[str, Dict]:
+    """Returns nothing. Serving parameters are fitted, not suggested.
+
+    What this produced was a nudge on top of the current value, clamped — the
+    same arithmetic as the drift loop in `_update_league_params`, and
+    `predict_upcoming.load_learned_adjustments` applied its output on top of
+    `league_params.json` at serve time. So a parameter could be pushed off a
+    measured value twice over, by two paths, neither of which ever checked
+    whether the push helped.
+
+    `avg_goals`, `home_adv` and `draw_rate` are observable quantities.
+    `backend.scripts.fit_league_params` measures them from completed matches;
+    that is the only writer now. The key is kept in the artifact as an empty
+    object so an older reader sees "no suggestions" rather than a KeyError.
     """
-    Generate suggested LEAGUE_PARAMS updates based on learned adjustments.
-    """
-    # Current base params (from probabilistic.py)
-    from backend.services.prediction.probabilistic import LEAGUE_PARAMS, DEFAULT_PARAMS
-
-    suggestions = {}
-    for league, adj in adjustments.items():
-        # Find matching params key
-        params = None
-        for key in LEAGUE_PARAMS:
-            if key == league or LEAGUE_PARAMS[key] == league:
-                params = LEAGUE_PARAMS[key].copy()
-                break
-        if params is None:
-            params = DEFAULT_PARAMS.copy()
-
-        new_params = {
-            "avg_goals": round(
-                _clamp(params["avg_goals"] + adj["goals_scale_adjustment"], MIN_AVG_GOALS, MAX_AVG_GOALS),
-                3,
-            ),
-            "home_adv": round(
-                _clamp(params["home_adv"] + adj["home_adv_adjustment"], MIN_HOME_ADV, MAX_HOME_ADV), 3
-            ),
-            "draw_rate": round(
-                _clamp(params["draw_rate"] + adj["draw_rate_adjustment"], MIN_DRAW_RATE, MAX_DRAW_RATE), 3
-            ),
-            "rho": params["rho"],  # Keep rho stable unless we have strong evidence
-        }
-
-        # Only flag as changed if adjustments are meaningful
-        changed = any(
-            abs(new_params[k] - params[k]) > 0.005
-            for k in ["avg_goals", "home_adv", "draw_rate"]
-        )
-
-        suggestions[league] = {
-            "current": params,
-            "suggested": new_params,
-            "changed": changed,
-        }
-
-    return suggestions
+    return {}
 
 
 def run_feedback():
@@ -441,47 +422,31 @@ def _online_learn(predictions: List[dict], adjustments: Dict[str, Dict]):
 
 
 def _update_league_params(adjustments: Dict[str, Dict]):
+    """Deliberately a no-op. `league_params.json` is fitted, not nudged.
+
+    This function used to add a fraction of the latest prediction error to
+    `avg_goals`, `home_adv` and `draw_rate` on every run and clamp the result.
+    Nothing in that loop compared the parameter to the truth, so the error term
+    never had to shrink and each value performed a random walk until it reached
+    a clamp and stopped. By 2026-08-10 every one of the fourteen leagues was
+    resting on a rail: the Premier League at `avg_goals` 0.75 and `home_adv`
+    0.05 — a league where a match finishes 0.8-0.75 and home advantage is worth
+    a twentieth of a goal. Those values reached the `/predict` page.
+
+    All three quantities are directly observable, so
+    `backend/scripts/fit_league_params.py` measures them from completed matches
+    in the warehouse instead. That estimator is idempotent and converges by
+    construction; this one could not converge at all.
+
+    The accuracy REPORTING above is untouched and still useful — knowing a
+    league's draws are under-predicted is worth recording. What is removed is
+    the part that let that observation write itself into a serving artifact
+    without ever being scored.
     """
-    Update the single-source-of-truth league_params.json with learned adjustments.
-    """
-    params_file = Path(__file__).parent.parent / "data" / "league_params.json"
-    if not params_file.exists():
-        return
-    
-    with open(params_file) as f:
-        params_data = json.load(f)
-    
-    leagues = params_data.get("leagues", {})
-    updated = 0
-    
-    for league_display, adj in adjustments.items():
-        league_key = _DISPLAY_TO_KEY.get(league_display)
-        if not league_key or league_key not in leagues:
-            continue
-        
-        lp = leagues[league_key]
-        
-        # Apply conservative adjustments
-        if abs(adj.get("draw_rate_adjustment", 0)) > 0.005:
-            new_dr = round(_clamp(lp["draw_rate"] + adj["draw_rate_adjustment"], MIN_DRAW_RATE, MAX_DRAW_RATE), 4)
-            lp["draw_rate"] = new_dr
-            updated += 1
-        
-        if abs(adj.get("home_adv_adjustment", 0)) > 0.005:
-            new_ha = round(_clamp(lp["home_adv"] + adj["home_adv_adjustment"], MIN_HOME_ADV, MAX_HOME_ADV), 4)
-            lp["home_adv"] = new_ha
-            updated += 1
-        
-        if abs(adj.get("goals_scale_adjustment", 0)) > 0.003:
-            new_ag = round(_clamp(lp["avg_goals"] + adj["goals_scale_adjustment"], MIN_AVG_GOALS, MAX_AVG_GOALS), 4)
-            lp["avg_goals"] = new_ag
-            updated += 1
-    
-    if updated > 0:
-        params_data["updated_at"] = datetime.now().isoformat()
-        with open(params_file, "w") as f:
-            json.dump(params_data, f, indent=2)
-        logger.info(f"  Updated league_params.json ({updated} parameter changes)")
+    logger.info(
+        "  league_params.json is fitted from the warehouse by "
+        "backend.scripts.fit_league_params — no drift applied here"
+    )
 
 
 if __name__ == "__main__":

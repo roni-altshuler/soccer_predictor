@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+import { scopePredictions } from '@/lib/predictionScope'
 import type {
   AccuracyMetrics,
   AccuracySummaryResponse,
@@ -231,14 +232,6 @@ function computeMetricBlock(completed: Prediction[], totalPredictions: number): 
   }
 }
 
-// The headline reflects the models we serve today; the retired ELO-Poisson
-// fallback (replaced by the unified net + per-league Dixon-Coles) is excluded so
-// its settled calls don't drag the number. Kept in sync with the accuracy route.
-function isRetiredModel(model?: string | null): boolean {
-  const m = (model || '').toLowerCase()
-  return m.includes('elo') || m.includes('poisson')
-}
-
 function loadAllPredictions(): Prediction[] {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
   if (!fs.existsSync(dataDir)) return []
@@ -255,7 +248,11 @@ function loadAllPredictions(): Prediction[] {
     }
   }
 
-  return all.filter(p => !isRetiredModel(p.model_used))
+  // Same scope as the headline endpoint, from the same module — covered
+  // competitions and the serving model generation only. When these two
+  // disagreed, the page showed a hit rate over one population and a per-league
+  // table over another.
+  return scopePredictions(all).rows
 }
 
 export async function GET() {

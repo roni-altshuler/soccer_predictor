@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+import { evaluateValueGate, explainGate, type GateVerdict } from '@/lib/valueGate'
+
 interface BettingIntelligenceProps {
   matchId: string
   leagueId?: string
@@ -63,6 +65,27 @@ function isFinalStatus(status: string): boolean {
 }
 
 export default function BettingIntelligence({ matchId, leagueId, modelProbs, status }: BettingIntelligenceProps) {
+  // Whether this league may show value flags at all. See src/lib/valueGate.ts:
+  // an edge against a forecaster that beats us is our error, not an edge.
+  const [gate, setGate] = useState<GateVerdict | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/v1/accuracy/market')
+      .then((r) => r.json())
+      .then((artifact) => {
+        if (alive) setGate(evaluateValueGate(artifact, leagueId))
+      })
+      .catch(() => {
+        // A gate that cannot be read is a gate that is CLOSED. Failing open
+        // here would show flags precisely when the evidence is unavailable.
+        if (alive) setGate({ allowed: false, reason: 'no_benchmark', n: 0, gap: null })
+      })
+    return () => {
+      alive = false
+    }
+  }, [leagueId])
+
   const [loading, setLoading] = useState(true)
   const [providerDisabled, setProviderDisabled] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -137,6 +160,8 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
     { key: 'away_win', label: 'Away' },
   ]
   const showFallback = !loading && !payload && !!errorMessage
+    const gateOpen = gate?.allowed === true
+
   const gridCols = 'grid grid-cols-[1fr_minmax(60px,auto)_minmax(60px,auto)_minmax(72px,auto)_minmax(70px,auto)] items-center gap-2'
 
   return (
@@ -148,10 +173,21 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
       <header className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
         <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent-market)' }} />
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Betting Intelligence</h3>
-        <span className="text-[10px] text-[var(--text-tertiary)] ml-auto">model vs market (no-vig)</span>
+        <span className="text-[10px] text-[var(--text-tertiary)] ml-auto">
+          {gateOpen ? 'model vs market (no-vig)' : 'model vs market — comparison only'}
+        </span>
       </header>
 
       <div className="p-4 space-y-3" style={{ background: 'var(--card-bg)' }}>
+        {gate && !gate.allowed && (
+          <p
+            className="rounded-lg px-3 py-2 text-[11px] leading-relaxed text-[var(--text-secondary)]"
+            style={{ background: 'var(--muted-bg)', border: '1px dashed var(--border-color)' }}
+          >
+            <strong className="text-[var(--text-primary)]">No value calls in this league.</strong>{' '}
+            {explainGate(gate)} The rows below compare the two prices and stop there.
+          </p>
+        )}
         {loading && <p className="text-xs text-[var(--text-tertiary)]">Loading market data…</p>}
 
         {!loading && showFallback && (
@@ -175,7 +211,7 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
               <span className="text-right">Model</span>
               <span className="text-right">Market</span>
               <span className="text-right">Edge</span>
-              <span className="text-right">Kelly</span>
+              <span className="text-right">{gateOpen ? 'Kelly' : '—'}</span>
             </div>
             {rows.map((row) => {
               const edge = payload.edges.find((e) => e.outcome === row.key)
@@ -186,10 +222,14 @@ export default function BettingIntelligence({ matchId, leagueId, modelProbs, sta
               const decimalOdds = edge?.fair_decimal_odds && edge.fair_decimal_odds > 1
                 ? edge.fair_decimal_odds
                 : marketProb > 0 ? 1 / marketProb : 0
-              const kelly = decimalOdds > 1 && edgeFraction > 0
+              const kelly = gateOpen && decimalOdds > 1 && edgeFraction > 0
                 ? Math.max(0, Math.min(0.25, edgeFraction / (decimalOdds - 1)))
                 : 0
-              const label = classifyEdge(edgePp)
+              // Gate closed: the disagreement is still shown, because seeing
+              // where the model differs from the price is the diagnostic this
+              // panel exists for. What is withheld is the CLAIM that the
+              // difference is worth money — the highlight and the stake.
+              const label = gateOpen ? classifyEdge(edgePp) : 'none'
               const style = edgeStyle(label)
               return (
                 <div key={row.key} className={`${gridCols} px-3 py-2 text-xs border-b last:border-b-0`} style={{ borderColor: 'var(--border-color)' }}>

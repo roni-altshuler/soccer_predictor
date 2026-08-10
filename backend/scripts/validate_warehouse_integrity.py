@@ -92,6 +92,7 @@ DISTINCT_CLUB_PAIRS: frozenset = frozenset(
         ("GFC Ajaccio", "AC Ajaccio"),              # Gazélec vs AC, same city
         ("Desportivo Aves", "AVS"),                 # dissolved 2020 vs founded 2024
         ("Hellas Verona", "Chievo Verona"),         # two Verona clubs
+        ("Serbia", "Serbia & Montenegro"),          # successor state, not a rename
     )
 )
 
@@ -109,17 +110,61 @@ COVERAGE_COLUMNS: Tuple[Tuple[str, str, Optional[float]], ...] = (
 )
 
 
-def _norm(name: str) -> str:
-    """Aggressive normalisation used only for near-duplicate detection."""
+# Legal-form and founding-year noise. A club's identity is the place name;
+# everything here is decoration one provider prints and another does not.
+# Anything purely numeric is dropped separately, which covers founding years
+# ("1899 Hoffenheim", "1. FSV Mainz 05", "1. FC Heidenheim 1846") without
+# needing each one listed.
+# Only initialisms and legal forms. Words that look like decoration but
+# actually name the club — 'Real', 'Atletico', 'Athletic', 'Borussia',
+# 'Deportivo', 'Olympique' — are deliberately NOT here: strip them and 'Real
+# Madrid' and 'Atletico Madrid' both reduce to 'madrid', which would merge two
+# different clubs into one. Names differing only by such a word are handled by
+# `_same_club_shape` below, where a head-to-head can veto the match.
+_NAME_NOISE = {
+    "fc", "cf", "sc", "ac", "afc", "sv", "as", "rc", "cd", "ud", "gd",
+    "aj", "sd", "club", "de", "del", "the", "ca", "rcd", "fsv", "tsg",
+    "vfl", "vfb", "ssc", "ss", "us", "acf", "ogc", "losc", "sco", "spvgg",
+}
+
+
+def _norm_tokens(name: str) -> List[str]:
+    """Identity tokens of a club name, noise and founding years removed."""
     nfkd = unicodedata.normalize("NFKD", name or "")
     ascii_only = "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
     keep = [c for c in ascii_only if c.isalnum() or c == " "]
-    tokens = "".join(keep).split()
-    noise = {
-        "fc", "cf", "sc", "ac", "afc", "sv", "as", "rc", "cd", "ud", "gd",
-        "aj", "sd", "club", "de", "the", "1", "04", "07", "96", "98",
-    }
-    return " ".join(t for t in tokens if t not in noise)
+    return [
+        t
+        for t in "".join(keep).split()
+        if t not in _NAME_NOISE and not t.isdigit()
+    ]
+
+
+def _norm(name: str) -> str:
+    """Aggressive normalisation used only for near-duplicate detection."""
+    return " ".join(_norm_tokens(name))
+
+
+def _same_club_shape(name_a: str, name_b: str) -> bool:
+    """True when one name's identity tokens are a subset of the other's.
+
+    Catches every shape the providers actually differ by — a prefix
+    ('Blackburn' / 'Blackburn Rovers'), a suffix ('Alavés' / 'Deportivo
+    Alavés'), and a wrapper ('Espanyol' / 'RCD Espanyol de Barcelona') — where
+    the old prefix-only test caught just the first.
+
+    Subset alone would also fold 'Ajaccio' into 'GFC Ajaccio' and 'Serbia' into
+    'Serbia & Montenegro', so it is never the whole test: callers pair it with
+    `DISTINCT_CLUB_PAIRS` and, in the repair, with proof the two never played
+    each other. Two clubs that have met are, conclusively, two clubs.
+
+    Names that reduce to the *same* token set are not this case — they are an
+    exact-normalisation match, handled one pass earlier.
+    """
+    ta, tb = set(_norm_tokens(name_a)), set(_norm_tokens(name_b))
+    if not ta or not tb:
+        return False
+    return ta < tb or tb < ta
 
 
 @dataclass
@@ -133,9 +178,17 @@ class CheckResult:
 
 
 class IntegrityValidator:
-    def __init__(self, warehouse: Warehouse, *, strict: bool = False):
+    def __init__(self, warehouse: Warehouse, *, strict: bool = False,
+                 min_season: Optional[int] = None):
         self.wh = warehouse
         self.strict = strict
+        # Season-shape checks below this are skipped. Upstream history is
+        # genuinely partial before 2005 — football-data.co.uk starts there, and
+        # ESPN later still for some leagues — so "eng.1 2003: 14 rows, expected
+        # ~380" is a report that the season was never ingested, not that the
+        # warehouse is corrupt. Conflating the two makes the guard cry wolf on
+        # something no repair can fix, which is how a guard stops being read.
+        self.min_season = min_season
         self.results: List[CheckResult] = []
 
     def _q(self, sql: str, args: Tuple = ()) -> List:
@@ -157,6 +210,8 @@ class IntegrityValidator:
             tuple(LEAGUE_SIZE),
         )
         failures, checked = [], 0
+        if self.min_season is not None:
+            rows = [r for r in rows if r["season"] >= self.min_season]
         for r in rows:
             sizes = LEAGUE_SIZE[r["competition_id"]]
             expected = sizes.get(str(r["season"]), sizes["default"])
@@ -223,7 +278,7 @@ class IntegrityValidator:
             names = ", ".join(f"{n!r}(id={i})" for i, n in sorted(members))
             failures.append(f"{comp}: {names} all normalise to {norm_name!r}")
 
-        # Second pass: one club's name fully contained in another's, same
+        # Second pass: one club's identity tokens contained in another's, same
         # competition. Catches "Swansea" vs "Swansea City" before it becomes
         # two Elo histories.
         by_comp: Dict[Tuple[str, str], List] = defaultdict(list)
@@ -238,7 +293,7 @@ class IntegrityValidator:
                         continue
                     if frozenset((name_a, name_b)) in DISTINCT_CLUB_PAIRS:
                         continue
-                    if norm_a.startswith(norm_b + " ") or norm_b.startswith(norm_a + " "):
+                    if _same_club_shape(name_a, name_b):
                         failures.append(
                             f"{comp}: {name_a!r}(id={id_a}) and {name_b!r}(id={id_b}) "
                             f"look like the same club"
@@ -415,6 +470,8 @@ class IntegrityValidator:
         current_season = int(latest[:4]) - (0 if latest[5:7] >= "08" else 1) if latest else 0
 
         failures, truncated = [], []
+        if self.min_season is not None:
+            rows = [r for r in rows if r["season"] >= self.min_season]
         for r in rows:
             if r["season"] >= current_season:
                 continue  # in-progress season is legitimately short
@@ -653,6 +710,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--db", type=Path, default=WAREHOUSE_PATH)
     parser.add_argument("--strict", action="store_true", help="Treat coverage warnings as failures.")
     parser.add_argument("--json", type=Path, help="Write the full report here.")
+    parser.add_argument(
+        "--min-season", type=int, default=None,
+        help="Skip season-shape checks before this season. Upstream history is "
+             "partial before 2005, so those seasons report as short forever. "
+             "Use 2005 to check only what a repair could actually fix.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="List every failure.")
     args = parser.parse_args(argv)
 
@@ -665,7 +728,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         if wh._conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0] == 0:  # noqa: SLF001
             print("warehouse contains no matches", file=sys.stderr)
             return 2
-        results = IntegrityValidator(wh, strict=args.strict).run_all()
+        results = IntegrityValidator(
+            wh, strict=args.strict, min_season=args.min_season
+        ).run_all()
     finally:
         wh.close()
 

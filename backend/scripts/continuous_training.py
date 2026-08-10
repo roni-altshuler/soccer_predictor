@@ -55,7 +55,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 # Reuse existing modules — do not refactor them.
 from backend.scripts.train_models import (
@@ -187,7 +187,8 @@ def _historical_changed_since(last_iso: Optional[str]) -> bool:
 def _resolve_keys_for_eval(leagues: Optional[List[str]]) -> List[str]:
     """Map runtime league keys (eng.1) to ESPN keys (premier_league) for backtest."""
     if not leagues:
-        return list(ESPN_LEAGUES.keys())
+        # Same Wave A default as training, mapped to the backtest's ESPN keys.
+        return [KEY_TO_ESPN.get(k, k) for k in WAVE_A_RUNTIME_KEYS]
     out: List[str] = []
     for key in leagues:
         if key in ESPN_LEAGUES:
@@ -199,10 +200,23 @@ def _resolve_keys_for_eval(leagues: Optional[List[str]]) -> List[str]:
     return out
 
 
+# Default training scope. The pivot narrowed the product to these five, but
+# this job kept retraining all fourteen every Sunday — `retrained_leagues:
+# list[14]` in every training_drift artifact — and each one competed for the
+# same promotion gate. Weekly compute spent on a league nothing serves is
+# weekly compute not spent on the leagues that do, and a regression there still
+# had to be triaged.
+#
+# Passing --leagues explicitly still reaches anything: this is the default, not
+# a restriction. Restoring a league permanently means adding it here, in
+# predict_upcoming.LEAGUES and in the frontend's WAVE_A_COMPETITION_IDS.
+WAVE_A_RUNTIME_KEYS: Tuple[str, ...] = ("eng.1", "esp.1", "ger.1", "ita.1", "fra.1")
+
+
 def _normalize_leagues_for_train(leagues: Optional[List[str]]) -> Optional[List[str]]:
     """train_all_models expects runtime keys (eng.1). Pass through or map."""
     if not leagues:
-        return None
+        return list(WAVE_A_RUNTIME_KEYS)
     out: List[str] = []
     for key in leagues:
         if key in ESPN_TO_KEY:

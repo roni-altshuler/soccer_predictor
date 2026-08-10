@@ -262,6 +262,7 @@ def load_settled_predictions(
     *,
     since: Optional[date] = None,
     until: Optional[date] = None,
+    model_prefixes: Optional[Sequence[str]] = None,
 ) -> Tuple[List[PredictionRow], int, int]:
     """Read every ``predictions_YYYY-MM.json`` and return the settled rows.
 
@@ -269,7 +270,16 @@ def load_settled_predictions(
     when ``actual_winner`` is non-null; records missing any of the three
     probability fields are dropped and counted as filtered, since there is
     nothing to score.
+
+    ``model_prefixes`` restricts the corpus to a model generation, matched
+    case-insensitively against ``model_used``. Without it the paired benchmark
+    scores every model that ever ran as if it were one forecaster: the
+    2026-08-09 artifact pooled 821 fixtures across the pre-pivot net, the
+    retired ELO-Poisson fallback and Dixon-Coles, and published the result as
+    "the model" against the closing line. A gap to market means nothing unless
+    it is a gap for a named model.
     """
+    wanted = tuple(m.lower() for m in model_prefixes) if model_prefixes else None
     rows: List[PredictionRow] = []
     settled_total = 0
     filtered = 0
@@ -286,6 +296,12 @@ def load_settled_predictions(
             if not record.get("actual_winner"):
                 continue
             settled_total += 1
+
+            if wanted is not None:
+                model = str(record.get("model_used") or "").lower()
+                if not model.startswith(wanted):
+                    filtered += 1
+                    continue
 
             match_date = _parse_date(record.get("match_date"))
             if match_date is None:
@@ -924,6 +940,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Competition id (eng.1) or display name ('Premier League'). "
              "Repeat or comma-separate for several. Default: all.",
     )
+    parser.add_argument(
+        "--model-prefix",
+        action="append",
+        default=None,
+        metavar="PREFIX",
+        help="Only score predictions whose model_used starts with this "
+             "(e.g. dixon_coles). Repeat for several. Default: every model "
+             "that ever ran, which pools retired generations into one number.",
+    )
     parser.add_argument("--since", metavar="YYYY-MM-DD",
                         help="Only score fixtures on or after this date.")
     parser.add_argument("--until", metavar="YYYY-MM-DD",
@@ -1004,7 +1029,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         notes.append(f"Unrecognised --league values ignored: {unknown_leagues}")
 
     predictions, settled_total, filtered = load_settled_predictions(
-        args.predictions_dir, since=since, until=until
+        args.predictions_dir, since=since, until=until,
+        model_prefixes=args.model_prefix,
     )
     if not predictions:
         notes.append(
@@ -1086,6 +1112,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "schema": "market_benchmark/1",
         "filters": {
             "leagues": sorted(leagues) if leagues else None,
+            "model_prefixes": list(args.model_prefix) if args.model_prefix else None,
             "since": since.isoformat() if since else None,
             "until": until.isoformat() if until else None,
             "primary_devig": args.devig,

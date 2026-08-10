@@ -25,7 +25,29 @@ If a proposed feature is none of those three, it does not belong here. The proje
 - **No fabricated data.** Sparse coverage stays genuinely missing; never impute a plausible value.
 - **Features must earn their place** via temporal-split ablation against the market row. Adding all 53 candidate features *degraded* Brier by .0052.
 
-## Current measured state (2026-08-09)
+## Current measured state (2026-08-10)
+
+The warehouse was repaired again on 2026-08-10 and the numbers below moved with
+it — re-derive rather than copy them forward.
+
+| | before repair | after repair |
+|---|---|---|
+| Market corpus (Wave A, priced fixtures) | 25,746 | **37,981** |
+| Market Brier / ECE | .5666 / .0049 | **.5793 / .0030** |
+| Dixon-Coles walk-forward, scored fixtures | 12,289 | **31,247** |
+| Dixon-Coles gap to close | +.0207 | **+.0177** |
+
+**The data repair alone moved Dixon-Coles .0030 closer to the market on 2.5x the
+sample.** No modelling changed. That is the ratio worth remembering when
+choosing between a feature idea and a data-integrity fix.
+
+**Live record: none.** `paired_benchmark` is n=0 by construction — it is now
+scoped to the serving model (`dixon_coles`) in the five covered leagues, and
+that intersection was empty on 2026-08-10 because Dixon-Coles had only just
+become the default and Wave A was between seasons. `/accuracy` says so rather
+than filling the space with a retired model's number.
+
+## Superseded measured state (2026-08-09)
 
 Two separate corpora, so read the columns not the rows. The first is the full
 market benchmark; the second is the 2,264-fixture paired holdout from
@@ -85,7 +107,7 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 - **Train/serve skew (fixed 2026-08-08, understand it anyway).** Market features were in `FEATURE_NAMES` and populated for 96.1% of training rows, while `unified_inference.py` synthesised the live row with `NULL AS odds_home`. Every served prediction saw 0.0. Brier .5801 → .6561, *below* the constant base rate. This was the entire 60.56%-holdout / 46%-live gap. The schema guard could not catch it because feature **names** matched — only **values** differed. `_warn_on_dead_feature_blocks()` in `unified_inference.py` is the guard that does catch it. **Never put a feature in the served vector that the serving path cannot populate.**
 - **Data integrity — fixed 2026-08-08, guard it.** The warehouse had 1,278 duplicate-fixture groups, 27 orphan team rows, and 60 of 77 league-seasons with the wrong team count. **One bug caused nearly all of it:** football-data's terse club names ("Ath Madrid", "Sp Lisbon") scored below `team_resolver`'s 0.92 fuzzy threshold, creating a second `teams` row, so `_find_existing_match` missed the ESPN fixture and inserted a duplicate. Dortmund "won" the 2018-19 Bundesliga because a 7-0 was counted twice. A second one-line bug — a naive local-midnight datetime run through `.astimezone(utc)` on an `Asia/Jerusalem` host — shifted every football-data kickoff back across midnight, making day-of-week wrong for 86% of Wave A.
 
-  **Run `.venv/bin/python -m backend.scripts.validate_warehouse_integrity` after any ingest change.** 9 checks, exits non-zero. Prefer adding a spelling to `team_aliases.yml` over lowering the fuzzy threshold.
+  **Run `python3 -m backend.scripts.validate_warehouse_integrity` after any ingest change.** 9 checks, exits non-zero. Prefer adding a spelling to `team_aliases.yml` over lowering the fuzzy threshold.
 - **What is still genuinely missing.** Referees outside England are a *source* limitation — football-data publishes `Referee` for England only, and ESPN carries officials only from 2022-23 — so esp/ger/ita/fra sit at 0.8–1.8% and referee features stay untestable there. Kickoff times before 2019 do not exist upstream. Weather covers 66.6% of Wave A. There is no injury or lineup source at all: `player_form` and `match_events` are empty tables.
 - **A constant feature is not free.** A zero-variance audit over 600 Wave A fixtures on 2026-08-09 found 9 of 81 served features constant. Six were constant because nothing fed them — `is_post_intl_break` (never derived), `home_squad_form` / `away_squad_form` / `home_missing_top3` / `away_missing_top3` (empty `player_form` table), `venue_altitude_m` (no source) — and were removed, 81 → 75. Three (`is_knockout`, `is_2leg_aggregate`, `is_neutral_venue`) are constant *by construction* in league play and go live in Wave C, so they stay. `away_travel_km` was in the first category until it was wired to the venue coordinates that now exist; it is real (median 311 km, max 2,260 km, 100% of Wave A). **Re-run the zero-variance check before adding a feature, and treat a permanently-constant column as a bug.**
 - **ESPN host — use `site.web.api.espn.com`, never `site.api.espn.com`.** The two serve
@@ -108,6 +130,34 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   projection made **Como** the favourite. The script now prints suggested
   `MANUAL_OVERRIDES` entries; check `unmatched_frontend_teams` after every rebuild and
   treat anything that is not a genuine promotion as a bug.
+- **The weekly `--full` warehouse build re-splits club identities.** `train_unified.yml`
+  runs `build_warehouse --full`, and `--full` includes the OpenFootball loader, whose
+  spellings ('Real Sociedad de Fútbol', '1899 Hoffenheim', 'Angers SCO') score below
+  `team_resolver`'s 0.92 threshold against the ESPN name. A second `teams` row appears, the
+  fixture is inserted twice, and the 2026-08-08 repair's hand-written `SPLIT_IDENTITIES`
+  list — written for two sources — never catches up. On 2026-08-10 the local warehouse had
+  **42 of 55 Wave A league-seasons since 2015 carrying the wrong team count**.
+
+  `repair_warehouse` now heals this structurally, in three passes, and **must be run to a
+  fixpoint** — each merge exposes duplicates that expose more identities:
+  `merge-normalised` (exact normalised equality, then token-subset gated on the two clubs
+  never having met), then `dedupe-fixtures`, then `merge-schedule-twins`.
+
+  **`merge-schedule-twins` only applies to round-robin seasons, and that guard is not
+  optional.** Two clubs in the same league that never met and share ≥90% of a home/away
+  calendar are one club — but in a GROUP STAGE two clubs in different groups also never meet
+  and also play on identical matchdays. Without the round-robin precondition the rule merged
+  `Feyenoord` into `FC Astana` and `Olympiacos` into `VfL Wolfsburg`: 19 merges, all wrong.
+  The precondition is measured from the season (share of team pairs that actually met) and
+  must be counted over EVERY participant — restricted to clubs with a deep European run, a
+  knockout bracket looks fully connected and passes.
+- **`merge_teams` and `delete_orphan_teams` must repoint every table that references
+  `teams`.** `players`, `player_match_stats` and `lineups` carry no `ON DELETE CASCADE`, so
+  one surviving row makes the final DELETE raise `FOREIGN KEY constraint failed` and aborts
+  the whole repair. The 2026-08-08 run never hit this because that machine's player tables
+  were empty. `players` is `UNIQUE(name, gender, current_team_id)`, so a repointed player can
+  collide with their own twin — fold them together rather than deleting, or the delete
+  cascades their appearances away.
 - **The prediction pipeline bot** commits to `main` 3×/day. Rebase feature branches often.
 - **Vercel escalates ESLint warnings to errors.** Run `npx next lint` before pushing; `npm run build` is not enough.
 
@@ -119,16 +169,22 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 | Production build | `npm run build` |
 | Lint (Vercel hard gate) | `npx next lint` |
 | Frontend tests | `npm test` |
-| Backend tests | `.venv/bin/python -m pytest backend/tests/` |
-| Market benchmark | `.venv/bin/python -m backend.scripts.benchmark_market` |
-| Dixon-Coles challenger | `.venv/bin/python -m backend.scripts.benchmark_dc_challenger` |
-| Neural vs DC (promotion gate) | `.venv/bin/python -m backend.scripts.benchmark_unified_vs_dc` |
-| Goal-model bake-off | `.venv/bin/python -m backend.scripts.bakeoff_goal_models` |
-| Feature ablation | `.venv/bin/python -m backend.scripts.ablate_features` |
-| Season projection backtest | `.venv/bin/python -m backend.scripts.backtest_season_projections` |
-| Warehouse rebuild (with odds) | `.venv/bin/python -m backend.scripts.build_warehouse --espn --football-data` |
+| Backend tests | `python3 -m pytest backend/tests/` |
+| Market benchmark | `python3 -m backend.scripts.benchmark_market` |
+| Dixon-Coles challenger | `python3 -m backend.scripts.benchmark_dc_challenger` |
+| Neural vs DC (promotion gate) | `python3 -m backend.scripts.benchmark_unified_vs_dc` |
+| Goal-model bake-off | `python3 -m backend.scripts.bakeoff_goal_models` |
+| Feature ablation | `python3 -m backend.scripts.ablate_features` |
+| Season projection backtest | `python3 -m backend.scripts.backtest_season_projections` |
+| Warehouse rebuild (with odds) | `python3 -m backend.scripts.build_warehouse --espn --football-data` |
 
-**Use `.venv/bin/python`** — the system Python lacks the dependencies.
+**Check which interpreter has the dependencies before running anything.** There is no
+`.venv` in this repo — on 2026-08-10 every one of these lines failed with
+`.venv/bin/python: No such file or directory`. The working interpreter on this machine
+is the miniforge base env (`/home/ronaltshuler/miniforge3/bin/python3`, which carries
+penaltyblog, torch, sklearn, fastapi); the sibling `code/.venv` does **not** have
+penaltyblog. CI installs into a bare 3.12 and calls plain `python -m ...`, so a script
+that only works under a named venv is a script CI cannot run.
 
 ## Architecture
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+import { scopePredictions } from '@/lib/predictionScope'
 import type { CalibrationDotPoint, FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 interface CompletedPrediction {
@@ -29,17 +30,17 @@ function normalizeConfidence(value: number): number {
   return value > 1 ? value / 100 : value
 }
 
-// "How accurate is the AI" should reflect the models we actually serve today —
-// not a retired one. The legacy ELO-Poisson fallback was replaced by the
-// unified net and the per-league Dixon-Coles models; its settled predictions
-// are kept in the record files but excluded from the headline accuracy. A
-// record with no model tag is left in: those pre-date tagging and track the
-// net's own accuracy, so dropping them would shrink the sample without changing
-// the story.
-function isRetiredModel(model?: string | null): boolean {
-  const m = (model || '').toLowerCase()
-  return m.includes('elo') || m.includes('poisson')
-}
+// Scope — which competitions and which model generation — lives in
+// `@/lib/predictionScope`, shared with the summary endpoint so the headline
+// and the per-league table can never describe different populations.
+//
+// The rule this replaced excluded only names containing "elo" or "poisson",
+// and deliberately kept untagged records "since dropping them would shrink the
+// sample without changing the story". It changed the story completely: those
+// untagged records were 1,162 of the 1,244 settled picks and came from the net
+// retired on 2026-08-08 for reading market features the serving path fed it as
+// zeros. Together with six out-of-scope competitions they made the published
+// 44.29% a number about no model that exists.
 
 function loadAll() {
   const dataDir = path.join(process.cwd(), 'backend', 'data', 'predictions')
@@ -74,7 +75,8 @@ export async function GET(request: NextRequest) {
   const wantedGender = gender === 'F' || gender === 'M' ? gender : null
 
   // Total includes pending; completed only those with an actual outcome.
-  let pool = loadAll().filter((p) => !isRetiredModel(p.model_used))
+  const scoped = scopePredictions(loadAll())
+  let pool = scoped.rows
   if (wantedGender) {
     pool = pool.filter((p) => (p.gender || 'M').toString().toUpperCase() === wantedGender)
   }
@@ -135,6 +137,7 @@ export async function GET(request: NextRequest) {
         low: { total: 0, correct: 0, accuracy: 0 },
       },
       recent_form: [],
+      scope: scoped.counts,
     }
     return NextResponse.json(empty)
   }
@@ -272,6 +275,7 @@ export async function GET(request: NextRequest) {
       low: { total: low.length, correct: low.filter((p) => p.winner_correct).length, accuracy: Math.round(acc(low) * 1000) / 1000 },
     },
     recent_form: form,
+    scope: scoped.counts,
   }
   return NextResponse.json(response)
 }

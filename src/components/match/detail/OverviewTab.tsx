@@ -17,7 +17,6 @@ import { cn } from '@/lib/utils'
 
 import { getPredictionVerdict } from './adaptPrediction'
 import { buildModelInsights } from './insights'
-import { LiveWinProbabilityPanel } from './LiveWinProbabilityPanel'
 import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
 import { MomentumRiver } from './MomentumRiver'
 import { TopStatsPreview } from './StatsTab'
@@ -25,7 +24,8 @@ import { formatMatchDate, type DetailTab, type MatchDetails } from './types'
 
 interface OverviewTabProps {
   match: MatchDetails
-  isLive: boolean
+  /** Retained for callers; the live-only engine panel it gated was removed with the engine's API routes. */
+  isLive?: boolean
   isFinished: boolean
   isScheduled: boolean
   onSelectTab: (tab: DetailTab) => void
@@ -477,7 +477,7 @@ function CommentaryCard({ match }: { match: MatchDetails }) {
 
 /* ── The tab body ── */
 
-export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTab }: OverviewTabProps) {
+export function OverviewTab({ match, isFinished, isScheduled, onSelectTab }: OverviewTabProps) {
   const hasShotmap = (match.shotmap?.length ?? 0) > 0
   const insights = match.prediction ? buildModelInsights(match) : []
 
@@ -617,8 +617,6 @@ export function OverviewTab({ match, isLive, isFinished, isScheduled, onSelectTa
       )}
 
       <CompactAIPickCard match={match} isFinished={isFinished} onSelectTab={onSelectTab} />
-
-      {isLive && <LiveWinProbabilityPanel match={match} />}
 
       <PlayerOfTheMatchCard match={match} isFinished={isFinished} />
 
