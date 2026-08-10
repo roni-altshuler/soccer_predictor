@@ -77,6 +77,34 @@ jobs:
           fi
           python -m backend.scripts.build_warehouse --stats
 
+      # Every ingest can re-split a club identity: a provider spelling that
+      # scores below team_resolver's 0.92 threshold creates a second `teams`
+      # row, `_find_existing_match` then misses the fixture, and the row is
+      # inserted twice. On 2026-08-10 that had left 42 of 55 Wave A
+      # league-seasons since 2015 carrying the wrong team count, and every
+      # model trained here had been fitted on it. Repairing after the refresh
+      # rather than trusting the release warehouse is what stops the corpus
+      # decaying one build at a time.
+      #
+      # --fixpoint is not belt-and-braces. Measured on the pre-repair
+      # warehouse: pass 1 made 62,431 changes, pass 2 another 1,498, pass 3
+      # none. A single pass leaves 1,498 defects behind, because each merge
+      # exposes duplicates that expose further split identities.
+      - name: Repair the warehouse to a fixpoint
+        timeout-minutes: 30
+        run: python -m backend.scripts.repair_warehouse --fixpoint
+
+      # Blocks training on corrupt data instead of discovering it in a
+      # benchmark three weeks later. Scoped to Wave A because ned.1/por.1 were
+      # descoped and their upstream coverage is genuinely partial (por.1 2008
+      # holds 27 rows of a 306-row season) — a gate that fails every run is a
+      # gate nobody reads. Verified 2026-08-10: 9/9 on the repaired warehouse,
+      # 2/9 on the same warehouse before repair.
+      - name: Verify Wave A integrity before training
+        run: |
+          python -m backend.scripts.validate_warehouse_integrity \
+            --min-season 2005 --leagues wave-a --verbose
+
       - name: Train men's model
         timeout-minutes: 75
         run: python -m backend.scripts.train_unified --gender M --device cpu

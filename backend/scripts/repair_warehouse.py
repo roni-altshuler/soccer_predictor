@@ -867,6 +867,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="append",
         help="Run only these steps (repeatable).",
     )
+    parser.add_argument(
+        "--fixpoint", action="store_true",
+        help="Repeat the step sequence until a pass changes nothing. Each merge "
+             "exposes duplicates that expose more split identities, so one pass "
+             "always leaves work behind. Exits 3 if it is still changing after "
+             "--max-passes.",
+    )
+    parser.add_argument("--max-passes", type=int, default=6)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -889,66 +897,24 @@ def main(argv: Optional[List[str]] = None) -> int:
         wh.migrate()
         print(f"{'DRY RUN — ' if args.dry_run else ''}repairing {args.db}")
 
-        if "merge-identities" in steps:
-            r = merge_identities(wh, dry_run=args.dry_run)
-            print(f"  merge-identities   : {r['merged']} merged, {r['skipped']} already clean, "
-                  f"{r['matches_moved']:,} matches repointed")
-
-        if "merge-normalised" in steps:
-            r = merge_normalised_identities(wh, dry_run=args.dry_run)
-            print(f"  merge-normalised   : {r['merged']} merged, "
-                  f"{r['matches_moved']:,} matches repointed, "
-                  f"{r['skipped_distinct']} pinned distinct, "
-                  f"{r['skipped_met']} proven distinct by a head-to-head")
-
-        if "rename-canonicals" in steps:
-            n = rename_canonicals(wh, dry_run=args.dry_run)
-            print(f"  rename-canonicals  : {n} renamed")
-
-        if "fix-dates" in steps:
-            r = fix_dates(wh, dry_run=args.dry_run, build_tz=args.build_tz)
-            print(f"  fix-dates          : {r['shifted']:,} of {r['candidates']:,} fdcouk rows "
-                  f"un-shifted ({r['already_correct_or_real_kickoff']:,} already fine, "
-                  f"{r['unparsable']} unparsable)")
-
-        if "fix-seasons" in steps:
-            r = fix_season_labels(wh, dry_run=args.dry_run)
-            print(f"  fix-seasons        : {r['moved']} matches relabelled to the season "
-                  f"they were actually played in")
-
-        if "drop-non-participants" in steps:
-            r = drop_non_participants(wh, dry_run=args.dry_run)
-            print(f"  drop-non-participants: {r['rows']} rows for clubs that were not in "
-                  f"that league-season")
-
-        if "dedupe-fixtures" in steps:
-            r = wh.merge_duplicate_fixtures(dry_run=args.dry_run)
-            print(f"  dedupe-fixtures    : {r['groups']} duplicate groups, "
-                  f"{r['rows_removed']:,} rows removed, "
-                  f"{r['fields_coalesced']:,} fields coalesced into survivors")
-
-        # Runs AFTER dedupe on purpose. Its round-robin precondition is measured
-        # from the season itself, and a season still carrying split identities
-        # and duplicate rows does not look like a round-robin — so run early, it
-        # disqualifies exactly the seasons it exists to repair.
-        if "merge-schedule-twins" in steps:
-            r = merge_schedule_twins(wh, dry_run=args.dry_run)
-            print(f"  merge-schedule-twins: {r['merged']} merged, "
-                  f"{r['matches_moved']:,} matches repointed, "
-                  f"{r['vetoed']} vetoed as pinned-distinct, "
-                  f"{r['skipped_format']} season(s) skipped as not round-robin")
-
-        if "backfill-kickoffs" in steps:
-            r = backfill_kickoffs(wh, dry_run=args.dry_run)
-            print(f"  backfill-kickoffs  : {r['kickoffs_applied']:,} date-only rows given a "
-                  f"real kickoff from football-data's Time column")
-
-        if "drop-orphans" in steps:
-            if args.dry_run:
-                orphans = wh.find_orphan_teams()
-                print(f"  drop-orphans       : {len(orphans)} zero-match teams would be removed")
+        changed = _run_once(wh, steps, args)
+        if args.fixpoint and not args.dry_run:
+            # Each merge exposes duplicates that expose more split identities, so
+            # a single pass leaves work behind. Loop until a pass changes nothing.
+            for extra in range(2, args.max_passes + 1):
+                if changed == 0:
+                    break
+                print(f"\n-- pass {extra} (previous pass made {changed:,} changes) --")
+                changed = _run_once(wh, steps, args)
             else:
-                print(f"  drop-orphans       : {wh.delete_orphan_teams()} zero-match teams removed")
+                if changed:
+                    print(
+                        f"\nSTILL CHANGING after {args.max_passes} passes "
+                        f"({changed:,} in the last one) — not a fixpoint.",
+                        file=sys.stderr,
+                    )
+                    return 3
+            print(f"\nfixpoint reached: the last pass changed nothing")
 
         if not args.dry_run:
             with wh._lock:  # noqa: SLF001
@@ -956,8 +922,86 @@ def main(argv: Optional[List[str]] = None) -> int:
     finally:
         wh.close()
 
-    print("\nNow run: .venv/bin/python -m backend.scripts.validate_warehouse_integrity")
+    print("\nNow run: python3 -m backend.scripts.validate_warehouse_integrity")
     return 0
+
+
+def _run_once(wh: Warehouse, steps: set, args) -> int:
+    """One full pass of the selected steps. Returns how many rows it changed."""
+    changed = 0
+    if "merge-identities" in steps:
+        r = merge_identities(wh, dry_run=args.dry_run)
+        print(f"  merge-identities   : {r['merged']} merged, {r['skipped']} already clean, "
+              f"{r['matches_moved']:,} matches repointed")
+        changed += r['merged']
+
+    if "merge-normalised" in steps:
+        r = merge_normalised_identities(wh, dry_run=args.dry_run)
+        print(f"  merge-normalised   : {r['merged']} merged, "
+              f"{r['matches_moved']:,} matches repointed, "
+              f"{r['skipped_distinct']} pinned distinct, "
+              f"{r['skipped_met']} proven distinct by a head-to-head")
+        changed += r['merged']
+
+    if "rename-canonicals" in steps:
+        n = rename_canonicals(wh, dry_run=args.dry_run)
+        print(f"  rename-canonicals  : {n} renamed")
+        changed += n
+
+    if "fix-dates" in steps:
+        r = fix_dates(wh, dry_run=args.dry_run, build_tz=args.build_tz)
+        print(f"  fix-dates          : {r['shifted']:,} of {r['candidates']:,} fdcouk rows "
+              f"un-shifted ({r['already_correct_or_real_kickoff']:,} already fine, "
+              f"{r['unparsable']} unparsable)")
+        changed += r['shifted']
+
+    if "fix-seasons" in steps:
+        r = fix_season_labels(wh, dry_run=args.dry_run)
+        print(f"  fix-seasons        : {r['moved']} matches relabelled to the season "
+              f"they were actually played in")
+        changed += r['moved']
+
+    if "drop-non-participants" in steps:
+        r = drop_non_participants(wh, dry_run=args.dry_run)
+        print(f"  drop-non-participants: {r['rows']} rows for clubs that were not in "
+              f"that league-season")
+        changed += r['rows']
+
+    if "dedupe-fixtures" in steps:
+        r = wh.merge_duplicate_fixtures(dry_run=args.dry_run)
+        print(f"  dedupe-fixtures    : {r['groups']} duplicate groups, "
+              f"{r['rows_removed']:,} rows removed, "
+              f"{r['fields_coalesced']:,} fields coalesced into survivors")
+        changed += r['rows_removed']
+
+    # Runs AFTER dedupe on purpose. Its round-robin precondition is measured
+    # from the season itself, and a season still carrying split identities
+    # and duplicate rows does not look like a round-robin — so run early, it
+    # disqualifies exactly the seasons it exists to repair.
+    if "merge-schedule-twins" in steps:
+        r = merge_schedule_twins(wh, dry_run=args.dry_run)
+        print(f"  merge-schedule-twins: {r['merged']} merged, "
+              f"{r['matches_moved']:,} matches repointed, "
+              f"{r['vetoed']} vetoed as pinned-distinct, "
+              f"{r['skipped_format']} season(s) skipped as not round-robin")
+        changed += r['merged']
+
+    if "backfill-kickoffs" in steps:
+        r = backfill_kickoffs(wh, dry_run=args.dry_run)
+        print(f"  backfill-kickoffs  : {r['kickoffs_applied']:,} date-only rows given a "
+              f"real kickoff from football-data's Time column")
+        changed += r['kickoffs_applied']
+
+    if "drop-orphans" in steps:
+        if args.dry_run:
+            orphans = wh.find_orphan_teams()
+            print(f"  drop-orphans       : {len(orphans)} zero-match teams would be removed")
+        else:
+            dropped = wh.delete_orphan_teams()
+            changed += dropped
+            print(f"  drop-orphans       : {dropped} zero-match teams removed")
+
+    return changed
 
 
 if __name__ == "__main__":

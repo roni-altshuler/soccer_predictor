@@ -179,9 +179,17 @@ class CheckResult:
 
 class IntegrityValidator:
     def __init__(self, warehouse: Warehouse, *, strict: bool = False,
-                 min_season: Optional[int] = None):
+                 min_season: Optional[int] = None,
+                 leagues: Optional[Tuple[str, ...]] = None):
         self.wh = warehouse
         self.strict = strict
+        # Season-shape checks are restricted to these competitions when set.
+        # `ned.1` and `por.1` were descoped in the pivot and their upstream
+        # coverage is genuinely partial — por.1 2008 holds 27 rows of a
+        # 306-row season — so a gate that includes them fails every run for a
+        # reason no repair can address, and a gate that always fails is a gate
+        # nobody reads. Wave A alone is the thing worth blocking on.
+        self.leagues = tuple(leagues) if leagues else None
         # Season-shape checks below this are skipped. Upstream history is
         # genuinely partial before 2005 — football-data.co.uk starts there, and
         # ESPN later still for some leagues — so "eng.1 2003: 14 rows, expected
@@ -212,6 +220,8 @@ class IntegrityValidator:
         failures, checked = [], 0
         if self.min_season is not None:
             rows = [r for r in rows if r["season"] >= self.min_season]
+        if self.leagues is not None:
+            rows = [r for r in rows if r["competition_id"] in self.leagues]
         for r in rows:
             sizes = LEAGUE_SIZE[r["competition_id"]]
             expected = sizes.get(str(r["season"]), sizes["default"])
@@ -472,6 +482,8 @@ class IntegrityValidator:
         failures, truncated = [], []
         if self.min_season is not None:
             rows = [r for r in rows if r["season"] >= self.min_season]
+        if self.leagues is not None:
+            rows = [r for r in rows if r["competition_id"] in self.leagues]
         for r in rows:
             if r["season"] >= current_season:
                 continue  # in-progress season is legitimately short
@@ -716,8 +728,22 @@ def main(argv: Optional[List[str]] = None) -> int:
              "partial before 2005, so those seasons report as short forever. "
              "Use 2005 to check only what a repair could actually fix.",
     )
+    parser.add_argument(
+        "--leagues", default=None,
+        help="Comma-separated competitions for the season-shape checks, or "
+             "'wave-a' for the five served leagues. Descoped leagues (ned.1, "
+             "por.1) have partial upstream coverage no repair can fix, so a CI "
+             "gate that includes them fails every run and stops being read.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="List every failure.")
     args = parser.parse_args(argv)
+
+    if args.leagues == "wave-a":
+        leagues: Optional[Tuple[str, ...]] = WAVE_A
+    elif args.leagues:
+        leagues = tuple(x.strip() for x in args.leagues.split(",") if x.strip())
+    else:
+        leagues = None
 
     if not args.db.exists():
         print(f"warehouse not found at {args.db}", file=sys.stderr)
@@ -729,7 +755,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("warehouse contains no matches", file=sys.stderr)
             return 2
         results = IntegrityValidator(
-            wh, strict=args.strict, min_season=args.min_season
+            wh, strict=args.strict, min_season=args.min_season, leagues=leagues
         ).run_all()
     finally:
         wh.close()
