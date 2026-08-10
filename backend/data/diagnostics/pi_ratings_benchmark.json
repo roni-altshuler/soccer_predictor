@@ -1,0 +1,212 @@
+{
+  "method": {
+    "challenger": "pi-ratings (Constantinou & Fenton 2013) -> HistGradientBoosting",
+    "pi_lambda": 0.06,
+    "pi_gamma": 0.6,
+    "pi_alpha": 0.06,
+    "pi_beta": 0.036,
+    "reference": "arXiv:2403.07669 \u2014 gradient boosting on soccer-specific ratings is the reported state of the art on goals-only data",
+    "ratings_are_strictly_pre_match": true,
+    "dixon_coles": "refit monthly on all prior matches",
+    "brier": "multiclass summed; uniform 1/3 = .6667"
+  },
+  "scope": {
+    "leagues": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "ita.1",
+      "fra.1"
+    ],
+    "min_test_season": 2015,
+    "test_seasons": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "n_scored": 19665,
+    "n_skipped": 98
+  },
+  "overall": {
+    "pi_gbm": {
+      "n": 19665,
+      "brier": 0.5882,
+      "log_loss": 0.988,
+      "accuracy": 0.5245
+    },
+    "dixon_coles": {
+      "n": 19665,
+      "brier": 0.5879,
+      "log_loss": 0.9874,
+      "accuracy": 0.5241
+    },
+    "market": {
+      "n": 19665,
+      "brier": 0.5743,
+      "log_loss": 0.9667,
+      "accuracy": 0.5384
+    }
+  },
+  "paired_pi_vs_dc": {
+    "diff": 0.00028,
+    "ci_low": -0.00131,
+    "ci_high": 0.00186,
+    "p_a_better": 0.3691,
+    "n": 19665
+  },
+  "by_league": {
+    "eng.1": {
+      "metrics": {
+        "pi_gbm": {
+          "n": 4157,
+          "brier": 0.5846,
+          "log_loss": 0.9832,
+          "accuracy": 0.5295
+        },
+        "dixon_coles": {
+          "n": 4157,
+          "brier": 0.5816,
+          "log_loss": 0.9792,
+          "accuracy": 0.5307
+        },
+        "market": {
+          "n": 4157,
+          "brier": 0.5689,
+          "log_loss": 0.9598,
+          "accuracy": 0.5473
+        }
+      },
+      "paired": {
+        "diff": 0.003,
+        "ci_low": -0.00068,
+        "ci_high": 0.00667,
+        "p_a_better": 0.0575,
+        "n": 4157
+      }
+    },
+    "esp.1": {
+      "metrics": {
+        "pi_gbm": {
+          "n": 4169,
+          "brier": 0.5847,
+          "log_loss": 0.9828,
+          "accuracy": 0.5277
+        },
+        "dixon_coles": {
+          "n": 4169,
+          "brier": 0.5857,
+          "log_loss": 0.9835,
+          "accuracy": 0.5227
+        },
+        "market": {
+          "n": 4169,
+          "brier": 0.5719,
+          "log_loss": 0.9629,
+          "accuracy": 0.5407
+        }
+      },
+      "paired": {
+        "diff": -0.00093,
+        "ci_low": -0.00407,
+        "ci_high": 0.00216,
+        "p_a_better": 0.7163,
+        "n": 4169
+      }
+    },
+    "fra.1": {
+      "metrics": {
+        "pi_gbm": {
+          "n": 3838,
+          "brier": 0.6024,
+          "log_loss": 1.0086,
+          "accuracy": 0.5096
+        },
+        "dixon_coles": {
+          "n": 3838,
+          "brier": 0.6011,
+          "log_loss": 1.0053,
+          "accuracy": 0.5104
+        },
+        "market": {
+          "n": 3838,
+          "brier": 0.5876,
+          "log_loss": 0.9855,
+          "accuracy": 0.5211
+        }
+      },
+      "paired": {
+        "diff": 0.0013,
+        "ci_low": -0.00228,
+        "ci_high": 0.00477,
+        "p_a_better": 0.2371,
+        "n": 3838
+      }
+    },
+    "ger.1": {
+      "metrics": {
+        "pi_gbm": {
+          "n": 3352,
+          "brier": 0.5943,
+          "log_loss": 0.9972,
+          "accuracy": 0.5119
+        },
+        "dixon_coles": {
+          "n": 3352,
+          "brier": 0.5953,
+          "log_loss": 0.9984,
+          "accuracy": 0.5101
+        },
+        "market": {
+          "n": 3352,
+          "brier": 0.5819,
+          "log_loss": 0.9778,
+          "accuracy": 0.5254
+        }
+      },
+      "paired": {
+        "diff": -0.00097,
+        "ci_low": -0.00485,
+        "ci_high": 0.00277,
+        "p_a_better": 0.6822,
+        "n": 3352
+      }
+    },
+    "ita.1": {
+      "metrics": {
+        "pi_gbm": {
+          "n": 4149,
+          "brier": 0.5773,
+          "log_loss": 0.9715,
+          "accuracy": 0.5401
+        },
+        "dixon_coles": {
+          "n": 4149,
+          "brier": 0.5785,
+          "log_loss": 0.9741,
+          "accuracy": 0.543
+        },
+        "market": {
+          "n": 4149,
+          "brier": 0.5636,
+          "log_loss": 0.9509,
+          "accuracy": 0.5539
+        }
+      },
+      "paired": {
+        "diff": -0.00117,
+        "ci_low": -0.00467,
+        "ci_high": 0.00241,
+        "p_a_better": 0.7356,
+        "n": 4149
+      }
+    }
+  }
+}
