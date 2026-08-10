@@ -9,6 +9,7 @@ import {
   BRIER_SUMMED_FROM_MEAN,
   EVEN_ODDS_PROBABILITY_SCORE,
   MIN_BIN_SAMPLE,
+  ALWAYS_HOME_RATE,
   RANDOM_WINNER_RATE,
   calibrationVerdict,
   samplePhrase,
@@ -54,6 +55,15 @@ describe('accuracyMetrics', () => {
     expect(RANDOM_WINNER_RATE).toBeCloseTo(0.3333, 4)
   })
 
+  it('reports against the home-team floor, not a random pick', () => {
+    // The page compared its hit rate to 1/3 for months. Nobody picks at
+    // random; the home side wins ~43% of the time and picking it needs no
+    // model, so that is the floor a reader should judge against. Using 1/3
+    // overstates the margin by ten points.
+    expect(ALWAYS_HOME_RATE).toBeCloseTo(0.43, 2)
+    expect(ALWAYS_HOME_RATE).toBeGreaterThan(RANDOM_WINNER_RATE)
+  })
+
   it('formats signed point differences with an explicit sign', () => {
     expect(signedPts(10.34)).toBe('+10.3 pts')
     expect(signedPts(-5.8)).toBe('−5.8 pts')
@@ -82,12 +92,21 @@ describe('AccuracyHeadline', () => {
     gender: 'men' as const,
   }
 
-  it('shows the rate, its sample and the margin over a random pick', () => {
+  it('shows the rate, its sample and the margin over the home-team floor', () => {
     render(<AccuracyHeadline {...base} />)
     expect(screen.getByText('43.6%')).toBeInTheDocument()
     expect(screen.getByText('1,429 settled picks')).toBeInTheDocument()
-    // 43.6% - 33.3% = 10.3 points
-    expect(screen.getByText('+10.3 pts')).toBeInTheDocument()
+    // 43.6% - 43.0% = 0.6 points. This assertion used to read +10.3, because
+    // the margin was taken against a random one-in-three pick — a comparison
+    // nobody makes, worth ten free points to every number on the page.
+    expect(screen.getByText('+0.6 pts')).toBeInTheDocument()
+    expect(screen.queryByText('+10.3 pts')).not.toBeInTheDocument()
+  })
+
+  it('marks the yardstick as the home-team floor rather than a random pick', () => {
+    render(<AccuracyHeadline {...base} />)
+    expect(screen.getByText(/always picking the home team/i)).toBeInTheDocument()
+    expect(screen.queryByText(/made at random/i)).not.toBeInTheDocument()
   })
 
   it('flags a small sample as provisional', () => {

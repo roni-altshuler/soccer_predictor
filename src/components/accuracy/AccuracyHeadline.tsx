@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 
 import {
   MIN_ROBUST_SAMPLE,
-  RANDOM_WINNER_RATE,
+  ALWAYS_HOME_RATE,
   count,
   pct1,
   samplePhrase,
@@ -61,7 +61,7 @@ export function AccuracyHeadline({
   className,
 }: AccuracyHeadlineProps) {
   const universe = gender === 'women' ? "Women's football" : "Men's football"
-  const marginPts = (accuracy - RANDOM_WINNER_RATE) * 100
+  const marginPts = (accuracy - ALWAYS_HOME_RATE) * 100
   const beatsRandom = marginPts > 0
   const smallSample = settled < MIN_ROBUST_SAMPLE
 
@@ -72,7 +72,7 @@ export function AccuracyHeadline({
   // Scale the comparison bar so both markers sit comfortably inside it.
   const scaleMax = Math.max(0.6, accuracy + 0.1)
   const ratePos = Math.min(100, (accuracy / scaleMax) * 100)
-  const randomPos = Math.min(100, (RANDOM_WINNER_RATE / scaleMax) * 100)
+  const randomPos = Math.min(100, (ALWAYS_HOME_RATE / scaleMax) * 100)
 
   return (
     <Card className={cn('overflow-hidden p-0', className)}>
@@ -115,14 +115,16 @@ export function AccuracyHeadline({
             )}
           </p>
 
-          {/* The yardstick: a blind three-way pick lands 1 in 3. */}
+          {/* The yardstick: the home side wins 43% of the time, and picking
+              it needs no model. A random pick is not a comparison anyone
+              would make, and using it overstates the margin by 10 points. */}
           <div className="mt-3 max-w-[340px]">
             <div
               className="relative h-1.5 w-full rounded-full bg-[var(--muted-bg)]"
               role="img"
               aria-label={`Hit rate ${pct1(accuracy)}, compared with ${pct1(
-                RANDOM_WINNER_RATE
-              )} for a pick made at random`}
+                ALWAYS_HOME_RATE
+              )} for always picking the home team`}
             >
               <span
                 className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent-primary)]/70"
@@ -135,7 +137,8 @@ export function AccuracyHeadline({
               />
             </div>
             <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
-              Marker at {pct1(RANDOM_WINNER_RATE)} — a home/draw/away pick made at random.
+              Marker at {pct1(ALWAYS_HOME_RATE)} — always picking the home team, which needs
+              no model.
             </p>
           </div>
 

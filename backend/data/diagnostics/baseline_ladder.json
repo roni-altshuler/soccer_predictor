@@ -1,0 +1,120 @@
+{
+  "generated_at": "2026-08-10T13:06:04.976537+00:00",
+  "method": {
+    "scope": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "ita.1",
+      "fra.1"
+    ],
+    "since": "2023-08-01",
+    "dixon_coles": "refit at the start of each calendar month on matches strictly before it",
+    "elo": "last ClubElo rating published before kickoff",
+    "priced_only": true,
+    "brier": "multiclass summed; uniform 1/3 = .6667"
+  },
+  "n": 5237,
+  "ladder": [
+    {
+      "key": "always_home",
+      "label": "Always pick the home team",
+      "note": "the floor for a home/draw/away pick",
+      "accuracy": 0.4298,
+      "brier": 1.1403,
+      "n": 5237
+    },
+    {
+      "key": "higher_elo",
+      "label": "Pick the higher-rated team",
+      "note": "roughly what an informed fan does",
+      "accuracy": 0.5188,
+      "brier": null,
+      "n": 3840
+    },
+    {
+      "key": "model",
+      "label": "This model",
+      "note": "Dixon-Coles, refit monthly on prior matches only",
+      "accuracy": 0.5228,
+      "brier": 0.589,
+      "n": 5237
+    },
+    {
+      "key": "market",
+      "label": "The closing line",
+      "note": "the practical ceiling",
+      "accuracy": 0.5396,
+      "brier": 0.5749,
+      "n": 5237
+    }
+  ],
+  "calibration": [
+    {
+      "stated_low": 30,
+      "stated_high": 40,
+      "n": 844,
+      "observed": 0.3732
+    },
+    {
+      "stated_low": 40,
+      "stated_high": 50,
+      "n": 1795,
+      "observed": 0.4496
+    },
+    {
+      "stated_low": 50,
+      "stated_high": 60,
+      "n": 1288,
+      "observed": 0.5318
+    },
+    {
+      "stated_low": 60,
+      "stated_high": 70,
+      "n": 813,
+      "observed": 0.6728
+    },
+    {
+      "stated_low": 70,
+      "stated_high": 80,
+      "n": 369,
+      "observed": 0.748
+    },
+    {
+      "stated_low": 80,
+      "stated_high": 90,
+      "n": 117,
+      "observed": 0.8547
+    }
+  ],
+  "picks": [
+    {
+      "outcome": "home",
+      "picked": 3316,
+      "share": 0.6332,
+      "correct": 0.5383
+    },
+    {
+      "outcome": "draw",
+      "picked": 27,
+      "share": 0.0052,
+      "correct": 0.3704
+    },
+    {
+      "outcome": "away",
+      "picked": 1894,
+      "share": 0.3617,
+      "correct": 0.4979
+    }
+  ],
+  "actual_outcomes": {
+    "home": 0.4298,
+    "draw": 0.2564,
+    "away": 0.3137
+  },
+  "decisive_only": {
+    "n": 3894,
+    "model": 0.7029,
+    "market": 0.7257
+  }
+}

@@ -26,6 +26,21 @@
 export const RANDOM_WINNER_RATE = 1 / 3
 
 /**
+ * The yardstick this page reports against: always pick the home team.
+ *
+ * Measured on 5,237 Wave A matches since 2023-08 (`benchmark_baselines.py`).
+ * Nobody picks at random, so 1/3 is not a comparison anyone would make — it
+ * flatters the model by nineteen points. The home side wins 43% of the time
+ * and picking it needs no model at all, which makes it the honest floor for a
+ * home/draw/away call.
+ *
+ * The fuller ladder — home floor, higher-rated side, this model, the closing
+ * line — is served from `/api/v1/accuracy/baselines` and rendered by
+ * `BaselineLadder`. This constant exists so the headline agrees with it.
+ */
+export const ALWAYS_HOME_RATE = 0.43
+
+/**
  * Probability score of an even-odds forecast: the standard multiclass Brier,
  * summed over the three outcomes. Exactly 2/3.
  *

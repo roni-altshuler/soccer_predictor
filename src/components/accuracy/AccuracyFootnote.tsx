@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 
-import { RANDOM_WINNER_RATE, pct1 } from './accuracyMetrics'
+import { ALWAYS_HOME_RATE, pct1 } from './accuracyMetrics'
 
 /**
  * How to read the page, as a footnote rather than a feature block.
@@ -31,10 +31,10 @@ export function AccuracyFootnote({ className }: { className?: string }) {
         </p>
         <p>
           The headline is the share of matches where the called outcome — home win, draw or away
-          win — actually happened. Picking one of the three at random lands {pct1(
-            RANDOM_WINNER_RATE
-          )}{' '}
-          of the time, so that is the line worth beating.
+          win — actually happened. The line worth beating is {pct1(ALWAYS_HOME_RATE)}: that is how
+          often the home side simply wins, and picking it needs no model. Beating a random
+          one-in-three pick is not an achievement anyone should be impressed by, and quoting it
+          overstates the margin by ten points.
         </p>
         <p>
           Percentages are chances, not promises. A pick given a 70% chance is meant to be wrong

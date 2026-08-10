@@ -6,6 +6,7 @@ import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
 import { AccuracyFootnote } from '@/components/accuracy/AccuracyFootnote'
 import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
+import { BaselineLadder } from '@/components/accuracy/BaselineLadder'
 import { MarketBenchmarkPanel } from '@/components/accuracy/MarketBenchmarkPanel'
 import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
 import { ScopeNote } from '@/components/accuracy/ScopeNote'
@@ -146,6 +147,10 @@ export default function AccuracyPage() {
             )
           }
           />
+          {/* The live record being empty is the strongest reason to show the
+              backtest: without it the page says nothing at all about whether
+              the model is any good. */}
+          <BaselineLadder />
         </div>
       ) : (
         <div className="space-y-3">
@@ -169,6 +174,11 @@ export default function AccuracyPage() {
               headline readable. A hit rate is meaningless without the closing
               line beside it. Renders nothing if the benchmark has never run. */}
           <MarketBenchmarkPanel />
+
+          {/* Where the model sits against yardsticks a reader would actually
+              use. The headline's floor is "always pick home"; this is the rest
+              of the ladder, up to the closing line. */}
+          <BaselineLadder />
 
           <ReliabilityPanel
             bins={metrics?.calibration_bins ?? []}
