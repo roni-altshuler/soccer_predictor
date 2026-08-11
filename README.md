@@ -166,7 +166,7 @@ land.
 
 | route | what it answers |
 |---|---|
-| [`/season`](src/app/(app)/season/page.tsx) | who wins the league, who goes down, what is on next |
+| [`/season`](src/app/(app)/season/page.tsx) | pick a league, then who wins it, where everyone finishes, and every fixture left |
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, team strength |
 | [`/evaluation`](src/app/(app)/evaluation/page.tsx) | how accurate it has actually been |
 | `/tournaments` | knockout ties and trophy odds |
@@ -203,6 +203,28 @@ The live sample is currently zero and the site says so, rather than showing a
 `0.00000` that would read as a perfect model. Below 200 scored matches
 `/evaluation` refuses to draw a reliability chart, because a chart implies a
 shape and a handful of points does not have one.
+
+It also says *why* the sample is the size it is. A forecast names its clubs the
+way FBref does ("Gladbach"); a result names them the way the warehouse does
+("Borussia Mönchengladbach"). Rehearsing last season through the scoring path
+before the first kickoff, a name-based join matched 68.9% of fixtures and
+dropped the rest without a word — the live record would simply have looked
+small. Clubs are resolved to ids now, which takes the same rehearsal to 99.6%,
+and anything still unmatched is counted and named on the page.
+
+### On a phone
+
+`/season` shows one league at a time, chosen from a picker that becomes a
+bottom sheet below the `sm` breakpoint, and splits the races, the projected
+table and the fixture list into three tabs. The projected table is a different
+layout on a narrow screen rather than the same one squeezed: a 20x6 grid is
+unusable at 375px however small the text gets, and scrolling it sideways hides
+the club name, which is the column you navigate by.
+
+`node scripts/responsive_audit.mjs` drives real device profiles at 320, 375,
+390, 768 and 1440 and fails the run on horizontal overflow or a tap target
+under 24px. It is what caught the picker being clipped by the tab bar, and the
+709 fixtures whose kickoff rendered as "Invalid Date".
 
 **Measured and dropped:** referee, rest, head-to-head, venue, attendance,
 kickoff time. Each was added, scored on unseen matches, and removed. Referee was

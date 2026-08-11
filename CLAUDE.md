@@ -278,7 +278,12 @@ forecast generated *before* kickoff. Anything stamped after kickoff is excluded
 
 Exported to `models-latest` as `prediction_snapshots.csv.gz` each run, because
 the warehouse is gitignored and a provenance record that dies with the runner
-is not one.
+is not one — and **restored from that same asset at the start of every run**.
+The warehouse artifact is republished by the training and backfill jobs, which
+know nothing about forecasts, so the copy each run downloads has no
+`prediction_snapshots`; without the restore the `--clobber` export would replace
+the whole history with one run's, and the table would be append-only and one
+run deep forever.
 
 ### Historical vs live evaluation — never merged
 
@@ -290,6 +295,20 @@ is not one.
 `services/forecast/evaluate.py` computes them separately, each carries `basis`,
 and the UI renders them in separate blocks. A live n of 40 is reported as 40.
 `/evaluation` refuses to draw a reliability chart below 200 scored matches.
+
+**The join is by team id, not by name.** A snapshot's club name comes from
+FBref ("Wolves", "Gladbach", "Man Utd") and a result's from the warehouse
+("Wolverhampton Wanderers", "Borussia Mönchengladbach", "Manchester United").
+Rehearsed against last season, a name join scored **68.9%** of fixtures —
+Bundesliga 23.4%, Premier League 41.1% — and dropped the rest silently, so the
+live sample would merely have looked small. `club_vocabulary()` resolves both
+sides through canonical names, the curated alias table and the canonical
+layer's fixture-graph aliases: same rehearsal, **99.6%**. Scoped per
+competition, and a name meaning two clubs is refused rather than guessed.
+
+Unmatched clubs are **counted and named** in the payload and on `/evaluation`.
+"Not played yet" and "we no longer recognise this club" both shrink the sample
+and only one of them means something is broken.
 
 ### Scheduled refresh
 
@@ -310,15 +329,36 @@ leaves the previous valid forecast serving rather than a truncated file.
 
 | route | what it is |
 |---|---|
-| `/season` | flagship: title race, relegation race, sortable projected table, fixture cards, evidence panel |
+| `/season` | flagship: league picker, then Overview / Table / Fixtures tabs, with the evidence panel always below them |
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
 | `/evaluation` | historical vs live, kept apart; reliability, per-league and per-version breakdowns |
 | `/tournaments` | knockout ties and trophy odds |
 
 Components in `src/components/forecast/`: `ProbabilityBar`, `ProbabilityRow`,
-`FixtureCard`, `ProjectedTable` (two layouts, not one squeezed), `EvidencePanel`.
-Every probability is rendered as **text**, never colour-only; the projected
-table sorts from the keyboard with `aria-sort`.
+`FixtureCard`, `FixtureList` (rows and day headings, six matchdays at a time),
+`ProjectedTable` (two layouts, not one squeezed), `LeagueSelect`,
+`EvidencePanel`. Every probability is rendered as **text**, never colour-only;
+the projected table sorts from the keyboard with `aria-sort`.
+
+`LeagueSelect` is the ARIA listbox pattern, not a `<select>`, because its rows
+carry a badge, a country and the fixtures left. It therefore owns the whole
+keyboard contract by hand — arrows with wraparound, Home/End, Enter, Escape
+returning focus, Tab, type-ahead — and all of it is tested. **Below the `sm`
+breakpoint it is a bottom sheet portalled to `document.body`**: an anchored
+panel does not fit between the trigger and the fixed tab bar at 375x667, and
+`position: fixed` is positioned against the nearest transformed ancestor rather
+than the viewport.
+
+The evidence panel is deliberately **not** one of the tabs. Those percentages
+are unfalsifiable without it and a tab is a place things go to be unread; a
+test asserts it is visible from every tab.
+
+`scripts/responsive_audit.mjs` drives real Playwright device descriptors at
+320/375/390/768/1440 and **fails** on horizontal overflow, on a picker that
+does not fit above the tab bar, and on tap targets under 24px:
+
+    npx next start -p 3111
+    QA_BASE=http://127.0.0.1:3111 node scripts/responsive_audit.mjs
 
 | Task | Command |
 |---|---|
@@ -326,6 +366,8 @@ table sorts from the keyboard with `aria-sort`.
 | Score live forecasts | `python3 -m backend.scripts.evaluate_live` |
 | Export provenance | `python3 -m backend.scripts.export_snapshots` |
 | Rebuild canonical layer | `python3 -m backend.scripts.build_canonical` |
+| Restore published provenance | `python3 -m backend.scripts.import_snapshots --allow-missing` |
+| Responsive/tap-target audit | `node scripts/responsive_audit.mjs` |
 | Walk-forward baselines | `python3 -m backend.scripts.baseline_walkforward` |
 | Layered ablation | `python3 -m backend.scripts.train_layered` |
 
