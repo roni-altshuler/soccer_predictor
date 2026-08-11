@@ -54,6 +54,11 @@ logger = logging.getLogger("fbref.client")
 # Sports-Reference's published guidance for automated traffic. Not lowered.
 MIN_INTERVAL_SECONDS = 6.0
 
+# FBref's thinnest genuine page is around 90KB. A document well under this is
+# an error shell, not a competition with little data — the World Cup history
+# page came back at 6,253 bytes with no <h1>.
+MIN_PLAUSIBLE_BYTES = 20_000
+
 CACHE_DIR = Path(__file__).resolve().parents[3] / "backend" / "data" / "cache" / "fbref_html"
 
 _COMMENT_MARKERS = re.compile(r"<!--|-->")
@@ -84,6 +89,8 @@ class FBrefClient:
 
     def __init__(self, *, min_interval: float = MIN_INTERVAL_SECONDS,
                  use_cache: bool = True,
+                 max_rejection_retries: int = 3,
+                 rejection_backoff: float = 60.0,
                  virtual_display: Optional[bool] = None) -> None:
         self.min_interval = max(min_interval, MIN_INTERVAL_SECONDS)
         self.use_cache = use_cache
@@ -96,10 +103,13 @@ class FBrefClient:
             display = os.environ.get("DISPLAY", "")
             virtual_display = display in ("", ":0")
         self.virtual_display = virtual_display
+        self.max_rejection_retries = max_rejection_retries
+        self.rejection_backoff = rejection_backoff
         self._last_request = 0.0
         self._fetch = None
         self.fetched = 0
         self.cache_hits = 0
+        self.rejected = 0
 
     # -- browser ------------------------------------------------------------
     def _ensure_driver(self):
@@ -149,15 +159,35 @@ class FBrefClient:
                 logger.warning("corrupt cache entry, refetching: %s", path)
 
         self._ensure_driver()
-        self._throttle()
-        try:
-            html = self._fetch(url)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("fetch failed %s: %s", url, str(exc)[:160])
-            return None
-        if not html:
-            return None
-        self.fetched += 1
+        for attempt in range(self.max_rejection_retries + 1):
+            self._throttle()
+            try:
+                html = self._fetch(url)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("fetch failed %s: %s", url, str(exc)[:160])
+                return None
+            if not html:
+                return None
+            self.fetched += 1
+
+            reason = self.rejection(html)
+            if reason is None:
+                break
+            # NEVER cache a rejection. Sports Reference answers a burst with a
+            # 110KB page titled "Rate Limited Request (429 error)" — a real,
+            # well-formed document that parses to zero rows. Caching it makes
+            # the failure PERMANENT and silent: every later run gets a cache
+            # hit, extracts nothing, and reports success. That is how Ligue 1
+            # and both World Cups came out of a 790-season sweep with no rows
+            # at all while the log said "done".
+            self.rejected += 1
+            if attempt == self.max_rejection_retries:
+                logger.warning("%s after %d attempts, giving up: %s",
+                               reason, attempt + 1, url)
+                return None
+            wait = self.rejection_backoff * (2 ** attempt)
+            logger.warning("%s, backing off %.0fs: %s", reason, wait, url)
+            time.sleep(wait)
 
         if self.use_cache:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -174,8 +204,25 @@ class FBrefClient:
     def is_challenge(self, html: str) -> bool:
         return "Just a moment" in html[:4000] or "cf-mitigated" in html[:4000]
 
+    # A page that came back instead of the data. Each of these is a real,
+    # well-formed HTML document, which is exactly why they have to be named:
+    # they parse without error and yield nothing.
+    def rejection(self, html: str) -> Optional[str]:
+        head = html[:6000]
+        if "Rate Limited Request" in head or "429 error" in head:
+            return "rate limited"
+        if self.is_challenge(html):
+            return "cloudflare challenge"
+        if len(html) < MIN_PLAUSIBLE_BYTES:
+            # FBref's thinnest real page is ~90KB. Anything under 20KB is an
+            # error shell — the World Cup history came back at 6,253 bytes
+            # with no <h1> at all.
+            return f"implausibly short page ({len(html)} bytes)"
+        return None
+
     def stats(self) -> dict:
-        return {"fetched": self.fetched, "cache_hits": self.cache_hits}
+        return {"fetched": self.fetched, "cache_hits": self.cache_hits,
+                "rejected": self.rejected}
 
 
 def commented_tables(soup: BeautifulSoup) -> int:
