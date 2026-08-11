@@ -59,7 +59,7 @@ import re
 import sys
 import unicodedata
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
@@ -147,11 +147,40 @@ def norm_team(name: str) -> str:
 
 DDL_UDF = "norm_team"
 
+# Columns the canonical layer carries through but does not require. The
+# published warehouse artifact can lag the local one by a migration — closing
+# odds arrived in schema 5 — and a rebuild that dies on a raw BinderException
+# because a column was added this morning is a brittle way to find that out.
+# Absent ones become NULL, which is what they already are for most rows.
+OPTIONAL_WH_COLUMNS = ("odds_close_home", "odds_close_draw", "odds_close_away")
 
-def build(con, *, parquet: bool) -> None:
+
+def _optional_select(con, columns: Sequence[str]) -> str:
+    """`m.col` where the attached warehouse has it, `NULL AS col` where not."""
+    have = {r[0] for r in con.execute(
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_schema = 'main' AND table_name = 'matches' "
+        "  AND table_catalog = 'wh'").fetchall()}
+    missing = [c for c in columns if c not in have]
+    if missing:
+        logger.warning("warehouse is missing %s — carried through as NULL. "
+                       "The artifact predates the migration that added them.",
+                       ", ".join(missing))
+    return ", ".join(f"m.{c}" if c in have else f"NULL AS {c}" for c in columns)
+
+
+def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
+          fbref: Optional[Path] = None) -> None:
+    """Rebuild the canonical layer from the two stores of record.
+
+    The inputs are overridable so the CI corpus can be rebuilt from the
+    published release artifacts and compared against the local one. Without
+    that, "the workflow will train on the same corpus the metrics describe" is
+    an assumption rather than something anyone has checked.
+    """
     con.execute("INSTALL sqlite; LOAD sqlite;")
-    con.execute(f"ATTACH '{WAREHOUSE}' AS wh (TYPE sqlite, READ_ONLY)")
-    con.execute(f"ATTACH '{FBREF}' AS fb (TYPE sqlite, READ_ONLY)")
+    con.execute(f"ATTACH '{warehouse or WAREHOUSE}' AS wh (TYPE sqlite, READ_ONLY)")
+    con.execute(f"ATTACH '{fbref or FBREF}' AS fb (TYPE sqlite, READ_ONLY)")
     con.create_function(DDL_UDF, norm_team, ["VARCHAR"], "VARCHAR")
 
     comp_map = ",".join(f"('{k.replace(chr(39), chr(39) * 2)}','{v}')"
@@ -159,6 +188,7 @@ def build(con, *, parquet: bool) -> None:
     con.execute(f"CREATE OR REPLACE TABLE competition_map(fbref VARCHAR, "
                 f"competition_id VARCHAR)")
     con.execute(f"INSERT INTO competition_map VALUES {comp_map}")
+    optional = _optional_select(con, OPTIONAL_WH_COLUMNS)
 
     # ---- warehouse side -------------------------------------------------
     # `matches` is results-only by invariant, so every row here is played.
@@ -185,7 +215,7 @@ def build(con, *, parquet: bool) -> None:
             r.name                                       AS referee,
             m.venue, m.attendance,
             m.odds_home, m.odds_draw, m.odds_away,
-            m.odds_close_home, m.odds_close_draw, m.odds_close_away
+            {optional}
         FROM wh.matches m
         JOIN wh.teams ht ON ht.team_id = m.home_team_id
         JOIN wh.teams awy ON awy.team_id = m.away_team_id
@@ -446,6 +476,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--no-parquet", action="store_true")
     ap.add_argument("--output", default=str(DUCKDB_OUT))
+    ap.add_argument("--warehouse", default=str(WAREHOUSE),
+                    help="override the warehouse input (for verifying a "
+                         "release artifact rebuilds the same corpus)")
+    ap.add_argument("--fbref", default=str(FBREF),
+                    help="override the FBref input")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -458,7 +493,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     if out.exists():
         out.unlink()
     con = duckdb.connect(str(out))
-    build(con, parquet=not args.no_parquet)
+    build(con, parquet=not args.no_parquet,
+          warehouse=Path(args.warehouse), fbref=Path(args.fbref))
     con.close()
     logger.info("wrote %s", out)
     return 0

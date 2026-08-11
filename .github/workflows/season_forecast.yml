@@ -76,6 +76,24 @@ jobs:
 
           ls -la backend/data/*.sqlite
 
+      - name: Restore the published prediction history
+        # `warehouse.sqlite.gz` is republished by the training and backfill
+        # jobs, which know nothing about forecasts, so the copy this runner
+        # downloads has no `prediction_snapshots`. Without this step the export
+        # below (`--clobber`) would replace last run's history with this run's,
+        # and the append-only record would be one run deep forever.
+        #
+        # First ever run has nothing to download, which is fine and not an
+        # error — hence --allow-missing.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest \
+            --pattern 'prediction_snapshots.csv.gz' --dir /tmp --clobber || \
+            echo "no published history yet"
+          python -m backend.scripts.import_snapshots \
+            --input /tmp/prediction_snapshots.csv.gz --allow-missing
+
       - name: Refresh current-season results
         # New results are the entire reason this job runs. Failing here means
         # forecasting from a stale corpus, which is stale but not WRONG — so
