@@ -98,7 +98,11 @@ def load_upcoming(competitions: Sequence[str]) -> List[dict]:
     """
     import duckdb
 
-    from backend.scripts.build_canonical import COMPETITION_MAP, norm_team
+    from backend.scripts.build_canonical import (
+        COMPETITION_MAP,
+        fbref_time,
+        norm_team,
+    )
 
     con = duckdb.connect(str(CANONICAL), read_only=True)
     con.execute("INSTALL sqlite; LOAD sqlite;")
@@ -125,7 +129,9 @@ def load_upcoming(competitions: Sequence[str]) -> List[dict]:
         out.append({
             "competition_id": comp, "season": int(str(season)[:4]),
             "local_date": datetime.fromisoformat(date).date(),
-            "kickoff": time or None, "round": rnd,
+            # `fbref_time` because FBref prints "20:15 (22:15)" and the raw
+            # cell concatenated onto a date is not a timestamp.
+            "kickoff": fbref_time(time), "round": rnd,
             "home_name": home, "away_name": away,
             "home_key": f"{comp}::{hn}", "away_key": f"{comp}::{an}",
             "home_score": None, "away_score": None,

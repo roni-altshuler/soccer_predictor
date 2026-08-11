@@ -146,6 +146,35 @@ def norm_team(name: str) -> str:
 
 
 DDL_UDF = "norm_team"
+TIME_UDF = "fbref_time"
+
+_FBREF_TIME = re.compile(r"^\s*(\d{1,2}):(\d{2})")
+
+
+def fbref_time(raw: Optional[str]) -> Optional[str]:
+    """`'20:15 (22:15)'` -> `'20:15'`.
+
+    FBref's schedule prints the kickoff twice: once in the timezone the page
+    was rendered for, and once — in parentheses — in another. Both describe one
+    instant, so concatenating the whole cell onto a date produces
+    `2026-08-14T20:15 (22:15)`, which is not a timestamp. That string reached
+    `kickoff_utc` on 67,704 canonical rows and rendered as "Invalid Date" on
+    709 of the 2,346 published fixtures.
+
+    Only the first is kept. Which zone it is stated in is not something this
+    repository has verified, and the surrounding code has always treated it as
+    UTC; that assumption is unchanged here rather than swapped for a different
+    unverified one.
+    """
+    if raw is None:
+        return None
+    m = _FBREF_TIME.match(str(raw))
+    if not m:
+        return None
+    h, mi = int(m.group(1)), int(m.group(2))
+    if not (0 <= h <= 23 and 0 <= mi <= 59):
+        return None
+    return f"{h:02d}:{mi:02d}"
 
 # Columns the canonical layer carries through but does not require. The
 # published warehouse artifact can lag the local one by a migration — closing
@@ -182,6 +211,7 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
     con.execute(f"ATTACH '{warehouse or WAREHOUSE}' AS wh (TYPE sqlite, READ_ONLY)")
     con.execute(f"ATTACH '{fbref or FBREF}' AS fb (TYPE sqlite, READ_ONLY)")
     con.create_function(DDL_UDF, norm_team, ["VARCHAR"], "VARCHAR")
+    con.create_function(TIME_UDF, fbref_time, ["VARCHAR"], "VARCHAR")
 
     comp_map = ",".join(f"('{k.replace(chr(39), chr(39) * 2)}','{v}')"
                         for k, v in COMPETITION_MAP.items())
@@ -233,9 +263,7 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
             'fbref'                                          AS source,
             COALESCE(cm.competition_id, 'fbref:' || f.league) AS competition_id,
             CAST(substr(f.season, 1, 4) AS INTEGER)          AS season,
-            CASE WHEN f.time IS NOT NULL AND f.time <> ''
-                 THEN f.date || 'T' || f.time
-                 ELSE f.date || 'T00:00' END                 AS kickoff_utc,
+            f.date || 'T' || COALESCE({TIME_UDF}(f.time), '00:00') AS kickoff_utc,
             CAST(f.date AS DATE)                             AS local_date,
             f.round                                          AS phase,
             f.home AS home_name, f.away AS away_name,

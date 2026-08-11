@@ -329,3 +329,41 @@ def test_a_missing_history_is_fine_on_the_first_ever_run(tmp_path):
                     "--database", str(tmp_path / "w.sqlite")]) == 0
     assert import_(["--input", str(tmp_path / "nope.csv.gz"),
                     "--database", str(tmp_path / "w.sqlite")]) == 1
+
+
+# ------------------------------------------------------ the scraped kickoff
+#
+# FBref's schedule cell prints one kickoff in two timezones: "20:15 (22:15)".
+# Concatenated onto a date that is `2026-08-14T20:15 (22:15)`, which is not a
+# timestamp. It reached `kickoff_utc` on 67,704 canonical rows and rendered as
+# the literal string "Invalid Date" on 709 of 2,346 published fixtures.
+
+
+@pytest.mark.parametrize("raw,want", [
+    ("20:15 (22:15)", "20:15"),
+    ("20:15", "20:15"),
+    ("9:05 (10:05)", "09:05"),
+    ("  16:00  ", "16:00"),
+    ("", None),
+    (None, None),
+    ("TBD", None),
+    ("25:00", None),
+    ("12:75", None),
+])
+def test_a_kickoff_printed_in_two_timezones_yields_one_time(raw, want):
+    from backend.scripts.build_canonical import fbref_time
+    assert fbref_time(raw) == want
+
+
+def test_a_snapshot_kickoff_is_a_timestamp_something_can_be_compared_against():
+    """`final_before_kickoff` compares generated_at against this string."""
+    fixtures = [{
+        "competition_id": "por.1", "season": 2026, "date": "2026-08-14",
+        "kickoff": "20:15", "home": "Sporting CP", "away": "Vit. Guimarães",
+        "p_home": 0.55, "p_draw": 0.25, "p_away": 0.20,
+        "xg_home": 1.8, "xg_away": 1.0, "scorelines": [{"score": "2-1", "p": 0.1}],
+    }]
+    s = snapshots_from_fixtures(fixtures, generated_at="2026-08-14T07:30:00+00:00",
+                                model_version="v1")[0]
+    assert s.kickoff_at == "2026-08-14T20:15:00+00:00"
+    assert s.generated_at < s.kickoff_at

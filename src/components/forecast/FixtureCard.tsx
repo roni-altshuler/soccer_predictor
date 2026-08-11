@@ -38,15 +38,27 @@ export interface FixtureForecast {
   elo_away?: number
 }
 
+/**
+ * `('2026-08-21', '19:00')` -> `'Fri 21 Aug · 19:00'`.
+ *
+ * Defensive about the time because it comes from a scrape. FBref's schedule
+ * cell reads "20:15 (22:15)" — one kickoff printed in two timezones — and
+ * feeding that to `new Date` produced the literal string "Invalid Date" on
+ * 709 of 2,346 published fixtures. That is fixed upstream now; this keeps a
+ * future malformed value from reaching a reader's screen, because a missing
+ * time is a far smaller failure than a visibly broken one.
+ */
 export function formatKickoff(date: string, kickoff: string | null): string {
-  const d = new Date(`${date}T${kickoff ?? '12:00'}:00Z`)
+  const time = /^\d{1,2}:\d{2}$/.test(kickoff ?? '') ? kickoff : null
+  const d = new Date(`${date}T${time ?? '12:00'}:00Z`)
+  if (Number.isNaN(d.getTime())) return time ? `${date} · ${time}` : date
   const day = d.toLocaleDateString('en-GB', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
   })
-  return kickoff ? `${day} · ${kickoff}` : day
+  return time ? `${day} · ${time}` : day
 }
 
 export function FixtureCard({
