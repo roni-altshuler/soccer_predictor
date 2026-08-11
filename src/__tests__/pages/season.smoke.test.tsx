@@ -1,34 +1,36 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import SeasonPage from '@/app/(app)/season/page'
 
 /**
- * Smoke tests for the season forecast.
+ * The flagship forecasting surface.
  *
- * Beyond "it mounts", three things are worth guarding:
+ * What is guarded here, and why each would otherwise be lost silently:
  *
- *  1. **The measured record stays next to the forecast.** The percentages on
- *     this page are unfalsifiable without it, and it is the first thing that
- *     gets edited away when a page is tidied.
- *  2. **Relegation is shown, not just the title race.** It is the half of the
- *     season question that is easy to drop and is what most readers of a
- *     mid-table club actually want.
- *  3. **A missing artifact renders an honest empty state**, rather than an
- *     empty table that reads as "nobody will be relegated".
+ *  1. **Both races.** Title and relegation. Relegation is the half that gets
+ *     dropped in a redesign and is what most readers of a mid-table club came
+ *     for.
+ *  2. **The evidence stays on the page.** These percentages are unfalsifiable
+ *     without it, and it comes from a different endpoint than the forecast, so
+ *     a broken evaluation route would quietly remove it.
+ *  3. **Historical and live are never merged.** A live n of zero must read as
+ *     zero, not as the 43,433-match backtest.
+ *  4. **League switching actually switches** — a tab bar that looks right but
+ *     renders the first league forever is a convincing bug.
+ *  5. **Missing artifacts render an honest empty state**, never an empty table
+ *     that reads as "nobody will be relegated".
  */
 
 const METHOD = {
-  measured: {
-    brier: 0.59303,
-    ece: 0.0099,
-    n: 43433,
-    protocol: 'expanding-window walk-forward, Wave A 2000-2025',
-  },
+  model_version: '2026.08.1+27734fb2',
+  trained_through: '2026-08-10',
   excluded_after_measurement: ['referee', 'rest', 'head-to-head', 'venue'],
 }
 
 const PROJECTIONS = {
   available: true,
+  generated_at: '2026-08-11T15:07:00+00:00',
   method: METHOD,
   leagues: [
     {
@@ -40,28 +42,25 @@ const PROJECTIONS = {
       teams: 20,
       relegation_places: 3,
       table: [
-        {
-          team: 'Manchester City',
-          p_title: 0.386,
-          p_top4: 0.815,
-          p_relegated: 0.0,
-          p_playoff: null,
-          exp_points: 78.8,
-          exp_position: 2.9,
-          played: 0,
-          points: 0,
-        },
-        {
-          team: 'Ipswich Town',
-          p_title: 0.0,
-          p_top4: 0.001,
-          p_relegated: 0.712,
-          p_playoff: null,
-          exp_points: 28.0,
-          exp_position: 18.0,
-          played: 0,
-          points: 0,
-        },
+        { team: 'Manchester City', p_title: 0.386, p_top4: 0.815, p_relegated: 0.0,
+          p_playoff: null, exp_points: 78.8, exp_position: 2.9, played: 0, points: 0 },
+        { team: 'Arsenal', p_title: 0.279, p_top4: 0.757, p_relegated: 0.001,
+          p_playoff: null, exp_points: 76.2, exp_position: 3.4, played: 0, points: 0 },
+        { team: 'Ipswich Town', p_title: 0.0, p_top4: 0.001, p_relegated: 0.712,
+          p_playoff: null, exp_points: 28.0, exp_position: 18.0, played: 0, points: 0 },
+      ],
+    },
+    {
+      competition_id: 'ger.1',
+      name: 'Bundesliga',
+      country: 'Germany',
+      season: 2026,
+      fixtures_remaining: 306,
+      teams: 18,
+      relegation_places: 2,
+      table: [
+        { team: 'Bayern Munich', p_title: 0.713, p_top4: 0.96, p_relegated: 0.0,
+          p_playoff: null, exp_points: 79.0, exp_position: 1.4, played: 0, points: 0 },
       ],
     },
   ],
@@ -72,14 +71,17 @@ const FIXTURES = {
   method: METHOD,
   fixtures: [
     {
+      fixture_uid: 'abc123',
       competition_id: 'eng.1',
+      season: 2026,
       date: '2026-08-21',
-      kickoff: '20:00',
+      kickoff: '19:00',
+      round: 'Matchweek 1',
       home: 'Liverpool',
       away: 'Arsenal',
-      p_home: 0.42,
-      p_draw: 0.27,
-      p_away: 0.31,
+      p_home: 0.421,
+      p_draw: 0.268,
+      p_away: 0.311,
       xg_home: 1.62,
       xg_away: 1.34,
       scorelines: [{ score: '1-1', p: 0.121 }],
@@ -87,65 +89,122 @@ const FIXTURES = {
   ],
 }
 
-function mockFetch(projections: unknown, fixtures: unknown) {
-  global.fetch = jest.fn().mockImplementation((url: string) =>
-    Promise.resolve({
-      ok: true,
-      json: async () =>
-        String(url).includes('projections') ? projections : fixtures,
-    }),
-  ) as unknown as typeof fetch
+const EVALUATION = {
+  available: true,
+  historical: { available: true, n: 43433, brier: 0.59303, ece: 0.0099 },
+  live: { n: 0 },
+  snapshot_store: { rows: 2346, fixtures: 2346, versions: 1 },
 }
 
-afterEach(() => {
-  jest.resetAllMocks()
-})
+function mockFetch(projections: unknown, fixtures: unknown, evaluation: unknown) {
+  global.fetch = jest.fn().mockImplementation((url: string) => {
+    const u = String(url)
+    const body = u.includes('projections')
+      ? projections
+      : u.includes('evaluation')
+        ? evaluation
+        : fixtures
+    return Promise.resolve({ ok: true, json: async () => body })
+  }) as unknown as typeof fetch
+}
+
+afterEach(() => jest.resetAllMocks())
 
 describe('SeasonPage', () => {
   it('shows the title race and the relegation race together', async () => {
-    mockFetch(PROJECTIONS, FIXTURES)
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
-    await waitFor(() =>
-      expect(screen.getByText('Manchester City')).toBeInTheDocument(),
-    )
-    expect(screen.getByText('38.6%')).toBeInTheDocument()
-    // Relegation is the half of the question that is easy to drop.
-    expect(screen.getByText('Ipswich Town')).toBeInTheDocument()
-    expect(screen.getByText('71.2%')).toBeInTheDocument()
-    expect(screen.getByText(/3 go down/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
+    expect(screen.getByText(/Relegation race/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('38.6%').length).toBeGreaterThan(0)
+    // The half that is easy to drop.
+    expect(screen.getAllByText('Ipswich Town').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('71.2%').length).toBeGreaterThan(0)
   })
 
-  it('keeps the measured record beside the forecast', async () => {
-    mockFetch(PROJECTIONS, FIXTURES)
+  it('states when the forecast was generated and how much is left to play', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
-    // Without this the percentages are unfalsifiable.
-    await waitFor(() => expect(screen.getByText('0.59303')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
+    expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
+    expect(screen.getByText(/updated/i)).toBeInTheDocument()
+  })
+
+  it('keeps the measured evidence on the page beside the forecast', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    // Without this the percentages above are unfalsifiable.
+    await waitFor(() => expect(screen.getByText('43,433')).toBeInTheDocument())
+    expect(screen.getByText('0.59303')).toBeInTheDocument()
     expect(screen.getByText('0.0099')).toBeInTheDocument()
-    expect(screen.getByText('43,433')).toBeInTheDocument()
-    expect(screen.getAllByText(/it had not seen/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/How accurate is this\?/i)).toBeInTheDocument()
+  })
+
+  it('does not present the historical backtest as a live record', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText('43,433')).toBeInTheDocument())
+    expect(screen.getByText(/Nothing scored yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/Historical walk-forward/i)).toBeInTheDocument()
+    expect(screen.getByText(/Live published forecasts/i)).toBeInTheDocument()
   })
 
   it('publishes what was measured and dropped', async () => {
-    mockFetch(PROJECTIONS, FIXTURES)
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
     await waitFor(() => expect(screen.getByText(/Measured and dropped/i)).toBeInTheDocument())
-    expect(screen.getByText(/referee, rest, head-to-head, venue/i)).toBeInTheDocument()
+    for (const dropped of ['referee', 'rest', 'head-to-head', 'venue']) {
+      expect(screen.getByText(dropped)).toBeInTheDocument()
+    }
   })
 
-  it('shows a fixture whose 1X2 and scoreline agree', async () => {
-    mockFetch(PROJECTIONS, FIXTURES)
+  it('renders a fixture card whose 1X2 and scoreline come from one object', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
-    await waitFor(() => expect(screen.getByText('Liverpool')).toBeInTheDocument())
-    expect(screen.getByText('42 · 27 · 31')).toBeInTheDocument()
-    expect(screen.getByText(/xG 1.62–1.34/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
+    expect(screen.getByText('Liverpool')).toBeInTheDocument()
+    expect(screen.getByText('42.1%')).toBeInTheDocument()
+    expect(screen.getByText('1.62 — 1.34')).toBeInTheDocument()
+    expect(screen.getByText('1-1 · 12.1%')).toBeInTheDocument()
+  })
+
+  it('actually switches leagues', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() =>
+      expect(screen.getAllByText('Bayern Munich').length).toBeGreaterThan(0),
+    )
+    expect(screen.getByText(/306 fixtures remaining/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
+
+    expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Bayern Munich')).not.toBeInTheDocument()
+    expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
+  })
+
+  it('names the model version so a forecast can be tied to an implementation', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() =>
+      expect(screen.getByText('2026.08.1+27734fb2')).toBeInTheDocument(),
+    )
   })
 
   it('renders an honest empty state when no forecast has been generated', async () => {
-    mockFetch({ available: false }, { available: false })
+    mockFetch({ available: false }, { available: false }, { available: false, live: { n: 0 } })
     render(<SeasonPage />)
 
     await waitFor(() =>

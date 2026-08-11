@@ -20,6 +20,7 @@ import {
   Users,
   Swords,
   CalendarRange,
+  BarChart3,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -61,6 +62,7 @@ const GROUPS: NavGroup[] = [
   {
     title: 'Evidence',
     items: [
+      { href: '/evaluation', label: 'Evaluation', icon: BarChart3 },
       { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
       { href: '/about', label: 'About', icon: Info },
     ],

@@ -224,6 +224,111 @@ none of it is unservable the way the market block was.
 | Forward title odds | `python3 -m backend.scripts.predict_tournaments` |
 | Lineup ablation | `python3 -m backend.scripts.benchmark_lineup_features` |
 
+## Production forecasting (2026-08-11)
+
+The 2026-27 season is served from `forecast_season.py`. **The model is frozen**
+unless a demonstrated implementation bug says otherwise.
+
+### The three decisions that must not be casually changed
+
+1. **Season simulation draws one strength offset per club, held for the whole
+   season.** Point estimates compounded 34 times gave Bayern 93.3%, PSG 88.1%,
+   Inter 83.4% — against market prices near 70/70/30. Within-season Elo drift
+   over **3,583 team-seasons has sd 45.3 points**, and that error is
+   *correlated across all of a club's fixtures*, which is why it cannot be
+   averaged away by more simulations. With it: Bayern 71.3%, City 38.6%,
+   Barcelona 48.7%. **Per-match probabilities stay unperturbed** — the head was
+   measured at ECE .0099 on exactly those inputs.
+2. **The 1X2 and the scoreline grid are reconciled, not merely adjacent.**
+   Dixon-Coles' two lambdas are solved so the grid reproduces the measured-best
+   1X2. Worst disagreement across 2,346 fixtures: **0.00000**, and a gap above
+   1e-3 now aborts the publish.
+3. **Season-boundary regression to the mean was tested and rejected**: +.00150
+   at 0.25, +.00394 at 0.40, +.00796 at 0.60 — significantly worse at every
+   level. Surprising orderings (Bournemouth above Chelsea) are the measured
+   model's output. **Do not tune ratings because a table looks wrong.**
+
+### Feature set
+
+`elo_*` and `form_*` only. Measured and dropped, each scored on unseen matches:
+**referee, rest, head-to-head, venue, attendance, kickoff time**. Referee was
+the expensive one — it needed a 207,000-fixture FBref scrape to make the
+question askable outside England — and the answer was still no.
+
+Walk-forward record: **Brier .59303, ECE .0099, 43,433 unseen matches.**
+
+### Model versioning
+
+`services/forecast/version.py`. Two halves: `2026.08.1` is human-facing and
+bumped deliberately; `+27734fb2` is a hash of the config that *determines* a
+forecast — features, shock sd, sims, league scope, Elo settings. A release
+string someone must remember to bump fails silently; the hash cannot. Tests pin
+that reordering features is not a change while adding one is.
+
+### Prediction snapshots — provenance
+
+`services/forecast/snapshots.py`, table `prediction_snapshots` in the
+warehouse. **Append-only**, keyed `(fixture_uid, generated_at, model_version)`,
+`INSERT OR IGNORE`. A test reads the module source to assert it contains no
+UPDATE, DELETE or INSERT OR REPLACE.
+
+`final_before_kickoff()` is the canonical evaluation record: strictly the last
+forecast generated *before* kickoff. Anything stamped after kickoff is excluded
+— it would flatter the model and it is not a forecast.
+
+Exported to `models-latest` as `prediction_snapshots.csv.gz` each run, because
+the warehouse is gitignored and a provenance record that dies with the runner
+is not one.
+
+### Historical vs live evaluation — never merged
+
+| | sample | what it is |
+|---|---|---|
+| historical walk-forward | 43,433 | retrospective; nobody saw those numbers before those kickoffs |
+| live published | grows from 0 | the final pre-kickoff snapshot, scored after the result |
+
+`services/forecast/evaluate.py` computes them separately, each carries `basis`,
+and the UI renders them in separate blocks. A live n of 40 is reported as 40.
+`/evaluation` refuses to draw a reliability chart below 200 scored matches.
+
+### Scheduled refresh
+
+`.github/workflows/season_forecast.yml`, daily 07:30 UTC, `concurrency:
+season-forecast`. Separate from `prediction_pipeline.yml` because it needs a
+16MB FBref download plus a canonical rebuild.
+
+**The input download has no `continue-on-error`, deliberately.** The forecast
+trains on the canonical corpus (62,504 matches for these seven leagues), not
+the warehouse alone (48,536); running without FBref would ship a different
+model under the same version string. A guard step fails the job if the rebuilt
+corpus comes out under 60,000.
+
+Artifacts are published via temp-file + `os.replace`, so a crash mid-write
+leaves the previous valid forecast serving rather than a truncated file.
+
+### Frontend routes
+
+| route | what it is |
+|---|---|
+| `/season` | flagship: title race, relegation race, sortable projected table, fixture cards, evidence panel |
+| `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
+| `/evaluation` | historical vs live, kept apart; reliability, per-league and per-version breakdowns |
+| `/tournaments` | knockout ties and trophy odds |
+
+Components in `src/components/forecast/`: `ProbabilityBar`, `ProbabilityRow`,
+`FixtureCard`, `ProjectedTable` (two layouts, not one squeezed), `EvidencePanel`.
+Every probability is rendered as **text**, never colour-only; the projected
+table sorts from the keyboard with `aria-sort`.
+
+| Task | Command |
+|---|---|
+| Season forecast | `python3 -m backend.scripts.forecast_season` |
+| Score live forecasts | `python3 -m backend.scripts.evaluate_live` |
+| Export provenance | `python3 -m backend.scripts.export_snapshots` |
+| Rebuild canonical layer | `python3 -m backend.scripts.build_canonical` |
+| Walk-forward baselines | `python3 -m backend.scripts.baseline_walkforward` |
+| Layered ablation | `python3 -m backend.scripts.train_layered` |
+
 ## Superseded measured state (2026-08-09)
 
 Two separate corpora, so read the columns not the rows. The first is the full
