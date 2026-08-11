@@ -295,11 +295,18 @@ def main(argv: Optional[List[str]] = None) -> int:
                 conn.executemany(
                     "INSERT OR REPLACE INTO fbref_fixtures VALUES "
                     "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+            # A zero must say WHY. FBref serves a real page for seasons it
+            # has no schedule for — 2003-04 Belgium returns 215KB, the right
+            # title, and nine tables, all of which are sidebar standings
+            # widgets. That is genuinely "FBref does not have this", not a
+            # fetch failure and not a parser bug, and the two must not look
+            # alike in the table afterwards.
+            reason = None if rows else "no_schedule_table"
             conn.execute("""UPDATE fbref_seasons
-                            SET schedule_url=?, fixtures=?, scraped_at=?, error=NULL
+                            SET schedule_url=?, fixtures=?, scraped_at=?, error=?
                             WHERE league=? AND season=?""",
                          (url, len(rows), datetime.now(timezone.utc).isoformat(),
-                          league, season))
+                          reason, league, season))
             conn.commit()
             processed += 1
             logger.info("  %-34s %-12s %4d fixtures", league, season, len(rows))
