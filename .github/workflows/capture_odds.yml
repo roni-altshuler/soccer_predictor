@@ -1,0 +1,84 @@
+name: Capture Odds Snapshots
+
+# The one dataset this project has never had.
+#
+# The warehouse holds a single price per fixture and that price is the CLOSING
+# line — the sharpest number in the market and the hardest to beat. Every
+# benchmark therefore reports the model losing to it, which is true and also
+# the only comparison the data permits. Closing line value — the price you
+# could have taken versus the price at close — has been unmeasurable.
+#
+# ESPN publishes DraftKings' opening AND current moneyline for upcoming
+# fixtures. Verified 2026-08-11: 24 of 37 Wave A fixtures had already moved off
+# their opening price, one of them 16.00 -> 14.00 on the away side. Polled
+# through the week, that becomes a price history.
+#
+# A missed capture cannot be recovered — the market has moved on — so this runs
+# often and commits its result rather than writing to the gitignored warehouse,
+# which lives on a release asset that three other workflows overwrite.
+#
+# HONESTY RULE (this repo once lost 3 months to a masked crash): no
+# `continue-on-error`, no `|| true` on the capture itself. A broken scrape must
+# fail the run visibly.
+
+on:
+  schedule:
+    # Every 3 hours. Line movement is the signal; sampling it once a day would
+    # record the drift and miss the move.
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      days_ahead:
+        description: 'How far ahead to price'
+        required: false
+        default: '14'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture-odds
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      # No warehouse download: the committed JSONL is the durable record, and
+      # this job deliberately does not touch warehouse.sqlite. Snapshots are
+      # loaded into the warehouse by the build, not by the scraper.
+      - name: Capture current and opening prices
+        run: |
+          python -m backend.scripts.capture_odds_snapshots \
+            --days-ahead ${{ github.event.inputs.days_ahead || '14' }} \
+            --no-warehouse
+
+      - name: Commit the snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/data/odds/
+          if git diff --cached --quiet; then
+            echo "no new prices (no fixtures in window)"
+            exit 0
+          fi
+          n=$(git diff --cached --numstat -- backend/data/odds/ | awk '{s+=$1} END {print s+0}')
+          git commit -m "chore: capture ${n} odds snapshots [automated]"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
