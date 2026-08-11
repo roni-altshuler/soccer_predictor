@@ -1,0 +1,170 @@
+{
+  "generated_at": "2026-08-11T11:57:26.122614+00:00",
+  "protocol": "pass 1 chronological day-blocked featurisation; pass 2 expanding-window refit, train on seasons < T predict T",
+  "competitions": [
+    "eng.1",
+    "esp.1",
+    "ger.1",
+    "ita.1",
+    "fra.1"
+  ],
+  "min_season": 2000,
+  "max_season": 2025,
+  "matches": 46789,
+  "estimator": "logistic",
+  "reference": [
+    {
+      "model": "elo_formula",
+      "n": 43433,
+      "log_loss": 1.01359,
+      "brier": 0.60108,
+      "accuracy": 0.51608,
+      "ece": 0.02335
+    },
+    {
+      "model": "base_rate_prior",
+      "n": 43433,
+      "log_loss": 1.07149,
+      "brier": 0.6476,
+      "accuracy": 0.45366,
+      "ece": 0.02453
+    }
+  ],
+  "feature_names": [
+    "elo_home",
+    "elo_away",
+    "elo_diff",
+    "elo_expected",
+    "form_h_pts_3",
+    "form_h_gf_3",
+    "form_h_ga_3",
+    "form_h_pts_5",
+    "form_h_gf_5",
+    "form_h_ga_5",
+    "form_h_pts_10",
+    "form_h_gf_10",
+    "form_h_ga_10",
+    "form_h_played",
+    "form_a_pts_3",
+    "form_a_gf_3",
+    "form_a_ga_3",
+    "form_a_pts_5",
+    "form_a_gf_5",
+    "form_a_ga_5",
+    "form_a_pts_10",
+    "form_a_gf_10",
+    "form_a_ga_10",
+    "form_a_played",
+    "form_h_home_pts",
+    "form_a_away_pts",
+    "form_pts_diff",
+    "form_gd_diff",
+    "rest_h_days",
+    "rest_h_in_14d",
+    "rest_a_days",
+    "rest_a_in_14d",
+    "rest_diff",
+    "h2h_n",
+    "h2h_home_pts",
+    "ref_home_rate",
+    "ref_draw_rate",
+    "ref_n",
+    "ref_known",
+    "ctx_venue_seen",
+    "ctx_att_mean",
+    "ctx_has_kickoff",
+    "ctx_dow"
+  ],
+  "layers": [
+    {
+      "layer": "ratings",
+      "cumulative_features": 4,
+      "n": 43433,
+      "log_loss": 0.99451,
+      "brier": 0.59366,
+      "accuracy": 0.5165,
+      "ece": 0.00839,
+      "delta_vs_elo_formula": {
+        "delta_brier": -0.00742,
+        "ci_low": -0.0083,
+        "ci_high": -0.00653,
+        "p_a_better": 1.0
+      }
+    },
+    {
+      "layer": "form",
+      "cumulative_features": 28,
+      "n": 43433,
+      "log_loss": 0.99379,
+      "brier": 0.59303,
+      "accuracy": 0.51788,
+      "ece": 0.00987,
+      "delta_vs_previous": {
+        "delta_brier": -0.00063,
+        "ci_low": -0.00112,
+        "ci_high": -0.00016,
+        "p_a_better": 0.9955
+      }
+    },
+    {
+      "layer": "rest",
+      "cumulative_features": 33,
+      "n": 43433,
+      "log_loss": 0.9949,
+      "brier": 0.59331,
+      "accuracy": 0.51719,
+      "ece": 0.01044,
+      "delta_vs_previous": {
+        "delta_brier": 0.00027,
+        "ci_low": -2e-05,
+        "ci_high": 0.00054,
+        "p_a_better": 0.035
+      }
+    },
+    {
+      "layer": "h2h",
+      "cumulative_features": 35,
+      "n": 43433,
+      "log_loss": 0.99512,
+      "brier": 0.59343,
+      "accuracy": 0.51783,
+      "ece": 0.01042,
+      "delta_vs_previous": {
+        "delta_brier": 0.00012,
+        "ci_low": -1e-05,
+        "ci_high": 0.00025,
+        "p_a_better": 0.0325
+      }
+    },
+    {
+      "layer": "referee",
+      "cumulative_features": 39,
+      "n": 43433,
+      "log_loss": 0.99575,
+      "brier": 0.59376,
+      "accuracy": 0.51737,
+      "ece": 0.01032,
+      "delta_vs_previous": {
+        "delta_brier": 0.00033,
+        "ci_low": 6e-05,
+        "ci_high": 0.00062,
+        "p_a_better": 0.011
+      }
+    },
+    {
+      "layer": "context",
+      "cumulative_features": 43,
+      "n": 43433,
+      "log_loss": 0.99779,
+      "brier": 0.59459,
+      "accuracy": 0.51758,
+      "ece": 0.01455,
+      "delta_vs_previous": {
+        "delta_brier": 0.00083,
+        "ci_low": 0.00025,
+        "ci_high": 0.00141,
+        "p_a_better": 0.0015
+      }
+    }
+  ]
+}

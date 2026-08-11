@@ -171,3 +171,73 @@ over rating features. Stop using "beat the closing line" as the success
 criterion.
 
 **Next.** Layer D, then state-space strength.
+
+---
+
+## 2026-08-11 — The layered experiment: which data layer actually earns its place?
+
+**Hypothesis.** The expanded corpus and the newly-loaded FBref columns —
+referee above all — improve on the Dixon-Coles baseline.
+
+**Method.** `train_layered.py`. Two passes: chronological day-blocked
+featurisation, then expanding-window refits (train on seasons < T, predict T).
+Layers added cumulatively, each scored against the previous on identical rows
+with a paired bootstrap. Wave A, 2000–2025, 46,789 matches, 43,433 scored.
+2026-27 untouched.
+
+**A wrong turn worth recording.** The first run used LightGBM at 400 trees and
+scored Brier **.6249** against plain Elo's .6023, with three times the
+calibration error. That is a model too large for a ~5k-row training window, and
+reading "the FBref layers do not help" off it would have blamed the data for
+the estimator. Re-run with a multinomial logistic and with a small,
+early-stopped LightGBM. **Do not let an unregularised model deliver a negative
+result about data.**
+
+**Result — Wave A, 43,433 scored rows, both estimators on identical rows:**
+
+| layer | logistic Brier | Δ | LightGBM Brier | Δ |
+|---|---|---|---|---|
+| *(ref)* base rate | .64760 | | | |
+| *(ref)* Elo formula | .60108 | | | |
+| ratings (4 feats) | **.59366** | −.00742 vs Elo, **sig** | .59479 | −.00629, **sig** |
+| + form (28) | **.59303** | **−.00063, sig** | .59443 | −.00036, ns |
+| + rest (33) | .59331 | +.00027, ns | .59415 | −.00028, sig |
+| + h2h (35) | .59343 | +.00012, ns | .59429 | +.00014, ns |
+| + **referee** (39) | .59376 | **+.00033, worse** | .59428 | **−.00001, ns** |
+| + context (43) | .59459 | +.00083, worse | .59406 | −.00022, ns |
+
+Calibration: logistic ratings+form ECE **.0099**; Elo formula .0233.
+
+**Interpretation.**
+
+1. **Four Elo features under a logistic beat the Elo formula by .00742** — a
+   significant, free win. The rating carries the signal; the *mapping* from
+   rating difference to a three-way distribution is worth learning rather than
+   assuming. It also cuts calibration error from .0233 to .0084.
+2. **Form helps, and only once there is enough data.** On eng.1 alone (7,980
+   matches) form was +.00119 and not significant; on Wave A (46,789) it is
+   −.00063 and significant. This is the single piece of direct evidence in this
+   repo for "more data helps" — and note how small the payoff is.
+3. **The referee layer does not help.** Logistic +.00033 (worse); LightGBM
+   −.00001 (literally nothing). This is the answer to a question the repo could
+   not previously ask: the earlier "+.0015, harmful" verdict was England-only
+   because England was the only league with the column. With esp.1 at 91%,
+   ita.1 at 100%, fra.1 at 89% and ger.1 at 68%, the answer is unchanged.
+   **"Untestable" and "no effect" are different answers, and this is now the
+   second one.**
+4. Rest, h2h and context add nothing either. Two independent model families
+   agree on the whole ordering.
+5. Best model overall: **logistic on ratings + form, Brier .59303** — ahead of
+   the Dixon-Coles walk-forward baseline (.59580 on 44,185 rows; masks differ
+   slightly, so treat as comparable rather than paired).
+
+**Decision.** Ratings + form is the feature set. Do not add referee, rest, h2h,
+venue, attendance or kickoff time. Do not run the match-tier scrape for xG on
+the strength of a hoped-for effect — every non-rating layer tested so far has
+landed at zero, and xG must be argued for on stronger grounds than "it is more
+data".
+
+**Next.** The remaining ceiling is not in the feature list. It is in (a) the
+strength model — dynamic/state-space, which yields uncertainty rather than a
+point estimate — and (b) propagating that uncertainty into the season and
+tournament heads, where the 70–90% overconfidence lives.
