@@ -1,0 +1,203 @@
+{
+  "method": {
+    "inspiration": "jdlamstein/tennispredictor \u2014 Elo + tree ensembles + sweep",
+    "features": [
+      "pi_home_at_home",
+      "pi_home_away",
+      "pi_away_at_home",
+      "pi_away_away",
+      "pi_matchup",
+      "pi_home_mean",
+      "pi_away_mean",
+      "pi_expected_gd",
+      "elo_home",
+      "elo_away",
+      "elo_diff"
+    ],
+    "ratings_strictly_pre_match": true,
+    "selection_seasons": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "final_seasons": [
+      2024,
+      2025
+    ],
+    "search_guard": "the winner is scored once on seasons never searched on; the selection-to-final gap is the cost of the search",
+    "importance": "permutation on held-out seasons, not gini on training data",
+    "brier": "multiclass summed; uniform 1/3 = .6667"
+  },
+  "candidates": [
+    {
+      "config": "hgb_lr0.03_d3",
+      "selection_brier": 0.59044,
+      "selection_accuracy": 0.5223,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.06_d3",
+      "selection_brier": 0.59061,
+      "selection_accuracy": 0.522,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.03_d4",
+      "selection_brier": 0.59079,
+      "selection_accuracy": 0.5217,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.12_d3",
+      "selection_brier": 0.59095,
+      "selection_accuracy": 0.521,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.06_d4",
+      "selection_brier": 0.59109,
+      "selection_accuracy": 0.5221,
+      "n": 10781
+    },
+    {
+      "config": "xgb_lr0.03_d3",
+      "selection_brier": 0.59109,
+      "selection_accuracy": 0.5203,
+      "n": 10781
+    },
+    {
+      "config": "rf_n600_leaf60",
+      "selection_brier": 0.59159,
+      "selection_accuracy": 0.5205,
+      "n": 10781
+    },
+    {
+      "config": "rf_n300_leaf60",
+      "selection_brier": 0.59175,
+      "selection_accuracy": 0.5206,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.12_d4",
+      "selection_brier": 0.59176,
+      "selection_accuracy": 0.5224,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.03_d6",
+      "selection_brier": 0.59179,
+      "selection_accuracy": 0.5215,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.06_d6",
+      "selection_brier": 0.59191,
+      "selection_accuracy": 0.5226,
+      "n": 10781
+    },
+    {
+      "config": "hgb_lr0.12_d6",
+      "selection_brier": 0.59284,
+      "selection_accuracy": 0.5197,
+      "n": 10781
+    },
+    {
+      "config": "xgb_lr0.03_d5",
+      "selection_brier": 0.59363,
+      "selection_accuracy": 0.5171,
+      "n": 10781
+    },
+    {
+      "config": "rf_n600_leaf20",
+      "selection_brier": 0.59427,
+      "selection_accuracy": 0.5181,
+      "n": 10781
+    },
+    {
+      "config": "rf_n300_leaf20",
+      "selection_brier": 0.59429,
+      "selection_accuracy": 0.518,
+      "n": 10781
+    },
+    {
+      "config": "xgb_lr0.08_d3",
+      "selection_brier": 0.59467,
+      "selection_accuracy": 0.5195,
+      "n": 10781
+    },
+    {
+      "config": "xgb_lr0.08_d5",
+      "selection_brier": 0.6037,
+      "selection_accuracy": 0.51,
+      "n": 10781
+    }
+  ],
+  "best": {
+    "config": "hgb_lr0.03_d3",
+    "selection_brier": 0.59044,
+    "final_brier": 0.59116,
+    "final_accuracy": 0.5191,
+    "search_cost_brier": 0.00072,
+    "n_final": 3504
+  },
+  "permutation_importance": [
+    {
+      "feature": "pi_matchup",
+      "importance": 0.07896,
+      "std": 0.00394
+    },
+    {
+      "feature": "elo_home",
+      "importance": 0.00686,
+      "std": 0.00124
+    },
+    {
+      "feature": "elo_diff",
+      "importance": 0.00534,
+      "std": 0.00118
+    },
+    {
+      "feature": "pi_away_at_home",
+      "importance": 0.00383,
+      "std": 0.00048
+    },
+    {
+      "feature": "pi_home_away",
+      "importance": 0.00144,
+      "std": 0.0006
+    },
+    {
+      "feature": "elo_away",
+      "importance": 0.00133,
+      "std": 0.00072
+    },
+    {
+      "feature": "pi_home_at_home",
+      "importance": 0.00099,
+      "std": 0.00045
+    },
+    {
+      "feature": "pi_away_mean",
+      "importance": 0.00052,
+      "std": 0.00057
+    },
+    {
+      "feature": "pi_home_mean",
+      "importance": 0.00022,
+      "std": 0.00036
+    },
+    {
+      "feature": "pi_expected_gd",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "pi_away_away",
+      "importance": -0.00031,
+      "std": 0.00035
+    }
+  ]
+}

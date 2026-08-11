@@ -103,6 +103,7 @@ def load_matches(conn: sqlite3.Connection, comps: Sequence[str]) -> List[sqlite3
     ph = ", ".join("?" * len(comps))
     return conn.execute(
         f"""SELECT m.match_id, m.date_utc, m.season, m.competition_id,
+                   m.home_team_id, m.away_team_id,
                    th.canonical_name AS home, ta.canonical_name AS away,
                    m.home_score AS hs, m.away_score AS a_s,
                    m.odds_home AS oh, m.odds_draw AS od, m.odds_away AS oa
