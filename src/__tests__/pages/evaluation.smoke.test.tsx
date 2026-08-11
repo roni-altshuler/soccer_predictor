@@ -97,6 +97,56 @@ describe('EvaluationPage', () => {
     expect(container.textContent).toMatch(/never added together|never adds them|apart on purpose/i)
   })
 
+
+  // ---------------------------------------------------------------- the join
+  //
+  // A rehearsal against last season found the snapshot->result join silently
+  // discarding 31% of fixtures because FBref says "Gladbach" and the warehouse
+  // says "Borussia Mönchengladbach". On the page that looked exactly like a
+  // small sample. These make the difference visible.
+
+  it('separates "not played yet" from "we could not match this club"', async () => {
+    mockFetch({
+      available: true,
+      historical: HISTORICAL,
+      live: { n: 0 },
+      join: {
+        snapshots: 2346,
+        scored: 0,
+        awaiting_result: 2203,
+        unresolved_count: 143,
+        unresolved_clubs: { 'eng.1:Coventry City': 38, 'ger.1:Elversberg': 34 },
+      },
+      snapshot_store: { rows: 2346, fixtures: 2346, versions: 1 },
+    })
+    render(<EvaluationPage />)
+
+    await waitFor(() =>
+      expect(screen.getByText(/Why the sample is this size/i)).toBeInTheDocument(),
+    )
+    expect(screen.getByText('2,203')).toBeInTheDocument()
+    expect(screen.getByText('143')).toBeInTheDocument()
+    expect(screen.getByText(/eng.1:Coventry City · 38/)).toBeInTheDocument()
+    expect(screen.getByText(/ger.1:Elversberg · 34/)).toBeInTheDocument()
+  })
+
+  it('says plainly when every club matched', async () => {
+    mockFetch({
+      available: true,
+      historical: HISTORICAL,
+      live: { n: 0 },
+      join: { snapshots: 380, scored: 0, awaiting_result: 380, unresolved_count: 0,
+              unresolved_clubs: {} },
+      snapshot_store: { rows: 380, fixtures: 380, versions: 1 },
+    })
+    render(<EvaluationPage />)
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Every club in every published forecast matched/i),
+      ).toBeInTheDocument(),
+    )
+  })
+
   it('renders an honest empty state when no evaluation exists', async () => {
     mockFetch({ available: false, live: { n: 0 } })
     render(<EvaluationPage />)

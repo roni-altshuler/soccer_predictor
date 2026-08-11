@@ -21,6 +21,13 @@ if (typeof global.ResizeObserver === 'undefined') {
   global.ResizeObserver = StubObserver
 }
 
+// jsdom implements no scrolling at all, so `scrollIntoView` is missing from
+// Element. Any component that keeps a highlighted row visible in a scrollable
+// listbox calls it, and the absence throws rather than no-opping.
+if (typeof window !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}
+
 // jsdom doesn't ship matchMedia either; default to "no-preference" matches.
 if (typeof window !== 'undefined' && !window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {

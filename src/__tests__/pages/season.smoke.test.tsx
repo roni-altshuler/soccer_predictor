@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import SeasonPage from '@/app/(app)/season/page'
@@ -11,14 +11,16 @@ import SeasonPage from '@/app/(app)/season/page'
  *  1. **Both races.** Title and relegation. Relegation is the half that gets
  *     dropped in a redesign and is what most readers of a mid-table club came
  *     for.
- *  2. **The evidence stays on the page.** These percentages are unfalsifiable
- *     without it, and it comes from a different endpoint than the forecast, so
- *     a broken evaluation route would quietly remove it.
+ *  2. **The evidence stays on the page**, and is not one of the tabs. These
+ *     percentages are unfalsifiable without it, it comes from a different
+ *     endpoint than the forecast, and a tab is a place things go to be unread.
  *  3. **Historical and live are never merged.** A live n of zero must read as
  *     zero, not as the 43,433-match backtest.
- *  4. **League switching actually switches** — a tab bar that looks right but
+ *  4. **League switching actually switches** — a picker that looks right but
  *     renders the first league forever is a convincing bug.
- *  5. **Missing artifacts render an honest empty state**, never an empty table
+ *  5. **Every tab is reachable and carries its own content.** Tabs that all
+ *     render the overview would look completely correct.
+ *  6. **Missing artifacts render an honest empty state**, never an empty table
  *     that reads as "nobody will be relegated".
  */
 
@@ -108,15 +110,41 @@ function mockFetch(projections: unknown, fixtures: unknown, evaluation: unknown)
   }) as unknown as typeof fetch
 }
 
-afterEach(() => jest.resetAllMocks())
+/** Open the league picker and choose one. */
+async function chooseLeague(name: string) {
+  await userEvent.click(screen.getByRole('button', { name: /change league/i }))
+  await userEvent.click(
+    within(screen.getByRole('listbox')).getByRole('option', {
+      name: new RegExp(name, 'i'),
+    }),
+  )
+}
+
+const openTab = (name: string) =>
+  userEvent.click(screen.getByRole('tab', { name: new RegExp(name, 'i') }))
+
+afterEach(() => {
+  jest.resetAllMocks()
+  // The picker remembers the last league. Without this, one test's choice
+  // silently becomes the next test's starting state.
+  window.localStorage.clear()
+})
 
 describe('SeasonPage', () => {
+  it('opens on the most-followed league rather than the alphabetically first', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0)
+    expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
+  })
+
   it('shows the title race and the relegation race together', async () => {
     mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
     await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
     expect(screen.getByText(/Relegation race/i)).toBeInTheDocument()
     expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0)
     expect(screen.getAllByText('38.6%').length).toBeGreaterThan(0)
@@ -130,7 +158,6 @@ describe('SeasonPage', () => {
     render(<SeasonPage />)
 
     await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
     expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
     expect(screen.getByText(/updated/i)).toBeInTheDocument()
   })
@@ -144,6 +171,21 @@ describe('SeasonPage', () => {
     expect(screen.getByText('0.59303')).toBeInTheDocument()
     expect(screen.getByText('0.0099')).toBeInTheDocument()
     expect(screen.getByText(/How accurate is this\?/i)).toBeInTheDocument()
+  })
+
+  it('does not hide the evidence behind a tab', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText('43,433')).toBeInTheDocument())
+    const tabs = screen.getAllByRole('tab').map((t) => t.textContent)
+    expect(tabs).toEqual(['Overview', 'Table', 'Fixtures'])
+
+    // Still there from every tab, not just the default one.
+    await openTab('Fixtures')
+    expect(screen.getByText('43,433')).toBeInTheDocument()
+    await openTab('Table')
+    expect(screen.getByText('43,433')).toBeInTheDocument()
   })
 
   it('does not present the historical backtest as a live record', async () => {
@@ -171,11 +213,47 @@ describe('SeasonPage', () => {
     render(<SeasonPage />)
 
     await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
     expect(screen.getByText('Liverpool')).toBeInTheDocument()
     expect(screen.getByText('42.1%')).toBeInTheDocument()
     expect(screen.getByText('1.62 — 1.34')).toBeInTheDocument()
     expect(screen.getByText('1-1 · 12.1%')).toBeInTheDocument()
+  })
+
+  it('puts the full table behind its own tab and actually renders it there', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    expect(
+      screen.queryByRole('heading', { name: 'Projected final table' }),
+    ).not.toBeInTheDocument()
+
+    await openTab('Table')
+    expect(
+      screen.getByRole('heading', { name: 'Projected final table' }),
+    ).toBeInTheDocument()
+    // Expected points is the column the races do not carry — proof the table
+    // itself rendered rather than the overview under a new heading.
+    expect(screen.getAllByText('79').length).toBeGreaterThan(0)
+    // How many go down is the single most consequential number on the table
+    // and it is interpolated, so it splits across text nodes.
+    expect(
+      screen.getByText((_, el) => el?.textContent?.startsWith('3 of 3 go down') ?? false),
+    ).toBeInTheDocument()
+  })
+
+  it('lists every remaining fixture under its own tab, grouped by day', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    await openTab('Fixtures')
+
+    expect(screen.getByText(/Every fixture left/i)).toBeInTheDocument()
+    expect(screen.getByText('Friday 21 August')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /Liverpool versus Arsenal/i }),
+    ).toHaveAttribute('href', '/season/fixture/abc123')
   })
 
   it('actually switches leagues', async () => {
@@ -183,15 +261,31 @@ describe('SeasonPage', () => {
     render(<SeasonPage />)
 
     await waitFor(() =>
+      expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0),
+    )
+    expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
+
+    await chooseLeague('Bundesliga')
+
+    expect(screen.getAllByText('Bayern Munich').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Manchester City')).not.toBeInTheDocument()
+    expect(screen.getByText(/306 fixtures remaining/i)).toBeInTheDocument()
+  })
+
+  it('remembers the chosen league and puts it in the URL', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    const { unmount } = render(<SeasonPage />)
+
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+    await chooseLeague('Bundesliga')
+    expect(window.location.search).toContain('league=ger.1')
+
+    unmount()
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+    await waitFor(() =>
       expect(screen.getAllByText('Bayern Munich').length).toBeGreaterThan(0),
     )
-    expect(screen.getByText(/306 fixtures remaining/i)).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Premier League' }))
-
-    expect(screen.getAllByText('Manchester City').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Bayern Munich')).not.toBeInTheDocument()
-    expect(screen.getByText(/380 fixtures remaining/i)).toBeInTheDocument()
   })
 
   it('names the model version so a forecast can be tied to an implementation', async () => {
@@ -213,5 +307,6 @@ describe('SeasonPage', () => {
       ).toBeInTheDocument(),
     )
     expect(screen.queryByText(/Next fixtures/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 })

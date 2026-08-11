@@ -1,27 +1,41 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { EvidencePanel } from '@/components/forecast/EvidencePanel'
 import type { Historical, Live } from '@/components/forecast/EvidencePanel'
 import { FixtureCard } from '@/components/forecast/FixtureCard'
 import type { FixtureForecast } from '@/components/forecast/FixtureCard'
+import { FixtureList } from '@/components/forecast/FixtureList'
+import { LeagueSelect, orderLeagues, seasonLabel } from '@/components/forecast/LeagueSelect'
 import { ProbabilityRow } from '@/components/forecast/ProbabilityBar'
 import { ProjectedTable } from '@/components/forecast/ProjectedTable'
 import type { ProjectedRow } from '@/components/forecast/ProjectedTable'
-import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
  * The season ahead — the flagship forecasting surface.
  *
- * Hierarchy follows what a reader wants, in order: which league, who wins it,
- * the full projected table, what is on next, and then the evidence that any of
- * it is worth reading.
+ * The page shows one league at a time, and everything on it belongs to that
+ * league. That single rule is what the structure comes from:
  *
- * The evidence block is on the page rather than behind a link because these
- * percentages are unfalsifiable without it. It is the first thing that gets
- * dropped in a redesign and there is a test asserting it stays.
+ *  - **The league picker is one control, not seven chips.** Seven chips wrapped
+ *    to two lines on a phone and left six irrelevant leagues on screen
+ *    permanently. See LeagueSelect.
+ *  - **Three views, not one scroll.** Races, the projected table and the
+ *    fixture list are three questions — who wins it, where does everyone
+ *    finish, what is on next — and stacking all three made a page nobody
+ *    reached the bottom of. They are tabs; the reader picks.
+ *  - **The evidence is not one of the tabs.** It sits below them, always
+ *    rendered, because these percentages are unfalsifiable without it and a
+ *    tab is a place things go to be unread. There is a test asserting it stays.
+ *
+ * The chosen league is written to the URL and to localStorage, so a link is
+ * shareable and a return visit opens where the reader left off. Done with the
+ * history API rather than the Next router: this is a client-side filter over
+ * data the page already has, and a router push would re-run the route for a
+ * state change that never leaves the browser.
  */
 
 interface League {
@@ -42,6 +56,8 @@ interface Method {
   excluded_after_measurement?: string[]
 }
 
+const STORAGE_KEY = 'pitchverse.season.league'
+
 const fmtStamp = (iso?: string) => {
   if (!iso) return null
   const d = new Date(iso)
@@ -53,6 +69,22 @@ const fmtStamp = (iso?: string) => {
     minute: '2-digit',
     timeZone: 'UTC',
   })
+}
+
+/** The league to open on: the URL, then last time, then the first listed. */
+function initialLeague(leagues: League[]): string {
+  const ids = new Set(leagues.map((l) => l.competition_id))
+  if (typeof window !== 'undefined') {
+    const fromUrl = new URLSearchParams(window.location.search).get('league')
+    if (fromUrl && ids.has(fromUrl)) return fromUrl
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY)
+      if (saved && ids.has(saved)) return saved
+    } catch {
+      // Private browsing. Not worth a broken page.
+    }
+  }
+  return orderLeagues(leagues)[0]?.competition_id ?? ''
 }
 
 export default function SeasonPage() {
@@ -69,19 +101,18 @@ export default function SeasonPage() {
     let alive = true
     Promise.allSettled([
       fetch('/api/v1/season/projections', { cache: 'no-store' }).then((r) => r.json()),
-      fetch('/api/v1/season/fixtures?limit=600', { cache: 'no-store' }).then((r) =>
+      fetch('/api/v1/season/fixtures?limit=2000', { cache: 'no-store' }).then((r) =>
         r.json(),
       ),
       fetch('/api/v1/evaluation', { cache: 'no-store' }).then((r) => r.json()),
     ]).then(([proj, fix, evalRes]) => {
       if (!alive) return
       if (proj.status === 'fulfilled' && proj.value?.available) {
-        const ls = (proj.value.leagues ?? []) as League[]
-        ls.sort((a, b) => a.name.localeCompare(b.name))
+        const ls = orderLeagues((proj.value.leagues ?? []) as League[])
         setLeagues(ls)
         setMethod(proj.value.method ?? null)
         setGeneratedAt(proj.value.generated_at)
-        setSelected(ls[0]?.competition_id ?? '')
+        setSelected(initialLeague(ls))
       }
       if (fix.status === 'fulfilled' && fix.value?.available) {
         setFixtures((fix.value.fixtures ?? []) as FixtureForecast[])
@@ -95,6 +126,19 @@ export default function SeasonPage() {
     return () => {
       alive = false
     }
+  }, [])
+
+  const selectLeague = useCallback((id: string) => {
+    setSelected(id)
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(STORAGE_KEY, id)
+    } catch {
+      // ignore
+    }
+    const url = new URL(window.location.href)
+    url.searchParams.set('league', id)
+    window.history.replaceState(null, '', url)
   }, [])
 
   const league = leagues.find((l) => l.competition_id === selected) ?? leagues[0]
@@ -115,11 +159,11 @@ export default function SeasonPage() {
       .slice(0, 6)
   }, [league])
 
-  const nextFixtures = useMemo(
+  const leagueFixtures = useMemo(
     () =>
-      fixtures
-        .filter((f) => !league || f.competition_id === league.competition_id)
-        .slice(0, 6),
+      league
+        ? fixtures.filter((f) => f.competition_id === league.competition_id)
+        : [],
     [fixtures, league],
   )
 
@@ -149,53 +193,46 @@ export default function SeasonPage() {
             description="It is a regenerable artifact, not shipped data. Run forecast_season to populate this page."
           />
         </div>
-      ) : (
-        <div className="mt-7 space-y-6">
-          <nav aria-label="Leagues">
-            <ul className="flex flex-wrap gap-1.5">
-              {leagues.map((l) => (
-                <li key={l.competition_id}>
-                  <button
-                    type="button"
-                    aria-current={l.competition_id === league?.competition_id ? 'true' : undefined}
-                    onClick={() => setSelected(l.competition_id)}
-                    className={cn(
-                      'rounded-md border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]',
-                      l.competition_id === league?.competition_id
-                        ? 'border-[var(--accent-primary)] bg-[var(--card-hover)] text-[var(--text-primary)]'
-                        : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-                    )}
-                  >
-                    {l.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
+      ) : league ? (
+        <div className="mt-6 space-y-5">
+          {/* ---- the one control that changes everything below ---------- */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <LeagueSelect
+              leagues={leagues}
+              value={league.competition_id}
+              onChange={selectLeague}
+            />
+            <p className="font-mono text-[10px] uppercase leading-relaxed tracking-[0.1em] text-[var(--text-tertiary)] sm:text-right">
+              {league.fixtures_remaining} fixtures remaining
+              {fmtStamp(generatedAt) ? (
+                <>
+                  <span className="hidden sm:inline"> · </span>
+                  <span className="block sm:inline">
+                    updated {fmtStamp(generatedAt)} UTC
+                  </span>
+                </>
+              ) : null}
+            </p>
+          </div>
 
-          {league ? (
-            <>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="table">Table</TabsTrigger>
+              <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
+            </TabsList>
+
+            {/* ---- overview: the two questions people arrive with ------- */}
+            <TabsContent value="overview" className="mt-4 space-y-5">
               <section
                 className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
-                aria-labelledby="league-heading"
+                aria-labelledby="races-heading"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h2
-                    id="league-heading"
-                    className="text-[17px] font-semibold text-[var(--text-primary)]"
-                  >
-                    {league.name}{' '}
-                    <span className="text-[var(--text-tertiary)]">
-                      {league.season}/{String(league.season + 1).slice(2)}
-                    </span>
-                  </h2>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-                    {league.fixtures_remaining} fixtures remaining
-                    {fmtStamp(generatedAt) ? ` · updated ${fmtStamp(generatedAt)} UTC` : ''}
-                  </p>
-                </div>
-
-                <div className="mt-5 grid gap-6 md:grid-cols-2">
+                <h2 id="races-heading" className="sr-only">
+                  {league.name} {seasonLabel(league.season)} — who wins it and who
+                  goes down
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
                       Title race
@@ -239,6 +276,31 @@ export default function SeasonPage() {
                 </div>
               </section>
 
+              {leagueFixtures.length ? (
+                <section aria-labelledby="next-heading">
+                  <h2
+                    id="next-heading"
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
+                  >
+                    Next fixtures
+                  </h2>
+                  <div className="mt-3.5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {leagueFixtures.slice(0, 6).map((f) => (
+                      <FixtureCard
+                        key={f.fixture_uid ?? `${f.date}-${f.home}-${f.away}`}
+                        fixture={f}
+                        href={
+                          f.fixture_uid ? `/season/fixture/${f.fixture_uid}` : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </TabsContent>
+
+            {/* ---- table ----------------------------------------------- */}
+            <TabsContent value="table" className="mt-4">
               <section
                 className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
                 aria-labelledby="table-heading"
@@ -255,45 +317,39 @@ export default function SeasonPage() {
                   relegationPlaces={league.relegation_places}
                 />
               </section>
+            </TabsContent>
 
-              {nextFixtures.length ? (
-                <section aria-labelledby="fixtures-heading">
-                  <h2
-                    id="fixtures-heading"
-                    className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
-                  >
-                    Next fixtures
-                  </h2>
-                  <div className="mt-3.5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {nextFixtures.map((f) => (
-                      <FixtureCard
-                        key={f.fixture_uid ?? `${f.date}-${f.home}-${f.away}`}
-                        fixture={f}
-                        href={
-                          f.fixture_uid ? `/season/fixture/${f.fixture_uid}` : undefined
-                        }
-                      />
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+            {/* ---- fixtures -------------------------------------------- */}
+            <TabsContent value="fixtures" className="mt-4">
+              <section
+                className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
+                aria-labelledby="fixtures-heading"
+              >
+                <h2
+                  id="fixtures-heading"
+                  className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
+                >
+                  Every fixture left
+                </h2>
+                <FixtureList className="mt-3.5" fixtures={leagueFixtures} />
+              </section>
+            </TabsContent>
+          </Tabs>
 
-              <EvidencePanel historical={historical} live={live} />
+          <EvidencePanel historical={historical} live={live} />
 
-              {method?.model_version ? (
-                <p className="text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-                  Model <code className="text-[var(--text-secondary)]">{method.model_version}</code>
-                  {method.trained_through
-                    ? `, trained on matches through ${method.trained_through}`
-                    : ''}
-                  . Every forecast is recorded before kickoff and kept, so what was shown
-                  here can be scored later against what happened.
-                </p>
-              ) : null}
-            </>
+          {method?.model_version ? (
+            <p className="text-[11px] leading-relaxed text-[var(--text-tertiary)]">
+              Model <code className="text-[var(--text-secondary)]">{method.model_version}</code>
+              {method.trained_through
+                ? `, trained on matches through ${method.trained_through}`
+                : ''}
+              . Every forecast is recorded before kickoff and kept, so what was shown
+              here can be scored later against what happened.
+            </p>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

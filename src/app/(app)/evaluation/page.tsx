@@ -46,10 +46,29 @@ interface Sample {
   last_kickoff?: string
 }
 
+/**
+ * Why the scored sample is the size it is.
+ *
+ * "Not played yet" and "we could not match this club to a result" both shrink
+ * the live sample, and only one of them means something is broken. A
+ * rehearsal against last season found the join silently discarding 31% of
+ * fixtures because FBref says "Gladbach" and the warehouse says "Borussia
+ * Mönchengladbach". It looked exactly like a small sample. It is a number on
+ * the page now so it cannot look like that again.
+ */
+interface JoinReport {
+  snapshots?: number
+  scored?: number
+  awaiting_result?: number
+  unresolved_count?: number
+  unresolved_clubs?: Record<string, number>
+}
+
 interface Payload {
   available: boolean
   generated_at?: string
   live?: Sample
+  join?: JoinReport
   historical?: Historical
   snapshot_store?: {
     rows: number
@@ -243,6 +262,8 @@ export default function EvaluationPage() {
             )}
           </section>
 
+          {data.join ? <JoinPanel join={data.join} /> : null}
+
           <p className="text-[11px] leading-relaxed text-[var(--text-tertiary)]">
             The live column scores the last forecast published <em>before</em> each
             kickoff — not the first, which would be stale, and never one generated
@@ -277,6 +298,63 @@ function Stat({
         {value}
       </dd>
     </div>
+  )
+}
+
+function JoinPanel({ join }: { join: JoinReport }) {
+  const unresolved = join.unresolved_count ?? 0
+  const clubs = Object.entries(join.unresolved_clubs ?? {})
+
+  return (
+    <section
+      className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
+      aria-labelledby="join-heading"
+    >
+      <h2
+        id="join-heading"
+        className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
+      >
+        Why the sample is this size
+      </h2>
+      <dl className="mt-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Forecasts held" value={(join.snapshots ?? 0).toLocaleString()} />
+        <Stat label="Scored" value={(join.scored ?? 0).toLocaleString()} />
+        <Stat
+          label="Not played yet"
+          value={(join.awaiting_result ?? 0).toLocaleString()}
+          tone="muted"
+        />
+        <Stat
+          label="Club not matched"
+          value={unresolved.toLocaleString()}
+          tone={unresolved ? undefined : 'muted'}
+        />
+      </dl>
+      {clubs.length ? (
+        <>
+          <p className="mt-3 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
+            These clubs are named in a published forecast but do not yet exist in the
+            results database — normally a promoted side that has not played a match in
+            this competition before. They start being scored once they do.
+          </p>
+          <ul className="mt-2.5 flex flex-wrap gap-1.5">
+            {clubs.map(([key, n]) => (
+              <li
+                key={key}
+                className="rounded-md border border-[var(--border-color)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-tertiary)]"
+              >
+                {key} · {n}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-3 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+          Every club in every published forecast matched a club in the results
+          database.
+        </p>
+      )}
+    </section>
   )
 }
 

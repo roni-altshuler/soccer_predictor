@@ -67,9 +67,11 @@ export default function FixtureForecastPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6 md:py-8">
+      {/* The only way back on this page, so it is sized for a thumb rather
+          than laid out as a caption. */}
       <Link
         href="/season"
-        className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]"
+        className="-ml-2 inline-flex min-h-[2.25rem] items-center rounded-lg px-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]"
       >
         ← The season ahead
       </Link>
