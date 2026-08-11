@@ -1,6 +1,10 @@
 {
-  "generated_at": "2026-08-11T12:07:04.847556+00:00",
+  "generated_at": "2026-08-11T12:24:24.501318+00:00",
   "method": {
+    "model_version": "2026.08.1+27734fb2",
+    "release": "2026.08.1",
+    "config_hash": "27734fb2",
+    "trained_through": "2026-08-10",
     "head": "multinomial logistic on Elo + rolling form, the feature set that won the layered ablation",
     "measured": {
       "brier": 0.59303,

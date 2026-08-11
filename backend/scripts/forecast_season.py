@@ -57,6 +57,11 @@ if str(ROOT) not in sys.path:
 
 from backend.scripts.baseline_walkforward import IDX, load_matches  # noqa: E402
 from backend.scripts.train_layered import FeatureState  # noqa: E402
+from backend.services.forecast import version as mv  # noqa: E402
+from backend.services.forecast.snapshots import (  # noqa: E402
+    SnapshotStore,
+    snapshots_from_fixtures,
+)
 
 logger = logging.getLogger("forecast_season")
 
@@ -279,6 +284,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--min-season", type=int, default=2000)
     ap.add_argument("--sims", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=17)
+    ap.add_argument("--no-snapshots", action="store_true",
+                    help="skip the provenance write (for local experiments; "
+                         "the scheduled job must never pass this)")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -341,6 +349,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         ph, pd_, pa = outcome_probs(M)
         top = np.dstack(np.unravel_index(np.argsort(-M.ravel())[:5], M.shape))[0]
         fixtures_out.append({
+            "fixture_uid": None,  # filled below, once the uid helper is imported
             "competition_id": f["competition_id"], "season": f["season"],
             "date": f["local_date"].isoformat(), "kickoff": f["kickoff"],
             "round": f["round"],
@@ -350,11 +359,23 @@ def main(argv: Optional[List[str]] = None) -> int:
             "xg_home": round(lh, 3), "xg_away": round(la, 3),
             "scorelines": [{"score": f"{int(h)}-{int(a)}",
                             "p": round(float(M[h, a]), 4)} for h, a in top],
+            "elo_home": round(float(state.elo.rating[f["home_key"]]), 1),
+            "elo_away": round(float(state.elo.rating[f["away_key"]]), 1),
             "coherence_gap": round(float(max(abs(ph - p[0]), abs(pa - p[2]))), 5),
         })
 
     gap = max(f["coherence_gap"] for f in fixtures_out) if fixtures_out else 0
     logger.info("worst 1X2/scoreline disagreement after reconciliation: %.5f", gap)
+    if gap > 1e-3:
+        raise SystemExit(
+            f"1X2 and scoreline grid disagree by {gap:.5f}. They are reconciled "
+            f"by construction, so a gap this size is a solver failure, not "
+            f"noise — refusing to publish an incoherent forecast.")
+
+    from backend.services.forecast.snapshots import fixture_uid
+    for f in fixtures_out:
+        f["fixture_uid"] = fixture_uid(f["competition_id"], f["season"],
+                                       f["date"], f["home"], f["away"])
 
     # -- season projections ------------------------------------------------
     rng = np.random.default_rng(args.seed)
@@ -417,7 +438,24 @@ def main(argv: Optional[List[str]] = None) -> int:
                     comp, season, len(entrants), len(fs), top["team"],
                     100 * top["p_title"])
 
+    model_version = mv.compute(
+        head="logistic-elo-form",
+        features=list(KEPT_PREFIXES),
+        leagues=comps,
+        min_season=args.min_season,
+        sims=args.sims,
+        strength_shock_sd=STRENGTH_SHOCK_SD,
+        elo={"k": 20.0, "home_adv": 65.0, "draw_width": 0.28, "regress": 0.0},
+    )
+    trained_through = str(played[-1]["local_date"])
+    logger.info("model version %s (trained through %s)", model_version.id,
+                trained_through)
+
     method = {
+        "model_version": model_version.id,
+        "release": model_version.release,
+        "config_hash": model_version.config_hash,
+        "trained_through": trained_through,
         "head": "multinomial logistic on Elo + rolling form, the feature set "
                 "that won the layered ablation",
         "measured": {"brier": 0.59303, "ece": 0.0099, "n": 43433,
@@ -440,15 +478,52 @@ def main(argv: Optional[List[str]] = None) -> int:
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).isoformat()
-    (OUT_DIR / "season_fixtures.json").write_text(json.dumps({
-        "generated_at": stamp, "method": method,
-        "fixtures": fixtures_out}, indent=2))
-    (OUT_DIR / "season_projections.json").write_text(json.dumps({
-        "generated_at": stamp, "method": method,
-        "leagues": projections}, indent=2))
+
+    # Record what we are about to publish BEFORE replacing the live artifact.
+    # A snapshot for a forecast that failed to publish is a harmless extra row;
+    # a published forecast with no snapshot is a permanently unauditable one.
+    if not args.no_snapshots:
+        snaps = snapshots_from_fixtures(
+            fixtures_out, generated_at=stamp,
+            model_version=model_version.id, trained_through=trained_through)
+        with SnapshotStore() as store:
+            written = store.record(snaps)
+        logger.info("recorded %d prediction snapshots (%d already present)",
+                    written, len(snaps) - written)
+
+    # Atomic replace. A crash mid-write must leave the PREVIOUS valid forecast
+    # serving, not a truncated file — the API reads these on every request and
+    # a half-written JSON is a 500 on the flagship page.
+    _publish(OUT_DIR / "season_fixtures.json",
+             {"generated_at": stamp, "method": method,
+              "fixtures": [{k: v for k, v in f.items() if not k.startswith("_")}
+                           for f in fixtures_out]})
+    _publish(OUT_DIR / "season_projections.json",
+             {"generated_at": stamp, "method": method, "leagues": projections})
     logger.info("\nwrote %s", OUT_DIR / "season_fixtures.json")
     logger.info("wrote %s", OUT_DIR / "season_projections.json")
     return 0
+
+
+def _publish(path: Path, payload: dict) -> None:
+    """Write via a temp file in the same directory, then os.replace.
+
+    Same filesystem so the replace is atomic; a reader either sees the whole
+    old file or the whole new one, never a prefix of either.
+    """
+    import os
+    import tempfile
+
+    body = json.dumps(payload, indent=2)
+    json.loads(body)  # refuse to publish something that will not parse back
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            fh.write(body)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 if __name__ == "__main__":

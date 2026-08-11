@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-08-11T12:27:08.920805+00:00",
+  "snapshot_store": {
+    "rows": 2346,
+    "fixtures": 2346,
+    "versions": 1,
+    "first_generated": "2026-08-11T12:24:24.501318+00:00",
+    "last_generated": "2026-08-11T12:24:24.501318+00:00",
+    "by_version": {
+      "2026.08.1+27734fb2": 2346
+    }
+  },
+  "live": {
+    "basis": "live_published",
+    "n": 0,
+    "note": "no scored fixtures yet \u2014 nothing has both a published forecast and a result"
+  },
+  "historical": {
+    "basis": "historical_walkforward",
+    "available": true,
+    "n": 43433,
+    "brier": 0.59303,
+    "log_loss": 0.99379,
+    "accuracy": 0.51788,
+    "ece": 0.00987,
+    "layer": "form",
+    "protocol": "pass 1 chronological day-blocked featurisation; pass 2 expanding-window refit, train on seasons < T predict T",
+    "competitions": [
+      "eng.1",
+      "esp.1",
+      "ger.1",
+      "ita.1",
+      "fra.1"
+    ],
+    "seasons": [
+      2000,
+      2025
+    ],
+    "note": "retrospective. The model was refit as the corpus advanced and predicted each match before its own result, but no user saw these numbers before these kickoffs."
+  },
+  "warning": "live and historical are different samples measuring different things. Never add them together or present one as the other."
+}

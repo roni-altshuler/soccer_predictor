@@ -1,0 +1,145 @@
+name: Season Forecast
+
+# Republishes the season forecast as results land.
+#
+# Separate from prediction_pipeline.yml on purpose. That job is 3x daily and
+# 25 minutes; this one needs a 16MB FBref download and a canonical rebuild, and
+# a league table does not move between kickoffs. Bolting it on would make the
+# fast job slow and couple two failure domains that fail for different reasons.
+#
+# The hard constraint that shapes this file: the forecast trains on the
+# CANONICAL corpus (62,504 matches for these seven leagues), not the warehouse
+# alone (48,536). Running it without FBref would silently produce a different
+# model under the same version string, so a missing input FAILS the job rather
+# than degrading it.
+
+on:
+  schedule:
+    # After the 06:00 prediction pipeline has fetched overnight results, and
+    # after the Monday 05:00 warehouse refresh.
+    - cron: '30 7 * * *'
+  workflow_dispatch:
+    inputs:
+      sims:
+        description: 'Monte Carlo iterations'
+        required: false
+        default: '20000'
+
+# One season forecast at a time. Two concurrent runs would both write
+# prediction_snapshots and both push the artifact; the snapshot table would
+# survive it (append-only, keyed on generated_at) but the git push would not.
+concurrency:
+  group: season-forecast
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install numpy scipy scikit-learn lightgbm duckdb httpx pyyaml \
+                      beautifulsoup4 pydantic pydantic-settings email-validator
+
+      - name: Download forecast inputs
+        # Both are required. `continue-on-error` is deliberately ABSENT: a
+        # forecast trained on a different corpus than the one the published
+        # metrics describe is worse than no refresh at all.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest --pattern 'warehouse.sqlite.gz' \
+            --dir /tmp --clobber
+          gunzip -f /tmp/warehouse.sqlite.gz
+          mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite
+
+          gh release download models-latest --pattern 'fbref.sqlite.gz' \
+            --dir /tmp --clobber
+          gunzip -f /tmp/fbref.sqlite.gz
+          mv /tmp/fbref.sqlite backend/data/fbref.sqlite
+
+          ls -la backend/data/*.sqlite
+
+      - name: Refresh current-season results
+        # New results are the entire reason this job runs. Failing here means
+        # forecasting from a stale corpus, which is stale but not WRONG — so
+        # this step, unlike the download, may fail without stopping the run.
+        continue-on-error: true
+        run: python -m backend.scripts.build_warehouse --espn --min-season 2026 --max-season 2026
+
+      - name: Rebuild canonical layer
+        run: python -m backend.scripts.build_canonical --no-parquet
+
+      - name: Verify the corpus is the one the published metrics describe
+        # A guard against the silent-degradation failure this workflow exists
+        # to prevent. If the canonical layer came out materially smaller than
+        # expected, something upstream is broken and the forecast would be a
+        # different model wearing the same version string.
+        run: |
+          python - <<'PY'
+          import sys, duckdb
+          con = duckdb.connect("backend/data/canonical.duckdb", read_only=True)
+          n = con.execute("""
+              SELECT COUNT(*) FROM matches
+               WHERE competition_id IN
+                     ('eng.1','esp.1','ger.1','ita.1','fra.1','ned.1','por.1')
+                 AND season >= 2000""").fetchone()[0]
+          print(f"canonical training corpus: {n}")
+          if n < 60000:
+              sys.exit(f"corpus is {n}, expected >=60000 — refusing to publish "
+                       f"a forecast trained on a different corpus than the "
+                       f"metrics on /season describe")
+          PY
+
+      - name: Generate season forecast
+        run: |
+          python -m backend.scripts.forecast_season \
+            --sims ${{ github.event.inputs.sims || '20000' }}
+
+      - name: Score the live published forecasts
+        # Reads the final pre-kickoff snapshot for every fixture that now has a
+        # result. Never fabricates a row for a fixture that has not happened.
+        continue-on-error: true
+        run: python -m backend.scripts.evaluate_live
+
+      - name: Commit refreshed forecast
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/data/predictions/season_fixtures.json \
+                  backend/data/predictions/season_projections.json \
+                  backend/data/evaluation/ || true
+          if git diff --cached --quiet; then
+            echo "Forecast unchanged"
+          else
+            git commit -m "chore: refresh season forecast [automated]"
+            git pull --rebase --autostash origin main || true
+            git push
+          fi
+
+      - name: Publish snapshot table
+        # `prediction_snapshots` lives in the gitignored warehouse, so the
+        # provenance record has to leave the runner some other way or the whole
+        # point of an immutable history is lost the moment the job ends.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m backend.scripts.export_snapshots \
+            --output /tmp/prediction_snapshots.csv.gz
+          gh release upload models-latest /tmp/prediction_snapshots.csv.gz --clobber
