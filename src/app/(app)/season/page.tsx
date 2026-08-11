@@ -46,6 +46,18 @@ interface League {
   fixtures_remaining: number
   teams: number
   relegation_places: number
+  top_cut?: number
+  top_cut_label?: string
+  schedule_completeness?: number
+  /** This league's OWN walk-forward record. Never another league's. */
+  measured?: {
+    n_scored: number
+    brier: number
+    accuracy: number
+    uniform: number
+    base_rate: number
+    always_home: number
+  } | null
   table: ProjectedRow[]
 }
 
@@ -315,7 +327,16 @@ export default function SeasonPage() {
                   className="mt-3.5"
                   rows={league.table}
                   relegationPlaces={league.relegation_places}
+                  topCutLabel={league.top_cut_label ?? 'Top 4'}
                 />
+                {league.schedule_completeness != null &&
+                league.schedule_completeness < 1 ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--accent-warn)]">
+                    {Math.round(league.schedule_completeness * 100)}% of this
+                    season&apos;s fixtures have a date. The table is projected from
+                    the ones that do.
+                  </p>
+                ) : null}
               </section>
             </TabsContent>
 
@@ -336,6 +357,8 @@ export default function SeasonPage() {
             </TabsContent>
           </Tabs>
 
+          <LeagueRecord league={league} />
+
           <EvidencePanel historical={historical} live={live} />
 
           {method?.model_version ? (
@@ -351,5 +374,60 @@ export default function SeasonPage() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * What the model has actually done in THIS league.
+ *
+ * The headline .59303 was measured on Europe's top five. The same model scores
+ * .63810 in the Championship — still better than every baseline, but a reader
+ * looking at Burnley deserves the number for their league rather than one
+ * borrowed from a division they are not reading about. Measured by
+ * `league_gate.py`, which is also what decides whether a league appears here
+ * at all.
+ */
+function LeagueRecord({ league }: { league: League }) {
+  const m = league.measured
+  if (!m) return null
+  const gain = m.uniform - m.brier
+
+  return (
+    <section
+      className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
+      aria-labelledby="league-record-heading"
+    >
+      <h2
+        id="league-record-heading"
+        className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
+      >
+        This league&apos;s record
+      </h2>
+      <dl className="mt-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { k: 'Matches scored', v: m.n_scored.toLocaleString() },
+          { k: 'Brier score', v: m.brier.toFixed(5) },
+          { k: 'One-in-three', v: m.uniform.toFixed(5) },
+          { k: 'Always home', v: m.always_home.toFixed(5) },
+        ].map((x) => (
+          <div key={x.k}>
+            <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              {x.k}
+            </dt>
+            <dd className="font-mono text-[16px] tabular-nums text-[var(--text-primary)]">
+              {x.v}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
+        Walk-forward over {league.name} alone, the model refit as the seasons
+        advanced and never shown a match before predicting it. Lower is better.
+        It beats a one-in-three guess by {gain.toFixed(5)} and beats picking the
+        home side every time. A league appears on this page only if it beats all
+        three baselines — that is the whole test, and it is why some leagues we
+        hold data for are not here.
+      </p>
+    </section>
   )
 }

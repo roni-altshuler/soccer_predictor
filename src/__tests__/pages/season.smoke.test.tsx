@@ -43,12 +43,16 @@ const PROJECTIONS = {
       fixtures_remaining: 380,
       teams: 20,
       relegation_places: 3,
+      top_cut: 4,
+      top_cut_label: 'Top 4',
+      measured: { n_scored: 8373, brier: 0.58266, accuracy: 0.5,
+                  uniform: 0.66667, base_rate: 0.64322, always_home: 1.08758 },
       table: [
-        { team: 'Manchester City', p_title: 0.386, p_top4: 0.815, p_relegated: 0.0,
+        { team: 'Manchester City', p_title: 0.386, p_top_cut: 0.815, p_top4: 0.815, p_relegated: 0.0,
           p_playoff: null, exp_points: 78.8, exp_position: 2.9, played: 0, points: 0 },
-        { team: 'Arsenal', p_title: 0.279, p_top4: 0.757, p_relegated: 0.001,
+        { team: 'Arsenal', p_title: 0.279, p_top_cut: 0.757, p_top4: 0.757, p_relegated: 0.001,
           p_playoff: null, exp_points: 76.2, exp_position: 3.4, played: 0, points: 0 },
-        { team: 'Ipswich Town', p_title: 0.0, p_top4: 0.001, p_relegated: 0.712,
+        { team: 'Ipswich Town', p_title: 0.0, p_top_cut: 0.001, p_top4: 0.001, p_relegated: 0.712,
           p_playoff: null, exp_points: 28.0, exp_position: 18.0, played: 0, points: 0 },
       ],
     },
@@ -60,9 +64,30 @@ const PROJECTIONS = {
       fixtures_remaining: 306,
       teams: 18,
       relegation_places: 2,
+      top_cut: 4,
+      top_cut_label: 'Top 4',
+      measured: { n_scored: 6478, brier: 0.60268, accuracy: 0.5,
+                  uniform: 0.66667, base_rate: 0.64758, always_home: 1.10732 },
       table: [
-        { team: 'Bayern Munich', p_title: 0.713, p_top4: 0.96, p_relegated: 0.0,
+        { team: 'Bayern Munich', p_title: 0.713, p_top_cut: 0.96, p_top4: 0.96, p_relegated: 0.0,
           p_playoff: null, exp_points: 79.0, exp_position: 1.4, played: 0, points: 0 },
+      ],
+    },
+    {
+      competition_id: 'eng.2',
+      name: 'EFL Championship',
+      country: 'England',
+      season: 2026,
+      fixtures_remaining: 552,
+      teams: 24,
+      relegation_places: 3,
+      top_cut: 2,
+      top_cut_label: 'Promoted',
+      measured: { n_scored: 5176, brier: 0.63810, accuracy: 0.45,
+                  uniform: 0.66667, base_rate: 0.65167, always_home: 1.13508 },
+      table: [
+        { team: 'Burnley', p_title: 0.559, p_top_cut: 0.741, p_top4: 0.902, p_relegated: 0.0,
+          p_playoff: null, exp_points: 88.0, exp_position: 1.7, played: 0, points: 0 },
       ],
     },
   ],
@@ -125,9 +150,12 @@ const openTab = (name: string) =>
 
 afterEach(() => {
   jest.resetAllMocks()
-  // The picker remembers the last league. Without this, one test's choice
-  // silently becomes the next test's starting state.
+  // The picker remembers the last league in BOTH places, and jsdom carries a
+  // URL across tests in the same file. Without clearing both, one test's
+  // choice silently becomes the next test's starting league — which looks
+  // exactly like the page ignoring its own data.
   window.localStorage.clear()
+  window.history.replaceState(null, '', '/season')
 })
 
 describe('SeasonPage', () => {
@@ -286,6 +314,53 @@ describe('SeasonPage', () => {
     await waitFor(() =>
       expect(screen.getAllByText('Bayern Munich').length).toBeGreaterThan(0),
     )
+  })
+
+
+  // -------------------------------------------------------- extra leagues
+  //
+  // Fourteen leagues are published, each admitted only after beating its own
+  // baselines. Two things must survive that: a second tier must not be
+  // labelled with a top-flight's column, and no league may borrow another's
+  // accuracy figures.
+
+  it('offers every published league in the picker', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: /change league/i }))
+    const options = within(screen.getByRole('listbox')).getAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Premier League'),
+        expect.stringContaining('Bundesliga'),
+        expect.stringContaining('EFL Championship'),
+      ]),
+    )
+  })
+
+  it('labels a second tier by promotion, not by top four', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+    await waitFor(() => expect(screen.getByText(/Title race/i)).toBeInTheDocument())
+
+    await chooseLeague('EFL Championship')
+    await openTab('Table')
+    expect(screen.getAllByText(/Promoted/).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Top 4')).not.toBeInTheDocument()
+  })
+
+  it('reports each league’s own record, never another league’s', async () => {
+    mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
+    render(<SeasonPage />)
+    await waitFor(() => expect(screen.getByText('0.58266')).toBeInTheDocument())
+
+    await chooseLeague('EFL Championship')
+    // The Championship is a harder league and says so.
+    expect(screen.getByText('0.63810')).toBeInTheDocument()
+    expect(screen.queryByText('0.58266')).not.toBeInTheDocument()
+    expect(screen.getByText('5,176')).toBeInTheDocument()
   })
 
   it('names the model version so a forecast can be tied to an implementation', async () => {

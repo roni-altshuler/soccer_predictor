@@ -1,0 +1,349 @@
+{
+  "protocol": "day-blocked walk-forward per competition; the head is refit every 380 matches on matches strictly before the block it predicts. base_rate uses only already-observed outcomes.",
+  "min_season": 2000,
+  "leagues": [
+    {
+      "competition_id": "eng.1",
+      "n_scored": 8373,
+      "n_played": 9880,
+      "seasons": [
+        2000,
+        2025
+      ],
+      "brier": 0.58266,
+      "log_loss": 0.97986,
+      "accuracy": 0.53505,
+      "uniform": 0.66667,
+      "base_rate": 0.64322,
+      "always_home": 1.08758,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "esp.1",
+      "n_scored": 8381,
+      "n_played": 9881,
+      "seasons": [
+        2000,
+        2025
+      ],
+      "brier": 0.58526,
+      "log_loss": 0.98432,
+      "accuracy": 0.52416,
+      "uniform": 0.66667,
+      "base_rate": 0.63883,
+      "always_home": 1.0601,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "ger.1",
+      "n_scored": 6478,
+      "n_played": 7979,
+      "seasons": [
+        2000,
+        2025
+      ],
+      "brier": 0.60268,
+      "log_loss": 1.00907,
+      "accuracy": 0.50386,
+      "uniform": 0.66667,
+      "base_rate": 0.64758,
+      "always_home": 1.10732,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "ita.1",
+      "n_scored": 8083,
+      "n_played": 9587,
+      "seasons": [
+        2000,
+        2025
+      ],
+      "brier": 0.58807,
+      "log_loss": 0.98564,
+      "accuracy": 0.52443,
+      "uniform": 0.66667,
+      "base_rate": 0.6492,
+      "always_home": 1.1145,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "fra.1",
+      "n_scored": 7960,
+      "n_played": 9462,
+      "seasons": [
+        2000,
+        2025
+      ],
+      "brier": 0.61363,
+      "log_loss": 1.02344,
+      "accuracy": 0.49347,
+      "uniform": 0.66667,
+      "base_rate": 0.6487,
+      "always_home": 1.10738,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "ned.1",
+      "n_scored": 6625,
+      "n_played": 8128,
+      "seasons": [
+        2000,
+        2026
+      ],
+      "brier": 0.5701,
+      "log_loss": 0.96053,
+      "accuracy": 0.54762,
+      "uniform": 0.66667,
+      "base_rate": 0.63712,
+      "always_home": 1.06045,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "por.1",
+      "n_scored": 6086,
+      "n_played": 7587,
+      "seasons": [
+        2000,
+        2026
+      ],
+      "brier": 0.56873,
+      "log_loss": 0.9591,
+      "accuracy": 0.53713,
+      "uniform": 0.66667,
+      "base_rate": 0.64948,
+      "always_home": 1.11663,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "eng.2",
+      "n_scored": 5176,
+      "n_played": 6679,
+      "seasons": [
+        2014,
+        2025
+      ],
+      "brier": 0.6381,
+      "log_loss": 1.05839,
+      "accuracy": 0.45421,
+      "uniform": 0.66667,
+      "base_rate": 0.65167,
+      "always_home": 1.13508,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "esp.2",
+      "n_scored": 4114,
+      "n_played": 5616,
+      "seasons": [
+        2014,
+        2025
+      ],
+      "brier": 0.63955,
+      "log_loss": 1.05997,
+      "accuracy": 0.45211,
+      "uniform": 0.66667,
+      "base_rate": 0.64753,
+      "always_home": 1.10821,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "ger.2",
+      "n_scored": 2228,
+      "n_played": 3728,
+      "seasons": [
+        2014,
+        2026
+      ],
+      "brier": 0.64334,
+      "log_loss": 1.06661,
+      "accuracy": 0.44524,
+      "uniform": 0.66667,
+      "base_rate": 0.65123,
+      "always_home": 1.12847,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "ita.2",
+      "n_scored": 3932,
+      "n_played": 5436,
+      "seasons": [
+        2013,
+        2025
+      ],
+      "brier": 0.64699,
+      "log_loss": 1.07024,
+      "accuracy": 0.42803,
+      "uniform": 0.66667,
+      "base_rate": 0.6548,
+      "always_home": 1.16356,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "fra.2",
+      "n_scored": 2856,
+      "n_played": 4357,
+      "seasons": [
+        2014,
+        2026
+      ],
+      "brier": 0.64736,
+      "log_loss": 1.07232,
+      "accuracy": 0.44258,
+      "uniform": 0.66667,
+      "base_rate": 0.6569,
+      "always_home": 1.16632,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "tur.1",
+      "n_scored": 2810,
+      "n_played": 4312,
+      "seasons": [
+        2013,
+        2025
+      ],
+      "brier": 0.60377,
+      "log_loss": 1.01135,
+      "accuracy": 0.50498,
+      "uniform": 0.66667,
+      "base_rate": 0.64685,
+      "always_home": 1.10297,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "bra.1",
+      "n_scored": 3275,
+      "n_played": 4775,
+      "seasons": [
+        2014,
+        2026
+      ],
+      "brier": 0.61613,
+      "log_loss": 1.02686,
+      "accuracy": 0.48977,
+      "uniform": 0.66667,
+      "base_rate": 0.63717,
+      "always_home": 1.04942,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "usa.1",
+      "n_scored": 7102,
+      "n_played": 8605,
+      "seasons": [
+        2000,
+        2026
+      ],
+      "brier": 0.62101,
+      "log_loss": 1.0355,
+      "accuracy": 0.49817,
+      "uniform": 0.66667,
+      "base_rate": 0.6273,
+      "always_home": 1.00666,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "mex.1",
+      "n_scored": 2498,
+      "n_played": 3998,
+      "seasons": [
+        2014,
+        2026
+      ],
+      "brier": 0.61854,
+      "log_loss": 1.03228,
+      "accuracy": 0.48479,
+      "uniform": 0.66667,
+      "base_rate": 0.64341,
+      "always_home": 1.08244,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    },
+    {
+      "competition_id": "arg.1",
+      "n_scored": 2911,
+      "n_played": 4413,
+      "seasons": [
+        2015,
+        2026
+      ],
+      "brier": 0.64524,
+      "log_loss": 1.06897,
+      "accuracy": 0.4325,
+      "uniform": 0.66667,
+      "base_rate": 0.65065,
+      "always_home": 1.1285,
+      "beats_uniform": true,
+      "beats_base_rate": true,
+      "beats_always_home": true,
+      "ships": true
+    }
+  ],
+  "ships": [
+    "eng.1",
+    "esp.1",
+    "ger.1",
+    "ita.1",
+    "fra.1",
+    "ned.1",
+    "por.1",
+    "eng.2",
+    "esp.2",
+    "ger.2",
+    "ita.2",
+    "fra.2",
+    "tur.1",
+    "bra.1",
+    "usa.1",
+    "mex.1",
+    "arg.1"
+  ],
+  "holds": []
+}

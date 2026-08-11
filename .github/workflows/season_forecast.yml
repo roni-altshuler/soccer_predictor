@@ -101,6 +101,22 @@ jobs:
         continue-on-error: true
         run: python -m backend.scripts.build_warehouse --espn --min-season 2026 --max-season 2026
 
+      - name: Refresh the current-season schedule
+        # Results arrive from ESPN above; this is the other half — kickoff
+        # times, rounds and postponements, which only FBref carries.
+        #
+        # `continue-on-error` because FBref sits behind Cloudflare and a
+        # GitHub runner is exactly the client it is built to turn away. When
+        # it fails the forecast is still correct: `load_upcoming` drops any
+        # fixture that already has a result, so a stale schedule costs a wrong
+        # kickoff time on a moved match, not a forecast for a match that has
+        # already been played.
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          python -m backend.scripts.ingest_fbref_schedules \
+            --since 2026 --stale-days 0.5
+
       - name: Rebuild canonical layer
         run: python -m backend.scripts.build_canonical --no-parquet
 

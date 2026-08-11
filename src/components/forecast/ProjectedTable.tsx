@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils'
 export interface ProjectedRow {
   team: string
   p_title: number
+  /** P(finishing inside this league's own headline band) — see `topCutLabel`. */
+  p_top_cut?: number
   p_top4: number
   p_relegated: number
   p_playoff: number | null
@@ -29,33 +31,57 @@ export interface ProjectedRow {
   points: number
 }
 
-type SortKey = 'exp_position' | 'p_title' | 'p_top4' | 'p_relegated' | 'exp_points'
+type SortKey =
+  | 'exp_position'
+  | 'p_title'
+  | 'p_top_cut'
+  | 'p_relegated'
+  | 'exp_points'
 
-const COLUMNS: { key: SortKey; label: string; short: string; desc: boolean }[] = [
+/**
+ * The band worth naming differs by competition. Fourth place is a Champions
+ * League spot in a top flight and nothing whatsoever in a second tier, where
+ * second is the last automatic promotion place — so the column is labelled by
+ * the league rather than hard-coded to "Top 4".
+ */
+const columns = (
+  topCutLabel: string,
+): { key: SortKey; label: string; short: string; desc: boolean }[] => [
   { key: 'exp_position', label: 'Projected position', short: 'Pos', desc: false },
   { key: 'exp_points', label: 'Expected points', short: 'xPts', desc: true },
   { key: 'p_title', label: 'Title', short: 'Title', desc: true },
-  { key: 'p_top4', label: 'Top four', short: 'Top 4', desc: true },
+  { key: 'p_top_cut', label: topCutLabel, short: topCutLabel, desc: true },
   { key: 'p_relegated', label: 'Relegation', short: 'Rel', desc: true },
 ]
+
+/** Older artifacts predate `p_top_cut`; their top cut was always four. */
+const topCut = (r: ProjectedRow) => r.p_top_cut ?? r.p_top4
 
 const pct = (v: number) => (v >= 0.001 ? `${(v * 100).toFixed(1)}%` : '—')
 
 export function ProjectedTable({
   rows,
   relegationPlaces,
+  topCutLabel = 'Top 4',
   className,
 }: {
   rows: ProjectedRow[]
   relegationPlaces: number
+  topCutLabel?: string
   className?: string
 }) {
   const [sort, setSort] = useState<SortKey>('exp_position')
   const [desc, setDesc] = useState(false)
+  const COLUMNS = useMemo(() => columns(topCutLabel), [topCutLabel])
+
+  const value = (r: ProjectedRow, key: SortKey) =>
+    key === 'p_top_cut' ? topCut(r) : r[key]
 
   const sorted = useMemo(() => {
     const dir = desc ? -1 : 1
-    return [...rows].sort((a, b) => (a[sort] - b[sort]) * dir || a.team.localeCompare(b.team))
+    return [...rows].sort(
+      (a, b) => (value(a, sort) - value(b, sort)) * dir || a.team.localeCompare(b.team),
+    )
   }, [rows, sort, desc])
 
   const toggle = (key: SortKey) => {
@@ -142,7 +168,7 @@ export function ProjectedTable({
                   {pct(t.p_title)}
                 </td>
                 <td className="py-2 pl-3 text-right text-[var(--text-tertiary)]">
-                  {pct(t.p_top4)}
+                  {pct(topCut(t))}
                 </td>
                 <td
                   className={cn(
@@ -202,7 +228,7 @@ export function ProjectedTable({
               <dl className="mt-2 grid grid-cols-3 gap-2">
                 {[
                   { label: 'Title', value: t.p_title, warn: false },
-                  { label: 'Top 4', value: t.p_top4, warn: false },
+                  { label: topCutLabel, value: topCut(t), warn: false },
                   { label: 'Rel', value: t.p_relegated, warn: t.p_relegated >= 0.2 },
                 ].map((x) => (
                   <div key={x.label}>

@@ -43,6 +43,17 @@ const accents: LeagueAccent[] = [
   { competitionId: 'ned.1', displayName: 'Eredivisie', shortName: 'Eredivisie', country: 'Netherlands', countryCode: 'NL', gender: 'M', accent: '#f04923', accentBg: 'rgba(240, 73, 35, 0.12)', flag: '🇳🇱', logoUrl: ESPN_LOGO(11), matchesPerSeason: 34 },
   { competitionId: 'por.1', displayName: 'Primeira Liga', shortName: 'Liga PT', country: 'Portugal', countryCode: 'PT', gender: 'M', accent: '#006a3d', accentBg: 'rgba(0, 106, 61, 0.12)', flag: '🇵🇹', logoUrl: ESPN_LOGO(14), matchesPerSeason: 34 },
   { competitionId: 'usa.1', displayName: 'MLS', shortName: 'MLS', country: 'USA', countryCode: 'US', gender: 'M', accent: '#1a1f2c', accentBg: 'rgba(26, 31, 44, 0.14)', flag: '🇺🇸', logoUrl: ESPN_LOGO(19), matchesPerSeason: 34 },
+  // Second tiers and further top flights — added when each cleared the
+  // per-league benchmark in reports/baselines/league_gate.json. Every logoUrl
+  // below was resolved from ESPN's own scoreboard payload and curl-verified.
+  { competitionId: 'eng.2', displayName: 'EFL Championship', shortName: 'Championship', country: 'England', countryCode: 'ENG', gender: 'M', accent: '#0e1f3f', accentBg: 'rgba(14, 31, 63, 0.14)', flag: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}', logoUrl: ESPN_LOGO(24), matchesPerSeason: 46 },
+  { competitionId: 'esp.2', displayName: 'LaLiga 2', shortName: 'LaLiga 2', country: 'Spain', countryCode: 'ES', gender: 'M', accent: '#1f6f4a', accentBg: 'rgba(31, 111, 74, 0.12)', flag: '🇪🇸', logoUrl: ESPN_LOGO(107), matchesPerSeason: 42 },
+  { competitionId: 'ger.2', displayName: '2. Bundesliga', shortName: '2. Bundesliga', country: 'Germany', countryCode: 'DE', gender: 'M', accent: '#e2001a', accentBg: 'rgba(226, 0, 26, 0.12)', flag: '🇩🇪', logoUrl: ESPN_LOGO(97), matchesPerSeason: 34 },
+  { competitionId: 'ita.2', displayName: 'Serie B', shortName: 'Serie B', country: 'Italy', countryCode: 'IT', gender: 'M', accent: '#004f9f', accentBg: 'rgba(0, 79, 159, 0.12)', flag: '🇮🇹', logoUrl: ESPN_LOGO(99), matchesPerSeason: 38 },
+  { competitionId: 'fra.2', displayName: 'Ligue 2', shortName: 'Ligue 2', country: 'France', countryCode: 'FR', gender: 'M', accent: '#122b54', accentBg: 'rgba(18, 43, 84, 0.14)', flag: '🇫🇷', logoUrl: ESPN_LOGO(96), matchesPerSeason: 34 },
+  { competitionId: 'tur.1', displayName: 'Süper Lig', shortName: 'Süper Lig', country: 'Türkiye', countryCode: 'TR', gender: 'M', accent: '#e30a17', accentBg: 'rgba(227, 10, 23, 0.12)', flag: '🇹🇷', logoUrl: ESPN_LOGO(18), matchesPerSeason: 34 },
+  { competitionId: 'bra.1', displayName: 'Brasileirão Série A', shortName: 'Brasileirão', country: 'Brazil', countryCode: 'BR', gender: 'M', accent: '#009c3b', accentBg: 'rgba(0, 156, 59, 0.12)', flag: '🇧🇷', logoUrl: ESPN_LOGO(85), matchesPerSeason: 38 },
+
   // UEFA + FIFA tournaments
   { competitionId: 'uefa.champions', displayName: 'UEFA Champions League', shortName: 'UCL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#0a1c47', accentBg: 'rgba(10, 28, 71, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2) },
   { competitionId: 'uefa.europa', displayName: 'UEFA Europa League', shortName: 'UEL', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#ff6900', accentBg: 'rgba(255, 105, 0, 0.12)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2310) },

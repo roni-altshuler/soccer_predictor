@@ -320,13 +320,17 @@ def load_matches(competitions: Optional[Sequence[str]], min_season: int,
         where.append(f"competition_id IN ({lst})")
     rows = con.execute(f"""
         SELECT match_uid, competition_id, season, local_date, home_key, away_key,
-               home_score, away_score, result, phase
+               home_name, away_name, home_score, away_score, result, phase
           FROM matches
          WHERE {' AND '.join(where)}
          ORDER BY local_date, match_uid
     """).fetchall()
+    # `home_name`/`away_name` are the display names. Carried because a club
+    # that has already played its last fixture of a season still needs a name
+    # in the projected table, and the fixture list no longer mentions it.
     cols = ["match_uid", "competition_id", "season", "local_date", "home_key",
-            "away_key", "home_score", "away_score", "result", "phase"]
+            "away_key", "home_name", "away_name", "home_score", "away_score",
+            "result", "phase"]
     con.close()
     return [dict(zip(cols, r)) for r in rows]
 

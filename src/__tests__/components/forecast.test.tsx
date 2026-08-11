@@ -6,6 +6,7 @@ import { FixtureCard } from '@/components/forecast/FixtureCard'
 import { FixtureList } from '@/components/forecast/FixtureList'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { ProjectedTable } from '@/components/forecast/ProjectedTable'
+import type { ProjectedRow } from '@/components/forecast/ProjectedTable'
 
 /**
  * The forecast components, tested for the properties that make them
@@ -240,5 +241,76 @@ describe('FixtureList', () => {
   it('says so when a league has nothing left to play', () => {
     render(<FixtureList fixtures={[]} />)
     expect(screen.getByText(/No fixtures remain in this league/i)).toBeInTheDocument()
+  })
+})
+
+// ------------------------------------------------- the league-specific band
+//
+// Fourth place is a Champions League spot in a top flight and nothing at all
+// in a second tier, where second is the last automatic promotion place. A
+// hard-coded "Top 4" column would be a straightforwardly wrong label on six
+// of the fourteen leagues now published.
+
+describe('ProjectedTable — the column each league actually cares about', () => {
+  const row = (team: string, over: Partial<ProjectedRow> = {}): ProjectedRow => ({
+    team,
+    p_title: 0.2,
+    p_top_cut: 0.55,
+    p_top4: 0.81,
+    p_relegated: 0.02,
+    p_playoff: null,
+    exp_points: 70,
+    exp_position: 3,
+    played: 0,
+    points: 0,
+    ...over,
+  })
+
+  it('labels the band with the league’s own word', () => {
+    render(
+      <ProjectedTable
+        rows={[row('Burnley')]}
+        relegationPlaces={3}
+        topCutLabel="Promoted"
+      />,
+    )
+    expect(screen.getAllByText(/Promoted/).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Top 4')).not.toBeInTheDocument()
+  })
+
+  it('shows p_top_cut, not p_top4, under that label', () => {
+    render(
+      <ProjectedTable
+        rows={[row('Burnley', { p_top_cut: 0.552, p_top4: 0.913 })]}
+        relegationPlaces={3}
+        topCutLabel="Promoted"
+      />,
+    )
+    expect(screen.getAllByText('55.2%').length).toBeGreaterThan(0)
+    expect(screen.queryByText('91.3%')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the old field when an artifact predates p_top_cut', () => {
+    const legacy = { ...row('Arsenal'), p_top4: 0.757 }
+    delete (legacy as { p_top_cut?: number }).p_top_cut
+    render(<ProjectedTable rows={[legacy]} relegationPlaces={3} />)
+    expect(screen.getAllByText('75.7%').length).toBeGreaterThan(0)
+  })
+
+  it('sorts by the league’s band rather than by top four', async () => {
+    render(
+      <ProjectedTable
+        rows={[
+          row('Low cut, high four', { p_top_cut: 0.1, p_top4: 0.99 }),
+          row('High cut, low four', { p_top_cut: 0.9, p_top4: 0.11 }),
+        ]}
+        relegationPlaces={3}
+        topCutLabel="Promoted"
+      />,
+    )
+    const header = screen.getAllByRole('button', { name: /sort by Promoted/i })[0]
+    await userEvent.click(header)
+    const first = screen.getAllByRole('rowheader')[0]
+    expect(first).toHaveTextContent('High cut, low four')
   })
 })

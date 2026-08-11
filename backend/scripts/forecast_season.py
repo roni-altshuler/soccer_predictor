@@ -40,6 +40,7 @@ Writes backend/data/predictions/season_fixtures.json and season_projections.json
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -74,27 +75,107 @@ OUT_DIR = ROOT / "backend" / "data" / "predictions"
 KEPT_PREFIXES = ("elo_", "form_")
 
 # Leagues served, with the relegation rule the simulation actually applies.
+# Every league whose season this can project.
+#
+# Two conditions, both checked rather than assumed. The model must beat
+# uniform, the competition's own base rate AND always-picking-home on a
+# day-blocked walk-forward of that league alone — `league_gate.py`, results in
+# reports/baselines/league_gate.json. And the season must be a plain double
+# round robin, which `_is_round_robin` verifies against the fixture list at
+# publish time; a table simulated from a schedule that is not one would be
+# wrong in a way no footnote repairs.
+#
+# `top_cut` is the position band worth naming in that competition. Fourth is
+# a Champions League place in a top flight and nothing at all in a second
+# tier, where second is the last automatic promotion spot. Publishing "Top 4"
+# for the Championship would be a straightforwardly wrong label.
 LEAGUES: Dict[str, Dict] = {
-    "eng.1": {"name": "Premier League", "country": "England", "relegate": 3},
-    "esp.1": {"name": "La Liga", "country": "Spain", "relegate": 3},
+    # -- top flights ---------------------------------------------------
+    "eng.1": {"name": "Premier League", "country": "England", "relegate": 3,
+              "top_cut": 4, "top_cut_label": "Top 4"},
+    "esp.1": {"name": "La Liga", "country": "Spain", "relegate": 3,
+              "top_cut": 4, "top_cut_label": "Top 4"},
     "ger.1": {"name": "Bundesliga", "country": "Germany", "relegate": 2,
-              "playoff": 1},
-    "ita.1": {"name": "Serie A", "country": "Italy", "relegate": 3},
+              "playoff": 1, "top_cut": 4, "top_cut_label": "Top 4"},
+    "ita.1": {"name": "Serie A", "country": "Italy", "relegate": 3,
+              "top_cut": 4, "top_cut_label": "Top 4"},
     "fra.1": {"name": "Ligue 1", "country": "France", "relegate": 2,
-              "playoff": 1},
-    "ned.1": {"name": "Eredivisie", "country": "Netherlands", "relegate": 2},
-    "por.1": {"name": "Primeira Liga", "country": "Portugal", "relegate": 2},
+              "playoff": 1, "top_cut": 4, "top_cut_label": "Top 4"},
+    "ned.1": {"name": "Eredivisie", "country": "Netherlands", "relegate": 2,
+              "top_cut": 4, "top_cut_label": "Top 4"},
+    "por.1": {"name": "Primeira Liga", "country": "Portugal", "relegate": 2,
+              "top_cut": 4, "top_cut_label": "Top 4"},
+    "tur.1": {"name": "Süper Lig", "country": "Türkiye", "relegate": 4,
+              "top_cut": 4, "top_cut_label": "Top 4"},
+    "bra.1": {"name": "Brasileirão Série A", "country": "Brazil",
+              "relegate": 4, "top_cut": 4, "top_cut_label": "Top 4"},
+
+    # -- second tiers --------------------------------------------------
+    # Here the story is promotion, so `top_cut` is the automatic-promotion
+    # band. Entrant turnover corroborates each relegation count: it runs at
+    # promoted + relegated, and every one of these adds up.
+    "eng.2": {"name": "EFL Championship", "country": "England", "relegate": 3,
+              "top_cut": 2, "top_cut_label": "Promoted"},
+    "esp.2": {"name": "LaLiga 2", "country": "Spain", "relegate": 4,
+              "top_cut": 2, "top_cut_label": "Promoted"},
+    "ger.2": {"name": "2. Bundesliga", "country": "Germany", "relegate": 2,
+              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
+    "ita.2": {"name": "Serie B", "country": "Italy", "relegate": 3,
+              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
+    "fra.2": {"name": "Ligue 2", "country": "France", "relegate": 2,
+              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
+}
+
+# Measured and NOT shipped. The match model clears the gate in all three —
+# MLS .62101, Liga MX .61854, Argentina .64524, each better than every
+# baseline — but none of them plays a double round robin, so there is no
+# single table for a season simulation to project. MLS splits into two
+# conferences with an unbalanced schedule and decides its champion in
+# playoffs; Liga MX and Argentina run Apertura/Clausura with knockout
+# stages inside the league competition. Simulating a 30-team table for MLS
+# would produce a confident number for a competition that does not exist.
+HELD: Dict[str, str] = {
+    "usa.1": "two conferences, unbalanced schedule, playoff champion",
+    "mex.1": "Apertura/Clausura split with a liguilla",
+    "arg.1": "zones and knockout rounds inside the league",
+    "ksa.1": "too little history to measure under the same protocol",
 }
 
 MAX_GOALS = 10
 
+# How close a schedule has to be to a double round robin before a projected
+# table is meaningful. Set between the two populations it separates: every
+# single-table league measured sits at 98%+, and every multi-conference or
+# Apertura/Clausura competition below 60%.
+ROUND_ROBIN_MIN = 0.95
 
-def load_upcoming(competitions: Sequence[str]) -> List[dict]:
+
+def _seed_for(competition_id: str, seed: int) -> int:
+    """A stable per-competition seed.
+
+    sha256 rather than `hash()`, which is salted per process and would make
+    the same command produce different probabilities on two runs.
+    """
+    digest = hashlib.sha256(competition_id.encode("utf-8")).digest()
+    return (int.from_bytes(digest[:8], "big") ^ (seed & 0xFFFFFFFF)) % (2 ** 63)
+
+
+def load_upcoming(competitions: Sequence[str],
+                  played: Optional[Sequence[dict]] = None) -> List[dict]:
     """Fixtures with no result yet, from the FBref schedule tier.
 
     Read here rather than from `matches` because the canonical layer is played
     matches only — that invariant is what lets every consumer treat a row as a
     fact — so the fixture list is a separate read by construction.
+
+    Two sources have to agree about what "not yet played" means, and they
+    refresh on different clocks. Results arrive daily from ESPN; the FBref
+    schedule is a release artifact that can be weeks old, so its `home_goals`
+    stays NULL all season for matches that have very much been played. The
+    date filter hides most of that, and `played` closes the rest: any fixture
+    already in the results corpus for that season is dropped whatever the
+    schedule says its date was. Without it, a match moved forward from its
+    published date would be forecast after it finished.
     """
     import duckdb
 
@@ -119,13 +200,20 @@ def load_upcoming(competitions: Sequence[str]) -> List[dict]:
         "SELECT competition_id, fb_norm, wh_norm FROM team_aliases").fetchall()}
     con.close()
 
-    out = []
+    # (competition, season, home_key, away_key) of everything already played.
+    done = {(m["competition_id"], m["season"], m["home_key"], m["away_key"])
+            for m in (played or [])}
+
+    out, already = [], 0
     for league, season, date, time, home, away, rnd in rows:
         comp = COMPETITION_MAP.get(league)
         if comp not in competitions:
             continue
         hn = aliases.get((comp, norm_team(home)), norm_team(home))
         an = aliases.get((comp, norm_team(away)), norm_team(away))
+        if (comp, int(str(season)[:4]), f"{comp}::{hn}", f"{comp}::{an}") in done:
+            already += 1
+            continue
         out.append({
             "competition_id": comp, "season": int(str(season)[:4]),
             "local_date": datetime.fromisoformat(date).date(),
@@ -136,6 +224,10 @@ def load_upcoming(competitions: Sequence[str]) -> List[dict]:
             "home_key": f"{comp}::{hn}", "away_key": f"{comp}::{an}",
             "home_score": None, "away_score": None,
         })
+    if already:
+        logger.info("  %d scheduled fixture(s) already have a result and were "
+                    "dropped — the schedule artifact is behind the results",
+                    already)
     return out
 
 
@@ -335,7 +427,7 @@ def main(argv: Optional[List[str]] = None) -> int:
              for c, v in recent.items()}
 
     # -- upcoming ---------------------------------------------------------
-    upcoming = load_upcoming(comps)
+    upcoming = load_upcoming(comps, played)
     logger.info("upcoming fixtures: %d", len(upcoming))
     unknown = {f["home_key"] for f in upcoming if f["home_key"] not in state.elo.rating}
     if unknown:
@@ -384,21 +476,72 @@ def main(argv: Optional[List[str]] = None) -> int:
                                        f["date"], f["home"], f["away"])
 
     # -- season projections ------------------------------------------------
-    rng = np.random.default_rng(args.seed)
+    # Each league carries its OWN measured record. The headline .59303 was
+    # measured on Europe's top five and says nothing about the Championship,
+    # where the same model scores .63810 — still better than every baseline,
+    # but a reader of that page deserves the number for their league rather
+    # than one borrowed from a different one.
+    gate = {}
+    gate_path = ROOT / "reports" / "baselines" / "league_gate.json"
+    if gate_path.exists():
+        try:
+            gate = {g["competition_id"]: g
+                    for g in json.loads(gate_path.read_text())["leagues"]}
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("could not read the league gate: %s", exc)
+
     projections = []
     by_comp: Dict[str, List[dict]] = defaultdict(list)
     for f in upcoming:
         by_comp[f["competition_id"]].append(f)
 
-    for comp, fs in by_comp.items():
+    # Sorted so the run order is the same every time, and each competition
+    # gets its OWN stream. One shared generator consumed in iteration order
+    # means a league's published probabilities depend on which other leagues
+    # ran before it: adding the Championship moved Manchester City by a point
+    # without anything about the Premier League changing. A forecast has to be
+    # reproducible from its own inputs.
+    for comp in sorted(by_comp):
+        fs = by_comp[comp]
+        rng = np.random.default_rng(_seed_for(comp, args.seed))
         season = max(x["season"] for x in fs)
         fs = [f for f in fs if f["season"] == season]
-        entrants = sorted({k for f in fs for k in (f["home_key"], f["away_key"])})
+        done_this_season = [m for m in played
+                            if m["competition_id"] == comp and m["season"] == season]
+        entrants = sorted({k for f in fs for k in (f["home_key"], f["away_key"])}
+                          | {k for m in done_this_season
+                             for k in (m["home_key"], m["away_key"])})
+
+        # A projected table only means anything if everyone plays everyone
+        # twice. Checked against the actual schedule rather than trusted from
+        # config, because the alternative is a confident 30-team table for a
+        # competition that is really two conferences and a playoff.
+        #
+        # Proportional rather than exact: the question is whether the format is
+        # a double round robin, and the two failure modes are far apart. MLS
+        # runs at 59% of one, Liga MX 50%, Argentina 57% — those are different
+        # competitions. A league sitting at 98% is the right competition with a
+        # postponement the schedule has not been redrawn for yet, which costs a
+        # rounding error rather than a wrong answer. The shortfall is published
+        # either way.
+        expected = len(entrants) * (len(entrants) - 1)
+        n_total = len(fs) + len(done_this_season)
+        completeness = n_total / expected if expected else 0.0
+        if completeness < ROUND_ROBIN_MIN or completeness > 1.0:
+            logger.warning(
+                "  %s: %d teams and %d fixtures — %.0f%% of a double round "
+                "robin (%d). Not a single-table competition; fixtures are "
+                "published, no table is.",
+                comp, len(entrants), n_total, 100 * completeness, expected)
+            continue
+        if n_total != expected:
+            logger.info("  %s: %d of %d fixtures scheduled (%.1f%%) — table "
+                        "projected from what exists", comp, n_total, expected,
+                        100 * completeness)
+
         # Points already banked this season, if any of it has been played.
         table = {t: {"points": 0, "gd": 0, "gf": 0, "played": 0} for t in entrants}
-        for m in played:
-            if m["competition_id"] != comp or m["season"] != season:
-                continue
+        for m in done_this_season:
             for key, gf_, ga in ((m["home_key"], m["home_score"], m["away_score"]),
                                  (m["away_key"], m["away_score"], m["home_score"])):
                 if key not in table:
@@ -412,10 +555,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         cfg = LEAGUES.get(comp, {})
         rel_from = len(entrants) - cfg.get("relegate", 3)
         po_from = rel_from - cfg.get("playoff", 0)
+        top_cut = cfg.get("top_cut", 4)
         names_by_key = {}
         for f in fs:
             names_by_key[f["home_key"]] = f["home_name"]
             names_by_key[f["away_key"]] = f["away_name"]
+        for m in done_this_season:
+            names_by_key.setdefault(m["home_key"], m["home_name"])
+            names_by_key.setdefault(m["away_key"], m["away_name"])
 
         rows_out = []
         for t, s in sim.items():
@@ -423,6 +570,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             rows_out.append({
                 "team": names_by_key.get(t, t.split("::")[-1]),
                 "p_title": round(float((pos == 0).mean()), 4),
+                "p_top_cut": round(float((pos < top_cut).mean()), 4),
+                # Retained for anything still reading the old key. In a second
+                # tier it is a genuine top-four probability and not the number
+                # the page shows, which is `p_top_cut`.
                 "p_top4": round(float((pos < 4).mean()), 4),
                 "p_relegated": round(float((pos >= rel_from).mean()), 4),
                 "p_playoff": round(float(((pos >= po_from) & (pos < rel_from)).mean()), 4)
@@ -437,6 +588,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             "country": cfg.get("country"), "season": season,
             "fixtures_remaining": len(fs), "teams": len(entrants),
             "relegation_places": cfg.get("relegate", 3),
+            "top_cut": top_cut,
+            "top_cut_label": cfg.get("top_cut_label", "Top 4"),
+            "schedule_completeness": round(completeness, 4),
+            "measured": {k: g[k] for k in ("n_scored", "brier", "log_loss",
+                                           "accuracy", "uniform", "base_rate",
+                                           "always_home")} if (g := gate.get(comp)) else None,
             "table": rows_out,
         })
         top = rows_out[0]

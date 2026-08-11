@@ -39,8 +39,13 @@ export interface LeagueOption {
   teams: number
 }
 
-// Roughly by following, which is how every product in this space orders them.
-const RANK = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1']
+// Roughly by following, which is how every product in this space orders them:
+// the big five, then the other top flights, then the second tiers. Anything
+// unlisted falls to the end in alphabetical order rather than disappearing.
+const RANK = [
+  'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1', 'tur.1',
+  'bra.1', 'eng.2', 'esp.2', 'ita.2', 'ger.2', 'fra.2',
+]
 
 // The app's mobile tab bar is fixed to the bottom of the viewport, so the
 // space a dropdown can actually use ends above it, not at the window edge.
