@@ -52,16 +52,59 @@ export default function AboutPage() {
         <Card className="p-4">
           <SectionTitle>How predictions work</SectionTitle>
           <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            Predictions come from a Dixon-Coles goal model fitted on years of match
+            Match predictions come from a Dixon-Coles goal model fitted on years of
             history in the five leagues Pitchverse covers. Every prediction is recorded
             before kick-off and publicly scored once the result is in — the running
             tally lives on the{' '}
             <Link href="/accuracy" className="font-semibold text-[var(--accent-primary)] hover:underline">
               Accuracy
             </Link>{' '}
-            page, alongside the same numbers for the bookmaker&apos;s closing price. The
-            model currently trails that closing price, and the page says so.
+            page, alongside the same numbers for the bookmaker&apos;s price. The model
+            currently trails that price, and the page says so.
           </p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+            Knockout football is modelled separately, because it asks a different
+            question. A league match has three outcomes and a quarter of them are draws;
+            a knockout tie has two, and extra time, penalties and away goals exist to
+            guarantee it. That model is trained on every previous season across fourteen
+            competitions and tested on the one being played —{' '}
+            <Link
+              href="/tournaments"
+              className="font-semibold text-[var(--accent-primary)] hover:underline"
+            >
+              the tournament record
+            </Link>{' '}
+            shows what it has called, including what it got wrong.
+          </p>
+        </Card>
+
+        {/* What the product is for — the four things, stated plainly */}
+        <Card className="p-4">
+          <SectionTitle>What this is for</SectionTitle>
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+            Four things, and nothing else:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+            <li>
+              <span className="font-semibold text-[var(--text-primary)]">Match outcome</span>{' '}
+              — who wins, and the scoreline, with the confidence calibrated.
+            </li>
+            <li>
+              <span className="font-semibold text-[var(--text-primary)]">Season shape</span> —
+              title, relegation and the final table, updated as the season runs.
+            </li>
+            <li>
+              <span className="font-semibold text-[var(--text-primary)]">Tournaments</span> —
+              who advances a knockout tie, and who lifts the trophy.
+            </li>
+            <li>
+              <span className="font-semibold text-[var(--text-primary)]">
+                The evidence behind all three
+              </span>{' '}
+              — measured against yardsticks anyone can check, never against a floor chosen
+              to flatter.
+            </li>
+          </ul>
         </Card>
 
         {/* Principles */}

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  Swords,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -35,8 +36,9 @@ type NavGroup = {
   items: NavItem[]
 }
 
-// Three sections for the three things this product does (PIVOT_2026-08 §2):
-// what's on, what the model says, and how right it has been.
+// Four things now, not three (PIVOT_2026-08 §2 + the tournament layer added
+// 2026-08-11): what's on, what the model says about a season, what it says
+// about a bracket, and how right it has been.
 const GROUPS: NavGroup[] = [
   {
     title: 'Matches',
@@ -51,6 +53,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
       { href: '/simulator', label: 'Title & Relegation', icon: Calculator },
+      { href: '/tournaments', label: 'Tournaments', icon: Swords },
     ],
   },
   {

@@ -196,6 +196,16 @@ export function BaselineLadder({ className }: { className?: string }) {
         </div>
       ) : null}
 
+      <p className="mt-4 border-t border-[var(--border-color)] pt-3.5 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+        Everything on this page is three-way — home, draw or away. Knockout football is
+        two-way, and is measured separately on{' '}
+        <a href="/tournaments" className="text-[var(--accent-primary)] hover:underline">
+          the tournaments page
+        </a>
+        . Those numbers are higher because the question is easier, not because the model is
+        better there.
+      </p>
+
       {data.decisive_only?.model != null && data.decisive_only.market != null ? (
         <p className="mt-4 border-t border-[var(--border-color)] pt-3.5 text-[12px] leading-relaxed text-[var(--text-secondary)]">
           Draws are the blind spot: the model almost never predicts one, and a quarter of
