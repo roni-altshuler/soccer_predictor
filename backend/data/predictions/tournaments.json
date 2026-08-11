@@ -1,14 +1,19 @@
 {
-  "generated_at": "2026-08-11T08:38:40.201113+00:00",
+  "generated_at": "2026-08-11T09:06:28.561594+00:00",
   "method": {
     "model": "random forest over tie features, refit on seasons strictly before the edition being forecast",
     "sims": 20000,
     "states": {
-      "live": "knockout matches remain; resolved ties fixed, the rest simulated",
+      "upcoming": "the draw is made and none of it has been played \u2014 a forecast of something genuinely undecided",
+      "in_progress": "some ties are decided; those are held at their real winner and only the rest is simulated",
       "completed": "nothing left to predict, so the forecast shown is the one made before the knockout stage began, next to the result",
       "awaiting_draw": "no bracket yet \u2014 a power ranking, not a forecast"
     },
-    "caveat": "UEFA drew the Champions League quarter-finals and semi-finals openly before 2023-24; for those editions the bracket is held fixed rather than redrawn"
+    "caveats": [
+      "Status comes from the fixture list, not from whether a past tie could be resolved: a competition is live only when matches remain to be played.",
+      "Where only the current round is drawn, later rounds are paired by a fresh random draw each round. CONMEBOL in fact seeds its bracket from the round of 16, so the true spread is slightly tighter than the title odds shown.",
+      "UEFA drew the Champions League quarter-finals and semi-finals openly before 2023-24; for those editions the bracket is held fixed rather than redrawn."
+    ]
   },
   "tournaments": [
     {
@@ -17,7 +22,7 @@
       "region": "Europe",
       "season": 2025,
       "last_match": "2026-05-30",
-      "status": "live",
+      "status": "completed",
       "field": 16,
       "forecast_made_at_round": "round-of-16",
       "forecast_from": "2026-03-10",
@@ -118,7 +123,11 @@
           "probability": 0.0022,
           "elo": 1601.5
         }
-      ]
+      ],
+      "actual_champion": "Paris Saint-Germain",
+      "actual_champion_id": 53,
+      "probability_on_actual": 0.1187,
+      "called_it": false
     },
     {
       "competition_id": "uefa.europa",
@@ -126,7 +135,7 @@
       "region": "Europe",
       "season": 2025,
       "last_match": "2026-05-20",
-      "status": "live",
+      "status": "completed",
       "field": 16,
       "forecast_made_at_round": "round-of-16",
       "forecast_from": "2026-03-12",
@@ -227,7 +236,11 @@
           "probability": 0.0008,
           "elo": 1515.7
         }
-      ]
+      ],
+      "actual_champion": "Aston Villa",
+      "actual_champion_id": 9,
+      "probability_on_actual": 0.1142,
+      "called_it": false
     },
     {
       "competition_id": "uefa.conference",
@@ -461,6 +474,11 @@
       "region": "Europe",
       "season": 2024,
       "last_match": "2026-03-31",
+      "next_fixture": {
+        "season": 2026,
+        "starts": "2026-09-24",
+        "fixtures": 156
+      },
       "status": "completed",
       "field": 8,
       "forecast_made_at_round": "quarterfinals",
@@ -524,113 +542,209 @@
       "competition_id": "fifa.world",
       "name": "FIFA World Cup",
       "region": "World",
-      "season": 2022,
-      "last_match": "2022-12-18",
+      "season": 2026,
+      "last_match": "2026-07-19",
       "status": "completed",
-      "field": 16,
-      "forecast_made_at_round": "round-of-16",
-      "forecast_from": "2022-12-03",
+      "field": 32,
+      "forecast_made_at_round": "round-of-32",
+      "forecast_from": "2026-06-28",
       "odds": [
         {
-          "team_id": 486,
-          "team": "Netherlands",
-          "probability": 0.1495,
-          "elo": 1656.2
+          "team_id": 462,
+          "team": "Argentina",
+          "probability": 0.1898,
+          "elo": 1629.6
         },
         {
           "team_id": 460,
           "team": "France",
-          "probability": 0.1404,
-          "elo": 1586.4
-        },
-        {
-          "team_id": 458,
-          "team": "Portugal",
-          "probability": 0.1348,
-          "elo": 1596.7
-        },
-        {
-          "team_id": 472,
-          "team": "Brazil",
-          "probability": 0.1338,
-          "elo": 1593.1
-        },
-        {
-          "team_id": 462,
-          "team": "Argentina",
-          "probability": 0.1005,
-          "elo": 1595.8
+          "probability": 0.1209,
+          "elo": 1652.5
         },
         {
           "team_id": 459,
           "team": "Spain",
-          "probability": 0.0876,
-          "elo": 1603.3
+          "probability": 0.1163,
+          "elo": 1660.0
         },
         {
           "team_id": 479,
           "team": "England",
-          "probability": 0.0514,
-          "elo": 1566.2
-        },
-        {
-          "team_id": 487,
-          "team": "United States",
-          "probability": 0.0464,
-          "elo": 1610.1
-        },
-        {
-          "team_id": 483,
-          "team": "Senegal",
-          "probability": 0.0389,
-          "elo": 1587.4
-        },
-        {
-          "team_id": 466,
-          "team": "Croatia",
-          "probability": 0.0375,
-          "elo": 1561.7
+          "probability": 0.0992,
+          "elo": 1626.6
         },
         {
           "team_id": 456,
           "team": "Morocco",
-          "probability": 0.035,
-          "elo": 1570.9
+          "probability": 0.0665,
+          "elo": 1632.1
         },
         {
-          "team_id": 481,
-          "team": "Japan",
-          "probability": 0.0158,
-          "elo": 1546.0
+          "team_id": 471,
+          "team": "Mexico",
+          "probability": 0.0597,
+          "elo": 1630.5
         },
         {
-          "team_id": 475,
-          "team": "South Korea",
-          "probability": 0.01,
-          "elo": 1546.6
+          "team_id": 480,
+          "team": "Colombia",
+          "probability": 0.0541,
+          "elo": 1600.5
+        },
+        {
+          "team_id": 458,
+          "team": "Portugal",
+          "probability": 0.0526,
+          "elo": 1611.5
+        },
+        {
+          "team_id": 472,
+          "team": "Brazil",
+          "probability": 0.0431,
+          "elo": 1599.7
+        },
+        {
+          "team_id": 486,
+          "team": "Netherlands",
+          "probability": 0.0285,
+          "elo": 1608.4
+        },
+        {
+          "team_id": 487,
+          "team": "United States",
+          "probability": 0.0258,
+          "elo": 1584.0
+        },
+        {
+          "team_id": 470,
+          "team": "Germany",
+          "probability": 0.0253,
+          "elo": 1583.0
+        },
+        {
+          "team_id": 454,
+          "team": "Egypt",
+          "probability": 0.0183,
+          "elo": 1571.7
+        },
+        {
+          "team_id": 483,
+          "team": "Senegal",
+          "probability": 0.0144,
+          "elo": 1581.9
+        },
+        {
+          "team_id": 974,
+          "team": "Norway",
+          "probability": 0.0134,
+          "elo": 1560.5
+        },
+        {
+          "team_id": 489,
+          "team": "Canada",
+          "probability": 0.0121,
+          "elo": 1558.0
+        },
+        {
+          "team_id": 981,
+          "team": "Ivory Coast",
+          "probability": 0.0099,
+          "elo": 1572.4
         },
         {
           "team_id": 473,
           "team": "Switzerland",
-          "probability": 0.0067,
-          "elo": 1538.8
+          "probability": 0.0095,
+          "elo": 1534.7
+        },
+        {
+          "team_id": 476,
+          "team": "Belgium",
+          "probability": 0.0073,
+          "elo": 1536.0
         },
         {
           "team_id": 461,
           "team": "Australia",
-          "probability": 0.0065,
-          "elo": 1520.2
+          "probability": 0.0056,
+          "elo": 1531.1
         },
         {
-          "team_id": 482,
-          "team": "Poland",
-          "probability": 0.0053,
-          "elo": 1475.6
+          "team_id": 481,
+          "team": "Japan",
+          "probability": 0.0046,
+          "elo": 1562.4
+        },
+        {
+          "team_id": 986,
+          "team": "Algeria",
+          "probability": 0.0044,
+          "elo": 1531.8
+        },
+        {
+          "team_id": 495,
+          "team": "Austria",
+          "probability": 0.0031,
+          "elo": 1525.8
+        },
+        {
+          "team_id": 474,
+          "team": "Sweden",
+          "probability": 0.0031,
+          "elo": 1547.2
+        },
+        {
+          "team_id": 466,
+          "team": "Croatia",
+          "probability": 0.0029,
+          "elo": 1530.8
+        },
+        {
+          "team_id": 1395,
+          "team": "Congo DR",
+          "probability": 0.0028,
+          "elo": 1535.1
+        },
+        {
+          "team_id": 491,
+          "team": "Ghana",
+          "probability": 0.0027,
+          "elo": 1490.6
+        },
+        {
+          "team_id": 1412,
+          "team": "Cape Verde",
+          "probability": 0.0019,
+          "elo": 1525.9
+        },
+        {
+          "team_id": 485,
+          "team": "Ecuador",
+          "probability": 0.0009,
+          "elo": 1512.4
+        },
+        {
+          "team_id": 975,
+          "team": "South Africa",
+          "probability": 0.0007,
+          "elo": 1509.3
+        },
+        {
+          "team_id": 508,
+          "team": "Paraguay",
+          "probability": 0.0003,
+          "elo": 1470.9
+        },
+        {
+          "team_id": 990,
+          "team": "Bosnia-Herzegovina",
+          "probability": 0.0003,
+          "elo": 1461.0
         }
       ],
-      "actual_champion": "Argentina",
-      "actual_champion_id": 462,
-      "probability_on_actual": 0.1005,
+      "actual_champion": "Spain",
+      "actual_champion_id": 459,
+      "probability_on_actual": 0.1163,
       "called_it": false
     },
     {
@@ -647,103 +761,103 @@
         {
           "team_id": 53,
           "team": "Paris Saint-Germain",
-          "probability": 0.1851,
+          "probability": 0.1871,
           "elo": 1890.6
         },
         {
           "team_id": 32,
           "team": "Bayern Munich",
-          "probability": 0.1527,
+          "probability": 0.152,
           "elo": 1850.5
         },
         {
           "team_id": 2,
           "team": "Manchester City",
-          "probability": 0.1414,
+          "probability": 0.1416,
           "elo": 1860.1
         },
         {
           "team_id": 21,
           "team": "Real Madrid",
-          "probability": 0.1343,
+          "probability": 0.1252,
           "elo": 1848.5
         },
         {
           "team_id": 43,
           "team": "Inter",
-          "probability": 0.0828,
+          "probability": 0.0857,
           "elo": 1867.9
         },
         {
           "team_id": 63,
           "team": "Benfica",
-          "probability": 0.0696,
+          "probability": 0.0705,
           "elo": 1819.2
         },
         {
           "team_id": 5,
           "team": "Chelsea",
-          "probability": 0.0659,
+          "probability": 0.0684,
           "elo": 1748.4
         },
         {
           "team_id": 33,
           "team": "Borussia Dortmund",
-          "probability": 0.0604,
+          "probability": 0.0648,
           "elo": 1760.2
         },
         {
           "team_id": 1130,
           "team": "Palmeiras",
-          "probability": 0.0362,
+          "probability": 0.0376,
           "elo": 1707.5
         },
         {
           "team_id": 42,
           "team": "Juventus",
-          "probability": 0.0359,
+          "probability": 0.0348,
           "elo": 1731.1
         },
         {
           "team_id": 1221,
           "team": "Monterrey",
-          "probability": 0.0092,
+          "probability": 0.0086,
           "elo": 1609.6
         },
         {
           "team_id": 1207,
           "team": "Fluminense",
-          "probability": 0.0091,
+          "probability": 0.0078,
           "elo": 1630.8
         },
         {
           "team_id": 1191,
           "team": "Flamengo",
-          "probability": 0.0069,
+          "probability": 0.0063,
           "elo": 1659.5
         },
         {
           "team_id": 1245,
           "team": "Botafogo",
-          "probability": 0.004,
+          "probability": 0.0042,
           "elo": 1620.8
         },
         {
           "team_id": 68,
           "team": "Inter Miami",
-          "probability": 0.0033,
+          "probability": 0.0027,
           "elo": 1566.0
         },
         {
           "team_id": 1598,
           "team": "Al Hilal",
-          "probability": 0.0032,
+          "probability": 0.0026,
           "elo": 1542.4
         }
       ],
       "actual_champion": "Chelsea",
       "actual_champion_id": 5,
-      "probability_on_actual": 0.0659,
+      "probability_on_actual": 0.0684,
       "called_it": false
     },
     {
@@ -760,55 +874,55 @@
         {
           "team_id": 462,
           "team": "Argentina",
-          "probability": 0.329,
+          "probability": 0.3271,
           "elo": 1611.3
         },
         {
           "team_id": 480,
           "team": "Colombia",
-          "probability": 0.2135,
+          "probability": 0.2049,
           "elo": 1576.9
         },
         {
           "team_id": 472,
           "team": "Brazil",
-          "probability": 0.1769,
+          "probability": 0.1807,
           "elo": 1591.1
         },
         {
           "team_id": 455,
           "team": "Uruguay",
-          "probability": 0.1058,
+          "probability": 0.107,
           "elo": 1584.9
         },
         {
           "team_id": 507,
           "team": "Venezuela",
-          "probability": 0.0565,
+          "probability": 0.0568,
           "elo": 1539.0
         },
         {
           "team_id": 489,
           "team": "Canada",
-          "probability": 0.0445,
+          "probability": 0.0481,
           "elo": 1516.6
         },
         {
           "team_id": 477,
           "team": "Panama",
-          "probability": 0.0435,
+          "probability": 0.0425,
           "elo": 1536.9
         },
         {
           "team_id": 485,
           "team": "Ecuador",
-          "probability": 0.0303,
+          "probability": 0.0328,
           "elo": 1508.5
         }
       ],
       "actual_champion": "Argentina",
       "actual_champion_id": 462,
-      "probability_on_actual": 0.329,
+      "probability_on_actual": 0.3271,
       "called_it": true
     },
     {
@@ -816,89 +930,195 @@
       "name": "Copa Libertadores",
       "region": "South America",
       "season": 2026,
-      "last_match": "2026-03-13",
-      "status": "awaiting_draw",
-      "reason": "no bracket could be reconstructed for this edition, so there is nothing to simulate",
-      "power_ranking": [
+      "last_match": "2026-08-21",
+      "next_fixture": {
+        "season": 2026,
+        "starts": "2026-08-11",
+        "fixtures": 16
+      },
+      "status": "upcoming",
+      "current_round": "round-of-16",
+      "field": 16,
+      "forecast_from": "2026-08-11",
+      "draw_known_to": "round-of-16",
+      "ties": [
         {
-          "team_id": 22,
-          "team": "Barcelona",
-          "elo": 1813.9
+          "round": "round-of-16",
+          "team_a": "Fluminense",
+          "team_b": "Independiente Rivadavia",
+          "team_a_id": 1207,
+          "team_b_id": 1309,
+          "p_team_a": 0.5831,
+          "kickoff": "2026-08-11",
+          "decided": null
         },
         {
-          "team_id": 3,
-          "team": "Liverpool",
-          "elo": 1778.4
+          "round": "round-of-16",
+          "team_a": "Estudiantes de La Plata",
+          "team_b": "Universidad Cat\u00f3lica",
+          "team_a_id": 1168,
+          "team_b_id": 1171,
+          "p_team_a": 0.6017,
+          "kickoff": "2026-08-12",
+          "decided": null
         },
         {
-          "team_id": 1245,
-          "team": "Botafogo",
-          "elo": 1589.0
+          "round": "round-of-16",
+          "team_a": "Deportes Tolima",
+          "team_b": "Independiente del Valle",
+          "team_a_id": 1183,
+          "team_b_id": 1247,
+          "p_team_a": 0.3359,
+          "kickoff": "2026-08-12",
+          "decided": null
         },
         {
-          "team_id": 1137,
-          "team": "Independiente Medell\u00edn",
-          "elo": 1546.1
+          "round": "round-of-16",
+          "team_a": "Platense",
+          "team_b": "Coquimbo Unido",
+          "team_a_id": 1312,
+          "team_b_id": 1310,
+          "p_team_a": 0.3498,
+          "kickoff": "2026-08-12",
+          "decided": null
         },
         {
-          "team_id": 1276,
-          "team": "Universidad Cat\u00f3lica (Quito)",
-          "elo": 1526.2
+          "round": "round-of-16",
+          "team_a": "Palmeiras",
+          "team_b": "Cerro Porte\u00f1o",
+          "team_a_id": 1130,
+          "team_b_id": 1159,
+          "p_team_a": 0.6247,
+          "kickoff": "2026-08-12",
+          "decided": null
         },
         {
-          "team_id": 1226,
-          "team": "Argentinos Juniors",
-          "elo": 1513.9
+          "round": "round-of-16",
+          "team_a": "Cruzeiro",
+          "team_b": "Flamengo",
+          "team_a_id": 1197,
+          "team_b_id": 1191,
+          "p_team_a": 0.2395,
+          "kickoff": "2026-08-13",
+          "decided": null
         },
         {
-          "team_id": 1308,
-          "team": "Juventud",
-          "elo": 1508.8
+          "round": "round-of-16",
+          "team_a": "Mirassol",
+          "team_b": "Liga de Quito",
+          "team_a_id": 1311,
+          "team_b_id": 1135,
+          "p_team_a": 0.2649,
+          "kickoff": "2026-08-13",
+          "decided": null
         },
         {
-          "team_id": 1302,
-          "team": "Bahia",
-          "elo": 1505.5
+          "round": "round-of-16",
+          "team_a": "Rosario Central",
+          "team_b": "Corinthians",
+          "team_a_id": 1174,
+          "team_b_id": 1179,
+          "p_team_a": 0.3849,
+          "kickoff": "2026-08-14",
+          "decided": null
+        }
+      ],
+      "odds": [
+        {
+          "team_id": 1191,
+          "team": "Flamengo",
+          "probability": 0.2344,
+          "elo": 1682.1
         },
         {
-          "team_id": 1307,
-          "team": "2 de Mayo",
-          "elo": 1499.6
+          "team_id": 1130,
+          "team": "Palmeiras",
+          "probability": 0.1802,
+          "elo": 1686.8
+        },
+        {
+          "team_id": 1207,
+          "team": "Fluminense",
+          "probability": 0.0896,
+          "elo": 1622.1
+        },
+        {
+          "team_id": 1135,
+          "team": "Liga de Quito",
+          "probability": 0.0866,
+          "elo": 1585.9
+        },
+        {
+          "team_id": 1168,
+          "team": "Estudiantes de La Plata",
+          "probability": 0.0738,
+          "elo": 1578.2
+        },
+        {
+          "team_id": 1179,
+          "team": "Corinthians",
+          "probability": 0.0729,
+          "elo": 1578.2
+        },
+        {
+          "team_id": 1247,
+          "team": "Independiente del Valle",
+          "probability": 0.0689,
+          "elo": 1572.0
+        },
+        {
+          "team_id": 1197,
+          "team": "Cruzeiro",
+          "probability": 0.0336,
+          "elo": 1572.6
+        },
+        {
+          "team_id": 1159,
+          "team": "Cerro Porte\u00f1o",
+          "probability": 0.0326,
+          "elo": 1543.7
+        },
+        {
+          "team_id": 1309,
+          "team": "Independiente Rivadavia",
+          "probability": 0.0296,
+          "elo": 1552.0
+        },
+        {
+          "team_id": 1174,
+          "team": "Rosario Central",
+          "probability": 0.0273,
+          "elo": 1542.7
+        },
+        {
+          "team_id": 1171,
+          "team": "Universidad Cat\u00f3lica",
+          "probability": 0.0188,
+          "elo": 1523.7
+        },
+        {
+          "team_id": 1310,
+          "team": "Coquimbo Unido",
+          "probability": 0.0175,
+          "elo": 1515.3
         },
         {
           "team_id": 1183,
           "team": "Deportes Tolima",
-          "elo": 1494.7
+          "probability": 0.0152,
+          "elo": 1496.5
         },
         {
-          "team_id": 1246,
-          "team": "O'Higgins",
-          "elo": 1492.0
+          "team_id": 1311,
+          "team": "Mirassol",
+          "probability": 0.0097,
+          "elo": 1523.4
         },
         {
-          "team_id": 1160,
-          "team": "The Strongest",
-          "elo": 1491.7
-        },
-        {
-          "team_id": 1288,
-          "team": "Nacional Potos\u00ed",
-          "elo": 1491.5
-        },
-        {
-          "team_id": 1209,
-          "team": "Guaran\u00ed",
-          "elo": 1489.9
-        },
-        {
-          "team_id": 1139,
-          "team": "Alianza Lima",
-          "elo": 1487.1
-        },
-        {
-          "team_id": 1242,
-          "team": "Huachipato",
-          "elo": 1474.9
+          "team_id": 1312,
+          "team": "Platense",
+          "probability": 0.009,
+          "elo": 1513.1
         }
       ]
     },
@@ -907,89 +1127,195 @@
       "name": "Copa Sudamericana",
       "region": "South America",
       "season": 2026,
-      "last_match": "2026-07-31",
-      "status": "awaiting_draw",
-      "reason": "no bracket could be reconstructed for this edition, so there is nothing to simulate",
-      "power_ranking": [
+      "last_match": "2026-08-21",
+      "next_fixture": {
+        "season": 2026,
+        "starts": "2026-08-11",
+        "fixtures": 16
+      },
+      "status": "upcoming",
+      "current_round": "round-of-16",
+      "field": 16,
+      "forecast_from": "2026-08-11",
+      "draw_known_to": "round-of-16",
+      "ties": [
         {
-          "team_id": 1285,
-          "team": "Red Bull Bragantino",
-          "elo": 1569.1
+          "round": "round-of-16",
+          "team_a": "Boca Juniors",
+          "team_b": "Deportivo Recoleta",
+          "team_a_id": 1150,
+          "team_b_id": 1391,
+          "p_team_a": 0.6212,
+          "kickoff": "2026-08-11",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Bol\u00edvar",
+          "team_b": "S\u00e3o Paulo",
+          "team_a_id": 1142,
+          "team_b_id": 1161,
+          "p_team_a": 0.3997,
+          "kickoff": "2026-08-12",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Tigre",
+          "team_b": "Montevideo City Torque",
+          "team_a_id": 1235,
+          "team_b_id": 1282,
+          "p_team_a": 0.3577,
+          "kickoff": "2026-08-12",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Red Bull Bragantino",
+          "team_b": "Atl\u00e9tico-MG",
+          "team_a_id": 1285,
+          "team_b_id": 1240,
+          "p_team_a": 0.4282,
+          "kickoff": "2026-08-12",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Independiente Santa Fe",
+          "team_b": "River Plate",
+          "team_a_id": 1166,
+          "team_b_id": 1153,
+          "p_team_a": 0.3217,
+          "kickoff": "2026-08-13",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Santos",
+          "team_b": "Macar\u00e1",
+          "team_a_id": 1143,
+          "team_b_id": 1263,
+          "p_team_a": 0.5816,
+          "kickoff": "2026-08-13",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Vasco da Gama",
+          "team_b": "Club Olimpia",
+          "team_a_id": 1232,
+          "team_b_id": 1233,
+          "p_team_a": 0.3665,
+          "kickoff": "2026-08-13",
+          "decided": null
+        },
+        {
+          "round": "round-of-16",
+          "team_a": "Cienciano del Cusco",
+          "team_b": "Botafogo",
+          "team_a_id": 1376,
+          "team_b_id": 1245,
+          "p_team_a": 0.1777,
+          "kickoff": "2026-08-14",
+          "decided": null
+        }
+      ],
+      "odds": [
+        {
+          "team_id": 1245,
+          "team": "Botafogo",
+          "probability": 0.1772,
+          "elo": 1625.4
+        },
+        {
+          "team_id": 1153,
+          "team": "River Plate",
+          "probability": 0.1255,
+          "elo": 1605.9
+        },
+        {
+          "team_id": 1161,
+          "team": "S\u00e3o Paulo",
+          "probability": 0.1163,
+          "elo": 1597.8
+        },
+        {
+          "team_id": 1240,
+          "team": "Atl\u00e9tico-MG",
+          "probability": 0.1118,
+          "elo": 1602.9
         },
         {
           "team_id": 1150,
           "team": "Boca Juniors",
-          "elo": 1561.5
+          "probability": 0.0764,
+          "elo": 1554.7
+        },
+        {
+          "team_id": 1285,
+          "team": "Red Bull Bragantino",
+          "probability": 0.0652,
+          "elo": 1569.1
+        },
+        {
+          "team_id": 1143,
+          "team": "Santos",
+          "probability": 0.0644,
+          "elo": 1543.1
         },
         {
           "team_id": 1142,
           "team": "Bol\u00edvar",
+          "probability": 0.0575,
           "elo": 1560.8
         },
         {
           "team_id": 1282,
           "team": "Montevideo City Torque",
+          "probability": 0.0549,
           "elo": 1556.6
-        },
-        {
-          "team_id": 1192,
-          "team": "Gr\u00eamio",
-          "elo": 1555.3
-        },
-        {
-          "team_id": 1200,
-          "team": "Lan\u00fas",
-          "elo": 1547.6
-        },
-        {
-          "team_id": 1143,
-          "team": "Santos",
-          "elo": 1543.1
-        },
-        {
-          "team_id": 1137,
-          "team": "Independiente Medell\u00edn",
-          "elo": 1540.7
         },
         {
           "team_id": 1233,
           "team": "Club Olimpia",
+          "probability": 0.0459,
           "elo": 1535.2
-        },
-        {
-          "team_id": 1263,
-          "team": "Macar\u00e1",
-          "elo": 1519.7
-        },
-        {
-          "team_id": 1232,
-          "team": "Vasco da Gama",
-          "elo": 1518.2
         },
         {
           "team_id": 1166,
           "team": "Independiente Santa Fe",
-          "elo": 1515.4
+          "probability": 0.027,
+          "elo": 1530.3
         },
         {
-          "team_id": 1128,
-          "team": "Am\u00e9rica de Cali",
-          "elo": 1512.7
-        },
-        {
-          "team_id": 1391,
-          "team": "Deportivo Recoleta",
-          "elo": 1508.8
-        },
-        {
-          "team_id": 1243,
-          "team": "Millonarios",
-          "elo": 1507.5
+          "team_id": 1232,
+          "team": "Vasco da Gama",
+          "probability": 0.0204,
+          "elo": 1518.2
         },
         {
           "team_id": 1235,
           "team": "Tigre",
+          "probability": 0.0199,
           "elo": 1504.7
+        },
+        {
+          "team_id": 1263,
+          "team": "Macar\u00e1",
+          "probability": 0.0184,
+          "elo": 1519.7
+        },
+        {
+          "team_id": 1391,
+          "team": "Deportivo Recoleta",
+          "probability": 0.0133,
+          "elo": 1508.8
+        },
+        {
+          "team_id": 1376,
+          "team": "Cienciano del Cusco",
+          "probability": 0.0059,
+          "elo": 1503.5
         }
       ]
     },
@@ -1007,44 +1333,50 @@
         {
           "team_id": 483,
           "team": "Senegal",
-          "probability": 0.2913,
+          "probability": 0.2892,
           "elo": 1597.1
         },
         {
           "team_id": 467,
           "team": "Nigeria",
-          "probability": 0.2155,
+          "probability": 0.2158,
           "elo": 1582.4
         },
         {
           "team_id": 456,
           "team": "Morocco",
-          "probability": 0.13,
+          "probability": 0.1278,
           "elo": 1566.9
-        },
-        {
-          "team_id": 454,
-          "team": "Egypt",
-          "probability": 0.0917,
-          "elo": 1542.5
         },
         {
           "team_id": 981,
           "team": "Ivory Coast",
-          "probability": 0.0909,
+          "probability": 0.0935,
           "elo": 1557.7
+        },
+        {
+          "team_id": 454,
+          "team": "Egypt",
+          "probability": 0.0886,
+          "elo": 1542.5
         },
         {
           "team_id": 986,
           "team": "Algeria",
-          "probability": 0.036,
+          "probability": 0.0382,
           "elo": 1552.9
         },
         {
           "team_id": 490,
           "team": "Cameroon",
-          "probability": 0.0345,
+          "probability": 0.0338,
           "elo": 1531.9
+        },
+        {
+          "team_id": 1395,
+          "team": "Congo DR",
+          "probability": 0.0303,
+          "elo": 1540.3
         },
         {
           "team_id": 975,
@@ -1053,15 +1385,9 @@
           "elo": 1526.7
         },
         {
-          "team_id": 1395,
-          "team": "Congo DR",
-          "probability": 0.0266,
-          "elo": 1540.3
-        },
-        {
           "team_id": 1399,
           "team": "Mali",
-          "probability": 0.02,
+          "probability": 0.0214,
           "elo": 1520.9
         },
         {
@@ -1073,7 +1399,7 @@
         {
           "team_id": 1400,
           "team": "Burkina Faso",
-          "probability": 0.0123,
+          "probability": 0.0114,
           "elo": 1512.4
         },
         {
@@ -1083,27 +1409,27 @@
           "elo": 1449.6
         },
         {
-          "team_id": 1407,
-          "team": "Mozambique",
-          "probability": 0.0017,
-          "elo": 1460.9
-        },
-        {
           "team_id": 1419,
           "team": "Tanzania",
-          "probability": 0.0017,
+          "probability": 0.0014,
           "elo": 1456.5
         },
         {
           "team_id": 1405,
           "team": "Sudan",
-          "probability": 0.0014,
+          "probability": 0.0011,
           "elo": 1430.8
+        },
+        {
+          "team_id": 1407,
+          "team": "Mozambique",
+          "probability": 0.0011,
+          "elo": 1460.9
         }
       ],
       "actual_champion": "Senegal",
       "actual_champion_id": 483,
-      "probability_on_actual": 0.2913,
+      "probability_on_actual": 0.2892,
       "called_it": true
     },
     {
@@ -1112,7 +1438,12 @@
       "region": "Asia",
       "season": 2023,
       "last_match": "2024-02-10",
-      "status": "live",
+      "next_fixture": {
+        "season": 2027,
+        "starts": "2027-01-07",
+        "fixtures": 36
+      },
+      "status": "completed",
       "field": 16,
       "forecast_made_at_round": "round-of-16",
       "forecast_from": "2024-01-28",
@@ -1120,100 +1451,104 @@
         {
           "team_id": 481,
           "team": "Japan",
-          "probability": 0.1921,
+          "probability": 0.1895,
           "elo": 1552.6
         },
         {
           "team_id": 457,
           "team": "Iran",
-          "probability": 0.1472,
+          "probability": 0.1494,
           "elo": 1560.9
         },
         {
           "team_id": 461,
           "team": "Australia",
-          "probability": 0.1143,
+          "probability": 0.1193,
           "elo": 1536.9
         },
         {
           "team_id": 1432,
           "team": "Uzbekistan",
-          "probability": 0.1082,
+          "probability": 0.1036,
           "elo": 1538.3
         },
         {
           "team_id": 484,
           "team": "Qatar",
-          "probability": 0.0968,
+          "probability": 0.0971,
           "elo": 1526.3
         },
         {
           "team_id": 1434,
           "team": "Jordan",
-          "probability": 0.0875,
+          "probability": 0.0863,
           "elo": 1527.6
         },
         {
           "team_id": 1425,
           "team": "Iraq",
-          "probability": 0.0824,
+          "probability": 0.0809,
           "elo": 1558.9
         },
         {
           "team_id": 475,
           "team": "South Korea",
-          "probability": 0.0746,
+          "probability": 0.0743,
           "elo": 1530.2
         },
         {
           "team_id": 1428,
           "team": "United Arab Emirates",
-          "probability": 0.0328,
+          "probability": 0.0326,
           "elo": 1513.0
         },
         {
           "team_id": 453,
           "team": "Saudi Arabia",
-          "probability": 0.0277,
+          "probability": 0.0275,
           "elo": 1510.7
         },
         {
           "team_id": 1424,
           "team": "Thailand",
-          "probability": 0.012,
+          "probability": 0.0118,
           "elo": 1498.1
         },
         {
           "team_id": 1430,
           "team": "Bahrain",
-          "probability": 0.007,
+          "probability": 0.0076,
           "elo": 1488.6
         },
         {
           "team_id": 1435,
           "team": "Syria",
-          "probability": 0.0052,
+          "probability": 0.0063,
           "elo": 1475.3
         },
         {
           "team_id": 1443,
           "team": "Tajikistan",
-          "probability": 0.005,
+          "probability": 0.006,
           "elo": 1498.8
         },
         {
           "team_id": 1437,
           "team": "Palestine",
-          "probability": 0.0039,
+          "probability": 0.0046,
           "elo": 1467.1
         },
         {
           "team_id": 1429,
           "team": "Indonesia",
-          "probability": 0.0034,
+          "probability": 0.0032,
           "elo": 1463.6
         }
-      ]
+      ],
+      "actual_champion": "Qatar",
+      "actual_champion_id": 484,
+      "probability_on_actual": 0.0971,
+      "called_it": false
     },
     {
       "competition_id": "concacaf.gold",
@@ -1229,55 +1564,55 @@
         {
           "team_id": 471,
           "team": "Mexico",
-          "probability": 0.3181,
+          "probability": 0.3206,
           "elo": 1580.9
         },
         {
           "team_id": 487,
           "team": "United States",
-          "probability": 0.2919,
+          "probability": 0.2873,
           "elo": 1592.5
         },
         {
           "team_id": 477,
           "team": "Panama",
-          "probability": 0.1614,
+          "probability": 0.158,
           "elo": 1563.6
         },
         {
           "team_id": 489,
           "team": "Canada",
-          "probability": 0.1293,
+          "probability": 0.132,
           "elo": 1553.9
-        },
-        {
-          "team_id": 453,
-          "team": "Saudi Arabia",
-          "probability": 0.0338,
-          "elo": 1506.0
         },
         {
           "team_id": 468,
           "team": "Costa Rica",
-          "probability": 0.0326,
+          "probability": 0.0357,
           "elo": 1515.4
+        },
+        {
+          "team_id": 453,
+          "team": "Saudi Arabia",
+          "probability": 0.0333,
+          "elo": 1506.0
         },
         {
           "team_id": 989,
           "team": "Honduras",
-          "probability": 0.0192,
+          "probability": 0.0179,
           "elo": 1486.7
         },
         {
           "team_id": 1446,
           "team": "Guatemala",
-          "probability": 0.0138,
+          "probability": 0.0151,
           "elo": 1492.9
         }
       ],
       "actual_champion": "Mexico",
       "actual_champion_id": 471,
-      "probability_on_actual": 0.3181,
+      "probability_on_actual": 0.3206,
       "called_it": true
     },
     {
@@ -1292,105 +1627,105 @@
       "forecast_from": "2026-03-10",
       "odds": [
         {
-          "team_id": 1231,
-          "team": "Cruz Azul",
-          "probability": 0.1273,
-          "elo": 1598.7
-        },
-        {
           "team_id": 67,
           "team": "LAFC",
-          "probability": 0.1263,
+          "probability": 0.1258,
           "elo": 1592.6
+        },
+        {
+          "team_id": 1231,
+          "team": "Cruz Azul",
+          "probability": 0.1212,
+          "elo": 1598.7
         },
         {
           "team_id": 239,
           "team": "Philadelphia Union",
-          "probability": 0.1187,
+          "probability": 0.1177,
           "elo": 1615.4
         },
         {
           "team_id": 68,
           "team": "Inter Miami",
-          "probability": 0.1058,
+          "probability": 0.1067,
           "elo": 1612.3
-        },
-        {
-          "team_id": 1221,
-          "team": "Monterrey",
-          "probability": 0.0941,
-          "elo": 1590.6
         },
         {
           "team_id": 234,
           "team": "FC Cincinnati",
-          "probability": 0.0898,
+          "probability": 0.098,
           "elo": 1612.2
+        },
+        {
+          "team_id": 1221,
+          "team": "Monterrey",
+          "probability": 0.0935,
+          "elo": 1590.6
         },
         {
           "team_id": 69,
           "team": "Seattle Sounders",
-          "probability": 0.0626,
+          "probability": 0.0624,
           "elo": 1559.9
         },
         {
           "team_id": 1140,
           "team": "Tigres UANL",
-          "probability": 0.0592,
+          "probability": 0.0602,
           "elo": 1556.2
-        },
-        {
-          "team_id": 1194,
-          "team": "Toluca",
-          "probability": 0.0457,
-          "elo": 1509.0
         },
         {
           "team_id": 233,
           "team": "Vancouver Whitecaps",
-          "probability": 0.0417,
+          "probability": 0.0457,
           "elo": 1566.8
+        },
+        {
+          "team_id": 1194,
+          "team": "Toluca",
+          "probability": 0.0446,
+          "elo": 1509.0
         },
         {
           "team_id": 66,
           "team": "LA Galaxy",
-          "probability": 0.0331,
+          "probability": 0.035,
           "elo": 1498.6
         },
         {
           "team_id": 1182,
           "team": "Am\u00e9rica",
-          "probability": 0.0319,
+          "probability": 0.0315,
           "elo": 1532.3
         },
         {
           "team_id": 240,
           "team": "Nashville SC",
-          "probability": 0.0306,
+          "probability": 0.0272,
           "elo": 1552.3
         },
         {
           "team_id": 245,
           "team": "San Diego FC",
-          "probability": 0.0241,
+          "probability": 0.0221,
           "elo": 1534.7
         },
         {
           "team_id": 1529,
           "team": "Mount Pleasant FA",
-          "probability": 0.0053,
+          "probability": 0.0049,
           "elo": 1500.0
         },
         {
           "team_id": 1317,
           "team": "Alajuelense",
-          "probability": 0.0039,
+          "probability": 0.0035,
           "elo": 1479.5
         }
       ],
       "actual_champion": "Toluca",
       "actual_champion_id": 1194,
-      "probability_on_actual": 0.0457,
+      "probability_on_actual": 0.0446,
       "called_it": false
     }
   ]

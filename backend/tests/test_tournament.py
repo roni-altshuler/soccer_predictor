@@ -140,6 +140,50 @@ def test_flag_missing_legs_refuses_a_lone_leg_in_a_two_legged_round():
     assert all(t.resolution == "aggregate" for t in ties[:3])
 
 
+def test_a_drawn_but_unplayed_tie_is_pending_not_resolved():
+    """The state a forward forecast lives in.
+
+    Both legs exist as fixtures and neither has a score. The tie must come
+    back with no winner and `pending`, so a bracket can be simulated forward
+    rather than reported backward.
+    """
+    legs = [_leg("m1", "2026-08-13", 1, 2, None, None),
+            _leg("m2", "2026-08-20", 2, 1, None, None)]
+    assert T.resolve(legs, 2026) == (None, "pending")
+
+
+def test_a_half_played_tie_is_not_decided_on_the_first_leg():
+    """Cruzeiro 2-0 Flamengo at home is a real result and the wrong answer.
+
+    Aggregating a played leg with an unplayed one would name a winner from
+    half a tie, and that winner would be treated as fact by the bracket.
+    """
+    legs = [_leg("m1", "2026-08-13", 1, 2, 2, 0),
+            _leg("m2", "2026-08-20", 2, 1, None, None)]
+    assert T.resolve(legs, 2026) == (None, "pending")
+
+
+def test_pending_ties_are_never_marked_incomplete():
+    """`incomplete` means a leg is MISSING; `pending` means it has not been
+    played. Conflating them hides exactly the fixtures a forecast covers."""
+    def mk(a, b, two, played=True):
+        s = (2, 0) if played else (None, None)
+        legs = [_leg(f"x{a}{b}", "2026-08-13", a, b, *s)]
+        if two:
+            legs.append(_leg(f"y{a}{b}", "2026-08-20", b, a,
+                             *((0, 1) if played else (None, None))))
+        w, how = T.resolve(legs, 2026)
+        return T.Tie(competition_id="conmebol.libertadores", season=2026,
+                     round_slug="roundof16", team_a=a, team_b=b,
+                     legs=legs, winner=w, resolution=how)
+
+    ties = [mk(1, 2, True), mk(3, 4, True), mk(5, 6, True),
+            mk(7, 8, False, played=False)]
+    T._flag_missing_legs(ties)
+    assert ties[-1].resolution == "pending"
+    assert ties[-1].pending is True
+
+
 def test_depth_is_counted_not_parsed():
     """Two rounds both slugged `secondround` in different competitions get the
     depth their own bracket implies."""

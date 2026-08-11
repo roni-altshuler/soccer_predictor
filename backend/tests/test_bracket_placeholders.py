@@ -106,3 +106,35 @@ def test_thirds_assignment_falls_back_when_constraints_unsatisfiable():
     assignment = _assign_thirds(slots, qualified)
     # Total-conserving fallback: any remaining third fills the slot.
     assert assignment == {0: "TeamA3"}
+
+
+# ------------------------------------- placeholders reaching the warehouse
+
+from backend.scripts.ingest_scheduled_fixtures import is_placeholder  # noqa: E402
+
+
+@pytest.mark.parametrize("name", [
+    "Group A 2nd Place", "Best 3rd Place", "Winner Match 12", "TBD",
+    "Runner-up Group C", "Loser Match 3", "Vencedor 3", "",
+])
+def test_slot_names_are_refused_before_they_become_teams(name):
+    """The same 2026 regression, one layer earlier.
+
+    `bracket_paths` guards the simulator. This guards the INGESTER, which is
+    worse when it fails: `TeamResolver.resolve` creates a club it cannot
+    match, and on 2026-08-11 it fuzzy-matched every "Group X 2nd Place" in the
+    Asian Cup 2027 draw onto one invented row — producing a tie whose two
+    sides were the same team. A junk `teams` row is permanent and competes
+    with every later fuzzy match.
+    """
+    assert is_placeholder(name)
+
+
+@pytest.mark.parametrize("name", [
+    "Fluminense", "Independiente del Valle", "Red Bull Bragantino",
+    "Atlético-MG", "Montevideo City Torque", "Cienciano del Cusco",
+    "1. FSV Mainz 05", "Estudiantes de La Plata", "Universidad Católica",
+])
+def test_real_clubs_are_not_mistaken_for_slots(name):
+    """A guard that eats real clubs silently truncates the draw."""
+    assert not is_placeholder(name)

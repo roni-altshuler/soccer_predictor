@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T08:08:10.795014+00:00",
+  "generated_at": "2026-08-11T09:14:23.506250+00:00",
   "method": {
     "unit": "knockout tie (two outcomes), not match (three)",
     "split": "train on every previous season, test on the season played",
@@ -22,9 +22,9 @@
     ],
     "qualifying_included": false,
     "progression_check": {
-      "checked": 2412,
-      "confirmed": 2403,
-      "rate": 0.996268656716418,
+      "checked": 2442,
+      "confirmed": 2433,
+      "rate": 0.9963144963144963,
       "by_resolution": {
         "aggregate": {
           "confirmed": 1617,
@@ -47,15 +47,15 @@
           "rate": 1.0
         },
         "single": {
-          "confirmed": 499,
-          "checked": 501,
-          "rate": 0.9960079840319361
+          "confirmed": 529,
+          "checked": 531,
+          "rate": 0.9962335216572504
         }
       }
     }
   },
-  "n_ties_total": 3101,
-  "n_ties_scored": 2110,
+  "n_ties_total": 3132,
+  "n_ties_scored": 2141,
   "test_seasons": [
     2013,
     2014,
@@ -82,40 +82,40 @@
     {
       "key": "higher_elo",
       "label": "Higher-rated side advances",
-      "accuracy": 0.6412,
-      "brier": 0.2387
+      "accuracy": 0.6427,
+      "brier": 0.2381
     },
     {
       "key": "model",
       "label": "This model (random_forest)",
-      "accuracy": 0.6479,
-      "brier": 0.2179
+      "accuracy": 0.6492,
+      "brier": 0.2175
     }
   ],
   "models": {
     "logistic": {
-      "n": 2110,
-      "accuracy": 0.6492890995260664,
-      "brier": 0.2186513503536953,
-      "log_loss": 0.629432939437761
+      "n": 2141,
+      "accuracy": 0.6492293320878094,
+      "brier": 0.2182387275971611,
+      "log_loss": 0.6284938782528583
     },
     "random_forest": {
-      "n": 2110,
-      "accuracy": 0.647867298578199,
-      "brier": 0.2178887345823325,
-      "log_loss": 0.6249987316919213
+      "n": 2141,
+      "accuracy": 0.6492293320878094,
+      "brier": 0.21748461556928783,
+      "log_loss": 0.6241590147188526
     },
     "hist_gbm": {
-      "n": 2110,
-      "accuracy": 0.6488151658767772,
-      "brier": 0.22000114861420592,
-      "log_loss": 0.6298799297569863
+      "n": 2141,
+      "accuracy": 0.6501634750116768,
+      "brier": 0.21953817454564775,
+      "log_loss": 0.6289007299938479
     },
     "xgboost": {
-      "n": 2110,
-      "accuracy": 0.6426540284360189,
-      "brier": 0.22867147936192095,
-      "log_loss": 0.6571725705391007
+      "n": 2141,
+      "accuracy": 0.6450256889304063,
+      "brier": 0.22805194013529279,
+      "log_loss": 0.6557628929787214
     }
   },
   "best_model": "random_forest",
@@ -123,57 +123,57 @@
     {
       "stated_low": 50,
       "stated_high": 60,
-      "n": 810,
-      "observed": 0.5568,
+      "n": 817,
+      "observed": 0.5569,
       "mean_stated": 0.551
     },
     {
       "stated_low": 60,
       "stated_high": 70,
-      "n": 717,
-      "observed": 0.6457,
-      "mean_stated": 0.6463
+      "n": 731,
+      "observed": 0.6484,
+      "mean_stated": 0.6466
     },
     {
       "stated_low": 70,
       "stated_high": 80,
-      "n": 408,
-      "observed": 0.7426,
-      "mean_stated": 0.7428
+      "n": 417,
+      "observed": 0.7434,
+      "mean_stated": 0.7431
     },
     {
       "stated_low": 80,
       "stated_high": 90,
-      "n": 174,
-      "observed": 0.8621,
+      "n": 175,
+      "observed": 0.8629,
       "mean_stated": 0.839
     }
   ],
   "by_round": {
     "round-of-16": {
-      "correct": 515,
-      "n": 766,
-      "accuracy": 0.6723
+      "correct": 519,
+      "n": 774,
+      "accuracy": 0.6705
     },
     "quarterfinals": {
-      "correct": 273,
-      "n": 409,
-      "accuracy": 0.6675
+      "correct": 277,
+      "n": 413,
+      "accuracy": 0.6707
     },
     "semifinals": {
-      "correct": 131,
-      "n": 232,
-      "accuracy": 0.5647
+      "correct": 132,
+      "n": 234,
+      "accuracy": 0.5641
     },
     "round-of-32": {
-      "correct": 138,
-      "n": 217,
-      "accuracy": 0.6359
+      "correct": 151,
+      "n": 233,
+      "accuracy": 0.6481
     },
     "final": {
-      "correct": 79,
-      "n": 120,
-      "accuracy": 0.6583
+      "correct": 80,
+      "n": 121,
+      "accuracy": 0.6612
     },
     "round-of-20": {
       "correct": 37,
@@ -229,108 +229,108 @@
   "permutation_importance": [
     {
       "feature": "elo_diff",
-      "importance": 0.01763,
-      "std": 0.00354
+      "importance": 0.02073,
+      "std": 0.00398
     },
     {
       "feature": "elo_expected_a",
-      "importance": 0.00588,
-      "std": 0.0019
+      "importance": 0.00779,
+      "std": 0.00264
     },
     {
       "feature": "elo_a",
-      "importance": 0.00532,
-      "std": 0.00114
-    },
-    {
-      "feature": "matches_a",
-      "importance": 0.00411,
-      "std": 0.00128
+      "importance": 0.00569,
+      "std": 0.00166
     },
     {
       "feature": "matches_b",
-      "importance": 0.0034,
-      "std": 0.0009
+      "importance": 0.00336,
+      "std": 0.00138
+    },
+    {
+      "feature": "matches_a",
+      "importance": 0.00313,
+      "std": 0.00122
     },
     {
       "feature": "gd_diff",
-      "importance": 0.00238,
-      "std": 0.00078
-    },
-    {
-      "feature": "pedigree_diff",
-      "importance": 0.00153,
-      "std": 0.00035
+      "importance": 0.00272,
+      "std": 0.00109
     },
     {
       "feature": "form_diff",
-      "importance": 0.00142,
-      "std": 0.0003
-    },
-    {
-      "feature": "rest_a",
-      "importance": 0.00137,
+      "importance": 0.0018,
       "std": 0.00046
     },
     {
+      "feature": "pedigree_diff",
+      "importance": 0.0018,
+      "std": 0.00052
+    },
+    {
       "feature": "two_legged",
-      "importance": 0.00121,
-      "std": 0.00044
+      "importance": 0.00137,
+      "std": 0.00036
+    },
+    {
+      "feature": "rest_a",
+      "importance": 0.00119,
+      "std": 0.00081
+    },
+    {
+      "feature": "elo_b",
+      "importance": 0.00106,
+      "std": 0.00067
     },
     {
       "feature": "neutral",
-      "importance": 0.00093,
-      "std": 0.00035
+      "importance": 0.00101,
+      "std": 0.00034
     },
     {
       "feature": "form_b",
       "importance": 0.00073,
-      "std": 0.00026
+      "std": 0.00023
     },
     {
       "feature": "pedigree_a",
-      "importance": 0.00038,
-      "std": 0.00041
+      "importance": 0.00045,
+      "std": 0.00037
     },
     {
       "feature": "form_a",
-      "importance": 0.00023,
-      "std": 0.00026
+      "importance": 0.00031,
+      "std": 0.00029
     },
     {
       "feature": "round_depth",
-      "importance": 0.0001,
-      "std": 0.00021
-    },
-    {
-      "feature": "pedigree_b",
-      "importance": 5e-05,
-      "std": 0.00014
+      "importance": 0.00012,
+      "std": 0.00016
     },
     {
       "feature": "h2h_a",
-      "importance": 3e-05,
-      "std": 6e-05
+      "importance": 9e-05,
+      "std": 5e-05
     },
     {
-      "feature": "elo_b",
-      "importance": 0.0,
-      "std": 0.00114
-    },
-    {
-      "feature": "gd_b",
-      "importance": -0.00015,
-      "std": 0.00041
+      "feature": "pedigree_b",
+      "importance": 8e-05,
+      "std": 0.0001
     },
     {
       "feature": "gd_a",
-      "importance": -0.0002,
-      "std": 0.00045
+      "importance": 2e-05,
+      "std": 0.00036
+    },
+    {
+      "feature": "gd_b",
+      "importance": -0.00026,
+      "std": 0.00063
     },
     {
       "feature": "rest_b",
-      "importance": -0.00083,
-      "std": 0.0006
+      "importance": -0.00058,
+      "std": 0.00051
     }
   ]
 }

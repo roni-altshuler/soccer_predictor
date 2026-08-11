@@ -1187,16 +1187,35 @@ class Warehouse:
         }
 
     def find_orphan_teams(self) -> List[Dict[str, Any]]:
-        """Teams with no match on either side."""
+        """Teams with no match on either side.
+
+        A team whose only appearance is a fixture that has not been played yet
+        is NOT an orphan. Singapore entered the warehouse on 2026-08-11 with
+        three Asian Cup 2027 group fixtures and no result anywhere — a real
+        national side with a real published fixture list. `delete_orphan_teams`
+        reads this method, so treating it as an orphan would have deleted a
+        team its own scheduled rows point at.
+        """
         with self._lock:
+            scheduled = self._conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='scheduled_matches'"
+            ).fetchone()
+            clause = """
+                AND NOT EXISTS (
+                    SELECT 1 FROM scheduled_matches s
+                    WHERE s.home_team_id = t.team_id OR s.away_team_id = t.team_id
+                )
+            """ if scheduled else ""
             cur = self._conn.execute(
-                """
+                f"""
                 SELECT t.team_id, t.canonical_name, t.gender
                 FROM teams t
                 WHERE NOT EXISTS (
                     SELECT 1 FROM matches m
                     WHERE m.home_team_id = t.team_id OR m.away_team_id = t.team_id
                 )
+                {clause}
                 ORDER BY t.team_id
                 """
             )

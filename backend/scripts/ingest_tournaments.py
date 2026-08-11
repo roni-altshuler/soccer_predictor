@@ -75,7 +75,16 @@ class Tournament:
 # returned events. Four plausible guesses did NOT and are absent rather than
 # left in to fail quietly: afc.asiancup, uefa.conference.league,
 # uefa.europa.conference, uefa.conf.
+#
+# fifa.world is listed here even though the warehouse has held World Cups since
+# the ESPN loader ran: the 2026 edition — 48 teams, a new round of 32, and the
+# first World Cup this project could have forecast forward — was never picked
+# up, because the loader is driven by a season list that stops at the last
+# edition it knew about. A quadrennial tournament is exactly the kind of thing
+# a "current season" sweep misses, so it is pinned to an explicit ingester.
 TOURNAMENTS: Tuple[Tournament, ...] = (
+    Tournament("fifa.world", "fifa.world",
+               "FIFA World Cup", "FIFA", 0, 1930),
     Tournament("conmebol.libertadores", "conmebol.libertadores",
                "Copa Libertadores", "CONMEBOL", 1, 2005),
     Tournament("conmebol.sudamericana", "conmebol.sudamericana",

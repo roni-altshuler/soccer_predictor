@@ -1,28 +1,28 @@
 {
-  "generated_at": "2026-08-11T08:08:59.616168+00:00",
+  "generated_at": "2026-08-11T09:15:07.766695+00:00",
   "method": {
     "sims": 20000,
     "bracket": "reconstructed from who actually met whom; UEFA drew the quarter-finals and semi-finals openly before 2023-24, so for those seasons the draw is held fixed rather than redrawn",
     "model": "random forest over tie features, refit on every season strictly before the tournament being simulated"
   },
   "summary": {
-    "n_tournaments": 84,
+    "n_tournaments": 85,
     "log_loss": {
-      "model": 1.9672,
-      "elo_simulation": 2.1454,
-      "uniform": 2.5498
+      "model": 1.9686,
+      "elo_simulation": 2.1453,
+      "uniform": 2.5606
     },
     "top1_hit_rate": {
-      "model": 0.3214,
-      "highest_rated": 0.2143
+      "model": 0.3176,
+      "highest_rated": 0.2235
     },
     "top3_hit_rate": {
-      "model": 0.631
+      "model": 0.6353
     },
     "mean_probability_on_actual_champion": {
-      "model": 0.1903,
-      "elo_simulation": 0.1737,
-      "uniform": 0.0904
+      "model": 0.1895,
+      "elo_simulation": 0.1731,
+      "uniform": 0.0897
     }
   },
   "events": [
@@ -1285,6 +1285,21 @@
       "model_top1_hit": 0,
       "elo_leader_hit": 0,
       "model_top3_hit": 0
+    },
+    {
+      "competition": "fifa.world",
+      "season": 2026,
+      "field": 32,
+      "champion": 459,
+      "model_p": 0.124,
+      "elo_p": 0.1179,
+      "uniform_p": 0.03125,
+      "model_favourite": 462,
+      "model_favourite_p": 0.1857,
+      "elo_leader": 459,
+      "model_top1_hit": 0,
+      "elo_leader_hit": 1,
+      "model_top3_hit": 1
     }
   ],
   "skipped": {

@@ -54,12 +54,21 @@ class Leg:
     date_utc: str
     home_team_id: int
     away_team_id: int
-    home_score: int
-    away_score: int
+    # None on both when the fixture is DRAWN BUT NOT YET PLAYED. That is a
+    # different thing from a missing leg, and the two must not be conflated:
+    # a pending leg is the whole reason a forward forecast exists, a missing
+    # one is a hole in the data. `resolve` returns "pending" for the first and
+    # `_flag_missing_legs` marks the second "incomplete".
+    home_score: Optional[int]
+    away_score: Optional[int]
     home_shootout: Optional[int]
     away_shootout: Optional[int]
     winner_side: Optional[str]
     status_detail: Optional[str]
+
+    @property
+    def played(self) -> bool:
+        return self.home_score is not None and self.away_score is not None
 
 
 @dataclass
@@ -82,6 +91,11 @@ class Tie:
     @property
     def two_legged(self) -> bool:
         return len(self.legs) > 1
+
+    @property
+    def pending(self) -> bool:
+        """Drawn, not yet played — the only state a forward forecast can add to."""
+        return any(not leg.played for leg in self.legs)
 
     @property
     def a_advanced(self) -> Optional[int]:
@@ -120,25 +134,83 @@ def load_legs(conn: sqlite3.Connection, competitions: Sequence[str],
     return out
 
 
+def load_scheduled_legs(conn: sqlite3.Connection, competitions: Sequence[str],
+                        *, include_qualifying: bool = True,
+                        min_season: int = 0) -> List[Tuple[sqlite3.Row, str]]:
+    """Fixtures that have been DRAWN but not played, from `scheduled_matches`.
+
+    They live in their own table rather than in `matches` on purpose. Every
+    consumer in this repo — Elo, Dixon-Coles, the feature builder, the
+    integrity checker — reads `matches` and assumes a row there is a result;
+    the table has held zero null-score rows for the life of the project.
+    Slipping unplayed fixtures in beside results to serve one page would be a
+    silent, global change to what a row means.
+
+    Returns nothing when the table does not exist, so every existing caller
+    keeps working on a warehouse that has never seen the ingester.
+    """
+    have = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='scheduled_matches'"
+    ).fetchone()
+    if not have:
+        return []
+    ph = ",".join("?" * len(competitions))
+    sql = f"""
+        SELECT s.match_id, s.competition_id, s.season, s.date_utc, s.phase,
+               s.home_team_id, s.away_team_id,
+               NULL AS home_score, NULL AS away_score,
+               NULL AS home_shootout, NULL AS away_shootout,
+               NULL AS winner_side, NULL AS status_detail
+          FROM scheduled_matches s
+         WHERE s.competition_id IN ({ph})
+           AND s.season >= ?
+           AND s.match_id NOT IN (SELECT match_id FROM matches)
+         ORDER BY s.date_utc, s.match_id
+    """
+    out = []
+    for r in conn.execute(sql, [*competitions, min_season]):
+        kind = classify(r["phase"])
+        if kind == GROUP:
+            continue
+        if kind == QUALIFYING and not include_qualifying:
+            continue
+        out.append((r, kind))
+    return out
+
+
 def build(conn: sqlite3.Connection, competitions: Sequence[str], *,
           include_qualifying: bool = True, include_third_place: bool = False,
-          min_season: int = 0) -> List[Tie]:
-    """Group knockout legs into ties and resolve each one."""
+          min_season: int = 0, include_scheduled: bool = False) -> List[Tie]:
+    """Group knockout legs into ties and resolve each one.
+
+    `include_scheduled` additionally admits drawn-but-unplayed fixtures, whose
+    ties come back with `winner=None` and `resolution="pending"`. It defaults
+    to False so that every training and benchmarking caller keeps seeing
+    results only — a pending tie has no label and must never reach a fit.
+    """
     buckets: Dict[Tuple, List[Leg]] = defaultdict(list)
     meta: Dict[Tuple, Tuple[str, int, str]] = {}
 
-    for r, kind in load_legs(conn, competitions,
-                             include_qualifying=include_qualifying,
-                             min_season=min_season):
+    rows = list(load_legs(conn, competitions,
+                          include_qualifying=include_qualifying,
+                          min_season=min_season))
+    if include_scheduled:
+        rows += load_scheduled_legs(conn, competitions,
+                                    include_qualifying=include_qualifying,
+                                    min_season=min_season)
+
+    for r, kind in rows:
         if kind == "third_place" and not include_third_place:
             continue
         h, a = int(r["home_team_id"]), int(r["away_team_id"])
         key = (r["competition_id"], int(r["season"]), slug(r["phase"]),
                min(h, a), max(h, a))
+        hs, as_ = r["home_score"], r["away_score"]
         buckets[key].append(Leg(
             match_id=r["match_id"], date_utc=r["date_utc"],
             home_team_id=h, away_team_id=a,
-            home_score=int(r["home_score"]), away_score=int(r["away_score"]),
+            home_score=None if hs is None else int(hs),
+            away_score=None if as_ is None else int(as_),
             home_shootout=r["home_shootout"], away_shootout=r["away_shootout"],
             winner_side=r["winner_side"], status_detail=r["status_detail"],
         ))
@@ -180,7 +252,10 @@ def _flag_missing_legs(ties: Sequence[Tie]) -> None:
         if t.two_legged:
             cell[0] += 1
     for t in ties:
-        if t.two_legged:
+        if t.two_legged or t.pending:
+            # A pending tie is one leg because the second has not been played,
+            # not because it is missing. Marking it incomplete would hide the
+            # only fixtures a forward forecast exists to cover.
             continue
         got, total = two_legged_share[(t.competition_id, t.season, t.round_slug)]
         if total >= 3 and got / total > 0.6:
@@ -190,6 +265,12 @@ def _flag_missing_legs(ties: Sequence[Tie]) -> None:
 
 def resolve(legs: Sequence[Leg], season: int) -> Tuple[Optional[int], str]:
     """Who advanced, and by which rule."""
+    # Nothing to resolve until it is played. Kept ahead of every other branch
+    # so a half-played two-legged tie cannot be decided on the first leg's
+    # scoreline, which is a real result and the wrong answer.
+    if any(not leg.played for leg in legs):
+        return None, "pending"
+
     if len(legs) == 1:
         leg = legs[0]
         if leg.winner_side == "home":

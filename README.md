@@ -108,40 +108,56 @@ every 1X2 number above is capped near the market's 54%. **A knockout tie has
 two** — extra time, penalties and away goals exist to guarantee it. That is a
 different question, and it is asked separately.
 
-Measured over 2,110 ties across fourteen competitions, 2013–2026, training on
+Measured over 2,141 ties across fourteen competitions, 2013–2026, training on
 every previous season and testing on the one being played:
 
 | | accuracy | Brier (binary) |
 |---|---|---|
 | Coin flip | 50.0% | .2500 |
-| Back the better-rated side | 64.1% | .2387 |
-| **This model** | **64.8%** | **.2179** |
+| Back the better-rated side | 64.3% | .2381 |
+| **This model** | **64.9%** | **.2175** |
 
 The accuracy gap is small; the probability gap is not, and a bracket is decided
 by probabilities compounded over four or five rounds. Calibration is close to
-exact — says 64.6%, happens 64.6%; says 74.3%, happens 74.3%.
+exact — says 64.7%, happens 64.8%; says 74.3%, happens 74.3%.
 
-Simulating whole brackets, 84 tournaments at 20,000 runs each:
+Simulating whole brackets, 85 tournaments at 20,000 runs each:
 
 | | log loss on the champion | called the winner |
 |---|---|---|
-| Uniform over the field | 2.5498 | — |
-| Rating-only simulation | 2.1454 | 21.4% (highest-rated team) |
-| **This model** | **1.9672** | **32.1%** (top 3: 63.1%) |
+| Uniform over the field | 2.5606 | — |
+| Rating-only simulation | 2.1453 | 22.4% (highest-rated team) |
+| **This model** | **1.9686** | **31.8%** (top 3: 63.5%) |
 
 **Integrity gate:** the team recorded as advancing turns up in the next round in
-2,403 of 2,412 ties (99.6%). That check is what catches a wrong away-goals
+2,433 of 2,442 ties (99.6%). That check is what catches a wrong away-goals
 branch or a mis-paired second leg — which would otherwise silently train the
 model on the losing side.
 
-Three states are reported and never merged, because a power ranking read as a
+### Pick a tournament, get the winner
+
+Four states are reported and never merged, because a power ranking read as a
 forecast is the easiest lie to tell here:
 
 | state | what is shown |
 |---|---|
-| `live` | real title odds; played ties fixed, the rest simulated |
+| `upcoming` | the draw is made, none of it played — title odds on something undecided |
+| `in_progress` | decided ties held at their real winner; only the rest simulated |
 | `completed` | the forecast made **before** the knockout stage, next to the result |
 | `awaiting_draw` | **no odds at all** — a rating table, labelled a power ranking |
+
+Which state a competition is in comes from the **fixture list**, never from
+whether a past tie could be resolved. That distinction is not pedantic: an
+earlier version called a tournament live whenever some tie had no recorded
+winner, and six missing legs made the 2025-26 Champions League — decided on
+30 May — report as still running, with live-looking odds for a trophy that had
+already been lifted.
+
+On 2026-08-11 nothing is mid-flight. The Copa Libertadores and Copa Sudamericana
+round of 16 are drawn and kick off today (Flamengo 23.4%, Botafogo 17.7%);
+everything else is a record. The most recent of those records is the 48-team
+2026 World Cup: the model made **Argentina** favourite at 19.0%, and **Spain**
+won it from 11.6%, third on its list.
 
 ## Supported competitions
 

@@ -163,8 +163,20 @@ def tie_features(team_a: int, team_b: int, template: T.Tie, elo: R.EloTable,
 
 
 def simulate(tree: List[List[Dict]], predict, elo: R.EloTable, hist: History,
-             ped: Dict, sims: int, rng: np.random.Generator) -> Dict[int, float]:
-    """Monte-Carlo the bracket. Returns team_id -> P(champion)."""
+             ped: Dict, sims: int, rng: np.random.Generator,
+             condition_on_results: bool = False) -> Dict[int, float]:
+    """Monte-Carlo the bracket. Returns team_id -> P(champion).
+
+    `condition_on_results=False` — the backtest setting, and the default —
+    simulates the whole bracket from its first round as if none of it had been
+    played. That is what makes the backtest a forecast: the number it produces
+    is the one the model would have published before a ball was kicked.
+
+    `condition_on_results=True` holds every ALREADY-DECIDED tie at its real
+    winner and simulates only what is left. That is what a half-played
+    tournament needs, and mixing the two up is how a backtest quietly becomes a
+    report of what already happened.
+    """
     n_first = len(tree[0])
     first_pairs = [(n["tie"].team_a, n["tie"].team_b) for n in tree[0]]
 
@@ -203,14 +215,27 @@ def simulate(tree: List[List[Dict]], predict, elo: R.EloTable, hist: History,
 
     probs = np.asarray(predict(np.vstack(feats)), dtype=np.float64)
 
+    # Known outcomes, per node, when the caller wants the bracket conditioned
+    # on what has actually been played. None everywhere in backtest mode.
+    known: List[List[Optional[int]]] = [
+        [(n["tie"].winner if condition_on_results else None) for n in nodes]
+        for nodes in tree
+    ]
+
     titles: Dict[int, int] = defaultdict(int)
     for _ in range(sims):
         draws = rng.random(n_first)
-        survivors = [a if draws[i] < probs[index[0][i][(a, b)]] else b
-                     for i, (a, b) in enumerate(first_pairs)]
+        survivors = [
+            known[0][i] if known[0][i] is not None
+            else (a if draws[i] < probs[index[0][i][(a, b)]] else b)
+            for i, (a, b) in enumerate(first_pairs)
+        ]
         for depth in range(1, len(tree)):
             nxt: List[int] = []
             for j, node in enumerate(tree[depth]):
+                if known[depth][j] is not None:
+                    nxt.append(known[depth][j])
+                    continue
                 fa, fb = node["feeders"]
                 a, b = survivors[fa], survivors[fb]
                 p = probs[index[depth][j][(a, b)]]
@@ -218,6 +243,83 @@ def simulate(tree: List[List[Dict]], predict, elo: R.EloTable, hist: History,
             survivors = nxt
         titles[survivors[0]] += 1
     return {k: v / sims for k, v in titles.items()}
+
+
+def simulate_open_draw(first_round: Sequence[T.Tie], predict, elo: R.EloTable,
+                       hist: History, ped: Dict, sims: int,
+                       rng: np.random.Generator) -> Tuple[Dict[int, float],
+                                                          Dict[Tuple[int, int], float]]:
+    """Title odds when only the CURRENT round is drawn.
+
+    The situation this handles is the common one for a live competition: the
+    Copa Libertadores round of 16 is drawn and published, and the
+    quarter-finals do not exist yet because nobody knows who is in them.
+    `bracket_tree` correctly refuses that — it is not a bracket — but refusing
+    to say anything is the wrong answer, because the interesting question is
+    exactly the undecided one.
+
+    So the drawn round is simulated as drawn, and every later round is paired
+    by a fresh uniform random draw. That is an ASSUMPTION and it is reported as
+    one: CONMEBOL in fact seeds its bracket from the round of 16, so the true
+    spread is a little tighter than this. It errs toward saying the outcome is
+    less certain than it is, which is the safe direction, and it invents no
+    structure the source does not carry.
+
+    Returns (champion probabilities, per-tie P(team_a advances) for the drawn
+    round). The second value is the honest headline: it is the quantity the
+    model is measured on, one round ahead, with nothing assumed.
+
+    A second, smaller approximation, recorded rather than hidden: every
+    simulated later round is featurised with the DRAWN round's date and
+    format, so `round_depth` reads as the drawn round throughout. That keeps
+    every feature strictly earlier than any match being predicted — the
+    property that matters — at the cost of one of twenty-one features being
+    stale in the deeper rounds.
+    """
+    if len(first_round) & (len(first_round) - 1):
+        raise ValueError(
+            f"open-draw simulation needs a power-of-two round, got "
+            f"{len(first_round)} ties; a round that does not halve cleanly has "
+            f"byes or missing fixtures and must not be simulated as if it did")
+    template = first_round[0]
+    pairs = [(t.team_a, t.team_b) for t in first_round]
+    field = [tid for pair in pairs for tid in pair]
+
+    # Every later round can pair any two survivors, so all N*(N-1)/2 orderings
+    # are scored once up front rather than inside the loop.
+    idx: Dict[Tuple[int, int], int] = {}
+    feats: List[np.ndarray] = []
+    for a in field:
+        for b in field:
+            if a == b:
+                continue
+            idx[(a, b)] = len(feats)
+            feats.append(tie_features(a, b, template, elo, hist, ped))
+    probs = np.asarray(predict(np.vstack(feats)), dtype=np.float64)
+
+    first_p = {(t.team_a, t.team_b): float(probs[idx[(t.team_a, t.team_b)]])
+               for t in first_round}
+
+    # A round is often part-played — one leg gone, or two of eight ties over.
+    # Those are held at their real winner; only the undecided ones are drawn.
+    decided = [t.winner for t in first_round]
+
+    titles: Dict[int, int] = defaultdict(int)
+    n = len(pairs)
+    for _ in range(sims):
+        draws = rng.random(n)
+        alive = [decided[i] if decided[i] is not None
+                 else (a if draws[i] < probs[idx[(a, b)]] else b)
+                 for i, (a, b) in enumerate(pairs)]
+        while len(alive) > 1:
+            rng.shuffle(alive)
+            nxt = []
+            for i in range(0, len(alive), 2):
+                a, b = alive[i], alive[i + 1]
+                nxt.append(a if rng.random() < probs[idx[(a, b)]] else b)
+            alive = nxt
+        titles[alive[0]] += 1
+    return {k: v / sims for k, v in titles.items()}, first_p
 
 
 def _log_loss(p: float) -> float:

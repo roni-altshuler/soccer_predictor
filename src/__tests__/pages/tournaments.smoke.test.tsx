@@ -34,25 +34,59 @@ const FORECASTS = {
   available: true,
   tournaments: [
     {
-      competition_id: 'uefa.champions',
-      name: 'UEFA Champions League',
-      region: 'Europe',
-      season: 2025,
-      status: 'live',
-      field: 16,
-      odds: [
-        { team_id: 1, team: 'Bayern Munich', probability: 0.229, elo: 1900 },
-        { team_id: 2, team: 'Arsenal', probability: 0.15, elo: 1870 },
-      ],
-    },
-    {
       competition_id: 'conmebol.libertadores',
       name: 'Copa Libertadores',
       region: 'South America',
       season: 2026,
+      status: 'upcoming',
+      field: 16,
+      current_round: 'round-of-16',
+      draw_known_to: 'round-of-16',
+      forecast_from: '2026-08-11',
+      ties: [
+        {
+          round: 'round-of-16',
+          team_a: 'Cruzeiro',
+          team_b: 'Flamengo',
+          team_a_id: 8,
+          team_b_id: 9,
+          p_team_a: 0.239,
+          kickoff: '2026-08-13',
+          decided: null,
+        },
+      ],
+      odds: [
+        { team_id: 9, team: 'Flamengo', probability: 0.234, elo: 1905 },
+        { team_id: 10, team: 'Palmeiras', probability: 0.18, elo: 1888 },
+      ],
+    },
+    {
+      competition_id: 'uefa.champions',
+      name: 'UEFA Champions League',
+      region: 'Europe',
+      season: 2025,
+      status: 'completed',
+      field: 16,
+      forecast_made_at_round: 'round-of-16',
+      forecast_from: '2026-03-04',
+      odds: [
+        { team_id: 1, team: 'Bayern Munich', probability: 0.229, elo: 1900 },
+        { team_id: 2, team: 'Arsenal', probability: 0.15, elo: 1870 },
+      ],
+      actual_champion: 'Arsenal',
+      actual_champion_id: 2,
+      probability_on_actual: 0.15,
+      called_it: false,
+      next_fixture: { season: 2026, starts: '2026-09-16', fixtures: 36 },
+    },
+    {
+      competition_id: 'fifa.cwc',
+      name: 'FIFA Club World Cup',
+      region: 'World',
+      season: 2025,
       status: 'awaiting_draw',
       reason: 'no bracket could be reconstructed for this edition',
-      power_ranking: [{ team_id: 9, team: 'Flamengo', elo: 1810 }],
+      power_ranking: [{ team_id: 11, team: 'Real Madrid', elo: 1912 }],
     },
   ],
 }
@@ -126,13 +160,42 @@ describe('TournamentsPage', () => {
     expect(screen.getByText(/not the 1X2 numbers made bigger/i)).toBeInTheDocument()
   })
 
-  it('lets a reader pick a tournament and see its title odds', async () => {
+  it('opens on the tournament that is still to be played, not a finished one', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+
+    // A page of finished tournaments is a record; the undecided one is the
+    // forecast. Ordering by status is what makes it the first thing seen.
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: /Copa Libertadores/i })).toBeInTheDocument()
+    expect(screen.getByText(/who goes through/i)).toBeInTheDocument()
+    expect(screen.getByText('Cruzeiro')).toBeInTheDocument()
+    expect(screen.getByText('23.4%')).toBeInTheDocument()
+  })
+
+  it('states the open-draw assumption behind the title odds', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+
+    // Only the round of 16 is drawn. Every later round is paired at random,
+    // and that assumption changes the numbers, so it is on the page.
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    expect(screen.getByText(/paired by a fresh random draw/i)).toBeInTheDocument()
+  })
+
+  it('shows a finished tournament as a record, with the result', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    expect(screen.getByText('Bayern Munich')).toBeInTheDocument()
-    expect(screen.getByText('22.9%')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: /Champions League/i }))
+
+    // The call made BEFORE the knockout stage, next to who actually won —
+    // never presented as though it were still open.
+    expect(screen.getByText(/What it said beforehand/i)).toBeInTheDocument()
+    expect(screen.getByText(/before any of it was played/i)).toBeInTheDocument()
+    expect(screen.getByText('won it')).toBeInTheDocument()
+    expect(screen.getByText(/Next up: 36 fixtures of the 2026 edition/i)).toBeInTheDocument()
   })
 
   it('refuses to print odds for a tournament that has not been drawn', async () => {
@@ -140,13 +203,13 @@ describe('TournamentsPage', () => {
     render(<TournamentsPage />)
 
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('tab', { name: /Copa Libertadores/i }))
+    await userEvent.click(screen.getByRole('tab', { name: /Club World Cup/i }))
 
     // A power ranking, explicitly not a forecast. Filling this state with last
     // edition's field would produce confident percentages backed by nothing.
     expect(screen.getByText(/no title odds to give/i)).toBeInTheDocument()
     expect(screen.getByText(/power\s+ranking, not a forecast/i)).toBeInTheDocument()
-    expect(screen.getByText('Flamengo')).toBeInTheDocument()
+    expect(screen.getByText('Real Madrid')).toBeInTheDocument()
   })
 
   it('shows an honest empty state when the benchmarks have not been run', async () => {

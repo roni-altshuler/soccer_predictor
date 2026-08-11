@@ -92,38 +92,48 @@ tie is where soccer asks a binary question, and it is the honest place to look
 for the kind of accuracy a binary sport allows. It is a different question,
 not a trick for inflating the same one.
 
-Measured 2026-08-11 on **14 competitions** — UCL, UEL, Conference, World Cup,
-Euros, Copa América, Libertadores, Sudamericana, AFCON, Asian Cup, Gold Cup,
-CONCACAF Champions Cup, Club World Cup, Nations League.
+Measured 2026-08-11 on **14 competitions** — UCL, UEL, Conference, World Cup
+(incl. the 48-team 2026 edition), Euros, Copa América, Libertadores,
+Sudamericana, AFCON, Asian Cup, Gold Cup, CONCACAF Champions Cup, Club World
+Cup, Nations League.
 
 | | accuracy | Brier (binary) |
 |---|---|---|
 | Coin flip | 50.0% | .2500 |
-| Higher-rated side advances | 64.1% | .2387 |
-| **Random forest over tie features** | **64.8%** | **.2179** |
+| Higher-rated side advances | 64.3% | .2381 |
+| **Random forest over tie features** | **64.9%** | **.2175** |
 
-2,110 test ties, 2013–2026, rolling origin (train on every previous season,
-test on the season played). Progression check 2,403/2,412 = **99.6%**.
+2,141 test ties, 2013–2026, rolling origin (train on every previous season,
+test on the season played). Progression check 2,433/2,442 = **99.6%**.
 
-**Calibration is the result worth quoting, not the accuracy.** Says 64.6%,
-happens 64.6%. Says 74.3%, happens 74.3%. Says 83.9%, happens 86.2%. That is
-what a bracket simulation consumes.
+**Calibration is the result worth quoting, not the accuracy.** Says 55.1%,
+happens 55.7%. Says 64.7%, happens 64.8%. Says 74.3%, happens 74.3%. Says
+83.9%, happens 86.3%. That is what a bracket simulation consumes.
 
 Read the ladder as a gap, not as levels: adding nine minnow-heavy competitions
-raised absolute Brier for *everything* (the baseline moved .2308 → .2387), and
+raised absolute Brier for *everything* (the baseline moved .2308 → .2381), and
 the model's edge over "back the better-rated side" grew from .0175 to
-**.0208**. Logistic .2187, HGB .2200, XGBoost .2287 — the forest still wins.
+**.0206**. Logistic .2182, HGB .2195, XGBoost .2281 — the forest still wins.
 
-Bracket Monte Carlo over **84** reconstructed tournaments:
+Bracket Monte Carlo over **85** reconstructed tournaments:
 
 | | log loss on the actual champion | picked the winner outright |
 |---|---|---|
-| Uniform over the field | 2.5498 | — |
-| Elo simulation (unfitted) | 2.1454 | 21.4% (highest-rated) |
-| **This model** | **1.9672** | **32.1%** (top 3: 63.1%) |
+| Uniform over the field | 2.5606 | — |
+| Elo simulation (unfitted) | 2.1453 | 22.4% (highest-rated) |
+| **This model** | **1.9686** | **31.8%** (top 3: 63.5%) |
 
 Half again as often as taking the highest-rated team, on a sample nearly three
 times the first run's.
+
+**Forward forecasts** (`predict_tournaments` → `backend/data/predictions/tournaments.json`)
+put every competition in exactly one of four states — `upcoming`,
+`in_progress`, `completed`, `awaiting_draw` — and the UI must not flatten them.
+As of 2026-08-11 nothing is mid-flight: the Libertadores and Sudamericana round
+of 16 are drawn and start today (Flamengo 23.4%, Botafogo 17.7%), and every
+other competition is finished. The 2026 World Cup is in as a record: the model
+made Argentina favourite at 19.0%, and Spain won it from 11.6%, third on its
+list.
 
 ### Rules for this layer
 
@@ -153,6 +163,36 @@ times the first run's.
 - **Enumerate reachable pairings, do not cache lazily.** A 16-team bracket has
   112 possible ties in total; batching them into one `predict` turned a
   twenty-minute backtest into a two-minute one.
+- **Whether a tournament is live is a question about FIXTURES, never about
+  resolution.** `predict_tournaments` first asked "is any tie winner-less?" —
+  but a tie is also winner-less when a leg is *missing from the data*. Six such
+  holes made the 2025-26 Champions League, whose final was played on
+  2026-05-30, report as still running with live-looking title odds. Liveness
+  now comes from `scheduled_matches`: fixtures still to play, or none.
+- **`matches` is results-only. Keep it that way.** It has held zero null-score
+  rows for the life of the project and every consumer — Elo, Dixon-Coles, the
+  feature builder, the integrity checker — reads a row there as a fact about
+  something that happened. Drawn-but-unplayed fixtures live in
+  `scheduled_matches` (owned by `ingest_scheduled_fixtures.py`), and
+  `ties.build(include_scheduled=True)` is the only reader that merges them.
+  Pending ties carry no label and are excluded from every fit by construction.
+- **A team whose only appearance is a future fixture is not an orphan.**
+  `find_orphan_teams` now checks `scheduled_matches` too; without it
+  `delete_orphan_teams` would delete Singapore, which entered the warehouse
+  with three Asian Cup 2027 fixtures and no result anywhere.
+- **Refuse bracket SLOT names at the ingester, not just at the simulator.**
+  ESPN publishes undrawn rounds with competitors like "Group A 2nd Place".
+  `TeamResolver.resolve` creates a club it cannot match, and it fuzzy-matched
+  every such string in the Asian Cup 2027 draw onto **one** invented row —
+  producing a tie whose two sides were the same team, a guaranteed advance. A
+  junk `teams` row is permanent and competes with every later fuzzy match.
+  `is_placeholder` refuses them, and a fixture whose two sides resolve to the
+  same id is refused whatever it is called.
+- **Only the drawn round is a bracket.** When the round of 16 is published and
+  the quarter-finals do not exist yet, `bracket_tree` correctly returns None.
+  `simulate_open_draw` handles that case by pairing every later round at
+  random — an assumption that is printed on the page, because CONMEBOL in fact
+  seeds from the round of 16, so real spread is slightly tighter.
 
 ### FBref is not available to this machine
 
@@ -180,6 +220,8 @@ none of it is unservable the way the market block was.
 | Bracket Monte Carlo | `python3 -m backend.scripts.backtest_brackets --sims 20000` |
 | Resolve knockout winners | `python3 -m backend.scripts.backfill_knockout_results` |
 | Ingest new tournaments | `python3 -m backend.scripts.ingest_tournaments --all` |
+| Ingest drawn-but-unplayed fixtures | `python3 -m backend.scripts.ingest_scheduled_fixtures --all` |
+| Forward title odds | `python3 -m backend.scripts.predict_tournaments` |
 | Lineup ablation | `python3 -m backend.scripts.benchmark_lineup_features` |
 
 ## Superseded measured state (2026-08-09)

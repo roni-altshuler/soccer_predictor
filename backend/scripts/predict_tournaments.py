@@ -9,20 +9,37 @@ know.** A tournament whose draw has not been made has no field, and inventing a
 plausible one — last year's entrants, say — would produce a confident-looking
 table with nothing behind it.
 
-So every competition lands in exactly one of three states, and the state is
+So every competition lands in exactly one of four states, and the state is
 reported rather than hidden:
 
-  live            knockout matches remain. The resolved ties are fixed, the
-                  rest are simulated, and the champion distribution is a real
-                  forecast of an undecided event.
-  awaiting_draw   the last edition is finished and the next has no bracket
-                  yet. No title odds. What IS shown is the strength table of
-                  the teams most likely to be involved, from the same ratings,
-                  clearly labelled as a power ranking and not a forecast.
+  upcoming        the draw is made and NONE of it has been played. The only
+                  state in which this is a forecast in the ordinary sense of
+                  the word, and the one the whole layer exists for.
+  in_progress     some ties are decided and some are not. Decided ties are
+                  held at their real winner and only the remainder is
+                  simulated.
   completed       there is nothing left to predict, so the page shows what the
                   model said BEFORE the knockout stage began — refit on prior
                   seasons only — next to who actually won. That is the honest
                   way to show a finished tournament: the call, then the result.
+  awaiting_draw   the last edition is finished and the next has no bracket
+                  yet. No title odds. What IS shown is the strength table of
+                  the teams most likely to be involved, from the same ratings,
+                  clearly labelled as a power ranking and not a forecast.
+
+Status is decided by FIXTURES, never by resolution
+--------------------------------------------------
+The first version of this script called a tournament live whenever some tie had
+`winner is None`. That is wrong in a way that is easy to miss and hard to spot
+afterwards: a tie is also winner-less when a leg is *missing from the data*.
+Six such holes in the 2025-26 Champions League — mostly pre-2010-style single
+legs ESPN never paired — made a competition whose final was played on
+2026-05-30 report as still running, with live-looking title odds for a trophy
+Bayern had already won or lost months earlier.
+
+A tournament is live if and only if it has fixtures still to play. That is a
+question about the calendar, which `scheduled_matches` answers, and never a
+question about how confidently a past result could be resolved.
 
 Every probability comes from the same model `benchmark_knockout` measures, refit
 on seasons strictly earlier than the one being forecast. Nothing here is fitted
@@ -55,7 +72,7 @@ from backend.scripts.backtest_brackets import (  # noqa: E402
     bracket_tree,
     rounds_in_order,
     simulate,
-    tie_features,
+    simulate_open_draw,
 )
 from backend.scripts.benchmark_knockout import (  # noqa: E402
     History,
@@ -94,6 +111,30 @@ def team_names(conn: sqlite3.Connection) -> Dict[int, str]:
         "SELECT team_id, canonical_name FROM teams")}
 
 
+def next_fixtures(conn: sqlite3.Connection) -> Dict[str, Dict]:
+    """The next scheduled fixture per competition, from `scheduled_matches`.
+
+    This is what lets a finished competition say "and the next one starts on
+    24 September" from a published fixture list rather than from an inference
+    about how the calendar usually runs.
+    """
+    have = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='scheduled_matches'"
+    ).fetchone()
+    if not have:
+        return {}
+    now = datetime.now(timezone.utc).isoformat()
+    out: Dict[str, Dict] = {}
+    for r in conn.execute(
+            "SELECT competition_id, season, MIN(date_utc) AS d, COUNT(*) AS n "
+            "FROM scheduled_matches WHERE date_utc >= ? "
+            "GROUP BY competition_id, season ORDER BY d", (now,)):
+        out.setdefault(r["competition_id"], {
+            "season": int(r["season"]), "starts": r["d"][:10],
+            "fixtures": int(r["n"])})
+    return out
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -113,13 +154,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.info("competitions: %s", ", ".join(comps))
 
     names = team_names(conn)
+    upcoming = next_fixtures(conn)
     elo = R.build(conn)
     hist = History.build(conn)
-    all_ties = T.build(conn, comps, include_qualifying=True, min_season=args.min_season)
-    ped = pedigree(all_ties)
+    all_ties = T.build(conn, comps, include_qualifying=True,
+                       min_season=args.min_season, include_scheduled=True)
+    ped = pedigree([t for t in all_ties if not t.pending])
     main_draw = [t for t in all_ties if classify(t.round_slug) != QUALIFYING]
 
-    X, y, kept = build_matrix(main_draw, elo, hist, ped)
+    # Pending ties carry no label, so they are excluded from the fit by
+    # construction rather than by remembering to filter later.
+    X, y, kept = build_matrix([t for t in main_draw if not t.pending],
+                              elo, hist, ped)
     seasons = np.array([t.season for t in kept])
 
     from sklearn.base import clone
@@ -144,10 +190,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         seasons_present = sorted({s for (c, s) in by_event if c == comp})
         if not seasons_present:
             continue
-        season = seasons_present[-1]
+        # The edition to report is the one with fixtures still to play, if
+        # there is one, and otherwise the most recently finished. Taking the
+        # newest season unconditionally reports a competition whose next
+        # edition has one qualifying tie in the books as though that were the
+        # tournament.
+        live_seasons = sorted({s for s in seasons_present
+                               if any(t.pending for t in by_event[(comp, s)])})
+        season = live_seasons[-1] if live_seasons else seasons_present[-1]
         group = by_event[(comp, season)]
         rounds = rounds_in_order(group)
-        tree = bracket_tree(rounds)
 
         entry = {
             "competition_id": comp,
@@ -156,8 +208,67 @@ def main(argv: Optional[List[str]] = None) -> int:
             "season": season,
             "last_match": max(t.legs[-1].date_utc for t in group)[:10],
         }
+        if comp in upcoming:
+            entry["next_fixture"] = upcoming[comp]
 
-        unresolved = [t for t in group if t.winner is None]
+        model = fitted.get(season)
+        if model is None:
+            tr = np.flatnonzero(seasons < season)
+            if len(tr) < 200:
+                entry["status"] = "insufficient_history"
+                entry["reason"] = "fewer than 200 earlier ties to learn from"
+                out.append(entry)
+                continue
+            model = clone(template)
+            model.fit(X[tr], y[tr])
+            fitted[season] = model
+
+        predict = lambda M: model.predict_proba(M)[:, 1]  # noqa: E731
+
+        pending_rounds = [(slug, ts) for slug, ts in rounds
+                          if any(t.pending for t in ts)]
+        tree = bracket_tree([(s, ts) for s, ts in rounds
+                             if not any(t.pending for t in ts)] or rounds)
+
+        if pending_rounds:
+            # ---- something is still to be played -----------------------
+            slug, current = pending_rounds[0]
+            if len(current) & (len(current) - 1):
+                entry["status"] = "awaiting_draw"
+                entry["reason"] = (f"the {slug} has {len(current)} ties, which is not "
+                                   f"a whole round — the draw is still being filled in")
+                entry["power_ranking"] = _power_ranking(group, elo, names)
+                out.append(entry)
+                logger.info("  %-24s %d  awaiting_draw (partial round)", comp, season)
+                continue
+
+            champion_probs, tie_probs = simulate_open_draw(
+                current, predict, elo, hist, ped, args.sims, rng)
+            played = [t for t in current if not t.pending]
+            entry["status"] = "in_progress" if played else "upcoming"
+            entry["current_round"] = current[0].round_label
+            entry["field"] = 2 * len(current)
+            entry["forecast_from"] = min(t.date_utc for t in current)[:10]
+            entry["draw_known_to"] = current[0].round_label
+            entry["ties"] = [
+                {"round": t.round_label,
+                 "team_a": names.get(t.team_a, str(t.team_a)),
+                 "team_b": names.get(t.team_b, str(t.team_b)),
+                 "team_a_id": t.team_a, "team_b_id": t.team_b,
+                 "p_team_a": round(tie_probs[(t.team_a, t.team_b)], 4),
+                 "kickoff": t.date_utc[:10],
+                 "decided": None if t.pending else names.get(t.winner, str(t.winner))}
+                for t in sorted(current, key=lambda x: x.date_utc)
+            ]
+            entry["odds"] = _odds_rows(champion_probs, names, elo,
+                                       entry["forecast_from"])
+            out.append(entry)
+            top = entry["odds"][0]
+            logger.info("  %-24s %d  %-12s %s, %d teams  favourite %s %.1f%%",
+                        comp, season, entry["status"], entry["current_round"],
+                        entry["field"], top["team"], 100 * top["probability"])
+            continue
+
         if tree is None:
             entry["status"] = "awaiting_draw"
             entry["reason"] = ("no bracket could be reconstructed for this edition, "
@@ -167,35 +278,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             logger.info("  %-24s %d  awaiting_draw", comp, season)
             continue
 
-        model = fitted.get(season)
-        if model is None:
-            tr = np.flatnonzero(seasons < season)
-            if len(tr) < 200:
-                entry["status"] = "insufficient_history"
-                out.append(entry)
-                continue
-            model = clone(template)
-            model.fit(X[tr], y[tr])
-            fitted[season] = model
-
-        champion_probs = simulate(tree, lambda M: model.predict_proba(M)[:, 1],
-                                  elo, hist, ped, args.sims, rng)
+        # ---- finished: show the call that was made, then the result ----
+        champion_probs = simulate(tree, predict, elo, hist, ped, args.sims, rng)
         field = sorted({tid for n in tree[0]
                         for tid in (n["tie"].team_a, n["tie"].team_b)})
-        final_tie = rounds[-1][1][0]
-        actual = final_tie.winner
+        actual = tree[-1][0]["tie"].winner
+        opened = tree[0][0]["tie"].date_utc[:10]
 
-        entry["status"] = "live" if unresolved else "completed"
+        entry["status"] = "completed"
         entry["field"] = len(field)
         entry["forecast_made_at_round"] = tree[0][0]["tie"].round_label
-        entry["forecast_from"] = tree[0][0]["tie"].date_utc[:10]
-        entry["odds"] = [
-            {"team_id": tid, "team": names.get(tid, str(tid)),
-             "probability": round(p, 4),
-             "elo": round(elo.rating_before(tid, tree[0][0]["tie"].date_utc) or R.BASE, 1)}
-            for tid, p in sorted(champion_probs.items(), key=lambda kv: -kv[1])
-        ]
-        if entry["status"] == "completed" and actual is not None:
+        entry["forecast_from"] = opened
+        entry["odds"] = _odds_rows(champion_probs, names, elo, opened)
+        if actual is not None:
             entry["actual_champion"] = names.get(actual, str(actual))
             entry["actual_champion_id"] = actual
             entry["probability_on_actual"] = round(champion_probs.get(actual, 0.0), 4)
@@ -203,7 +298,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         out.append(entry)
         top = entry["odds"][0] if entry["odds"] else None
-        logger.info("  %-24s %d  %-13s field %2d  favourite %s %.1f%%%s",
+        logger.info("  %-24s %d  %-12s field %2d  favourite %s %.1f%%%s",
                     comp, season, entry["status"], len(field),
                     (top["team"] if top else "-"),
                     100 * (top["probability"] if top else 0),
@@ -216,14 +311,26 @@ def main(argv: Optional[List[str]] = None) -> int:
                      "before the edition being forecast",
             "sims": args.sims,
             "states": {
-                "live": "knockout matches remain; resolved ties fixed, the rest simulated",
+                "upcoming": "the draw is made and none of it has been played — a "
+                            "forecast of something genuinely undecided",
+                "in_progress": "some ties are decided; those are held at their real "
+                               "winner and only the rest is simulated",
                 "completed": "nothing left to predict, so the forecast shown is the one "
                              "made before the knockout stage began, next to the result",
                 "awaiting_draw": "no bracket yet — a power ranking, not a forecast",
             },
-            "caveat": "UEFA drew the Champions League quarter-finals and semi-finals "
-                      "openly before 2023-24; for those editions the bracket is held "
-                      "fixed rather than redrawn",
+            "caveats": [
+                "Status comes from the fixture list, not from whether a past tie "
+                "could be resolved: a competition is live only when matches remain "
+                "to be played.",
+                "Where only the current round is drawn, later rounds are paired by a "
+                "fresh random draw each round. CONMEBOL in fact seeds its bracket "
+                "from the round of 16, so the true spread is slightly tighter than "
+                "the title odds shown.",
+                "UEFA drew the Champions League quarter-finals and semi-finals "
+                "openly before 2023-24; for those editions the bracket is held "
+                "fixed rather than redrawn.",
+            ],
         },
         "tournaments": out,
     }
@@ -232,6 +339,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     op.write_text(json.dumps(payload, indent=2))
     logger.info("\nwrote %s", op)
     return 0
+
+
+def _odds_rows(champion_probs: Dict[int, float], names: Dict[int, str],
+               elo: R.EloTable, when: str) -> List[Dict]:
+    return [
+        {"team_id": tid, "team": names.get(tid, str(tid)),
+         "probability": round(p, 4),
+         "elo": round(elo.rating_before(tid, when) or R.BASE, 1)}
+        for tid, p in sorted(champion_probs.items(), key=lambda kv: -kv[1])
+    ]
 
 
 def _power_ranking(group: Sequence[T.Tie], elo: R.EloTable,
