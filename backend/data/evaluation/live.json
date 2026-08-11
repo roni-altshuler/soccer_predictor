@@ -1,14 +1,26 @@
 {
-  "generated_at": "2026-08-11T13:00:35.868430+00:00",
+  "generated_at": "2026-08-11T13:07:24.546268+00:00",
   "snapshot_store": {
-    "rows": 4692,
+    "rows": 2346,
     "fixtures": 2346,
     "versions": 1,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-11T13:00:33.370151+00:00",
+    "last_generated": "2026-08-11T12:24:24.501318+00:00",
     "by_version": {
-      "2026.08.1+27734fb2": 4692
+      "2026.08.1+27734fb2": 2346
     }
+  },
+  "join": {
+    "snapshots": 2346,
+    "scored": 0,
+    "awaiting_result": 2203,
+    "unresolved_clubs": {
+      "eng.1:Coventry City": 38,
+      "esp.1:Dep. A Coru\u00f1a": 38,
+      "ger.1:Elversberg": 34,
+      "por.1:Acad. Viseu": 33
+    },
+    "unresolved_count": 143
   },
   "live": {
     "basis": "live_published",

@@ -85,8 +85,16 @@ def main(argv: Optional[List[str]] = None) -> int:
                 stats["versions"])
     logger.info("final pre-kickoff forecasts: %d", len(finals))
 
-    scored = join_results(finals)
+    join_report: dict = {}
+    scored = join_results(finals, report=join_report)
     logger.info("of those, %d now have a result", len(scored))
+    if join_report.get("unresolved_count"):
+        # Distinct from "not played yet". A club whose name stopped resolving
+        # shrinks the sample because something is broken upstream, and that
+        # must never look like an ordinary small sample.
+        logger.warning("%d snapshot(s) could not be matched to a club: %s",
+                       join_report["unresolved_count"],
+                       ", ".join(join_report["unresolved_clubs"]))
 
     live = score(scored, basis="live_published")
     if scored:
@@ -104,6 +112,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "snapshot_store": stats,
+        "join": join_report,
         "live": live,
         "historical": historical_block(),
         "warning": "live and historical are different samples measuring "

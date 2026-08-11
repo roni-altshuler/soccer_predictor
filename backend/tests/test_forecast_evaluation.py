@@ -155,3 +155,187 @@ def test_join_refuses_to_score_a_fixture_that_has_not_happened(tmp_path):
     assert len(got) == 1
     assert got[0]["home_team"] == "Liverpool"
     assert got[0]["result"] == "H"
+
+
+# ------------------------------------------------------------ the name join
+#
+# A snapshot's club name comes from FBref and a result's from the warehouse.
+# On a full rehearsal against last season those two vocabularies agreed on only
+# 68.9% of fixtures — 41% of the Premier League, 23% of the Bundesliga — and
+# every miss was dropped silently, so the live sample would simply have been
+# small rather than obviously broken. These pin the resolution that fixed it.
+
+
+def _warehouse(tmp_path, *, teams, aliases=(), matches=()):
+    """A minimal warehouse with the two vocabularies the join has to bridge."""
+    import sqlite3
+
+    db = tmp_path / "w.sqlite"
+    conn = sqlite3.connect(db)
+    conn.executescript("""
+        CREATE TABLE teams (team_id INTEGER PRIMARY KEY, canonical_name TEXT);
+        CREATE TABLE team_aliases (alias TEXT, gender TEXT, team_id INTEGER);
+        CREATE TABLE matches (
+            match_id INTEGER PRIMARY KEY, competition_id TEXT, date_utc TEXT,
+            home_team_id INTEGER, away_team_id INTEGER,
+            home_score INTEGER, away_score INTEGER);
+    """)
+    conn.executemany("INSERT INTO teams VALUES (?,?)", teams)
+    conn.executemany("INSERT INTO team_aliases VALUES (?,'M',?)", aliases)
+    conn.executemany(
+        "INSERT INTO matches (competition_id, date_utc, home_team_id, "
+        "away_team_id, home_score, away_score) VALUES (?,?,?,?,?,?)", matches)
+    conn.commit()
+    conn.close()
+    return db
+
+
+def _snap(home, away, day="2026-08-21", comp="eng.1"):
+    return {
+        "fixture_uid": f"{home}-{away}", "competition_id": comp, "season": 2026,
+        "kickoff_at": f"{day}T19:00:00+00:00", "model_version": "v1",
+        "home_team": home, "away_team": away,
+        "p_home": 0.5, "p_draw": 0.25, "p_away": 0.25,
+    }
+
+
+def test_a_club_the_two_sources_name_differently_is_still_scored(tmp_path):
+    """The exact failure: FBref says 'Wolves', the warehouse says the long name."""
+    from backend.services.forecast.evaluate import join_results
+
+    db = _warehouse(
+        tmp_path,
+        teams=[(1, "Wolverhampton Wanderers"), (2, "Manchester United")],
+        aliases=[("Wolves", 1), ("Man Utd", 2), ("Manchester Utd", 2)],
+        matches=[("eng.1", "2026-08-21T19:00:00Z", 1, 2, 2, 1)],
+    )
+    report = {}
+    got = join_results([_snap("Wolves", "Manchester Utd")], db=db, report=report)
+    assert len(got) == 1
+    assert got[0]["result"] == "H"
+    assert report["unresolved_count"] == 0
+
+
+def test_a_result_a_day_either_side_is_the_same_fixture(tmp_path):
+    from backend.services.forecast.evaluate import join_results
+
+    db = _warehouse(
+        tmp_path, teams=[(1, "Liverpool"), (2, "Arsenal")],
+        matches=[("eng.1", "2026-08-22T01:00:00Z", 1, 2, 1, 1)])
+    got = join_results([_snap("Liverpool", "Arsenal", day="2026-08-21")], db=db)
+    assert len(got) == 1 and got[0]["result"] == "D"
+
+
+def test_a_fixture_not_played_yet_is_dropped_not_defaulted(tmp_path):
+    from backend.services.forecast.evaluate import join_results
+
+    db = _warehouse(tmp_path, teams=[(1, "Liverpool"), (2, "Arsenal")])
+    report = {}
+    got = join_results([_snap("Liverpool", "Arsenal")], db=db, report=report)
+    assert got == []
+    assert report["awaiting_result"] == 1
+    assert report["unresolved_count"] == 0, (
+        "a match that has not happened is not a broken join, and conflating "
+        "the two hides the one that needs fixing")
+
+
+def test_an_unrecognised_club_is_counted_rather_than_silently_dropped(tmp_path):
+    from backend.services.forecast.evaluate import join_results
+
+    db = _warehouse(tmp_path, teams=[(1, "Liverpool"), (2, "Arsenal")],
+                    matches=[("eng.1", "2026-08-21T19:00:00Z", 1, 2, 1, 0)])
+    report = {}
+    got = join_results([_snap("Liverpool", "Some New Club")], db=db,
+                       report=report)
+    assert got == []
+    assert report["unresolved_count"] == 1
+    assert "eng.1:Some New Club" in report["unresolved_clubs"]
+
+
+def test_an_alias_meaning_two_clubs_is_refused_rather_than_guessed(tmp_path):
+    """Never merge two identities to raise a match rate.
+
+    Taken from a real case the rehearsal surfaced: two clubs share the alias
+    "Seattle Reign". Resolving it either way would attribute a forecast to the
+    wrong match, which is worse than not scoring it at all.
+    """
+    import sqlite3
+
+    from backend.services.forecast.evaluate import club_vocabulary
+
+    db = _warehouse(
+        tmp_path,
+        teams=[(1, "Reign United"), (2, "Seattle Reign")],
+        aliases=[("Seattle Reign", 1)],
+        matches=[("usa.1", "2026-08-21T19:00:00Z", 1, 2, 1, 0)],
+    )
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row
+    vocab = club_vocabulary(conn, db)
+    conn.close()
+    # The alias points at club 1; club 2's own canonical name is the same
+    # string. The canonical name is the store of record and wins.
+    assert vocab["usa.1"]["seattle reign"] == 2
+    assert vocab["usa.1"]["reign united"] == 1
+
+
+def test_two_aliases_disagreeing_leave_the_name_unresolvable(tmp_path):
+    import sqlite3
+
+    from backend.services.forecast.evaluate import club_vocabulary
+
+    db = _warehouse(
+        tmp_path,
+        teams=[(1, "Reign United"), (2, "Sound FC")],
+        aliases=[("The Reign", 1), ("The Reign", 2)],
+        matches=[("usa.1", "2026-08-21T19:00:00Z", 1, 2, 1, 0)],
+    )
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row
+    vocab = club_vocabulary(conn, db)
+    conn.close()
+    assert "the reign" not in vocab["usa.1"]
+
+
+def test_a_warehouse_without_an_alias_table_still_joins(tmp_path):
+    """Fewer names resolve; nothing breaks."""
+    import sqlite3
+
+    from backend.services.forecast.evaluate import join_results
+
+    db = tmp_path / "bare.sqlite"
+    conn = sqlite3.connect(db)
+    conn.executescript("""
+        CREATE TABLE teams (team_id INTEGER PRIMARY KEY, canonical_name TEXT);
+        CREATE TABLE matches (
+            match_id INTEGER PRIMARY KEY, competition_id TEXT, date_utc TEXT,
+            home_team_id INTEGER, away_team_id INTEGER,
+            home_score INTEGER, away_score INTEGER);
+        INSERT INTO teams VALUES (1,'Liverpool'),(2,'Arsenal');
+        INSERT INTO matches (competition_id, date_utc, home_team_id,
+            away_team_id, home_score, away_score)
+            VALUES ('eng.1','2026-08-21T19:00:00Z',1,2,3,0);
+    """)
+    conn.commit()
+    conn.close()
+    got = join_results([_snap("Liverpool", "Arsenal")], db=db)
+    assert len(got) == 1 and got[0]["result"] == "H"
+
+
+def test_a_name_is_only_resolved_inside_its_own_competition(tmp_path):
+    """Two competitions, same club name, different clubs."""
+    from backend.services.forecast.evaluate import club_vocabulary
+    import sqlite3
+
+    db = _warehouse(
+        tmp_path,
+        teams=[(1, "Arsenal"), (2, "Arsenal")],
+        matches=[("eng.1", "2026-08-21T19:00:00Z", 1, 1, 1, 0),
+                 ("eng.1.w", "2026-08-21T19:00:00Z", 2, 2, 1, 0)],
+    )
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row
+    vocab = club_vocabulary(conn, db)
+    conn.close()
+    assert vocab["eng.1"]["arsenal"] == 1
+    assert vocab["eng.1.w"]["arsenal"] == 2

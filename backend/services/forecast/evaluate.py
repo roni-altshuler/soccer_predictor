@@ -41,55 +41,230 @@ WAREHOUSE = ROOT / "backend" / "data" / "warehouse.sqlite"
 
 OUTCOMES = ("H", "D", "A")
 
+# Key for the warehouse-wide fallback vocabulary. Not a competition id, and
+# deliberately not one any source could produce.
+GLOBAL = "*"
+
 
 def _result(hs: int, as_: int) -> str:
     return "H" if hs > as_ else ("A" if hs < as_ else "D")
 
 
+def club_vocabulary(conn, db: Optional[Path] = None
+                    ) -> Dict[str, Dict[str, int]]:
+    """Per-competition `normalised club name -> team_id`.
+
+    A snapshot's club name comes from FBref ("Wolves", "Gladbach", "Man Utd")
+    and a result's comes from the warehouse ("Wolverhampton Wanderers",
+    "Borussia Mönchengladbach", "Manchester United"). Normalising both sides
+    does not close that gap — it is not a punctuation difference, it is a
+    different name — so a join on names alone silently drops the match. This
+    resolves both sides to a team_id instead, through three sources in order
+    of trust:
+
+      1. the warehouse's own `canonical_name`
+      2. its curated `team_aliases`
+      3. the canonical layer's fixture-graph aliases, which were derived by
+         aligning FBref and warehouse fixtures on date and scoreline rather
+         than by string similarity
+
+    Scoped per competition, and an alias that resolves to two different clubs
+    *within one competition* is refused rather than guessed. Merging two clubs
+    to raise a match rate would corrupt the evaluation it exists to serve.
+    """
+    from backend.scripts.build_canonical import norm_team
+
+    # Which clubs actually play in which competition. Scoping by this is what
+    # makes "Arsenal" unambiguous: the men's and women's clubs share a name
+    # but never a competition.
+    in_comp: Dict[str, set] = defaultdict(set)
+    for r in conn.execute(
+            "SELECT DISTINCT competition_id, home_team_id AS t FROM matches "
+            "UNION SELECT DISTINCT competition_id, away_team_id FROM matches"):
+        in_comp[r["competition_id"]].add(r["t"])
+
+    names = {r["team_id"]: r["canonical_name"]
+             for r in conn.execute("SELECT team_id, canonical_name FROM teams")}
+    try:
+        aliases: List[tuple] = [
+            (r["alias"], r["team_id"])
+            for r in conn.execute("SELECT alias, team_id FROM team_aliases")]
+    except sqlite3.OperationalError:
+        # An older or minimal warehouse may not carry the alias table. Fewer
+        # names resolve; nothing breaks.
+        aliases = []
+
+    def vocabulary(ids: Optional[set]) -> Dict[str, int]:
+        v: Dict[str, int] = {}
+        canonical: set = set()
+        for tid, name in names.items():
+            if ids is not None and tid not in ids:
+                continue
+            k = norm_team(name)
+            if not k:
+                continue
+            if k in canonical and v.get(k) != tid:
+                # Two clubs with the same canonical name in one competition.
+                # Nothing can tell them apart, so neither is resolvable.
+                v.pop(k, None)
+                continue
+            v[k] = tid
+            canonical.add(k)
+        refused: set = set()
+        for alias, tid in aliases:
+            if ids is not None and tid not in ids:
+                continue
+            k = norm_team(alias)
+            if not k or k in canonical or k in refused:
+                # A canonical name outranks an alias: the warehouse's own name
+                # for a club is the store of record.
+                continue
+            existing = v.get(k)
+            if existing is None:
+                v[k] = tid
+            elif existing != tid:
+                del v[k]
+                refused.add(k)
+                logger.warning("%r resolves to two clubs — refusing it rather "
+                               "than picking one", alias)
+        return v
+
+    vocab: Dict[str, Dict[str, int]] = {
+        comp: vocabulary(ids) for comp, ids in in_comp.items()}
+    _add_fixture_graph_aliases(vocab, db)
+
+    # A competition with no played matches yet — a new league, or the first
+    # week of a season in a fresh warehouse — has no per-competition
+    # vocabulary at all. Falling back to a warehouse-wide one keeps those
+    # resolvable, and it is safe precisely because a name that means two
+    # different clubs anywhere in the warehouse is refused rather than guessed.
+    vocab[GLOBAL] = vocabulary(None)
+    return vocab
+
+
+def _add_fixture_graph_aliases(vocab: Dict[str, Dict[str, int]],
+                               db: Optional[Path]) -> None:
+    """Fold in the canonical layer's derived FBref->warehouse name map.
+
+    Optional by design: the canonical layer is a rebuildable artifact and the
+    evaluation must still run without it, just with a lower match rate. A
+    missing file is logged, never fatal.
+    """
+    from backend.scripts.build_canonical import norm_team
+
+    canonical = (Path(db).parent if db else WAREHOUSE.parent) / "canonical.duckdb"
+    if not canonical.exists():
+        logger.info("no canonical layer at %s — joining on warehouse names "
+                    "and curated aliases only", canonical)
+        return
+    try:
+        import duckdb
+
+        con = duckdb.connect(str(canonical), read_only=True)
+        rows = con.execute("SELECT competition_id, fb_norm, wh_norm "
+                           "FROM team_aliases").fetchall()
+        con.close()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("could not read fixture-graph aliases: %s", exc)
+        return
+
+    added = 0
+    for comp, fb_norm, wh_norm in rows:
+        v = vocab.get(comp)
+        if v is None or fb_norm in v:
+            continue
+        tid = v.get(norm_team(wh_norm))
+        if tid is not None:
+            v[fb_norm] = tid
+            added += 1
+    logger.debug("fixture-graph aliases added %d name(s)", added)
+
+
 def join_results(snapshots: Sequence[Dict[str, Any]],
-                 db: Optional[Path] = None) -> List[Dict[str, Any]]:
+                 db: Optional[Path] = None,
+                 report: Optional[Dict[str, Any]] = None
+                 ) -> List[Dict[str, Any]]:
     """Attach the actual result to each snapshot, where one exists yet.
 
-    Matched on competition, date and both club names normalised the same way
-    the canonical layer normalises them. A fixture with no result is DROPPED,
-    not defaulted — a forecast for a match that has not happened contributes
-    nothing to a score, and inventing a row for it is fabrication.
+    Matched on competition, date and both clubs resolved to warehouse team
+    ids. A fixture with no result is DROPPED, not defaulted — a forecast for a
+    match that has not happened contributes nothing to a score, and inventing
+    a row for it is fabrication.
+
+    A snapshot whose club cannot be resolved at all is also dropped, but it is
+    counted and reported. That distinction matters: "not played yet" shrinks
+    the sample legitimately, "we no longer recognise this club's name" shrinks
+    it because something is broken, and a silent join makes the two look
+    identical.
     """
     from backend.scripts.build_canonical import norm_team
 
     conn = sqlite3.connect(f"file:{db or WAREHOUSE}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
+    vocab = club_vocabulary(conn, db)
+
     index: Dict[tuple, sqlite3.Row] = {}
     for r in conn.execute("""
         SELECT m.competition_id, m.date_utc, m.home_score, m.away_score,
-               ht.canonical_name AS home, awy.canonical_name AS away
+               m.home_team_id, m.away_team_id
           FROM matches m
-          JOIN teams ht ON ht.team_id = m.home_team_id
-          JOIN teams awy ON awy.team_id = m.away_team_id
          WHERE m.home_score IS NOT NULL"""):
-        key = (r["competition_id"], r["date_utc"][:10],
-               norm_team(r["home"]), norm_team(r["away"]))
-        index[key] = r
+        index[(r["competition_id"], r["date_utc"][:10],
+               r["home_team_id"], r["away_team_id"])] = r
     conn.close()
 
     out: List[Dict[str, Any]] = []
+    unresolved: Dict[str, int] = defaultdict(int)
+    no_result = 0
+    fallback = vocab.get(GLOBAL, {})
+
+    def resolve(comp: str, name: str) -> Optional[int]:
+        key = norm_team(name)
+        v = vocab.get(comp)
+        if v is not None and key in v:
+            return v[key]
+        return fallback.get(key)
+
     for s in snapshots:
+        comp = s["competition_id"]
+        hid = resolve(comp, s["home_team"])
+        aid = resolve(comp, s["away_team"])
+        if hid is None or aid is None:
+            for side in ("home_team", "away_team"):
+                if resolve(comp, s[side]) is None:
+                    unresolved[f"{comp}:{s[side]}"] += 1
+            continue
+
         day = s["kickoff_at"][:10]
-        hn, an = norm_team(s["home_team"]), norm_team(s["away_team"])
         row = None
         # +/- one day: kickoff instants and stored match dates disagree by a
         # timezone for some sources, and a fixture is not two fixtures.
         for d in (day, _shift(day, -1), _shift(day, 1)):
-            row = index.get((s["competition_id"], d, hn, an))
+            row = index.get((comp, d, hid, aid))
             if row is not None:
                 break
         if row is None:
+            no_result += 1
             continue
         enriched = dict(s)
         enriched["home_score"] = int(row["home_score"])
         enriched["away_score"] = int(row["away_score"])
         enriched["result"] = _result(enriched["home_score"], enriched["away_score"])
         out.append(enriched)
+
+    if unresolved:
+        logger.warning("%d snapshot(s) name a club the warehouse does not "
+                       "recognise and were NOT scored: %s",
+                       sum(unresolved.values()),
+                       ", ".join(sorted(unresolved)[:8]))
+    if report is not None:
+        report.update({
+            "snapshots": len(snapshots),
+            "scored": len(out),
+            "awaiting_result": no_result,
+            "unresolved_clubs": dict(sorted(unresolved.items())),
+            "unresolved_count": sum(unresolved.values()),
+        })
     return out
 
 
