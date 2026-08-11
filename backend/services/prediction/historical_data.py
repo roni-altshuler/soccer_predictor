@@ -324,9 +324,20 @@ class HistoricalDataCollector:
                         except (ValueError, TypeError):
                             return default
 
+                    # PSH/B365H are the prices football-data collects BEFORE
+                    # kickoff. The closing prices are the C-prefixed columns.
+                    # Until 2026-08-11 this loader read only the first set and
+                    # the whole codebase called the result "the closing line" —
+                    # every published gap to the market was a gap to a softer
+                    # number than advertised. Both are now captured, and they
+                    # are not interchangeable: the pre-kickoff price is known
+                    # at serve time, the closing price never is.
                     odds_h = _sf(row.get("PSH")) or _sf(row.get("B365H"))
                     odds_d = _sf(row.get("PSD")) or _sf(row.get("B365D"))
                     odds_a = _sf(row.get("PSA")) or _sf(row.get("B365A"))
+                    close_h = _sf(row.get("PSCH")) or _sf(row.get("B365CH"))
+                    close_d = _sf(row.get("PSCD")) or _sf(row.get("B365CD"))
+                    close_a = _sf(row.get("PSCA")) or _sf(row.get("B365CA"))
                     odds_o25 = _sf(row.get("BbAv>2.5")) or _sf(row.get("P>2.5"))
                     odds_u25 = _sf(row.get("BbAv<2.5")) or _sf(row.get("P<2.5"))
 
@@ -344,6 +355,9 @@ class HistoricalDataCollector:
                         "odds_home": odds_h,
                         "odds_draw": odds_d,
                         "odds_away": odds_a,
+                        "odds_close_home": close_h,
+                        "odds_close_draw": close_d,
+                        "odds_close_away": close_a,
                         "odds_over_2_5": odds_o25,
                         "odds_under_2_5": odds_u25,
                         "home_shots": _sf(row.get("HS")),

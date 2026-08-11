@@ -365,6 +365,9 @@ def _raw_to_row(
         odds_draw=_to_float(raw.get("odds_draw")),
         odds_away=_to_float(raw.get("odds_away")),
         odds_over_2_5=_to_float(raw.get("odds_over_2_5")),
+        odds_close_home=_to_float(raw.get("odds_close_home")),
+        odds_close_draw=_to_float(raw.get("odds_close_draw")),
+        odds_close_away=_to_float(raw.get("odds_close_away")),
     )
 
 

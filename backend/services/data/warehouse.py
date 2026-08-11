@@ -75,7 +75,7 @@ WAREHOUSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "wareh
 # (minute-level goal + red-card timeline for the Rarity Engine). v4:
 # match_event_coverage (verified-empty marker; migrate() also backfills
 # coverage rows for matches whose events were stored under v3).
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 _DDL_STATEMENTS: Tuple[str, ...] = (
     """
@@ -259,6 +259,14 @@ class MatchRow:
     odds_draw: Optional[float] = None
     odds_away: Optional[float] = None
     odds_over_2_5: Optional[float] = None
+    # The CLOSING price, when the source publishes one. `odds_home` and
+    # friends are the pre-kickoff price; these are what the market settled
+    # on. Keeping them apart matters: only the first set exists at serve
+    # time, and conflating them is what made every 'gap to the closing
+    # line' in this repo a gap to a softer number.
+    odds_close_home: Optional[float] = None
+    odds_close_draw: Optional[float] = None
+    odds_close_away: Optional[float] = None
     venue: Optional[str] = None
     fetched_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -292,6 +300,9 @@ class MatchRow:
             self.odds_draw,
             self.odds_away,
             self.odds_over_2_5,
+            self.odds_close_home,
+            self.odds_close_draw,
+            self.odds_close_away,
             self.venue,
             self.fetched_at,
         )
@@ -331,9 +342,10 @@ _MATCH_COLUMNS = (
     "home_score, away_score, phase, referee_id, home_shots, away_shots, home_sot, "
     "away_sot, home_corners, away_corners, home_yellows, away_yellows, home_reds, "
     "away_reds, home_xg, away_xg, attendance, odds_home, odds_draw, odds_away, "
-    "odds_over_2_5, venue, fetched_at"
+    "odds_over_2_5, odds_close_home, odds_close_draw, odds_close_away, "
+    "venue, fetched_at"
 )
-_MATCH_PLACEHOLDERS = ", ".join(["?"] * 30)
+_MATCH_PLACEHOLDERS = ", ".join(["?"] * 33)
 
 
 class Warehouse:
@@ -378,6 +390,19 @@ class Warehouse:
                     """,
                     (now,),
                 )
+            if current < 5:
+                # v5: separate the pre-kickoff price from the closing one.
+                # ALTER TABLE ADD COLUMN is the only safe move on a 300MB
+                # warehouse that three workflows share; existing rows keep
+                # NULL, which reads as 'no closing price recorded' and is
+                # exactly true.
+                have = {r[1] for r in self._conn.execute(
+                    "PRAGMA table_info(matches)")}
+                for col in ("odds_close_home", "odds_close_draw",
+                            "odds_close_away"):
+                    if col not in have:
+                        self._conn.execute(
+                            f"ALTER TABLE matches ADD COLUMN {col} REAL")
             if current < SCHEMA_VERSION:
                 self._conn.execute(
                     "INSERT INTO schema_version(version, applied_at) VALUES (?, ?)",
@@ -1043,14 +1068,27 @@ class Warehouse:
         return counts
 
     def find_duplicate_fixtures(self) -> List[Dict[str, Any]]:
-        """Groups of >1 row sharing (competition, season, home, away)."""
+        """Groups of >1 row sharing (competition, season, home, away, phase).
+
+        `phase` is part of the key and must stay part of it. Without it this
+        method reported 69 "duplicates" the moment nine knockout tournaments
+        were ingested on 2026-08-11, and every one of them was real football:
+        Egypt beat Ivory Coast in the 2006 Africa Cup of Nations group stage
+        and again in the final, at the same venue, in the same season. A
+        repeat meeting is an artefact only in a round-robin league, which is
+        the assumption this method was written under and no longer holds.
+
+        Merging on the looser key would have deleted the final.
+        """
         with self._lock:
             cur = self._conn.execute(
                 """
                 SELECT competition_id, season, home_team_id, away_team_id,
+                       COALESCE(phase, '') AS phase,
                        COUNT(*) AS n, GROUP_CONCAT(match_id, '|') AS match_ids
                 FROM matches
-                GROUP BY competition_id, season, home_team_id, away_team_id
+                GROUP BY competition_id, season, home_team_id, away_team_id,
+                         COALESCE(phase, '')
                 HAVING n > 1
                 ORDER BY n DESC, competition_id, season
                 """
@@ -1063,7 +1101,7 @@ class Warehouse:
             return out
 
     def merge_duplicate_fixtures(self, *, dry_run: bool = False) -> Dict[str, Any]:
-        """Collapse duplicate (competition, season, home, away) rows.
+        """Collapse duplicate (competition, season, home, away, phase) rows.
 
         The survivor is the row with the most populated columns, tie-broken
         toward `source='espn'` because ESPN rows carry a true UTC kickoff

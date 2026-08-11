@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-08-11T07:23:15.846269+00:00",
+  "caveat": {
+    "which_price": "football-data PSH/B365H, read by historical_data.py. These are NOT the closing columns (PSCH/B365CH), which no file in this repo references. Treat every 'closing line' label in this codebase as suspect until the feed's notes.txt is re-read.",
+    "why_it_matters": "a pre-kickoff price is available at serve time, so the market feature block may be servable after all"
+  },
+  "n_scored": 17933,
+  "test_seasons": [
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "brier": {
+    "the_price_itself_(Shin_de-vig)": 0.57279,
+    "price,_recalibrated_by_a_model": 0.5742,
+    "ratings_only,_no_price": 0.58575,
+    "blend:_ratings_+_price": 0.57433
+  },
+  "market_accuracy": 0.541,
+  "blend_vs_price": {
+    "mean_delta": 0.00154,
+    "ci_low": 0.00085,
+    "ci_high": 0.00222,
+    "p_better": 0.0
+  },
+  "blend_vs_ratings": {
+    "mean_delta": -0.01143,
+    "ci_low": -0.01307,
+    "ci_high": -0.0097,
+    "p_better": 1.0
+  },
+  "blend_beats_price_significantly": false
+}

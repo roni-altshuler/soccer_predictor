@@ -128,16 +128,39 @@ _NAME_NOISE = {
 }
 
 
+# A number followed by one of these is part of the club's NAME, not a date
+# stuck on the front of it: '12 de Octubre' and '9 de Octubre' are two
+# different Paraguayan clubs. Everywhere else a bare number is decoration —
+# a founding year ('1899 Hoffenheim', '1. FSV Mainz 05') — and keeping it
+# splits one club into two.
+_DATE_CONNECTIVES = {"de", "di", "do", "of"}
+
+
 def _norm_tokens(name: str) -> List[str]:
-    """Identity tokens of a club name, noise and founding years removed."""
+    """Identity tokens of a club name, noise and founding years removed.
+
+    Digits are dropped by default and kept only in the `<number> de <name>`
+    shape. Dropping ALL digits collapsed '12 de Octubre' and '9 de Octubre'
+    onto the same key and reported a split identity for a warehouse that was
+    fine; keeping all of them would leave '1. FSV Mainz 05' and 'Mainz 05' as
+    two clubs, which is the failure this check exists to catch.
+    """
     nfkd = unicodedata.normalize("NFKD", name or "")
     ascii_only = "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
     keep = [c for c in ascii_only if c.isalnum() or c == " "]
-    return [
-        t
-        for t in "".join(keep).split()
-        if t not in _NAME_NOISE and not t.isdigit()
-    ]
+    raw = "".join(keep).split()
+
+    out: List[str] = []
+    for i, token in enumerate(raw):
+        if token in _NAME_NOISE:
+            continue
+        if token.isdigit():
+            nxt = raw[i + 1] if i + 1 < len(raw) else ""
+            if nxt in _DATE_CONNECTIVES:
+                out.append(token)
+            continue
+        out.append(token)
+    return out
 
 
 def _norm(name: str) -> str:
@@ -267,10 +290,12 @@ class IntegrityValidator:
     def check_split_identities(self) -> CheckResult:
         rows = self._q(
             """
-            SELECT DISTINCT t.team_id, t.canonical_name, t.gender, m.competition_id
+            SELECT DISTINCT t.team_id, t.canonical_name, t.gender,
+                   m.competition_id, c.country
             FROM teams t
             JOIN matches m
               ON m.home_team_id = t.team_id OR m.away_team_id = t.team_id
+            JOIN competitions c ON c.competition_id = m.competition_id
             """
         )
         buckets: Dict[Tuple[str, str, str], List] = defaultdict(list)
@@ -291,8 +316,18 @@ class IntegrityValidator:
         # Second pass: one club's identity tokens contained in another's, same
         # competition. Catches "Swansea" vs "Swansea City" before it becomes
         # two Elo histories.
+        # ...but ONLY within a single country's competition. The token-subset
+        # rule was validated on domestic leagues, where 'Swansea' and 'Swansea
+        # City' really are one club. Across a continental draw it is wrong far
+        # more often than right: Libertadores alone contains C.D. Nacional,
+        # Nacional Asuncion, Atletico Nacional and El Nacional — four clubs in
+        # four countries — and the Africa Cup of Nations contains Congo and
+        # Congo DR, and Guinea and Equatorial Guinea. Reporting those as split
+        # identities trains everyone to ignore the check.
         by_comp: Dict[Tuple[str, str], List] = defaultdict(list)
         for r in rows:
+            if not r["country"]:
+                continue
             by_comp[(r["competition_id"], r["gender"])].append(
                 (r["team_id"], r["canonical_name"], _norm(r["canonical_name"]))
             )

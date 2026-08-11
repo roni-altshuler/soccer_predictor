@@ -106,3 +106,14 @@ public/swe-worker-*.js.map
 # market_benchmark.json (the accuracy page). Ignoring the directory blanks
 # them in production while everything still works locally.
 backend/data/diagnostics/season_projection_backtest.json
+
+# FBref landing zone. The SOURCE OF TRUTH locally, but not the durable
+# artefact: it is a working DB that a multi-hour scrape rewrites, and the
+# gzipped raw HTML under backend/data/cache/ is already ignored above.
+# What gets committed is the Parquet export (backend/data/fbref/parquet),
+# which is typed, ~10x smaller than the equivalent CSV, and partitioned by
+# league/season so a new season adds a file instead of rewriting the set.
+backend/data/fbref.sqlite
+backend/data/fbref.sqlite-journal
+backend/data/fbref.sqlite-wal
+backend/data/fbref.sqlite-shm
