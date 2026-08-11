@@ -4,11 +4,12 @@
 
 # Pitchverse
 
-**A soccer prediction dashboard that scores itself against the closing line.**
+**A soccer prediction dashboard that publishes every number it can be judged on.**
 
-Match outcomes, season projections, and a value surface — for the five big
-European leagues. Every accuracy claim on this page is a measured number
-against the bookmaker close, or it is not made.
+Match outcomes and season projections for the five big European leagues, plus
+knockout forecasts for fourteen tournaments — who advances a tie, and who lifts
+the trophy. Every model is trained on the seasons before the one it predicts,
+and every claim here is a measured number with its sample printed next to it.
 
 [![CI](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml)
 [![Backend tests](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml)
@@ -18,68 +19,187 @@ against the bookmaker close, or it is not made.
 
 </div>
 
-> [!WARNING]
-> **This project surfaces betting information.** Model probabilities are compared
-> against no-vig market prices to compute expected value and Kelly stakes.
-> Sports betting is not legal everywhere and carries real financial risk. Nothing
-> here is financial advice. A well-calibrated model still loses constantly, and
-> a model that cannot beat the closing line has no edge at all — which is why
-> **no league ships value flags until it has demonstrably earned them.**
+> [!IMPORTANT]
+> **The goal is forecasting accuracy, not betting.** The market price is used as
+> a yardstick — it is the best public forecaster of a football match, so being
+> measured against it is the hardest honest test available. It is not a target
+> to beat for profit, and the repo carries the measurement that settles the
+> question: backing this model against the price loses money in **every**
+> disagreement bucket, and loses more the more confident the model is
+> (`benchmark_edge_buckets`). That result is published rather than buried.
 
 ---
 
 ## What it does
 
-Three things.
+Four things.
 
 **1. Predicts match outcomes.** 1X2 and scoreline for the five big European
-leagues, calibrated and scored against closing odds on identical fixtures.
+leagues, calibrated and scored against the bookmaker's price on identical
+fixtures.
 
 **2. Projects the season.** Title, relegation and final table via Monte Carlo,
 updated as each matchday resolves — with a published convergence curve saying
 how many matchdays it takes before the projection is trustworthy.
 
-**3. Surfaces value.** Model probability vs no-vig implied probability, with
-expected value and Kelly staking — gated per league on measured calibration.
+**3. Forecasts tournaments.** Who advances a knockout tie, and who lifts the
+trophy — fourteen competitions, from the Champions League to the Africa Cup of
+Nations. Pick a tournament and the model gives its title odds for the edition
+being played, or, for a finished one, the call it made *before* the knockout
+stage next to what actually happened.
 
-Anything that is none of those three was deleted on 2026-08-08. See
-[docs/PIVOT_2026-08.md](docs/PIVOT_2026-08.md) for what went and why.
+**4. Shows the evidence for all three.** Every headline sits on a ladder that
+starts at a yardstick anyone can check — a coin flip, always picking home,
+backing the better-rated side — never at a floor chosen to flatter.
+
+Anything that is none of those was deleted on 2026-08-08. See
+[docs/PIVOT_2026-08.md](docs/PIVOT_2026-08.md) for what went and why. The
+tournament layer was added on 2026-08-11.
 
 ## Where the model actually stands
 
-Measured 2026-08-08 over 25,746 settled fixtures carrying closing odds
-(2015–2026), scored with multiclass Brier where uniform ⅓ = .6667:
+### Match outcome, 1X2 — the weakest surface, stated plainly
 
-| forecaster | Brier | log loss | accuracy | ECE |
-|---|---|---|---|---|
-| **Bookmaker closing line** (Shin de-vig) | **.5666** | .9552 | **.5456** | .0049 |
-| Dixon-Coles (`penaltyblog`, untuned) | .5977 | 1.0026 | .5138 | — |
-| 30-feature logistic regression | .5876 | — | — | — |
-| Constant base rate | .6468 | 1.0693 | .4427 | — |
-| Uniform ⅓ | .6667 | 1.0986 | .4427 | — |
-| In-house neural ensemble | .6396 | 1.0601 | .4427 | .0273 |
+Rolling origin over 17,933 priced Wave A fixtures (2016–2025), multiclass Brier
+where uniform ⅓ = .6667:
 
-Read honestly: **the closing line is still the best forecaster here.** Our
-Dixon-Coles floor sits +.0207 behind it and captures roughly 70% of the distance
-from "knows nothing" to the market. The neural ensemble captures about 17% and
-does not currently serve.
+| forecaster | Brier | accuracy |
+|---|---|---|
+| **The bookmaker's price** (Shin de-vig) | **.5728** | **54.0%** |
+| Dixon-Coles (serving) | .5890 | 52.3% |
+| Ratings only (pi-ratings + Elo, boosted) | .5858 | — |
+| Back the higher-rated team | — | 51.9% |
+| Always pick home | — | 43.0% |
+| Constant base rate | .6526 | 43.1% |
 
-The market's own ECE of .0049 is the sanity check on the whole harness —
-closing odds are almost perfectly calibrated, exactly as theory predicts.
+The price is the best forecaster here and adding our features to it makes it
+**worse** (`benchmark_market_blend`: +.00154, 95% CI [+.0009, +.0022]). This is
+the honest ceiling of a three-way problem where a quarter of matches end level.
 
-**Season projections are the stronger half.** The simulator beats a
-carry-forward-the-table baseline at every matchday from 0 to 35. Title Brier
-holds ≤.02 from matchday 10 and ≤.01 from matchday 32; relegation ≤.05 from
-matchday 26. It is overconfident in the 70–90% band and is being recalibrated.
+Nine independent challenger families have now landed in the same place — six
+goal models within .003, two Bayesian models within .001, pi-ratings plus a
+booster at parity, sixteen swept tree configurations, and a lineup block that
+came in at −.00095 with a confidence interval straddling zero. The permutation
+importance says why: one feature carries an order of magnitude more than every
+other, and one candidate is an exact algebraic duplicate of it. **The model
+family was never the bottleneck.**
+
+### Season projections — the stronger half
+
+The simulator beats a carry-forward-the-table baseline at every matchday:
+
+| | simulator | naive carry-forward |
+|---|---|---|
+| Champion picked | **79.4%** | 73.5% |
+| Title Brier | **.0149** | .0273 |
+| Title log loss | **.613** | 3.665 |
+
+The log-loss gap is the real story — the naive baseline puts p=1 on today's
+leader and is destroyed when it is wrong.
+
+### Tournaments — see below
+
+The binary layer, and where the sharpest numbers live.
+
+## The tournament layer
+
+A league match has three outcomes and a quarter of them end level, which is why
+every 1X2 number above is capped near the market's 54%. **A knockout tie has
+two** — extra time, penalties and away goals exist to guarantee it. That is a
+different question, and it is asked separately.
+
+Measured over 2,110 ties across fourteen competitions, 2013–2026, training on
+every previous season and testing on the one being played:
+
+| | accuracy | Brier (binary) |
+|---|---|---|
+| Coin flip | 50.0% | .2500 |
+| Back the better-rated side | 64.1% | .2387 |
+| **This model** | **64.8%** | **.2179** |
+
+The accuracy gap is small; the probability gap is not, and a bracket is decided
+by probabilities compounded over four or five rounds. Calibration is close to
+exact — says 64.6%, happens 64.6%; says 74.3%, happens 74.3%.
+
+Simulating whole brackets, 84 tournaments at 20,000 runs each:
+
+| | log loss on the champion | called the winner |
+|---|---|---|
+| Uniform over the field | 2.5498 | — |
+| Rating-only simulation | 2.1454 | 21.4% (highest-rated team) |
+| **This model** | **1.9672** | **32.1%** (top 3: 63.1%) |
+
+**Integrity gate:** the team recorded as advancing turns up in the next round in
+2,403 of 2,412 ties (99.6%). That check is what catches a wrong away-goals
+branch or a mis-paired second leg — which would otherwise silently train the
+model on the losing side.
+
+Three states are reported and never merged, because a power ranking read as a
+forecast is the easiest lie to tell here:
+
+| state | what is shown |
+|---|---|
+| `live` | real title odds; played ties fixed, the rest simulated |
+| `completed` | the forecast made **before** the knockout stage, next to the result |
+| `awaiting_draw` | **no odds at all** — a rating table, labelled a power ranking |
 
 ## Supported competitions
 
-**Wave A (live):** Premier League · La Liga · Bundesliga · Serie A · Ligue 1
+**Leagues (live):** Premier League · La Liga · Bundesliga · Serie A · Ligue 1
 
-**Wave B:** MLS — once Wave A holds for a full season.
-**Wave C:** Champions League · Europa League · Euros · World Cup · Copa América.
+**Tournaments (live):** Champions League · Europa League · Conference League ·
+Euros · Nations League · World Cup · Club World Cup · Copa América ·
+Libertadores · Sudamericana · Africa Cup of Nations · AFC Asian Cup · Gold Cup ·
+CONCACAF Champions Cup
+
+**Next:** MLS, once Wave A holds for a full season.
 
 Each wave advances on measured evidence, not on a calendar.
+
+## Data
+
+Four layers, and each exists because the one above it cannot do its job.
+
+| layer | what it is | why |
+|---|---|---|
+| raw HTML, gzipped | `backend/data/cache/` | six seconds a page — a parser bug must cost a re-parse, never a re-scrape |
+| `fbref.sqlite` | typed landing zone, **source of truth** | has a PRIMARY KEY, so re-scraping a season *replaces* it |
+| Parquet | `league=<x>/season=<y>/` | portable, typed, ~10× smaller than CSV; a new season adds a file |
+| `warehouse.sqlite` | serving | filled by a separate re-runnable loader that **cannot create a team or a fixture** |
+
+**Why not CSV as the store.** A keyless file can only be appended to, and
+appending the same season twice silently doubles it. This warehouse has been
+there: 18,547 duplicate fixtures, and a club that "won" the Bundesliga because
+a 7-0 was counted twice.
+
+| source | provides |
+|---|---|
+| ESPN | fixtures, results, lineups, knockout winners **and shootout scores**, live odds movement |
+| football-data.co.uk | historical 1X2 prices — the yardstick |
+| FBref | referees, shot-level xG, league history |
+| Understat | match xG |
+| ClubElo | club strength ratings |
+| Open-Meteo | match-day weather |
+
+Known gaps are documented rather than papered over. Features built on absent
+data are reported as **untestable**, never as "no signal", and are never
+imputed — the difference matters, because referee coverage outside England was
+called a source limitation for months and turned out to be a column nobody had
+read.
+
+**One price is not the other.** `historical_data.py` reads football-data's
+`PSH`/`B365H`, which are collected *before* kickoff. The closing columns are
+`PSCH`/`B365CH`. Both are now captured, in separate warehouse columns, because
+only the first exists at serve time — and any older document in this repo
+calling the benchmark "the closing line" is describing the softer number.
+
+> **FBref needs a real browser.** It answers plain HTTP with 403 —
+> `server: cloudflare`, `cf-mitigated: challenge`. Measured three ways on
+> 2026-08-11: `requests.get()` 403 with 0 tables, curl with full browser headers
+> 403, headless Chromium 403 with the challenge unsolved. Only a real headed
+> browser gets through, which means **CI can never run it**. It is a local bake:
+> `backend/scripts/run_fbref_scrape.sh schedules` (wrapped in `xvfb-run`, so no
+> windows appear), and the output is the artefact.
 
 ## How accuracy is measured
 
@@ -88,20 +208,38 @@ built warehouse:
 
 ```bash
 # Score the model and the market on identical fixtures
-.venv/bin/python -m backend.scripts.benchmark_market
+python3 -m backend.scripts.benchmark_market
 
 # The Dixon-Coles floor, walk-forward out-of-sample
-.venv/bin/python -m backend.scripts.benchmark_dc_challenger
+python3 -m backend.scripts.benchmark_dc_challenger
 
 # All six goal models plus blends, paired on identical fixtures
-.venv/bin/python -m backend.scripts.bakeoff_goal_models
+python3 -m backend.scripts.bakeoff_goal_models
 
 # Which features earn their place (temporal splits, market reference row)
-.venv/bin/python -m backend.scripts.ablate_features
+python3 -m backend.scripts.ablate_features
 
 # Season projections, matchday by matchday, vs a naive baseline
-.venv/bin/python -m backend.scripts.backtest_season_projections
+python3 -m backend.scripts.backtest_season_projections
+
+# Knockout ties: who advances, against a coin flip and the better-rated side
+python3 -m backend.scripts.benchmark_knockout
+
+# Whole brackets simulated to a champion, 84 tournaments
+python3 -m backend.scripts.backtest_brackets --sims 20000
+
+# Forward title odds for every covered tournament
+python3 -m backend.scripts.predict_tournaments
+
+# Does the model add anything to the price? (it does not — this proves it)
+python3 -m backend.scripts.benchmark_market_blend
+python3 -m backend.scripts.benchmark_edge_buckets
 ```
+
+There is no `.venv` in this repo. Use whichever interpreter carries
+`penaltyblog`, `torch` and `sklearn`; CI installs into a bare 3.12 and calls
+plain `python -m ...`, so a script that only runs under a named venv is a
+script CI cannot run.
 
 Results land in `backend/data/diagnostics/` as committed JSON artifacts.
 
@@ -135,21 +273,6 @@ The warehouse (`backend/data/warehouse.sqlite`) and trained model artifacts are
 gitignored — build and train them locally. Committed prediction JSON under
 `backend/data/predictions/` is what the Vercel deployment reads, which is why
 `/accuracy` works without the Python backend.
-
-## Data
-
-| source | provides |
-|---|---|
-| football-data.co.uk | results **and closing 1X2 / over-2.5 odds** — the benchmark |
-| ESPN | fixtures, live scores, standings |
-| ClubElo | team strength ratings |
-| Understat | shot-level xG |
-| Open-Meteo | match-day weather |
-
-Known gaps are documented rather than papered over — see PIVOT §4c. The
-`weather` table is currently empty, `referee_id` covers the Premier League only,
-and venues are not yet geocoded. Features built on absent data are reported as
-untestable, never as "no signal", and are **never imputed**.
 
 ## Design
 

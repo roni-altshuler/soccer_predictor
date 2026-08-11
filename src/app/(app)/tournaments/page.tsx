@@ -7,6 +7,8 @@ import { BracketRecord } from '@/components/tournament/BracketRecord'
 import type { BracketEvent, BracketSummary } from '@/components/tournament/BracketRecord'
 import { TournamentLadder } from '@/components/tournament/TournamentLadder'
 import type { LadderEntry } from '@/components/tournament/TournamentLadder'
+import { TournamentPicker } from '@/components/tournament/TournamentPicker'
+import type { TournamentForecast } from '@/components/tournament/TournamentPicker'
 import { cn } from '@/lib/utils'
 
 /**
@@ -81,24 +83,29 @@ const roundLabel = (key: string) => ROUND_LABELS[key] ?? key.replace(/-/g, ' ')
 
 export default function TournamentsPage() {
   const [data, setData] = useState<Payload | null>(null)
+  const [forecasts, setForecasts] = useState<TournamentForecast[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let live = true
-    fetch('/api/v1/tournaments/knockout', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : { available: false }))
-      .then((j: Payload) => {
-        if (live) {
-          setData(j)
-          setLoading(false)
-        }
-      })
-      .catch(() => {
-        if (live) {
-          setData({ available: false })
-          setLoading(false)
-        }
-      })
+    // Two independent artifacts. The forecast panel is the thing a reader came
+    // for, so it must not wait on — or be blocked by — the backtest.
+    Promise.allSettled([
+      fetch('/api/v1/tournaments/knockout', { cache: 'no-store' }).then((r) =>
+        r.ok ? r.json() : { available: false },
+      ),
+      fetch('/api/v1/tournaments/predictions', { cache: 'no-store' }).then((r) =>
+        r.ok ? r.json() : { available: false },
+      ),
+    ]).then(([record, predictions]) => {
+      if (!live) return
+      setData(record.status === 'fulfilled' ? (record.value as Payload) : { available: false })
+      if (predictions.status === 'fulfilled') {
+        const p = predictions.value as { tournaments?: TournamentForecast[] }
+        setForecasts(p.tournaments ?? [])
+      }
+      setLoading(false)
+    })
     return () => {
       live = false
     }
@@ -127,7 +134,7 @@ export default function TournamentsPage() {
 
       {loading ? (
         <div className="mt-8 h-40 animate-pulse rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]" />
-      ) : !data?.available || (!ties && !brackets) ? (
+      ) : (!data?.available || (!ties && !brackets)) && !forecasts.length ? (
         <div className="mt-8">
           <EmptyState
             title="The tournament benchmarks have not been run here"
@@ -136,6 +143,8 @@ export default function TournamentsPage() {
         </div>
       ) : (
         <div className="mt-8 space-y-6">
+          {forecasts.length ? <TournamentPicker tournaments={forecasts} /> : null}
+
           {ties ? (
             <TournamentLadder
               ladder={ties.ladder}

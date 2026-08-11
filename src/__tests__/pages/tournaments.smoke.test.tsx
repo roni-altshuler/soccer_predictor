@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import TournamentsPage from '@/app/(app)/tournaments/page'
 
@@ -17,11 +18,43 @@ import TournamentsPage from '@/app/(app)/tournaments/page'
  *     predicted correctly".
  */
 
-function mockFetch(payload: unknown) {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: async () => payload,
-  }) as unknown as typeof fetch
+function mockFetch(record: unknown, predictions: unknown = { available: false }) {
+  // Must resolve a Promise: the page calls fetch(...).then(...), so returning
+  // the response object directly leaves `.then` undefined and every test fails
+  // at render rather than at the assertion.
+  global.fetch = jest.fn().mockImplementation((url: string) =>
+    Promise.resolve({
+      ok: true,
+      json: async () => (String(url).includes('predictions') ? predictions : record),
+    }),
+  ) as unknown as typeof fetch
+}
+
+const FORECASTS = {
+  available: true,
+  tournaments: [
+    {
+      competition_id: 'uefa.champions',
+      name: 'UEFA Champions League',
+      region: 'Europe',
+      season: 2025,
+      status: 'live',
+      field: 16,
+      odds: [
+        { team_id: 1, team: 'Bayern Munich', probability: 0.229, elo: 1900 },
+        { team_id: 2, team: 'Arsenal', probability: 0.15, elo: 1870 },
+      ],
+    },
+    {
+      competition_id: 'conmebol.libertadores',
+      name: 'Copa Libertadores',
+      region: 'South America',
+      season: 2026,
+      status: 'awaiting_draw',
+      reason: 'no bracket could be reconstructed for this edition',
+      power_ranking: [{ team_id: 9, team: 'Flamengo', elo: 1810 }],
+    },
+  ],
 }
 
 const ARTIFACT = {
@@ -91,6 +124,29 @@ describe('TournamentsPage', () => {
     // not the 1X2 numbers improved.
     expect(screen.getByText(/a knockout\s+tie has two/i)).toBeInTheDocument()
     expect(screen.getByText(/not the 1X2 numbers made bigger/i)).toBeInTheDocument()
+  })
+
+  it('lets a reader pick a tournament and see its title odds', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    expect(screen.getByText('Bayern Munich')).toBeInTheDocument()
+    expect(screen.getByText('22.9%')).toBeInTheDocument()
+  })
+
+  it('refuses to print odds for a tournament that has not been drawn', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('tab', { name: /Copa Libertadores/i }))
+
+    // A power ranking, explicitly not a forecast. Filling this state with last
+    // edition's field would produce confident percentages backed by nothing.
+    expect(screen.getByText(/no title odds to give/i)).toBeInTheDocument()
+    expect(screen.getByText(/power\s+ranking, not a forecast/i)).toBeInTheDocument()
+    expect(screen.getByText('Flamengo')).toBeInTheDocument()
   })
 
   it('shows an honest empty state when the benchmarks have not been run', async () => {
