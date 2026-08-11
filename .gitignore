@@ -117,3 +117,9 @@ backend/data/fbref.sqlite
 backend/data/fbref.sqlite-journal
 backend/data/fbref.sqlite-wal
 backend/data/fbref.sqlite-shm
+
+# Derived analytical layer — rebuilt in one command from the two SQLite stores
+# (`python3 -m backend.scripts.build_canonical`), so committing 100MB of it
+# would version an artifact rather than its recipe. The recipe is the script.
+backend/data/canonical.duckdb
+data/processed/
