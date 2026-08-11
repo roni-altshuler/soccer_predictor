@@ -159,6 +159,56 @@ everything else is a record. The most recent of those records is the 48-team
 2026 World Cup: the model made **Argentina** favourite at 19.0%, and **Spain**
 won it from 11.6%, third on its list.
 
+## The season ahead — what the site serves now
+
+Seven leagues, 2,346 remaining fixtures for 2026-27, refreshed daily as results
+land.
+
+| route | what it answers |
+|---|---|
+| [`/season`](src/app/(app)/season/page.tsx) | who wins the league, who goes down, what is on next |
+| `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, team strength |
+| [`/evaluation`](src/app/(app)/evaluation/page.tsx) | how accurate it has actually been |
+| `/tournaments` | knockout ties and trophy odds |
+
+### Three things worth knowing about the numbers
+
+**Season probabilities carry strength uncertainty, and that changed them a
+lot.** Simulating from point-estimate ratings gave Bayern 93.3% for the
+Bundesliga. Within-season Elo drift, measured over 3,583 team-seasons, has a
+standard deviation of 45.3 points — and that error is *correlated across all of
+a club's fixtures*, so more simulations do not wash it out. Each run now draws
+one strength offset per club and holds it for the season: Bayern 71.3%, City
+38.6%, Barcelona 48.7%. Per-match probabilities are unchanged by this; the
+correlation only matters when you compound 34 of them.
+
+**The 1X2 and the scoreline grid cannot disagree.** They come from different
+model families, so the goal model's two rates are solved until its scoreline
+grid reproduces the outcome probabilities exactly. Worst disagreement across
+2,346 fixtures: 0.00000. A gap above 1e-3 aborts the publish.
+
+**Every forecast is written down before kickoff and never rewritten.**
+`prediction_snapshots` is append-only. That is what makes it possible to ask
+later what users were actually shown before a match, rather than what the model
+says now — and it is what the live evaluation scores.
+
+### Historical and live evidence are never merged
+
+| | matches | what it is |
+|---|---|---|
+| Historical walk-forward | 43,433 | Brier .59303, ECE .0099. Retrospective — nobody saw these before those kickoffs. |
+| Live published | grows from 0 | The final pre-kickoff forecast, scored once the result lands. |
+
+The live sample is currently zero and the site says so, rather than showing a
+`0.00000` that would read as a perfect model. Below 200 scored matches
+`/evaluation` refuses to draw a reliability chart, because a chart implies a
+shape and a handful of points does not have one.
+
+**Measured and dropped:** referee, rest, head-to-head, venue, attendance,
+kickoff time. Each was added, scored on unseen matches, and removed. Referee was
+the expensive one — it needed a 207,000-fixture scrape to make the question
+askable outside England — and the answer was still no.
+
 ## Supported competitions
 
 **Leagues (live):** Premier League · La Liga · Bundesliga · Serie A · Ligue 1
