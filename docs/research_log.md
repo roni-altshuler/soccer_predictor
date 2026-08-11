@@ -241,3 +241,58 @@ data".
 strength model — dynamic/state-space, which yields uncertainty rather than a
 point estimate — and (b) propagating that uncertainty into the season and
 tournament heads, where the 70–90% overconfidence lives.
+
+---
+
+## 2026-08-11 — Shipping: production forecast for 2026-27
+
+**Hypothesis.** The measured-best model can serve the upcoming season directly.
+
+**Method.** `forecast_season.py`. Trains the winning head (logistic on Elo +
+form) on all 62,504 played matches, freezes the feature state, featurises the
+2,346 upcoming fixtures already in the FBref schedule tier, and Monte Carlos
+each league 20,000 times.
+
+**Result 1 — coherence.** The 1X2 head and the goal model are different
+families and do not agree by accident. Solving Dixon-Coles' two lambdas so the
+scoreline grid reproduces the logistic's 1X2 makes them agree to **0.00000**.
+One object: expected goals, scorelines and outcome probabilities, all
+consistent, with the 1X2 equal to the forecast that was actually measured.
+
+**Result 2 — the first run was not shippable.** Point-estimate simulation gave
+Bayern **93.3%**, PSG 88.1%, Inter 83.4% for their titles, against bookmaker
+prices nearer 70/70/30. A point estimate compounded 34 times is an assumption
+repeated, not a forecast.
+
+**Fix, measured not guessed.** Within-season Elo drift over **3,583
+team-seasons** in this corpus has sd **45.3 points** (p10 −58, p90 +57). That
+is how wrong a start-of-season rating turns out to be, and it is correlated
+across all of a club's fixtures. Drawing one strength offset per club per
+simulation and holding it for the season gives:
+
+| | before | after | market ballpark |
+|---|---|---|---|
+| Bayern | 93.3% | **71.3%** | ~70% |
+| PSG | 88.1% | 59.3% | ~70% |
+| Inter | 83.4% | 54.8% | ~30% |
+| Man City | 54.8% | 38.6% | ~35–40% |
+| Barcelona | 64.4% | 48.7% | ~45% |
+
+Per-MATCH probabilities are left unperturbed: the head was measured at ECE
+.0099 on exactly those inputs. The shock is about season-long correlation,
+which is the only place it matters.
+
+**A fix tested and rejected.** The ratings put Bournemouth above Chelsea, which
+looks wrong. The standard remedy is regressing ratings toward the mean at each
+season boundary. Measured on Wave A 2000–2025: **+.00150 at 0.25 regression,
++.00394 at 0.40, +.00796 at 0.60 — significantly worse at every level.** Not
+adopted. The surprising ordering is what the measured-best rating actually
+says, and tuning until the table looks right is how a model stops being a
+measurement.
+
+**Decision.** Shipped. `/season` serves title, top-four and relegation for
+seven leagues plus per-fixture forecasts, with the walk-forward record and the
+list of measured-and-dropped feature groups on the same page.
+
+**Next.** Score the forward season against these published numbers as results
+land — that is the only test that has not been run because it cannot be yet.

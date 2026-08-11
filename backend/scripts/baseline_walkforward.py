@@ -121,15 +121,34 @@ class Elo:
 
     def __init__(self, *, k: float = 20.0, home_adv: float = 65.0,
                  draw_width: float = 0.28, mov: bool = False,
-                 base: float = 1500.0) -> None:
+                 base: float = 1500.0, regress: float = 0.0) -> None:
         self.k, self.home_adv, self.draw_width = k, home_adv, draw_width
         self.mov, self.base = mov, base
-        self.name = "elo_mov" if mov else "elo"
+        # Pull each rating `regress` of the way back to base when a club's
+        # season turns over. Without it a rating drifts freely across decades
+        # and a club with little history sits wherever its first good run left
+        # it — which is how Bournemouth came out rated above Chelsea on a key
+        # that spans 1888 to 2026.
+        self.regress = regress
+        self.name = ("elo_regress" if regress else
+                     ("elo_mov" if mov else "elo"))
         self.rating: Dict[str, float] = defaultdict(lambda: base)
+        self._season: Dict[str, int] = {}
+
+    def _regressed(self, key: str, season: int) -> float:
+        """The rating as it stands for THIS season, applying the turnover pull
+        lazily so a read never depends on whether observe() ran first."""
+        r = self.rating[key]
+        prev = self._season.get(key)
+        if self.regress and prev is not None and season != prev:
+            r += self.regress * (self.base - r)
+        return r
 
     def _expected(self, m) -> float:
         adv = 0.0 if m.get("neutral") else self.home_adv
-        d = self.rating[m["home_key"]] + adv - self.rating[m["away_key"]]
+        se = m.get("season", 0)
+        d = (self._regressed(m["home_key"], se) + adv
+             - self._regressed(m["away_key"], se))
         return 1.0 / (1.0 + 10 ** (-d / 400.0))
 
     def predict(self, m) -> np.ndarray:
@@ -144,6 +163,12 @@ class Elo:
         return p / p.sum()
 
     def observe(self, m) -> None:
+        if self.regress:
+            for key in (m["home_key"], m["away_key"]):
+                prev = self._season.get(key)
+                if prev is not None and m["season"] != prev:
+                    self.rating[key] += self.regress * (self.base - self.rating[key])
+                self._season[key] = m["season"]
         e = self._expected(m)
         s = {"H": 1.0, "D": 0.5, "A": 0.0}[m["result"]]
         k = self.k

@@ -19,6 +19,7 @@ import {
   Trophy,
   Users,
   Swords,
+  CalendarRange,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -52,6 +53,7 @@ const GROUPS: NavGroup[] = [
     title: 'Model',
     items: [
       { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
+      { href: '/season', label: 'The Season Ahead', icon: CalendarRange },
       { href: '/simulator', label: 'Title & Relegation', icon: Calculator },
       { href: '/tournaments', label: 'Tournaments', icon: Swords },
     ],

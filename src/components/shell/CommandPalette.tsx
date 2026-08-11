@@ -20,6 +20,7 @@ import {
   UserRound,
   Users,
   Swords,
+  CalendarRange,
 } from 'lucide-react'
 
 import { TeamBadge } from '@/components/primitives'
@@ -43,6 +44,7 @@ const PAGES = [
   { href: '/leagues', label: 'Standings', icon: Trophy, hint: 'Tables + projected finish' },
   { href: '/predict', label: 'Predict', icon: Brain, hint: 'Custom match prediction', accent: 'ai' as const },
   { href: '/simulator', label: 'Title & Relegation', icon: Calculator, hint: 'How the season ends' },
+  { href: '/season', label: 'The Season Ahead', icon: CalendarRange, hint: 'Forecast for every remaining fixture' },
   { href: '/tournaments', label: 'Tournaments', icon: Swords, hint: 'Knockout ties + who lifts the trophy' },
   { href: '/accuracy', label: 'Accuracy', icon: TrendingUp, hint: 'Track record vs the market' },
   { href: '/about', label: 'About', icon: Info, hint: 'Methodology + model card' },
