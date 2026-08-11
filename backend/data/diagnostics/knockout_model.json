@@ -1,0 +1,296 @@
+{
+  "generated_at": "2026-08-11T07:02:20.016474+00:00",
+  "method": {
+    "unit": "knockout tie (two outcomes), not match (three)",
+    "split": "train on every previous season, test on the season played",
+    "ratings": "chronological Elo over all 60k warehouse matches, clubs and national teams, read strictly pre-tie",
+    "competitions": [
+      "uefa.champions",
+      "uefa.europa",
+      "fifa.world",
+      "uefa.euro",
+      "conmebol.america"
+    ],
+    "qualifying_included": false,
+    "progression_check": {
+      "checked": 993,
+      "confirmed": 991,
+      "rate": 0.9979859013091642,
+      "by_resolution": {
+        "aggregate": {
+          "confirmed": 748,
+          "checked": 748,
+          "rate": 1.0
+        },
+        "away_goals": {
+          "confirmed": 67,
+          "checked": 67,
+          "rate": 1.0
+        },
+        "shootout": {
+          "confirmed": 15,
+          "checked": 15,
+          "rate": 1.0
+        },
+        "single": {
+          "confirmed": 161,
+          "checked": 163,
+          "rate": 0.9877300613496932
+        }
+      }
+    }
+  },
+  "n_ties_total": 1322,
+  "n_ties_scored": 871,
+  "test_seasons": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "ladder": [
+    {
+      "key": "coin_flip",
+      "label": "Coin flip",
+      "accuracy": 0.5,
+      "brier": 0.25
+    },
+    {
+      "key": "higher_elo",
+      "label": "Higher-rated side advances",
+      "accuracy": 0.6418,
+      "brier": 0.2308
+    },
+    {
+      "key": "model",
+      "label": "This model (random_forest)",
+      "accuracy": 0.6533,
+      "brier": 0.2133
+    }
+  ],
+  "models": {
+    "logistic": {
+      "n": 871,
+      "accuracy": 0.6463834672789897,
+      "brier": 0.218093755612532,
+      "log_loss": 0.6303707936369993
+    },
+    "random_forest": {
+      "n": 871,
+      "accuracy": 0.653272101033295,
+      "brier": 0.2132757930667249,
+      "log_loss": 0.6147865163424798
+    },
+    "hist_gbm": {
+      "n": 871,
+      "accuracy": 0.6486796785304249,
+      "brier": 0.22060024474222462,
+      "log_loss": 0.6317676314138857
+    },
+    "xgboost": {
+      "n": 871,
+      "accuracy": 0.6360505166475315,
+      "brier": 0.23625712535638407,
+      "log_loss": 0.6943982237950832
+    }
+  },
+  "best_model": "random_forest",
+  "calibration": [
+    {
+      "stated_low": 50,
+      "stated_high": 60,
+      "n": 330,
+      "observed": 0.5333,
+      "mean_stated": 0.5481
+    },
+    {
+      "stated_low": 60,
+      "stated_high": 70,
+      "n": 275,
+      "observed": 0.6618,
+      "mean_stated": 0.6469
+    },
+    {
+      "stated_low": 70,
+      "stated_high": 80,
+      "n": 141,
+      "observed": 0.7589,
+      "mean_stated": 0.7413
+    },
+    {
+      "stated_low": 80,
+      "stated_high": 90,
+      "n": 122,
+      "observed": 0.8361,
+      "mean_stated": 0.8474
+    }
+  ],
+  "by_round": {
+    "round-of-16": {
+      "correct": 194,
+      "n": 283,
+      "accuracy": 0.6855
+    },
+    "round-of-32": {
+      "correct": 92,
+      "n": 143,
+      "accuracy": 0.6434
+    },
+    "quarterfinals": {
+      "correct": 82,
+      "n": 127,
+      "accuracy": 0.6457
+    },
+    "semifinals": {
+      "correct": 42,
+      "n": 66,
+      "accuracy": 0.6364
+    },
+    "round-of-60": {
+      "correct": 32,
+      "n": 54,
+      "accuracy": 0.5926
+    },
+    "round-of-20": {
+      "correct": 35,
+      "n": 49,
+      "accuracy": 0.7143
+    },
+    "round-of-44": {
+      "correct": 28,
+      "n": 43,
+      "accuracy": 0.6512
+    },
+    "round-of-42": {
+      "correct": 26,
+      "n": 42,
+      "accuracy": 0.619
+    },
+    "final": {
+      "correct": 17,
+      "n": 30,
+      "accuracy": 0.5667
+    },
+    "round-of-12": {
+      "correct": 12,
+      "n": 17,
+      "accuracy": 0.7059
+    }
+  },
+  "permutation_importance": [
+    {
+      "feature": "elo_diff",
+      "importance": 0.00396,
+      "std": 0.00643
+    },
+    {
+      "feature": "elo_b",
+      "importance": 0.00303,
+      "std": 0.00164
+    },
+    {
+      "feature": "pedigree_diff",
+      "importance": 0.00259,
+      "std": 0.00115
+    },
+    {
+      "feature": "matches_b",
+      "importance": 0.00144,
+      "std": 0.00245
+    },
+    {
+      "feature": "neutral",
+      "importance": 0.00132,
+      "std": 0.0004
+    },
+    {
+      "feature": "two_legged",
+      "importance": 0.00122,
+      "std": 0.00031
+    },
+    {
+      "feature": "pedigree_b",
+      "importance": 0.00051,
+      "std": 0.00037
+    },
+    {
+      "feature": "pedigree_a",
+      "importance": 0.00036,
+      "std": 0.00044
+    },
+    {
+      "feature": "gd_b",
+      "importance": 0.00018,
+      "std": 0.00033
+    },
+    {
+      "feature": "h2h_a",
+      "importance": 0.0,
+      "std": 4e-05
+    },
+    {
+      "feature": "form_b",
+      "importance": -0.00011,
+      "std": 0.00043
+    },
+    {
+      "feature": "rest_b",
+      "importance": -0.00036,
+      "std": 0.00144
+    },
+    {
+      "feature": "form_diff",
+      "importance": -0.00123,
+      "std": 0.00074
+    },
+    {
+      "feature": "gd_a",
+      "importance": -0.00169,
+      "std": 0.00096
+    },
+    {
+      "feature": "form_a",
+      "importance": -0.00185,
+      "std": 0.00068
+    },
+    {
+      "feature": "round_depth",
+      "importance": -0.00201,
+      "std": 0.00075
+    },
+    {
+      "feature": "rest_a",
+      "importance": -0.00246,
+      "std": 0.00158
+    },
+    {
+      "feature": "gd_diff",
+      "importance": -0.00261,
+      "std": 0.00131
+    },
+    {
+      "feature": "matches_a",
+      "importance": -0.00276,
+      "std": 0.00161
+    },
+    {
+      "feature": "elo_expected_a",
+      "importance": -0.00423,
+      "std": 0.00659
+    },
+    {
+      "feature": "elo_a",
+      "importance": -0.00431,
+      "std": 0.00178
+    }
+  ]
+}

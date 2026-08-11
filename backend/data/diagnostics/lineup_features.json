@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-08-11T06:59:26.269310+00:00",
+  "method": {
+    "corpus": "matches WITH a recorded starting XI only, so both arms score the same fixtures",
+    "split": "rolling origin by season",
+    "servable": "every feature is computed from the starting XI, which the scraper already fetches ~1h before kickoff",
+    "leakage": "player totals and the reference XI accumulate strictly before each match"
+  },
+  "n_scored": 11948,
+  "test_seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "brier": {
+    "ratings_only": 0.59471,
+    "ratings_plus_lineups": 0.59377
+  },
+  "paired_bootstrap": {
+    "mean_delta": -0.00095,
+    "ci_low": -0.00219,
+    "ci_high": 0.00029,
+    "p_better": 0.932
+  },
+  "verdict": "no measurable effect",
+  "permutation_importance": [
+    {
+      "feature": "xi_output_diff",
+      "importance": 0.00275,
+      "std": 0.00053
+    },
+    {
+      "feature": "xi_output_h",
+      "importance": 0.00125,
+      "std": 0.00044
+    },
+    {
+      "feature": "xi_experience_diff",
+      "importance": 0.00024,
+      "std": 0.0004
+    },
+    {
+      "feature": "xi_continuity_diff",
+      "importance": 0.00014,
+      "std": 0.0004
+    },
+    {
+      "feature": "xi_output_a",
+      "importance": 0.00013,
+      "std": 0.00034
+    },
+    {
+      "feature": "xi_continuity_a",
+      "importance": 0.00012,
+      "std": 5e-05
+    },
+    {
+      "feature": "xi_top3_present_a",
+      "importance": 8e-05,
+      "std": 8e-05
+    },
+    {
+      "feature": "xi_experience_h",
+      "importance": -0.0,
+      "std": 0.0003
+    },
+    {
+      "feature": "xi_top3_present_h",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "xi_top3_present_diff",
+      "importance": -3e-05,
+      "std": 8e-05
+    },
+    {
+      "feature": "xi_newcomers_h",
+      "importance": -9e-05,
+      "std": 4e-05
+    },
+    {
+      "feature": "xi_continuity_h",
+      "importance": -0.0001,
+      "std": 0.00017
+    },
+    {
+      "feature": "xi_newcomers_a",
+      "importance": -0.00011,
+      "std": 4e-05
+    },
+    {
+      "feature": "xi_experience_a",
+      "importance": -0.00037,
+      "std": 0.00057
+    }
+  ]
+}

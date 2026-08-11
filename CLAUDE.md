@@ -6,13 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pitchverse** is a soccer match-prediction dashboard: Next.js 15 frontend, Python/FastAPI backend, ML prediction engine. Deployed on Vercel.
 
-It does **three things**, and nothing else (see [docs/PIVOT_2026-08.md](docs/PIVOT_2026-08.md)):
+It does **four things**, and nothing else (see [docs/PIVOT_2026-08.md](docs/PIVOT_2026-08.md)):
 
 1. **Match outcome prediction** — 1X2 and scoreline, calibrated, scored against closing odds.
 2. **Season projections** — title, relegation and final table, updated as the season runs.
 3. **A value surface** — model probability vs no-vig implied probability, with EV and Kelly staking.
+4. **Tournament brackets** — who advances a knockout tie, and who lifts the trophy. Added 2026-08-11 (see *The tournament layer* below).
 
-If a proposed feature is none of those three, it does not belong here. The project pivoted on 2026-08-08 away from a sprawling "world model of football" (VISION_2030) that had grown to 26 pages and 131k lines while the prediction engine regressed for nine straight weeks.
+If a proposed feature is none of those four, it does not belong here. The project pivoted on 2026-08-08 away from a sprawling "world model of football" (VISION_2030) that had grown to 26 pages and 131k lines while the prediction engine regressed for nine straight weeks.
 
 **This is a betting-adjacent product.** The former "educational only, no betting recommendations" constraint is retired. That raises the evidentiary bar rather than lowering it — see Standing rules below.
 
@@ -80,6 +81,91 @@ would have promoted the net.** Both bugs handicapped everything except the net:
 **Whenever a challenger beats the closing line, suspect the harness first.** A
 model with no market features cannot out-predict the market by .027 Brier; that
 number was the bug announcing itself.
+
+## The tournament layer (2026-08-11)
+
+**A knockout tie has two outcomes, and that is the whole point.** Every
+three-way number in this file is capped by the fact that 25.6% of league
+matches are drawn — the closing line itself only reaches 54.0% on 1X2. Extra
+time, penalties and away goals exist so that exactly one team advances, so the
+tie is where soccer asks a binary question, and it is the honest place to look
+for the kind of accuracy a binary sport allows. It is a different question,
+not a trick for inflating the same one.
+
+| | accuracy | Brier (binary) |
+|---|---|---|
+| Coin flip | 50.0% | .2500 |
+| Higher-rated side advances | 64.2% | .2308 |
+| **Random forest over tie features** | **65.3%** | **.2133** |
+
+871 ties, 2013–2025, rolling origin (train on every previous season, test on
+the season played). Calibration holds: says 74%, happens 76%; says 85%,
+happens 84%. Logistic .2181, HGB .2206, XGBoost .2363 — the forest wins.
+
+Bracket Monte Carlo over 29 reconstructed tournaments:
+
+| | log loss on the actual champion | picked the winner outright |
+|---|---|---|
+| Uniform over the field | 2.7965 | — |
+| Elo simulation (unfitted) | 2.2778 | 13.8% (highest-rated) |
+| **This model** | **2.0995** | **27.6%** (top 3: 58.6%) |
+
+### Rules for this layer
+
+- **Bracket depth is COUNTED, never parsed.** `second-round` is the round of 32
+  in the Europa League and the round of 16 at the 1998 World Cup;
+  `quarter-finals` and `quarterfinals` are the same round in different seasons.
+  `_assign_depth` derives the round from `2 x (ties in it)`. Any code that maps
+  a phase string to a bracket position will be wrong in the seasons nobody
+  checks.
+- **`validate_progression` is the integrity gate.** It asks whether the team
+  the resolver says advanced actually appears in the next round. Currently
+  991/993 = 99.8% with qualifying excluded. **Run it after any change to tie
+  resolution** — a wrong away-goals branch or a mis-paired second leg trains
+  the model on the losing side and is otherwise invisible.
+- **A one-legged tie inside a two-legged round is a hole, not a format.** ESPN
+  carries one leg and not the other for some pre-2010 qualifiers; resolved on
+  that scoreline they name the wrong team about half the time. `_flag_missing_legs`
+  marks them `incomplete` and drops them.
+- **Ratings are POST-match values timestamped at kickoff.** `rating_before` then
+  takes the last entry strictly earlier. Storing pre-match values instead looks
+  equivalent and silently runs every feature one game stale — that was the first
+  version, caught by
+  `test_rating_is_read_strictly_before_the_match_that_produced_it`.
+- **ClubElo cannot serve this layer.** It covers 244 clubs and zero national
+  teams. `tournament/ratings.py` builds one Elo over all 60,953 warehouse
+  matches so a World Cup tie has a rating on both sides.
+- **Enumerate reachable pairings, do not cache lazily.** A 16-team bracket has
+  112 possible ties in total; batching them into one `predict` turned a
+  twenty-minute backtest into a two-minute one.
+
+### FBref is not available to this machine
+
+Sports Reference answers datacentre IPs with **HTTP 403**, re-verified
+2026-08-11 against the Champions League page with a browser User-Agent. It is
+genuinely free in a browser and genuinely unreachable from here and from CI.
+ESPN answers the same questions, and carries the shootout scores and
+`winner` flags that FBref's match tables do not expose. Where FBref would add
+something ESPN cannot — per-match xG before 2017 — that gap stays recorded.
+
+### Lineups: measured, and not significant
+
+`lineups` was an empty table for the life of the project; it now holds 759,920
+rows over 18,939 Wave A matches (2015–2025). Scored on the 11,948 fixtures
+both arms cover: ratings-only .59471, ratings+lineups .59377, **delta −.00095,
+95% CI [−.00219, +.00029], p(better) = .932 — no measurable effect.** The one
+feature carrying anything is `xi_output_diff` (+.00275), the gap in recent
+goal involvement between the two starting elevens. Every feature is computed
+from the XI alone, which the scraper already fetches ~1h before kickoff, so
+none of it is unservable the way the market block was.
+
+| Task | Command |
+|---|---|
+| Knockout tie model | `python3 -m backend.scripts.benchmark_knockout` |
+| Bracket Monte Carlo | `python3 -m backend.scripts.backtest_brackets --sims 20000` |
+| Resolve knockout winners | `python3 -m backend.scripts.backfill_knockout_results` |
+| Ingest new tournaments | `python3 -m backend.scripts.ingest_tournaments --all` |
+| Lineup ablation | `python3 -m backend.scripts.benchmark_lineup_features` |
 
 ## Superseded measured state (2026-08-09)
 
