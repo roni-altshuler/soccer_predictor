@@ -7102,15 +7102,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
+      "actual_home_goals": 2,
+      "actual_away_goals": 2,
+      "actual_winner": "draw",
+      "winner_correct": false,
+      "scoreline_correct": false,
       "scoreline_in_top5": null,
-      "goals_diff": null,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-08-03T10:01:46.311124",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-08-11T07:20:12.676272"
     },
     {
       "match_id": "401875646",
