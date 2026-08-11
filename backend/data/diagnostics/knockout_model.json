@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T07:02:20.016474+00:00",
+  "generated_at": "2026-08-11T08:08:10.795014+00:00",
   "method": {
     "unit": "knockout tie (two outcomes), not match (three)",
     "split": "train on every previous season, test on the season played",
@@ -7,41 +7,55 @@
     "competitions": [
       "uefa.champions",
       "uefa.europa",
+      "uefa.conference",
       "fifa.world",
       "uefa.euro",
-      "conmebol.america"
+      "conmebol.america",
+      "conmebol.libertadores",
+      "conmebol.sudamericana",
+      "caf.nations",
+      "afc.asian",
+      "concacaf.gold",
+      "concacaf.champions",
+      "fifa.cwc",
+      "uefa.nations"
     ],
     "qualifying_included": false,
     "progression_check": {
-      "checked": 993,
-      "confirmed": 991,
-      "rate": 0.9979859013091642,
+      "checked": 2412,
+      "confirmed": 2403,
+      "rate": 0.996268656716418,
       "by_resolution": {
         "aggregate": {
-          "confirmed": 748,
-          "checked": 748,
-          "rate": 1.0
+          "confirmed": 1617,
+          "checked": 1619,
+          "rate": 0.9987646695491044
         },
         "away_goals": {
-          "confirmed": 67,
-          "checked": 67,
+          "confirmed": 135,
+          "checked": 135,
           "rate": 1.0
         },
+        "espn": {
+          "confirmed": 17,
+          "checked": 22,
+          "rate": 0.7727272727272727
+        },
         "shootout": {
-          "confirmed": 15,
-          "checked": 15,
+          "confirmed": 135,
+          "checked": 135,
           "rate": 1.0
         },
         "single": {
-          "confirmed": 161,
-          "checked": 163,
-          "rate": 0.9877300613496932
+          "confirmed": 499,
+          "checked": 501,
+          "rate": 0.9960079840319361
         }
       }
     }
   },
-  "n_ties_total": 1322,
-  "n_ties_scored": 871,
+  "n_ties_total": 3101,
+  "n_ties_scored": 2110,
   "test_seasons": [
     2013,
     2014,
@@ -55,7 +69,8 @@
     2022,
     2023,
     2024,
-    2025
+    2025,
+    2026
   ],
   "ladder": [
     {
@@ -67,40 +82,40 @@
     {
       "key": "higher_elo",
       "label": "Higher-rated side advances",
-      "accuracy": 0.6418,
-      "brier": 0.2308
+      "accuracy": 0.6412,
+      "brier": 0.2387
     },
     {
       "key": "model",
       "label": "This model (random_forest)",
-      "accuracy": 0.6533,
-      "brier": 0.2133
+      "accuracy": 0.6479,
+      "brier": 0.2179
     }
   ],
   "models": {
     "logistic": {
-      "n": 871,
-      "accuracy": 0.6463834672789897,
-      "brier": 0.218093755612532,
-      "log_loss": 0.6303707936369993
+      "n": 2110,
+      "accuracy": 0.6492890995260664,
+      "brier": 0.2186513503536953,
+      "log_loss": 0.629432939437761
     },
     "random_forest": {
-      "n": 871,
-      "accuracy": 0.653272101033295,
-      "brier": 0.2132757930667249,
-      "log_loss": 0.6147865163424798
+      "n": 2110,
+      "accuracy": 0.647867298578199,
+      "brier": 0.2178887345823325,
+      "log_loss": 0.6249987316919213
     },
     "hist_gbm": {
-      "n": 871,
-      "accuracy": 0.6486796785304249,
-      "brier": 0.22060024474222462,
-      "log_loss": 0.6317676314138857
+      "n": 2110,
+      "accuracy": 0.6488151658767772,
+      "brier": 0.22000114861420592,
+      "log_loss": 0.6298799297569863
     },
     "xgboost": {
-      "n": 871,
-      "accuracy": 0.6360505166475315,
-      "brier": 0.23625712535638407,
-      "log_loss": 0.6943982237950832
+      "n": 2110,
+      "accuracy": 0.6426540284360189,
+      "brier": 0.22867147936192095,
+      "log_loss": 0.6571725705391007
     }
   },
   "best_model": "random_forest",
@@ -108,189 +123,214 @@
     {
       "stated_low": 50,
       "stated_high": 60,
-      "n": 330,
-      "observed": 0.5333,
-      "mean_stated": 0.5481
+      "n": 810,
+      "observed": 0.5568,
+      "mean_stated": 0.551
     },
     {
       "stated_low": 60,
       "stated_high": 70,
-      "n": 275,
-      "observed": 0.6618,
-      "mean_stated": 0.6469
+      "n": 717,
+      "observed": 0.6457,
+      "mean_stated": 0.6463
     },
     {
       "stated_low": 70,
       "stated_high": 80,
-      "n": 141,
-      "observed": 0.7589,
-      "mean_stated": 0.7413
+      "n": 408,
+      "observed": 0.7426,
+      "mean_stated": 0.7428
     },
     {
       "stated_low": 80,
       "stated_high": 90,
-      "n": 122,
-      "observed": 0.8361,
-      "mean_stated": 0.8474
+      "n": 174,
+      "observed": 0.8621,
+      "mean_stated": 0.839
     }
   ],
   "by_round": {
     "round-of-16": {
-      "correct": 194,
-      "n": 283,
-      "accuracy": 0.6855
-    },
-    "round-of-32": {
-      "correct": 92,
-      "n": 143,
-      "accuracy": 0.6434
+      "correct": 515,
+      "n": 766,
+      "accuracy": 0.6723
     },
     "quarterfinals": {
-      "correct": 82,
-      "n": 127,
-      "accuracy": 0.6457
+      "correct": 273,
+      "n": 409,
+      "accuracy": 0.6675
     },
     "semifinals": {
-      "correct": 42,
-      "n": 66,
-      "accuracy": 0.6364
+      "correct": 131,
+      "n": 232,
+      "accuracy": 0.5647
     },
-    "round-of-60": {
-      "correct": 32,
-      "n": 54,
-      "accuracy": 0.5926
-    },
-    "round-of-20": {
-      "correct": 35,
-      "n": 49,
-      "accuracy": 0.7143
-    },
-    "round-of-44": {
-      "correct": 28,
-      "n": 43,
-      "accuracy": 0.6512
-    },
-    "round-of-42": {
-      "correct": 26,
-      "n": 42,
-      "accuracy": 0.619
+    "round-of-32": {
+      "correct": 138,
+      "n": 217,
+      "accuracy": 0.6359
     },
     "final": {
-      "correct": 17,
-      "n": 30,
-      "accuracy": 0.5667
+      "correct": 79,
+      "n": 120,
+      "accuracy": 0.6583
+    },
+    "round-of-20": {
+      "correct": 37,
+      "n": 60,
+      "accuracy": 0.6167
+    },
+    "round-of-42": {
+      "correct": 34,
+      "n": 57,
+      "accuracy": 0.5965
+    },
+    "round-of-60": {
+      "correct": 34,
+      "n": 56,
+      "accuracy": 0.6071
+    },
+    "round-of-44": {
+      "correct": 27,
+      "n": 44,
+      "accuracy": 0.6136
     },
     "round-of-12": {
-      "correct": 12,
-      "n": 17,
-      "accuracy": 0.7059
+      "correct": 28,
+      "n": 38,
+      "accuracy": 0.7368
+    },
+    "round-of-24": {
+      "correct": 17,
+      "n": 31,
+      "accuracy": 0.5484
+    },
+    "round-of-6": {
+      "correct": 19,
+      "n": 30,
+      "accuracy": 0.6333
+    },
+    "round-of-22": {
+      "correct": 20,
+      "n": 24,
+      "accuracy": 0.8333
+    },
+    "round-of-48": {
+      "correct": 9,
+      "n": 13,
+      "accuracy": 0.6923
+    },
+    "round-of-14": {
+      "correct": 6,
+      "n": 13,
+      "accuracy": 0.4615
     }
   },
   "permutation_importance": [
     {
       "feature": "elo_diff",
-      "importance": 0.00396,
-      "std": 0.00643
-    },
-    {
-      "feature": "elo_b",
-      "importance": 0.00303,
-      "std": 0.00164
-    },
-    {
-      "feature": "pedigree_diff",
-      "importance": 0.00259,
-      "std": 0.00115
-    },
-    {
-      "feature": "matches_b",
-      "importance": 0.00144,
-      "std": 0.00245
-    },
-    {
-      "feature": "neutral",
-      "importance": 0.00132,
-      "std": 0.0004
-    },
-    {
-      "feature": "two_legged",
-      "importance": 0.00122,
-      "std": 0.00031
-    },
-    {
-      "feature": "pedigree_b",
-      "importance": 0.00051,
-      "std": 0.00037
-    },
-    {
-      "feature": "pedigree_a",
-      "importance": 0.00036,
-      "std": 0.00044
-    },
-    {
-      "feature": "gd_b",
-      "importance": 0.00018,
-      "std": 0.00033
-    },
-    {
-      "feature": "h2h_a",
-      "importance": 0.0,
-      "std": 4e-05
-    },
-    {
-      "feature": "form_b",
-      "importance": -0.00011,
-      "std": 0.00043
-    },
-    {
-      "feature": "rest_b",
-      "importance": -0.00036,
-      "std": 0.00144
-    },
-    {
-      "feature": "form_diff",
-      "importance": -0.00123,
-      "std": 0.00074
-    },
-    {
-      "feature": "gd_a",
-      "importance": -0.00169,
-      "std": 0.00096
-    },
-    {
-      "feature": "form_a",
-      "importance": -0.00185,
-      "std": 0.00068
-    },
-    {
-      "feature": "round_depth",
-      "importance": -0.00201,
-      "std": 0.00075
-    },
-    {
-      "feature": "rest_a",
-      "importance": -0.00246,
-      "std": 0.00158
-    },
-    {
-      "feature": "gd_diff",
-      "importance": -0.00261,
-      "std": 0.00131
-    },
-    {
-      "feature": "matches_a",
-      "importance": -0.00276,
-      "std": 0.00161
+      "importance": 0.01763,
+      "std": 0.00354
     },
     {
       "feature": "elo_expected_a",
-      "importance": -0.00423,
-      "std": 0.00659
+      "importance": 0.00588,
+      "std": 0.0019
     },
     {
       "feature": "elo_a",
-      "importance": -0.00431,
-      "std": 0.00178
+      "importance": 0.00532,
+      "std": 0.00114
+    },
+    {
+      "feature": "matches_a",
+      "importance": 0.00411,
+      "std": 0.00128
+    },
+    {
+      "feature": "matches_b",
+      "importance": 0.0034,
+      "std": 0.0009
+    },
+    {
+      "feature": "gd_diff",
+      "importance": 0.00238,
+      "std": 0.00078
+    },
+    {
+      "feature": "pedigree_diff",
+      "importance": 0.00153,
+      "std": 0.00035
+    },
+    {
+      "feature": "form_diff",
+      "importance": 0.00142,
+      "std": 0.0003
+    },
+    {
+      "feature": "rest_a",
+      "importance": 0.00137,
+      "std": 0.00046
+    },
+    {
+      "feature": "two_legged",
+      "importance": 0.00121,
+      "std": 0.00044
+    },
+    {
+      "feature": "neutral",
+      "importance": 0.00093,
+      "std": 0.00035
+    },
+    {
+      "feature": "form_b",
+      "importance": 0.00073,
+      "std": 0.00026
+    },
+    {
+      "feature": "pedigree_a",
+      "importance": 0.00038,
+      "std": 0.00041
+    },
+    {
+      "feature": "form_a",
+      "importance": 0.00023,
+      "std": 0.00026
+    },
+    {
+      "feature": "round_depth",
+      "importance": 0.0001,
+      "std": 0.00021
+    },
+    {
+      "feature": "pedigree_b",
+      "importance": 5e-05,
+      "std": 0.00014
+    },
+    {
+      "feature": "h2h_a",
+      "importance": 3e-05,
+      "std": 6e-05
+    },
+    {
+      "feature": "elo_b",
+      "importance": 0.0,
+      "std": 0.00114
+    },
+    {
+      "feature": "gd_b",
+      "importance": -0.00015,
+      "std": 0.00041
+    },
+    {
+      "feature": "gd_a",
+      "importance": -0.0002,
+      "std": 0.00045
+    },
+    {
+      "feature": "rest_b",
+      "importance": -0.00083,
+      "std": 0.0006
     }
   ]
 }

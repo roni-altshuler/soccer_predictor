@@ -92,23 +92,38 @@ tie is where soccer asks a binary question, and it is the honest place to look
 for the kind of accuracy a binary sport allows. It is a different question,
 not a trick for inflating the same one.
 
+Measured 2026-08-11 on **14 competitions** — UCL, UEL, Conference, World Cup,
+Euros, Copa América, Libertadores, Sudamericana, AFCON, Asian Cup, Gold Cup,
+CONCACAF Champions Cup, Club World Cup, Nations League.
+
 | | accuracy | Brier (binary) |
 |---|---|---|
 | Coin flip | 50.0% | .2500 |
-| Higher-rated side advances | 64.2% | .2308 |
-| **Random forest over tie features** | **65.3%** | **.2133** |
+| Higher-rated side advances | 64.1% | .2387 |
+| **Random forest over tie features** | **64.8%** | **.2179** |
 
-871 ties, 2013–2025, rolling origin (train on every previous season, test on
-the season played). Calibration holds: says 74%, happens 76%; says 85%,
-happens 84%. Logistic .2181, HGB .2206, XGBoost .2363 — the forest wins.
+2,110 test ties, 2013–2026, rolling origin (train on every previous season,
+test on the season played). Progression check 2,403/2,412 = **99.6%**.
 
-Bracket Monte Carlo over 29 reconstructed tournaments:
+**Calibration is the result worth quoting, not the accuracy.** Says 64.6%,
+happens 64.6%. Says 74.3%, happens 74.3%. Says 83.9%, happens 86.2%. That is
+what a bracket simulation consumes.
+
+Read the ladder as a gap, not as levels: adding nine minnow-heavy competitions
+raised absolute Brier for *everything* (the baseline moved .2308 → .2387), and
+the model's edge over "back the better-rated side" grew from .0175 to
+**.0208**. Logistic .2187, HGB .2200, XGBoost .2287 — the forest still wins.
+
+Bracket Monte Carlo over **84** reconstructed tournaments:
 
 | | log loss on the actual champion | picked the winner outright |
 |---|---|---|
-| Uniform over the field | 2.7965 | — |
-| Elo simulation (unfitted) | 2.2778 | 13.8% (highest-rated) |
-| **This model** | **2.0995** | **27.6%** (top 3: 58.6%) |
+| Uniform over the field | 2.5498 | — |
+| Elo simulation (unfitted) | 2.1454 | 21.4% (highest-rated) |
+| **This model** | **1.9672** | **32.1%** (top 3: 63.1%) |
+
+Half again as often as taking the highest-rated team, on a sample nearly three
+times the first run's.
 
 ### Rules for this layer
 
