@@ -197,6 +197,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--leagues", help="comma-separated FBref league names; default all")
     ap.add_argument("--since", type=int, help="skip seasons starting before this year")
+    ap.add_argument("--current-season", action="store_true",
+                    help="shorthand for --since <season now in progress>, so a "
+                         "cron does not carry a year that expires each August")
     ap.add_argument("--limit", type=int, help="stop after N league-seasons")
     ap.add_argument("--refresh", action="store_true", help="ignore the HTML cache")
     ap.add_argument("--stale-days", type=float, default=3.0,
@@ -207,6 +210,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                          "nothing — what the raw-HTML layer exists for")
     ap.add_argument("--stats", action="store_true")
     args = ap.parse_args(argv)
+    if args.current_season and not args.since:
+        from backend.services.prediction.historical_data import current_season
+
+        # The earlier of the two, so a calendar-year league in its second half
+        # is still covered alongside a European season that started last July.
+        args.since = min(current_season("premier_league"), current_season("mls"))
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s",
                         datefmt="%H:%M:%S")
     for noisy in ("botasaurus", "urllib3", "httpx"):

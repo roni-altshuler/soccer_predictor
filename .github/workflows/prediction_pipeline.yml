@@ -65,7 +65,7 @@ jobs:
         continue-on-error: true
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
-            python -m backend.scripts.build_warehouse --espn --min-season 2026 --max-season 2026
+            python -m backend.scripts.build_warehouse --espn --current-season
           fi
 
       - name: Fetch match outcomes

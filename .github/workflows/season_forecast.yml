@@ -8,10 +8,10 @@ name: Season Forecast
 # fast job slow and couple two failure domains that fail for different reasons.
 #
 # The hard constraint that shapes this file: the forecast trains on the
-# CANONICAL corpus (62,504 matches for these seven leagues), not the warehouse
-# alone (48,536). Running it without FBref would silently produce a different
-# model under the same version string, so a missing input FAILS the job rather
-# than degrading it.
+# CANONICAL corpus (97,421 matches across the fourteen served leagues), not
+# the warehouse alone. Running it without FBref would silently produce a
+# different model under the same version string, so a missing input FAILS the
+# job rather than degrading it. `verify_corpus` checks that per league.
 
 on:
   schedule:
@@ -99,7 +99,7 @@ jobs:
         # forecasting from a stale corpus, which is stale but not WRONG — so
         # this step, unlike the download, may fail without stopping the run.
         continue-on-error: true
-        run: python -m backend.scripts.build_warehouse --espn --min-season 2026 --max-season 2026
+        run: python -m backend.scripts.build_warehouse --espn --current-season
 
       - name: Refresh the current-season schedule
         # Results arrive from ESPN above; this is the other half — kickoff
@@ -115,31 +115,18 @@ jobs:
         timeout-minutes: 12
         run: |
           python -m backend.scripts.ingest_fbref_schedules \
-            --since 2026 --stale-days 0.5
+            --current-season --stale-days 0.5
 
       - name: Rebuild canonical layer
         run: python -m backend.scripts.build_canonical --no-parquet
 
       - name: Verify the corpus is the one the published metrics describe
         # A guard against the silent-degradation failure this workflow exists
-        # to prevent. If the canonical layer came out materially smaller than
-        # expected, something upstream is broken and the forecast would be a
-        # different model wearing the same version string.
-        run: |
-          python - <<'PY'
-          import sys, duckdb
-          con = duckdb.connect("backend/data/canonical.duckdb", read_only=True)
-          n = con.execute("""
-              SELECT COUNT(*) FROM matches
-               WHERE competition_id IN
-                     ('eng.1','esp.1','ger.1','ita.1','fra.1','ned.1','por.1')
-                 AND season >= 2000""").fetchone()[0]
-          print(f"canonical training corpus: {n}")
-          if n < 60000:
-              sys.exit(f"corpus is {n}, expected >=60000 — refusing to publish "
-                       f"a forecast trained on a different corpus than the "
-                       f"metrics on /season describe")
-          PY
+        # to prevent. Checked PER LEAGUE against the last recorded count: the
+        # previous version summed the original seven against a single floor,
+        # which every one of the seven leagues added later could have fallen
+        # out of without moving.
+        run: python -m backend.scripts.verify_corpus
 
       - name: Generate season forecast
         run: |

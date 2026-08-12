@@ -51,42 +51,79 @@ ESPN_LEAGUES = {
     "brasileirao": "bra.1",
 }
 
-# Extended season ranges
-AVAILABLE_SEASONS = {
-    "premier_league": list(range(2003, 2026)),
-    "la_liga": list(range(2003, 2026)),
-    "bundesliga": list(range(2003, 2026)),
-    "serie_a": list(range(2003, 2026)),
-    "ligue_1": list(range(2005, 2026)),
-    "eredivisie": list(range(2008, 2026)),
-    "primeira_liga": list(range(2008, 2026)),
-    "mls": list(range(2005, 2026)),
-    "champions_league": list(range(2005, 2026)),
-    "europa_league": list(range(2009, 2026)),
+# Leagues played inside one calendar year rather than across two. Their season
+# label IS the year, so "the current season" for them turns over in January,
+# not in July.
+CALENDAR_YEAR_LEAGUES = {"mls", "brasileirao"}
+
+# The month a European season is taken to start in. July rather than August
+# because qualifying rounds and an early Eredivisie kickoff both land in it.
+SEASON_START_MONTH = 7
+
+
+def current_season(league: str = "premier_league",
+                   today: Optional[datetime] = None) -> int:
+    """The season label for the campaign in progress, for this league.
+
+    Hard-coding the end of a season range is a bug with a one-year fuse: it
+    works until August, and then the league everyone is watching quietly stops
+    being fetched. This is computed instead, so the ingestion follows the
+    calendar without anyone remembering to bump a literal.
+    """
+    now = today or datetime.now()
+    if league in CALENDAR_YEAR_LEAGUES:
+        return now.year
+    return now.year if now.month >= SEASON_START_MONTH else now.year - 1
+
+
+def seasons_for(league: str, today: Optional[datetime] = None) -> List[int]:
+    """Every season this league can be fetched for, up to the current one."""
+    fixed = FIXED_SEASONS.get(league)
+    if fixed is not None:
+        return list(fixed)
+    start = SEASON_STARTS.get(league)
+    if start is None:
+        return []
+    return list(range(start, current_season(league, today) + 1))
+
+
+# First season each league can be fetched for. The last is computed.
+SEASON_STARTS = {
+    "premier_league": 2003,
+    "la_liga": 2003,
+    "bundesliga": 2003,
+    "serie_a": 2003,
+    "ligue_1": 2005,
+    "eredivisie": 2008,
+    "primeira_liga": 2008,
+    "mls": 2005,
+    "champions_league": 2005,
+    "europa_league": 2009,
+    "championship": 2010,
+    "laliga_2": 2010,
+    "bundesliga_2": 2010,
+    "serie_b": 2010,
+    "ligue_2": 2010,
+    "super_lig": 2010,
+    "brasileirao": 2010,
+}
+
+# Tournaments happen in named years rather than every season, so they are
+# listed rather than computed.
+FIXED_SEASONS = {
     # World Cup: all tournament years from 1998 onwards
-    "world_cup": [1998, 2002, 2006, 2010, 2014, 2018, 2022],
+    "world_cup": [1998, 2002, 2006, 2010, 2014, 2018, 2022, 2026],
     # International tournaments use tournament years, except Euro 2020,
     # which was played in 2021 but remains the 2020 edition.
     "euro": [2000, 2004, 2008, 2012, 2016, 2020, 2024],
     "copa_america": [2001, 2004, 2007, 2011, 2015, 2016, 2019, 2021, 2024],
-    "championship": list(range(2010, 2027)),
-    "laliga_2": list(range(2010, 2027)),
-    "bundesliga_2": list(range(2010, 2027)),
-    "serie_b": list(range(2010, 2027)),
-    "ligue_2": list(range(2010, 2027)),
-    "super_lig": list(range(2010, 2027)),
-    "brasileirao": list(range(2010, 2027)),
 }
 
-# Midweek/sparse tournament schedules are easy to miss with weekly date probes.
-# ESPN supports YYYYMMDD-YYYYMMDD range queries, so these competitions fetch
-# monthly/window chunks instead of single-day weekly snapshots.
-ESPN_RANGE_FETCH_LEAGUES = {
-    "champions_league",
-    "europa_league",
-    "world_cup",
-    "euro",
-    "copa_america",
+# Evaluated at import: every process that ingests is short-lived, and the
+# callers that want a live answer can call `seasons_for` directly.
+AVAILABLE_SEASONS: Dict[str, List[int]] = {
+    league: seasons_for(league)
+    for league in list(SEASON_STARTS) + list(FIXED_SEASONS)
 }
 
 # Some older international tournaments are no longer exposed by ESPN's
@@ -129,14 +166,21 @@ FOOTBALL_DATA_LEAGUES = {
     "primeira_liga": "P1",
 }
 
-FOOTBALL_DATA_SEASONS = {
-    "premier_league": list(range(2005, 2026)),
-    "la_liga": list(range(2005, 2026)),
-    "bundesliga": list(range(2005, 2026)),
-    "serie_a": list(range(2005, 2026)),
-    "ligue_1": list(range(2005, 2026)),
-    "eredivisie": list(range(2008, 2026)),
-    "primeira_liga": list(range(2012, 2026)),
+# Same rule as `SEASON_STARTS`: first season listed, last one computed, so the
+# odds source does not silently stop a month into every new campaign.
+FOOTBALL_DATA_STARTS = {
+    "premier_league": 2005,
+    "la_liga": 2005,
+    "bundesliga": 2005,
+    "serie_a": 2005,
+    "ligue_1": 2005,
+    "eredivisie": 2008,
+    "primeira_liga": 2012,
+}
+
+FOOTBALL_DATA_SEASONS: Dict[str, List[int]] = {
+    league: list(range(start, current_season(league) + 1))
+    for league, start in FOOTBALL_DATA_STARTS.items()
 }
 
 
@@ -211,8 +255,14 @@ class HistoricalDataCollector:
         return datetime.strptime(value, "%Y%m%d")
 
     def _season_windows(self, league: str, season: int) -> List[Tuple[datetime, datetime]]:
-        if league == "mls":
-            return [(datetime(season, 2, 1), datetime(season, 12, 15))]
+        # A calendar-year league's season is its year, end to end. Bounding it
+        # at February and mid-December, as this did for MLS, drops any fixture
+        # outside those months — the Brasileirão runs from April but its
+        # season label is still the year, and it was being fetched on the
+        # European August-to-June window, which missed everything before
+        # August and mislabelled the rest.
+        if league in CALENDAR_YEAR_LEAGUES:
+            return [(datetime(season, 1, 1), datetime(season, 12, 31))]
 
         if league == "world_cup":
             # Qatar 2022 was a winter tournament; most World Cups are June-July.
@@ -234,7 +284,11 @@ class HistoricalDataCollector:
             )
             return [(self._parse_yyyymmdd(start), self._parse_yyyymmdd(end))]
 
-        return [(datetime(season, 8, 1), datetime(season + 1, 6, 30))]
+        # Ends in July, not June: the 2019/20 season finished on 26 July 2020
+        # and a June cutoff dropped its last five weeks. The overlap month is
+        # assigned to the season that is ending, which is the one that plays
+        # in it — no European league starts in July.
+        return [(datetime(season, 8, 1), datetime(season + 1, 7, 31))]
 
     @staticmethod
     def _date_chunks(
@@ -259,6 +313,13 @@ class HistoricalDataCollector:
             mtime = datetime.fromtimestamp(path.stat().st_mtime)
             if (datetime.now() - mtime).days > 1:
                 return False
+        # A season cached as empty is a failure that got written down, not a
+        # season in which nobody played: 25 of the 375 cached seasons were
+        # empty because the old weekly probe landed on a weekday that league
+        # does not play, and re-reading the cache made the hole permanent.
+        # Retrying costs a dozen requests and heals it.
+        if not self._load_cache(league, season):
+            return False
         return True
 
     # ── football-data.co.uk CSV fetcher ──
@@ -428,21 +489,24 @@ class HistoricalDataCollector:
             windows = self._season_windows(league, season)
 
             for window_start, window_end in windows:
-                if league in ESPN_RANGE_FETCH_LEAGUES:
-                    date_ranges = [
-                        (
-                            start.strftime("%Y%m%d")
-                            if start == end
-                            else f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
-                        )
-                        for start, end in self._date_chunks(window_start, window_end)
-                    ]
-                else:
-                    date_ranges = []
-                    current = window_start
-                    while current <= window_end:
-                        date_ranges.append(current.strftime("%Y%m%d"))
-                        current += timedelta(days=7)
+                # Every league fetches by date RANGE. This used to probe a
+                # single day every seven for domestic leagues, which sampled
+                # one weekday out of the week: measured against the range
+                # endpoint, that returned 26 of 56 played Premier League
+                # matches for December 2025, and 0 of 37 Bundesliga matches
+                # for September 2016 — a whole season came back empty
+                # whenever the probe landed on a weekday that league does not
+                # play. The gap went unnoticed because football-data.co.uk
+                # backfills the seven leagues that have a CSV; the ones that
+                # do not were losing most of their results.
+                date_ranges = [
+                    (
+                        start.strftime("%Y%m%d")
+                        if start == end
+                        else f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
+                    )
+                    for start, end in self._date_chunks(window_start, window_end)
+                ]
 
                 for date_str in date_ranges:
                     url = (
@@ -460,7 +524,10 @@ class HistoricalDataCollector:
                     except Exception as e:
                         logger.debug(f"Error fetching {league} {date_str}: {e}")
 
-                    await asyncio.sleep(0.1 if league in ESPN_RANGE_FETCH_LEAGUES else 0.15)
+                    # A month per request rather than a day per request means
+                    # roughly a tenth of the calls, so the courtesy delay can
+                    # stay at the more generous end without costing wall time.
+                    await asyncio.sleep(0.15)
 
             seen = set()
             unique_matches = []

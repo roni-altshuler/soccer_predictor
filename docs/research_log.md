@@ -296,3 +296,66 @@ list of measured-and-dropped feature groups on the same page.
 
 **Next.** Score the forward season against these published numbers as results
 land — that is the only test that has not been run because it cannot be yet.
+
+---
+
+## 2026-08-12 — The live path was not live
+
+**Context.** `/season` promises that every forecast is republished as results
+land. Fourteen leagues now depend on that. Nothing had tested whether results
+actually reach the warehouse.
+
+**Finding 1 — the current season was not being ingested at all.**
+`AVAILABLE_SEASONS` ended at 2025. The refresh step asks for the current
+season, got an empty list for every league whose range had expired, and
+fetched nothing. Measured on the live warehouse: MLS held **0** results for a
+season 270 matches old; the Eredivisie and the Primeira Liga had both kicked
+off with **0**. The Premier League, Bundesliga, LaLiga, Serie A and Ligue 1
+were three days from the same state.
+
+**Finding 2 — the fetcher sampled one weekday in seven.** For domestic
+leagues the collector queried a single date every seven days, so it saw
+whichever weekday the season window happened to start on. Against the same
+endpoint's range query, on the same dates:
+
+| | weekly probe | date range |
+|---|---|---|
+| eng.1, December 2025 | 26 | **56** |
+| ger.1, September 2016 | 0 | **37** |
+
+Zero, not a shortfall: 1 August 2016 was a Monday and the Bundesliga does not
+play Mondays. **25 of 375 cached seasons were empty for this reason.** It went
+unnoticed because the seven leagues with a football-data.co.uk CSV are
+backfilled from there — and those are the seven anyone was looking at.
+
+**Fix.** Season ranges are computed from a start year rather than written
+down, calendar-year leagues (MLS, the Brasileirão) turn over in January
+instead of being fetched on a European window, and every league fetches by
+date range. After re-ingestion: **MLS 0 → 270, Brasileirão 4 → 215, Primeira
+Liga 0 → 9, Eredivisie 0 → 9.**
+
+**Finding 3 — results arriving exposed a cold start in club identity.** The
+canonical layer resolves FBref names onto warehouse names through the fixture
+graph, accepting a mapping on ~5 aligned fixtures. On matchday one a club has
+one. So `Dijon FCO` and `Dijon` stayed separate, the same match entered the
+corpus twice, and the structural check saw **25 clubs in an 18-club league**
+and refused to project a table. Ligue 2, 2. Bundesliga and the Primeira Liga
+lost theirs.
+
+**Fix, measured not guessed.** Alignments that could not be anything else are
+accepted without votes: a scoreline unique that day, or one side already
+agreeing and only one such candidate. `US Boulogne 0-0 Nancy` against
+`Boulogne 0-0 AS Nancy Lorraine` meets neither — two 0-0s, no club in common —
+and is left unresolved rather than guessed. **111 identities recovered, all
+111 read and confirmed as the same club** (`nl ajax` → `ajax`, `dresden` →
+`dynamo dresden`). 31 duplicated matches collapsed; corpus back to **97,407**.
+
+**Result.** All fourteen leagues project again, with matchday one already
+deducted from the fixtures remaining. Snapshots naming an unrecognised club
+fell **2,306 → 1,448**, and the remainder are exactly the four leagues that
+have not kicked off plus three promoted clubs.
+
+**Decision.** Shipped. The corpus guard now checks every served league against
+its last recorded count rather than summing the original seven against one
+floor — under which all seven leagues added later could have vanished without
+moving the number.

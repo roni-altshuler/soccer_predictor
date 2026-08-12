@@ -219,11 +219,30 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     parser.add_argument("--min-season", type=int, default=1998)
     parser.add_argument("--max-season", type=int, default=None)
+    parser.add_argument("--current-season", action="store_true",
+                        help="Ingest only the season(s) in progress. Prefer "
+                             "this to writing the year into a cron: a literal "
+                             "stops being true every August.")
     parser.add_argument("--force", action="store_true", help="Bypass per-source caches.")
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args(argv)
     _setup_logging(args.verbose)
+
+    if args.current_season:
+        # Two answers, not one: a European season in February is last
+        # summer's, while MLS and the Brasileirão are already in this year's.
+        # Spanning both is what makes "the current season" mean the same
+        # thing in August and in February.
+        from backend.services.prediction.historical_data import (
+            CALENDAR_YEAR_LEAGUES,
+            current_season,
+        )
+
+        labels = {current_season("premier_league")} | {
+            current_season(league) for league in CALENDAR_YEAR_LEAGUES}
+        args.min_season, args.max_season = min(labels), max(labels)
+        logger.info("current season(s): %d..%d", args.min_season, args.max_season)
 
     try:
         return asyncio.run(_async_main(args))

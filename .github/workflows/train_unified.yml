@@ -72,11 +72,11 @@ jobs:
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
             # Incremental: recent seasons + xG enrichment.
-            python -m backend.scripts.build_warehouse --espn --football-data --min-season 2025 --max-season 2026
-            python -m backend.scripts.build_warehouse --understat --min-season 2024 --max-season 2026
+            python -m backend.scripts.build_warehouse --espn --football-data --min-season 2025
+            python -m backend.scripts.build_warehouse --understat --min-season 2024
           else
             echo "No warehouse from release — full build (slow first run)."
-            python -m backend.scripts.build_warehouse --full --max-season 2026
+            python -m backend.scripts.build_warehouse --full
           fi
           python -m backend.scripts.build_warehouse --stats
 

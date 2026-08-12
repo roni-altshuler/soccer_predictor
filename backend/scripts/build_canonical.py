@@ -323,11 +323,93 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
         FROM pairs GROUP BY 1, 2, 3
     """)
 
+    # ---- the cold start the vote rule cannot serve ----------------------
+    # A vote floor of five needs a club to have played five fixtures. On the
+    # opening weekend of a season every club has played one, so a promoted
+    # side — or every side in a league whose results have only just started
+    # being ingested — resolves to nothing and enters the corpus TWICE: once
+    # under each source's spelling. That is not cosmetic. The same match is
+    # then two matches, and the structural check that decides whether a table
+    # can be projected sees 25 clubs in an 18-club league and refuses one.
+    #
+    # There is stronger evidence available than a vote count, and it is still
+    # not string similarity: whether an alignment is the ONLY one it could be.
+    #
+    #   unique scoreline   one FBref fixture and one warehouse fixture that day
+    #                      with that scoreline, each other's only candidate.
+    #                      `USL Dunkerque 4-2 Grenoble Foot` and
+    #                      `Dunkerque 4-2 Grenoble` — nothing else was 4-2.
+    #
+    #   one side agrees    the names already match on one side, and among the
+    #                      candidates where that is true there is exactly one.
+    #                      `Clermont Foot 0-0 Reims` and `Clermont Foot 0-0
+    #                      Stade de Reims`, on a day with a second 0-0 that
+    #                      shares neither club.
+    #
+    # `US Boulogne 0-0 Nancy` against `Boulogne 0-0 AS Nancy Lorraine` meets
+    # neither — two 0-0s that day and no side in common — and is left
+    # unresolved. That is the right answer: with this evidence nothing
+    # distinguishes it from the other 0-0, and it resolves by itself once
+    # either club has played enough fixtures to be voted in.
+    con.execute("""
+        CREATE OR REPLACE TABLE alias_alignments AS
+        SELECT w.competition_id,
+               w.source_id AS wh_id, f.source_id AS fb_id,
+               w.home_norm AS wh_home, w.away_norm AS wh_away,
+               f.home_norm AS fb_home, f.away_norm AS fb_away,
+               (w.home_norm = f.home_norm OR w.away_norm = f.away_norm)
+                   AS side_agrees
+        FROM wh_matches w
+        JOIN fb_matches f
+          ON f.competition_id = w.competition_id
+         AND f.season = w.season
+         AND f.home_score = w.home_score
+         AND f.away_score = w.away_score
+         AND abs(date_diff('day', f.local_date, w.local_date)) <= 1
+    """)
+    con.execute("""
+        CREATE OR REPLACE TABLE alias_identified AS
+        WITH counted AS (
+            SELECT *,
+                   COUNT(*) OVER (PARTITION BY fb_id) AS fb_alts,
+                   COUNT(*) OVER (PARTITION BY wh_id) AS wh_alts,
+                   SUM(CASE WHEN side_agrees THEN 1 ELSE 0 END)
+                       OVER (PARTITION BY fb_id) AS fb_agreeing,
+                   SUM(CASE WHEN side_agrees THEN 1 ELSE 0 END)
+                       OVER (PARTITION BY wh_id) AS wh_agreeing
+            FROM alias_alignments
+        ),
+        identified AS (
+            SELECT * FROM counted
+             WHERE (fb_alts = 1 AND wh_alts = 1)
+                OR (side_agrees AND fb_agreeing = 1 AND wh_agreeing = 1)
+        ),
+        pairs AS (
+            SELECT competition_id, wh_home AS wh, fb_home AS fb FROM identified
+            UNION ALL
+            SELECT competition_id, wh_away, fb_away FROM identified
+        )
+        SELECT competition_id, wh, fb, COUNT(*) AS proofs
+        FROM pairs GROUP BY 1, 2, 3
+    """)
+    # One name identified as two clubs is not evidence, it is a contradiction,
+    # and both readings are dropped rather than the larger one winning.
+    con.execute("""
+        CREATE OR REPLACE TABLE alias_by_alignment AS
+        SELECT i.* FROM alias_identified i
+        WHERE NOT EXISTS (SELECT 1 FROM alias_identified j
+                           WHERE j.competition_id = i.competition_id
+                             AND j.fb = i.fb AND j.wh <> i.wh)
+          AND NOT EXISTS (SELECT 1 FROM alias_identified j
+                           WHERE j.competition_id = i.competition_id
+                             AND j.wh = i.wh AND j.fb <> i.fb)
+    """)
+
     # Mutual best, >= MIN_VOTES, and at least DOMINANCE x the runner-up on both
     # sides. A club that changed name mid-corpus fails dominance and is left
     # unresolved rather than half-merged.
     con.execute("""
-        CREATE OR REPLACE TABLE team_aliases AS
+        CREATE OR REPLACE TABLE alias_by_votes AS
         WITH ranked_fb AS (
             SELECT *, row_number() OVER (PARTITION BY competition_id, wh
                                          ORDER BY votes DESC) AS rk_fb,
@@ -350,11 +432,34 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
           AND votes >= 3 * next_fb
           AND votes >= 3 * next_wh
     """)
+
+    # Votes first, alignment only for names no vote has spoken for: a club
+    # with a season of evidence behind it should not be overruled by one
+    # unambiguous night.
+    con.execute("""
+        CREATE OR REPLACE TABLE team_aliases AS
+        SELECT competition_id, fb_norm, wh_norm, votes, next_fb, next_wh,
+               'votes' AS evidence
+        FROM alias_by_votes
+        UNION ALL
+        SELECT a.competition_id, a.fb AS fb_norm, a.wh AS wh_norm,
+               a.proofs AS votes, 0 AS next_fb, 0 AS next_wh,
+               'alignment' AS evidence
+        FROM alias_by_alignment a
+        WHERE NOT EXISTS (SELECT 1 FROM alias_by_votes v
+                           WHERE v.competition_id = a.competition_id
+                             AND (v.fb_norm = a.fb OR v.wh_norm = a.wh))
+    """)
     n_alias = con.execute("SELECT COUNT(*) FROM team_aliases").fetchone()[0]
     n_ident = con.execute("SELECT COUNT(*) FROM team_aliases "
                           "WHERE fb_norm = wh_norm").fetchone()[0]
+    n_align = con.execute("SELECT COUNT(*) FROM team_aliases "
+                          "WHERE evidence = 'alignment' "
+                          "AND fb_norm <> wh_norm").fetchone()[0]
     logger.info("aliases accepted: %d (%d were already identical, %d genuinely "
-                "renamed)", n_alias, n_ident, n_alias - n_ident)
+                "renamed, of which %d identified by an unambiguous alignment "
+                "rather than by votes)",
+                n_alias, n_ident, n_alias - n_ident, n_align)
     rejected = con.execute("""
         SELECT COUNT(*) FROM alias_votes v
         WHERE NOT EXISTS (SELECT 1 FROM team_aliases a
