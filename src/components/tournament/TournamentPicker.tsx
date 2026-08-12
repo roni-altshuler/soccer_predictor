@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
+import { CompetitionSelect } from '@/components/forecast/CompetitionSelect'
 import { cn } from '@/lib/utils'
 
 /**
@@ -115,6 +116,21 @@ export function TournamentPicker({
   const [selected, setSelected] = useState<string>(ordered[0]?.competition_id ?? '')
   const active = ordered.find((t) => t.competition_id === selected) ?? ordered[0]
 
+  // The second line is the tournament's STATE, which is the thing that decides
+  // whether the numbers underneath are odds on something undecided or a record
+  // of a call already settled. On the league picker that line is how much of a
+  // season is left; here it is what kind of answer you are about to get.
+  const options = useMemo(
+    () =>
+      ordered.map((t) => ({
+        id: t.competition_id,
+        name: t.name,
+        subtitle: `${t.season} · ${(STATUS_COPY[t.status] ?? STATUS_COPY.completed).label}`,
+        live: t.status === 'upcoming' || t.status === 'in_progress',
+      })),
+    [ordered],
+  )
+
   if (!ordered.length) return null
 
   return (
@@ -135,35 +151,13 @@ export function TournamentPicker({
         </p>
       </header>
 
-      <div className="mt-3.5 flex flex-wrap gap-1.5" role="tablist" aria-label="Tournaments">
-        {ordered.map((t) => {
-          const isActive = t.competition_id === active?.competition_id
-          const isLive = t.status === 'upcoming' || t.status === 'in_progress'
-          return (
-            <button
-              key={t.competition_id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setSelected(t.competition_id)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] transition-colors',
-                isActive
-                  ? 'border-[var(--accent-primary)] bg-[var(--card-hover)] text-[var(--text-primary)]'
-                  : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-              )}
-            >
-              {isLive ? (
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]"
-                />
-              ) : null}
-              {t.name}
-            </button>
-          )
-        })}
-      </div>
+      <CompetitionSelect
+        className="mt-3.5"
+        kind="Tournament"
+        options={options}
+        value={active?.competition_id ?? ''}
+        onChange={setSelected}
+      />
 
       {active ? <Forecast tournament={active} /> : null}
     </section>

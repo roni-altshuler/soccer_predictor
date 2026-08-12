@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import TournamentsPage from '@/app/(app)/tournaments/page'
@@ -138,6 +138,19 @@ afterEach(() => {
   jest.resetAllMocks()
 })
 
+/**
+ * Choose a tournament from the picker.
+ *
+ * It was a row of chips and is now the same listbox the league picker uses —
+ * nine competitions permanently on screen was the thing to fix.
+ */
+async function chooseTournament(name: RegExp) {
+  await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
+  await userEvent.click(
+    within(screen.getByRole('listbox')).getByRole('option', { name }),
+  )
+}
+
 describe('TournamentsPage', () => {
   it('renders the ladder and the bracket record', async () => {
     mockFetch(ARTIFACT)
@@ -188,7 +201,7 @@ describe('TournamentsPage', () => {
     render(<TournamentsPage />)
 
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('tab', { name: /Champions League/i }))
+    await chooseTournament(/Champions League/i)
 
     // The call made BEFORE the knockout stage, next to who actually won —
     // never presented as though it were still open.
@@ -203,7 +216,7 @@ describe('TournamentsPage', () => {
     render(<TournamentsPage />)
 
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await userEvent.click(screen.getByRole('tab', { name: /Club World Cup/i }))
+    await chooseTournament(/Club World Cup/i)
 
     // A power ranking, explicitly not a forecast. Filling this state with last
     // edition's field would produce confident percentages backed by nothing.
@@ -220,5 +233,51 @@ describe('TournamentsPage', () => {
       expect(screen.getByText(/have not been run here/i)).toBeInTheDocument(),
     )
     expect(screen.queryByText(/Who lifts the trophy/i)).not.toBeInTheDocument()
+  })
+
+  // ------------------------------------------------------------- the picker
+  //
+  // Nine tournaments as chips filled two lines on a phone with eight
+  // competitions the reader is not looking at. It is now the same listbox as
+  // /season. What must survive the change: a tournament's STATE has to be
+  // visible before you pick it, because it decides whether the numbers
+  // underneath are odds on something undecided or a record of a settled call.
+
+  it('shows every tournament with its state, before one is chosen', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
+    const options = within(screen.getByRole('listbox')).getAllByRole('option')
+    const text = options.map((o) => o.textContent ?? '')
+    expect(text.some((t) => /Champions League/.test(t))).toBe(true)
+    expect(text.some((t) => /Finished/.test(t))).toBe(true)
+    expect(text.some((t) => /Draw not made/.test(t))).toBe(true)
+  })
+
+  it('offers what is live first, not what is alphabetically first', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
+    const first = within(screen.getByRole('listbox')).getAllByRole('option')[0]
+    // Anything undecided outranks a finished edition, whatever it is called.
+    expect(first.textContent).not.toMatch(/Finished/)
+  })
+
+  it('switches tournament from the keyboard alone', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    const trigger = screen.getByRole('button', { name: /change tournament/i })
+    trigger.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
   })
 })

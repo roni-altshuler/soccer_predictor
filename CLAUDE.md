@@ -229,6 +229,56 @@ none of it is unservable the way the market block was.
 The 2026-27 season is served from `forecast_season.py`. **The model is frozen**
 unless a demonstrated implementation bug says otherwise.
 
+### It re-syncs every matchday, by construction
+
+Nothing about the forecast is a preseason snapshot. Each daily run pulls new
+results from ESPN, rebuilds the canonical layer, retrains through yesterday,
+and re-simulates. Elo and form advance with each result; **points already
+banked seed the season simulation**, so the projection tightens as the season
+runs; played fixtures leave the remaining set. Brazil is the visible proof —
+215 played, 160 to go, and a mid-season table rather than an August one.
+
+`load_upcoming` takes `played` for exactly this reason. The FBref schedule's
+`home_goals` column is a release artifact refreshed on a different clock from
+results, so it stays NULL all season for matches that have been played; only
+the date filter was keeping them out. Any fixture already in the results
+corpus is dropped whatever the schedule claims.
+
+### Which leagues serve, and why those
+
+Fourteen, each admitted by `league_gate.py` — a day-blocked walk-forward over
+that competition alone against three baselines: a one-in-three guess, the
+league's own running base rate, and picking the home side every time. A league
+that does not beat all three does not appear. Results in
+`reports/baselines/league_gate.json`.
+
+| | leagues |
+|---|---|
+| top flights | eng.1 esp.1 ger.1 ita.1 fra.1 ned.1 por.1 **tur.1 bra.1** |
+| second tiers | **eng.2 esp.2 ger.2 ita.2 fra.2** |
+
+The spread is wide and the page says so per league: por.1 .56873, ned.1
+.57010, eng.1 .58266 … eng.2 .63810, ita.2 .64699, fra.2 .64736. **Each league
+carries its own `measured` block** rather than inheriting the .59303 headline,
+which was measured on the top five only.
+
+**Passing the match gate does not earn a projected TABLE.** A season simulation
+assumes a double round robin, and `ROUND_ROBIN_MIN` checks that against the
+real fixture list: MLS runs at 59% of one (two conferences, unbalanced
+schedule, playoff champion), Liga MX 50% (Apertura/Clausura), Argentina 57%
+(knockout rounds inside the league). All three are in `HELD` with the reason —
+the model is fine, the competition is not a single table. Brazil at 98.7% (five
+postponements without a new date) projects and publishes the shortfall.
+
+Second tiers use `top_cut` = 2 labelled "Promoted". Fourth place is a Champions
+League spot in a top flight and nothing whatsoever in the Championship, so the
+column is per-league rather than a hard-coded "Top 4".
+
+**Every competition seeds its own RNG** from `sha256(competition_id)`. One
+shared generator consumed in dict-iteration order meant adding the Championship
+moved Manchester City by a point with nothing about the Premier League having
+changed. Two full runs are now byte-identical.
+
 ### The three decisions that must not be casually changed
 
 1. **Season simulation draws one strength offset per club, held for the whole
@@ -317,10 +367,15 @@ season-forecast`. Separate from `prediction_pipeline.yml` because it needs a
 16MB FBref download plus a canonical rebuild.
 
 **The input download has no `continue-on-error`, deliberately.** The forecast
-trains on the canonical corpus (62,504 matches for these seven leagues), not
-the warehouse alone (48,536); running without FBref would ship a different
-model under the same version string. A guard step fails the job if the rebuilt
-corpus comes out under 60,000.
+trains on the canonical corpus (97,407 matches across the fourteen leagues),
+not the warehouse alone; running without FBref would ship a different model
+under the same version string. A guard step fails the job if the rebuilt corpus
+comes out under 60,000.
+
+The current-season FBref schedule refresh IS `continue-on-error`: FBref sits
+behind Cloudflare and a GitHub runner is the client it exists to turn away.
+When it fails the forecast is still correct — a stale schedule costs a wrong
+kickoff time on a moved match, not a forecast for a match already played.
 
 Artifacts are published via temp-file + `os.replace`, so a crash mid-write
 leaves the previous valid forecast serving rather than a truncated file.
@@ -336,18 +391,31 @@ leaves the previous valid forecast serving rather than a truncated file.
 
 Components in `src/components/forecast/`: `ProbabilityBar`, `ProbabilityRow`,
 `FixtureCard`, `FixtureList` (rows and day headings, six matchdays at a time),
-`ProjectedTable` (two layouts, not one squeezed), `LeagueSelect`,
-`EvidencePanel`. Every probability is rendered as **text**, never colour-only;
-the projected table sorts from the keyboard with `aria-sort`.
+`ProjectedTable` (two layouts, not one squeezed), `CompetitionSelect`,
+`LeagueSelect`, `EvidencePanel`. Every probability is rendered as **text**,
+never colour-only; the projected table sorts from the keyboard with
+`aria-sort`.
 
-`LeagueSelect` is the ARIA listbox pattern, not a `<select>`, because its rows
-carry a badge, a country and the fixtures left. It therefore owns the whole
-keyboard contract by hand — arrows with wraparound, Home/End, Enter, Escape
-returning focus, Tab, type-ahead — and all of it is tested. **Below the `sm`
-breakpoint it is a bottom sheet portalled to `document.body`**: an anchored
-panel does not fit between the trigger and the fixed tab bar at 375x667, and
-`position: fixed` is positioned against the nearest transformed ancestor rather
-than the viewport.
+`CompetitionSelect` is the one picker, used by `/season` (via `LeagueSelect`,
+which only supplies ordering and the second line) and by `/tournaments`. It is
+the ARIA listbox pattern, not a `<select>`, because its rows carry a badge and
+a second line — fixtures left, or whether a tournament has been drawn. It
+therefore owns the whole keyboard contract by hand — arrows with wraparound,
+Home/End, Enter, Escape returning focus, Tab, type-ahead — and all of it is
+tested. **Below the `sm` breakpoint it is a bottom sheet portalled to
+`document.body`**: an anchored panel does not fit between the trigger and the
+fixed tab bar at 375x667, and `position: fixed` is positioned against the
+nearest transformed ancestor rather than the viewport.
+
+On `/tournaments` the second line is the tournament's STATE, because that is
+what decides whether the numbers underneath are odds on something undecided or
+a record of a call already settled.
+
+`leagueAccents.ts` carries the badge for every published competition. **Each
+`logoUrl` came from ESPN's own scoreboard payload for that competition and was
+curl-verified.** Where ESPN would not answer — `afc.asian` — the entry ships
+with no logo and falls back to a neutral trophy; a confidently wrong badge is
+worse than an honest placeholder.
 
 The evidence panel is deliberately **not** one of the tabs. Those percentages
 are unfalsifiable without it and a tab is a place things go to be unread; a
@@ -370,6 +438,7 @@ does not fit above the tab bar, and on tap targets under 24px:
 | Responsive/tap-target audit | `node scripts/responsive_audit.mjs` |
 | Walk-forward baselines | `python3 -m backend.scripts.baseline_walkforward` |
 | Layered ablation | `python3 -m backend.scripts.train_layered` |
+| Per-league benchmark gate | `python3 -m backend.scripts.league_gate` |
 
 ## Superseded measured state (2026-08-09)
 

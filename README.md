@@ -161,8 +161,24 @@ won it from 11.6%, third on its list.
 
 ## The season ahead — what the site serves now
 
-Seven leagues, 2,346 remaining fixtures for 2026-27, refreshed daily as results
-land.
+**Fourteen leagues, 4,800 remaining fixtures, refreshed daily as results land.**
+
+Not a preseason snapshot. Every day the pipeline pulls the previous night's
+results, retrains through them, and re-simulates: ratings and form advance,
+points already banked seed the season simulation, and played fixtures leave the
+remaining set. The Brasileirão is the visible proof — 215 played, 160 to go,
+and a mid-season table rather than an August one. Everything else starts moving
+from 14 August.
+
+A league appears here only if it beats three baselines on its own history — a
+one-in-three guess, its own base rate, and picking the home side every time.
+Seventeen of eighteen candidates did. Fourteen get a projected table; MLS, Liga
+MX and Argentina do not, because they are not single-table competitions and a
+confident 30-team MLS table would describe a competition that does not exist.
+
+The spread between leagues is real and each page states its own number rather
+than borrowing the headline: Primeira Liga .56873 at the top, Ligue 2 .64736 at
+the bottom.
 
 | route | what it answers |
 |---|---|

@@ -62,6 +62,20 @@ const accents: LeagueAccent[] = [
   { competitionId: 'uefa.euro', displayName: 'UEFA European Championship', shortName: 'Euros', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#1a4b8c', accentBg: 'rgba(26, 75, 140, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(74) },
   { competitionId: 'conmebol.america', displayName: 'Copa América', shortName: 'Copa América', country: 'South America', countryCode: 'SA', gender: 'M', accent: '#10708f', accentBg: 'rgba(16, 112, 143, 0.12)', flag: '🌎', logoUrl: ESPN_LOGO(83) },
 
+  // Confederation and club tournaments. Every logoUrl below came from ESPN's
+  // own scoreboard payload for that competition and was curl-verified; where
+  // ESPN would not answer (afc.asian), the entry ships WITHOUT a logo and
+  // LeagueMark falls back to a neutral trophy. A confidently wrong badge is
+  // worse than an honest placeholder.
+  { competitionId: 'uefa.nations', displayName: 'UEFA Nations League', shortName: 'Nations League', country: 'Europe', countryCode: 'EU', gender: 'M', accent: '#1a3a6b', accentBg: 'rgba(26, 58, 107, 0.14)', flag: '🇪🇺', logoUrl: ESPN_LOGO(2395) },
+  { competitionId: 'fifa.cwc', displayName: 'FIFA Club World Cup', shortName: 'Club World Cup', country: 'World', countryCode: 'EARTH', gender: 'M', accent: '#c9a227', accentBg: 'rgba(201, 162, 39, 0.12)', flag: '🌍', logoUrl: ESPN_LOGO(1932) },
+  { competitionId: 'conmebol.libertadores', displayName: 'Copa Libertadores', shortName: 'Libertadores', country: 'South America', countryCode: 'SA', gender: 'M', accent: '#c8102e', accentBg: 'rgba(200, 16, 46, 0.12)', flag: '🌎', logoUrl: ESPN_LOGO(58) },
+  { competitionId: 'conmebol.sudamericana', displayName: 'Copa Sudamericana', shortName: 'Sudamericana', country: 'South America', countryCode: 'SA', gender: 'M', accent: '#f5a623', accentBg: 'rgba(245, 166, 35, 0.12)', flag: '🌎', logoUrl: ESPN_LOGO(1208) },
+  { competitionId: 'caf.nations', displayName: 'Africa Cup of Nations', shortName: 'AFCON', country: 'Africa', countryCode: 'AF', gender: 'M', accent: '#1c7c3c', accentBg: 'rgba(28, 124, 60, 0.12)', flag: '🌍', logoUrl: ESPN_LOGO(76) },
+  { competitionId: 'concacaf.champions', displayName: 'CONCACAF Champions Cup', shortName: 'CCC', country: 'North America', countryCode: 'NA', gender: 'M', accent: '#0a4a8f', accentBg: 'rgba(10, 74, 143, 0.14)', flag: '🌎', logoUrl: ESPN_LOGO(2298) },
+  { competitionId: 'concacaf.gold', displayName: 'CONCACAF Gold Cup', shortName: 'Gold Cup', country: 'North America', countryCode: 'NA', gender: 'M', accent: '#d4af37', accentBg: 'rgba(212, 175, 55, 0.12)', flag: '🌎', logoUrl: ESPN_LOGO(59) },
+  { competitionId: 'afc.asian', displayName: 'AFC Asian Cup', shortName: 'Asian Cup', country: 'Asia', countryCode: 'AS', gender: 'M', accent: '#c1121f', accentBg: 'rgba(193, 18, 31, 0.12)', flag: '🌏' },
+
   // Women's universe — same teal/magenta family as men's parents where applicable.
   { competitionId: 'eng.1.w', displayName: "FA Women's Super League", shortName: 'WSL', country: 'England', countryCode: 'ENG', gender: 'F', accent: '#c10078', accentBg: 'rgba(193, 0, 120, 0.12)', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', logoUrl: ESPN_LOGO(2314) },
   { competitionId: 'usa.1.w', displayName: 'NWSL', shortName: 'NWSL', country: 'USA', countryCode: 'US', gender: 'F', accent: '#00a651', accentBg: 'rgba(0, 166, 81, 0.12)', flag: '🇺🇸', logoUrl: ESPN_LOGO(2323) },
