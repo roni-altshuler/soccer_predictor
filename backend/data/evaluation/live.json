@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-08-12T08:07:09.390690+00:00",
+  "generated_at": "2026-08-12T08:15:44.985387+00:00",
   "snapshot_store": {
-    "rows": 38292,
+    "rows": 16638,
     "fixtures": 4800,
     "versions": 2,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-12T08:06:52.836045+00:00",
+    "last_generated": "2026-08-12T08:15:41.908513+00:00",
     "by_version": {
-      "2026.08.1+4e57ca7c": 33600,
-      "2026.08.1+27734fb2": 4692
+      "2026.08.1+4e57ca7c": 9600,
+      "2026.08.1+27734fb2": 7038
     }
   },
   "join": {
     "snapshots": 4800,
     "scored": 0,
-    "awaiting_result": 3672,
+    "awaiting_result": 3636,
     "unresolved_clubs": {
       "eng.1:Coventry City": 38,
       "eng.2:Lincoln City": 46,
@@ -27,6 +27,7 @@
       "esp.2:Celta de Vigo B": 42,
       "esp.2:Ceuta": 42,
       "esp.2:Eldense": 42,
+      "esp.2:FC Andorra": 42,
       "esp.2:Real Sociedad B": 42,
       "esp.2:Sabadell": 42,
       "ger.1:Elversberg": 34,
@@ -53,9 +54,10 @@
       "tur.1:Kas\u0131mpa\u015fa": 34,
       "tur.1:Kocaelispor": 34,
       "tur.1:Rizespor": 34,
+      "tur.1:Samsunspor": 34,
       "tur.1:Yeni \u00c7orumspor": 34
     },
-    "unresolved_count": 1448
+    "unresolved_count": 1524
   },
   "live": {
     "basis": "live_published",
