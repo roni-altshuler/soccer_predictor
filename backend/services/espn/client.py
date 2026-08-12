@@ -36,6 +36,16 @@ ESPN_LEAGUE_IDS = {
     "world_cup": "fifa.world",
     "euro": "uefa.euro",
     "copa_america": "conmebol.america",
+    # Added 2026-08-12 when these leagues started serving on /season.
+    # Without them the daily result refresh skips them entirely and
+    # their forecasts never re-sync with what has been played.
+    "championship": "eng.2",
+    "laliga_2": "esp.2",
+    "bundesliga_2": "ger.2",
+    "serie_b": "ita.2",
+    "ligue_2": "fra.2",
+    "super_lig": "tur.1",
+    "brasileirao": "bra.1",
 }
 
 

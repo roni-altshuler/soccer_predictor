@@ -49,6 +49,16 @@ MEN_COMPETITIONS: Tuple[Dict, ...] = (
     {"key": "champions_league", "competition_id": "uefa.champions", "name": "UEFA Champions League", "country": None, "tier": 1, "confederation": "UEFA"},
     {"key": "europa_league",  "competition_id": "uefa.europa",   "name": "UEFA Europa League",     "country": None, "tier": 1, "confederation": "UEFA"},
     {"key": "world_cup",      "competition_id": "fifa.world",    "name": "FIFA World Cup",         "country": None, "tier": 0, "confederation": "FIFA"},
+    # Leagues added to /season on 2026-08-12 after each cleared its own
+    # benchmark. Results have to reach the warehouse or the forecast
+    # cannot re-sync as their seasons run.
+    {"key": "championship", "competition_id": "eng.2", "name": "EFL Championship", "country": "GB", "tier": 2, "confederation": "UEFA"},
+    {"key": "laliga_2", "competition_id": "esp.2", "name": "LaLiga 2", "country": "ES", "tier": 2, "confederation": "UEFA"},
+    {"key": "bundesliga_2", "competition_id": "ger.2", "name": "2. Bundesliga", "country": "DE", "tier": 2, "confederation": "UEFA"},
+    {"key": "serie_b", "competition_id": "ita.2", "name": "Serie B", "country": "IT", "tier": 2, "confederation": "UEFA"},
+    {"key": "ligue_2", "competition_id": "fra.2", "name": "Ligue 2", "country": "FR", "tier": 2, "confederation": "UEFA"},
+    {"key": "super_lig", "competition_id": "tur.1", "name": "Süper Lig", "country": "TR", "tier": 1, "confederation": "UEFA"},
+    {"key": "brasileirao", "competition_id": "bra.1", "name": "Brasileirão Série A", "country": "BR", "tier": 1, "confederation": "CONMEBOL"},
     {"key": "euro",           "competition_id": "uefa.euro",     "name": "UEFA European Championship", "country": None, "tier": 0, "confederation": "UEFA"},
     {"key": "copa_america",   "competition_id": "conmebol.america", "name": "Copa América",        "country": None, "tier": 0, "confederation": "CONMEBOL"},
 )

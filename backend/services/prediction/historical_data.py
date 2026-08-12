@@ -42,6 +42,13 @@ ESPN_LEAGUES = {
     "world_cup": "fifa.world",
     "euro": "uefa.euro",
     "copa_america": "conmebol.america",
+    "championship": "eng.2",
+    "laliga_2": "esp.2",
+    "bundesliga_2": "ger.2",
+    "serie_b": "ita.2",
+    "ligue_2": "fra.2",
+    "super_lig": "tur.1",
+    "brasileirao": "bra.1",
 }
 
 # Extended season ranges
@@ -62,6 +69,13 @@ AVAILABLE_SEASONS = {
     # which was played in 2021 but remains the 2020 edition.
     "euro": [2000, 2004, 2008, 2012, 2016, 2020, 2024],
     "copa_america": [2001, 2004, 2007, 2011, 2015, 2016, 2019, 2021, 2024],
+    "championship": list(range(2010, 2027)),
+    "laliga_2": list(range(2010, 2027)),
+    "bundesliga_2": list(range(2010, 2027)),
+    "serie_b": list(range(2010, 2027)),
+    "ligue_2": list(range(2010, 2027)),
+    "super_lig": list(range(2010, 2027)),
+    "brasileirao": list(range(2010, 2027)),
 }
 
 # Midweek/sparse tournament schedules are easy to miss with weekly date probes.

@@ -367,3 +367,60 @@ def test_a_snapshot_kickoff_is_a_timestamp_something_can_be_compared_against():
                                 model_version="v1")[0]
     assert s.kickoff_at == "2026-08-14T20:15:00+00:00"
     assert s.generated_at < s.kickoff_at
+
+
+# ------------------------------------------- the leagues have to stay in sync
+#
+# A league on /season whose results never reach the warehouse cannot re-sync as
+# its season runs — the forecast would stay frozen at its preseason state while
+# looking exactly as live as the others. That happened: seven leagues shipped
+# on the strength of the FBref corpus and none of them was registered for the
+# daily ESPN refresh. Three lists have to agree, and nothing but a test makes
+# them.
+
+
+def _served_leagues():
+    from backend.scripts.forecast_season import LEAGUES
+    return set(LEAGUES)
+
+
+def test_every_served_league_can_have_its_results_refreshed():
+    from backend.services.data.espn_loader import MEN_COMPETITIONS
+
+    ingested = {c["competition_id"] for c in MEN_COMPETITIONS}
+    missing = _served_leagues() - ingested
+    assert not missing, (
+        f"{sorted(missing)} are forecast on /season but no loader ingests their "
+        f"results, so those forecasts can never re-sync with what is played")
+
+
+def test_the_espn_key_maps_agree_with_each_other():
+    """Three modules name the same leagues; a key in one and not the others is
+    a league that half-works."""
+    from backend.services.data.espn_loader import MEN_COMPETITIONS
+    from backend.services.espn.client import ESPN_LEAGUE_IDS
+    from backend.services.prediction.historical_data import (
+        AVAILABLE_SEASONS,
+        ESPN_LEAGUES,
+    )
+
+    for c in MEN_COMPETITIONS:
+        key, comp = c["key"], c["competition_id"]
+        assert ESPN_LEAGUE_IDS.get(key) == comp, (
+            f"espn/client.py maps {key!r} to {ESPN_LEAGUE_IDS.get(key)!r}, "
+            f"not {comp!r}")
+        assert ESPN_LEAGUES.get(key) == comp, (
+            f"historical_data.py maps {key!r} to {ESPN_LEAGUES.get(key)!r}, "
+            f"not {comp!r}")
+        assert AVAILABLE_SEASONS.get(key), (
+            f"{key!r} has no season range, so the collector will never ask "
+            f"for any of it")
+
+
+def test_a_held_league_is_not_also_served():
+    """`HELD` records why a league is absent. Both lists would be a lie."""
+    from backend.scripts.forecast_season import HELD, LEAGUES
+
+    assert not set(HELD) & set(LEAGUES)
+    assert all(reason.strip() for reason in HELD.values()), (
+        "a held league without a reason is indistinguishable from an oversight")
