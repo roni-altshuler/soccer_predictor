@@ -86,6 +86,7 @@ async def _async_main(args: argparse.Namespace) -> int:
                 wh,
                 min_season=args.min_season,
                 max_season=args.max_season,
+                competitions=_competitions(args),
                 force=args.force,
             )
 
@@ -199,6 +200,13 @@ async def _async_main(args: argparse.Namespace) -> int:
     return 0
 
 
+def _competitions(args) -> Optional[List[str]]:
+    """`--competitions eng.2,esp.2` -> ['eng.2', 'esp.2']; absent -> everything."""
+    if not getattr(args, "competitions", None):
+        return None
+    return [c.strip() for c in args.competitions.split(",") if c.strip()]
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--full", action="store_true", help="Run every loader.")
@@ -217,6 +225,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Apply backend/data/venues.yml to teams (offline; implied by --weather).")
     parser.add_argument("--weather", action="store_true", help="Run Open-Meteo weather loader.")
 
+    parser.add_argument("--competitions",
+                        help="comma-separated competition ids to restrict the "
+                             "ESPN loaders to, e.g. 'eng.2,esp.2'. Lets a "
+                             "targeted backfill run without re-touching every "
+                             "league in the warehouse.")
     parser.add_argument("--min-season", type=int, default=1998)
     parser.add_argument("--max-season", type=int, default=None)
     parser.add_argument("--current-season", action="store_true",

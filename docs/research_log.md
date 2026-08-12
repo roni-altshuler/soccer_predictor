@@ -359,3 +359,21 @@ have not kicked off plus three promoted clubs.
 its last recorded count rather than summing the original seven against one
 floor — under which all seven leagues added later could have vanished without
 moving the number.
+
+**Follow-on, same day — the backfill that exposed two merged clubs.** With
+the fetcher fixed, four recent seasons of the seven newer leagues were
+ingested so their clubs exist before their seasons start. The corpus grew by
+**2 matches** and gained **10,914 cross-source links** — the point was never
+more matches, it was identity.
+
+It also surfaced two clubs the resolver had merged. `Reggiana` scores .93
+against `Reggina` on the 0.92 fuzzy threshold, so Reggio Emilia's 114 Serie B
+matches were filed under Reggio Calabria; `Juventude` (Caxias do Sul) had been
+folded into `Juventud` (Las Piedras). A split identity is loud — the integrity
+guard reports it. A merge is silent: one entity carrying two clubs' results,
+ratings and form. Both are pinned apart now, and pinning Reggiana recovered
+its FBref rows, which had been unable to link to an entity named Reggina.
+
+Snapshots naming an unrecognised club: **2,306 → 346**, the remainder being
+nine clubs promoted into their league this summer, each of which resolves at
+its first ingested match.

@@ -698,3 +698,40 @@ teams:
     gender: M
     country: FR
     aliases: [SC Bastia]
+
+  # =====================================================================
+  # CLUBS THAT ARE NOT EACH OTHER
+  #
+  # Everything above this block exists to stop one club being split into
+  # two rows. These entries exist for the opposite failure, which is worse:
+  # two different clubs merged into one, so a single entity carries two
+  # clubs' results, Elo and form.
+  #
+  # The resolver's fuzzy pass merges at a 0.92 similarity ratio, and these
+  # pairs sit above it while being unrelated clubs in different cities.
+  # Pinning them makes the YAML override fire first, so the fuzzy pass
+  # never sees the name. Found on 2026-08-12 when second-tier history was
+  # first ingested: `Reggiana` scores .93 against `Reggina` and had taken
+  # over 114 of its Serie B matches.
+  # =====================================================================
+  - canonical: Reggiana
+    gender: M
+    country: IT
+    # Reggio Emilia. Promoted to Serie B in 2023. NOT Reggina, of Reggio
+    # Calabria, whose Serie A years are 2004-2008 and which was excluded
+    # from Serie B in 2023.
+    aliases: [AC Reggiana, AC Reggiana 1919, Reggiana 1919, US Reggiana]
+  - canonical: Reggina
+    gender: M
+    country: IT
+    aliases: [Reggina 1914, Reggina Calcio]
+  - canonical: Juventude
+    gender: M
+    country: BR
+    # Esporte Clube Juventude, Caxias do Sul. NOT Juventud, of Las Piedras
+    # in Uruguay, which the fuzzy pass had folded it into.
+    aliases: [EC Juventude, Juventude RS, Esporte Clube Juventude]
+  - canonical: Juventud
+    gender: M
+    country: UY
+    aliases: [Juventud de Las Piedras, CA Juventud]

@@ -65,3 +65,55 @@ def test_resolver_rejects_empty_or_bad_gender(warehouse: Warehouse):
         r.resolve("", gender="M")
     with pytest.raises(ValueError):
         r.resolve("Arsenal", gender="X")
+
+
+# ── clubs that are not each other ───────────────────────────────────────
+#
+# The fuzzy pass merges at a 0.92 similarity ratio, which is the right
+# threshold for `Atlético Madrid` / `Atletico Madrid` and the wrong one for
+# two unrelated clubs whose names happen to be one letter apart. Reggiana
+# (Reggio Emilia) scored .93 against Reggina (Reggio Calabria) and took over
+# 114 of its Serie B matches the first time second-tier history was ingested.
+#
+# A split identity halves a club's history and is loud — the integrity guard
+# reports it. A merged identity is silent: one entity with two clubs' results,
+# ratings and form, and every downstream number quietly wrong.
+
+CONFUSABLE = [
+    # (a, b, why they are not the same club)
+    ("Reggiana", "Reggina", "Reggio Emilia; Reggio Calabria"),
+    ("Juventude", "Juventud", "Caxias do Sul, Brazil; Las Piedras, Uruguay"),
+]
+
+
+@pytest.mark.parametrize("a,b,why", CONFUSABLE)
+def test_confusable_clubs_are_above_the_fuzzy_threshold(a, b, why):
+    """If this ever fails, the pin below has become unnecessary — but check
+    why before deleting it."""
+    assert _similarity(a, b) >= 0.92, why
+
+
+@pytest.mark.parametrize("a,b,why", CONFUSABLE)
+def test_confusable_clubs_resolve_to_different_teams(warehouse: Warehouse, a, b, why):
+    """The pin in team_aliases.yml has to fire before the fuzzy pass."""
+    r = TeamResolver(warehouse, gender_default="M")
+    assert r.resolve(a, gender="M").team_id != r.resolve(b, gender="M").team_id, (
+        f"{a} and {b} resolved to one club — {why}")
+
+
+def test_no_alias_is_claimed_by_two_clubs():
+    """One spelling meaning two clubs is a merge waiting to happen, and the
+    file is 154 entries deep — too many to hold in a reviewer's head."""
+    import yaml
+    from pathlib import Path
+
+    path = (Path(__file__).resolve().parent.parent / "data" / "team_aliases.yml")
+    entries = yaml.safe_load(path.read_text())["teams"]
+
+    owner = {}
+    for entry in entries:
+        key = (entry["canonical"], entry.get("gender", "M"))
+        for spelling in [entry["canonical"], *entry.get("aliases", [])]:
+            seen = owner.setdefault((_normalise(spelling), key[1]), key)
+            assert seen == key, (
+                f"{spelling!r} is claimed by both {seen[0]!r} and {key[0]!r}")
