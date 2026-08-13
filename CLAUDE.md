@@ -35,8 +35,9 @@ it — re-derive rather than copy them forward.
 quoting them.** 22 wrong-competition matches deleted, identities merged to a
 fixpoint, and **2,173 duplicate rows collapsed** (1,315 fields coalesced into
 the survivors, so no odds were lost) once `find_duplicate_fixtures` stopped
-keying on `phase` — see the landmines below. `matches` 83,785 → 81,612;
-`eng.1` 2025 748 → **380**, which is what a 380-match season should hold.
+keying on `phase` — see the landmines below. `matches` 83,785 → **81,701**;
+`eng.1` 2025 748 → **380**, ESPN-sourced throughout, which is what a 380-match
+season should hold.
 Anything measured on the pre-2026-08-13 corpus counted most of last season's
 top-five matches twice.
 
@@ -629,6 +630,24 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   stage and its final — are left alone, and zero cases share a day while disagreeing about
   the score. `merge_duplicate_fixtures` re-selects by `match_ids`, never by the key, or a
   group formed for the group stage drags the final in.
+- **A dedupe that deletes the row tomorrow's ingest rewrites is not a dedupe.** The
+  survivor was picked as "most populated columns, ESPN on ties", and football-data rows
+  carry closing odds so they counted as richer and won — 298 of the 380 `eng.1` 2025
+  survivors were football-data rows. ESPN is re-ingested **daily**, so the next Event
+  Backfill wrote all 298 fixtures back (`ESPN/M eng.1 2025 → 380 matches written` into a
+  season already holding 380) and 1,838 duplicates returned within four hours of being
+  removed. **Source comes first, richness is only the tiebreak.** Nothing is lost: every
+  column the survivor lacks is coalesced in from the losers, odds included.
+- **Merging fixtures must MOVE the timeline, not delete it.** `match_events` and
+  `match_event_coverage` are keyed by `match_id` and cost one verified ESPN request each.
+  With football-data rows left as survivors by the old rule, months of backfill had
+  attached to those ids, and re-running the merge under the corrected rule threw away
+  **1,146 verified timelines in a single pass**. `UPDATE OR IGNORE ... SET match_id` onto
+  the keeper first — OR IGNORE because the keeper may already carry its own.
+- **`event_backfill.yml` runs `repair_warehouse --only dedupe-fixtures` after the ingest**,
+  before the event backfill (so timelines attach to surviving rows) and before the artifact
+  builders (so nothing is derived from a corpus that counts matches twice). The corpus
+  heals daily rather than when someone happens to look at it.
 - **`forecast_season` refuses to publish when a league the live artifact serves would
   disappear**, leaving the previous forecast up rather than shipping the survivors.
   Compared against the artifact on disk, not against `LEAGUES`, so a competition that is
