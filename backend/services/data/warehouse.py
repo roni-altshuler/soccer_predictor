@@ -1212,8 +1212,23 @@ class Warehouse:
 
             def richness(r: sqlite3.Row) -> Tuple[int, int, str]:
                 filled = sum(1 for c in self._MERGEABLE_COLUMNS if r[c] is not None)
-                # espn wins ties: it is the only source with a real kickoff.
-                return (filled, 1 if r["source"] == "espn" else 0, r["match_id"])
+                # SOURCE FIRST, richness only as the tiebreak.
+                #
+                # It used to be the other way round, and a dedupe that keeps
+                # the fullest row undoes itself. football-data rows carry
+                # closing odds, so they counted as richer and won: of the 380
+                # eng.1 2025 fixtures only 82 ESPN rows survived the 2026-08-13
+                # repair and 298 football-data rows did. The next daily ingest
+                # then wrote those 298 ESPN fixtures back — `ESPN/M eng.1 2025
+                # -> 380 matches written` into a season that already had 380 —
+                # and the duplicates were all back within hours.
+                #
+                # ESPN is the source re-ingested every day and the only one
+                # with a true kickoff, so its row is the one that must survive.
+                # Nothing is lost by preferring it: every column the survivor
+                # lacks is coalesced in from the rows being dropped below, so
+                # the odds move across.
+                return (1 if r["source"] == "espn" else 0, filled, r["match_id"])
 
             ordered = sorted(rows, key=richness, reverse=True)
             keeper, losers = ordered[0], ordered[1:]
@@ -1242,7 +1257,27 @@ class Warehouse:
                     )
                     fields_filled += len(patch)
                 placeholders = ", ".join(["?"] * len(loser_ids))
-                # Dependent rows first; match_events has no FK to cascade.
+                # MOVE the timeline to the survivor before deleting the row it
+                # hangs off. Deleting it outright cost 1,146 verified timelines
+                # in one pass on 2026-08-13: events are fetched per match_id,
+                # an earlier dedupe had left football-data rows as the
+                # survivors, months of backfill attached to THOSE ids, and
+                # re-running with the corrected survivor rule threw all of it
+                # away. One ESPN request each, and the corpus guard exists
+                # precisely to notice that number falling.
+                #
+                # OR IGNORE because the keeper may already carry its own
+                # timeline — `match_events` is keyed (match_id, seq, source)
+                # and `match_event_coverage` (match_id, source), so a
+                # collision means the survivor already has that row and the
+                # loser's copy is redundant rather than new.
+                for table in ("match_events", "match_event_coverage"):
+                    self._conn.execute(
+                        f"UPDATE OR IGNORE {table} SET match_id = ? "
+                        f"WHERE match_id IN ({placeholders})",
+                        (keeper["match_id"], *loser_ids),
+                    )
+                # Whatever could not move was a duplicate of the survivor's.
                 self._conn.execute(
                     f"DELETE FROM match_events WHERE match_id IN ({placeholders})", loser_ids
                 )

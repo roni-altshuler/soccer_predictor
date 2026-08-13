@@ -455,3 +455,61 @@ class TestRealWarehouse:
         assert not wave_a_failures, (
             f"{check} failed for Wave A league-seasons:\n" + "\n".join(wave_a_failures[:10])
         )
+
+
+class TestDedupeSurvivesTheNextIngest:
+    """A dedupe that deletes the row tomorrow's ingest rewrites is not a dedupe.
+
+    Survivor choice used to be "most populated columns, ESPN on ties".
+    football-data rows carry closing odds, so they counted as richer and won:
+    of the 380 eng.1 2025 fixtures, 298 football-data rows survived the
+    2026-08-13 repair and only 82 ESPN ones did. The daily ingest then wrote
+    those 298 ESPN fixtures straight back — `ESPN/M eng.1 2025 -> 380 matches
+    written` into a season that already held 380 — and every duplicate was
+    back within hours of being removed.
+
+    ESPN is re-ingested daily and is the only source with a true kickoff, so
+    its row has to be the survivor. Nothing is lost by preferring it: the
+    columns it lacks are coalesced in from the rows being dropped.
+    """
+
+    def test_the_espn_row_survives_even_when_the_other_has_more_columns(self, wh):
+        a, b = _team(wh, "Man City"), _team(wh, "Liverpool")
+        _match(wh, "espn_1", "eng.1", 2025, "2025-11-09T16:30:00+00:00", a, b,
+               source="espn", home_score=2, away_score=1)
+        # football-data knows only the day, but carries the closing prices.
+        _match(wh, "fd_1", "eng.1", 2025, "2025-11-09T00:00:00+00:00", a, b,
+               source="fdcouk", home_score=2, away_score=1,
+               odds_home=1.9, odds_draw=3.5, odds_away=4.2, odds_over_2_5=1.8)
+
+        wh.merge_duplicate_fixtures()
+
+        rows = wh._conn.execute(
+            "SELECT match_id, source, odds_home FROM matches "
+            "WHERE competition_id='eng.1' AND season=2025").fetchall()
+        assert len(rows) == 1, "the duplicate was not collapsed"
+        assert rows[0]["source"] == "espn", (
+            "the football-data row survived; the next ESPN ingest will "
+            "re-insert the fixture and the duplicate returns")
+        assert rows[0]["odds_home"] == 1.9, (
+            "preferring ESPN dropped the closing odds instead of coalescing "
+            "them into the survivor")
+
+    def test_a_real_repeat_meeting_is_left_alone(self, wh):
+        """Same two clubs, same season, weeks apart — two real matches.
+
+        This is the shape that made `phase` part of the key in the first
+        place: Egypt beat Ivory Coast in the 2006 Africa Cup of Nations group
+        stage and again in the final. The date gap is what separates them now,
+        so the rule has to hold with no phase set at all.
+        """
+        a, b = _team(wh, "Egypt"), _team(wh, "Ivory Coast")
+        _match(wh, "g", "eng.1", 2006, "2006-01-20T15:00:00+00:00", a, b,
+               source="espn")
+        _match(wh, "f", "eng.1", 2006, "2006-02-10T15:00:00+00:00", a, b,
+               source="espn")
+        wh.merge_duplicate_fixtures()
+        n = wh._conn.execute(
+            "SELECT COUNT(*) FROM matches WHERE competition_id='eng.1' "
+            "AND season=2006").fetchone()[0]
+        assert n == 2, "the second meeting was merged into the first"

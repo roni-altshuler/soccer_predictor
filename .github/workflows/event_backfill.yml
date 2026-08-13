@@ -112,6 +112,22 @@ jobs:
             --espn --espn-women --football-data \
             --min-season $((YEAR - 1)) --max-season "$YEAR"
 
+      - name: Collapse duplicate fixtures the ingest just created
+        # The ingest above reads two sources for the same competition and they
+        # do not always resolve to the same club, so the same match can enter
+        # twice. On 2026-08-13 that had put 748 rows in a 380-match eng.1
+        # season, invisible to every check because the duplicate detector keyed
+        # on `phase` — which is what the SOURCE called the round, so two
+        # sources describing one match disagreed and never grouped.
+        #
+        # Run BEFORE the backfill so timelines are fetched against the
+        # surviving rows rather than against a row about to be deleted, and
+        # before the artifacts are built so nothing is derived from a corpus
+        # that counts matches twice. The merge keeps the ESPN row (the one
+        # re-ingested tomorrow), coalesces every column the loser had into it,
+        # and MOVES the timeline across, so this costs no odds and no coverage.
+        run: python -m backend.scripts.repair_warehouse --only dedupe-fixtures
+
       - name: Backfill events — primary source (incremental)
         # Only matches absent from match_event_coverage inside the lookback
         # window are attempted; exit code 1 = polite hard-stop after
