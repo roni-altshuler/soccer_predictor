@@ -34,7 +34,7 @@ const tiers = (v: number): Tier => {
   if (v >= 0.55) {
     return {
       dot: 'bg-[var(--accent-ai)]',
-      chip: 'border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]',
+      chip: 'border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]',
       label: 'Solid',
     }
   }

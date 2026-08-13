@@ -26,10 +26,10 @@ export function ConfidencePill({ value, label, compact, className }: ConfidenceP
   const band = bandFor(pct)
   const toneClass =
     band.tone === 'high'
-      ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)] ring-[var(--accent-primary)]/30'
+      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)] text-[var(--accent-primary)] ring-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
       : band.tone === 'mid'
-        ? 'bg-[var(--accent-ai)]/12 text-[var(--accent-ai)] ring-[var(--accent-ai)]/30'
-        : 'bg-[var(--accent-warn)]/12 text-[var(--accent-warn)] ring-[var(--accent-warn)]/30'
+        ? 'bg-[color-mix(in_srgb,var(--accent-ai)_12%,transparent)] text-[var(--accent-ai)] ring-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)]'
+        : 'bg-[color-mix(in_srgb,var(--accent-warn)_12%,transparent)] text-[var(--accent-warn)] ring-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)]'
 
   if (compact) {
     return (

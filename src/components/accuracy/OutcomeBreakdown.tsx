@@ -73,7 +73,7 @@ export function OutcomeBreakdown({
               >
                 {readable && (
                   <span
-                    className="block h-full rounded-full bg-[var(--accent-ai)]/70"
+                    className="block h-full rounded-full bg-[color-mix(in_srgb,var(--accent-ai)_70%,transparent)]"
                     style={{ width: `${Math.min(100, Math.max(2, rate * 100))}%` }}
                   />
                 )}

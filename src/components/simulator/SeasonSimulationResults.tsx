@@ -435,7 +435,7 @@ export default function SeasonSimulationResults({
                             <tr
                               key={row.team_name}
                               className={cn(
-                                'border-b border-[var(--border-color)]/60 last:border-b-0',
+                                'border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] last:border-b-0',
                                 isOut ? 'opacity-55' : 'hover:bg-[var(--card-hover)]',
                               )}
                             >

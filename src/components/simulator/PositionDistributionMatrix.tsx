@@ -106,7 +106,7 @@ function DistributionCell({
       role="cell"
       aria-label={label}
       className={cn(
-        'relative flex h-[30px] items-center justify-center border-t border-[var(--border-color)]/50 text-[10px] font-bold tabular-nums',
+        'relative flex h-[30px] items-center justify-center border-t border-[color-mix(in_srgb,var(--border-color)_50%,transparent)] text-[10px] font-bold tabular-nums',
         hasBoundary && 'border-l border-l-[var(--border-color)]',
       )}
       style={{
@@ -331,7 +331,7 @@ export default function PositionDistributionMatrix({
                 <div role="row" className="contents">
                   <div
                     role="rowheader"
-                    className="sticky left-0 z-10 flex h-[30px] items-center gap-2 border-t border-[var(--border-color)]/50 bg-[var(--card-bg)] px-3"
+                    className="sticky left-0 z-10 flex h-[30px] items-center gap-2 border-t border-[color-mix(in_srgb,var(--border-color)_50%,transparent)] bg-[var(--card-bg)] px-3"
                   >
                     <TeamBadge
                       teamId={teamMeta[standing.team_name]?.id}

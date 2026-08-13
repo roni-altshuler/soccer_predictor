@@ -418,7 +418,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
             <h2 className="text-h4 font-bold text-[var(--text-primary)]">Win probability</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
+            <Badge variant="outline" className="border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]">
               {prediction.league}
             </Badge>
             {/* Confidence as a quiet chip — no gauges, no needles. */}

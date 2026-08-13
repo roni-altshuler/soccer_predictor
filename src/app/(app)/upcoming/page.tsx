@@ -277,7 +277,7 @@ export default function UpcomingFixturesPage() {
                   <h2
                     className={cn(
                       'sticky top-[var(--shell-topbar-h)] z-10 -mx-1 flex items-baseline justify-between',
-                      'bg-[var(--background)]/95 px-1 py-2 backdrop-blur-sm'
+                      'bg-[color-mix(in_srgb,var(--background)_95%,transparent)] px-1 py-2 backdrop-blur-sm'
                     )}
                   >
                     <span className="text-xs font-semibold text-[var(--text-secondary)]">

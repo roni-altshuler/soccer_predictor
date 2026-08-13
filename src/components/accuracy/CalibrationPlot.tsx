@@ -84,7 +84,7 @@ export function CalibrationPlot({ bins, ece, className }: CalibrationPlotProps) 
         className="mb-3"
         action={
           typeof ece === 'number' && bins.length > 0 ? (
-            <span className="inline-flex items-center rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)]/60 px-2 py-1 text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">
+            <span className="inline-flex items-center rounded-full border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--muted-bg)_60%,transparent)] px-2 py-1 text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">
               Calibration error ±{(ece * 100).toFixed(1)}pts
             </span>
           ) : (

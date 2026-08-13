@@ -143,10 +143,10 @@ export default function AboutPage() {
 
         {/* Where to go next — /about should open doors, not close them */}
         <Card className="overflow-hidden p-0">
-          <p className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+          <p className="border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] bg-[color-mix(in_srgb,var(--background-secondary)_60%,transparent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
             Explore Pitchverse
           </p>
-          <ul className="divide-y divide-[var(--border-color)]/40">
+          <ul className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">
             {[
               { href: '/', title: 'Match centre', desc: "Today's scores and fixtures with AI picks alongside" },
               { href: '/predict', title: 'AI predict', desc: 'Run the model on any matchup you like' },

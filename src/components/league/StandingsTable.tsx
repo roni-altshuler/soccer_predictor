@@ -115,7 +115,7 @@ export default function StandingsTable({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[var(--border-color)] bg-[var(--surface-muted)]/30 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+            <tr className="border-b border-[var(--border-color)] bg-[color-mix(in_srgb,var(--surface-muted)_30%,transparent)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
               <th className="px-3 py-3 text-left w-8">#</th>
               <th className="px-3 py-3 text-left">Team</th>
               <th className="px-2 py-3 text-center" title="Played">P</th>
@@ -140,7 +140,7 @@ export default function StandingsTable({
                 <tr
                   key={`${row.position}-${row.team_name}`}
                   className={cn(
-                    'border-b border-[var(--border-color)]/40 transition-colors hover:bg-[var(--card-hover)]',
+                    'border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] transition-colors hover:bg-[var(--card-hover)]',
                     styles?.bg,
                     styles?.bar,
                     highlighted && 'bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]'
@@ -206,7 +206,7 @@ export default function StandingsTable({
       </div>
 
       {showLegend && (
-        <div className="border-t border-[var(--border-color)] bg-[var(--surface-muted)]/20 px-4 py-2.5">
+        <div className="border-t border-[var(--border-color)] bg-[color-mix(in_srgb,var(--surface-muted)_20%,transparent)] px-4 py-2.5">
           <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-tertiary)]">
             {showEuropeanZones && (
               <>

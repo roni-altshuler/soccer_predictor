@@ -105,7 +105,7 @@ export function LeagueTable({
                 className={cn(
                   'flex min-h-[44px] items-center rounded-md px-2.5 text-[11px] font-semibold transition-colors sm:min-h-[36px]',
                   active
-                    ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
+                    ? 'bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)] text-[var(--accent-primary)]'
                     : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
                 )}
               >
@@ -214,7 +214,7 @@ function LeagueRow({
   return (
     <tr
       className={cn(
-        'border-b border-[var(--border-color)]/40 last:border-b-0 transition-colors hover:bg-[var(--card-hover)]',
+        'border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] last:border-b-0 transition-colors hover:bg-[var(--card-hover)]',
         muted && 'opacity-55'
       )}
     >
@@ -236,7 +236,7 @@ function LeagueRow({
             className="hidden h-1 w-14 overflow-hidden rounded-full bg-[var(--border-color)] sm:block"
           >
             <span
-              className="block h-full rounded-full bg-[var(--accent-primary)]/70"
+              className="block h-full rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_70%,transparent)]"
               style={{ width: `${Math.min(100, row.accuracy * 100)}%` }}
             />
           </span>

@@ -183,13 +183,13 @@ function EmptyState({
       <div className="p-6 md:p-8">
         <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--accent-ai)]/35 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--accent-ai)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="space-y-2">
               <Badge
                 variant="outline"
-                className="border-[var(--accent-ai)]/40 bg-[var(--accent-ai)]/10 text-[var(--accent-ai)]"
+                className="border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] text-[var(--accent-ai)]"
               >
                 <Sparkles className="mr-1 h-3 w-3" aria-hidden="true" /> {c.eyebrow}
               </Badge>
@@ -231,8 +231,8 @@ function EmptyState({
         </div>
 
         {error && (
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--accent-loss)]/30 bg-[var(--accent-loss)]/5 p-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]">
+          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_5%,transparent)] p-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]">
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </span>
             <p className="text-[12px] text-[var(--text-secondary)]">{error}</p>
@@ -245,7 +245,7 @@ function EmptyState({
 
 function RetrospectiveBanner() {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-warn)]/30 bg-[var(--accent-warn)]/8 px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
+    <div className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
       <History className="h-3.5 w-3.5 shrink-0 text-[var(--accent-warn)]" aria-hidden="true" />
       <span>
         Retrospective analysis — same AI, but{' '}

@@ -106,7 +106,7 @@ export default async function LeaguesPage() {
       </p>
 
       <Card className="overflow-hidden p-0">
-        <ul className="divide-y divide-[var(--border-color)]/40">
+        <ul className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">
           {leagues.map((league) => (
             <li key={league.competitionId}>
               <Link

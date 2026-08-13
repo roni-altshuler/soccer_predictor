@@ -32,7 +32,7 @@ const toastVariants = cva(
         default:
           'border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)]',
         destructive:
-          'border-[var(--accent-loss)]/30 bg-[var(--accent-loss)]/10 text-[var(--accent-loss)]',
+          'border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] text-[var(--accent-loss)]',
       },
     },
     defaultVariants: {

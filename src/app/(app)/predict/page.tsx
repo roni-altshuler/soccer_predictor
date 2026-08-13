@@ -141,19 +141,19 @@ function ResultSkeleton() {
 const OUTPUT_EXPLAINERS = [
   {
     Icon: Percent,
-    tint: 'text-[var(--accent-ai)] bg-[var(--accent-ai)]/12',
+    tint: 'text-[var(--accent-ai)] bg-[color-mix(in_srgb,var(--accent-ai)_12%,transparent)]',
     title: 'Honest probabilities',
     desc: 'Win/draw/loss chances with a confidence we track publicly — when we say 60%, it should happen about 60% of the time.',
   },
   {
     Icon: Goal,
-    tint: 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/12',
+    tint: 'text-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)]',
     title: 'Scoreline distribution',
     desc: 'Every plausible final score gets a probability, with the most likely ones surfaced first.',
   },
   {
     Icon: ListTree,
-    tint: 'text-[var(--accent-warn)] bg-[var(--accent-warn)]/12',
+    tint: 'text-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_12%,transparent)]',
     title: 'Why this prediction',
     desc: 'A factor panel showing which signals — rating gap, form, home edge — moved the needle.',
   },
@@ -380,7 +380,7 @@ function PredictPageContent() {
           />
 
           {isCrossLeague && homeTeam && awayTeam && (
-            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10 px-3 py-2 text-[11px] font-semibold text-[var(--accent-warn)]">
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] px-3 py-2 text-[11px] font-semibold text-[var(--accent-warn)]">
               <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
               Cross-league: {homeTeam.league} vs {awayTeam.league}
             </div>
@@ -402,7 +402,7 @@ function PredictPageContent() {
                         setHomeTeam(fixture.home)
                         setAwayTeam(fixture.away)
                       }}
-                      className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)]/60 px-3.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--muted-bg)_60%,transparent)] px-3.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
                     >
                       <ChipIdentity pick={fixture.home} />
                       <span className="max-w-[9rem] truncate">{fixture.home.name}</span>
@@ -466,7 +466,7 @@ function PredictPageContent() {
                     <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Policy &amp; cross-league context
                     </p>
-                    <div className={`rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10' : 'border-[var(--accent-warn)]/35 bg-[var(--accent-warn)]/10'}`}>
+                    <div className={`rounded-lg border p-3 ${result.verdict.recommended_action === 'play' ? 'border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)]' : 'border-[color-mix(in_srgb,var(--accent-warn)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)]'}`}>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Policy Decision</p>

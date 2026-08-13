@@ -70,7 +70,7 @@ function CompactAIPickCard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Prob1X2 home={p.home_win} draw={p.draw} away={p.away_win} />
-            <span className="inline-flex shrink-0 items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
+            <span className="inline-flex shrink-0 items-center rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
               AI {scoreline}
             </span>
           </div>
@@ -463,7 +463,7 @@ function CommentaryCard({ match }: { match: MatchDetails }) {
             .sort((a, b) => b.minute - a.minute)
             .map((item, idx) => (
               <div key={idx} className="flex gap-3 p-3 hover:bg-[var(--muted-bg)] transition-colors">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold tabular-nums text-[10px] flex-shrink-0">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-[var(--accent-primary)] font-bold tabular-nums text-[10px] flex-shrink-0">
                   {item.minute}&apos;
                 </span>
                 <p className="text-xs text-[var(--text-primary)] leading-relaxed">{item.text}</p>

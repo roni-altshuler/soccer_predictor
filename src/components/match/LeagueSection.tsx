@@ -82,12 +82,12 @@ export function LeagueSection({
   }))
 
   return (
-    <section className="relative border-b border-[var(--border-color)]/40 last:border-b-0">
+    <section className="relative border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex min-h-[40px] w-full items-center gap-2 bg-[var(--background-secondary)]/60 px-3 py-1.5 transition-colors',
+          'flex min-h-[40px] w-full items-center gap-2 bg-[color-mix(in_srgb,var(--background-secondary)_60%,transparent)] px-3 py-1.5 transition-colors',
           'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
         )}
         aria-expanded={open}
@@ -112,7 +112,7 @@ export function LeagueSection({
         {tableLeader && (
           <Badge
             variant="outline"
-            className="hidden border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 text-[10px] text-[var(--accent-primary)] md:inline-flex"
+            className="hidden border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[10px] text-[var(--accent-primary)] md:inline-flex"
           >
             Leader: {tableLeader}
           </Badge>
@@ -151,7 +151,7 @@ export function LeagueSection({
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <div className="divide-y divide-[var(--border-color)]/40">
+            <div className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">
               {stampedMatches.map((match, idx) => (
                 <MatchRow
                   key={match.id ?? `${leagueName}-${idx}`}

@@ -114,20 +114,20 @@ export function AccuracyKpiStrip({
               i >= 2 && 'sm:border-t sm:border-[var(--border-color)] lg:border-t-0'
             )}
           >
-            <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+            <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
               {cell.label}
             </dt>
             <dd className="mt-1 flex flex-wrap items-baseline gap-2">
-              <span className="text-[22px] font-bold leading-none tabular-nums text-[var(--text-primary)]">
+              <span className="font-mono text-[22px] leading-none tabular-nums text-[var(--text-primary)]">
                 {cell.value}
               </span>
               {cell.chip && (
                 <span
                   className={cn(
-                    'rounded px-1 py-0.5 text-[10px] font-bold tabular-nums',
+                    'rounded px-1 py-0.5 font-mono text-[10px] tabular-nums',
                     cell.chip.tone === 'good'
-                      ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
-                      : 'bg-[var(--accent-warn)]/14 text-[var(--accent-warn)]'
+                      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)] text-[var(--accent-primary)]'
+                      : 'bg-[color-mix(in_srgb,var(--accent-warn)_14%,transparent)] text-[var(--accent-warn)]'
                   )}
                 >
                   {cell.chip.text}

@@ -127,11 +127,11 @@ export default function MatchWeather({ venue, kickoffTime, homeTeam }: MatchWeat
 
   const getImpactBg = (level: string): string => {
     switch (level) {
-      case 'none': return 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30'
-      case 'low': return 'bg-[var(--accent-info)]/10 border-[var(--accent-info)]/30'
-      case 'moderate': return 'bg-[var(--accent-warn)]/10 border-[var(--accent-warn)]/30'
-      case 'high': return 'bg-[var(--accent-warn)]/10 border-[var(--accent-warn)]/30'
-      case 'severe': return 'bg-[var(--accent-loss)]/10 border-[var(--accent-loss)]/30'
+      case 'none': return 'bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] border-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
+      case 'low': return 'bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] border-[color-mix(in_srgb,var(--accent-info)_30%,transparent)]'
+      case 'moderate': return 'bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)]'
+      case 'high': return 'bg-[color-mix(in_srgb,var(--accent-warn)_10%,transparent)] border-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)]'
+      case 'severe': return 'bg-[color-mix(in_srgb,var(--accent-loss)_10%,transparent)] border-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)]'
       default: return 'bg-[var(--muted-bg)]'
     }
   }

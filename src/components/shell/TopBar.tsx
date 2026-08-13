@@ -51,7 +51,7 @@ export function TopBar() {
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="group relative ml-auto md:ml-0 flex h-9 min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[var(--accent-primary)]/50 sm:min-w-[160px]"
+          className="group relative ml-auto md:ml-0 flex h-9 min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)] sm:min-w-[160px]"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]" />

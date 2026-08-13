@@ -79,7 +79,7 @@ export function AccuracyHeadline({
       <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-start sm:justify-between md:p-5">
         {/* The number */}
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
             Winner called correctly
           </p>
 
@@ -88,14 +88,14 @@ export function AccuracyHeadline({
               value={accuracy * 100}
               decimals={1}
               suffix="%"
-              className="text-[44px] font-black leading-none tracking-tight tabular-nums text-[var(--text-primary)]"
+              className="font-mono text-[40px] leading-none tabular-nums text-[var(--text-primary)] md:text-[44px]"
             />
             <span
               className={cn(
-                'inline-flex items-center rounded-md px-1.5 py-0.5 text-[12px] font-bold tabular-nums',
+                'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[12px] tabular-nums',
                 beatsRandom
-                  ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
-                  : 'bg-[var(--accent-loss)]/12 text-[var(--accent-loss)]'
+                  ? 'bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)] text-[var(--accent-primary)]'
+                  : 'bg-[color-mix(in_srgb,var(--accent-loss)_12%,transparent)] text-[var(--accent-loss)]'
               )}
             >
               {signedPts(marginPts)}
@@ -127,7 +127,7 @@ export function AccuracyHeadline({
               )} for always picking the home team`}
             >
               <span
-                className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent-primary)]/70"
+                className="absolute inset-y-0 left-0 rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_70%,transparent)]"
                 style={{ width: `${ratePos}%` }}
               />
               <span
@@ -157,10 +157,10 @@ export function AccuracyHeadline({
               {streak && streak.count >= 2 && (
                 <span
                   className={cn(
-                    'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                    'inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums',
                     streak.type === 'W'
-                      ? 'bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]'
-                      : 'bg-[var(--accent-loss)]/12 text-[var(--accent-loss)]'
+                      ? 'bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)] text-[var(--accent-primary)]'
+                      : 'bg-[color-mix(in_srgb,var(--accent-loss)_12%,transparent)] text-[var(--accent-loss)]'
                   )}
                 >
                   {streak.count} in a row
@@ -180,7 +180,7 @@ export function AccuracyHeadline({
                   aria-hidden="true"
                   className={cn(
                     'h-3.5 w-1.5 rounded-[2px]',
-                    f === 'W' ? 'bg-[var(--accent-primary)]' : 'bg-[var(--accent-loss)]/45'
+                    f === 'W' ? 'bg-[var(--accent-primary)]' : 'bg-[color-mix(in_srgb,var(--accent-loss)_45%,transparent)]'
                   )}
                 />
               ))}
@@ -193,7 +193,7 @@ export function AccuracyHeadline({
       </div>
 
       {smallSample && (
-        <p className="border-t border-[var(--border-color)] bg-[var(--muted-bg)]/40 px-4 py-2.5 text-[11px] text-[var(--text-secondary)] md:px-5">
+        <p className="border-t border-[var(--border-color)] bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)] px-4 py-2.5 text-[11px] text-[var(--text-secondary)] md:px-5">
           Only {samplePhrase(settled)} so far — treat this rate and every breakdown below as
           provisional.
         </p>

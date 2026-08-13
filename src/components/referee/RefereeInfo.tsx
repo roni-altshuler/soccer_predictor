@@ -400,7 +400,7 @@ function TeamHistoryCard({ history, isHome }: { history: TeamRefereeHistory; isH
   const winRate = history.matches > 0 ? (history.wins / history.matches * 100) : 0
   
   return (
-    <div className={`rounded-lg p-4 ${isHome ? 'bg-[var(--accent-primary)]/10 border-l-4 border-[var(--accent-primary)]' : 'bg-[var(--accent-info)]/10 border-l-4 border-[var(--accent-info)]'}`}>
+    <div className={`rounded-lg p-4 ${isHome ? 'bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] border-l-4 border-[var(--accent-primary)]' : 'bg-[color-mix(in_srgb,var(--accent-info)_10%,transparent)] border-l-4 border-[var(--accent-info)]'}`}>
       <h5 className="font-semibold text-[var(--text-primary)] mb-3">{history.team}</h5>
       <div className="grid grid-cols-4 gap-2 text-center mb-3">
         <div>

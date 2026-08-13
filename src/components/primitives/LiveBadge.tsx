@@ -30,7 +30,7 @@ export function LiveBadge({ minute, compact = false, className }: LiveBadgeProps
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-loss)]/12 px-2 py-0.5 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--accent-loss)] ring-1 ring-[var(--accent-loss)]/30',
+        'inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--accent-loss)_12%,transparent)] px-2 py-0.5 text-caption font-semibold uppercase tracking-[0.18em] text-[var(--accent-loss)] ring-1 ring-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)]',
         className
       )}
     >

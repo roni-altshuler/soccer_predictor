@@ -175,7 +175,7 @@ export default function WhatIfLab({
             <li
               key={fixture.key}
               className={cn(
-                'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--border-color)]/60 px-4 py-2 last:border-b-0',
+                'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-4 py-2 last:border-b-0',
                 active && 'bg-[color-mix(in_srgb,var(--accent-ai)_6%,transparent)]',
               )}
             >

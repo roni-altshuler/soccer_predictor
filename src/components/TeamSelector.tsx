@@ -133,7 +133,7 @@ function TeamIdentity({
   }, [pick.name, accent.competitionId])
 
   return (
-    <div className="relative flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--muted-bg)]/40 px-3 py-4 text-center">
+    <div className="relative flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--muted-bg)_40%,transparent)] px-3 py-4 text-center">
       <button
         type="button"
         onClick={onClear}
@@ -246,7 +246,7 @@ function TeamPickerControls({
             setOpen(false)
           }}
           aria-label={`${side === 'home' ? 'Home' : 'Away'} team league`}
-          className="min-h-[44px] w-full appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] pl-3 pr-9 text-sm text-[var(--text-primary)] shadow-sm transition-shadow focus:border-[var(--accent-ai)]/70 focus:outline-none focus:ring-2 focus:ring-[var(--accent-ai)]/30"
+          className="min-h-[44px] w-full appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] pl-3 pr-9 text-sm text-[var(--text-primary)] shadow-sm transition-shadow focus:border-[color-mix(in_srgb,var(--accent-ai)_70%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)]"
         >
           <option value="">All leagues</option>
           {leagueNames.map((lg) => (
@@ -283,7 +283,7 @@ function TeamPickerControls({
           }}
           aria-label={`${side === 'home' ? 'Home' : 'Away'} team`}
           placeholder={league ? `Search ${league}…` : 'Type to search any team…'}
-          className="min-h-[44px] w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] shadow-sm transition-shadow focus:border-[var(--accent-ai)]/70 focus:outline-none focus:ring-2 focus:ring-[var(--accent-ai)]/30"
+          className="min-h-[44px] w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] shadow-sm transition-shadow focus:border-[color-mix(in_srgb,var(--accent-ai)_70%,transparent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--accent-ai)_30%,transparent)]"
         />
 
         {open && results.length > 0 && (
@@ -380,7 +380,7 @@ export function MatchupPicker({
           className={cn(
             'flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-secondary)] transition-colors',
             canSwap
-              ? 'hover:border-[var(--accent-ai)]/60 hover:text-[var(--accent-ai)]'
+              ? 'hover:border-[color-mix(in_srgb,var(--accent-ai)_60%,transparent)] hover:text-[var(--accent-ai)]'
               : 'cursor-not-allowed opacity-40'
           )}
         >

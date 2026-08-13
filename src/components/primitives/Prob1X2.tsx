@@ -36,8 +36,8 @@ export function Prob1X2({ home, draw, away, compact = false, className }: Prob1X
             className={cn(
               'flex h-8 w-[42px] flex-col items-center justify-center rounded-md border leading-none',
               isPick
-                ? 'border-[var(--accent-ai)]/45 bg-[var(--accent-ai)]/12'
-                : 'border-[var(--border-color)] bg-[var(--muted-bg)]/60'
+                ? 'border-[color-mix(in_srgb,var(--accent-ai)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent-ai)_12%,transparent)]'
+                : 'border-[var(--border-color)] bg-[color-mix(in_srgb,var(--muted-bg)_60%,transparent)]'
             )}
           >
             <span

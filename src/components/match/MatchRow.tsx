@@ -216,7 +216,7 @@ export function MatchRow({
 
       <StatusColumn match={match} />
 
-      <div className="min-w-0 flex-1 space-y-1.5 border-l border-[var(--border-color)]/60 py-2 pl-3">
+      <div className="min-w-0 flex-1 space-y-1.5 border-l border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] py-2 pl-3">
         <TeamLine
           name={match.home_team}
           crestUrl={match.home_crest_url}
@@ -240,7 +240,7 @@ export function MatchRow({
           <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} className="hidden sm:flex" />
           <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} compact className="sm:hidden" />
           {predictedScoreline && (
-            <span className="hidden shrink-0 items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
+            <span className="hidden shrink-0 items-center rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
               AI {predictedScoreline}
             </span>
           )}
@@ -281,7 +281,7 @@ export function MatchRowList({
         visible: { transition: { staggerChildren: 0.02 } },
         hidden: {},
       }}
-      className={cn('divide-y divide-[var(--border-color)]/40', className)}
+      className={cn('divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]', className)}
     >
       {Array.isArray(children)
         ? children.map((child, idx) => (

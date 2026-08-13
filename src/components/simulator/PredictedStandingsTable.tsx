@@ -130,7 +130,7 @@ export default function PredictedStandingsTable({
                         setExpandedTeam(expanded ? null : team.team_name)
                       }
                     }}
-                    className="cursor-pointer border-b border-[var(--border-color)]/60 transition-colors last:border-b-0 hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none"
+                    className="cursor-pointer border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] transition-colors last:border-b-0 hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none"
                     style={
                       stripe
                         ? { boxShadow: `inset 2px 0 0 0 ${stripe}` }
@@ -192,7 +192,7 @@ export default function PredictedStandingsTable({
                     />
                   </tr>
                   {expanded && (
-                    <tr className="border-b border-[var(--border-color)]/60 bg-[var(--background-secondary)]">
+                    <tr className="border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] bg-[var(--background-secondary)]">
                       <td colSpan={colSpan} className="px-4 py-3">
                         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                           Where {team.team_name} finish across the simulated seasons

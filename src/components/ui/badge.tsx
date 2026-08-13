@@ -9,17 +9,17 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          'border-transparent bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]',
+          'border-transparent bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]',
         ai:
-          'border-transparent bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]',
+          'border-transparent bg-[color-mix(in_srgb,var(--accent-ai)_15%,transparent)] text-[var(--accent-ai)]',
         warn:
-          'border-transparent bg-[var(--accent-warn)]/15 text-[var(--accent-warn)]',
+          'border-transparent bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]',
         loss:
-          'border-transparent bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]',
+          'border-transparent bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]',
         outline:
           'border-[var(--border-color)] text-[var(--text-secondary)] bg-transparent',
         live:
-          'border-transparent bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]',
+          'border-transparent bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]',
       },
     },
     defaultVariants: {

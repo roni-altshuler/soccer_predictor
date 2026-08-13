@@ -158,7 +158,7 @@ function GroupTable({
             return (
               <tr
                 key={`${team.rank}-${team.team}`}
-                className="border-b border-[var(--border-color)]/60 last:border-0 hover:bg-[var(--card-hover)]"
+                className="border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] last:border-0 hover:bg-[var(--card-hover)]"
               >
                 <td className="relative py-2 pl-3 text-right">
                   {color && (

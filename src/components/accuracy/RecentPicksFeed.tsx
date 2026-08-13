@@ -114,7 +114,7 @@ export function RecentPicksFeed({ picks, embedded = false, className }: RecentPi
         <div
           role="tablist"
           aria-label="Filter recent picks"
-          className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]/70 p-0.5"
+          className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--card-bg)_70%,transparent)] p-0.5"
         >
           {(
             [
@@ -136,10 +136,10 @@ export function RecentPicksFeed({ picks, embedded = false, className }: RecentPi
                 'flex min-h-[36px] items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
                 filter === f.value
                   ? f.tone === 'primary'
-                    ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
+                    ? 'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)]'
                     : f.tone === 'loss'
-                      ? 'bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]'
-                      : 'bg-[var(--accent-ai)]/15 text-[var(--accent-ai)]'
+                      ? 'bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]'
+                      : 'bg-[color-mix(in_srgb,var(--accent-ai)_15%,transparent)] text-[var(--accent-ai)]'
                   : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
               )}
             >
@@ -161,7 +161,7 @@ export function RecentPicksFeed({ picks, embedded = false, className }: RecentPi
           No picks match this filter.
         </div>
       ) : (
-        <ul className="divide-y divide-[var(--border-color)]/60">
+        <ul className="divide-y divide-[color-mix(in_srgb,var(--border-color)_60%,transparent)]">
           {visible.map((pick, idx) => (
             <li key={pick.match_id ?? idx}>
               <PickRow pick={pick} idx={idx} />
@@ -268,9 +268,9 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
           isHit &&
-            'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30',
+            'bg-[color-mix(in_srgb,var(--accent-primary)_15%,transparent)] text-[var(--accent-primary)] ring-1 ring-[color-mix(in_srgb,var(--accent-primary)_30%,transparent)]',
           isMiss &&
-            'bg-[var(--accent-loss)]/12 text-[var(--accent-loss)] ring-1 ring-[var(--accent-loss)]/30',
+            'bg-[color-mix(in_srgb,var(--accent-loss)_12%,transparent)] text-[var(--accent-loss)] ring-1 ring-[color-mix(in_srgb,var(--accent-loss)_30%,transparent)]',
           isPending && 'bg-[var(--muted-bg)] text-[var(--text-tertiary)] ring-1 ring-[var(--border-color)]'
         )}
         role="img"
@@ -282,7 +282,7 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
       </div>
 
       {/* Stacked team lines with the final score */}
-      <div className="min-w-0 flex-1 space-y-1 border-l border-[var(--border-color)]/60 py-0.5 pl-3">
+      <div className="min-w-0 flex-1 space-y-1 border-l border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] py-0.5 pl-3">
         <TeamLine name={pick.home_team} score={homeScore} emphasis={homeEmphasis} />
         <TeamLine name={pick.away_team} score={awayScore} emphasis={awayEmphasis} />
         {/* On narrow screens the league/date column is dropped, so the date
@@ -317,7 +317,7 @@ function PickRow({ pick, idx }: { pick: RecentPick; idx: number }) {
             className="sm:hidden"
           />
           {hasScorelinePick && (
-            <span className="hidden shrink-0 items-center rounded-md bg-[var(--accent-ai)]/10 px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
+            <span className="hidden shrink-0 items-center rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)] lg:inline-flex">
               AI {pick.predicted_scoreline}
             </span>
           )}

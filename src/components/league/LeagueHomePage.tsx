@@ -976,7 +976,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                     </button>
                   }
                 />
-                <div className="divide-y divide-[var(--border-color)]/40">
+                <div className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">
                   {data?.standings.slice(0, 5).map((team, idx) => (
                     <div key={team.teamName} className="flex min-h-[44px] items-center gap-2 px-3 py-2">
                       <ZoneDot
@@ -1023,7 +1023,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   
                   return (
                     <div key={conference} className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-                      <div className="border-b border-[var(--border-color)]/40 bg-[var(--background-secondary)]/60 px-3 py-2">
+                      <div className="border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] bg-[color-mix(in_srgb,var(--background-secondary)_60%,transparent)] px-3 py-2">
                         <h2 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">{conference}</h2>
                       </div>
                       <div className="max-h-[560px] overflow-auto">
@@ -1047,7 +1047,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                                     : undefined
 
                               return (
-                                <tr key={team.teamName} className="border-b border-[var(--border-color)]/40 last:border-b-0 hover:bg-[var(--card-hover)]">
+                                <tr key={team.teamName} className="border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] last:border-b-0 hover:bg-[var(--card-hover)]">
                                   <td className="py-2 pl-3 pr-1 text-[var(--text-secondary)]">
                                     <span className="flex items-center gap-1.5">
                                       <ZoneDot color={zoneColor} />
@@ -1136,7 +1136,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                         return (
                           <tr
                             key={team.teamName}
-                            className="border-b border-[var(--border-color)]/40 transition-colors last:border-b-0 hover:bg-[var(--card-hover)]"
+                            className="border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] transition-colors last:border-b-0 hover:bg-[var(--card-hover)]"
                           >
                             <td className="py-2 pl-3 pr-1 text-[var(--text-secondary)]">
                               <span className="flex items-center gap-1.5">
@@ -1213,7 +1213,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               className="p-4 border-b border-[var(--border-color)]"
             />
             {data?.topScorers && data.topScorers.length > 0 ? (
-              <div className="divide-y divide-[var(--border-color)]/40">
+              <div className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">
                 {data.topScorers.map((scorer) => (
                   <div key={scorer.name} className="flex min-h-[48px] items-center gap-3 px-3 py-2 hover:bg-[var(--card-hover)]">
                     <span className="w-5 shrink-0 text-center text-[12px] tabular-nums text-[var(--text-tertiary)]">

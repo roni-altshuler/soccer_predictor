@@ -46,7 +46,7 @@ const pct = (v: number | null | undefined) =>
 
 /**
  * Inline rather than Tailwind classes because the softer band needs an alpha
- * of the token, and `bg-[var(--x)]/45` does not work: Tailwind's opacity
+ * of the token, and `bg-[color-mix(in_srgb,var(--x)_45%,transparent)]` does not work: Tailwind's opacity
  * modifier has to know the colour to blend it, and a CSS variable is opaque to
  * it at build time. The class silently produced no background at all, so the
  * qualification band — four rows of every table — was invisible while the
@@ -398,7 +398,7 @@ function Legend({
           {it.text}
         </li>
       ))}
-      <li className="text-[var(--text-tertiary)]/70">
+      <li className="text-[color-mix(in_srgb,var(--text-tertiary)_70%,transparent)]">
         Bands follow the projected finish, not today&apos;s position
       </li>
     </ul>

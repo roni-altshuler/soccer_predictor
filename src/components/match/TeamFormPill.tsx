@@ -28,10 +28,10 @@ export interface TeamFormPillProps {
 }
 
 const toneByResult: Record<FormChar, string> = {
-  W: 'border-[var(--accent-primary)]/60 bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]',
-  D: 'border-[var(--accent-warn)]/60 bg-[var(--accent-warn)]/15 text-[var(--accent-warn)]',
-  L: 'border-[var(--accent-loss)]/60 bg-[var(--accent-loss)]/15 text-[var(--accent-loss)]',
-  '-': 'border-[var(--border-color)] bg-[var(--surface-muted)]/40 text-[var(--text-tertiary)]',
+  W: 'border-[color-mix(in_srgb,var(--accent-primary)_60%,transparent)] bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] text-[var(--accent-primary)]',
+  D: 'border-[color-mix(in_srgb,var(--accent-warn)_60%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_15%,transparent)] text-[var(--accent-warn)]',
+  L: 'border-[color-mix(in_srgb,var(--accent-loss)_60%,transparent)] bg-[color-mix(in_srgb,var(--accent-loss)_15%,transparent)] text-[var(--accent-loss)]',
+  '-': 'border-[var(--border-color)] bg-[color-mix(in_srgb,var(--surface-muted)_40%,transparent)] text-[var(--text-tertiary)]',
 }
 
 const sizeMap = {
