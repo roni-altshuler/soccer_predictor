@@ -89,6 +89,12 @@ SPLIT_IDENTITIES: Tuple[Tuple[str, str, str], ...] = (
     ("ger.1", "Union Berlin", "1. FC Union Berlin"),
     ("ger.1", "Bielefeld", "Arminia Bielefeld"),
     ("ger.1", "Greuther Furth", "SpVgg Greuther Fürth"),
+    # The pin in team_aliases.yml used to make `1. FC Heidenheim` canonical
+    # while ESPN wrote `1. FC Heidenheim 1846`, so the alias file itself split
+    # the club: ger.1 2025 held 340 rows for a 306-match season, this merged
+    # them on every run, and the next day's ingest split them again. The pin
+    # now follows ESPN; this heals the warehouses written before it did.
+    ("ger.1", "1. FC Heidenheim", "1. FC Heidenheim 1846"),
 
     ("ita.1", "Verona", "Hellas Verona"),
     ("ita.1", "Chievo", "Chievo Verona"),

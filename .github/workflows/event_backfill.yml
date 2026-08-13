@@ -112,7 +112,7 @@ jobs:
             --espn --espn-women --football-data \
             --min-season $((YEAR - 1)) --max-season "$YEAR"
 
-      - name: Collapse duplicate fixtures the ingest just created
+      - name: Fold split club identities the ingest just recreated
         # The ingest above reads two sources for the same competition and they
         # do not always resolve to the same club, so the same match can enter
         # twice. On 2026-08-13 that had put 748 rows in a 380-match eng.1
@@ -126,7 +126,17 @@ jobs:
         # that counts matches twice. The merge keeps the ESPN row (the one
         # re-ingested tomorrow), coalesces every column the loser had into it,
         # and MOVES the timeline across, so this costs no odds and no coverage.
-        run: python -m backend.scripts.repair_warehouse --only dedupe-fixtures
+        #
+        # `merge-identities` runs FIRST and is not optional: a duplicate is
+        # only visible once both rows point at the same club. football-data
+        # spells clubs tersely enough to fall under the resolver's 0.92 fuzzy
+        # threshold, so it keeps minting second `teams` rows — ger.1 2025 sat
+        # at 340 rows for a 306-match season behind a split Heidenheim, and
+        # deduping alone could not see it. That pass is the hand-curated
+        # SPLIT_IDENTITIES list, not a heuristic.
+        run: |
+          python -m backend.scripts.repair_warehouse \
+            --only merge-identities --only dedupe-fixtures
 
       - name: Backfill events — primary source (incremental)
         # Only matches absent from match_event_coverage inside the lookback

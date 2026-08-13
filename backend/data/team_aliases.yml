@@ -511,10 +511,19 @@ teams:
     gender: M
     country: DE
     aliases: [Paderborn]
-  - canonical: 1. FC Heidenheim
+  # Heidenheim is no longer FD-only — they are in the Bundesliga and ESPN
+  # covers them as `1. FC Heidenheim 1846`. This entry still pinned the
+  # canonical to `1. FC Heidenheim`, so football-data's "Heidenheim" landed on
+  # one row while ESPN's ingest materialised another, and ger.1 2025 carried
+  # 340 rows for a 306-match season. `repair_warehouse` merged the pair every
+  # time it ran and the next day's ingest split them again.
+  #
+  # The canonical has to be the spelling the DAILY source writes, or the pin
+  # manufactures the very split it exists to prevent.
+  - canonical: 1. FC Heidenheim 1846
     gender: M
     country: DE
-    aliases: [Heidenheim]
+    aliases: [Heidenheim, 1. FC Heidenheim]
   - canonical: Holstein Kiel
     gender: M
     country: DE
