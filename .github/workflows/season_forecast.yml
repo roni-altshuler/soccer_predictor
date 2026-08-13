@@ -117,6 +117,23 @@ jobs:
           python -m backend.scripts.ingest_fbref_schedules \
             --current-season --stale-days 0.5
 
+      - name: Refresh MLS conference membership
+        # `conferences.json` decides which conference every MLS club sits in
+        # AND where the playoff cut line falls. `forecast_season` refuses to
+        # publish a grouped table when a club in the fixture list is in no
+        # conference — the safe failure — so a file frozen at the day it was
+        # first built would cost MLS its table the season a club is added or
+        # moved, and nothing would say why.
+        #
+        # `continue-on-error` for the same reason as the schedule refresh: a
+        # stale membership still produces a correct table (clubs do not change
+        # conference mid-season), so an ESPN hiccup must not take down the
+        # forecast. `build_conferences` raises BEFORE writing when ESPN returns
+        # fewer than two groups, so a bad response leaves the committed file
+        # intact rather than flattening the league into one conference.
+        continue-on-error: true
+        run: python -m backend.scripts.build_conferences
+
       - name: Rebuild canonical layer
         run: python -m backend.scripts.build_canonical --no-parquet
 
@@ -145,8 +162,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add backend/data/predictions/season_fixtures.json \
                   backend/data/predictions/season_projections.json \
+                  backend/data/conferences.json \
                   backend/data/evaluation/ || true
-          if git diff --cached --quiet; then
+          # conferences.json stamps generated_at on every build, so ignore that
+          # line — otherwise this job commits a one-line timestamp change daily.
+          if git diff --cached --quiet -I'"generated_at":'; then
             echo "Forecast unchanged"
           else
             git commit -m "chore: refresh season forecast [automated]"
