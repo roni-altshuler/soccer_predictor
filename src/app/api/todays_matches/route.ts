@@ -3,7 +3,7 @@ import path from 'path'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getLeagueAccent, WAVE_A_COMPETITION_IDS } from '@/lib/leagueAccents'
+import { getLeagueAccent, ALL_COMPETITION_IDS } from '@/lib/leagueAccents'
 import { ESPN_SITE } from '@/lib/espnHost'
 
 export const dynamic = 'force-dynamic'
@@ -137,13 +137,34 @@ function attachPredictions(matches: Match[], preds: CommittedPrediction[]): void
   }
 }
 
-// Wave A — the five leagues the model has been scored on. The other seven
-// competitions this route used to fetch (Eredivisie, Primeira Liga, MLS, the
-// UEFA cups, the World Cup) still resolved to badges and still got an "AI"
-// scoreline chip on the matches list, from a model with no measured record in
-// any of them. Coverage is defined in one place now: src/lib/leagueAccents.ts.
-const MENS_ESPN_LEAGUES = WAVE_A_COMPETITION_IDS.map((id) => ({
-  id,
+// Everything the site covers: the six leagues and the fourteen knockout
+// competitions. "Today" that shows five leagues is not today.
+//
+// This was cut back to Wave A once because the other competitions were still
+// getting an "AI" scoreline chip from a model with no measured record in them.
+// That was the right problem and the wrong fix — the chip comes from
+// `attachPredictions`, which only writes one when a COMMITTED prediction
+// exists for that fixture, so a competition the model has not forecast simply
+// shows a fixture and no number. Narrowing the fixture list to fix a
+// labelling bug cost the reader thirteen competitions.
+//
+// ESPN's scoreboard spells the Conference League differently from the forecast
+// layer. Asking for `uefa.conference` returns 404 and the competition silently
+// never appears.
+//
+// Declared BEFORE the list that reads it, and that ordering is load-bearing:
+// `MENS_ESPN_LEAGUES` runs its `.map` at module scope, so a `const` defined
+// below is still in the temporal dead zone when the callback reaches it. It
+// throws `ReferenceError: Cannot access 'ESPN_SCOREBOARD_ID' before
+// initialization` at import time, which fails `next build` at "Collecting page
+// data" rather than at typecheck — TypeScript cannot prove when a callback
+// runs, so it raises nothing.
+const ESPN_SCOREBOARD_ID: Record<string, string> = {
+  'uefa.conference': 'uefa.europa.conf',
+}
+
+const MENS_ESPN_LEAGUES = ALL_COMPETITION_IDS.map((id) => ({
+  id: ESPN_SCOREBOARD_ID[id] ?? id,
   name: getLeagueAccent(id).displayName,
 }))
 

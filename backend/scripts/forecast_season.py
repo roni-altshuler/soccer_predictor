@@ -101,12 +101,6 @@ LEAGUES: Dict[str, Dict] = {
               "top_cut": 4, "top_cut_label": "Top 4"},
     "fra.1": {"name": "Ligue 1", "country": "France", "relegate": 2,
               "playoff": 1, "top_cut": 4, "top_cut_label": "Top 4"},
-    "ned.1": {"name": "Eredivisie", "country": "Netherlands", "relegate": 2,
-              "top_cut": 4, "top_cut_label": "Top 4"},
-    "por.1": {"name": "Primeira Liga", "country": "Portugal", "relegate": 2,
-              "top_cut": 4, "top_cut_label": "Top 4"},
-    "tur.1": {"name": "Süper Lig", "country": "Türkiye", "relegate": 4,
-              "top_cut": 4, "top_cut_label": "Top 4"},
 
     # -- North America -------------------------------------------------
     # Grouped rather than single-table, which changes what every number on
@@ -127,21 +121,29 @@ LEAGUES: Dict[str, Dict] = {
 # reason MLS was held until conference-aware ranking existed.
 #
 # The rest are held for SCOPE. Each cleared its gate and each was served for a
-# day; the site is now the top flight of Europe plus MLS, and a Championship
-# table on the same page as the Premier League made the product harder to read
-# rather than more complete. The evidence stays in
-# `reports/baselines/league_gate.json` — nothing was un-measured, and turning
-# any of them back on is one line here.
+# day; the site is the BIG FIVE plus MLS plus the tournaments, and every league
+# added beyond that made the product harder to read rather than more complete.
+# The evidence stays in `reports/baselines/league_gate.json` — nothing was
+# un-measured, and turning any of them back on is one line here.
+#
+# ned.1, por.1 and tur.1 were served through 2026-08-13 and are the closest of
+# these to coming back: por.1 is the model's BEST measured league (.56873) and
+# ned.1 second (.57010), both ahead of the Premier League's .58266. They are
+# out on scope, not on evidence, and the numbers say so.
+SCOPE = "out of scope: the site serves the big five, MLS and the tournaments"
 HELD: Dict[str, str] = {
     "mex.1": "Apertura/Clausura split with a liguilla",
     "arg.1": "zones and knockout rounds inside the league",
     "ksa.1": "too little history to measure under the same protocol",
-    "eng.2": "out of scope: the site serves the European top flight and MLS",
-    "esp.2": "out of scope: the site serves the European top flight and MLS",
-    "ger.2": "out of scope: the site serves the European top flight and MLS",
-    "ita.2": "out of scope: the site serves the European top flight and MLS",
-    "fra.2": "out of scope: the site serves the European top flight and MLS",
-    "bra.1": "out of scope: the site serves the European top flight and MLS",
+    "eng.2": SCOPE,
+    "esp.2": SCOPE,
+    "ger.2": SCOPE,
+    "ita.2": SCOPE,
+    "fra.2": SCOPE,
+    "bra.1": SCOPE,
+    "ned.1": SCOPE,
+    "por.1": SCOPE,
+    "tur.1": SCOPE,
 }
 
 MAX_GOALS = 10

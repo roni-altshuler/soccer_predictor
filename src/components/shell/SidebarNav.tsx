@@ -4,23 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Activity,
-  BookOpen,
-  Brain,
-  Calculator,
-  CalendarDays,
-  Database,
-  Globe,
-  History,
+  BarChart3,
+  CalendarRange,
   Info,
-  Medal,
-  Newspaper,
-  Radio,
+  Swords,
   TrendingUp,
   Trophy,
-  Users,
-  Swords,
-  CalendarRange,
-  BarChart3,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -38,24 +27,31 @@ type NavGroup = {
   items: NavItem[]
 }
 
-// Four things now, not three (PIVOT_2026-08 §2 + the tournament layer added
-// 2026-08-11): what's on, what the model says about a season, what it says
-// about a bracket, and how right it has been.
+// Two questions and the receipts.
+//
+// WATCH is where you follow football as it happens: what is on right now, and
+// the table for any competition. FORECAST is the two shapes a season comes in
+// — a league is a table, a tournament is a bracket — and each is its own
+// destination rather than a tab inside a generic "model" bucket. EVIDENCE is
+// how right it has been.
+//
+// The old nav split the same competition across four entries: `/leagues` was
+// labelled "Standings", `/season` was "The Season Ahead", `/simulator` was
+// "Title & Relegation" and `/tournaments` sat under "Model". A reader who
+// wanted the Premier League had to know which of those held the part they
+// were after. One competition is now one destination.
 const GROUPS: NavGroup[] = [
   {
-    title: 'Matches',
+    title: 'Watch',
     items: [
       { href: '/', label: 'Today', icon: Activity },
-      { href: '/upcoming', label: 'Fixtures', icon: CalendarDays },
-      { href: '/leagues', label: 'Standings', icon: Trophy },
+      { href: '/standings', label: 'Standings', icon: Trophy },
     ],
   },
   {
-    title: 'Model',
+    title: 'Forecast',
     items: [
-      { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
-      { href: '/season', label: 'The Season Ahead', icon: CalendarRange },
-      { href: '/simulator', label: 'Title & Relegation', icon: Calculator },
+      { href: '/leagues', label: 'Leagues', icon: CalendarRange },
       { href: '/tournaments', label: 'Tournaments', icon: Swords },
     ],
   },

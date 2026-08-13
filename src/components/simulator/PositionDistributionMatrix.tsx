@@ -40,10 +40,40 @@ function zoneBoundaries(numTeams: number): Set<number> {
   return bounds
 }
 
+/**
+ * The ramp, and why these particular numbers.
+ *
+ * `--accent-ai` is #c3d9f3 and `--card-bg` is #0d0d0d, so the old floor of 4%
+ * produced rgb(20,21,22) — a cell one step off the page background and
+ * indistinguishable from an empty one at rgb(21,21,21). Most of a 20x20 grid
+ * sits in the bottom tenth of the scale, so most of the grid was black
+ * squares, and the distribution the component exists to show was invisible.
+ *
+ * The floor is now 20%, which is the point at which a tinted cell separates
+ * from an untinted one, and the range runs to 88%. Every non-zero cell is
+ * therefore visibly non-zero, which is the only claim the colour has to make.
+ */
+const FILL_FLOOR = 20
+const FILL_RANGE = 68
+
+/**
+ * Where black text starts beating white text on this ramp.
+ *
+ * At mix 52% the cell is rgb(108,119,133): white reads 4.55:1 and black 4.62:1,
+ * so both clear 4.5:1 and the crossover has no dead band. Below it the cell is
+ * dark enough for white, above it light enough for black. Solving
+ * `FILL_FLOOR + t*FILL_RANGE = 52` gives t = 0.47.
+ */
+const INK_FLIP = 0.47
+
+/** Printed as text below this and the cell is a rounding artefact, not a number. */
+const PRINTABLE = 0.005
+
 function cellFill(prob: number, maxProb: number): string {
   if (prob <= 0) return 'color-mix(in srgb, var(--muted-bg) 45%, transparent)'
   const t = maxProb > 0 ? prob / maxProb : 0
-  return `color-mix(in srgb, var(--accent-ai) ${Math.round(Math.max(4, t * 82))}%, var(--card-bg))`
+  const mix = Math.round(FILL_FLOOR + Math.min(1, Math.max(0, t)) * FILL_RANGE)
+  return `color-mix(in srgb, var(--accent-ai) ${mix}%, var(--card-bg))`
 }
 
 interface DistributionCellProps {
@@ -64,7 +94,12 @@ function DistributionCell({
   hasBoundary,
 }: DistributionCellProps) {
   const t = maxProb > 0 ? probability / maxProb : 0
-  const label = `${teamName} — ${ordinal(position)} in ${(probability * 100).toFixed(probability >= 0.095 ? 0 : 1)}% of simulations`
+  const reading = (probability * 100).toFixed(probability >= 0.095 ? 0 : 1)
+  const label = `${teamName} — ${ordinal(position)} in ${reading}% of simulations`
+  // On a dark cell white, on a light one black — see INK_FLIP. The old
+  // #cccccc had no headroom at the top of the ramp and the flip was late
+  // enough that mid-range cells were grey text on mid-blue.
+  const dark = t < INK_FLIP
 
   const cell = (
     <div
@@ -76,15 +111,23 @@ function DistributionCell({
       )}
       style={{
         background: cellFill(probability, maxProb),
-        boxShadow: isPeak ? 'inset 0 0 0 1px var(--accent-ai)' : undefined,
-        color: t >= 0.55 ? 'var(--accent-on-primary)' : 'var(--text-secondary)',
+        // The modal finish is outlined in whichever ink its own cell can
+        // carry. A fixed accent ring vanished on exactly the cells most
+        // likely to be the peak, which are the brightest ones.
+        boxShadow: isPeak
+          ? `inset 0 0 0 1px ${dark ? 'var(--text-primary)' : 'var(--accent-on-primary)'}`
+          : undefined,
+        color: dark ? 'var(--text-primary)' : 'var(--accent-on-primary)',
       }}
     >
-      {(isPeak || t >= 0.55) && probability > 0 && (
-        <span className="pointer-events-none">
-          {(probability * 100).toFixed(probability >= 0.095 ? 0 : 1)}
-        </span>
-      )}
+      {/*
+        Every cell that holds a real number prints it, rather than only the
+        peak and the top of the ramp. A grid where 380 of 400 cells were blank
+        made the reader hover to learn anything, and the house rule is that a
+        probability is text and colour is the second channel, never the only
+        one.
+      */}
+      {probability >= PRINTABLE && <span className="pointer-events-none">{reading}</span>}
     </div>
   )
 
@@ -187,7 +230,12 @@ function ZoneLegend({ numTeams }: { numTeams: number }) {
           {ZONE_LABEL[zone]}
         </span>
       ))}
-      <span className="ml-auto hidden sm:inline">Darker cell = finishes there more often</span>
+      {/*
+        Brighter, not darker. The ramp mixes `--accent-ai` (#c3d9f3) INTO the
+        near-black card background, so more probability is a lighter cell —
+        the legend described the scale backwards.
+      */}
+      <span className="ml-auto hidden sm:inline">Brighter cell = finishes there more often</span>
     </div>
   )
 }

@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
-  Brain,
+  CalendarRange,
   Search,
-  TrendingUp,
+  Swords,
   Trophy,
 } from 'lucide-react'
 
@@ -23,12 +23,16 @@ type Item = {
   action?: 'palette'
 }
 
+// The same five destinations the sidebar leads with, minus the evidence pages
+// a phone reader reaches least: what is on, the table for any competition, the
+// two forecast surfaces, and search. Deep enough that no primary destination
+// is more than one tap away.
 const ITEMS: Item[] = [
   { href: '/', label: 'Today', icon: Activity },
-  { href: '/leagues', label: 'Standings', icon: Trophy },
+  { href: '/standings', label: 'Standings', icon: Trophy },
   { action: 'palette', label: 'Search', icon: Search },
-  { href: '/predict', label: 'Predict', icon: Brain, accent: 'ai' },
-  { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
+  { href: '/leagues', label: 'Leagues', icon: CalendarRange },
+  { href: '/tournaments', label: 'Cups', icon: Swords },
 ]
 
 function isActive(pathname: string, href?: string) {

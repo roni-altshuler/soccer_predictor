@@ -28,18 +28,10 @@ export interface LeagueOption {
   teams: number
 }
 
-// Roughly by following: the big five, the other European top flights, then
-// MLS.
-//
-// The second tiers and Brazil that used to sit at the tail were removed from
-// the product, and `usa.1` was never added — so MLS landed last only because
-// an unranked league sorts after every ranked one. It was the position we
-// wanted, arrived at by accident, and the next league added anywhere but the
-// end would have exposed that. Ranked explicitly now.
-const RANK = [
-  'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1', 'tur.1',
-  'usa.1',
-]
+// By following: the big five, then MLS. Every served league is named here, so
+// nothing falls back to alphabetical — which is how MLS previously ended up
+// last by accident rather than by intent.
+const RANK = ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'usa.1']
 
 export function orderLeagues<T extends { competition_id: string; name: string }>(
   leagues: T[],

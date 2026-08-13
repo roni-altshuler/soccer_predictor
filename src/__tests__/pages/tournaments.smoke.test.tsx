@@ -30,6 +30,25 @@ function mockFetch(record: unknown, predictions: unknown = { available: false })
   ) as unknown as typeof fetch
 }
 
+/**
+ * The artifact carries one entry per EDITION, not per competition — the last
+ * eight of each. A fixture with one entry per competition is what let the page
+ * ship broken: the real file has six rows reading "UEFA Champions League",
+ * every one of them carrying the same `competition_id`, and the old picker put
+ * all seventy-nine into a single flat listbox. So the shape is reproduced here
+ * — multiple editions per competition, `is_current` marking which one to open
+ * on, and a `bracket` on every entry.
+ */
+const tie = (over: Record<string, unknown>) => ({
+  score: null,
+  winner: null,
+  winner_id: null,
+  p_team_a: null,
+  two_legged: false,
+  pending: false,
+  ...over,
+})
+
 const FORECASTS = {
   available: true,
   tournaments: [
@@ -38,21 +57,47 @@ const FORECASTS = {
       name: 'Copa Libertadores',
       region: 'South America',
       season: 2026,
+      is_current: true,
       status: 'upcoming',
       field: 16,
       current_round: 'round-of-16',
       draw_known_to: 'round-of-16',
       forecast_from: '2026-08-11',
-      ties: [
+      bracket: [
         {
-          round: 'round-of-16',
-          team_a: 'Cruzeiro',
-          team_b: 'Flamengo',
-          team_a_id: 8,
-          team_b_id: 9,
-          p_team_a: 0.239,
-          kickoff: '2026-08-13',
-          decided: null,
+          slug: 'firststage',
+          label: 'round-of-6',
+          display: 'First stage',
+          ties: [
+            tie({
+              team_a: 'Cerro Porteño',
+              team_b: 'Nacional',
+              team_a_id: 20,
+              team_b_id: 21,
+              score: '3-1',
+              winner: 'Cerro Porteño',
+              winner_id: 20,
+              kickoff: '2026-02-11',
+              two_legged: true,
+            }),
+          ],
+        },
+        {
+          slug: 'roundof16',
+          label: 'round-of-16',
+          display: 'Round of 16',
+          ties: [
+            tie({
+              team_a: 'Cruzeiro',
+              team_b: 'Flamengo',
+              team_a_id: 8,
+              team_b_id: 9,
+              p_team_a: 0.239,
+              kickoff: '2026-08-13',
+              two_legged: true,
+              pending: true,
+            }),
+          ],
         },
       ],
       odds: [
@@ -61,14 +106,69 @@ const FORECASTS = {
       ],
     },
     {
+      competition_id: 'conmebol.libertadores',
+      name: 'Copa Libertadores',
+      region: 'South America',
+      season: 2025,
+      is_current: false,
+      status: 'completed',
+      field: 16,
+      forecast_made_at_round: 'round-of-16',
+      forecast_from: '2025-08-12',
+      bracket: [
+        {
+          slug: 'final',
+          label: 'final',
+          display: 'Final',
+          ties: [
+            tie({
+              team_a: 'Botafogo',
+              team_b: 'Peñarol',
+              team_a_id: 30,
+              team_b_id: 31,
+              score: '2-0',
+              winner: 'Botafogo',
+              winner_id: 30,
+              kickoff: '2025-11-29',
+            }),
+          ],
+        },
+      ],
+      odds: [{ team_id: 30, team: 'Botafogo', probability: 0.21, elo: 1890 }],
+      actual_champion: 'Botafogo',
+      actual_champion_id: 30,
+      probability_on_actual: 0.21,
+      called_it: true,
+    },
+    {
       competition_id: 'uefa.champions',
       name: 'UEFA Champions League',
       region: 'Europe',
       season: 2025,
+      is_current: true,
       status: 'completed',
       field: 16,
       forecast_made_at_round: 'round-of-16',
       forecast_from: '2026-03-04',
+      bracket: [
+        {
+          slug: 'final',
+          label: 'final',
+          display: 'Final',
+          ties: [
+            tie({
+              team_a: 'Arsenal',
+              team_b: 'Bayern Munich',
+              team_a_id: 2,
+              team_b_id: 1,
+              score: '1-1 (4-2 pens)',
+              winner: 'Arsenal',
+              winner_id: 2,
+              kickoff: '2026-05-30',
+            }),
+          ],
+        },
+      ],
       odds: [
         { team_id: 1, team: 'Bayern Munich', probability: 0.229, elo: 1900 },
         { team_id: 2, team: 'Arsenal', probability: 0.15, elo: 1870 },
@@ -80,12 +180,47 @@ const FORECASTS = {
       next_fixture: { season: 2026, starts: '2026-09-16', fixtures: 36 },
     },
     {
+      // Finished years ago, every tie played — but the rounds could not be
+      // paired into a tree, so there is no forecast. NOT the same thing as a
+      // draw that has not been made.
+      competition_id: 'uefa.champions',
+      name: 'UEFA Champions League',
+      region: 'Europe',
+      season: 2020,
+      is_current: false,
+      status: 'not_reconstructed',
+      reason:
+        'the bracket could not be paired into a tree, so no forecast was made for this edition',
+      bracket: [
+        {
+          slug: 'final',
+          label: 'final',
+          display: 'Final',
+          ties: [
+            tie({
+              team_a: 'Manchester City',
+              team_b: 'Chelsea',
+              team_a_id: 2001,
+              team_b_id: 2002,
+              score: '0-1',
+              winner: 'Chelsea',
+              winner_id: 2002,
+              kickoff: '2021-05-29',
+            }),
+          ],
+        },
+      ],
+      power_ranking: [{ team_id: 2002, team: 'Chelsea', elo: 1901 }],
+    },
+    {
       competition_id: 'fifa.cwc',
       name: 'FIFA Club World Cup',
       region: 'World',
       season: 2025,
+      is_current: true,
       status: 'awaiting_draw',
-      reason: 'no bracket could be reconstructed for this edition',
+      reason: 'the round-of-16 has 6 ties, which is not a whole round',
+      bracket: [],
       power_ranking: [{ team_id: 11, team: 'Real Madrid', elo: 1912 }],
     },
   ],
@@ -181,9 +316,102 @@ describe('TournamentsPage', () => {
     // forecast. Ordering by status is what makes it the first thing seen.
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
     expect(screen.getByRole('heading', { name: /Copa Libertadores/i })).toBeInTheDocument()
-    expect(screen.getByText(/who goes through/i)).toBeInTheDocument()
     expect(screen.getByText('Cruzeiro')).toBeInTheDocument()
     expect(screen.getByText('23.4%')).toBeInTheDocument()
+  })
+
+  // ------------------------------------------------------------ the bracket
+  //
+  // The artifact grew a full bracket per edition — every round, in order, with
+  // scores — and the page rendered none of it. A reader saw that Bayern were
+  // favourites and never saw who they had to beat to get there.
+
+  it('draws the path to the trophy, round by round', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    const rounds = screen.getAllByRole('heading', { level: 5 }).map((h) => h.textContent)
+    expect(rounds).toEqual(['First stage', 'Round of 16'])
+
+    // A settled tie carries the score that settled it; an undecided one
+    // carries the chance each side goes through. Never both.
+    expect(screen.getByText('3-1')).toBeInTheDocument()
+    expect(screen.getByText('Cerro Porteño')).toBeInTheDocument()
+    expect(screen.getByText('24%')).toBeInTheDocument()
+  })
+
+  it('shows a shootout as well as the aggregate, not instead of it', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Champions League/i)
+
+    // 1-1 alone reads as a drawn tie with a team advancing for no stated
+    // reason, which is what the scoreline looked like before the shootout was
+    // appended to it.
+    expect(screen.getByText('1-1 (4-2 pens)')).toBeInTheDocument()
+  })
+
+  // ----------------------------------------------------- the season explorer
+
+  it('opens on the current edition and walks back through earlier ones', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    const seasons = screen.getByRole('group', { name: /season/i })
+    expect(within(seasons).getByRole('button', { name: /2026/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    // The 2025 edition is a different tournament with a different winner, and
+    // selecting it must actually change the panel — the old picker matched on
+    // competition_id alone, so every edition of a competition resolved to the
+    // same one.
+    await userEvent.click(within(seasons).getByRole('button', { name: /2025/ }))
+    expect(screen.getByRole('heading', { name: /Copa Libertadores 2025/i })).toBeInTheDocument()
+    expect(screen.getByText('Peñarol')).toBeInTheDocument()
+    expect(screen.getByText('2-0')).toBeInTheDocument()
+  })
+
+  it('lands on the current edition when the competition changes, not last pick', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    const seasons = () => screen.getByRole('group', { name: /season/i })
+    await userEvent.click(within(seasons()).getByRole('button', { name: /2025/ }))
+    await chooseTournament(/Champions League/i)
+
+    // 2025 happens to exist in both competitions, so a stale season would look
+    // like it worked. What must be true is that the CURRENT edition is chosen.
+    expect(
+      within(seasons()).getByRole('button', { name: /2025/ }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText(/Next up: 36 fixtures/i)).toBeInTheDocument()
+  })
+
+  it('never calls a finished edition undrawn', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Champions League/i)
+    await userEvent.click(
+      within(screen.getByRole('group', { name: /season/i })).getByRole('button', {
+        name: /2020/,
+      }),
+    )
+
+    // This edition is over — Chelsea won it on 2021-05-29 and the bracket
+    // prints the final. It has no forecast because its rounds could not be
+    // paired into a tree, which is a different fact from "the draw has not
+    // been made", and the page used to state the wrong one of the two.
+    expect(screen.getByText(/This edition is finished/i)).toBeInTheDocument()
+    expect(screen.getByText('0-1')).toBeInTheDocument()
+    expect(screen.queryByText(/Draw not made/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/has not been drawn/i)).not.toBeInTheDocument()
   })
 
   it('states the open-draw assumption behind the title odds', async () => {

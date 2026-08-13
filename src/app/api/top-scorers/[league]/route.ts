@@ -38,6 +38,26 @@ function withSeason(url: string, season: string): string {
   return `${url}${url.includes('?') ? '&' : '?'}season=${encodeURIComponent(season)}`
 }
 
+/**
+ * The season each curated fallback actually describes.
+ *
+ * This is the whole safety of the fallback and it was missing. The eng.1 list
+ * below was checked against the Golden Boot table on 2026-05-04 — it is the
+ * 2025-26 season — but the route served it whenever ESPN's leaders endpoint
+ * came back empty, for whatever season was asked for. From July 2026
+ * `defaultSeasonForLeague` returns 2026 and ESPN has no leaders for a season
+ * that has not kicked off, so every request got last season's Golden Boot
+ * table stamped `season: 2026`. Asking for 2019 got it too.
+ *
+ * A fallback that answers a question it was not verified against is not a
+ * fallback, it is fabricated data — and the standing rule is that sparse
+ * coverage stays genuinely missing rather than being filled with a plausible
+ * value.
+ */
+const FALLBACK_SEASON: Record<string, string> = {
+  'eng.1': '2025',
+}
+
 // Verified public fallback for cases where ESPN's leaders endpoint is temporarily empty.
 // Keep this intentionally narrow so stale curated data is not displayed as live.
 const SEASON_TOP_SCORERS: Record<string, ScorerRow[]> = {
@@ -277,15 +297,17 @@ export async function GET(
   let source = 'espn'
   let scorers = await fetchESPNScorers(espnSlug, season)
   
-  // Fall back only for source-verified leagues so stale data is not shown as live.
-  if (scorers.length === 0 && espnSlug === 'eng.1') {
-    const fallback = SEASON_TOP_SCORERS[espnSlug] || SEASON_TOP_SCORERS[league]
+  // Fall back only for a league whose list was verified, and only for the
+  // SEASON it was verified against. An empty answer for a season that has not
+  // started is the correct answer.
+  if (scorers.length === 0 && FALLBACK_SEASON[espnSlug] === season) {
+    const fallback = SEASON_TOP_SCORERS[espnSlug]
     if (fallback) {
       scorers = fallback
       source = 'verified_fallback'
     }
   }
-  
+
   return NextResponse.json({
     success: true,
     league,
@@ -297,7 +319,7 @@ export async function GET(
     })),
     source: scorers.length > 0 ? source : 'none',
     sourceDetail: source === 'verified_fallback'
-      ? 'Fallback verified against the Guardian Premier League Golden Boot table on 2026-05-04.'
+      ? `Fallback for ${season}-${String(Number(season) + 1).slice(2)}, verified against the Guardian Premier League Golden Boot table on 2026-05-04.`
       : 'ESPN soccer leaders endpoint',
   })
 }

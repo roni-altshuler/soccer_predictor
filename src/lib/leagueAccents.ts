@@ -103,6 +103,11 @@ const nameAliases: Record<string, string> = {
   'champions league': 'uefa.champions',
   'europa league': 'uefa.europa',
   'conference league': 'uefa.europa.conf',
+  // The forecast layer calls it `uefa.conference`; ESPN's own scoreboard (and
+  // therefore this registry, and the crest map) calls it `uefa.europa.conf`.
+  // Without this the Conference League renders with no badge and no colour on
+  // every page that reads a tournament id straight from `tournaments.json`.
+  'uefa.conference': 'uefa.europa.conf',
   'fifa world cup': 'fifa.world',
   'fifa world cup 2026': 'fifa.world',
   'world cup': 'fifa.world',
@@ -234,10 +239,39 @@ export const SERVED_COMPETITION_IDS = [
   'fra.1',
   'ger.1',
   'ita.1',
-  'ned.1',
-  'por.1',
-  'tur.1',
   'usa.1',
+] as const
+
+/**
+ * The knockout competitions `/tournaments` forecasts, in the order to show
+ * them: the European club cups, then the international tournaments, then the
+ * rest of the confederations.
+ *
+ * Mirrors `tournaments.json`, which is why `uefa.conference` appears in the
+ * forecast layer's spelling rather than this registry's `uefa.europa.conf` —
+ * `getLeagueAccent` aliases one onto the other.
+ */
+export const TOURNAMENT_COMPETITION_IDS = [
+  'uefa.champions',
+  'uefa.europa',
+  'uefa.conference',
+  'fifa.world',
+  'uefa.euro',
+  'uefa.nations',
+  'fifa.cwc',
+  'conmebol.libertadores',
+  'conmebol.sudamericana',
+  'conmebol.america',
+  'concacaf.champions',
+  'concacaf.gold',
+  'caf.nations',
+  'afc.asian',
+] as const
+
+/** Everything the site covers — leagues first, then knockout competitions. */
+export const ALL_COMPETITION_IDS = [
+  ...SERVED_COMPETITION_IDS,
+  ...TOURNAMENT_COMPETITION_IDS,
 ] as const
 
 /** Covered competitions, in the order league pickers should show them. */
