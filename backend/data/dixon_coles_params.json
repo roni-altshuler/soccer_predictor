@@ -1,209 +1,121 @@
 {
   "competitions": {
     "eng.1": {
-      "fitted_matches": 1464,
+      "fitted_matches": 1656,
       "half_life_days": 390.0,
-      "home_adv": 0.168943,
-      "last_match_date": "2026-08-08T14:00:00+00:00",
+      "home_adv": 0.165143,
+      "last_match_date": "2026-05-24T00:00:00+00:00",
       "n_seasons": 5,
-      "rho": -0.095697,
+      "rho": -0.083796,
       "source": "fdcouk",
       "teams": {
-        "Aldershot": {
-          "attack": 0.108146,
-          "defence": 3.0
-        },
-        "Altrincham": {
-          "attack": 0.023585,
-          "defence": -0.441214
-        },
         "Arsenal": {
-          "attack": 0.507087,
-          "defence": 0.522147
+          "attack": 0.416555,
+          "defence": 0.465496
         },
         "Aston Villa": {
-          "attack": 0.308438,
-          "defence": 0.050792
-        },
-        "Barrow": {
-          "attack": -3.0,
-          "defence": -0.153927
-        },
-        "Boreham Wood": {
-          "attack": 0.572934,
-          "defence": -0.441214
-        },
-        "Boston Utd": {
-          "attack": -3.0,
-          "defence": 0.108043
+          "attack": 0.222663,
+          "defence": -0.037382
         },
         "Bournemouth": {
-          "attack": 0.24401,
-          "defence": -0.031789
+          "attack": 0.129958,
+          "defence": -0.118633
         },
         "Brentford": {
-          "attack": 0.295283,
-          "defence": -0.05678
+          "attack": 0.187545,
+          "defence": -0.147835
         },
         "Brighton & Hove Albion": {
-          "attack": 0.281854,
-          "defence": 0.005328
+          "attack": 0.183989,
+          "defence": -0.049933
         },
         "Burnley": {
-          "attack": -0.0763,
-          "defence": -0.33865
-        },
-        "Carlisle": {
-          "attack": 0.370116,
-          "defence": -0.441214
+          "attack": -0.237943,
+          "defence": -0.412893
         },
         "Chelsea": {
-          "attack": 0.305911,
-          "defence": 0.013649
+          "attack": 0.227644,
+          "defence": -0.08567
         },
         "Crystal Palace": {
-          "attack": 0.09285,
-          "defence": -0.012432
-        },
-        "Eastleigh": {
-          "attack": 0.370116,
-          "defence": 0.108043
+          "attack": 0.009366,
+          "defence": -0.109453
         },
         "Everton": {
-          "attack": 0.014422,
-          "defence": 0.064422
-        },
-        "Forest Green": {
-          "attack": 0.572934,
-          "defence": -0.238469
+          "attack": -0.066416,
+          "defence": -0.047498
         },
         "Fulham": {
-          "attack": 0.129213,
-          "defence": 0.009573
-        },
-        "Fylde": {
-          "attack": 0.370116,
-          "defence": -0.238469
-        },
-        "Gateshead": {
-          "attack": 0.108146,
-          "defence": -0.153927
-        },
-        "Halifax": {
-          "attack": 0.454659,
-          "defence": -0.356745
-        },
-        "Harrogate": {
-          "attack": 0.828305,
-          "defence": -0.238469
-        },
-        "Hartlepool": {
-          "attack": 0.370116,
-          "defence": 3.0
-        },
-        "Hornchurch": {
-          "attack": 0.572934,
-          "defence": 3.0
+          "attack": 0.027098,
+          "defence": -0.076775
         },
         "Ipswich Town": {
-          "attack": -0.201765,
-          "defence": -0.473076
-        },
-        "Kidderminster": {
-          "attack": -3.0,
-          "defence": -0.356745
+          "attack": -0.286386,
+          "defence": -0.560307
         },
         "Leeds United": {
-          "attack": 0.095209,
-          "defence": -0.088105
+          "attack": -0.101976,
+          "defence": -0.244122
         },
         "Leicester City": {
-          "attack": -0.212358,
-          "defence": -0.38086
+          "attack": -0.283914,
+          "defence": -0.452889
         },
         "Liverpool": {
-          "attack": 0.501502,
-          "defence": 0.097536
+          "attack": 0.428981,
+          "defence": 0.068431
         },
         "Luton Town": {
-          "attack": 0.1738,
-          "defence": -0.497253
+          "attack": 0.086947,
+          "defence": -0.589233
         },
         "Manchester City": {
-          "attack": 0.596586,
-          "defence": 0.325415
+          "attack": 0.51443,
+          "defence": 0.226819
         },
         "Manchester United": {
-          "attack": 0.328813,
-          "defence": 0.013977
+          "attack": 0.024824,
+          "defence": -0.120211
         },
         "Newcastle United": {
-          "attack": 0.391713,
-          "defence": -0.036531
+          "attack": 0.31432,
+          "defence": -0.148079
+        },
+        "Norwich City": {
+          "attack": -0.74823,
+          "defence": -0.625962
         },
         "Nottingham Forest": {
-          "attack": 0.123361,
-          "defence": 0.003577
-        },
-        "Scunthorpe": {
-          "attack": 0.023585,
-          "defence": 0.216189
+          "attack": 0.040855,
+          "defence": -0.083573
         },
         "Sheffield United": {
-          "attack": -0.248983,
-          "defence": -0.670653
-        },
-        "Solihull": {
-          "attack": 0.454659,
-          "defence": -0.612116
+          "attack": -0.335026,
+          "defence": -0.764305
         },
         "Southampton": {
-          "attack": -0.434403,
-          "defence": -0.459351
-        },
-        "Southend": {
-          "attack": 0.657404,
-          "defence": 0.192604
+          "attack": -0.482275,
+          "defence": -0.528345
         },
         "Sunderland": {
-          "attack": 0.036805,
-          "defence": 0.182174
-        },
-        "Sutton": {
-          "attack": 0.657404,
-          "defence": 3.0
-        },
-        "Tamworth": {
-          "attack": 0.657404,
-          "defence": -0.356745
+          "attack": 0.005663,
+          "defence": 0.055067
         },
         "Tottenham Hotspur": {
-          "attack": 0.288197,
-          "defence": -0.181512
+          "attack": 0.232964,
+          "defence": -0.278885
         },
-        "Wealdstone": {
-          "attack": 0.454659,
-          "defence": -0.153927
+        "Watford": {
+          "attack": -0.541233,
+          "defence": -0.492318
         },
         "West Ham United": {
-          "attack": 0.092966,
-          "defence": -0.194634
-        },
-        "Woking": {
-          "attack": -3.0,
-          "defence": -0.441214
+          "attack": 0.02927,
+          "defence": -0.282096
         },
         "Wolverhampton Wanderers": {
-          "attack": -0.134998,
-          "defence": -0.224251
-        },
-        "Worthing": {
-          "attack": 0.657404,
-          "defence": -0.153927
-        },
-        "Yeovil": {
-          "attack": 0.216163,
-          "defence": 0.192604
+          "attack": 0.000327,
+          "defence": -0.319304
         }
       }
     },
@@ -283,415 +195,343 @@
       }
     },
     "esp.1": {
-      "fitted_matches": 1415,
+      "fitted_matches": 1637,
       "half_life_days": 390.0,
-      "home_adv": 0.287488,
-      "last_match_date": "2026-08-10T18:15:00+00:00",
+      "home_adv": 0.28702,
+      "last_match_date": "2026-05-24T18:00:00+00:00",
       "n_seasons": 5,
-      "rho": 0.028736,
+      "rho": 0.027841,
       "source": "fdcouk",
       "teams": {
-        "Academico Viseu": {
-          "attack": 0.7752,
-          "defence": 0.225696
-        },
         "Alavés": {
-          "attack": 0.289665,
-          "defence": 0.29706
+          "attack": -0.074537,
+          "defence": -0.076097
         },
         "Almería": {
-          "attack": 0.389384,
-          "defence": 0.010829
-        },
-        "Alverca": {
-          "attack": -3.0,
-          "defence": 0.225703
-        },
-        "Arouca": {
-          "attack": 0.428759,
-          "defence": 0.857059
+          "attack": 0.033422,
+          "defence": -0.347919
         },
         "Athletic Bilbao": {
-          "attack": 0.393393,
-          "defence": 0.393499
+          "attack": 0.031323,
+          "defence": 0.038956
         },
         "Atletico Madrid": {
-          "attack": 0.702,
-          "defence": 0.529659
+          "attack": 0.338984,
+          "defence": 0.167868
         },
         "Barcelona": {
-          "attack": 1.034195,
-          "defence": 0.587364
-        },
-        "Benfica": {
-          "attack": 0.631363,
-          "defence": 0.081859
-        },
-        "Braga": {
-          "attack": 0.7752,
-          "defence": 0.225696
-        },
-        "C.D. Nacional": {
-          "attack": 0.775236,
-          "defence": 0.225632
-        },
-        "Casa Pia": {
-          "attack": -3.0,
-          "defence": 0.572286
+          "attack": 0.666751,
+          "defence": 0.226341
         },
         "Celta Vigo": {
-          "attack": 0.534373,
-          "defence": 0.303915
+          "attack": 0.169332,
+          "defence": -0.051482
         },
         "Cádiz": {
-          "attack": -0.173647,
-          "defence": 0.284782
+          "attack": -0.491826,
+          "defence": -0.057563
         },
         "Elche": {
-          "attack": 0.444589,
-          "defence": 0.161918
+          "attack": 0.075593,
+          "defence": -0.196778
         },
         "Espanyol": {
-          "attack": 0.33472,
-          "defence": 0.242232
-        },
-        "Estoril": {
-          "attack": 0.284779,
-          "defence": 0.428289
-        },
-        "Estrela": {
-          "attack": 0.631297,
-          "defence": 0.081891
-        },
-        "FC Famalicao": {
-          "attack": 0.42877,
-          "defence": 0.572279
+          "attack": -0.028362,
+          "defence": -0.120582
         },
         "Getafe": {
-          "attack": 0.04915,
-          "defence": 0.593299
-        },
-        "Gil Vicente": {
-          "attack": 0.284761,
-          "defence": 3.0
+          "attack": -0.309586,
+          "defence": 0.227355
         },
         "Girona": {
-          "attack": 0.42315,
-          "defence": 0.230606
+          "attack": 0.06431,
+          "defence": -0.13053
         },
         "Granada": {
-          "attack": 0.18633,
-          "defence": -0.103548
+          "attack": -0.10738,
+          "defence": -0.424379
         },
         "Las Palmas": {
-          "attack": 0.129196,
-          "defence": 0.199315
+          "attack": -0.22935,
+          "defence": -0.161034
         },
         "Leganés": {
-          "attack": 0.247702,
-          "defence": 0.230617
+          "attack": -0.111806,
+          "defence": -0.131035
         },
         "Levante": {
-          "attack": 0.266158,
-          "defence": 0.17943
+          "attack": -0.086201,
+          "defence": -0.197258
         },
         "Mallorca": {
-          "attack": 0.269327,
-          "defence": 0.295192
-        },
-        "Maritimo": {
-          "attack": 0.284773,
-          "defence": 3.0
-        },
-        "Moreirense": {
-          "attack": 0.631363,
-          "defence": 0.081859
+          "attack": -0.097313,
+          "defence": -0.072053
         },
         "Osasuna": {
-          "attack": 0.342634,
-          "defence": 0.307652
-        },
-        "Porto": {
-          "attack": 0.631356,
-          "defence": 3.0
+          "attack": -0.021546,
+          "defence": -0.050062
         },
         "Rayo Vallecano": {
-          "attack": 0.186605,
-          "defence": 0.441445
+          "attack": -0.173429,
+          "defence": 0.075969
         },
         "Real Betis": {
-          "attack": 0.53138,
-          "defence": 0.352329
+          "attack": 0.174489,
+          "defence": 0.001795
         },
         "Real Madrid": {
-          "attack": 0.885014,
-          "defence": 0.646665
+          "attack": 0.529002,
+          "defence": 0.298502
         },
         "Real Oviedo": {
-          "attack": -0.003419,
-          "defence": 0.294995
+          "attack": -0.365528,
+          "defence": -0.06895
         },
         "Real Sociedad": {
-          "attack": 0.475692,
-          "defence": 0.300578
+          "attack": 0.113459,
+          "defence": -0.055783
         },
         "Real Valladolid": {
-          "attack": -0.138865,
-          "defence": -0.166418
-        },
-        "Rio Ave": {
-          "attack": -3.0,
-          "defence": 0.572297
-        },
-        "Santa Clara": {
-          "attack": 0.631427,
-          "defence": 0.081823
+          "attack": -0.498118,
+          "defence": -0.527918
         },
         "Sevilla": {
-          "attack": 0.322522,
-          "defence": 0.204785
-        },
-        "Sporting CP": {
-          "attack": 0.775168,
-          "defence": 0.225762
+          "attack": -0.032939,
+          "defence": -0.14768
         },
         "Valencia": {
-          "attack": 0.354714,
-          "defence": 0.295245
+          "attack": -0.00477,
+          "defence": -0.066
         },
         "Villarreal": {
-          "attack": 0.796688,
-          "defence": 0.302593
-        },
-        "Vitória de Guimaraes": {
-          "attack": -8.242099,
-          "defence": 0.4283
+          "attack": 0.436026,
+          "defence": -0.0531
         }
       }
     },
     "fra.1": {
-      "fitted_matches": 1429,
+      "fitted_matches": 1403,
       "half_life_days": 390.0,
-      "home_adv": 0.178266,
+      "home_adv": 0.174815,
       "last_match_date": "2026-05-17T00:00:00+00:00",
       "n_seasons": 5,
-      "rho": -0.072159,
+      "rho": -0.092785,
       "source": "fdcouk",
       "teams": {
         "AC Ajaccio": {
-          "attack": -0.81758,
-          "defence": -0.50342
+          "attack": -0.820985,
+          "defence": -0.499376
         },
         "AJ Auxerre": {
-          "attack": -0.064454,
-          "defence": -0.227604
+          "attack": -0.063676,
+          "defence": -0.222057
         },
         "Angers": {
-          "attack": -0.427203,
-          "defence": -0.180248
+          "attack": -0.415869,
+          "defence": -0.165269
         },
         "Bordeaux": {
-          "attack": 0.156971,
-          "defence": -0.6461
+          "attack": 0.150866,
+          "defence": -0.646562
         },
         "Brest": {
-          "attack": 0.042533,
-          "defence": -0.243172
+          "attack": 0.063353,
+          "defence": -0.262151
         },
         "Clermont Foot": {
-          "attack": -0.334836,
-          "defence": -0.285203
+          "attack": -0.341183,
+          "defence": -0.282436
         },
         "Le Havre AC": {
-          "attack": -0.179425,
-          "defence": -0.231945
+          "attack": -0.158178,
+          "defence": -0.248521
         },
         "Lens": {
-          "attack": 0.18688,
-          "defence": 0.145472
+          "attack": 0.204635,
+          "defence": 0.155709
         },
         "Lille": {
-          "attack": 0.177067,
-          "defence": 0.183485
+          "attack": 0.174038,
+          "defence": 0.179539
         },
         "Lorient": {
-          "attack": 0.098066,
-          "defence": -0.205558
+          "attack": 0.073948,
+          "defence": -0.236049
         },
         "Lyon": {
-          "attack": 0.28092,
-          "defence": -0.077532
+          "attack": 0.260229,
+          "defence": -0.082564
         },
         "Marseille": {
-          "attack": 0.382475,
-          "defence": -0.145571
+          "attack": 0.390947,
+          "defence": -0.134844
         },
         "Metz": {
-          "attack": -0.203181,
-          "defence": -0.526012
+          "attack": -0.222152,
+          "defence": -0.539122
         },
         "Monaco": {
-          "attack": 0.365783,
-          "defence": -0.137132
+          "attack": 0.367854,
+          "defence": -0.16296
         },
         "Montpellier": {
-          "attack": -0.229893,
-          "defence": -0.459207
+          "attack": -0.235465,
+          "defence": -0.455388
         },
         "Nantes": {
-          "attack": -0.288477,
-          "defence": -0.196422
+          "attack": -0.270308,
+          "defence": -0.20276
         },
         "Nice": {
-          "attack": 0.038765,
-          "defence": -0.093471
+          "attack": 0.055711,
+          "defence": -0.082551
         },
         "Paris FC": {
-          "attack": 0.137185,
-          "defence": -0.189318
+          "attack": 0.103977,
+          "defence": -0.24565
         },
         "Paris Saint-Germain": {
-          "attack": 0.609138,
-          "defence": 0.268036
+          "attack": 0.65165,
+          "defence": 0.100424
         },
         "Rennes": {
-          "attack": 0.281754,
-          "defence": -0.21645
+          "attack": 0.285954,
+          "defence": -0.192239
         },
         "Saint-Étienne": {
-          "attack": -0.067328,
-          "defence": -0.599091
+          "attack": -0.072259,
+          "defence": -0.593147
         },
         "Stade de Reims": {
-          "attack": -0.217747,
-          "defence": -0.085452
+          "attack": -0.22051,
+          "defence": -0.082448
         },
         "Strasbourg": {
-          "attack": 0.213223,
-          "defence": -0.128944
+          "attack": 0.211414,
+          "defence": -0.130057
         },
         "Toulouse": {
-          "attack": 0.065903,
-          "defence": -0.058426
+          "attack": 0.038953,
+          "defence": -0.01463
         },
         "Troyes": {
-          "attack": -0.206539,
-          "defence": -0.535931
+          "attack": -0.212944,
+          "defence": -0.532912
         }
       }
     },
     "ger.1": {
-      "fitted_matches": 1411,
+      "fitted_matches": 1369,
       "half_life_days": 390.0,
-      "home_adv": 0.144187,
+      "home_adv": 0.124096,
       "last_match_date": "2026-05-16T12:30:00+00:00",
       "n_seasons": 5,
-      "rho": -0.087171,
+      "rho": -0.075396,
       "source": "fdcouk",
       "teams": {
         "1. FC Heidenheim": {
-          "attack": -0.059874,
-          "defence": -0.496524
+          "attack": -0.07634,
+          "defence": -0.502507
         },
         "1. FC Heidenheim 1846": {
-          "attack": -0.13979,
-          "defence": -0.326079
+          "attack": -0.150035,
+          "defence": -0.341801
         },
         "1. FC Union Berlin": {
-          "attack": -0.146623,
-          "defence": -0.259348
+          "attack": -0.158167,
+          "defence": -0.269865
         },
         "Arminia Bielefeld": {
-          "attack": -0.478759,
-          "defence": -0.217768
+          "attack": -0.488971,
+          "defence": -0.230315
         },
         "Bayer Leverkusen": {
-          "attack": 0.418344,
-          "defence": -0.017566
+          "attack": 0.448777,
+          "defence": -0.060659
         },
         "Bayern Munich": {
-          "attack": 0.793957,
-          "defence": 0.081309
+          "attack": 0.782818,
+          "defence": 0.053979
         },
         "Borussia Dortmund": {
-          "attack": 0.380538,
-          "defence": -0.012352
+          "attack": 0.391936,
+          "defence": -0.020722
         },
         "Borussia Monchengladbach": {
-          "attack": 0.099155,
-          "defence": -0.31328
+          "attack": 0.192966,
+          "defence": -0.371934
         },
         "Eintracht Frankfurt": {
-          "attack": 0.207425,
-          "defence": -0.22952
+          "attack": 0.163562,
+          "defence": -0.232193
         },
         "FC Augsburg": {
-          "attack": -0.095343,
-          "defence": -0.273629
+          "attack": -0.109161,
+          "defence": -0.291105
         },
         "FC Cologne": {
-          "attack": 0.016344,
-          "defence": -0.400499
+          "attack": 0.000598,
+          "defence": -0.407648
         },
         "Hamburg SV": {
-          "attack": -0.057902,
-          "defence": -0.241162
+          "attack": 0.115847,
+          "defence": -0.397058
         },
         "Hertha Berlin": {
-          "attack": -0.172352,
-          "defence": -0.512543
+          "attack": -0.182097,
+          "defence": -0.527514
         },
         "Hoffenheim": {
-          "attack": 0.261243,
-          "defence": -0.312845
+          "attack": 0.222234,
+          "defence": -0.31409
         },
         "Holstein Kiel": {
-          "attack": 0.080763,
-          "defence": -0.609942
+          "attack": 0.070649,
+          "defence": -0.624314
         },
         "Mainz": {
-          "attack": 0.059934,
-          "defence": -0.134928
+          "attack": 0.069459,
+          "defence": -0.133762
         },
         "RB Leipzig": {
-          "attack": 0.315117,
-          "defence": -0.051306
+          "attack": 0.317031,
+          "defence": -0.09036
         },
         "SC Freiburg": {
-          "attack": 0.068457,
-          "defence": -0.242853
+          "attack": 0.054768,
+          "defence": -0.251184
         },
         "SV Darmstadt 98": {
-          "attack": -0.498045,
-          "defence": -0.685263
+          "attack": -0.506573,
+          "defence": -0.700632
         },
         "Schalke 04": {
-          "attack": -0.226552,
-          "defence": -0.499999
+          "attack": -0.238951,
+          "defence": -0.51571
         },
         "SpVgg Greuther Fürth": {
-          "attack": -0.482035,
-          "defence": -0.633576
+          "attack": -0.495855,
+          "defence": -0.644455
         },
         "St. Pauli": {
-          "attack": -0.45539,
-          "defence": -0.228054
+          "attack": -0.442784,
+          "defence": -0.216725
         },
         "VfB Stuttgart": {
-          "attack": 0.408457,
-          "defence": -0.159732
+          "attack": 0.392322,
+          "defence": -0.213294
         },
         "VfL Bochum": {
-          "attack": -0.219809,
-          "defence": -0.462104
+          "attack": -0.228674,
+          "defence": -0.477255
         },
         "VfL Wolfsburg": {
-          "attack": 0.007958,
-          "defence": -0.345292
+          "attack": 0.014753,
+          "defence": -0.391769
         },
         "Werder Bremen": {
-          "attack": -0.085217,
-          "defence": -0.281912
+          "attack": -0.160112,
+          "defence": -0.303349
         }
       }
     },
@@ -815,367 +655,371 @@
       }
     },
     "ned.1": {
-      "fitted_matches": 1379,
+      "fitted_matches": 1300,
       "half_life_days": 390.0,
-      "home_adv": 0.258774,
+      "home_adv": 0.242286,
       "last_match_date": "2026-05-17T11:30:00+00:00",
       "n_seasons": 5,
-      "rho": -0.098575,
+      "rho": -0.12431,
       "source": "fdcouk",
       "teams": {
         "AZ Alkmaar": {
-          "attack": 0.253265,
-          "defence": -0.009731
+          "attack": 0.234212,
+          "defence": -0.033037
         },
         "Ajax": {
-          "attack": 0.354413,
-          "defence": 0.030283
+          "attack": 0.347772,
+          "defence": 0.013035
         },
         "Almere City": {
-          "attack": -0.532516,
-          "defence": -0.307008
+          "attack": -0.537304,
+          "defence": -0.317227
         },
         "Excelsior": {
-          "attack": -0.002728,
-          "defence": -0.308996
+          "attack": -0.037314,
+          "defence": -0.317701
         },
         "FC Emmen": {
-          "attack": -0.30377,
-          "defence": -0.386892
+          "attack": -0.30791,
+          "defence": -0.397545
         },
         "FC Groningen": {
-          "attack": -0.086257,
-          "defence": -0.15217
+          "attack": -0.041183,
+          "defence": -0.199793
         },
         "FC Twente": {
-          "attack": 0.270659,
-          "defence": 0.094292
+          "attack": 0.23608,
+          "defence": 0.069833
         },
         "FC Utrecht": {
-          "attack": 0.210508,
-          "defence": -0.036203
+          "attack": 0.224109,
+          "defence": -0.05718
         },
         "FC Volendam": {
-          "attack": -0.376107,
-          "defence": -0.405608
+          "attack": -0.307711,
+          "defence": -0.514002
         },
         "Feyenoord": {
-          "attack": 0.414188,
-          "defence": 0.098259
+          "attack": 0.451161,
+          "defence": 0.134232
         },
         "Fortuna Sittard": {
-          "attack": -0.100808,
-          "defence": -0.265252
+          "attack": -0.107106,
+          "defence": -0.281448
         },
         "Go Ahead Eagles": {
-          "attack": 0.058237,
-          "defence": -0.16065
+          "attack": 0.029733,
+          "defence": -0.20112
         },
         "Heerenveen": {
-          "attack": 0.092312,
-          "defence": -0.212027
+          "attack": 0.058497,
+          "defence": -0.237331
         },
         "Heracles Almelo": {
-          "attack": -0.215451,
-          "defence": -0.478233
+          "attack": -0.222161,
+          "defence": -0.497704
         },
         "NAC Breda": {
-          "attack": -0.341536,
-          "defence": -0.22573
+          "attack": -0.218218,
+          "defence": -0.30716
         },
         "NEC Nijmegen": {
-          "attack": 0.324635,
-          "defence": -0.13298
+          "attack": 0.313967,
+          "defence": -0.142779
         },
         "PEC Zwolle": {
-          "attack": 0.049978,
-          "defence": -0.243836
+          "attack": 0.041739,
+          "defence": -0.259962
         },
         "PSV": {
-          "attack": 0.766499,
-          "defence": 0.080785
+          "attack": 0.759719,
+          "defence": 0.073689
         },
         "RKC Waalwijk": {
-          "attack": -0.044505,
-          "defence": -0.403427
+          "attack": -0.051182,
+          "defence": -0.415019
         },
         "SC Cambuur": {
-          "attack": -0.262687,
-          "defence": -0.464639
+          "attack": -0.267546,
+          "defence": -0.47753
         },
         "Sparta Rotterdam": {
-          "attack": -0.052168,
-          "defence": -0.128564
+          "attack": -0.048107,
+          "defence": -0.00371
         },
         "Telstar": {
-          "attack": 0.116391,
-          "defence": -0.2402
+          "attack": 0.058816,
+          "defence": -0.261892
         },
         "Vitesse": {
-          "attack": -0.226749,
-          "defence": -0.309519
+          "attack": -0.235375,
+          "defence": -0.322319
         },
         "Willem II": {
-          "attack": -0.365804,
-          "defence": -0.261789
+          "attack": -0.37469,
+          "defence": -0.269855
         }
       }
     },
     "por.1": {
-      "fitted_matches": 1138,
+      "fitted_matches": 1060,
       "half_life_days": 390.0,
-      "home_adv": 0.20584,
+      "home_adv": 0.21552,
       "last_match_date": "2026-08-09T19:30:00+00:00",
       "n_seasons": 5,
-      "rho": 0.039484,
+      "rho": 0.0815,
       "source": "fdcouk",
       "teams": {
         "AVS": {
-          "attack": -0.529207,
-          "defence": -0.317258
+          "attack": -0.488604,
+          "defence": -0.346462
         },
         "Academico Viseu": {
-          "attack": 1.096657,
-          "defence": 0.153564
+          "attack": 1.136165,
+          "defence": 0.18185
         },
         "Alverca": {
-          "attack": -0.056036,
-          "defence": -0.17893
+          "attack": -0.240526,
+          "defence": -0.501103
         },
         "Arouca": {
-          "attack": 0.083434,
-          "defence": -0.25431
+          "attack": 0.053099,
+          "defence": -0.207486
         },
         "Benfica": {
-          "attack": 0.640725,
-          "defence": 0.403651
+          "attack": 0.659494,
+          "defence": 0.443098
         },
         "Boavista": {
-          "attack": -0.267508,
-          "defence": -0.355011
+          "attack": -0.255627,
+          "defence": -0.344723
         },
         "Braga": {
-          "attack": 0.437746,
-          "defence": 0.110407
+          "attack": 0.440079,
+          "defence": 0.112768
         },
         "C.D. Nacional": {
-          "attack": -0.055342,
-          "defence": -0.09619
+          "attack": -0.043842,
+          "defence": -0.088771
         },
         "Casa Pia": {
-          "attack": -0.155071,
-          "defence": -0.144299
+          "attack": -0.211739,
+          "defence": -0.058384
         },
         "Estoril": {
-          "attack": 0.211714,
-          "defence": -0.293092
+          "attack": 0.210666,
+          "defence": -0.286917
         },
         "Estrela": {
-          "attack": -0.238466,
-          "defence": -0.240122
+          "attack": -0.240767,
+          "defence": -0.231693
         },
         "FC Famalicao": {
-          "attack": 0.056063,
-          "defence": 0.118217
+          "attack": 0.123814,
+          "defence": 0.126188
         },
         "GD Chaves": {
-          "attack": -0.278921,
-          "defence": -0.342569
+          "attack": -0.265015,
+          "defence": -0.332446
         },
         "Gil Vicente": {
-          "attack": -0.06634,
-          "defence": -0.091462
+          "attack": -0.142109,
+          "defence": -0.046756
         },
         "Maritimo": {
-          "attack": -0.23163,
-          "defence": -0.386648
+          "attack": -0.220504,
+          "defence": -0.377879
         },
         "Moreirense": {
-          "attack": -0.051071,
-          "defence": -0.09697
+          "attack": -0.057344,
+          "defence": -0.012704
         },
         "Paços de Ferreira": {
-          "attack": -0.452822,
-          "defence": -0.383056
+          "attack": -0.438648,
+          "defence": -0.372876
         },
         "Portimonense": {
-          "attack": -0.18123,
-          "defence": -0.421963
+          "attack": -0.163158,
+          "defence": -0.41385
         },
         "Porto": {
-          "attack": 0.434031,
-          "defence": 0.470785
+          "attack": 0.432924,
+          "defence": 0.473704
         },
         "Rio Ave": {
-          "attack": -0.090671,
-          "defence": -0.157898
+          "attack": -0.038718,
+          "defence": -0.161828
         },
         "SC Farense": {
-          "attack": -0.227867,
-          "defence": -0.119876
+          "attack": -0.210649,
+          "defence": -0.109836
         },
         "Santa Clara": {
-          "attack": -0.252676,
-          "defence": 0.082615
+          "attack": -0.251329,
+          "defence": 0.083484
         },
         "Sporting CP": {
-          "attack": 0.720328,
-          "defence": 0.321161
+          "attack": 0.731442,
+          "defence": 0.32708
         },
         "Tondela": {
-          "attack": -0.341392,
-          "defence": -0.210434
+          "attack": -0.3258,
+          "defence": -0.201298
         },
         "Vitória de Guimaraes": {
-          "attack": -0.036672,
-          "defence": -0.096977
+          "attack": -0.036892,
+          "defence": -0.092804
         },
         "Vizela": {
-          "attack": -0.167776,
-          "defence": -0.328637
+          "attack": -0.156413,
+          "defence": -0.314254
         }
       }
     },
     "usa.1": {
       "fitted_matches": 921,
       "half_life_days": 390.0,
-      "home_adv": 0.258515,
+      "home_adv": 0.259045,
       "last_match_date": "2026-08-08T20:30:00+00:00",
       "n_seasons": 5,
-      "rho": -0.022849,
+      "rho": -0.023132,
       "source": "espn",
       "teams": {
         "Arsenal": {
-          "attack": 0.707935,
+          "attack": 0.69628,
           "defence": 3.0
         },
         "Atlanta United": {
-          "attack": -0.258953,
-          "defence": -0.405162
+          "attack": -0.259947,
+          "defence": -0.405278
         },
         "Austin FC": {
-          "attack": -0.179062,
-          "defence": -0.325052
+          "attack": -0.179691,
+          "defence": -0.324872
         },
         "CF Montréal": {
-          "attack": -0.246675,
-          "defence": -0.378292
+          "attack": -0.247841,
+          "defence": -0.378006
         },
         "Charlotte FC": {
-          "attack": 0.039534,
-          "defence": -0.158342
+          "attack": 0.038666,
+          "defence": -0.161806
         },
         "Chicago Fire FC": {
-          "attack": 0.255551,
-          "defence": -0.286602
+          "attack": 0.254889,
+          "defence": -0.289055
         },
         "Colorado Rapids": {
-          "attack": -0.041313,
-          "defence": -0.238883
+          "attack": -0.041933,
+          "defence": -0.238863
         },
         "Columbus Crew": {
-          "attack": 0.043279,
-          "defence": -0.187881
+          "attack": 0.042449,
+          "defence": -0.189262
         },
         "D.C. United": {
-          "attack": -0.247499,
-          "defence": -0.388852
+          "attack": -0.24865,
+          "defence": -0.388477
         },
         "FC Cincinnati": {
-          "attack": 0.259793,
-          "defence": -0.377819
+          "attack": 0.258404,
+          "defence": -0.377228
         },
         "FC Dallas": {
-          "attack": 0.14094,
-          "defence": -0.190908
+          "attack": 0.140281,
+          "defence": -0.191034
         },
         "Houston Dynamo FC": {
-          "attack": -0.018533,
-          "defence": -0.18252
+          "attack": -0.019054,
+          "defence": -0.182682
+        },
+        "Inter": {
+          "attack": 0.022363,
+          "defence": -0.229093
         },
         "Inter Miami": {
-          "attack": 0.557745,
-          "defence": -0.291586
+          "attack": 0.567544,
+          "defence": -0.293704
         },
         "LA Galaxy": {
-          "attack": -0.074856,
-          "defence": -0.354293
+          "attack": -0.075448,
+          "defence": -0.354404
         },
         "LAFC": {
-          "attack": 0.277569,
-          "defence": 0.11933
+          "attack": 0.277076,
+          "defence": 0.119236
         },
         "Liga MX All-Stars": {
-          "attack": -0.060715,
+          "attack": -0.057517,
           "defence": -3.0
         },
         "MLS All-Stars": {
-          "attack": -1.961447,
-          "defence": -0.901587
+          "attack": -1.962032,
+          "defence": -0.899126
         },
         "Minnesota United FC": {
-          "attack": -0.017537,
-          "defence": -0.064896
+          "attack": -0.018172,
+          "defence": -0.065043
         },
         "Nashville SC": {
-          "attack": 0.146174,
-          "defence": 0.064024
+          "attack": 0.145751,
+          "defence": 0.059487
         },
         "New England Revolution": {
-          "attack": -0.063227,
-          "defence": -0.189617
+          "attack": -0.064665,
+          "defence": -0.189025
         },
         "New York City FC": {
-          "attack": 0.052039,
-          "defence": -0.050404
+          "attack": 0.050561,
+          "defence": -0.049855
         },
         "Orlando City SC": {
-          "attack": 0.190761,
-          "defence": -0.473551
+          "attack": 0.189437,
+          "defence": -0.472728
         },
         "Philadelphia Union": {
-          "attack": 0.043085,
-          "defence": -0.136354
+          "attack": 0.041694,
+          "defence": -0.13599
         },
         "Portland Timbers": {
-          "attack": 0.059803,
-          "defence": -0.259988
+          "attack": 0.059145,
+          "defence": -0.259926
         },
         "Real Salt Lake": {
-          "attack": -0.039921,
-          "defence": -0.192793
+          "attack": -0.040572,
+          "defence": -0.192721
         },
         "Red Bull New York": {
-          "attack": -0.002555,
-          "defence": -0.359455
+          "attack": -0.003276,
+          "defence": -0.36211
         },
         "San Diego FC": {
-          "attack": 0.245976,
-          "defence": -0.14041
+          "attack": 0.245448,
+          "defence": -0.140789
         },
         "San Jose Earthquakes": {
-          "attack": 0.240765,
-          "defence": -0.296287
+          "attack": 0.240249,
+          "defence": -0.296429
         },
         "Seattle Sounders": {
-          "attack": 0.05553,
-          "defence": -0.127103
+          "attack": 0.055005,
+          "defence": -0.12709
         },
         "Sporting Kansas City": {
-          "attack": -0.182006,
-          "defence": -0.610557
+          "attack": -0.182544,
+          "defence": -0.610954
         },
         "St. Louis CITY SC": {
-          "attack": -0.065793,
-          "defence": -0.243609
+          "attack": -0.066442,
+          "defence": -0.244011
         },
         "Toronto FC": {
-          "attack": -0.219038,
-          "defence": -0.184126
+          "attack": -0.219554,
+          "defence": -0.187411
         },
         "Vancouver Whitecaps": {
-          "attack": 0.36265,
-          "defence": 0.089005
+          "attack": 0.362097,
+          "defence": 0.088941
         }
       }
     },
@@ -1259,7 +1103,7 @@
       }
     }
   },
-  "generated_at": "2026-08-13T07:21:52+00:00",
+  "generated_at": "2026-08-13T08:29:25+00:00",
   "half_life_days": 390.0,
   "schema": 1
 }
