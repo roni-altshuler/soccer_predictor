@@ -23,12 +23,21 @@ export interface ProjectedRow {
   /** P(finishing inside this league's own headline band) — see `topCutLabel`. */
   p_top_cut?: number
   p_top4: number
-  p_relegated: number
+  /**
+   * Null where the competition has no relegation. Zero would read as "safe",
+   * which is a different claim from "this league does not relegate anyone".
+   */
+  p_relegated: number | null
   p_playoff: number | null
   exp_points: number
   exp_position: number
   played: number
   points: number
+  /** Grouped competitions only (MLS): the conference and the rank inside it. */
+  group?: string
+  group_exp_position?: number
+  p_group_title?: number
+  p_qualify?: number | null
 }
 
 type SortKey =

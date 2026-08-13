@@ -86,6 +86,21 @@ jobs:
           mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite
           python -m backend.scripts.build_warehouse --stats
 
+      - name: Restore the published event corpus
+        # The warehouse asset has four writers and no merge, so a job that
+        # downloaded it before today's backfill and re-uploaded it afterwards
+        # silently deletes verified timelines. That happened on 2026-08-09 and
+        # cost 3,140 of them. The corpus is therefore ALSO published on its own,
+        # and restored here before anything reads coverage. INSERT OR IGNORE, so
+        # this only ever adds.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download models-latest --pattern 'match_events.csv.gz' \
+            --dir /tmp --clobber || echo "no published event corpus yet"
+          python -m backend.scripts.sync_events import \
+            --input /tmp/match_events.csv.gz --allow-missing
+
       - name: Ingest newly finished matches
         # The release copy is up to a week old (train_unified republishes
         # Sundays). Both ESPN universes plus football-data.co.uk, last two
@@ -159,6 +174,11 @@ jobs:
         run: |
           gzip -c backend/data/warehouse.sqlite > /tmp/warehouse.sqlite.gz
           gh release upload models-latest --clobber /tmp/warehouse.sqlite.gz
+
+          # The corpus outlives the warehouse it happens to be sitting in.
+          python -m backend.scripts.sync_events export \
+            --output /tmp/match_events.csv.gz
+          gh release upload models-latest --clobber /tmp/match_events.csv.gz
 
       - name: Commit regenerated artifacts
         run: |

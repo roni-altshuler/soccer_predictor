@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-08-13T06:29:48+00:00",
+  "source": "ESPN standings \u2014 groups and the qualification notes on them",
+  "competitions": {
+    "usa.1": {
+      "season": 2026,
+      "name": "Major League Soccer",
+      "qualify_label": "MLS Cup Playoffs",
+      "teams": 30,
+      "groups": [
+        {
+          "name": "Eastern Conference",
+          "short": "Eastern",
+          "teams": [
+            "Atlanta United FC",
+            "CF Montr\u00e9al",
+            "Charlotte FC",
+            "Chicago Fire FC",
+            "Columbus Crew",
+            "D.C. United",
+            "FC Cincinnati",
+            "Inter Miami CF",
+            "Nashville SC",
+            "New England Revolution",
+            "New York City FC",
+            "Orlando City SC",
+            "Philadelphia Union",
+            "Red Bull New York",
+            "Toronto FC"
+          ],
+          "qualify": 9
+        },
+        {
+          "name": "Western Conference",
+          "short": "Western",
+          "teams": [
+            "Austin FC",
+            "Colorado Rapids",
+            "FC Dallas",
+            "Houston Dynamo FC",
+            "LA Galaxy",
+            "LAFC",
+            "Minnesota United FC",
+            "Portland Timbers",
+            "Real Salt Lake",
+            "San Diego FC",
+            "San Jose Earthquakes",
+            "Seattle Sounders FC",
+            "Sporting Kansas City",
+            "St. Louis CITY SC",
+            "Vancouver Whitecaps"
+          ],
+          "qualify": 9
+        }
+      ]
+    }
+  }
+}

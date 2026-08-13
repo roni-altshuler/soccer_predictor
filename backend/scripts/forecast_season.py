@@ -107,38 +107,41 @@ LEAGUES: Dict[str, Dict] = {
               "top_cut": 4, "top_cut_label": "Top 4"},
     "tur.1": {"name": "Süper Lig", "country": "Türkiye", "relegate": 4,
               "top_cut": 4, "top_cut_label": "Top 4"},
-    "bra.1": {"name": "Brasileirão Série A", "country": "Brazil",
-              "relegate": 4, "top_cut": 4, "top_cut_label": "Top 4"},
 
-    # -- second tiers --------------------------------------------------
-    # Here the story is promotion, so `top_cut` is the automatic-promotion
-    # band. Entrant turnover corroborates each relegation count: it runs at
-    # promoted + relegated, and every one of these adds up.
-    "eng.2": {"name": "EFL Championship", "country": "England", "relegate": 3,
-              "top_cut": 2, "top_cut_label": "Promoted"},
-    "esp.2": {"name": "LaLiga 2", "country": "Spain", "relegate": 4,
-              "top_cut": 2, "top_cut_label": "Promoted"},
-    "ger.2": {"name": "2. Bundesliga", "country": "Germany", "relegate": 2,
-              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
-    "ita.2": {"name": "Serie B", "country": "Italy", "relegate": 3,
-              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
-    "fra.2": {"name": "Ligue 2", "country": "France", "relegate": 2,
-              "playoff": 1, "top_cut": 2, "top_cut_label": "Promoted"},
+    # -- North America -------------------------------------------------
+    # Grouped rather than single-table, which changes what every number on
+    # the page means: `p_title` is the Supporters' Shield (best record in
+    # the league), while a club's season is decided by where it finishes in
+    # its OWN conference. Membership and the playoff cut line come from
+    # `conferences.json`, built from ESPN's published standings.
+    "usa.1": {"name": "Major League Soccer", "country": "United States",
+              "relegate": 0, "grouped": True,
+              "top_cut": 1, "top_cut_label": "Supporters' Shield"},
 }
 
-# Measured and NOT shipped. The match model clears the gate in all three —
-# MLS .62101, Liga MX .61854, Argentina .64524, each better than every
-# baseline — but none of them plays a double round robin, so there is no
-# single table for a season simulation to project. MLS splits into two
-# conferences with an unbalanced schedule and decides its champion in
-# playoffs; Liga MX and Argentina run Apertura/Clausura with knockout
-# stages inside the league competition. Simulating a 30-team table for MLS
-# would produce a confident number for a competition that does not exist.
+# Measured and NOT shipped, each for its own reason.
+#
+# `mex.1` and `arg.1` clear the match gate (.61854, .64524) and are held for
+# STRUCTURE: Apertura/Clausura with knockout stages inside the league, so
+# there is no season-long table for a simulation to project. That is the same
+# reason MLS was held until conference-aware ranking existed.
+#
+# The rest are held for SCOPE. Each cleared its gate and each was served for a
+# day; the site is now the top flight of Europe plus MLS, and a Championship
+# table on the same page as the Premier League made the product harder to read
+# rather than more complete. The evidence stays in
+# `reports/baselines/league_gate.json` — nothing was un-measured, and turning
+# any of them back on is one line here.
 HELD: Dict[str, str] = {
-    "usa.1": "two conferences, unbalanced schedule, playoff champion",
     "mex.1": "Apertura/Clausura split with a liguilla",
     "arg.1": "zones and knockout rounds inside the league",
     "ksa.1": "too little history to measure under the same protocol",
+    "eng.2": "out of scope: the site serves the European top flight and MLS",
+    "esp.2": "out of scope: the site serves the European top flight and MLS",
+    "ger.2": "out of scope: the site serves the European top flight and MLS",
+    "ita.2": "out of scope: the site serves the European top flight and MLS",
+    "fra.2": "out of scope: the site serves the European top flight and MLS",
+    "bra.1": "out of scope: the site serves the European top flight and MLS",
 }
 
 MAX_GOALS = 10
@@ -299,8 +302,106 @@ STRENGTH_SHOCK_SD = SEASON_ELO_DRIFT_SD / 400 * np.log(10) / 2
 SHOCK_BUCKETS = 15
 
 
+CONFERENCES = ROOT / "backend" / "data" / "conferences.json"
+
+
+def load_groups(competition: str, season: int,
+                entrants: Sequence[str]) -> Optional[Dict[str, str]]:
+    """`team_key -> conference name`, or None if this is a single table.
+
+    Read from the committed artifact rather than fetched, so the forecast has
+    no live dependency on a third-party endpoint. Returns None — and the
+    caller then holds the league rather than projecting it — whenever the map
+    cannot be trusted: wrong season, or clubs it does not place. Half a
+    conference table is worse than none, because it looks like the real thing.
+    """
+    from backend.scripts.build_canonical import norm_team
+
+    if not CONFERENCES.exists():
+        logger.warning("  %s is grouped but %s does not exist — run "
+                       "build_conferences", competition, CONFERENCES.name)
+        return None
+    payload = json.loads(CONFERENCES.read_text())
+    cfg = (payload.get("competitions") or {}).get(competition)
+    if not cfg:
+        logger.warning("  %s is grouped but has no entry in %s",
+                       competition, CONFERENCES.name)
+        return None
+    if int(cfg.get("season", -1)) != int(season):
+        logger.warning("  %s conference map is for %s, not %s — refusing to "
+                       "place this season's clubs with last season's map",
+                       competition, cfg.get("season"), season)
+        return None
+
+    placed: Dict[str, str] = {}
+    for group in cfg.get("groups", []):
+        for name in group.get("teams", []):
+            placed[f"{competition}::{norm_team(name)}"] = group["name"]
+
+    missing = [t for t in entrants if t not in placed]
+    if missing:
+        logger.warning("  %s: %d club(s) are in the fixture list but not in "
+                       "the conference map (%s) — no table published",
+                       competition, len(missing),
+                       ", ".join(sorted(m.split("::")[-1] for m in missing)[:5]))
+        return None
+    return {t: placed[t] for t in entrants}
+
+
+def group_config(competition: str) -> Optional[Dict]:
+    """The published shape of a grouped competition: its groups and cut line."""
+    if not CONFERENCES.exists():
+        return None
+    cfg = (json.loads(CONFERENCES.read_text()).get("competitions")
+           or {}).get(competition)
+    if not cfg:
+        return None
+    # `qualify` is per group and identical across them in every format seen so
+    # far; the minimum is the honest reduction if that ever stops being true.
+    qualify = min((g.get("qualify", 0) for g in cfg.get("groups", [])),
+                  default=0)
+    return {
+        "qualify": qualify,
+        "qualify_label": cfg.get("qualify_label"),
+        "groups": [{"name": g["name"], "short": g["short"],
+                    "teams": len(g["teams"]), "qualify": g.get("qualify", 0)}
+                   for g in cfg.get("groups", [])],
+    }
+
+
+def league_participants(entrants: Sequence[str],
+                        appearances: Dict[str, int]) -> List[str]:
+    """The clubs actually playing the league season.
+
+    A season's fixture list can contain sides that are not in the league. MLS
+    is the live example: ESPN files the All-Star Game under `usa.1`, so
+    `MLS All-Stars` and `Liga MX All-Stars` arrive as clubs with one match
+    each and a 30-team league becomes a 32-team table.
+
+    Filtered on participation rather than on names, because the shape of the
+    error is the general one — a side that plays once in a competition where
+    everyone else plays thirty times is not in that competition — and a name
+    filter only ever catches the instance someone already noticed.
+    """
+    if not entrants:
+        return []
+    counts = sorted(appearances.get(t, 0) for t in entrants)
+    median = counts[len(counts) // 2]
+    floor = median * 0.25
+    keep = [t for t in entrants if appearances.get(t, 0) >= floor]
+    dropped = [t for t in entrants if t not in set(keep)]
+    if dropped:
+        logger.info("  dropped %d non-participant(s) — %s — each with far "
+                    "fewer matches than the season's median of %d",
+                    len(dropped),
+                    ", ".join(sorted(d.split("::")[-1] for d in dropped)[:4]),
+                    median)
+    return keep
+
+
 def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
                     sims: int, rng: np.random.Generator,
+                    groups: Optional[Dict[str, str]] = None,
                     shock_sd: float = STRENGTH_SHOCK_SD) -> Dict[str, dict]:
     """Monte Carlo the rest of the league, with strength uncertainty.
 
@@ -372,7 +473,26 @@ def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
     rows = np.arange(sims)[:, None]
     position[rows, order] = np.arange(n)[None, :]
 
-    return {t: {"pos": position[:, ti[t]], "pts": pts[:, ti[t]]} for t in teams}
+    out = {t: {"pos": position[:, ti[t]], "pts": pts[:, ti[t]]} for t in teams}
+
+    # In a grouped competition the league-wide position answers one real
+    # question (the Supporters' Shield) and the club's actual season is
+    # decided inside its conference. Rank there too, on the same key, so both
+    # are available and neither has to stand in for the other.
+    if groups:
+        for name in sorted(set(groups.values())):
+            cols = [ti[t] for t in teams if groups.get(t) == name]
+            if not cols:
+                continue
+            sub = key[:, cols]
+            sub_order = np.argsort(-sub, axis=1, kind="stable")
+            sub_pos = np.empty_like(sub_order)
+            sub_pos[np.arange(sims)[:, None], sub_order] = \
+                np.arange(len(cols))[None, :]
+            for j, col in enumerate(cols):
+                out[teams[col]]["group"] = name
+                out[teams[col]]["group_pos"] = sub_pos[:, j]
+    return out
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -524,20 +644,55 @@ def main(argv: Optional[List[str]] = None) -> int:
         # postponement the schedule has not been redrawn for yet, which costs a
         # rounding error rather than a wrong answer. The shortfall is published
         # either way.
+        appearances: Dict[str, int] = {}
+        for row in list(fs) + list(done_this_season):
+            for k in (row["home_key"], row["away_key"]):
+                appearances[k] = appearances.get(k, 0) + 1
+        entrants = league_participants(entrants, appearances)
+
+        cfg_early = LEAGUES.get(comp, {})
+        groups = None
+        if cfg_early.get("grouped"):
+            groups = load_groups(comp, season, entrants)
+            if groups is None:
+                logger.warning("  %s: no usable conference map — fixtures are "
+                               "published, no table is", comp)
+                continue
+
         expected = len(entrants) * (len(entrants) - 1)
         n_total = len(fs) + len(done_this_season)
         completeness = n_total / expected if expected else 0.0
-        if completeness < ROUND_ROBIN_MIN or completeness > 1.0:
+        # A grouped competition is not trying to be a double round robin and
+        # measuring it against one is meaningless — MLS runs at 59% of one BY
+        # DESIGN. Its structural check is the conference map above: every club
+        # placed, or no table.
+        if groups is not None:
+            pass
+        elif completeness < ROUND_ROBIN_MIN or completeness > 1.0:
             logger.warning(
                 "  %s: %d teams and %d fixtures — %.0f%% of a double round "
                 "robin (%d). Not a single-table competition; fixtures are "
                 "published, no table is.",
                 comp, len(entrants), n_total, 100 * completeness, expected)
             continue
-        if n_total != expected:
+        if groups is not None:
+            # Measured against a format this competition is not playing, so it
+            # is neither logged nor published. MLS at "59% of a double round
+            # robin" is not an incomplete schedule, it is a different one.
+            completeness = None
+        elif n_total != expected:
             logger.info("  %s: %d of %d fixtures scheduled (%.1f%%) — table "
                         "projected from what exists", comp, n_total, expected,
                         100 * completeness)
+
+        # Both sides must be in the league for the match to be part of it.
+        # Without this the All-Star Game still contributes points to whoever
+        # ESPN listed as the home side.
+        member = set(entrants)
+        fs = [f for f in fs
+              if f["home_key"] in member and f["away_key"] in member]
+        done_this_season = [m for m in done_this_season
+                            if m["home_key"] in member and m["away_key"] in member]
 
         # Points already banked this season, if any of it has been played.
         table = {t: {"points": 0, "gd": 0, "gf": 0, "played": 0} for t in entrants}
@@ -551,8 +706,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 table[key]["gf"] += gf_
                 table[key]["played"] += 1
 
-        sim = simulate_season(fs, table, sims=args.sims, rng=rng)
-        cfg = LEAGUES.get(comp, {})
+        sim = simulate_season(fs, table, sims=args.sims, rng=rng, groups=groups)
+        cfg = cfg_early
+        group_meta = group_config(comp) if groups is not None else None
+        qualify = (group_meta or {}).get("qualify", 0)
         rel_from = len(entrants) - cfg.get("relegate", 3)
         po_from = rel_from - cfg.get("playoff", 0)
         top_cut = cfg.get("top_cut", 4)
@@ -575,14 +732,26 @@ def main(argv: Optional[List[str]] = None) -> int:
                 # tier it is a genuine top-four probability and not the number
                 # the page shows, which is `p_top_cut`.
                 "p_top4": round(float((pos < 4).mean()), 4),
-                "p_relegated": round(float((pos >= rel_from).mean()), 4),
+                # A league with no relegation has no relegation probability.
+                # Zero would read as "safe"; absent reads as "not a thing here".
+                "p_relegated": round(float((pos >= rel_from).mean()), 4)
+                if cfg.get("relegate") else None,
                 "p_playoff": round(float(((pos >= po_from) & (pos < rel_from)).mean()), 4)
                 if cfg.get("playoff") else None,
                 "exp_points": round(float(s["pts"].mean()), 1),
                 "exp_position": round(float(pos.mean()) + 1, 2),
                 "played": table[t]["played"], "points": table[t]["points"],
             })
-        rows_out.sort(key=lambda r: -r["p_title"])
+            if groups is not None:
+                gpos = s["group_pos"]
+                rows_out[-1].update({
+                    "group": s["group"],
+                    "group_exp_position": round(float(gpos.mean()) + 1, 2),
+                    "p_group_title": round(float((gpos == 0).mean()), 4),
+                    "p_qualify": round(float((gpos < qualify).mean()), 4)
+                    if qualify else None,
+                })
+        rows_out.sort(key=lambda r: (-r["p_title"], -r.get("p_group_title", 0)))
         projections.append({
             "competition_id": comp, "name": cfg.get("name", comp),
             "country": cfg.get("country"), "season": season,
@@ -590,7 +759,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             "relegation_places": cfg.get("relegate", 3),
             "top_cut": top_cut,
             "top_cut_label": cfg.get("top_cut_label", "Top 4"),
-            "schedule_completeness": round(completeness, 4),
+            "schedule_completeness": (round(completeness, 4)
+                                      if completeness is not None else None),
+            "groups": group_meta["groups"] if group_meta else None,
+            "qualify_label": (group_meta or {}).get("qualify_label"),
             "measured": {k: g[k] for k in ("n_scored", "brier", "log_loss",
                                            "accuracy", "uniform", "base_rate",
                                            "always_home")} if (g := gate.get(comp)) else None,

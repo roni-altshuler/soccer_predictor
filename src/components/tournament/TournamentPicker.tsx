@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { CompetitionSelect } from '@/components/forecast/CompetitionSelect'
+import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { cn } from '@/lib/utils'
 
 /**
@@ -326,41 +327,87 @@ function TieTable({ tournament: t }: { tournament: TournamentForecast }) {
       <h4 className="mt-4 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
         {t.current_round ?? 'This round'} — who goes through
       </h4>
-      <ul className="mt-3 space-y-2.5">
+      {/*
+        One card per tie, one row per team. The previous layout put both clubs
+        on a single line either side of a percentage, so a reader had to work
+        out which club the number belonged to and which way the bar pointed —
+        and the club on the right was right-aligned into the middle of the row,
+        which reads as a scoreline that is not there.
+
+        A knockout tie has exactly two outcomes, so both are stated: each club
+        gets its crest, its name and its own probability, and the split bar is
+        the same two numbers drawn once.
+      */}
+      <ul className="mt-3 space-y-2">
         {t.ties?.map((tie) => {
-          const favouredA = tie.p_team_a >= 0.5
-          const pct = favouredA ? tie.p_team_a : 1 - tie.p_team_a
+          const sides = [
+            { name: tie.team_a, p: tie.p_team_a },
+            { name: tie.team_b, p: 1 - tie.p_team_a },
+          ]
           return (
-            <li key={`${tie.team_a_id}-${tie.team_b_id}`}>
+            <li
+              key={`${tie.team_a_id}-${tie.team_b_id}`}
+              className="rounded-lg border border-[var(--border-color)] px-3 py-2.5"
+            >
               <div className="flex items-baseline justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
                 <span>{fmtDate(tie.kickoff)}</span>
                 {tie.decided ? <span>{tie.decided} went through</span> : null}
               </div>
-              <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-                <span
-                  className={cn(
-                    'truncate text-right text-[13px]',
-                    favouredA ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]',
-                  )}
-                >
-                  {tie.team_a}
-                </span>
-                <span className="font-mono text-[12px] tabular-nums text-[var(--accent-primary)]">
-                  {(pct * 100).toFixed(0)}%
-                </span>
-                <span
-                  className={cn(
-                    'truncate text-[13px]',
-                    favouredA ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]',
-                  )}
-                >
-                  {tie.team_b}
-                </span>
+
+              <div className="mt-2 space-y-1.5">
+                {sides.map((side) => {
+                  const favoured = side.p >= 0.5
+                  return (
+                    <div
+                      key={side.name}
+                      className="flex items-center gap-2.5"
+                    >
+                      <TeamCrest
+                        team={side.name}
+                        competitionId={t.competition_id}
+                        size="sm"
+                      />
+                      <span
+                        className={cn(
+                          'min-w-0 flex-1 truncate text-[13px]',
+                          favoured
+                            ? 'font-medium text-[var(--text-primary)]'
+                            : 'text-[var(--text-tertiary)]',
+                        )}
+                      >
+                        {side.name}
+                      </span>
+                      <span
+                        className={cn(
+                          'shrink-0 font-mono text-[12px] tabular-nums',
+                          favoured
+                            ? 'text-[var(--accent-primary)]'
+                            : 'text-[var(--text-tertiary)]',
+                        )}
+                      >
+                        {(side.p * 100).toFixed(0)}%
+                        <span className="sr-only"> to advance</span>
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
-              <div className="mt-1.5 flex h-[3px] w-full overflow-hidden rounded-full bg-[var(--border-color)]">
+
+              <div
+                aria-hidden
+                className="mt-2 flex h-[3px] w-full overflow-hidden rounded-full bg-[var(--border-color)]"
+              >
                 <div
                   className="h-full bg-[var(--accent-primary)]"
                   style={{ width: `${tie.p_team_a * 100}%` }}
+                />
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(1 - tie.p_team_a) * 100}%`,
+                    background:
+                      'color-mix(in srgb, var(--accent-primary) 30%, transparent)',
+                  }}
                 />
               </div>
             </li>

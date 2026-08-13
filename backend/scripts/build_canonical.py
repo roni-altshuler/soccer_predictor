@@ -433,6 +433,71 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
           AND votes >= 3 * next_wh
     """)
 
+    # ---- the club that got renamed ------------------------------------
+    # `rk_fb = 1` above says one FBref spelling may not mean two clubs, which
+    # is right and must stay. `rk_wh = 1` says the reverse — one warehouse club
+    # may have only one FBref spelling — and that is simply false. Sources
+    # rename clubs. FBref called the New York Red Bulls `NY Red Bulls` for a
+    # decade and `RB New York` from 2024; the older spelling wins the mutual
+    # best on 106 votes, so the current one was refused and the SAME CLUB
+    # entered the corpus twice, 18 matches each. In an MLS table that is 31
+    # teams and two half-strength New Yorks.
+    #
+    # A rename has a signature a merge does not: the club stops being called
+    # one thing and starts being called the other, with no gap and no overlap.
+    # `NY Red Bulls` last appears in 2023 and `RB New York` first appears in
+    # 2024 — CONTIGUOUS, which is what a rename looks like from the outside.
+    #
+    # Non-overlap alone is too weak, and the corpus says so: Gazelec Ajaccio
+    # played Ligue 1 in 2015 and AC Ajaccio in 2011-2013 and 2022. They never
+    # share a season, they are two different clubs from one Corsican town, and
+    # a non-overlap rule merged them. Adjacency rejects it — 2015 neither
+    # follows 2013 nor precedes 2022 — while still accepting every genuine
+    # rename in the corpus.
+    con.execute("""
+        CREATE OR REPLACE TABLE alias_seasons AS
+        SELECT competition_id, fb_norm AS fb, season
+          FROM (SELECT competition_id, home_norm AS fb_norm, season FROM fb_matches
+                UNION SELECT competition_id, away_norm, season FROM fb_matches)
+         GROUP BY 1, 2, 3
+    """)
+    con.execute("""
+        CREATE OR REPLACE TABLE alias_by_rename AS
+        WITH ranked AS (
+            SELECT *, row_number() OVER (PARTITION BY competition_id, wh
+                                         ORDER BY votes DESC) AS rk_fb,
+                   row_number() OVER (PARTITION BY competition_id, fb
+                                      ORDER BY votes DESC) AS rk_wh,
+                   COALESCE(lead(votes) OVER (PARTITION BY competition_id, fb
+                                              ORDER BY votes DESC), 0) AS next_wh
+            FROM alias_votes
+        ),
+        winner AS (SELECT competition_id, wh, fb FROM ranked WHERE rk_fb = 1),
+        runner_up AS (
+            SELECT r.* FROM ranked r
+             WHERE r.rk_fb > 1          -- refused only for being the second spelling
+               AND r.rk_wh = 1          -- but still the best club for THIS spelling
+               AND r.votes >= 5
+               AND r.votes >= 3 * r.next_wh
+        ),
+        span AS (
+            SELECT competition_id, fb, MIN(season) AS first_season,
+                   MAX(season) AS last_season
+              FROM alias_seasons GROUP BY 1, 2
+        )
+        SELECT r.competition_id, r.fb, r.wh, r.votes
+          FROM runner_up r
+          JOIN winner w ON w.competition_id = r.competition_id AND w.wh = r.wh
+          JOIN span sr ON sr.competition_id = r.competition_id AND sr.fb = r.fb
+          JOIN span sw ON sw.competition_id = r.competition_id AND sw.fb = w.fb
+         WHERE sr.last_season + 1 = sw.first_season
+            OR sw.last_season + 1 = sr.first_season
+    """)
+    n_rename = con.execute("SELECT COUNT(*) FROM alias_by_rename").fetchone()[0]
+    if n_rename:
+        logger.info("renames folded in: %d spelling(s) that share a club with "
+                    "another and never share a season", n_rename)
+
     # Votes first, alignment only for names no vote has spoken for: a club
     # with a season of evidence behind it should not be overruled by one
     # unambiguous night.
@@ -449,6 +514,17 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
         WHERE NOT EXISTS (SELECT 1 FROM alias_by_votes v
                            WHERE v.competition_id = a.competition_id
                              AND (v.fb_norm = a.fb OR v.wh_norm = a.wh))
+        UNION ALL
+        SELECT r.competition_id, r.fb AS fb_norm, r.wh AS wh_norm,
+               r.votes, 0 AS next_fb, 0 AS next_wh,
+               'rename' AS evidence
+        FROM alias_by_rename r
+        WHERE NOT EXISTS (SELECT 1 FROM alias_by_votes v
+                           WHERE v.competition_id = r.competition_id
+                             AND v.fb_norm = r.fb)
+          AND NOT EXISTS (SELECT 1 FROM alias_by_alignment a
+                           WHERE a.competition_id = r.competition_id
+                             AND a.fb = r.fb)
     """)
     n_alias = con.execute("SELECT COUNT(*) FROM team_aliases").fetchone()[0]
     n_ident = con.execute("SELECT COUNT(*) FROM team_aliases "

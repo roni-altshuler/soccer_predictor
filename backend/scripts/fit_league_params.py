@@ -62,9 +62,24 @@ PARAMS_PATH = Path(__file__).resolve().parents[1] / "data" / "league_params.json
 
 # Sanity rails. A fitted value touching one of these means the estimator is
 # broken or the sample is junk — never that the league is that extreme.
+#
+# Set from the corpus rather than from intuition. Measured 2026-08-13 over
+# every competition with >=200 completed matches since 2021 (25 of them):
+#
+#     avg_goals   1.177 (esp.2)   .. 1.728 (uefa.champions.w)
+#     home_adv    0.174 (eng.1.w) .. 0.762 (concacaf.champions)
+#     draw_rate   0.153 (uefa.champions.w) .. 0.321 (ita.2)
+#
+# `home_adv` was bounded at 0.45, which is a European league's home edge
+# mistaken for a universal one. Three competitions sit above it and two do so
+# by more than sampling error: CONCACAF Champions at 0.762 (95% CI
+# [0.476, 1.049]) and Libertadores at 0.605 ([0.492, 0.719]) — altitude,
+# continental travel and hostile away nights are real and this is what they
+# are worth. MLS at 0.468 over 767 matches is the same story on one continent.
+# The rail was failing CI for measuring them correctly.
 BOUNDS: Dict[str, Tuple[float, float]] = {
     "avg_goals": (0.75, 2.25),
-    "home_adv": (0.05, 0.45),
+    "home_adv": (0.05, 1.00),
     "draw_rate": (0.08, 0.38),
 }
 

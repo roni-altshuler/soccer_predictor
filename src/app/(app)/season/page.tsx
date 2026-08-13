@@ -10,8 +10,9 @@ import type { FixtureForecast } from '@/components/forecast/FixtureCard'
 import { FixtureList } from '@/components/forecast/FixtureList'
 import { LeagueSelect, orderLeagues, seasonLabel } from '@/components/forecast/LeagueSelect'
 import { ProbabilityRow } from '@/components/forecast/ProbabilityBar'
-import { ProjectedTable } from '@/components/forecast/ProjectedTable'
 import type { ProjectedRow } from '@/components/forecast/ProjectedTable'
+import { StandingsTable } from '@/components/forecast/StandingsTable'
+import type { GroupMeta } from '@/components/forecast/StandingsTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
@@ -48,7 +49,10 @@ interface League {
   relegation_places: number
   top_cut?: number
   top_cut_label?: string
-  schedule_completeness?: number
+  schedule_completeness?: number | null
+  /** Present only where the competition ranks inside groups, e.g. MLS. */
+  groups?: GroupMeta[] | null
+  qualify_label?: string | null
   /** This league's OWN walk-forward record. Never another league's. */
   measured?: {
     n_scored: number
@@ -163,11 +167,23 @@ export default function SeasonPage() {
       .slice(0, 6)
   }, [league])
 
+  // The second race is whatever this competition's bottom half is actually
+  // playing for. Most leagues relegate; MLS does not, and the live question
+  // there is the last playoff place — so the panel changes question rather
+  // than showing a column of dashes.
   const relegationRace = useMemo(() => {
-    if (!league) return []
+    if (!league || !league.relegation_places) return []
     return [...league.table]
-      .filter((t) => t.p_relegated >= 0.05)
-      .sort((a, b) => b.p_relegated - a.p_relegated)
+      .filter((t) => (t.p_relegated ?? 0) >= 0.05)
+      .sort((a, b) => (b.p_relegated ?? 0) - (a.p_relegated ?? 0))
+      .slice(0, 6)
+  }, [league])
+
+  const qualifyRace = useMemo(() => {
+    if (!league?.groups?.length) return []
+    return [...league.table]
+      .filter((t) => (t.p_qualify ?? 0) > 0.02 && (t.p_qualify ?? 0) < 0.98)
+      .sort((a, b) => (b.p_qualify ?? 0) - (a.p_qualify ?? 0))
       .slice(0, 6)
   }, [league])
 
@@ -186,9 +202,10 @@ export default function SeasonPage() {
           The season ahead
         </h1>
         <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
-          Trained on every match played since 2000 and asked about every one still to
-          come. Title, top four and relegation come from 20,000 simulations of the
-          fixtures that remain.
+          Trained on every match played since 2000 and asked about every one still
+          to come. Each league&apos;s projection is 20,000 simulations of the
+          fixtures that remain, and every probability on this page is the share
+          of those simulations in which it happened.
         </p>
       </header>
 
@@ -247,12 +264,15 @@ export default function SeasonPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                      Title race
+                      {league.groups?.length
+                        ? 'Supporters’ Shield'
+                        : 'Title race'}
                     </h3>
                     <ul className="mt-3 space-y-2.5">
                       {titleRace.map((t) => (
                         <li key={t.team}>
                           <ProbabilityRow
+                            competitionId={league.competition_id}
                             label={t.team}
                             value={t.p_title}
                             max={titleRace[0]?.p_title ?? 1}
@@ -264,15 +284,37 @@ export default function SeasonPage() {
 
                   <div>
                     <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                      Relegation race
+                      {league.groups?.length
+                        ? `${league.qualify_label ?? 'Qualification'} — still open`
+                        : 'Relegation race'}
                     </h3>
-                    {relegationRace.length ? (
+                    {league.groups?.length ? (
+                      qualifyRace.length ? (
+                        <ul className="mt-3 space-y-2.5">
+                          {qualifyRace.map((t) => (
+                            <li key={t.team}>
+                              <ProbabilityRow
+                                label={t.team}
+                                value={t.p_qualify ?? 0}
+                                max={qualifyRace[0]?.p_qualify ?? 1}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 text-[12px] text-[var(--text-tertiary)]">
+                          Every club is already clear either way — none sits
+                          between a 2% and a 98% chance of qualifying.
+                        </p>
+                      )
+                    ) : relegationRace.length ? (
                       <ul className="mt-3 space-y-2.5">
                         {relegationRace.map((t) => (
                           <li key={t.team}>
                             <ProbabilityRow
+                              competitionId={league.competition_id}
                               label={t.team}
-                              value={t.p_relegated}
+                              value={t.p_relegated ?? 0}
                               max={relegationRace[0]?.p_relegated ?? 1}
                               tone="warn"
                             />
@@ -321,13 +363,19 @@ export default function SeasonPage() {
                   id="table-heading"
                   className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
                 >
-                  Projected final table
+                  {league.groups?.length
+                    ? 'Projected standings'
+                    : 'Projected final table'}
                 </h2>
-                <ProjectedTable
+                <StandingsTable
                   className="mt-3.5"
                   rows={league.table}
+                  competitionId={league.competition_id}
                   relegationPlaces={league.relegation_places}
+                  topCut={league.top_cut ?? 4}
                   topCutLabel={league.top_cut_label ?? 'Top 4'}
+                  groups={league.groups}
+                  qualifyLabel={league.qualify_label}
                 />
                 {league.schedule_completeness != null &&
                 league.schedule_completeness < 1 ? (

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import type { FixtureForecast } from '@/components/forecast/FixtureCard'
+import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { cn } from '@/lib/utils'
 
 /**
@@ -142,11 +143,17 @@ function FixtureRow({ fixture: f }: { fixture: FixtureForecast }) {
       </time>
 
       <span className="min-w-0">
-        <span className="block truncate text-[13px] leading-snug text-[var(--text-primary)]">
-          {f.home}
+        <span className="flex items-center gap-2">
+          <TeamCrest team={f.home} competitionId={f.competition_id} size="sm" />
+          <span className="truncate text-[13px] leading-snug text-[var(--text-primary)]">
+            {f.home}
+          </span>
         </span>
-        <span className="block truncate text-[13px] leading-snug text-[var(--text-secondary)]">
-          {f.away}
+        <span className="mt-0.5 flex items-center gap-2">
+          <TeamCrest team={f.away} competitionId={f.competition_id} size="sm" />
+          <span className="truncate text-[13px] leading-snug text-[var(--text-secondary)]">
+            {f.away}
+          </span>
         </span>
       </span>
 

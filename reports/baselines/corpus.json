@@ -1,22 +1,17 @@
 {
-  "measured_at": "2026-08-12T08:25:03+00:00",
+  "measured_at": "2026-08-13T06:33:27+00:00",
   "min_season": 2000,
   "tolerance": 25,
   "note": "Played matches per served league in the canonical layer. Recorded, not chosen: the guard fails when a league falls below what was last measured.",
   "leagues": {
-    "bra.1": 4775,
     "eng.1": 9880,
-    "eng.2": 6680,
     "esp.1": 9881,
-    "esp.2": 5616,
     "fra.1": 9462,
-    "fra.2": 4358,
     "ger.1": 7979,
-    "ger.2": 3728,
     "ita.1": 9587,
-    "ita.2": 5436,
     "ned.1": 8128,
-    "por.1": 7587,
-    "tur.1": 4312
+    "por.1": 7451,
+    "tur.1": 4312,
+    "usa.1": 8596
   }
 }

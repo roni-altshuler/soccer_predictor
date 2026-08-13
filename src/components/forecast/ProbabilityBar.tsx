@@ -1,5 +1,6 @@
 'use client'
 
+import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { cn } from '@/lib/utils'
 
 /**
@@ -103,6 +104,7 @@ export function ProbabilityRow({
   max = 1,
   tone = 'primary',
   suffix,
+  competitionId,
   className,
 }: {
   label: string
@@ -110,6 +112,8 @@ export function ProbabilityRow({
   max?: number
   tone?: 'primary' | 'warn' | 'muted'
   suffix?: string
+  /** When given, `label` is read as a club and gets its crest. */
+  competitionId?: string
   className?: string
 }) {
   const width = max > 0 ? Math.max(1.5, (clamp(value) / max) * 100) : 0
@@ -123,7 +127,10 @@ export function ProbabilityRow({
   return (
     <div className={cn('grid grid-cols-[1fr_auto] items-baseline gap-x-3', className)}>
       <div className="min-w-0">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-2">
+          {competitionId ? (
+            <TeamCrest team={label} competitionId={competitionId} size="sm" />
+          ) : null}
           <span className="truncate text-[13px] text-[var(--text-secondary)]">{label}</span>
           {suffix ? (
             <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">

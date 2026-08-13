@@ -263,11 +263,16 @@ describe('SeasonPage', () => {
     // Expected points is the column the races do not carry — proof the table
     // itself rendered rather than the overview under a new heading.
     expect(screen.getAllByText('79').length).toBeGreaterThan(0)
-    // How many go down is the single most consequential number on the table
-    // and it is interpolated, so it splits across text nodes.
+    // How many go down is the single most consequential number on the table.
+    // It now lives in the qualification legend, which is also what tells a
+    // reader why rows 18-20 carry a different stripe from rows 5-17.
+    // `getAllByText`: the legend entry is one <li> whose text also matches on
+    // its parent <ul>, so the exact-node query finds two.
     expect(
-      screen.getByText((_, el) => el?.textContent?.startsWith('3 of 3 go down') ?? false),
-    ).toBeInTheDocument()
+      screen.getAllByText((_, el) =>
+        el?.textContent?.includes('Bottom 3 — relegation') ?? false,
+      ).length,
+    ).toBeGreaterThan(0)
   })
 
   it('lists every remaining fixture under its own tab, grouped by day', async () => {

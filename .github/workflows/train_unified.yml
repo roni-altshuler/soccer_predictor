@@ -169,6 +169,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # This warehouse has been through a training ingest and is about to
+          # replace the shared asset. Fold the published event corpus back in
+          # first: without this the republish deletes every timeline the daily
+          # backfill verified since this job downloaded its copy.
+          gh release download models-latest --pattern 'match_events.csv.gz' \
+            --dir /tmp --clobber || echo "no published event corpus yet"
+          python -m backend.scripts.sync_events import \
+            --input /tmp/match_events.csv.gz --allow-missing
+
           gzip -c backend/data/warehouse.sqlite > /tmp/warehouse.sqlite.gz
           gh release upload models-latest --clobber /tmp/warehouse.sqlite.gz
 

@@ -246,7 +246,7 @@ corpus is dropped whatever the schedule claims.
 
 ### Which leagues serve, and why those
 
-Fourteen, each admitted by `league_gate.py` — a day-blocked walk-forward over
+Nine, each admitted by `league_gate.py` — a day-blocked walk-forward over
 that competition alone against three baselines: a one-in-three guess, the
 league's own running base rate, and picking the home side every time. A league
 that does not beat all three does not appear. Results in
@@ -254,25 +254,49 @@ that does not beat all three does not appear. Results in
 
 | | leagues |
 |---|---|
-| top flights | eng.1 esp.1 ger.1 ita.1 fra.1 ned.1 por.1 **tur.1 bra.1** |
-| second tiers | **eng.2 esp.2 ger.2 ita.2 fra.2** |
+| European top flight | eng.1 esp.1 ger.1 ita.1 fra.1 ned.1 por.1 tur.1 |
+| North America | **usa.1 (MLS)** |
+
+**Scope is a product decision, not a measurement one.** The five second tiers
+and Brazil each cleared the gate and each shipped for a day; they are in `HELD`
+with the reason `out of scope`, their gate evidence untouched in
+`reports/baselines/league_gate.json`, and turning any of them back on is one
+line in `LEAGUES`. Do not re-derive their numbers to "justify" removing them —
+they were removed because a Championship table next to the Premier League made
+the page harder to read.
+
+**MLS is grouped, and that changes what every number means.** `p_title` is the
+Supporters' Shield; a club's season is decided by `p_group_title` (wins its
+conference) and `p_qualify` (reaches the playoffs). Conference membership AND
+the playoff cut line come from `backend/data/conferences.json`, built by
+`build_conferences.py` from ESPN's own standings — the cut is READ from ESPN's
+per-team notes ("Qualifies for MLS Cup Playoffs — Wild Card Matches", rank 9)
+rather than hard-coded, because a literal 9 stops being true the year the
+format changes and nothing would say so. A grouped league skips
+`ROUND_ROBIN_MIN` (MLS is 59% of one by design); its structural check is that
+every club in the fixture list is placed in a conference, or no table
+publishes.
+
+**`league_participants` drops sides that are not in the league.** ESPN files
+the All-Star Game under `usa.1`, so `MLS All-Stars` and `Liga MX All-Stars`
+arrived as clubs with one match each and made a 30-team league a 32-team table.
+Filtered on participation against the season median, not on names.
 
 The spread is wide and the page says so per league: por.1 .56873, ned.1
-.57010, eng.1 .58266 … eng.2 .63810, ita.2 .64699, fra.2 .64736. **Each league
-carries its own `measured` block** rather than inheriting the .59303 headline,
-which was measured on the top five only.
+.57010, eng.1 .58266 … tur.1 .60377, usa.1 .62101. **Each league carries its
+own `measured` block** rather than inheriting the .59303 headline, which was
+measured on the top five only.
 
-**Passing the match gate does not earn a projected TABLE.** A season simulation
-assumes a double round robin, and `ROUND_ROBIN_MIN` checks that against the
-real fixture list: MLS runs at 59% of one (two conferences, unbalanced
-schedule, playoff champion), Liga MX 50% (Apertura/Clausura), Argentina 57%
-(knockout rounds inside the league). All three are in `HELD` with the reason —
-the model is fine, the competition is not a single table. Brazil at 98.7% (five
-postponements without a new date) projects and publishes the shortfall.
+**Passing the match gate does not earn a projected TABLE.** For an ungrouped
+league a season simulation assumes a double round robin, and `ROUND_ROBIN_MIN`
+checks that against the real fixture list: Liga MX runs at 50% of one
+(Apertura/Clausura), Argentina 57% (knockout rounds inside the league). Both
+are in `HELD` with the reason — the model is fine, the competition is not a
+single table.
 
-Second tiers use `top_cut` = 2 labelled "Promoted". Fourth place is a Champions
-League spot in a top flight and nothing whatsoever in the Championship, so the
-column is per-league rather than a hard-coded "Top 4".
+`top_cut` is per league, because the band worth naming differs: fourth is a
+Champions League place in a top flight and the Supporters' Shield is a single
+position in MLS. Never hard-code "Top 4".
 
 **Every competition seeds its own RNG** from `sha256(competition_id)`. One
 shared generator consumed in dict-iteration order meant adding the Championship
@@ -497,6 +521,9 @@ rather than the feature list.
 ## League scope — Wave A only
 
 Premier League (`eng.1`), La Liga (`esp.1`), Bundesliga (`ger.1`), Serie A (`ita.1`), Ligue 1 (`fra.1`).
+
+This is the scope of the *benchmark corpus*, which is not the scope of
+`/season` — see "Which leagues serve" above for what the site publishes.
 
 MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advances only on measured evidence. Women's competitions were dropped in the pivot — a real cost, to be revisited on the same evidence gate.
 
