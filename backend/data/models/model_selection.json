@@ -739,12 +739,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "global",
       "dc_backtest": {
-        "season": 2025,
-        "n": 34,
-        "dc_accuracy": 0.5588,
-        "dc_brier": 0.5648,
-        "dc_log_loss": 0.9551,
-        "always_home_accuracy": 0.4706
+        "season": 2024,
+        "n": 306,
+        "dc_accuracy": 0.4804,
+        "dc_brier": 0.6149,
+        "dc_log_loss": 1.0312,
+        "always_home_accuracy": 0.3856
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -2056,8 +2056,8 @@
         "season": 2025,
         "n": 541,
         "dc_accuracy": 0.475,
-        "dc_brier": 0.6395,
-        "dc_log_loss": 1.0704,
+        "dc_brier": 0.6402,
+        "dc_log_loss": 1.0708,
         "always_home_accuracy": 0.4436
       },
       "incumbent_accuracy": null,
@@ -2099,7 +2099,7 @@
   "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
   "statistical_selection": {
     "policy_version": "2026-07-30",
-    "generated_at": "2026-08-13T09:49:08+00:00",
+    "generated_at": "2026-08-13T10:14:59+00:00",
     "gates": {
       "min_backtest_matches": 60,
       "floor_tolerance": 0.01,
@@ -2176,12 +2176,12 @@
         "reason": "dixon_coles_retained_clears_floor"
       },
       "ger.1": {
-        "season": 2025,
-        "n": 34,
-        "dc_accuracy": 0.5588,
-        "dc_brier": 0.5648,
-        "dc_log_loss": 0.9551,
-        "always_home_accuracy": 0.4706,
+        "season": 2024,
+        "n": 306,
+        "dc_accuracy": 0.4804,
+        "dc_brier": 0.6149,
+        "dc_log_loss": 1.0312,
+        "always_home_accuracy": 0.3856,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
@@ -2223,8 +2223,8 @@
         "season": 2025,
         "n": 541,
         "dc_accuracy": 0.475,
-        "dc_brier": 0.6395,
-        "dc_log_loss": 1.0704,
+        "dc_brier": 0.6402,
+        "dc_log_loss": 1.0708,
         "always_home_accuracy": 0.4436,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
