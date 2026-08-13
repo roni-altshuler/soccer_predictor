@@ -644,7 +644,25 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   attached to those ids, and re-running the merge under the corrected rule threw away
   **1,146 verified timelines in a single pass**. `UPDATE OR IGNORE ... SET match_id` onto
   the keeper first — OR IGNORE because the keeper may already carry its own.
-- **`event_backfill.yml` runs `repair_warehouse --only dedupe-fixtures` after the ingest**,
+- **A pin in `team_aliases.yml` can MANUFACTURE the split it exists to prevent.** The
+  canonical must be the spelling the **daily** source writes. Heidenheim was pinned to
+  `1. FC Heidenheim` while ESPN — ingested every day — writes `1. FC Heidenheim 1846`, so
+  football-data's "Heidenheim" landed on one row and ESPN's ingest created another;
+  `ger.1` 2025 held 340 rows for a 306-match season, `repair_warehouse` merged the pair on
+  every run, and the next day's ingest split them again.
+- **Team identity is global; club names are competition-scoped. That gap mis-attributes
+  matches.** ESPN's MLS scoreboard calls Inter Miami "Inter", which the resolver matched to
+  the existing global `Inter` — Internazionale. 28 matches against D.C. United, Orlando
+  City, Atlanta United, NYCFC, Montréal and Nashville sat on Inter Milan's record from 2020
+  to 2023, and **both clubs were rated on it**. Repointed to Inter Miami (58 → 86 matches).
+  **Do not "fix" this by merging.** `split_identities` flags the pair because within
+  `usa.1` they look like one club, and merging is what that normally means — here it would
+  fuse Internazionale into Inter Miami. A competition-scoped check cannot see that one of
+  the two rows is a foreign club that should not be in that competition at all.
+- **`event_backfill.yml` folds split identities BEFORE deduping** — a duplicate is only
+  visible once both rows point at the same club, and deduping alone could not see the
+  Heidenheim pair at all. It runs `repair_warehouse --only merge-identities
+  --only dedupe-fixtures` after the ingest,
   before the event backfill (so timelines attach to surviving rows) and before the artifact
   builders (so nothing is derived from a corpus that counts matches twice). The corpus
   heals daily rather than when someone happens to look at it.
