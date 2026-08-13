@@ -421,6 +421,18 @@ leaves the previous valid forecast serving rather than a truncated file.
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
 | `/evaluation` | historical vs live, kept apart; reliability, per-league and per-version breakdowns |
 | `/tournaments` | knockout ties and trophy odds |
+| `/leagues` | directory of the nine projected leagues, each with the walk-forward record that admitted it |
+
+`/leagues` reads `season_projections.json` and lists `SERVED_COMPETITION_IDS`
+from `leagueAccents.ts`, which mirrors `LEAGUES` in `forecast_season.py` and is
+pinned to the artifact by `src/__tests__/lib/servedLeagues.test.ts`. **Keep
+`SERVED_COMPETITION_IDS` and `WAVE_A_COMPETITION_IDS` distinct.** Nine leagues
+are projected; only the five in Wave A carry a closing price on every fixture
+and may be described as scored against the market. The page marks that per row
+rather than flattening the two, because merging them promotes four leagues into
+a claim no measurement supports — the previous version went the other way and
+listed five leagues while advertising MLS and the Champions League as "not
+covered yet", both of which had been live for days.
 
 Components in `src/components/forecast/`: `ProbabilityBar`, `ProbabilityRow`,
 `FixtureCard`, `FixtureList` (rows and day headings, six matchdays at a time),

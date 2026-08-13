@@ -213,6 +213,33 @@ export const WAVE_A_COMPETITION_IDS = [
 
 export type WaveACompetitionId = (typeof WAVE_A_COMPETITION_IDS)[number]
 
+/**
+ * The leagues the site actually PROJECTS, which is a wider set than the ones
+ * scored against a closing line — and the two must not be conflated.
+ *
+ * `WAVE_A_COMPETITION_IDS` above is the benchmark corpus: five leagues with a
+ * paired market price on every fixture, which is what lets `/accuracy` say how
+ * far the model sits from the bookmaker. These nine are the ones admitted by
+ * `league_gate.py` — a day-blocked walk-forward in which the league beat a
+ * one-in-three guess, its own running base rate, and picking the home side
+ * every time. Every one of the nine publishes a projected table; only five of
+ * them can be placed against the market.
+ *
+ * Mirrors `LEAGUES` in `backend/scripts/forecast_season.py`, in its order:
+ * the European top flight, then MLS.
+ */
+export const SERVED_COMPETITION_IDS = [
+  'eng.1',
+  'esp.1',
+  'fra.1',
+  'ger.1',
+  'ita.1',
+  'ned.1',
+  'por.1',
+  'tur.1',
+  'usa.1',
+] as const
+
 /** Covered competitions, in the order league pickers should show them. */
 export function coveredLeagues(): LeagueAccent[] {
   return WAVE_A_COMPETITION_IDS.map((id) => byCompetitionId.get(id)).filter(

@@ -1,22 +1,33 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { LeagueTrackRecord } from '@/components/accuracy/LeagueTrackRecord'
+import { SERVED_COMPETITION_IDS, getLeagueAccent } from '@/lib/leagueAccents'
 
 /**
- * Wave A only.
+ * The nine leagues `/season` projects are the ones this route is built for.
  *
- * The pivot (docs/PIVOT_2026-08.md §5) scopes the product to the five big
- * European men's leagues until the model is measured against the closing line
- * on each of them. MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are
- * Wave C and only return once their wave's evidence gate is met. The tournament
- * branch that used to live here went with them.
+ * It is NOT restricted to them, and must not be. A Champions League fixture on
+ * a match page links to its own competition, and 404ing that link to keep the
+ * directory tidy would break a page a reader actually reached from content
+ * that exists. Anything the accent registry knows therefore still renders,
+ * with its real name — the previous version hard-coded five leagues and fell
+ * back to title-casing the slug, which is how `/leagues/bra.1` came to be
+ * headed "Bra.1" in country "Unknown".
+ *
+ * `generateStaticParams` still pre-renders only the served nine, because those
+ * are the ones linked from the directory and worth the build time.
  */
-const LEAGUE_CONFIG: Record<string, { name: string; country: string }> = {
-  'eng.1': { name: 'Premier League', country: 'England' },
-  'esp.1': { name: 'La Liga', country: 'Spain' },
-  'ger.1': { name: 'Bundesliga', country: 'Germany' },
-  'ita.1': { name: 'Serie A', country: 'Italy' },
-  'fra.1': { name: 'Ligue 1', country: 'France' },
+function leagueConfig(leagueId: string): { name: string; country: string } {
+  const accent = getLeagueAccent(leagueId)
+  if (accent.competitionId !== 'unknown') {
+    return { name: accent.displayName, country: accent.country }
+  }
+  // A competition no source has ever named. Humanise the slug rather than
+  // invent an identity for it.
+  return {
+    name: leagueId.replace(/[_-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+    country: '',
+  }
 }
 
 interface LeaguePageParams {
@@ -27,10 +38,7 @@ interface LeaguePageParams {
 
 export default async function LeaguePage({ params }: LeaguePageParams) {
   const { leagueId } = await params
-  const config = LEAGUE_CONFIG[leagueId] || {
-    name: leagueId.replace(/[_-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-    country: 'Unknown',
-  }
+  const config = leagueConfig(leagueId)
 
   return (
     <>
@@ -62,15 +70,12 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
 }
 
 export function generateStaticParams() {
-  return Object.keys(LEAGUE_CONFIG).map((leagueId) => ({
-    leagueId,
-  }))
+  return SERVED_COMPETITION_IDS.map((leagueId) => ({ leagueId }))
 }
 
 export async function generateMetadata({ params }: LeaguePageParams) {
   const { leagueId } = await params
-  const config = LEAGUE_CONFIG[leagueId]
-  const name = config?.name || leagueId
+  const { name } = leagueConfig(leagueId)
 
   return {
     title: `${name} · Pitchverse`,
