@@ -38,6 +38,7 @@ const RENDERED = new Set([
   'in_progress',
   'completed',
   'awaiting_draw',
+  'awaiting_fixtures',
   'not_reconstructed',
   'insufficient_history',
 ])
@@ -102,13 +103,33 @@ describe('tournaments.json — the shape the page is built on', () => {
     }
   })
 
-  it('never publishes an edition after the current one', () => {
-    // Anything later has no draw, and a bracket printed for a tournament that
-    // does not exist yet reads as a forecast of it.
+  it('publishes an edition after the current one only as an empty placeholder', () => {
+    // The rule used to be "never forward", which left the page with nothing to
+    // say about the next Champions League for the three months between one
+    // final and the next draw. Forward editions are allowed now, but only as
+    // `awaiting_fixtures`: no bracket, no odds, and a reason. A bracket
+    // printed for a tournament that has not been drawn would read as a
+    // forecast of it.
     for (const [id, list] of byCompetition()) {
       const current = list.find((e) => e.is_current)!
-      const ahead = list.filter((e) => e.season > current.season).map((e) => e.season)
-      expect([id, ahead]).toEqual([id, []])
+      for (const ahead of list.filter((e) => e.season > current.season)) {
+        expect([id, ahead.season, ahead.status]).toEqual([id, ahead.season, 'awaiting_fixtures'])
+        expect(ahead.bracket ?? []).toEqual([])
+        expect(ahead.odds ?? []).toEqual([])
+        expect(Boolean(ahead.reason)).toBe(true)
+      }
+    }
+  })
+
+  it('backs every upcoming edition with a real published fixture list', () => {
+    // The placeholder exists because fixtures exist. Inventing "next season"
+    // from the calendar would put a World Cup one year after the last one.
+    for (const e of editions.filter((x) => x.status === 'awaiting_fixtures')) {
+      expect([e.competition_id, e.next_fixture?.season]).toEqual([
+        e.competition_id,
+        e.season,
+      ])
+      expect((e.next_fixture?.fixtures ?? 0) > 0).toBe(true)
     }
   })
 
@@ -251,7 +272,11 @@ describe('tournaments.json — the shape the page is built on', () => {
 
   it('states a reason wherever it declines to forecast', () => {
     for (const e of editions) {
-      if (['awaiting_draw', 'not_reconstructed', 'insufficient_history'].includes(e.status)) {
+      if (
+        ['awaiting_draw', 'awaiting_fixtures', 'not_reconstructed', 'insufficient_history'].includes(
+          e.status,
+        )
+      ) {
         expect([e.competition_id, e.season, Boolean(e.reason)]).toEqual([
           e.competition_id,
           e.season,

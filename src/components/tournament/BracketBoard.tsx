@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { cn } from '@/lib/utils'
@@ -71,6 +71,134 @@ const fmtDate = (iso: string) =>
     timeZone: 'UTC',
   })
 
+/**
+ * Fitting a bracket into the width it has, without a sideways scrollbar.
+ *
+ * A bracket is intrinsically wide and the obvious answer — let it scroll — is
+ * the one thing that stops a reader seeing the shape, which is the only reason
+ * to draw a bracket rather than list the rounds. Three things together get the
+ * whole board on screen at any width:
+ *
+ *  1. GEOMETRY IS KNOWN, NOT MEASURED. Every column is a fixed width, so the
+ *     natural size of the board is arithmetic on the number of rounds. That
+ *     avoids measuring a scaled element to decide how much to scale it, which
+ *     oscillates.
+ *  2. THE HALVES STACK WHEN THEY MUST. Two-sided is right when it fits: it is
+ *     how a bracket is drawn and it shows both routes to the final at once.
+ *     Below that it becomes two one-sided halves stacked vertically, each
+ *     reading inwards to the final — which is roughly half the width, so it is
+ *     worth about twice the scale.
+ *  3. WHAT IS LEFT IS SCALED. A transform, so the layout still reserves the
+ *     right height and nothing overlaps what follows.
+ *
+ * The measured numbers this is tuned against, at the app's 990px content width
+ * and a 375px phone: a Champions League bracket is 1092px two-sided, so it
+ * fits desktop at 0.91 and a phone at 0.27 — three-pixel text. Stacked and
+ * compacted, the same bracket is 458px, which a phone takes at 0.82.
+ */
+const GEOM = {
+  /** Two-sided, roomy: the desktop case. */
+  wide: { col: 140, conn: 16, final: 156 },
+  /** Stacked halves, compact: crest and meta line drop out below. */
+  compact: { col: 104, conn: 10, final: 116 },
+}
+
+/** Below this the text is too small to be worth keeping the two-sided shape. */
+const MIN_TWO_SIDED_SCALE = 0.62
+
+export interface Fit {
+  /** Two-sided with the final in the middle, or halves stacked vertically. */
+  stacked: boolean
+  scale: number
+}
+
+/**
+ * Pure so the guarantee can be tested: whichever branch is taken, the drawn
+ * width is never greater than the width available, so nothing scrolls
+ * sideways. Exported for exactly that.
+ */
+export function computeFit(width: number, sideRounds: number): Fit {
+  // Width 0 means it has not been measured — server render, or jsdom, which
+  // implements no layout. Draw the canonical shape rather than guessing.
+  if (!width || sideRounds < 1) return { stacked: false, scale: 1 }
+
+  const w = GEOM.wide
+  const twoSided = 2 * sideRounds * (w.col + w.conn) + w.final
+  const twoScale = Math.min(1, width / twoSided)
+  if (twoScale >= MIN_TWO_SIDED_SCALE) return { stacked: false, scale: twoScale }
+
+  const c = GEOM.compact
+  const half = sideRounds * (c.col + c.conn) + c.final
+  return { stacked: true, scale: Math.min(1, width / half) }
+}
+
+/** The drawn width of a board, for the mode `computeFit` chose. */
+export function naturalWidth(sideRounds: number, stacked: boolean): number {
+  const g = stacked ? GEOM.compact : GEOM.wide
+  return stacked
+    ? sideRounds * (g.col + g.conn) + g.final
+    : 2 * sideRounds * (g.col + g.conn) + g.final
+}
+
+function useFit(sideRounds: number): [React.RefObject<HTMLDivElement>, Fit] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+
+  // Layout effect so the first paint is already at the right scale rather than
+  // flashing a full-size board and snapping.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setWidth(el.clientWidth)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const fit = useMemo<Fit>(() => computeFit(width, sideRounds), [width, sideRounds])
+
+  return [ref, fit]
+}
+
+/**
+ * Scales its child to `scale` and reserves the height the scaled child needs.
+ *
+ * `transform` does not affect layout, so without the height correction the
+ * board would leave a gap under it the size of the space it no longer uses.
+ */
+function Scaled({ scale, children }: { scale: number; children: React.ReactNode }) {
+  const inner = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    const el = inner.current
+    if (!el) return
+    const measure = () => setHeight(el.offsetHeight * scale)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [scale])
+
+  return (
+    <div style={{ height }}>
+      <div
+        ref={inner}
+        style={
+          scale < 1
+            ? { transform: `scale(${scale})`, transformOrigin: 'top left', width: `${100 / scale}%` }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function BracketBoard({
   rounds,
   competitionId,
@@ -93,6 +221,7 @@ export function BracketBoard({
   // Everything except the final, which is drawn once in the middle rather than
   // once per side.
   const sides = tree.filter((r) => (r.slots ?? 0) > 1)
+  const [fitRef, fit] = useFit(sides.length)
 
   return (
     <section className={cn('mt-5', className)}>
@@ -106,35 +235,57 @@ export function BracketBoard({
       </p>
 
       {tree.length ? (
-        // Seven columns of bracket do not fit a phone and must not squeeze:
-        // the board scrolls inside its own box rather than compressing a tie
-        // to the point where neither club name survives.
-        <div className="mt-4 overflow-x-auto pb-2">
-          <div className="flex min-w-max items-stretch">
-            {sides.map((round, i) => (
-              <RoundGroup
-                key={`l-${round.slug}-${round.display}`}
-                round={round}
-                side="left"
-                competitionId={competitionId}
-                next={sides[i + 1] ?? final}
-              />
-            ))}
+        <div ref={fitRef} className="mt-4">
+          <Scaled scale={fit.scale}>
+            {fit.stacked ? (
+              // Each half reads inwards to the final, stacked one above the
+              // other. Half the width, so roughly twice the scale — which is
+              // the difference between a phone showing three-pixel text and a
+              // legible board.
+              <div className="flex flex-col gap-5">
+                <HalfBoard
+                  rounds={sides}
+                  side="left"
+                  label="Top half"
+                  competitionId={competitionId}
+                  final={final}
+                  compact
+                />
+                <HalfBoard
+                  rounds={sides}
+                  side="right"
+                  label="Bottom half"
+                  competitionId={competitionId}
+                  final={null}
+                  compact
+                />
+              </div>
+            ) : (
+              <div className="flex items-stretch">
+                {sides.map((round, i) => (
+                  <RoundGroup
+                    key={`l-${round.slug}-${round.display}`}
+                    round={round}
+                    side="left"
+                    competitionId={competitionId}
+                    next={sides[i + 1] ?? final}
+                  />
+                ))}
 
-            {final ? (
-              <FinalColumn round={final} competitionId={competitionId} />
-            ) : null}
+                {final ? <FinalColumn round={final} competitionId={competitionId} /> : null}
 
-            {[...sides].reverse().map((round, i, arr) => (
-              <RoundGroup
-                key={`r-${round.slug}-${round.display}`}
-                round={round}
-                side="right"
-                competitionId={competitionId}
-                next={arr[i - 1] ?? final}
-              />
-            ))}
-          </div>
+                {[...sides].reverse().map((round, i, arr) => (
+                  <RoundGroup
+                    key={`r-${round.slug}-${round.display}`}
+                    round={round}
+                    side="right"
+                    competitionId={competitionId}
+                    next={arr[i - 1] ?? final}
+                  />
+                ))}
+              </div>
+            )}
+          </Scaled>
         </div>
       ) : null}
 
@@ -143,33 +294,92 @@ export function BracketBoard({
   )
 }
 
+/**
+ * One half of the draw, read left to right, ending at the final.
+ *
+ * Used when the two-sided board will not fit. Both halves are still shown —
+ * the whole bracket is on screen — but stacked rather than mirrored, which is
+ * what buys back the width.
+ */
+function HalfBoard({
+  rounds,
+  side,
+  label,
+  competitionId,
+  final,
+  compact,
+}: {
+  rounds: BracketRound[]
+  side: 'left' | 'right'
+  label: string
+  competitionId: string
+  final: BracketRound | null
+  compact?: boolean
+}) {
+  return (
+    <div>
+      <div className="pb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+        {label}
+      </div>
+      <div className="flex items-stretch">
+        {rounds.map((round, i) => (
+          <RoundGroup
+            key={`${side}-${round.slug}-${round.display}`}
+            round={round}
+            side="left"
+            renderHalf={side}
+            competitionId={competitionId}
+            next={rounds[i + 1] ?? final}
+            compact={compact}
+          />
+        ))}
+        {final ? (
+          <FinalColumn round={final} competitionId={competitionId} compact={compact} />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 /** Column labels sit above the board, one per round, mirrored either side. */
 function RoundGroup({
   round,
   side,
+  renderHalf,
   competitionId,
   next,
+  compact,
 }: {
   round: BracketRound
+  /** Which way the connector points — the drawing direction. */
   side: 'left' | 'right'
+  /** Which half's slots to render. Defaults to the drawing direction. */
+  renderHalf?: 'left' | 'right'
   competitionId: string
   next: BracketRound | null
+  compact?: boolean
 }) {
+  const g = compact ? GEOM.compact : GEOM.wide
   const slots = round.slots ?? 0
   const half = slots / 2
   const bySlot = new Map(round.ties.filter((t) => t.slot != null).map((t) => [t.slot as number, t]))
   // Left half is the low slots, right half the high ones — the split the
-  // feeder rule (2s, 2s+1) produces.
-  const range = Array.from({ length: half }, (_, i) => (side === 'left' ? i : half + i))
-  const connector = <Connector pairs={Math.max(1, (next?.slots ?? 2) / 2)} side={side} />
+  // feeder rule (2s, 2s+1) produces. Which half is DRAWN is separate from
+  // which way the connectors point, so a stacked board can render the
+  // right-hand half of the draw reading left-to-right.
+  const which = renderHalf ?? side
+  const range = Array.from({ length: half }, (_, i) => (which === 'left' ? i : half + i))
+  const connector = (
+    <Connector pairs={Math.max(1, (next?.slots ?? 2) / 2)} side={side} width={g.conn} />
+  )
 
   const column = (
-    <div className="flex w-[140px] shrink-0 flex-col md:w-[176px]">
+    <div className="flex shrink-0 flex-col" style={{ width: g.col }}>
       <ColumnHeading round={round} />
       <div className="flex flex-1 flex-col">
         {range.map((slot) => (
           <div key={slot} className="flex flex-1 items-center py-1">
-            <Tie tie={bySlot.get(slot) ?? null} competitionId={competitionId} />
+            <Tie tie={bySlot.get(slot) ?? null} competitionId={competitionId} compact={compact} />
           </div>
         ))}
       </div>
@@ -192,16 +402,19 @@ function RoundGroup({
 function FinalColumn({
   round,
   competitionId,
+  compact,
 }: {
   round: BracketRound
   competitionId: string
+  compact?: boolean
 }) {
   const tie = round.ties[0] ?? null
+  const g = compact ? GEOM.compact : GEOM.wide
   return (
-    <div className="flex w-[150px] shrink-0 flex-col md:w-[190px]">
+    <div className="flex shrink-0 flex-col" style={{ width: g.final }}>
       <ColumnHeading round={round} center />
       <div className="flex flex-1 items-center px-1.5">
-        <Tie tie={tie} competitionId={competitionId} emphasis />
+        <Tie tie={tie} competitionId={competitionId} emphasis compact={compact} />
       </div>
     </div>
   )
@@ -229,9 +442,17 @@ function ColumnHeading({ round, center }: { round: BracketRound; center?: boolea
  * because the cell covers exactly the two boxes below it, those are their
  * centre lines. No pixel maths, and it survives any box height.
  */
-function Connector({ pairs, side }: { pairs: number; side: 'left' | 'right' }) {
+function Connector({
+  pairs,
+  side,
+  width,
+}: {
+  pairs: number
+  side: 'left' | 'right'
+  width: number
+}) {
   return (
-    <div className="flex w-3 shrink-0 flex-col md:w-6" aria-hidden>
+    <div className="flex shrink-0 flex-col" style={{ width }} aria-hidden>
       {/* Spacer matching the column heading, so the joins line up with boxes. */}
       <div className="pb-2">
         <div className="font-mono text-[10px] leading-normal">&nbsp;</div>
@@ -261,15 +482,21 @@ function Tie({
   tie,
   competitionId,
   emphasis,
+  compact,
 }: {
   tie: BracketTie | null
   competitionId: string
   emphasis?: boolean
+  /** Drop the crest and the meta line — the width the stacked board buys. */
+  compact?: boolean
 }) {
   if (!tie) {
     return (
       <div
-        className="h-[46px] w-full rounded-md border border-dashed border-[var(--border-color)] px-2 py-1.5"
+        className={cn(
+          'w-full rounded-md border border-dashed border-[var(--border-color)] px-2 py-1.5',
+          compact ? 'h-[34px]' : 'h-[46px]',
+        )}
         aria-hidden
       />
     )
@@ -296,7 +523,9 @@ function Tie({
         const lead = won || favoured
         return (
           <div key={`${side.id}-${side.name}`} className="flex items-center gap-1.5 py-[1px]">
-            <TeamCrest team={side.name} competitionId={competitionId} size="sm" />
+            {compact ? null : (
+              <TeamCrest team={side.name} competitionId={competitionId} size="sm" />
+            )}
             <span
               className={cn(
                 'min-w-0 flex-1 truncate text-[11px] md:text-[12px]',
@@ -319,14 +548,25 @@ function Tie({
         )
       })}
 
-      <div className="mt-0.5 flex items-baseline justify-between gap-1 font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
-        <span className="truncate">{fmtDate(tie.kickoff)}</span>
-        {tie.score ? (
-          <span className="shrink-0 text-[var(--text-secondary)]">{tie.score}</span>
-        ) : priced ? null : (
-          <span className="shrink-0">To play</span>
-        )}
-      </div>
+      {/* The meta line is the first thing to go when space is short: the score
+          is already implied by which club is bold, and the date is the least
+          load-bearing thing in the box. */}
+      {compact ? (
+        tie.score ? (
+          <div className="mt-0.5 text-right font-mono text-[9px] tabular-nums text-[var(--text-secondary)]">
+            {tie.score}
+          </div>
+        ) : null
+      ) : (
+        <div className="mt-0.5 flex items-baseline justify-between gap-1 font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
+          <span className="truncate">{fmtDate(tie.kickoff)}</span>
+          {tie.score ? (
+            <span className="shrink-0 text-[var(--text-secondary)]">{tie.score}</span>
+          ) : priced ? null : (
+            <span className="shrink-0">To play</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

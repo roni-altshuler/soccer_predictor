@@ -343,6 +343,34 @@ def main(argv: Optional[List[str]] = None) -> int:
                         100 * (top["probability"] if top else 0),
                         "  <- called it" if entry.get("called_it") else "")
 
+        # ---- the edition that has not started yet --------------------
+        # Published as soon as FIXTURES for it exist, which is well before the
+        # knockout draw is made. Without this the page had nothing at all to
+        # say about the next Champions League between one final and the next
+        # draw — a gap of three months on the competition readers ask about
+        # most, during which the site's most prominent page showed only last
+        # season's result.
+        #
+        # It carries no bracket and no odds by construction. The moment the
+        # draw lands, `wanted` includes that season and the real edition
+        # replaces this one, because a published edition always sorts newer.
+        nf = upcoming.get(comp)
+        if nf and nf["season"] > current_season:
+            out.append({
+                "competition_id": comp,
+                "name": COMPETITIONS[comp]["name"],
+                "region": COMPETITIONS[comp]["region"],
+                "season": nf["season"],
+                "is_current": False,
+                "bracket": [],
+                "status": "awaiting_fixtures",
+                "reason": ("fixtures are published but the knockout draw for this "
+                           "edition has not been made"),
+                "next_fixture": nf,
+            })
+            logger.info("  %-24s %d  awaiting_fixtures (%d fixtures from %s)",
+                        comp, nf["season"], nf["fixtures"], nf["starts"])
+
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "method": {
@@ -360,6 +388,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                                  "— a power ranking, not a forecast",
                 "not_reconstructed": "finished, and the bracket is shown, but it could "
                                      "not be paired into a tree so no forecast was made",
+                "awaiting_fixtures": "the next edition — fixtures exist but the knockout "
+                                     "draw has not been made, so there is nothing to "
+                                     "forecast yet",
                 "insufficient_history": "fewer than 200 earlier ties to learn from",
             },
             "caveats": [

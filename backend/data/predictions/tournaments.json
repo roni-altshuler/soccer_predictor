@@ -9,7 +9,8 @@
       "completed": "nothing left to predict, so the forecast shown is the one made before the knockout stage began, next to the result",
       "awaiting_draw": "still to be played, but the round is only part drawn \u2014 a power ranking, not a forecast",
       "not_reconstructed": "finished, and the bracket is shown, but it could not be paired into a tree so no forecast was made",
-      "insufficient_history": "fewer than 200 earlier ties to learn from"
+      "insufficient_history": "fewer than 200 earlier ties to learn from",
+      "awaiting_fixtures": "the next edition \u2014 fixtures exist but the knockout draw has not been made, so there is nothing to forecast yet"
     },
     "caveats": [
       "Status comes from the fixture list, not from whether a past tie could be resolved: a competition is live only when matches remain to be played.",
@@ -30268,6 +30269,36 @@
       "actual_champion_id": 1194,
       "probability_on_actual": 0.0343,
       "called_it": false
+    },
+    {
+      "competition_id": "uefa.nations",
+      "name": "UEFA Nations League",
+      "region": "Europe",
+      "season": 2026,
+      "is_current": false,
+      "bracket": [],
+      "status": "awaiting_fixtures",
+      "reason": "fixtures are published but the knockout draw for this edition has not been made",
+      "next_fixture": {
+        "season": 2026,
+        "starts": "2026-09-24",
+        "fixtures": 156
+      }
+    },
+    {
+      "competition_id": "afc.asian",
+      "name": "AFC Asian Cup",
+      "region": "Asia",
+      "season": 2027,
+      "is_current": false,
+      "bracket": [],
+      "status": "awaiting_fixtures",
+      "reason": "fixtures are published but the knockout draw for this edition has not been made",
+      "next_fixture": {
+        "season": 2027,
+        "starts": "2027-01-07",
+        "fixtures": 36
+      }
     }
   ]
 }

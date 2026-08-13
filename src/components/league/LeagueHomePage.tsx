@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { seasonOptions } from '@/lib/seasons'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import SeasonProjections from '@/components/league/SeasonProjections'
 import SeasonSimulationResults, {
@@ -143,23 +144,11 @@ interface LeagueHomePageProps {
   country: string
 }
 
-// Available seasons for dropdown
-const AVAILABLE_SEASONS = [
-  { value: '2025', label: '2025-26' },
-  { value: '2024', label: '2024-25' },
-  { value: '2023', label: '2023-24' },
-  { value: '2022', label: '2022-23' },
-  { value: '2021', label: '2021-22' },
-]
-
-// MLS uses calendar-year seasons (2026 = Feb–Nov 2026)
-const MLS_SEASONS = [
-  { value: '2026', label: '2026' },
-  { value: '2025', label: '2025' },
-  { value: '2024', label: '2024' },
-  { value: '2023', label: '2023' },
-  { value: '2022', label: '2022' },
-]
+// Seasons are DERIVED, never listed. The array that used to sit here topped
+// out at 2025-26 with the default pinned to '2025', so once the 2026-27 season
+// came round every league page opened on last season's table and last season's
+// top scorers, and the current season was not even in the dropdown. A
+// hard-coded year stops being true and nothing notices — see lib/seasons.ts.
 
 // Calendar-year league IDs
 const CALENDAR_YEAR_LEAGUE_IDS = new Set(['usa.1', 'mls'])
@@ -371,8 +360,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
   const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
-  const seasons = isCalendarYear ? MLS_SEASONS : AVAILABLE_SEASONS
-  const [selectedSeason, setSelectedSeason] = useState(isCalendarYear ? '2026' : '2025')
+  // Recomputed only when the league flips between calendar-year and
+  // split-year, which is a property of the competition and not of time.
+  const seasons = useMemo(() => seasonOptions(isCalendarYear), [isCalendarYear])
+  const [selectedSeason, setSelectedSeason] = useState(seasons[0].value)
   const [runningSimulation, setRunningSimulation] = useState(false)
   const [numSimulations, setNumSimulations] = useState(10000)
   const [simulationResults, setSimulationResults] = useState<LeagueSimulationResult | null>(null)
@@ -573,7 +564,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           leagueId: parseInt(leagueId) || 0,
           leagueName,
           country,
-          season: seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26'),
+          season: seasons.find(s => s.value === selectedSeason)?.label ?? seasons[0].label,
           standings: [],
           topScorers: [],
           upcomingMatches: [],
@@ -832,7 +823,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               </h1>
               <p className="text-[12px] text-[var(--text-tertiary)]">
                 {country} · {leagueAccent.shortName} ·{' '}
-                {seasons.find(s => s.value === selectedSeason)?.label || (isCalendarYear ? '2026' : '2025-26')}
+                {seasons.find(s => s.value === selectedSeason)?.label ?? seasons[0].label}
               </p>
             </div>
 

@@ -61,6 +61,7 @@ export type TournamentStatus =
   | 'in_progress'
   | 'completed'
   | 'awaiting_draw'
+  | 'awaiting_fixtures'
   | 'not_reconstructed'
   | 'insufficient_history'
 
@@ -94,6 +95,7 @@ const STATUS_COPY: Record<string, { label: string; tone: string }> = {
   in_progress: { label: 'In progress', tone: 'text-[var(--accent-primary)]' },
   completed: { label: 'Finished', tone: 'text-[var(--text-tertiary)]' },
   awaiting_draw: { label: 'Draw not made', tone: 'text-[var(--accent-warn)]' },
+  awaiting_fixtures: { label: 'Next up', tone: 'text-[var(--accent-primary)]' },
   not_reconstructed: { label: 'Finished · not forecast', tone: 'text-[var(--text-tertiary)]' },
   insufficient_history: { label: 'Not enough history', tone: 'text-[var(--text-tertiary)]' },
 }
@@ -302,6 +304,21 @@ function Forecast({ tournament: t }: { tournament: TournamentForecast }) {
         </p>
       ) : null}
 
+      {t.status === 'awaiting_fixtures' ? (
+        <>
+          <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
+            This edition has not started. Its fixtures are published, but the knockout
+            draw has not been made — and a bracket is a field of teams, so there is
+            nothing here to forecast yet. No odds are shown rather than odds built on
+            last season&apos;s entrants.
+          </p>
+          <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+            The bracket and the title odds appear here automatically on the first run
+            after the draw lands. Nothing needs to be switched on.
+          </p>
+        </>
+      ) : null}
+
       {t.status === 'not_reconstructed' ? (
         <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
           This edition is finished and the bracket below is what happened. Its rounds could
@@ -455,13 +472,42 @@ function Forecast({ tournament: t }: { tournament: TournamentForecast }) {
   )
 }
 
+/**
+ * What is known about the edition after this one.
+ *
+ * Three states, and the third is the one that used to be silent. A finished
+ * competition with no published fixtures for its next edition said nothing at
+ * all, so between one final and the next draw — three months, on the
+ * competitions readers ask about most — the page showed last season's result
+ * and left a reader to guess whether anything was coming.
+ */
 function NextEdition({ tournament: t }: { tournament: TournamentForecast }) {
-  if (!t.next_fixture || t.next_fixture.season <= t.season) return null
+  const finished =
+    t.status === 'completed' ||
+    t.status === 'not_reconstructed' ||
+    t.status === 'insufficient_history'
+
+  if (t.next_fixture && t.next_fixture.season > t.season) {
+    return (
+      <p className="mt-3 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+        Next up: {t.next_fixture.fixtures} fixtures of the {t.next_fixture.season} edition,
+        beginning{' '}
+        <span className="text-[var(--text-secondary)]">{fmtDate(t.next_fixture.starts)}</span>.
+        Pick it from the seasons above; the bracket and odds appear there once the
+        knockout draw is made.
+      </p>
+    )
+  }
+
+  // Only for an edition that is over. A live one has its own fixtures and
+  // saying "nothing published" beside it would be false.
+  if (!finished) return null
+
   return (
     <p className="mt-3 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-      Next up: {t.next_fixture.fixtures} fixtures of the {t.next_fixture.season} edition,
-      beginning <span className="text-[var(--text-secondary)]">{fmtDate(t.next_fixture.starts)}</span>
-      . Odds appear here once the knockout draw is made.
+      No fixtures for the next edition have been published yet, so there is nothing to
+      show for it — not even a start date. This page picks them up on the first run
+      after the fixture list appears, and the bracket follows when the draw is made.
     </p>
   )
 }
