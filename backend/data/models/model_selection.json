@@ -743,7 +743,7 @@
         "n": 34,
         "dc_accuracy": 0.5588,
         "dc_brier": 0.5648,
-        "dc_log_loss": 0.955,
+        "dc_log_loss": 0.9551,
         "always_home_accuracy": 0.4706
       },
       "incumbent_accuracy": null,
@@ -2099,7 +2099,7 @@
   "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
   "statistical_selection": {
     "policy_version": "2026-07-30",
-    "generated_at": "2026-08-13T09:20:57+00:00",
+    "generated_at": "2026-08-13T09:49:08+00:00",
     "gates": {
       "min_backtest_matches": 60,
       "floor_tolerance": 0.01,
@@ -2180,7 +2180,7 @@
         "n": 34,
         "dc_accuracy": 0.5588,
         "dc_brier": 0.5648,
-        "dc_log_loss": 0.955,
+        "dc_log_loss": 0.9551,
         "always_home_accuracy": 0.4706,
         "incumbent_accuracy": null,
         "incumbent_brier": null,

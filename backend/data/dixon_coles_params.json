@@ -883,147 +883,147 @@
     "usa.1": {
       "fitted_matches": 921,
       "half_life_days": 390.0,
-      "home_adv": 0.259045,
+      "home_adv": 0.259001,
       "last_match_date": "2026-08-08T20:30:00+00:00",
       "n_seasons": 5,
-      "rho": -0.023132,
+      "rho": -0.023116,
       "source": "espn",
       "teams": {
         "Arsenal": {
-          "attack": 0.69628,
+          "attack": 0.705204,
           "defence": 3.0
         },
         "Atlanta United": {
-          "attack": -0.259947,
-          "defence": -0.405278
+          "attack": -0.260054,
+          "defence": -0.405291
         },
         "Austin FC": {
-          "attack": -0.179691,
-          "defence": -0.324872
+          "attack": -0.179621,
+          "defence": -0.324896
         },
         "CF Montréal": {
-          "attack": -0.247841,
-          "defence": -0.378006
+          "attack": -0.247915,
+          "defence": -0.378055
         },
         "Charlotte FC": {
-          "attack": 0.038666,
-          "defence": -0.161806
+          "attack": 0.038699,
+          "defence": -0.161951
         },
         "Chicago Fire FC": {
-          "attack": 0.254889,
-          "defence": -0.289055
+          "attack": 0.254819,
+          "defence": -0.289091
         },
         "Colorado Rapids": {
-          "attack": -0.041933,
-          "defence": -0.238863
+          "attack": -0.041851,
+          "defence": -0.238829
         },
         "Columbus Crew": {
-          "attack": 0.042449,
-          "defence": -0.189262
+          "attack": 0.042469,
+          "defence": -0.189384
         },
         "D.C. United": {
-          "attack": -0.24865,
-          "defence": -0.388477
+          "attack": -0.248752,
+          "defence": -0.388547
         },
         "FC Cincinnati": {
-          "attack": 0.258404,
-          "defence": -0.377228
+          "attack": 0.258347,
+          "defence": -0.377284
         },
         "FC Dallas": {
-          "attack": 0.140281,
-          "defence": -0.191034
+          "attack": 0.140328,
+          "defence": -0.19101
         },
         "Houston Dynamo FC": {
-          "attack": -0.019054,
-          "defence": -0.182682
+          "attack": -0.018954,
+          "defence": -0.1827
         },
         "Inter": {
-          "attack": 0.022363,
-          "defence": -0.229093
+          "attack": 0.018043,
+          "defence": -0.231522
         },
         "Inter Miami": {
-          "attack": 0.567544,
-          "defence": -0.293704
+          "attack": 0.567529,
+          "defence": -0.293781
         },
         "LA Galaxy": {
-          "attack": -0.075448,
-          "defence": -0.354404
+          "attack": -0.075359,
+          "defence": -0.354359
         },
         "LAFC": {
-          "attack": 0.277076,
-          "defence": 0.119236
+          "attack": 0.277015,
+          "defence": 0.119342
         },
         "Liga MX All-Stars": {
-          "attack": -0.057517,
-          "defence": -3.0
+          "attack": -0.062545,
+          "defence": -2.999946
         },
         "MLS All-Stars": {
-          "attack": -1.962032,
-          "defence": -0.899126
+          "attack": -1.961891,
+          "defence": -0.903516
         },
         "Minnesota United FC": {
-          "attack": -0.018172,
-          "defence": -0.065043
+          "attack": -0.018073,
+          "defence": -0.065049
         },
         "Nashville SC": {
-          "attack": 0.145751,
-          "defence": 0.059487
+          "attack": 0.145705,
+          "defence": 0.05948
         },
         "New England Revolution": {
-          "attack": -0.064665,
-          "defence": -0.189025
+          "attack": -0.064623,
+          "defence": -0.189136
         },
         "New York City FC": {
-          "attack": 0.050561,
-          "defence": -0.049855
+          "attack": 0.050524,
+          "defence": -0.04988
         },
         "Orlando City SC": {
-          "attack": 0.189437,
-          "defence": -0.472728
+          "attack": 0.189381,
+          "defence": -0.472821
         },
         "Philadelphia Union": {
-          "attack": 0.041694,
-          "defence": -0.13599
+          "attack": 0.041749,
+          "defence": -0.136061
         },
         "Portland Timbers": {
-          "attack": 0.059145,
-          "defence": -0.259926
+          "attack": 0.059248,
+          "defence": -0.259858
         },
         "Real Salt Lake": {
-          "attack": -0.040572,
-          "defence": -0.192721
+          "attack": -0.04053,
+          "defence": -0.192694
         },
         "Red Bull New York": {
-          "attack": -0.003276,
-          "defence": -0.36211
+          "attack": -0.003269,
+          "defence": -0.362274
         },
         "San Diego FC": {
-          "attack": 0.245448,
-          "defence": -0.140789
+          "attack": 0.24545,
+          "defence": -0.140748
         },
         "San Jose Earthquakes": {
-          "attack": 0.240249,
+          "attack": 0.240257,
           "defence": -0.296429
         },
         "Seattle Sounders": {
-          "attack": 0.055005,
-          "defence": -0.12709
+          "attack": 0.055056,
+          "defence": -0.127066
         },
         "Sporting Kansas City": {
           "attack": -0.182544,
-          "defence": -0.610954
+          "defence": -0.61091
         },
         "St. Louis CITY SC": {
-          "attack": -0.066442,
-          "defence": -0.244011
+          "attack": -0.066271,
+          "defence": -0.24398
         },
         "Toronto FC": {
-          "attack": -0.219554,
-          "defence": -0.187411
+          "attack": -0.219695,
+          "defence": -0.187492
         },
         "Vancouver Whitecaps": {
-          "attack": 0.362097,
-          "defence": 0.088941
+          "attack": 0.362127,
+          "defence": 0.088974
         }
       }
     },
@@ -1107,7 +1107,7 @@
       }
     }
   },
-  "generated_at": "2026-08-13T09:20:39+00:00",
+  "generated_at": "2026-08-13T09:48:56+00:00",
   "half_life_days": 390.0,
   "schema": 1
 }
