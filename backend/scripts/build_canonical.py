@@ -454,6 +454,23 @@ def build(con, *, parquet: bool, warehouse: Optional[Path] = None,
     # a non-overlap rule merged them. Adjacency rejects it — 2015 neither
     # follows 2013 nor precedes 2022 — while still accepting every genuine
     # rename in the corpus.
+    #
+    # WHAT THE RULE IS WORTH, AND WHY THE CORPUS SHRINKS WHEN IT LANDS. An
+    # unaliased rename does not merely split a club's record — it DUPLICATES
+    # its fixtures, because the FBref row and the warehouse row for the same
+    # match no longer resolve to the same pair of teams and both are written.
+    # por.1 is the largest case: the warehouse carries one identity
+    # (`Belenenses`, 34 matches in each of 2018-2021) while FBref calls that
+    # same league entry `B-SAD` from 2018, so the canonical layer held 4 x 34 =
+    # 136 fixtures twice. Adding this rule took por.1 from 7,587 matches to
+    # 7,451 and left every season at exactly its structural size.
+    #
+    # So a DROP in `reports/baselines/corpus.json` after a change here is the
+    # rule working, not the corpus truncating — but only when the arithmetic
+    # says so. Check that the delta equals whole club-seasons and that no
+    # season falls BELOW its round-robin size before re-recording the baseline;
+    # `verify_corpus` cannot tell a de-duplication from a truncation, and the
+    # whole point of that guard is that nobody has to remember it did not.
     con.execute("""
         CREATE OR REPLACE TABLE alias_seasons AS
         SELECT competition_id, fb_norm AS fb, season

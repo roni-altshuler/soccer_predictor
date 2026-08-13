@@ -8,8 +8,8 @@ name: Season Forecast
 # fast job slow and couple two failure domains that fail for different reasons.
 #
 # The hard constraint that shapes this file: the forecast trains on the
-# CANONICAL corpus (97,421 matches across the fourteen served leagues), not
-# the warehouse alone. Running it without FBref would silently produce a
+# CANONICAL corpus (75,276 matches across the nine served leagues), not the
+# warehouse alone. Running it without FBref would silently produce a
 # different model under the same version string, so a missing input FAILS the
 # job rather than degrading it. `verify_corpus` checks that per league.
 

@@ -391,10 +391,19 @@ season-forecast`. Separate from `prediction_pipeline.yml` because it needs a
 16MB FBref download plus a canonical rebuild.
 
 **The input download has no `continue-on-error`, deliberately.** The forecast
-trains on the canonical corpus (97,407 matches across the fourteen leagues),
+trains on the canonical corpus (75,276 matches across the nine served leagues),
 not the warehouse alone; running without FBref would ship a different model
-under the same version string. A guard step fails the job if the rebuilt corpus
-comes out under 60,000.
+under the same version string. `verify_corpus` then checks every served league
+against its own recorded baseline in `reports/baselines/corpus.json` — the
+single 60,000 floor it replaced could not see six of nine leagues vanish.
+
+**A league's baseline may only be re-recorded with the arithmetic in hand.**
+por.1 went 7,587 → 7,451 on 2026-08-13, past the tolerance of 25, and that was
+correct: the new rename alias `B-SAD → Belenenses` removed 4 × 34 = 136
+fixtures the canonical layer had been holding *twice*, once per spelling. Every
+por.1 season still sits at its structural size. `verify_corpus` cannot tell a
+de-duplication from a truncation, so a drop is explained before it is recorded,
+never after.
 
 The current-season FBref schedule refresh IS `continue-on-error`: FBref sits
 behind Cloudflare and a GitHub runner is the client it exists to turn away.
