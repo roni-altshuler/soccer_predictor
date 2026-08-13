@@ -46,6 +46,7 @@ const tie = (over: Record<string, unknown>) => ({
   p_team_a: null,
   two_legged: false,
   pending: false,
+  slot: null,
   ...over,
 })
 
@@ -65,9 +66,13 @@ const FORECASTS = {
       forecast_from: '2026-08-11',
       bracket: [
         {
+          // An entry round: it feeds the bracket without being part of it, so
+          // it carries no slots and is listed rather than drawn.
           slug: 'firststage',
           label: 'round-of-6',
           display: 'First stage',
+          slots: 0,
+          projected: false,
           ties: [
             tie({
               team_a: 'Cerro Porteño',
@@ -86,6 +91,8 @@ const FORECASTS = {
           slug: 'roundof16',
           label: 'round-of-16',
           display: 'Round of 16',
+          slots: 2,
+          projected: false,
           ties: [
             tie({
               team_a: 'Cruzeiro',
@@ -96,8 +103,19 @@ const FORECASTS = {
               kickoff: '2026-08-13',
               two_legged: true,
               pending: true,
+              slot: 0,
             }),
           ],
+        },
+        {
+          // Not drawn yet — the rounds above a live frontier are still part of
+          // the bracket, as empty boxes.
+          slug: 'projected-1',
+          label: 'final',
+          display: 'Final',
+          slots: 1,
+          projected: true,
+          ties: [],
         },
       ],
       odds: [
@@ -120,8 +138,11 @@ const FORECASTS = {
           slug: 'final',
           label: 'final',
           display: 'Final',
+          slots: 1,
+          projected: false,
           ties: [
             tie({
+              slot: 0,
               team_a: 'Botafogo',
               team_b: 'Peñarol',
               team_a_id: 30,
@@ -155,8 +176,11 @@ const FORECASTS = {
           slug: 'final',
           label: 'final',
           display: 'Final',
+          slots: 1,
+          projected: false,
           ties: [
             tie({
+              slot: 0,
               team_a: 'Arsenal',
               team_b: 'Bayern Munich',
               team_a_id: 2,
@@ -196,8 +220,11 @@ const FORECASTS = {
           slug: 'final',
           label: 'final',
           display: 'Final',
+          slots: 1,
+          projected: false,
           ties: [
             tie({
+              slot: 0,
               team_a: 'Manchester City',
               team_b: 'Chelsea',
               team_a_id: 2001,
@@ -308,13 +335,14 @@ describe('TournamentsPage', () => {
     expect(screen.getByText(/not the 1X2 numbers made bigger/i)).toBeInTheDocument()
   })
 
-  it('opens on the tournament that is still to be played, not a finished one', async () => {
+  it('prices the undecided ties of a tournament still being played', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
     // A page of finished tournaments is a record; the undecided one is the
     // forecast. Ordering by status is what makes it the first thing seen.
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
     expect(screen.getByRole('heading', { name: /Copa Libertadores/i })).toBeInTheDocument()
     expect(screen.getByText('Cruzeiro')).toBeInTheDocument()
     expect(screen.getByText('23.4%')).toBeInTheDocument()
@@ -322,30 +350,56 @@ describe('TournamentsPage', () => {
 
   // ------------------------------------------------------------ the bracket
   //
-  // The artifact grew a full bracket per edition — every round, in order, with
-  // scores — and the page rendered none of it. A reader saw that Bayern were
-  // favourites and never saw who they had to beat to get there.
+  // The artifact grew a full bracket per edition and the page rendered none of
+  // it. A reader saw that Bayern were favourites and never saw who they had to
+  // beat to get there — and a stack of round lists cannot say who could still
+  // meet whom, which is the one thing a bracket is for.
 
-  it('draws the path to the trophy, round by round', async () => {
+  it('draws both halves of the draw meeting once', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
 
-    const rounds = screen.getAllByRole('heading', { level: 5 }).map((h) => h.textContent)
-    expect(rounds).toEqual(['First stage', 'Round of 16'])
+    // Round of 16 down each side, the final once in the middle. A round that
+    // appeared once, or a final that appeared twice, would not be a bracket.
+    const columns = screen
+      .getAllByText(/./, { selector: 'div.truncate.font-mono' })
+      .map((n) => n.textContent)
+    expect(columns).toEqual(['Round of 16', 'Final', 'Not drawn', 'Round of 16'])
+  })
 
-    // A settled tie carries the score that settled it; an undecided one
-    // carries the chance each side goes through. Never both.
-    expect(screen.getByText('3-1')).toBeInTheDocument()
+  it('shows a round nobody has drawn yet as empty boxes', async () => {
+    // The quarter-finals of a live tournament are part of the bracket and have
+    // no ties in them. Empty boxes are the true statement; omitting the round
+    // would draw a bracket that stops halfway.
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
+
+    expect(screen.getByText('Not drawn')).toBeInTheDocument()
+  })
+
+  it('lists an entry round instead of drawing it into the bracket', async () => {
+    // The Libertadores group stages feed the round of 16 without halving into
+    // it. Forcing them onto the board doubles its width and misaligns every
+    // pairing above them.
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
+
+    expect(screen.getByText(/Getting there/i)).toBeInTheDocument()
+    expect(screen.getByText('First stage')).toBeInTheDocument()
     expect(screen.getByText('Cerro Porteño')).toBeInTheDocument()
-    expect(screen.getByText('24%')).toBeInTheDocument()
+    expect(screen.getByText('3-1')).toBeInTheDocument()
   })
 
   it('shows a shootout as well as the aggregate, not instead of it', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Champions League/i)
 
     // 1-1 alone reads as a drawn tie with a team advancing for no stated
     // reason, which is what the scoreline looked like before the shootout was
@@ -359,6 +413,7 @@ describe('TournamentsPage', () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
 
     const seasons = screen.getByRole('group', { name: /season/i })
     expect(within(seasons).getByRole('button', { name: /2026/ })).toHaveAttribute(
@@ -421,6 +476,7 @@ describe('TournamentsPage', () => {
     // Only the round of 16 is drawn. Every later round is paired at random,
     // and that assumption changes the numbers, so it is on the page.
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await chooseTournament(/Copa Libertadores/i)
     expect(screen.getByText(/paired by a fresh random draw/i)).toBeInTheDocument()
   })
 
@@ -484,15 +540,34 @@ describe('TournamentsPage', () => {
     expect(text.some((t) => /Draw not made/.test(t))).toBe(true)
   })
 
-  it('offers what is live first, not what is alphabetically first', async () => {
+  it('offers the biggest competitions first, whatever is live', async () => {
+    // This used to sort live-first, which reads well in the abstract and badly
+    // across a calendar: some minor competition is nearly always mid-flight,
+    // so the Champions League spent most of the year below it. A reader came
+    // for a competition, not for whichever one happens to be playing — the
+    // live ones are still marked with a dot.
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
     await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
 
     await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
-    const first = within(screen.getByRole('listbox')).getAllByRole('option')[0]
-    // Anything undecided outranks a finished edition, whatever it is called.
-    expect(first.textContent).not.toMatch(/Finished/)
+    const names = within(screen.getByRole('listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent ?? '')
+    expect(names[0]).toMatch(/Champions League/)
+    expect(names.findIndex((n) => /Champions League/.test(n))).toBeLessThan(
+      names.findIndex((n) => /Libertadores/.test(n)),
+    )
+  })
+
+  it('opens on the most important competition rather than a minor live one', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+
+    expect(
+      screen.getByRole('heading', { name: /UEFA Champions League/i }),
+    ).toBeInTheDocument()
   })
 
   it('switches tournament from the keyboard alone', async () => {

@@ -21,7 +21,12 @@ from __future__ import annotations
 
 import pytest
 
-from backend.scripts.predict_tournaments import _bracket, _round_display, _score
+from backend.scripts.predict_tournaments import (
+    _bracket,
+    _bracket_slots,
+    _round_display,
+    _score,
+)
 from backend.services.tournament import ties as T
 
 
@@ -181,3 +186,129 @@ def test_an_unmapped_slug_is_spaced_out_rather_than_guessed_at():
 
 def test_an_empty_slug_falls_back_to_the_counted_depth():
     assert _round_display("", "round-of-32") == "round-of-32"
+
+
+# ------------------------------------------------------------- the placement ---
+#
+# A bracket is only a bracket if the tie at slot s is fed by slots 2s and 2s+1.
+# Getting that wrong does not crash anything — it draws a tidy bracket in which
+# the wrong two teams appear to have played each other.
+
+def _pairs(*rounds):
+    """Rounds of (team_a, team_b), the shape `_bracket_slots` takes."""
+    return list(rounds)
+
+
+def test_the_final_sits_at_slot_zero_and_earlier_rounds_double():
+    qf = [(1, 2), (3, 4), (5, 6), (7, 8)]
+    sf = [(1, 3), (5, 7)]
+    final = [(1, 5)]
+    slots, to_come = _bracket_slots(_pairs(qf, sf, final))
+
+    assert to_come == 0
+    assert slots[(2, 0)] == 0                      # the final
+    assert sorted(slots[(1, i)] for i in range(2)) == [0, 1]
+    assert sorted(slots[(0, i)] for i in range(4)) == [0, 1, 2, 3]
+
+
+def test_a_tie_is_fed_by_the_two_slots_below_it():
+    """The rule the whole drawing rests on, checked on a real shape."""
+    qf = [(1, 2), (3, 4), (5, 6), (7, 8)]
+    sf = [(1, 3), (5, 7)]                          # 1 beat 2, 3 beat 4, ...
+    final = [(1, 5)]
+    slots, _ = _bracket_slots(_pairs(qf, sf, final))
+
+    # Whichever slot each semi-final took, its two feeders are 2s and 2s+1.
+    for j, (a, b) in enumerate(sf):
+        s = slots[(1, j)]
+        feeders = {slots[(0, i)] for i, (x, y) in enumerate(qf)
+                   if a in (x, y) or b in (x, y)}
+        assert feeders == {2 * s, 2 * s + 1}
+
+
+def test_two_ties_in_a_round_never_share_a_slot():
+    qf = [(1, 2), (3, 4), (5, 6), (7, 8)]
+    sf = [(1, 3), (5, 7)]
+    final = [(1, 5)]
+    slots, _ = _bracket_slots(_pairs(qf, sf, final))
+    per_round = {}
+    for (depth, _), s in slots.items():
+        per_round.setdefault(depth, []).append(s)
+    for depth, ss in per_round.items():
+        assert len(ss) == len(set(ss)), f"round {depth} double-booked a slot"
+
+
+def test_an_entry_round_is_left_out_of_the_tree():
+    """The Champions League bolts an 8-tie play-off onto an 8-tie round of 16.
+
+    It is a way into the bracket, not a round of it. Forcing it in doubles the
+    drawing and misaligns every pairing above it.
+    """
+    playoff = [(11, 12), (13, 14), (15, 16), (17, 18),
+               (19, 20), (21, 22), (23, 24), (25, 26)]
+    r16 = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 13), (15, 17), (19, 21)]
+    qf = [(1, 3), (5, 7), (9, 11), (15, 19)]
+    sf = [(1, 5), (9, 15)]
+    final = [(1, 9)]
+    slots, _ = _bracket_slots(_pairs(playoff, r16, qf, sf, final))
+
+    assert all((0, i) not in slots for i in range(len(playoff)))
+    assert sorted(slots[(1, i)] for i in range(8)) == list(range(8))
+
+
+def test_a_live_bracket_projects_the_rounds_that_are_not_drawn_yet():
+    """The case that matters most, and the one bracket_tree refuses.
+
+    The Libertadores stops at a drawn round of 16 because the quarter-finals do
+    not exist yet. Requiring a final meant the two competitions actually being
+    played were the only ones with no bracket at all.
+    """
+    r16 = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 16)]
+    slots, to_come = _bracket_slots(_pairs(r16), project=True)
+
+    assert to_come == 3                             # quarters, semis, final
+    assert sorted(slots[(0, i)] for i in range(8)) == list(range(8))
+
+
+def test_a_finished_edition_never_sprouts_empty_rounds():
+    """Projection is gated on there being fixtures left, and must be.
+
+    The 2020-21 Europa League is finished and carries a malformed trailing
+    round of 16. Projecting from its shape would print four empty rounds above
+    a competition that was decided five years ago.
+    """
+    trailing = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 16)]
+    slots, to_come = _bracket_slots(_pairs(trailing), project=False)
+
+    assert to_come == 0
+    assert slots == {}
+
+
+def test_a_round_that_is_not_a_power_of_two_is_not_a_bracket():
+    # Three semi-finals is a data fault, not a format.
+    slots, to_come = _bracket_slots(_pairs([(1, 2), (3, 4), (5, 6)]), project=True)
+    assert (slots, to_come) == ({}, 0)
+
+
+def test_a_tie_whose_feeder_cannot_be_traced_still_gets_a_slot():
+    """A hole in the data must not drop a round out of the drawing."""
+    qf = [(1, 2), (3, 4), (5, 6), (7, 8)]
+    # 99 never appears in the quarter-finals — an untraceable participant.
+    sf = [(1, 99), (5, 7)]
+    final = [(1, 5)]
+    slots, _ = _bracket_slots(_pairs(qf, sf, final))
+
+    assert len([i for i in range(4) if (0, i) in slots]) == 4
+    assert sorted(slots[(0, i)] for i in range(4)) == [0, 1, 2, 3]
+
+
+def test_bracket_publishes_the_slot_and_the_round_width():
+    qf = [_tie("quarterfinals", 1, 2, [_leg("m1", "2026-04-01", 1, 2, 1, 0)], 1),
+          _tie("quarterfinals", 3, 4, [_leg("m2", "2026-04-02", 3, 4, 1, 0)], 3)]
+    sf = [_tie("final", 1, 3, [_leg("m3", "2026-05-01", 1, 3, 2, 0)], 1)]
+    out = _bracket([("quarterfinals", qf), ("final", sf)], NAMES)
+
+    assert [r["slots"] for r in out] == [2, 1]
+    assert sorted(t["slot"] for t in out[0]["ties"]) == [0, 1]
+    assert out[1]["ties"][0]["slot"] == 0
+    assert all(r["projected"] is False for r in out)

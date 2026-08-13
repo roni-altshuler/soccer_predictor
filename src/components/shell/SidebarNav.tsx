@@ -9,7 +9,6 @@ import {
   Info,
   Swords,
   TrendingUp,
-  Trophy,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -29,8 +28,8 @@ type NavGroup = {
 
 // Two questions and the receipts.
 //
-// WATCH is where you follow football as it happens: what is on right now, and
-// the table for any competition. FORECAST is the two shapes a season comes in
+// WATCH is where you follow football as it happens: what is on right now.
+// FORECAST is the two shapes a season comes in
 // — a league is a table, a tournament is a bracket — and each is its own
 // destination rather than a tab inside a generic "model" bucket. EVIDENCE is
 // how right it has been.
@@ -40,13 +39,16 @@ type NavGroup = {
 // "Title & Relegation" and `/tournaments` sat under "Model". A reader who
 // wanted the Premier League had to know which of those held the part they
 // were after. One competition is now one destination.
+//
+// `/standings` was one of those four and is gone for the same reason. A table
+// is not a destination — it belongs to the competition it ranks, so it is on
+// the league page and under the tournament's bracket. Keeping it separate
+// meant a reader looking at the Champions League had to leave, pick the
+// Champions League a second time, and come back.
 const GROUPS: NavGroup[] = [
   {
     title: 'Watch',
-    items: [
-      { href: '/', label: 'Today', icon: Activity },
-      { href: '/standings', label: 'Standings', icon: Trophy },
-    ],
+    items: [{ href: '/', label: 'Today', icon: Activity }],
   },
   {
     title: 'Forecast',

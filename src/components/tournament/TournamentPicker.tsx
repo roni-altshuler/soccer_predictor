@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import { CompetitionSelect } from '@/components/forecast/CompetitionSelect'
 import { BracketBoard } from '@/components/tournament/BracketBoard'
 import type { BracketRound } from '@/components/tournament/BracketBoard'
+import { TournamentStandings } from '@/components/tournament/TournamentStandings'
+import { tournamentRank } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
 
 /**
@@ -96,15 +98,6 @@ const STATUS_COPY: Record<string, { label: string; tone: string }> = {
   insufficient_history: { label: 'Not enough history', tone: 'text-[var(--text-tertiary)]' },
 }
 
-const RANK: Record<string, number> = {
-  upcoming: 0,
-  in_progress: 1,
-  awaiting_draw: 2,
-  completed: 3,
-  not_reconstructed: 4,
-  insufficient_history: 5,
-}
-
 const statusCopy = (s: string) => STATUS_COPY[s] ?? STATUS_COPY.completed
 
 const fmtDate = (iso: string) =>
@@ -148,13 +141,13 @@ function groupByCompetition(tournaments: TournamentForecast[]): Competition[] {
     comps.push({ id, name: current.name, region: current.region, editions, current })
   }
 
-  // Ordered by what the CURRENT edition is doing, so a tournament being played
-  // is offered before a shelf of finished ones.
-  return comps.sort(
-    (a, b) =>
-      (RANK[a.current.status] ?? 9) - (RANK[b.current.status] ?? 9) ||
-      a.name.localeCompare(b.name),
-  )
+  // Ordered by the competition, NOT by what its current edition happens to be
+  // doing. Sorting live-first reads well in the abstract and badly in practice:
+  // most of the calendar has some minor competition mid-flight, so the
+  // Champions League spent most of the year below the Sudamericana. A reader
+  // opening this page came for a competition, and the live ones are still
+  // marked with a dot — see TOURNAMENT_COMPETITION_IDS for the order itself.
+  return comps.sort((a, b) => tournamentRank(a.id) - tournamentRank(b.id))
 }
 
 export function TournamentPicker({
@@ -449,6 +442,13 @@ function Forecast({ tournament: t }: { tournament: TournamentForecast }) {
           {t.reason ?? 'No forecast is available for this edition.'}
         </p>
       ) : null}
+
+      {/*
+        The table that produced the bracket, shown with the competition it
+        belongs to rather than at a destination of its own. Renders nothing
+        when the edition has no group stage on record.
+      */}
+      <TournamentStandings competitionId={t.competition_id} season={t.season} />
 
       <NextEdition tournament={t} />
     </div>

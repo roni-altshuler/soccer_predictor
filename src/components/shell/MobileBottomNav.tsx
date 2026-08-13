@@ -8,7 +8,6 @@ import {
   CalendarRange,
   Search,
   Swords,
-  Trophy,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -23,15 +22,17 @@ type Item = {
   action?: 'palette'
 }
 
-// The same five destinations the sidebar leads with, minus the evidence pages
-// a phone reader reaches least: what is on, the table for any competition, the
-// two forecast surfaces, and search. Deep enough that no primary destination
-// is more than one tap away.
+// The destinations the sidebar leads with, minus the evidence pages a phone
+// reader reaches least: what is on, the two forecast surfaces, and search.
+// Deep enough that no primary destination is more than one tap away.
+//
+// Standings are not among them because a table is not a destination — it is
+// part of the competition it ranks, and lives on the league page and under
+// the tournament's bracket.
 const ITEMS: Item[] = [
   { href: '/', label: 'Today', icon: Activity },
-  { href: '/standings', label: 'Standings', icon: Trophy },
-  { action: 'palette', label: 'Search', icon: Search },
   { href: '/leagues', label: 'Leagues', icon: CalendarRange },
+  { action: 'palette', label: 'Search', icon: Search },
   { href: '/tournaments', label: 'Cups', icon: Swords },
 ]
 

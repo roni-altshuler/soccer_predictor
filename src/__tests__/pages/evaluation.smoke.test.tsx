@@ -56,7 +56,7 @@ describe('EvaluationPage', () => {
 
     await waitFor(() => expect(screen.getAllByText('42').length).toBeGreaterThan(0))
     expect(screen.getByText(/too few for a reliability chart/i)).toBeInTheDocument()
-    expect(screen.queryByText(/It happened/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/what it said, against what happened/i)).not.toBeInTheDocument()
   })
 
   it('shows the reliability table once the sample is large enough', async () => {
@@ -78,10 +78,16 @@ describe('EvaluationPage', () => {
     })
     render(<EvaluationPage />)
 
-    await waitFor(() => expect(screen.getByText(/It happened/i)).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText(/what it said, against what happened/i)).toBeInTheDocument(),
+    )
+    // Stated and observed are paired bars per band now, not two table
+    // columns: a calibrated band is two bars the same length, which the
+    // numbers alone made a reader work out.
     expect(screen.getByText('36.0%')).toBeInTheDocument()
+    expect(screen.getAllByText(/^Said$/).length).toBeGreaterThan(0)
     // A league with 4 fixtures reports its size instead of a meaningless score.
-    expect(screen.getByText('too few')).toBeInTheDocument()
+    expect(screen.getByText(/too few/)).toBeInTheDocument()
   })
 
   it('never presents the historical sample as the live one', async () => {
@@ -93,7 +99,9 @@ describe('EvaluationPage', () => {
     })
     const { container } = render(<EvaluationPage />)
 
-    await waitFor(() => expect(screen.getByText('43,433')).toBeInTheDocument())
+    // The figure appears in the two-record hero and again in the evidence
+    // panel below it, which is summary-then-detail rather than a mix.
+    await waitFor(() => expect(screen.getAllByText('43,433').length).toBeGreaterThan(0))
     expect(container.textContent).toMatch(/never added together|never adds them|apart on purpose/i)
   })
 

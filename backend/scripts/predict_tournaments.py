@@ -81,7 +81,11 @@ from backend.scripts.benchmark_knockout import (  # noqa: E402
 )
 from backend.services.tournament import ratings as R  # noqa: E402
 from backend.services.tournament import ties as T  # noqa: E402
-from backend.services.tournament.rounds import QUALIFYING, classify  # noqa: E402
+from backend.services.tournament.rounds import (  # noqa: E402
+    QUALIFYING,
+    classify,
+    depth_label,
+)
 
 logger = logging.getLogger("predict_tournaments")
 
@@ -407,6 +411,121 @@ def _score(tie: T.Tie) -> Optional[str]:
     return text
 
 
+def _bracket_slots(
+    rounds: Sequence[Sequence[Tuple[int, int]]],
+    *,
+    project: bool = False,
+) -> Tuple[Dict[Tuple[int, int], int], int]:
+    """Where each tie sits in the bracket, as a printed bracket would place it.
+
+    Takes rounds of `(team_a_id, team_b_id)` pairs, already in the order they
+    will be printed, rather than `Tie` objects — the placement is pure
+    arithmetic over who played whom, and keeping it that way lets the same
+    function place a bracket read back out of a published artifact.
+
+    Returns `{(round_index, tie_index): slot}`. A round holding `n` ties owns
+    slots `0..2n-1` of the round before it: the tie at slot `s` is fed by slots
+    `2s` and `2s+1`, which is the rule the whole drawing depends on. The final
+    is slot 0 of a one-slot round, and every earlier round doubles.
+
+    This is what the old comment here said could not be done, and the reasoning
+    was half right. `bracket_tree` refuses the WHOLE edition when any single
+    pairing cannot be traced, so threading it through would indeed have left a
+    live bracket undrawable. But a bracket does not need every pairing to be
+    known in order to be drawn — it needs every SLOT to be known. A tie whose
+    feeder is still to be played is an empty box, which is exactly what a
+    printed bracket shows before the tournament starts.
+
+    So the tree is walked BACKWARDS from the final, which is the direction the
+    information actually flows: a later tie names the two clubs that won their
+    way into it, and `source` says which earlier tie each of them came out of.
+    Whatever cannot be traced that way is placed into the slots left over, in
+    date order, rather than dropping the round.
+
+    Only the trophy tree is placed. Entry rounds are excluded on the same rule
+    `bracket_tree` uses — the longest run of rounds that halves cleanly. The
+    Europa League bolts a 16-tie play-off round onto a 16-tie round of 32 and
+    the Champions League has done the same since 2024; those are ways into the
+    bracket, not rounds of it, and forcing them in doubles the drawing and
+    misaligns every pairing above them.
+
+    The run does NOT have to end in a final, and that is what makes a LIVE
+    tournament drawable. `bracket_tree` requires one, so the two competitions
+    actually being played — the ones a reader most wants a bracket for —
+    produced nothing: the Libertadores stops at a drawn round of 16 because
+    the quarter-finals do not exist yet. The last round of the run is the
+    frontier, it takes slots `0..n-1`, and the rounds above it are returned as
+    a count so the page can draw them as the empty boxes a printed bracket
+    shows before a tournament starts.
+
+    Forward projection is only offered when `project` is set, which the caller
+    ties to the edition having fixtures still to play. Without that gate the
+    2020-21 Europa League — finished, and holding a malformed trailing round of
+    16 — would sprout four empty rounds above a competition Villarreal won five
+    years ago. Empty boxes are a true statement about a draw that has not
+    happened and a false one about a tournament that is over.
+
+    Returns `(slots, to_come)` where `to_come` is how many rounds sit above the
+    frontier: 0 for a finished bracket, 3 for one drawn only to the round of 16.
+    """
+    sizes = [len(r) for r in rounds]
+    if not sizes:
+        return {}, 0
+    frontier = sizes[-1]
+    # A frontier that is not a power of two is not a round of a bracket.
+    if frontier < 1 or frontier & (frontier - 1):
+        return {}, 0
+    start = len(sizes) - 1
+    while start > 0 and sizes[start - 1] == sizes[start] * 2:
+        start -= 1
+
+    to_come = (frontier.bit_length() - 1) if project else 0
+    # Two rows make a bracket. A single drawn round counts when the rounds
+    # above it are still to come — that is the whole live case, where the
+    # Libertadores has its round of 16 and nothing above it yet.
+    if frontier != 1 and not project:
+        return {}, 0
+    if (len(sizes) - start) + to_come < 2:
+        return {}, 0
+    slot_of: Dict[Tuple[int, int], int] = {
+        (len(rounds) - 1, i): i for i in range(frontier)
+    }
+    for depth in range(len(rounds) - 1, start, -1):
+        prev_ties = rounds[depth - 1]
+        cur_ties = rounds[depth]
+
+        # Which earlier tie did each club come out of? A club appears in at
+        # most one tie per round, so this is a lookup and not a search.
+        source: Dict[int, int] = {}
+        for i, (a, b) in enumerate(prev_ties):
+            source[a] = i
+            source[b] = i
+
+        placed: Dict[int, int] = {}
+        taken: set = set()
+        for j, (a, b) in enumerate(cur_ties):
+            s = slot_of.get((depth, j))
+            if s is None:
+                continue
+            for feeder, target in ((source.get(a), 2 * s),
+                                   (source.get(b), 2 * s + 1)):
+                if feeder is None or feeder in placed or target in taken:
+                    continue
+                placed[feeder] = target
+                taken.add(target)
+
+        # Anything the results could not place — a pending tie, or a leg the
+        # source never carried — takes a free slot rather than vanishing.
+        free = [s for s in range(2 * len(cur_ties)) if s not in taken]
+        for i in range(len(prev_ties)):
+            if i in placed or not free:
+                continue
+            placed[i] = free.pop(0)
+        for i, s in placed.items():
+            slot_of[(depth - 1, i)] = s
+    return slot_of, to_come
+
+
 def _bracket(rounds: Sequence[Tuple[str, List[T.Tie]]], names: Dict[int, str],
              tie_probs: Optional[Dict[Tuple[int, int], float]] = None) -> List[Dict]:
     """Every round of the draw, in order, as the page draws it.
@@ -417,20 +536,30 @@ def _bracket(rounds: Sequence[Tuple[str, List[T.Tie]]], names: Dict[int, str],
     path. Rounds are emitted whether played or not, so one component renders a
     finished edition and a live one without knowing which it has.
 
-    `feeders` is deliberately absent here. `bracket_tree` can pair a round onto
-    the previous one only where the result is already known, so threading a
-    tree through would make the LIVE half of a bracket — the half a reader is
-    actually following — the half that cannot be drawn. The page lays rounds
-    out in order and lets position carry the pairing, which is what a printed
-    bracket does anyway.
+    Each tie carries the `slot` it occupies in its round, so the page can draw
+    a real two-sided bracket rather than a stack of lists — see
+    `_bracket_slots`. A round outside the trophy tree carries `slots: 0` and
+    every tie in it `slot: None`; it is a way into the bracket, not a round of
+    it, and the page prints it separately.
+
+    Rounds that have not been drawn yet are emitted too, with no ties and
+    `projected: true`. A tournament stopped at a drawn round of 16 gets its
+    quarter-finals, semi-finals and final as empty rounds, because a bracket
+    missing its top three rows is not a bracket — and the empty boxes are a
+    true statement about a draw that has not happened.
     """
     probs = tie_probs or {}
+    ordered = [(slug, sorted(ties, key=lambda x: (x.date_utc, x.team_a)))
+               for slug, ties in rounds if ties]
+    slot_of, to_come = _bracket_slots(
+        [[(t.team_a, t.team_b) for t in ties] for _, ties in ordered],
+        project=any(t.pending for _, ties in ordered for t in ties),
+    )
+
     out: List[Dict] = []
-    for slug, ties in rounds:
-        if not ties:
-            continue
+    for depth, (slug, ties) in enumerate(ordered):
         rows = []
-        for t in sorted(ties, key=lambda x: (x.date_utc, x.team_a)):
+        for idx, t in enumerate(ties):
             # Only an UNDECIDED tie is priced. `probs` is keyed by the pairing
             # alone, so a rematch — the same two clubs meeting again later in
             # the same edition — would otherwise hand the settled earlier tie
@@ -451,14 +580,42 @@ def _bracket(rounds: Sequence[Tuple[str, List[T.Tie]]], names: Dict[int, str],
                 "kickoff": t.date_utc[:10],
                 "two_legged": t.two_legged,
                 "pending": t.pending,
+                "slot": slot_of.get((depth, idx)),
             })
+        placed = sum(1 for r in rows if r["slot"] is not None)
         out.append({
             "slug": slug,
             "label": ties[0].round_label,
             "display": _round_display(slug, ties[0].round_label),
+            # Positions in this round of the bracket, which is TWICE the ties
+            # in the round above it — not the number of ties here. A round of
+            # 16 that is missing a tie still owns sixteen slots, and the hole
+            # is the point: it draws as an empty box.
+            "slots": (2 ** (len(ordered) - 1 - depth)) * (2 ** to_come) if placed else 0,
             "ties": rows,
+            "projected": False,
+        })
+
+    # The rounds above the frontier: drawn from the shape of the bracket, not
+    # from any fixture, so they are named by the size they must be and carry
+    # nothing else.
+    for step in range(to_come - 1, -1, -1):
+        n = 2 ** step
+        out.append({
+            "slug": f"projected-{n}",
+            "label": depth_label(2 * n),
+            "display": _slots_display(n),
+            "slots": n,
+            "ties": [],
+            "projected": True,
         })
     return out
+
+
+def _slots_display(slots: int) -> str:
+    """What to call a round nobody has drawn yet, from its size alone."""
+    return {1: "Final", 2: "Semi-finals", 4: "Quarter-finals"}.get(
+        slots, f"Round of {2 * slots}")
 
 
 # Slugs seen across the fourteen competitions, mapped to what a reader calls

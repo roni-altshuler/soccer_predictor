@@ -244,8 +244,19 @@ export const SERVED_COMPETITION_IDS = [
 
 /**
  * The knockout competitions `/tournaments` forecasts, in the order to show
- * them: the European club cups, then the international tournaments, then the
- * rest of the confederations.
+ * them — which is by how many people came for them, not alphabetically and
+ * not by confederation.
+ *
+ * The first five are fixed: Champions League, Europa League, World Cup, Euros,
+ * Copa América. Everything after them is ordered on the same principle, which
+ * is the one every scoreboard app settles on — a reader opening a tournament
+ * page is far more often there for the Champions League than for the CONCACAF
+ * Champions Cup, and making them scroll past twelve competitions to reach it
+ * is the list working against them.
+ *
+ * This is the ONE ordering. `/tournaments` and the competition pickers all
+ * read it, so a competition cannot be prominent in one place and buried in
+ * another.
  *
  * Mirrors `tournaments.json`, which is why `uefa.conference` appears in the
  * forecast layer's spelling rather than this registry's `uefa.europa.conf` —
@@ -254,19 +265,29 @@ export const SERVED_COMPETITION_IDS = [
 export const TOURNAMENT_COMPETITION_IDS = [
   'uefa.champions',
   'uefa.europa',
-  'uefa.conference',
   'fifa.world',
   'uefa.euro',
-  'uefa.nations',
-  'fifa.cwc',
-  'conmebol.libertadores',
-  'conmebol.sudamericana',
   'conmebol.america',
-  'concacaf.champions',
-  'concacaf.gold',
+  'uefa.conference',
+  'conmebol.libertadores',
+  'fifa.cwc',
   'caf.nations',
+  'uefa.nations',
+  'concacaf.gold',
   'afc.asian',
+  'conmebol.sudamericana',
+  'concacaf.champions',
 ] as const
+
+/**
+ * Rank of a knockout competition in that order, for sorting a list that is not
+ * already in it. Anything unlisted sorts last rather than first — a
+ * competition nobody registered is not a headline.
+ */
+export const tournamentRank = (competitionId: string): number => {
+  const i = (TOURNAMENT_COMPETITION_IDS as readonly string[]).indexOf(competitionId)
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i
+}
 
 /** Everything the site covers — leagues first, then knockout competitions. */
 export const ALL_COMPETITION_IDS = [

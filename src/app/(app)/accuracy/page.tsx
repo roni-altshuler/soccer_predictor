@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
+import { EvidenceHeader } from '@/components/evidence/primitives'
 import { AccuracyFootnote } from '@/components/accuracy/AccuracyFootnote'
 import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
@@ -111,7 +112,7 @@ export default function AccuracyPage() {
 
   if (loading && metrics === null) {
     return (
-      <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-4">
+      <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
         <PageTitle />
         <AccuracySkeleton />
       </div>
@@ -119,7 +120,7 @@ export default function AccuracyPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-4">
+    <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
       <PageTitle />
 
       {failed ? (
@@ -128,7 +129,7 @@ export default function AccuracyPage() {
           body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
         />
       ) : settled === 0 ? (
-        <div className="space-y-3">
+        <div className="mt-8 space-y-6">
           <ScopeNote scope={metrics?.scope} />
           <EmptyState
           heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
@@ -153,7 +154,7 @@ export default function AccuracyPage() {
           <BaselineLadder />
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="mt-8 space-y-6">
           <AccuracyHeadline
             accuracy={metrics?.winner_accuracy ?? 0}
             settled={settled}
@@ -202,14 +203,23 @@ export default function AccuracyPage() {
   )
 }
 
+/**
+ * The same header the other evidence page uses.
+ *
+ * `/accuracy` and `/evaluation` are one section of the app and were rendering
+ * as two products: an 18px bold title with a grey line under it here, an
+ * uppercase letterspaced display there, on containers with different padding
+ * and different vertical rhythm. Neither treatment was wrong on its own;
+ * having both is what made the section feel unfinished. `EvidenceHeader` is
+ * now the single one — see components/evidence/primitives.
+ */
 function PageTitle() {
   return (
-    <div className="px-1 pb-3">
-      <h1 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">Accuracy</h1>
-      <p className="text-[12px] text-[var(--text-tertiary)]">
-        The full record of every pick, scored against the final result.
-      </p>
-    </div>
+    <EvidenceHeader
+      title="Accuracy"
+      lede="The full record of every pick this site has published, scored against the final result."
+      note="A three-way pick made blind lands one in three. That is the floor every number here is read against."
+    />
   )
 }
 
@@ -227,7 +237,7 @@ function EmptyState({ heading, body }: { heading: string; body: React.ReactNode 
 /** Loading skeleton mirroring the final layout — headline, strip, chart, tabs. */
 function AccuracySkeleton() {
   return (
-    <div className="space-y-3" role="status" aria-label="Loading accuracy data">
+    <div className="mt-8 space-y-6" role="status" aria-label="Loading accuracy data">
       <div className="skeleton-shimmer h-[240px] rounded-xl border border-[var(--border-color)]" />
       <div className="skeleton-shimmer h-[300px] rounded-xl border border-[var(--border-color)] sm:h-[160px] lg:h-[92px]" />
       <div className="skeleton-shimmer h-[440px] rounded-xl border border-[var(--border-color)]" />

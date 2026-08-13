@@ -171,6 +171,84 @@ describe('tournaments.json — the shape the page is built on', () => {
     }
   })
 
+  // ------------------------------------------------------------- the bracket
+  //
+  // A bracket is only a bracket if the tie at slot s is fed by slots 2s and
+  // 2s+1. Break that and the page still draws a tidy bracket — one in which
+  // the wrong two teams appear to have played each other.
+
+  it('never puts two ties of a round in the same slot', () => {
+    for (const e of editions) {
+      for (const round of e.bracket ?? []) {
+        const slots = round.ties.map((t) => t.slot).filter((s) => s != null)
+        expect([e.competition_id, e.season, round.display, slots.length]).toEqual([
+          e.competition_id,
+          e.season,
+          round.display,
+          new Set(slots).size,
+        ])
+      }
+    }
+  })
+
+  it('keeps every slot inside the width of its round', () => {
+    for (const e of editions) {
+      for (const round of e.bracket ?? []) {
+        for (const tie of round.ties) {
+          if (tie.slot == null) continue
+          expect([e.competition_id, round.display, tie.slot < (round.slots ?? 0)]).toEqual([
+            e.competition_id,
+            round.display,
+            true,
+          ])
+        }
+      }
+    }
+  })
+
+  it('halves the bracket cleanly from its widest round to the final', () => {
+    // Widths must be a power-of-two ladder. A round of 6 between a round of 8
+    // and a semi-final is a data fault that would draw as a bracket anyway.
+    for (const e of editions) {
+      const widths = (e.bracket ?? [])
+        .map((r) => r.slots ?? 0)
+        .filter((n) => n > 0)
+        .sort((a, b) => b - a)
+      if (!widths.length) continue
+      expect([e.competition_id, e.season, widths]).toEqual([
+        e.competition_id,
+        e.season,
+        widths.map((_, i) => widths[0] / 2 ** i),
+      ])
+      expect([e.competition_id, widths[widths.length - 1]]).toEqual([e.competition_id, 1])
+    }
+  })
+
+  it('gives a round outside the tree no slots and no positions', () => {
+    // An entry round feeds the bracket without being part of it.
+    for (const e of editions) {
+      for (const round of (e.bracket ?? []).filter((r) => !(r.slots ?? 0))) {
+        expect(round.ties.every((t) => t.slot == null)).toBe(true)
+      }
+    }
+  })
+
+  it('only projects empty rounds onto an edition with fixtures left', () => {
+    // Empty boxes are a true statement about a draw that has not happened and
+    // a false one about a tournament that is over.
+    for (const e of editions) {
+      const projected = (e.bracket ?? []).filter((r) => r.projected)
+      if (!projected.length) continue
+      const pending = (e.bracket ?? []).flatMap((r) => r.ties).some((t) => t.pending)
+      expect([e.competition_id, e.season, pending]).toEqual([
+        e.competition_id,
+        e.season,
+        true,
+      ])
+      expect(projected.every((r) => r.ties.length === 0)).toBe(true)
+    }
+  })
+
   it('states a reason wherever it declines to forecast', () => {
     for (const e of editions) {
       if (['awaiting_draw', 'not_reconstructed', 'insufficient_history'].includes(e.status)) {
