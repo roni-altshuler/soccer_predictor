@@ -37,7 +37,18 @@ async function projectedIds(): Promise<string[]> {
 describe('the served league list', () => {
   it('is exactly what the season forecast publishes', async () => {
     const projected = await projectedIds()
-    expect([...SERVED_COMPETITION_IDS].sort()).toEqual([...projected].sort())
+    const served = [...SERVED_COMPETITION_IDS].sort()
+    const published = [...projected].sort()
+    // This failed for real on 2026-08-13, which is why the wording is
+    // directive: the artifact had lost eng.1, esp.1 and por.1 after
+    // football-data served the wrong file, and this was the only check in the
+    // repository that noticed the Premier League had left the site.
+    //
+    // Which side is wrong decides the fix. Fewer published than served means
+    // the FORECAST is degraded — find out why those leagues dropped, do not
+    // trim this list to match. A league genuinely added or retired means
+    // updating SERVED_COMPETITION_IDS to follow forecast_season.LEAGUES.
+    expect({ served, published }).toEqual({ served: published, published })
   })
 
   it('gives every served league a real badge and country', () => {

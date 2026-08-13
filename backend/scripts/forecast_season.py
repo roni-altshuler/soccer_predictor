@@ -48,7 +48,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
@@ -338,12 +338,40 @@ def load_groups(competition: str, season: int,
         for name in group.get("teams", []):
             placed[f"{competition}::{norm_team(name)}"] = group["name"]
 
-    missing = [t for t in entrants if t not in placed]
-    if missing:
+    # One provider, two vocabularies. `conferences.json` is built from ESPN's
+    # STANDINGS, which name the club "Inter Miami CF", while the warehouse
+    # holds the name ESPN's SCOREBOARD uses for the same club — "Inter". They
+    # normalise to `inter miami` and `inter`, so an exact match places
+    # twenty-nine of thirty MLS clubs and refuses the table over the thirtieth.
+    #
+    # Resolved by containment, and only when the answer is unambiguous: the
+    # short key's tokens must be a subset of exactly ONE unplaced conference
+    # entry. `inter` is inside `inter miami` and nothing else here, so it
+    # resolves; had the league also contained `inter miami cf ii` there would
+    # be two candidates and this refuses rather than guessing — which matters
+    # because `inter` is Internazionale in every other competition we serve.
+    unresolved = [t for t in entrants if t not in placed]
+    if unresolved:
+        free = {key: name for key, name in placed.items()
+                if key not in set(entrants)}
+        for team in list(unresolved):
+            tokens = set(team.split("::")[-1].split())
+            hits = [key for key in free
+                    if tokens and tokens < set(key.split("::")[-1].split())]
+            if len(hits) == 1:
+                placed[team] = free.pop(hits[0])
+                unresolved.remove(team)
+                logger.info("  %s: placed %r via %r — the standings and the "
+                            "scoreboard spell the same club differently",
+                            competition, team.split("::")[-1],
+                            hits[0].split("::")[-1])
+
+    if unresolved:
         logger.warning("  %s: %d club(s) are in the fixture list but not in "
                        "the conference map (%s) — no table published",
-                       competition, len(missing),
-                       ", ".join(sorted(m.split("::")[-1] for m in missing)[:5]))
+                       competition, len(unresolved),
+                       ", ".join(sorted(m.split("::")[-1]
+                                        for m in unresolved)[:5]))
         return None
     return {t: placed[t] for t in entrants}
 
@@ -505,6 +533,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--no-snapshots", action="store_true",
                     help="skip the provenance write (for local experiments; "
                          "the scheduled job must never pass this)")
+    ap.add_argument("--allow-missing-leagues", action="store_true",
+                    help="publish even though a league the live forecast "
+                         "serves would disappear. For a competition that has "
+                         "genuinely ended — never to get past a bad ingest.")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -814,6 +846,39 @@ def main(argv: Optional[List[str]] = None) -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).isoformat()
 
+    # A league that published yesterday and does not today is a regression,
+    # and until now it was a warning in a log nobody reads.
+    #
+    # 2026-08-13: football-data.co.uk served National League fixtures for the
+    # `E0` request and the Primeira Liga for `SP1`. Twenty-two matches landed
+    # under eng.1 and esp.1, eng.1 came out with forty-four entrants, the
+    # round-robin check correctly refused to call that a single table, and the
+    # PREMIER LEAGUE AND LA LIGA SILENTLY LEFT THE SITE. Every step behaved as
+    # designed and the product lost its two biggest leagues.
+    #
+    # Compared against the artifact already on disk rather than against
+    # `LEAGUES`, because between seasons a league legitimately has neither
+    # fixtures nor a table — it was absent yesterday too, so it does not trip
+    # this. What trips it is losing something we were already publishing.
+    #
+    # Refuses to write ANY of it rather than publishing the survivors: the
+    # atomic replace means the previous complete forecast keeps serving, which
+    # is strictly better than a page that quietly shows six leagues where it
+    # showed nine.
+    # Scoped to what this run was ASKED for. `--competitions eng.1` is a
+    # deliberate one-league run, not a product that lost eight leagues.
+    published = {p["competition_id"] for p in projections}
+    missing = _leagues_lost(
+        OUT_DIR / "season_projections.json", published, set(comps))
+    if missing and not args.allow_missing_leagues:
+        logger.error(
+            "REFUSING TO PUBLISH: %d league(s) that the live forecast serves "
+            "would disappear — %s. The previous forecast stays up. Fix the "
+            "input, or pass --allow-missing-leagues if the competition has "
+            "genuinely ended.",
+            len(missing), ", ".join(sorted(missing)))
+        return 1
+
     # Record what we are about to publish BEFORE replacing the live artifact.
     # A snapshot for a forecast that failed to publish is a harmless extra row;
     # a published forecast with no snapshot is a permanently unauditable one.
@@ -838,6 +903,24 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.info("\nwrote %s", OUT_DIR / "season_fixtures.json")
     logger.info("wrote %s", OUT_DIR / "season_projections.json")
     return 0
+
+
+def _leagues_lost(path: Path, publishing: Set[str],
+                  in_scope: Set[str]) -> Set[str]:
+    """Leagues the live artifact serves that this run would drop.
+
+    A missing or unreadable artifact yields nothing to lose — the first run on
+    a fresh checkout must not be blocked by a guard about continuity. Likewise
+    a league outside `in_scope` was never this run's to produce.
+    """
+    try:
+        previous = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return set()
+    served = {league.get("competition_id")
+              for league in previous.get("leagues", [])}
+    served.discard(None)
+    return (served & in_scope) - publishing
 
 
 def _publish(path: Path, payload: dict) -> None:

@@ -52,7 +52,7 @@ import io
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -371,6 +371,87 @@ def _raw_to_row(
     )
 
 
+# A competition's own history has to recognise the clubs in the file before
+# any of it is written. Promotion turns over three or four clubs in twenty, so
+# a genuine file shares ~85% of its sides with previous seasons; a file about a
+# different competition shares none. Set between those, far from both.
+COMPETITION_IDENTITY_MIN_SHARE = 0.5
+
+# Below this the competition has no history to check against and the guard
+# would refuse the very first ingest of a new league forever.
+COMPETITION_IDENTITY_MIN_HISTORY = 10
+
+
+def _belongs_to_competition(
+    warehouse: Warehouse, competition_id: str, raw_matches: Sequence[dict],
+) -> Tuple[bool, str]:
+    """Is this file actually about `competition_id`?
+
+    On 2026-08-13 football-data.co.uk answered the 2026-27 request for `E0`
+    (Premier League) with NATIONAL LEAGUE fixtures — Altrincham, Boreham Wood,
+    Aldershot — and the request for `SP1` (La Liga) with the Portuguese
+    Primeira Liga. Both leagues had not kicked off yet; the ones served in
+    their place had. Twenty-two wrong-competition matches went into the
+    warehouse under `eng.1` and `esp.1`.
+
+    Nothing downstream could see it. The rows are well-formed matches with
+    real clubs and real scores, so the integrity checks passed. What they did
+    was give `eng.1` forty-four entrants, which put it at 21% of a double round
+    robin — and `forecast_season` correctly concluded that a 44-team league is
+    not a single table and published no table. **The Premier League and La Liga
+    disappeared from the site, and the only trace was one warning line.**
+
+    So the file is checked against the competition's own history before a
+    single name is resolved — resolution creates `teams` rows, and a junk one
+    is permanent and competes with every later fuzzy match.
+
+    Deliberately not a check on WHY the source did it. We do not control
+    football-data's file layout and the next mix-up will have a different
+    shape; what we control is refusing to write a competition's matches into
+    another competition's history.
+    """
+    if not raw_matches:
+        return True, ""
+
+    from backend.scripts.build_canonical import norm_team
+
+    known = {
+        norm_team(r[0])
+        for r in warehouse._conn.execute(  # noqa: SLF001
+            """SELECT DISTINCT t.canonical_name
+                 FROM matches m
+                 JOIN teams t ON t.team_id IN (m.home_team_id, m.away_team_id)
+                WHERE m.competition_id = ?""",
+            (competition_id,),
+        ).fetchall()
+    }
+    known.discard("")
+    if len(known) < COMPETITION_IDENTITY_MIN_HISTORY:
+        return True, ""
+
+    incoming = set()
+    for raw in raw_matches:
+        for side in ("home_team", "away_team"):
+            name = (raw.get(side) or "").strip()
+            if name:
+                incoming.add(norm_team(name))
+    incoming.discard("")
+    if not incoming:
+        return True, ""
+
+    share = len(incoming & known) / len(incoming)
+    if share >= COMPETITION_IDENTITY_MIN_SHARE:
+        return True, ""
+
+    strangers = sorted(incoming - known)[:6]
+    return False, (
+        f"only {len(incoming & known)} of {len(incoming)} clubs in this file "
+        f"({100 * share:.0f}%) have ever played in {competition_id}; the file "
+        f"is about a different competition. Unrecognised: "
+        f"{', '.join(strangers)}"
+    )
+
+
 async def _load_one(
     collector: HistoricalDataCollector,
     warehouse: Warehouse,
@@ -392,6 +473,15 @@ async def _load_one(
     except Exception as exc:
         logger.warning("FD fetch failed %s/%s: %s", competition_id, season, exc)
         return LoadStats(competition_id, season, 0, 0, 0, error=str(exc))
+
+    # The file has to be about the competition we asked for. See
+    # `_belongs_to_competition` — this is checked BEFORE any name is resolved,
+    # because resolving is what creates `teams` rows and those are permanent.
+    ok, why = _belongs_to_competition(warehouse, competition_id, raw_matches)
+    if not ok:
+        logger.error("FD REFUSED %s %s: %s", competition_id, season, why)
+        return LoadStats(competition_id, season, 0, 0, 0,
+                         error="wrong_competition")
 
     kickoffs = kickoffs or {}
     enriched = 0

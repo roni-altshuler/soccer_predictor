@@ -903,7 +903,8 @@ class Warehouse:
         what makes those duplicates visible.
         """
         if src_team_id == dst_team_id:
-            return {"matches": 0, "aliases": 0, "clubelo": 0, "player_form": 0}
+            return {"matches": 0, "aliases": 0, "clubelo": 0, "player_form": 0,
+                    "scheduled_matches": 0}
         counts: Dict[str, int] = {}
         with self._lock, self._conn:
             row = self._conn.execute(
@@ -932,6 +933,36 @@ class Warehouse:
                 (dst_team_id, src_team_id),
             )
             counts["matches"] = moved + cur.rowcount
+
+            # Drawn-but-unplayed fixtures point at teams too. This table
+            # arrived with the tournament layer, AFTER the player tables were
+            # fixed, and was the last reference `merge_teams` did not repoint
+            # — so with 224 rows in it the final DELETE raised FOREIGN KEY
+            # constraint failed and aborted `repair_warehouse --fixpoint`
+            # before it could heal a single split identity.
+            #
+            # `UPDATE OR IGNORE` then DELETE, like the tables below: the
+            # fixture may already exist against the surviving club, and a
+            # collision means the row is a duplicate of one already there
+            # rather than something to keep.
+            # Guarded by `_existing_tables` for the same reason the player
+            # tables are: a warehouse built by an older migration, or a test
+            # fixture holding only what it needs, does not have this table and
+            # must not be made to fail on a merge that has nothing to move.
+            moved_sched = 0
+            if self._existing_tables({"scheduled_matches"}):
+                for column in ("home_team_id", "away_team_id"):
+                    cur = self._conn.execute(
+                        f"UPDATE OR IGNORE scheduled_matches SET {column} = ? "
+                        f"WHERE {column} = ?",
+                        (dst_team_id, src_team_id),
+                    )
+                    moved_sched += cur.rowcount
+                self._conn.execute(
+                    "DELETE FROM scheduled_matches WHERE home_team_id = ? "
+                    "OR away_team_id = ?", (src_team_id, src_team_id),
+                )
+            counts["scheduled_matches"] = moved_sched
 
             # The old spelling becomes an alias of the surviving team so a
             # later ingest resolves it correctly even without the YAML pin.
@@ -1068,37 +1099,82 @@ class Warehouse:
         return counts
 
     def find_duplicate_fixtures(self) -> List[Dict[str, Any]]:
-        """Groups of >1 row sharing (competition, season, home, away, phase).
+        """Groups of >1 row sharing (competition, season, home, away, DATE).
 
-        `phase` is part of the key and must stay part of it. Without it this
-        method reported 69 "duplicates" the moment nine knockout tournaments
-        were ingested on 2026-08-11, and every one of them was real football:
+        Two clubs can meet twice in one season and both meetings be real:
         Egypt beat Ivory Coast in the 2006 Africa Cup of Nations group stage
-        and again in the final, at the same venue, in the same season. A
-        repeat meeting is an artefact only in a round-robin league, which is
-        the assumption this method was written under and no longer holds.
+        and again in the final. Grouping without something to separate those
+        reported 69 "duplicates" the day nine knockout tournaments were
+        ingested, and merging on that key would have deleted the final.
 
-        Merging on the looser key would have deleted the final.
+        That separator used to be `phase`, and `phase` cannot do the job — it
+        describes what the SOURCE chose to call the round, so two sources
+        describing the same match disagree about it and the duplicate becomes
+        invisible. Measured 2026-08-13: ESPN files league matches under a
+        SEASON SLUG (`2025-26-english-premier-league`, 9,495 rows across 76
+        such values) while football-data writes NULL, so 2,169 fixtures held
+        twice — 368 of the 380 Premier League matches of 2025-26 among them —
+        grouped as singletons and survived every dedupe pass. `eng.1` 2025
+        carried 748 rows for a 380-match season and the integrity check
+        reported no duplicates.
+
+        WHEN the two clubs met does the job properly. A repeat meeting is
+        weeks away; the same fixture arriving from two sources is the same
+        night. On the corpus that motivated this: 2,169 groups land on one day
+        (source duplicates), 274 span different dates weeks apart (real repeat
+        meetings, left alone) and ZERO share a day while disagreeing about the
+        score, so the rule never has to guess.
+
+        Clustered within ONE DAY rather than on an equal date, because the two
+        sources do not agree to the hour: football-data knows only the
+        calendar day and writes midnight, while ESPN carries a true kickoff,
+        so a 20:00 Monday kickoff in a western timezone is Monday to one and
+        Tuesday to the other. That is the same +/-1 day tolerance
+        `build_canonical` aligns the two vocabularies with.
         """
         with self._lock:
             cur = self._conn.execute(
                 """
                 SELECT competition_id, season, home_team_id, away_team_id,
-                       COALESCE(phase, '') AS phase,
-                       COUNT(*) AS n, GROUP_CONCAT(match_id, '|') AS match_ids
+                       substr(date_utc, 1, 10) AS local_day, match_id
                 FROM matches
-                GROUP BY competition_id, season, home_team_id, away_team_id,
-                         COALESCE(phase, '')
-                HAVING n > 1
-                ORDER BY n DESC, competition_id, season
+                ORDER BY competition_id, season, home_team_id, away_team_id,
+                         date_utc
                 """
             )
-            out = []
-            for r in cur.fetchall():
-                d = dict(r)
-                d["match_ids"] = (d.pop("match_ids") or "").split("|")
-                out.append(d)
-            return out
+            rows = cur.fetchall()
+
+        out: List[Dict[str, Any]] = []
+        pair: Optional[Tuple] = None
+        cluster: List[sqlite3.Row] = []
+
+        def flush() -> None:
+            if len(cluster) > 1:
+                out.append({
+                    "competition_id": cluster[0]["competition_id"],
+                    "season": cluster[0]["season"],
+                    "home_team_id": cluster[0]["home_team_id"],
+                    "away_team_id": cluster[0]["away_team_id"],
+                    "local_day": cluster[0]["local_day"],
+                    "n": len(cluster),
+                    "match_ids": [r["match_id"] for r in cluster],
+                })
+
+        for r in rows:
+            key = (r["competition_id"], r["season"],
+                   r["home_team_id"], r["away_team_id"])
+            if key != pair:
+                flush()
+                pair, cluster = key, [r]
+                continue
+            if _days_apart(cluster[-1]["local_day"], r["local_day"]) <= 1:
+                cluster.append(r)
+            else:
+                flush()
+                cluster = [r]
+        flush()
+        out.sort(key=lambda g: (-g["n"], g["competition_id"], g["season"]))
+        return out
 
     def merge_duplicate_fixtures(self, *, dry_run: bool = False) -> Dict[str, Any]:
         """Collapse duplicate (competition, season, home, away, phase) rows.
@@ -1116,17 +1192,20 @@ class Warehouse:
 
         for group in groups:
             with self._lock:
+                # Exactly the rows `find_duplicate_fixtures` clustered, by id.
+                # Re-selecting on (competition, season, home, away) instead
+                # would pull in EVERY meeting of the two clubs that season, so
+                # a group formed for the Africa Cup of Nations group stage
+                # would drag the final in and merge it away — the deletion
+                # this whole key exists to prevent.
+                ids = list(group["match_ids"])
                 rows = self._conn.execute(
                     f"""
                     SELECT match_id, source, date_utc, {", ".join(self._MERGEABLE_COLUMNS)}
                     FROM matches
-                    WHERE competition_id = ? AND season = ?
-                      AND home_team_id = ? AND away_team_id = ?
+                    WHERE match_id IN ({", ".join("?" * len(ids))})
                     """,
-                    (
-                        group["competition_id"], group["season"],
-                        group["home_team_id"], group["away_team_id"],
-                    ),
+                    ids,
                 ).fetchall()
             if len(rows) < 2:
                 continue
@@ -1289,6 +1368,20 @@ class Warehouse:
                 """
             )
             return [dict(r) for r in cur.fetchall()]
+
+
+def _days_apart(day_a: Optional[str], day_b: Optional[str]) -> int:
+    """Whole days between two `YYYY-MM-DD` strings.
+
+    A row with no date cannot be clustered with anything, so it reports a gap
+    nothing tolerates rather than defaulting to zero and merging blind.
+    """
+    try:
+        a = datetime.strptime(day_a[:10], "%Y-%m-%d")
+        b = datetime.strptime(day_b[:10], "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return 10**6
+    return abs((b - a).days)
 
 
 @contextmanager
