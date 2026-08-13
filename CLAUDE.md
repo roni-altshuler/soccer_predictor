@@ -429,9 +429,41 @@ leaves the previous valid forecast serving rather than a truncated file.
 |---|---|
 | `/season` | flagship: league picker, then Overview / Table / Fixtures tabs, with the evidence panel always below them |
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
-| `/evaluation` | historical vs live, kept apart; reliability, per-league and per-version breakdowns |
-| `/tournaments` | knockout ties and trophy odds |
+| `/evaluation` | the model, one competition at a time: what it believed and what that was worth. Pooled evidence sits below a heading that says it is pooled |
+| `/accuracy` | the published-pick record, same furniture as `/evaluation`, with the per-competition table as a section rather than a tab |
+| `/tournaments` | knockout ties and trophy odds — the football only |
 | `/leagues` | directory of the nine projected leagues, each with the walk-forward record that admitted it |
+| `/about` | "How it works": the short version, handing off to `docs/handbook/` |
+
+**Football and evidence are different destinations, and that split is load-bearing.**
+`/leagues` and `/tournaments` answer "what is happening and what does the model
+expect"; `/evaluation` and `/accuracy` answer "how right has it been". The
+knockout backtest — ladder, calibration, per-round, progression check — used to
+sit under the brackets on `/tournaments` and is now on `/evaluation`, because a
+reader who came for the next round should not have to scroll a calibration
+table to reach it. `tournaments.smoke.test.tsx` asserts it has not crept back.
+
+**The site does not explain itself in place; it links to `docs/handbook/`.**
+Every methodology paragraph that used to sit on a page — what Brier means, why
+a knockout tie is a different question, the six feature groups measured and
+dropped — is in the handbook, addressed through `src/lib/docs.ts` (one place a
+doc's path is written down) and rendered by `DocsLink`/`DocsRow`.
+`src/__tests__/lib/docs.test.ts` pins both halves of that trade: every
+registered path resolves to a real file, every cross-link inside the handbook
+resolves, **and the specific claims removed from pages are present in the
+documents they moved into.** Deleting an honesty note and calling it "moved to
+the docs" is the failure mode this reorganisation invites, and that test is the
+only thing that catches it.
+
+`/evaluation` is organised per competition because the evidence exists per
+competition: `season_projections.json` carries a `measured` block per league,
+and `bracket_backtest.json` one row per reconstructed tournament (folded per
+competition by `components/evidence/competitionRecords.ts`). The pooled
+walk-forward .59303 is an average over the top five whose members run .56873 to
+.62101 — showing it under one league's name is a wrong claim about that league.
+Per-TIE records per competition come from `knockout_model.json`'s
+`by_competition`, which `benchmark_knockout` has written since 2026-08-13;
+older artifacts lack it and the UI renders that half only when it is there.
 
 `/leagues` reads `season_projections.json` and lists `SERVED_COMPETITION_IDS`
 from `leagueAccents.ts`, which mirrors `LEAGUES` in `forecast_season.py` and is

@@ -314,6 +314,44 @@ def calibration(p: np.ndarray, y: np.ndarray, bins=(0.5, 0.6, 0.7, 0.8, 0.9, 1.0
     return out
 
 
+def rollup(labels: Sequence[str], probs: np.ndarray, y: np.ndarray,
+           mask: np.ndarray, *, min_n: int = 10,
+           with_brier: bool = False) -> Dict[str, Dict]:
+    """Score the model within each group of ties — a round, or a competition.
+
+    Two rules, both about not publishing noise under a name that gives it
+    authority:
+
+    * **A group under ``min_n`` ties is dropped**, not rounded. A 100% hit rate
+      on three ties reads as a fact about that competition, and it is not one.
+    * **A tie the model could not score is excluded by ``mask``**, exactly as
+      the pooled figures are, so a group's ``n`` always means the same thing as
+      the headline ``n_ties_scored``.
+
+    ``with_brier`` is on for competitions and off for rounds: a competition can
+    pick more winners than another and still be worse calibrated, and
+    calibration is what the bracket simulation consumes.
+    """
+    cells: Dict[str, List[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
+    for i, label in enumerate(labels):
+        if not mask[i]:
+            continue
+        cell = cells[label]
+        cell[1] += 1
+        cell[0] += int((probs[i] >= 0.5) == bool(y[i]))
+        cell[2] += float((probs[i] - y[i]) ** 2)
+
+    out: Dict[str, Dict] = {}
+    for key, (correct, n, sq) in sorted(cells.items(), key=lambda kv: -kv[1][1]):
+        if n < min_n:
+            continue
+        row = {"correct": int(correct), "n": int(n), "accuracy": round(correct / n, 4)}
+        if with_brier:
+            row["brier"] = round(sq / n, 4)
+        out[key] = row
+    return out
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -406,19 +444,24 @@ def main(argv: Optional[List[str]] = None) -> int:
     for e in importance[:10]:
         logger.info("  %-18s %+.5f ± %.5f", e["feature"], e["importance"], e["std"])
 
-    # --- per-round accuracy -------------------------------------------------
-    per_round: Dict[str, List[int]] = defaultdict(lambda: [0, 0])
-    for i, t in enumerate(kept):
-        if not mask[i]:
-            continue
-        cell = per_round[t.round_label]
-        cell[1] += 1
-        cell[0] += int((best["_probs"][i] >= 0.5) == bool(y[i]))
-    rounds = {k: {"correct": v[0], "n": v[1], "accuracy": round(v[0] / v[1], 4)}
-              for k, v in sorted(per_round.items(), key=lambda kv: -kv[1][1]) if v[1] >= 10}
+    # --- per-round and per-competition --------------------------------------
+    #
+    # The site evaluates one competition at a time, because the pooled figure is
+    # an average over fourteen competitions whose fields differ enormously — a
+    # Champions League round of 16 and an AFCON qualifier are not the same
+    # question. Without `by_competition` the evaluation page could only ever
+    # quote the pooled number under a competition's own name.
+    rounds = rollup([t.round_label for t in kept], best["_probs"], y, mask)
     logger.info("\nby round:")
     for k, v in rounds.items():
         logger.info("  %-16s %4d ties  %.1f%%", k, v["n"], v["accuracy"] * 100)
+
+    comps_out = rollup([t.competition_id for t in kept], best["_probs"], y, mask,
+                       with_brier=True)
+    logger.info("\nby competition:")
+    for k, v in comps_out.items():
+        logger.info("  %-24s %4d ties  %.1f%%  brier %.4f",
+                    k, v["n"], v["accuracy"] * 100, v["brier"])
 
     out = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -446,6 +489,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "best_model": best_name,
         "calibration": cal,
         "by_round": rounds,
+        "by_competition": comps_out,
         "permutation_importance": importance,
     }
     op = Path(args.output)

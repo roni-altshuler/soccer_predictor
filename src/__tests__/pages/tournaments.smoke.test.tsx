@@ -6,14 +6,20 @@ import TournamentsPage from '@/app/(app)/tournaments/page'
 /**
  * Smoke tests for the tournament page.
  *
- * Two things are worth guarding beyond "it mounts":
+ * This page is now only the football: pick an edition, read the bracket, read
+ * the odds. The knockout backtest that used to sit underneath it — the ladder
+ * against a coin flip, the calibration table, per-round accuracy, the
+ * progression check — is on /evaluation, per competition.
  *
- *  1. The framing survives. The whole reason this page is separate from
- *     /accuracy is that a knockout tie has two outcomes and a league match has
- *     three, so a 64.8% here is not a better version of the 52.3% there. If
- *     that sentence ever gets edited away, the page starts overstating itself
- *     and nothing else would catch it.
- *  2. A missing artifact renders an honest empty state rather than crashing or
+ * Three things are worth guarding beyond "it mounts":
+ *
+ *  1. The model's argument stays off this page. It came back once already, as
+ *     "just one more panel", and the bracket ended up below the fold.
+ *  2. The framing survives somewhere. A knockout tie has two outcomes and a
+ *     league match has three, so a 64.8% here is not a better version of the
+ *     52.3% on /accuracy. That now lives in the handbook, and
+ *     `src/__tests__/lib/docs.test.ts` is what pins it.
+ *  3. A missing artifact renders an honest empty state rather than crashing or
  *     — worse — rendering an empty table that reads as "no tournaments were
  *     predicted correctly".
  */
@@ -314,25 +320,33 @@ async function chooseTournament(name: RegExp) {
 }
 
 describe('TournamentsPage', () => {
-  it('renders the ladder and the bracket record', async () => {
-    mockFetch(ARTIFACT)
+  it('keeps the model\'s own record off the football page', async () => {
+    // Everything below was on this page and is now on /evaluation. A reader
+    // who came to see who plays Real Madrid had to scroll a calibration table
+    // to reach the next round.
+    mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Who advances/i)).toBeInTheDocument())
-    expect(screen.getByText(/Who lifts the trophy/i)).toBeInTheDocument()
-    expect(screen.getByText('32.1%')).toBeInTheDocument()
-    expect(screen.getByText(/84 tournaments simulated/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    expect(screen.queryByText(/Coin flip/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/What the confidence means/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Where it is strong/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Integrity check/i)).not.toBeInTheDocument()
+    // The trophy ODDS for the selected edition stay — they are the forecast.
+    // What left is the backtest of them across 85 past tournaments.
+    expect(screen.queryByText(/tournaments simulated/i)).not.toBeInTheDocument()
   })
 
-  it('keeps the two-outcome framing that stops the numbers being misread', async () => {
-    mockFetch(ARTIFACT)
+  it('sends a reader who wants the reasoning to the handbook', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Who advances/i)).toBeInTheDocument())
-    // The claim: knockout is binary, league play is not, so these numbers are
-    // not the 1X2 numbers improved.
-    expect(screen.getByText(/a knockout\s+tie has two/i)).toBeInTheDocument()
-    expect(screen.getByText(/not the 1X2 numbers made bigger/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    const link = screen.getByText(/How to read this/i).closest('a')
+    expect(link).toHaveAttribute(
+      'href',
+      expect.stringContaining('docs/handbook/tutorials/read-a-bracket.md'),
+    )
   })
 
   it('prices the undecided ties of a tournament still being played', async () => {
@@ -509,14 +523,17 @@ describe('TournamentsPage', () => {
     expect(screen.getByText('Real Madrid')).toBeInTheDocument()
   })
 
-  it('shows an honest empty state when the benchmarks have not been run', async () => {
-    mockFetch({ available: false, reason: 'not run' })
+  it('shows an honest empty state when no forecast has been generated', async () => {
+    mockFetch({ available: false }, { available: false, tournaments: [] })
     render(<TournamentsPage />)
 
     await waitFor(() =>
-      expect(screen.getByText(/have not been run here/i)).toBeInTheDocument(),
+      expect(
+        screen.getByText(/No tournament forecast has been generated here/i),
+      ).toBeInTheDocument(),
     )
-    expect(screen.queryByText(/Who lifts the trophy/i)).not.toBeInTheDocument()
+    // An empty picker would read as "no tournament was predicted correctly".
+    expect(screen.queryByText(/Pick a tournament/i)).not.toBeInTheDocument()
   })
 
   // ------------------------------------------------------------- the picker

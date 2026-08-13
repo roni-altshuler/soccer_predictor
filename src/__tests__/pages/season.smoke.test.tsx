@@ -226,14 +226,20 @@ describe('SeasonPage', () => {
     expect(screen.getByText(/Live published forecasts/i)).toBeInTheDocument()
   })
 
-  it('publishes what was measured and dropped', async () => {
+  it('points at what was measured and dropped rather than reprinting it', async () => {
+    // The six dropped feature groups used to be chips on this page. They are
+    // model detail on a page about one league's fixtures, so they live in the
+    // handbook now — `src/__tests__/lib/docs.test.ts` pins that the document
+    // genuinely still lists them, which is the half of this trade that could
+    // silently fail.
     mockFetch(PROJECTIONS, FIXTURES, EVALUATION)
     render(<SeasonPage />)
 
-    await waitFor(() => expect(screen.getByText(/Measured and dropped/i)).toBeInTheDocument())
-    for (const dropped of ['referee', 'rest', 'head-to-head', 'venue']) {
-      expect(screen.getByText(dropped)).toBeInTheDocument()
-    }
+    await waitFor(() =>
+      expect(screen.getByText(/What was measured and dropped/i)).toBeInTheDocument(),
+    )
+    const link = screen.getByText(/What was measured and dropped/i).closest('a')
+    expect(link).toHaveAttribute('href', expect.stringContaining('docs/handbook/concepts/models.md'))
   })
 
   it('renders a fixture card whose 1X2 and scoreline come from one object', async () => {

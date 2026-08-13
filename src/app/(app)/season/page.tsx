@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
+import { DocsRow } from '@/components/evidence/DocsLink'
 import { EvidencePanel } from '@/components/forecast/EvidencePanel'
 import type { Historical, Live } from '@/components/forecast/EvidencePanel'
 import { FixtureCard } from '@/components/forecast/FixtureCard'
@@ -202,11 +203,16 @@ export default function SeasonPage() {
           The season ahead
         </h1>
         <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
-          Trained on every match played since 2000 and asked about every one still
-          to come. Each league&apos;s projection is 20,000 simulations of the
-          fixtures that remain, and every probability on this page is the share
-          of those simulations in which it happened.
+          Every probability here is the share of 20,000 simulated seasons in which it
+          happened.
         </p>
+        <DocsRow
+          className="mt-3"
+          docs={[
+            { doc: 'tutorialSeason', label: 'How to read this' },
+            { doc: 'models', hash: '2-season-projection--monte-carlo', label: 'How it is simulated' },
+          ]}
+        />
       </header>
 
       {loading ? (
@@ -415,8 +421,7 @@ export default function SeasonPage() {
               {method.trained_through
                 ? `, trained on matches through ${method.trained_through}`
                 : ''}
-              . Every forecast is recorded before kickoff and kept, so what was shown
-              here can be scored later against what happened.
+              . Recorded before kickoff and kept.
             </p>
           ) : null}
         </div>
@@ -469,13 +474,14 @@ function LeagueRecord({ league }: { league: League }) {
         ))}
       </dl>
       <p className="mt-3 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
-        Walk-forward over {league.name} alone, the model refit as the seasons
-        advanced and never shown a match before predicting it. Lower is better.
-        It beats a one-in-three guess by {gain.toFixed(5)} and beats picking the
-        home side every time. A league appears on this page only if it beats all
-        three baselines — that is the whole test, and it is why some leagues we
-        hold data for are not here.
+        Walk-forward over {league.name} alone. Lower is better: it beats a one-in-three
+        guess by {gain.toFixed(5)}, and beating that guess, the league&apos;s own base
+        rate and always-home is what admitted it to this page.
       </p>
+      <DocsRow
+        className="mt-3"
+        docs={[{ doc: 'scoring', hash: 'the-floors', label: 'What these floors are' }]}
+      />
     </section>
   )
 }

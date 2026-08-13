@@ -24,7 +24,7 @@ export const Footer = () => {
             <Link href="/predict" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-ai)] hover:border-[color-mix(in_srgb,var(--accent-ai)_40%,transparent)] transition-colors">AI Predict</Link>
             <Link href="/accuracy" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] transition-colors">Accuracy</Link>
             <Link href="/simulator" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] transition-colors">Title &amp; Relegation</Link>
-            <Link href="/about" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] transition-colors">About</Link>
+            <Link href="/about" className="px-2.5 py-1 rounded-full border border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] hover:border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] transition-colors">How it works</Link>
           </div>
         </div>
 

@@ -3,46 +3,53 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
-import { EvidenceHeader } from '@/components/evidence/primitives'
-import { AccuracyFootnote } from '@/components/accuracy/AccuracyFootnote'
 import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
 import { BaselineLadder } from '@/components/accuracy/BaselineLadder'
+import { LeagueTable } from '@/components/accuracy/LeagueTable'
 import { MarketBenchmarkPanel } from '@/components/accuracy/MarketBenchmarkPanel'
 import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
 import { ScopeNote } from '@/components/accuracy/ScopeNote'
 import { samplePhrase } from '@/components/accuracy/accuracyMetrics'
 import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
+import { DocsRow } from '@/components/evidence/DocsLink'
+import { EvidenceHeader, Panel } from '@/components/evidence/primitives'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import type { AccuracySummaryResponse, FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 /**
- * The public track record: how the AI's picks have actually scored.
+ * The published-pick record: how the picks this site made have actually scored.
  *
- * Information architecture — one narrative, top to bottom:
+ * The sibling of `/evaluation`, and built from the same furniture on purpose —
+ * one section is one Panel, the eyebrow heading names the job, the numbers are
+ * the biggest thing in the block. The two pages are one part of the app and
+ * were rendering as two products.
  *
- *   1. The headline rate, its sample, and the yardstick that makes it
- *      readable (a blind three-way pick lands 1 in 3).
+ * The division of labour between them: `/evaluation` is about the MODEL —
+ * what it believed in each competition and what that belief was worth against
+ * the baselines. This page is about the PICKS — the record of what was
+ * published, scored after the fact. Both are organised per competition,
+ * because a pooled hit rate over eleven competitions and three model
+ * generations is a number that describes nothing.
+ *
+ * Order, top to bottom:
+ *   1. The headline rate, its sample, and the floor that makes it readable.
  *   2. A strip of supporting numbers, each carrying its own denominator.
- *   3. One chart, chosen because calibration is the claim this page exists
- *      to support: stated chance against what happened, with the sample
- *      behind every point drawn underneath it.
- *   4. The deep cuts — per competition, per confidence tier, scorelines,
- *      recent picks — behind tabs rather than stacked as four more cards.
- *   5. A short footnote on how to read the page.
+ *   3. The market benchmark, then the rest of the baseline ladder.
+ *   4. Calibration — the claim this page exists to support.
+ *   5. The record per competition.
+ *   6. The deep cuts, behind tabs rather than as four more cards.
+ *   7. What the record covers and holds out.
  *
- * Honesty rules that shape the layout: a section whose data is missing
- * renders nothing, rates below their minimum sample lose their verdict
- * chips rather than their context, and no number here is derived from
- * anything other than the settled record.
+ * Honesty rules that shape the layout: a section whose data is missing renders
+ * nothing, rates below their minimum sample lose their verdict chips rather
+ * than their context, and no number here is derived from anything other than
+ * the settled record.
  *
- * The rolling-form chart that used to sit above the calibration plot was
- * removed rather than restyled. Its endpoint does not filter by universe,
- * so it could only ever render for men's football — the layout silently
- * differed between the two universes — and the series itself was a 50-pick
- * rolling line oscillating between 30% and 70%, which carried no legible
- * trend at the size it was given.
+ * The three paragraphs of "how to read this" that used to close the page are
+ * in `docs/handbook/` now — linked, not inlined. They were explaining scoring
+ * on a page whose job is to report it.
  */
 
 interface RecentResponse {
@@ -113,7 +120,7 @@ export default function AccuracyPage() {
   if (loading && metrics === null) {
     return (
       <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
-        <PageTitle />
+        <PageHeader />
         <AccuracySkeleton />
       </div>
     )
@@ -121,32 +128,34 @@ export default function AccuracyPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
-      <PageTitle />
+      <PageHeader />
 
       {failed ? (
-        <EmptyState
-          heading="The record isn't loading"
-          body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
-        />
+        <div className="mt-8">
+          <EmptyState
+            heading="The record isn't loading"
+            body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
+          />
+        </div>
       ) : settled === 0 ? (
         <div className="mt-8 space-y-6">
           <ScopeNote scope={metrics?.scope} />
           <EmptyState
-          heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
-          body={
-            total > 0 ? (
-              <>
-                {samplePhrase(total, 'pick')} recorded, none with a final result so far. The rates
-                and breakdowns appear as soon as the first match finishes.
-              </>
-            ) : (
-                            <>
-                Nothing in scope has been settled yet. The record covers the model serving today
-                in the five covered leagues, and that intersection is currently empty &mdash; see
-                the note above for what is being held out and why.
-              </>
-            )
-          }
+            heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
+            body={
+              total > 0 ? (
+                <>
+                  {samplePhrase(total, 'pick')} recorded, none with a final result so far. The
+                  rates and breakdowns appear as soon as the first match finishes.
+                </>
+              ) : (
+                <>
+                  Nothing in scope has been settled yet. The record covers the model serving
+                  today in the five covered leagues, and that intersection is currently empty
+                  &mdash; see the note above for what is being held out and why.
+                </>
+              )
+            }
           />
           {/* The live record being empty is the strongest reason to show the
               backtest: without it the page says nothing at all about whether
@@ -187,16 +196,31 @@ export default function AccuracyPage() {
             settled={settled}
           />
 
+          {/* Per competition, out of the tabs it used to hide in. A pooled hit
+              rate is an average over leagues that differ by six points, and
+              the reader almost always cares about one of them. */}
+          {leagueRows.length ? (
+            <Panel title="The record, competition by competition">
+              <LeagueTable
+                className="-mx-4 mt-2 md:-mx-5"
+                rows={leagueRows}
+                overallAccuracy={metrics?.winner_accuracy ?? 0}
+                embedded
+              />
+            </Panel>
+          ) : null}
+
+          <AccuracyDeepCuts metrics={metrics} picks={picks} />
+
           <ScopeNote scope={metrics?.scope} />
 
-          <AccuracyDeepCuts
-            metrics={metrics}
-            leagueRows={leagueRows}
-            picks={picks}
-            overallAccuracy={metrics?.winner_accuracy ?? 0}
+          <DocsRow
+            docs={[
+              { doc: 'tutorialJudge', label: 'How to read this' },
+              { doc: 'scoring', label: 'What the metrics mean' },
+              { doc: 'evaluation', label: 'How the record is kept' },
+            ]}
           />
-
-          <AccuracyFootnote />
         </div>
       )}
     </div>
@@ -209,17 +233,23 @@ export default function AccuracyPage() {
  * `/accuracy` and `/evaluation` are one section of the app and were rendering
  * as two products: an 18px bold title with a grey line under it here, an
  * uppercase letterspaced display there, on containers with different padding
- * and different vertical rhythm. Neither treatment was wrong on its own;
- * having both is what made the section feel unfinished. `EvidenceHeader` is
- * now the single one — see components/evidence/primitives.
+ * and different vertical rhythm. `EvidenceHeader` is the single one.
  */
-function PageTitle() {
+function PageHeader() {
   return (
-    <EvidenceHeader
-      title="Accuracy"
-      lede="The full record of every pick this site has published, scored against the final result."
-      note="A three-way pick made blind lands one in three. That is the floor every number here is read against."
-    />
+    <>
+      <EvidenceHeader
+        title="Accuracy"
+        lede="Every pick this site has published, scored against the final result."
+      />
+      <DocsRow
+        className="mt-3"
+        docs={[
+          { doc: 'tutorialJudge', label: 'How to judge this' },
+          { doc: 'scoring', label: 'What the metrics mean' },
+        ]}
+      />
+    </>
   )
 }
 

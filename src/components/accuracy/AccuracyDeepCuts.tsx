@@ -3,11 +3,10 @@
 import { useMemo, useState } from 'react'
 
 import { Card } from '@/components/ui/card'
-import type { FlatAccuracyResponse, LeagueAccuracySummary } from '@/lib/types/accuracy'
+import type { FlatAccuracyResponse } from '@/lib/types/accuracy'
 import { cn } from '@/lib/utils'
 
 import { ConfidenceTiers } from './ConfidenceTiers'
-import { LeagueTable } from './LeagueTable'
 import { OutcomeBreakdown } from './OutcomeBreakdown'
 import { RecentPicksFeed, type RecentPick } from './RecentPicksFeed'
 import { ScorelineStats } from './ScorelineStats'
@@ -21,39 +20,35 @@ import { ScorelineStats } from './ScorelineStats'
  * The headline and the reliability chart now carry the page; these are the
  * deep cuts, and they live in one container the reader opts into.
  *
+ * The per-competition table was the first of these tabs and is no longer:
+ * both evidence pages are organised per competition now, so the breakdown a
+ * reader most often wants is a section of the page rather than a tab they
+ * have to know to open.
+ *
  * A section with no data does not get a tab — an empty tab is worse than an
  * absent one.
  */
 
-type TabKey = 'leagues' | 'confidence' | 'scorelines' | 'picks'
+type TabKey = 'confidence' | 'scorelines' | 'picks'
 
 interface AccuracyDeepCutsProps {
   metrics: FlatAccuracyResponse | null
-  leagueRows: LeagueAccuracySummary[]
   picks: RecentPick[]
-  overallAccuracy: number
   className?: string
 }
 
-export function AccuracyDeepCuts({
-  metrics,
-  leagueRows,
-  picks,
-  overallAccuracy,
-  className,
-}: AccuracyDeepCutsProps) {
+export function AccuracyDeepCuts({ metrics, picks, className }: AccuracyDeepCutsProps) {
   const bins = metrics?.calibration_bins ?? []
 
   const tabs = useMemo(() => {
     const available: { key: TabKey; label: string }[] = []
-    if (leagueRows.length > 0) available.push({ key: 'leagues', label: 'Competitions' })
     if (bins.length > 0) available.push({ key: 'confidence', label: 'Confidence' })
     if (metrics && metrics.completed_predictions > 0) {
       available.push({ key: 'scorelines', label: 'Scorelines' })
     }
     if (picks.length > 0) available.push({ key: 'picks', label: 'Recent picks' })
     return available
-  }, [leagueRows.length, bins.length, metrics, picks.length])
+  }, [bins.length, metrics, picks.length])
 
   const [active, setActive] = useState<TabKey | null>(null)
   const current = active && tabs.some((t) => t.key === active) ? active : tabs[0]?.key
@@ -102,10 +97,6 @@ export function AccuracyDeepCuts({
         id={`deepcut-panel-${current}`}
         aria-labelledby={`deepcut-tab-${current}`}
       >
-        {current === 'leagues' && (
-          <LeagueTable rows={leagueRows} overallAccuracy={overallAccuracy} embedded />
-        )}
-
         {current === 'confidence' && metrics && (
           <div className="space-y-6 p-4 md:p-5">
             <ConfidenceTiers bins={bins} embedded />

@@ -2,6 +2,25 @@
 
 This directory contains all project documentation for the Soccer Match Predictor application.
 
+## 🧭 Start here — the handbook
+
+**[handbook/](./handbook/README.md)** is the user-facing documentation the app
+itself links to: tutorials, the concepts behind every number on the site, and a
+reference for the API, the artifacts and the commands.
+
+| | |
+|---|---|
+| [Getting started](./handbook/getting-started.md) | What each page answers, in one screen |
+| [Tutorials](./handbook/README.md#tutorials) | Read a forecast, follow a season, read a bracket, judge the model |
+| [Scoring](./handbook/concepts/scoring.md) | Brier, log loss, ECE, calibration, and the floors |
+| [Models](./handbook/concepts/models.md) | The four forecasters and what each was measured against |
+| [Evaluation](./handbook/concepts/evaluation.md) | Walk-forward vs live, and why they stay apart |
+| [Data](./handbook/concepts/data.md) | Sources, coverage, and what is genuinely missing |
+| [HTTP API](./handbook/reference/api.md) · [Artifacts](./handbook/reference/artifacts.md) · [Commands](./handbook/reference/cli.md) | Reference |
+| [Glossary](./handbook/glossary.md) | One line per term |
+
+Everything below is internal: architecture, operations and project history.
+
 ## 📖 Contents
 
 ### Project Organization

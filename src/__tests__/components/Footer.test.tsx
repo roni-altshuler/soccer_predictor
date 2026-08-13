@@ -14,7 +14,7 @@ describe('Footer', () => {
     expect(screen.getByText('AI Predict')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Accuracy' })).toBeInTheDocument()
     expect(screen.getByText(/Title & Relegation/)).toBeInTheDocument()
-    expect(screen.getByText('About')).toBeInTheDocument()
+    expect(screen.getByText('How it works')).toBeInTheDocument()
   })
 
   it('links only to pages that exist', () => {

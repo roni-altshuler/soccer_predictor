@@ -62,7 +62,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/evaluation', label: 'Evaluation', icon: BarChart3 },
       { href: '/accuracy', label: 'Accuracy', icon: TrendingUp },
-      { href: '/about', label: 'About', icon: Info },
+      { href: '/about', label: 'How it works', icon: Info },
     ],
   },
 ]

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 
+import { DocsLink } from '@/components/evidence/DocsLink'
 import { cn } from '@/lib/utils'
 
 /**
@@ -16,6 +17,14 @@ import { cn } from '@/lib/utils'
  *  2. **No market comparison.** The repository has no valid evidence that this
  *     model beats a bookmaker — its own measurements say the opposite — so
  *     nothing here claims it does.
+ *
+ * What it no longer carries is the explanation. Two blocks used to sit under
+ * the numbers: what Brier and ECE mean, and the six feature groups that were
+ * measured and dropped. Both are true and both were being read on a page about
+ * one league's fixtures. They are in `docs/handbook/` now — the dropped
+ * features under Models, the metrics under Scoring — and a test pins that they
+ * are genuinely there, because "we moved it to the docs" is only honest if the
+ * docs say it.
  */
 
 export interface Historical {
@@ -37,24 +46,13 @@ export interface Live {
   note?: string
 }
 
-const DROPPED = [
-  'referee',
-  'rest',
-  'head-to-head',
-  'venue',
-  'attendance',
-  'kickoff time',
-]
-
 export function EvidencePanel({
   historical,
   live,
-  compact = false,
   className,
 }: {
   historical?: Historical | null
   live?: Live | null
-  compact?: boolean
   className?: string
 }) {
   return (
@@ -89,15 +87,11 @@ export function EvidencePanel({
                 />
               </dl>
               <p className="mt-2.5 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-                Each match was predicted before its own result, with the model refit as
-                the corpus advanced. Large and honest — but retrospective: nobody saw
-                these numbers before those kickoffs.
+                Retrospective: nobody saw these numbers before those kickoffs.
               </p>
             </>
           ) : (
-            <p className="mt-2.5 text-[12px] text-[var(--text-tertiary)]">
-              Not available.
-            </p>
+            <p className="mt-2.5 text-[12px] text-[var(--text-tertiary)]">Not available.</p>
           )}
         </div>
 
@@ -115,90 +109,31 @@ export function EvidencePanel({
               </dl>
               {live.n < 100 ? (
                 <p className="mt-2.5 text-[11px] leading-relaxed text-[var(--accent-warn)]">
-                  {live.n} matches is too few to conclude anything. Shown because
-                  hiding it until it flatters us would be the wrong way round.
+                  {live.n} matches is too few to conclude anything. Shown because hiding it
+                  until it flatters us would be the wrong way round.
                 </p>
               ) : null}
             </>
           ) : (
             <p className="mt-2.5 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-              <span className="text-[var(--text-secondary)]">Nothing scored yet.</span>{' '}
-              Every forecast is recorded before kickoff and scored once the result
-              lands. The 2026-27 season has not produced a scoreable match, so this
+              <span className="text-[var(--text-secondary)]">Nothing scored yet.</span> Every
+              forecast is recorded before kickoff and scored once the result lands, so this
               number is genuinely zero rather than pending.
             </p>
           )}
         </div>
       </div>
 
-      {!compact ? (
-        <>
-          <div className="mt-4 border-t border-[var(--border-color)] pt-3.5">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-              What the numbers mean
-            </h3>
-            <dl className="mt-2 space-y-2 text-[12px] leading-relaxed">
-              <div>
-                <dt className="inline font-medium text-[var(--text-secondary)]">
-                  Brier score.{' '}
-                </dt>
-                <dd className="inline text-[var(--text-tertiary)]">
-                  Squared error of the probabilities. Lower is better; a forecast that
-                  says one-in-three to everything scores .667, so the distance below
-                  that is the whole of what the model knows.
-                </dd>
-              </div>
-              <div>
-                <dt className="inline font-medium text-[var(--text-secondary)]">
-                  Calibration error (ECE).{' '}
-                </dt>
-                <dd className="inline text-[var(--text-tertiary)]">
-                  How far stated confidence drifts from what happens. At .0099, things
-                  called 60% happen about 60% of the time — which matters more than
-                  accuracy here, because season and knockout probabilities are built by
-                  compounding these numbers.
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          <div className="mt-4 border-t border-[var(--border-color)] pt-3.5">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-              Measured and dropped
-            </h3>
-            <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-              Each was added to the model, scored on matches it had not seen, and
-              removed because it did not improve the forecast:
-            </p>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {DROPPED.map((d) => (
-                <li
-                  key={d}
-                  className="rounded-md border border-[var(--border-color)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]"
-                >
-                  {d}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2.5 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-              Referee was the most expensive to test — it needed a 207,000-fixture
-              scrape to make the question askable outside England — and the answer was
-              still no.
-            </p>
-          </div>
-
-          <p className="mt-4 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-            <Link
-              href="/evaluation"
-              className="text-[var(--text-secondary)] underline underline-offset-2 hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]"
-            >
-              Full evaluation dashboard
-            </Link>{' '}
-            — reliability by probability band, per-league breakdown, and model-version
-            comparison.
-          </p>
-        </>
-      ) : null}
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--border-color)] pt-3.5">
+        <Link
+          href="/evaluation"
+          className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)] underline-offset-4 transition-colors hover:text-[var(--accent-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]"
+        >
+          This league&apos;s full record
+        </Link>
+        <DocsLink doc="scoring" label="What these numbers mean" />
+        <DocsLink doc="models" label="What was measured and dropped" hash="what-the-model-looks-at" />
+      </div>
     </section>
   )
 }

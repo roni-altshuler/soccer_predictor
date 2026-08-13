@@ -3,6 +3,7 @@ import path from 'path'
 
 import Link from 'next/link'
 
+import { DocsRow } from '@/components/evidence/DocsLink'
 import { LeagueMark } from '@/components/primitives'
 import { Card } from '@/components/ui/card'
 import {
@@ -96,14 +97,18 @@ export default async function LeaguesPage() {
           {leagues.length} projected
         </span>
       </div>
-      <p className="mb-3 px-1 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-        A league appears here once the model has beaten three baselines on it —
-        a one-in-three guess, the league&rsquo;s own base rate, and always
-        backing the home side — on a walk-forward that never sees a match
-        before predicting it. Lower Brier is better.{' '}
-        <span className="font-mono uppercase tracking-wide">vs closing line</span>{' '}
-        marks the five that also carry a bookmaker price on every fixture.
+      <p className="mb-2 px-1 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
+        Lower Brier is better.{' '}
+        <span className="font-mono uppercase tracking-wide">vs closing line</span> marks the
+        five that carry a bookmaker price on every fixture.
       </p>
+      <DocsRow
+        className="mb-3 px-1"
+        docs={[
+          { doc: 'scoring', hash: 'the-floors', label: 'What admits a league here' },
+          { doc: 'tutorialSeason', label: 'How to read a league page' },
+        ]}
+      />
 
       <Card className="overflow-hidden p-0">
         <ul className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">

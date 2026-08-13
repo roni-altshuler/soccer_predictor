@@ -144,11 +144,22 @@ describe('EvidencePanel', () => {
     expect(screen.getByText(/too few to conclude anything/i)).toBeInTheDocument()
   })
 
-  it('publishes the feature groups that were measured and dropped', () => {
+  it('hands off to the handbook instead of explaining the metrics in place', () => {
+    // Two blocks used to sit under these numbers: what Brier and ECE mean, and
+    // the six feature groups measured and dropped. Both are true and both were
+    // being read on a page about one league's fixtures. The panel now links to
+    // them; docs.test.ts checks the documents still carry them.
     render(<EvidencePanel historical={historical} live={{ n: 0 }} />)
-    for (const dropped of ['referee', 'rest', 'head-to-head', 'venue']) {
-      expect(screen.getByText(dropped)).toBeInTheDocument()
-    }
+    const metrics = screen.getByText(/What these numbers mean/i).closest('a')
+    expect(metrics).toHaveAttribute(
+      'href',
+      expect.stringContaining('docs/handbook/concepts/scoring.md'),
+    )
+    const dropped = screen.getByText(/What was measured and dropped/i).closest('a')
+    expect(dropped).toHaveAttribute(
+      'href',
+      expect.stringContaining('docs/handbook/concepts/models.md'),
+    )
   })
 
   it('makes no claim about beating bookmakers', () => {

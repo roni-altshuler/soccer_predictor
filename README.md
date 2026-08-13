@@ -378,6 +378,19 @@ gitignored — build and train them locally. Committed prediction JSON under
 `backend/data/predictions/` is what the Vercel deployment reads, which is why
 `/accuracy` works without the Python backend.
 
+## Documentation
+
+**[docs/handbook/](docs/handbook/README.md)** — the user-facing documentation
+the site links to wherever it stops explaining itself. The pages carry the
+numbers; the handbook carries the reasoning.
+
+| | |
+|---|---|
+| [Getting started](docs/handbook/getting-started.md) | What each page answers, in one screen |
+| [Read a match forecast](docs/handbook/tutorials/read-a-match-forecast.md) · [Follow a season](docs/handbook/tutorials/follow-a-season.md) · [Read a bracket](docs/handbook/tutorials/read-a-bracket.md) · [Judge the model](docs/handbook/tutorials/judge-the-model.md) | Tutorials |
+| [Scoring](docs/handbook/concepts/scoring.md) · [Models](docs/handbook/concepts/models.md) · [Evaluation](docs/handbook/concepts/evaluation.md) · [Data](docs/handbook/concepts/data.md) | Concepts |
+| [HTTP API](docs/handbook/reference/api.md) · [Artifacts](docs/handbook/reference/artifacts.md) · [Commands](docs/handbook/reference/cli.md) · [Glossary](docs/handbook/glossary.md) | Reference |
+
 ## Design
 
 The interface follows the **Bugatti** language shared with the sibling
