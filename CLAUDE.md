@@ -31,6 +31,15 @@ If a proposed feature is none of those four, it does not belong here. The projec
 The warehouse was repaired again on 2026-08-10 and the numbers below moved with
 it — re-derive rather than copy them forward.
 
+**Repaired again on 2026-08-13 and the corpus SHRANK, so re-derive these before
+quoting them.** 22 wrong-competition matches deleted, identities merged to a
+fixpoint, and **2,173 duplicate rows collapsed** (1,315 fields coalesced into
+the survivors, so no odds were lost) once `find_duplicate_fixtures` stopped
+keying on `phase` — see the landmines below. `matches` 83,785 → 81,612;
+`eng.1` 2025 748 → **380**, which is what a 380-match season should hold.
+Anything measured on the pre-2026-08-13 corpus counted most of last season's
+top-five matches twice.
+
 | | before repair | after repair |
 |---|---|---|
 | Market corpus (Wave A, priced fixtures) | 25,746 | **37,981** |
@@ -597,10 +606,48 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   The precondition is measured from the season (share of team pairs that actually met) and
   must be counted over EVERY participant — restricted to clubs with a deep European run, a
   knockout bracket looks fully connected and passes.
+- **A source can serve you another competition's matches. Check before writing.** On
+  2026-08-13 football-data.co.uk answered the 2026-27 request for `E0` (Premier League)
+  with **National League** fixtures and `SP1` (La Liga) with the **Portuguese Primeira
+  Liga** — both of those leagues had not kicked off yet and the ones served in their place
+  had. 22 well-formed matches between real clubs with real scores landed under `eng.1` and
+  `esp.1`; every row-level integrity check passed. Two steps later `eng.1` had 44 entrants
+  = 21% of a double round robin, `forecast_season` correctly refused to project a 44-team
+  "single table", and **the Premier League and La Liga silently left the site** behind one
+  warning line. `_belongs_to_competition` in `footballdata_loader.py` now refuses a file
+  whose clubs are strangers to the competition it claims to be (promotion turns over 3-4
+  clubs in 20, so a genuine file shares ~85% of its sides; the foreign files shared 0%),
+  **before any name is resolved** — resolving is what creates permanent `teams` rows.
+- **`phase` cannot separate duplicate fixtures, because it is what the SOURCE called the
+  round.** `find_duplicate_fixtures` keyed on it, so two sources describing the same match
+  disagreed and the duplicate became invisible: ESPN files league matches under a season
+  slug (`2025-26-english-premier-league`, 9,495 rows across 76 such values) where
+  football-data writes NULL. `eng.1` 2025 carried **748 rows for a 380-match season** and
+  the integrity check reported no duplicates. It keys on **when the two clubs met**,
+  clustered within ±1 day (football-data knows only the calendar date, ESPN carries a true
+  kickoff). Measured: 2,169 groups collapse, **274 real repeat meetings** — the AFCON group
+  stage and its final — are left alone, and zero cases share a day while disagreeing about
+  the score. `merge_duplicate_fixtures` re-selects by `match_ids`, never by the key, or a
+  group formed for the group stage drags the final in.
+- **`forecast_season` refuses to publish when a league the live artifact serves would
+  disappear**, leaving the previous forecast up rather than shipping the survivors.
+  Compared against the artifact on disk, not against `LEAGUES`, so a competition that is
+  merely between seasons does not trip it every summer. `--allow-missing-leagues` is for a
+  competition that genuinely ended, never for getting past a bad ingest.
+- **`conferences.json` and the warehouse are the same provider in two vocabularies.** The
+  map is built from ESPN's **standings** ("Inter Miami CF"); the warehouse holds the name
+  ESPN's **scoreboard** uses ("Inter"). Exact matching placed 29 of 30 MLS clubs and
+  refused the whole table over the 30th. `load_groups` resolves a short spelling only when
+  its tokens sit inside exactly **one** unplaced entry, and refuses otherwise — `inter` is
+  Internazionale in every other competition served.
 - **`merge_teams` and `delete_orphan_teams` must repoint every table that references
-  `teams`.** `players`, `player_match_stats` and `lineups` carry no `ON DELETE CASCADE`, so
-  one surviving row makes the final DELETE raise `FOREIGN KEY constraint failed` and aborts
-  the whole repair. The 2026-08-08 run never hit this because that machine's player tables
+  `teams`.** `players`, `player_match_stats`, `lineups` **and `scheduled_matches`** carry no
+  `ON DELETE CASCADE`, so one surviving row makes the final DELETE raise `FOREIGN KEY
+  constraint failed` and aborts the whole repair. `scheduled_matches` arrived with the
+  tournament layer, *after* the player tables were fixed, and was missed — with 224 rows in
+  it `repair_warehouse --fixpoint` aborted before healing a single identity. **When a new
+  table gains a `teams` foreign key, add it to `merge_teams`**; guard it with
+  `_existing_tables` so older schemas and test fixtures still merge. The 2026-08-08 run never hit this because that machine's player tables
   were empty. `players` is `UNIQUE(name, gender, current_team_id)`, so a repointed player can
   collide with their own twin — fold them together rather than deleting, or the delete
   cascades their appearances away.
