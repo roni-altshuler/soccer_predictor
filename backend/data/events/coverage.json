@@ -2252,10 +2252,10 @@
   },
   {
    "competition_id": "ger.1",
-   "coverage": 0.3385,
+   "coverage": 0.3368,
    "covered": 2197,
    "gender": "M",
-   "matches": 6490,
+   "matches": 6524,
    "name": "Bundesliga",
    "seasons": [
     {
@@ -2457,16 +2457,16 @@
      "with_events": 195
     },
     {
-     "coverage": 0.4248,
+     "coverage": 0.3824,
      "covered": 130,
-     "matches": 306,
+     "matches": 340,
      "season": 2025,
-     "uncovered": 176,
+     "uncovered": 210,
      "verified_empty": 5,
      "with_events": 125
     }
    ],
-   "uncovered": 4293,
+   "uncovered": 4327,
    "verified_empty": 114,
    "with_events": 2083
   },
@@ -4196,13 +4196,13 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-08-13T09:07:41+00:00",
+ "generated_at": "2026-08-13T09:20:37+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4348,
+  "coverage": 0.4346,
   "covered": 35522,
-  "matches": 81701,
-  "uncovered": 46179,
+  "matches": 81735,
+  "uncovered": 46213,
   "verified_empty": 2260,
   "with_events": 33262
  }
