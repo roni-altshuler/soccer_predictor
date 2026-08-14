@@ -1,21 +1,22 @@
 {
-  "generated_at": "2026-08-13T07:27:43.129813+00:00",
+  "generated_at": "2026-08-14T08:49:29.254045+00:00",
   "snapshot_store": {
-    "rows": 75663,
+    "rows": 89228,
     "fixtures": 5041,
-    "versions": 3,
+    "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-13T07:27:40.279656+00:00",
+    "last_generated": "2026-08-14T08:49:26.643533+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
+      "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384,
-      "2026.08.1+c919f68a": 8679
+      "2026.08.1+4277ba19": 1993
     }
   },
   "join": {
     "snapshots": 5041,
     "scored": 0,
-    "awaiting_result": 4672,
+    "awaiting_result": 4705,
     "unresolved_clubs": {
       "eng.2:Lincoln City": 46,
       "esp.1:Dep. A Coru\u00f1a": 38,
@@ -23,12 +24,11 @@
       "esp.2:Sabadell": 42,
       "ita.2:Arezzo": 38,
       "ita.2:Vicenza Virtus": 38,
-      "por.1:Acad. Viseu": 33,
       "tur.1:Amedspor": 34,
       "tur.1:Erzurum BB": 34,
       "tur.1:Yeni \u00c7orumspor": 34
     },
-    "unresolved_count": 379
+    "unresolved_count": 346
   },
   "live": {
     "basis": "live_published",
