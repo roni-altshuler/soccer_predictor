@@ -205,6 +205,54 @@ describe('BracketBoard', () => {
     expect(bayern.textContent).not.toMatch(/%/)
   })
 
+  it('strikes the club that went out and leaves the one that came through', () => {
+    render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
+    const inter = document.querySelector('[data-club="Inter"]')!
+    expect(inter).toHaveAttribute('data-out', 'true')
+    expect(inter.querySelector('.line-through')).toHaveTextContent('Inter')
+
+    const bayern = document.querySelector('[data-club="Bayern Munich"]')!
+    expect(bayern).not.toHaveAttribute('data-out')
+    expect(bayern.querySelector('.line-through')).toBeNull()
+  })
+
+  it('marks nobody in a tie still to be played', () => {
+    // Two clubs both still in it. A strikethrough before a ball is kicked is a
+    // result the board does not have.
+    render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
+    for (const club of ['Arsenal', 'Real Madrid', 'PSG', 'Chelsea']) {
+      expect(document.querySelector(`[data-club="${club}"]`)).not.toHaveAttribute('data-out')
+    }
+  })
+
+  it('strikes a club on the tie it lost, not on the ones it won', () => {
+    // Inter beat Bayern in the semi and lost the final. It is crossed out once
+    // — on the final — because striking it retrospectively would cross out the
+    // winning side of a semi-final it won.
+    render(<BracketBoard rounds={FINISHED} competitionId="uefa.champions" />)
+    const inter = Array.from(document.querySelectorAll('[data-club="Inter"]'))
+    expect(inter).toHaveLength(2)
+    expect(inter.filter((r) => r.getAttribute('data-out') === 'true')).toHaveLength(1)
+
+    // The champion played twice and is never struck.
+    const arsenal = Array.from(document.querySelectorAll('[data-club="Arsenal"]'))
+    expect(arsenal.every((r) => !r.hasAttribute('data-out'))).toBe(true)
+  })
+
+  it('strikes neither side when the winner names neither club', () => {
+    // A `winner_id` matching no competitor is a resolver fault. Read literally
+    // it says both teams went out of a tie one of them won.
+    const broken: BracketRound[] = [
+      {
+        ...FINISHED[1],
+        ties: [tie({ ...FINISHED[1].ties[0], winner_id: 99, winner: 'Nobody' })],
+      },
+    ]
+    render(<BracketBoard rounds={broken} competitionId="uefa.champions" />)
+    expect(document.querySelector('[data-out]')).toBeNull()
+    expect(screen.queryByText('Champion')).not.toBeInTheDocument()
+  })
+
   it('draws one connector per feeding tie', () => {
     const { container } = render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
     // 4 quarter-finals feed 2 semis, which feed the final: six paths.

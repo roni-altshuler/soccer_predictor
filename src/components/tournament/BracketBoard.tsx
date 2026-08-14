@@ -189,12 +189,17 @@ export function BracketBoard({
 
   const finalRound = tree[tree.length - 1] ?? null
   const finalTie = finalRound?.slots === 1 ? finalRound.ties[0] ?? null : null
+  // Named only when the winner is one of the two clubs that played the final.
+  // The `?:` this replaces fell through to team_b for any unrecognised
+  // `winner_id`, which crowns a team that did not win.
   const champion =
-    finalTie && finalTie.winner_id !== null
-      ? finalTie.winner_id === finalTie.team_a_id
+    !finalTie || finalTie.winner_id === null
+      ? null
+      : finalTie.winner_id === finalTie.team_a_id
         ? finalTie.team_a
-        : finalTie.team_b
-      : null
+        : finalTie.winner_id === finalTie.team_b_id
+          ? finalTie.team_b
+          : null
 
   if (!tree.length) {
     return entry.length ? (
@@ -428,8 +433,14 @@ function placeholderFor(
  * undecided one — never both. A percentage next to a played tie reads as a
  * forecast of something already known.
  *
- * The winner is the only club at full contrast. That is the whole reading of a
- * bracket at a glance: scan down the bold names and you have the path.
+ * The winner is the only club at full contrast, and **the club that went out is
+ * struck through**. That is the whole reading of a bracket at a glance: scan
+ * down the names that are neither faded nor crossed and you have the path.
+ *
+ * A club is struck on the tie it LOST, not on every card it ever appeared on.
+ * Striking it retrospectively would cross out a team on a card whose result it
+ * won — the printed convention, and the honest one, is that the mark belongs to
+ * the match that eliminated it.
  */
 function TieCard({
   tie,
@@ -479,6 +490,14 @@ function TieCard({
         ? `${fmtDate(tie.kickoff)}${tie.two_legged ? ' · two legs' : ''}`
         : null
 
+  // Only a winner that is actually one of the two clubs settles the tie. A
+  // `winner_id` matching neither side is a resolver fault, and reading it
+  // literally would strike BOTH names — announcing that two teams went out of a
+  // tie one of them won.
+  const settled =
+    tie.winner_id !== null &&
+    (tie.winner_id === tie.team_a_id || tie.winner_id === tie.team_b_id)
+
   return (
     <button
       type="button"
@@ -491,27 +510,35 @@ function TieCard({
       )}
     >
       {sides.map((side, i) => {
-        const won = tie.winner_id !== null && side.id === tie.winner_id
-        const lost = tie.winner_id !== null && !won
+        const won = settled && side.id === tie.winner_id
+        const out = settled && !won
         const favoured = side.p !== null && side.p >= 0.5
         return (
           <div
             key={`${side.id}-${side.name}`}
             data-club={side.name}
+            data-out={out ? 'true' : undefined}
             className={cn(
               'flex items-center gap-2 px-2.5 py-[5px]',
               i === 0 && 'border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)]',
               won && 'bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]',
             )}
           >
-            <TeamCrest team={side.name} competitionId={competitionId} size="sm" />
+            <TeamCrest
+              team={side.name}
+              competitionId={competitionId}
+              size="sm"
+              className={out ? 'opacity-40' : undefined}
+            />
             <span
               className={cn(
                 'min-w-0 flex-1 truncate text-[12.5px]',
-                won || favoured
-                  ? 'font-semibold text-[var(--text-primary)]'
-                  : lost
-                    ? 'text-[var(--text-tertiary)]'
+                // Elimination is read before anything else, so it is checked
+                // first: a club that went out is never also bolded as favoured.
+                out
+                  ? 'text-[var(--text-tertiary)] line-through decoration-1'
+                  : won || favoured
+                    ? 'font-semibold text-[var(--text-primary)]'
                     : 'text-[var(--text-secondary)]',
               )}
             >

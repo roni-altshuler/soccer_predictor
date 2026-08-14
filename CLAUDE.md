@@ -458,6 +458,12 @@ happens only when the reader presses *Fit on screen*. Cards carry two rows,
 crest and club, and the number that settles it on the right — the aggregate
 split onto the two clubs (`splitScore`), or the chance to advance, never both.
 
+**A knocked-out club is struck through on the tie that eliminated it, and only
+there.** Propagating the strike back over the earlier rounds it won would cross
+out the winning side of a match it won. Both the strike and the champion bar are
+gated on the winner being **one of the two clubs that played** — read literally,
+a `winner_id` matching neither side strikes both names and crowns `team_b`.
+
 **Both evidence pages are per competition, and share `LayerTabs`.** `/accuracy`
 was reporting one pooled hit rate over every league — an average of leagues that
 differ by six points. Its league side reads `by_league` from the tracking

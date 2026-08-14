@@ -86,6 +86,12 @@ imposed on you.
 *Winner of Arsenal / Real Madrid*, or names the club that has already come
 through where the next round has not been drawn.
 
+**A club that went out is struck through**, crest faded, on the tie that
+eliminated it. It is marked there and not on the earlier rounds it won — a line
+through a team on a card whose result it won would say the opposite of what
+happened. So reading down a round, the names that are neither crossed nor faded
+are the ones still in it.
+
 **Point at any tie to trace its route.** The rest of the board dims and what is
 left is that team's remaining path to the final. Who could still meet whom is
 the only reason to draw a bracket rather than list the rounds, and this is that
