@@ -29,6 +29,14 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
 
+  // Coming back from a tie says which competition to reopen. Read from
+  // `location` rather than `useSearchParams` so the page needs no Suspense
+  // boundary to prerender.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('competition')
+    if (id) setOpenId(id)
+  }, [])
+
   useEffect(() => {
     let live = true
     fetch('/api/v1/tournaments/predictions', { cache: 'no-store' })

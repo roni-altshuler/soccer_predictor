@@ -148,12 +148,12 @@ describe('BracketBoard', () => {
     expect(screen.getByText('To be decided')).toBeInTheDocument()
   })
 
-  it('traces a route to the final when a tie is tapped', async () => {
+  it('traces a route to the final when a tie is pointed at', async () => {
     const { container } = render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
     const before = container.querySelectorAll('.opacity-30')
     expect(before).toHaveLength(0)
 
-    await userEvent.click(screen.getByText('Real Madrid'))
+    await userEvent.hover(screen.getByText('Real Madrid'))
 
     // Everything off that team's path dims: the other three quarter-finals and
     // the semi-final on the far side of the draw.
@@ -163,15 +163,30 @@ describe('BracketBoard', () => {
     expect(dimmed.some((el) => el.textContent?.includes('Real Madrid'))).toBe(false)
   })
 
-  it('lets go of the route when the same tie is tapped again', async () => {
-    const { container } = render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
-    const card = screen.getByText('Real Madrid')
-    await userEvent.click(card)
-    expect(container.querySelectorAll('.opacity-30').length).toBeGreaterThan(0)
-    await userEvent.click(card)
-    // Hover survives the second click in jsdom, so assert on the pin being
-    // released rather than on the dimming disappearing entirely.
-    expect(screen.getByText('Real Madrid')).toBeInTheDocument()
+  it('opens the fixture behind a tie when it is clicked', () => {
+    // Tapping a fixture opens it everywhere else on the web, and it is what a
+    // reader on a phone reaches for. The route trace is the pointer gesture.
+    render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" season={2025} />)
+    const link = screen.getByRole('link', { name: /Bayern Munich against Inter/i })
+    expect(link).toHaveAttribute(
+      'href',
+      '/tournaments/tie/uefa.champions/2025/quarterfinals/3v4',
+    )
+  })
+
+  it('leaves the cards inert when the edition is not addressable', () => {
+    // Without a season there is no address for a tie, and a link that cannot
+    // resolve is worse than no link.
+    render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" />)
+    expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+
+  it('never links an empty slot, which is not a fixture', () => {
+    render(<BracketBoard rounds={LIVE} competitionId="uefa.champions" season={2025} />)
+    const links = screen.getAllByRole('link')
+    // Four quarter-finals are real; the semis and final are places in a draw.
+    expect(links).toHaveLength(4)
+    expect(screen.getByText('To be decided').closest('a')).toBeNull()
   })
 
   it('names the champion rather than leaving it as one bold row', () => {

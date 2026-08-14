@@ -464,6 +464,37 @@ out the winning side of a match it won. Both the strike and the champion bar are
 gated on the winner being **one of the two clubs that played** — read literally,
 a `winner_id` matching neither side strikes both names and crowns `team_b`.
 
+**Every tie is a link to the fixture behind it** — `/tournaments/tie/<competition>/<season>/<round>/<aVb>`,
+served by `api/v1/tournaments/tie` and rendered from `LegDetail` + `Formation`
+(timeline, commentary, both team sheets in shape with the bench, match stats,
+head-to-head, recent form). Tapping opens the match; the route trace moved to
+hover and keyboard focus alone, because tapping a fixture opens it everywhere
+else on the web.
+
+**The tie-to-fixture join is by NAME AND DATE, and it was measured before it was
+built on.** `tournaments.json` carries no match id, and this project has already
+been burned once by a name join that silently scored 68.9%. Over 520 real ties
+across all fourteen competitions:
+
+| rule | resolved |
+|---|---|
+| pairing + date, our own competition ids | 76.7% |
+| + ESPN's slugs (`uefa.europa.conf`, `afc.asian.cup`) | 91.3% |
+| + one differing spelling allowed on a unique date | **99.2%** |
+
+The last step exists because our warehouse says `Inter` where ESPN says
+`Internazionale` — 42 of 520. It is gated on there being **exactly one** event
+in that competition on the tie's own date, since a bare `Inter` also matches
+Inter Miami. The four that still fail return null and the page says the match
+detail is unavailable; opening whichever fixture was nearest is the failure that
+would not announce itself. `ESPN_SLUG` is pinned against `ingest_tournaments.py`
+by a test, because two copies of that map drift invisibly.
+
+**Players are shirt numbers, not faces.** Measured: ESPN has a headshot for
+**1 of the 46** players in a Champions League final squad list. Portraits are
+licensed data (api-football and SportMonks both serve them); a grid of grey
+silhouettes is not a lineup, and the number is what is on the actual shirt.
+
 **Both evidence pages are per competition, and share `LayerTabs`.** `/accuracy`
 was reporting one pooled hit rate over every league — an average of leagues that
 differ by six points. Its league side reads `by_league` from the tracking

@@ -1,6 +1,7 @@
 'use client'
 
 import { Maximize2, Minimize2, Trophy } from 'lucide-react'
+import Link from 'next/link'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { TeamCrest } from '@/components/primitives/TeamCrest'
@@ -33,10 +34,15 @@ import { cn } from '@/lib/utils'
  *  2. **Named empty slots.** A place in the draw nobody has reached is not a
  *     blank box — it says *Winner of Arsenal / Real Madrid*, which is the
  *     thing a reader is actually working out when they look at one.
- *  3. **A route, on hover or tap.** Point at any tie and the rest of the board
- *     dims to leave that team's remaining path to the final. "Who could still
- *     meet whom" is the only reason to draw a bracket rather than list rounds,
- *     and this is that question asked directly.
+ *  3. **A route, on hover.** Point at any tie and the rest of the board dims to
+ *     leave that team's remaining path to the final. "Who could still meet
+ *     whom" is the only reason to draw a bracket rather than list rounds, and
+ *     this is that question asked directly. Keyboard focus does the same.
+ *  3b. **Every tie is a link.** Clicking one opens the fixture behind it —
+ *     timeline, commentary, both team sheets in their real shapes, the match
+ *     statistics and the head-to-head. Tracing is a pointer affordance and
+ *     opening the match is the tap, which is the way every scoreboard product
+ *     behaves and the thing a reader reaches for first.
  *  4. **Full size, always.** The board picks the widest layout that fits at
  *     scale 1 — mirrored, else a single left-to-right flow — and pans when
  *     neither does, with a round navigator above it. Scaling happens only when
@@ -107,13 +113,34 @@ function useWidth(): [React.RefObject<HTMLDivElement>, number] {
   return [ref, width]
 }
 
+/**
+ * The address of one tie: the edition, the round, and the two clubs in it.
+ *
+ * The artifact publishes no match id, so the tie is addressed by the things it
+ * does publish. A round cannot hold the same pairing twice, which is what makes
+ * this unique — and it survives a bracket being regenerated, where a slot index
+ * would silently start pointing at a different tie.
+ */
+export function tieHref(
+  competitionId: string,
+  season: number | undefined,
+  roundSlug: string,
+  tie: BracketTie,
+): string | null {
+  if (season === undefined) return null
+  return `/tournaments/tie/${competitionId}/${season}/${roundSlug}/${tie.team_a_id}v${tie.team_b_id}`
+}
+
 export function BracketBoard({
   rounds,
   competitionId,
+  season,
   className,
 }: {
   rounds: BracketRound[]
   competitionId: string
+  /** The edition. Without it a tie has no address and the cards are not links. */
+  season?: number
   className?: string
 }) {
   // Widest round first, which is the order the bracket is drawn in. The
@@ -143,11 +170,10 @@ export function BracketBoard({
     [width, roundSlots, fit],
   )
 
-  // Hover traces a route; tapping pins it, because a phone has no hover and
-  // this is the interaction the whole board exists to support.
-  const [hovered, setHovered] = useState<string | null>(null)
-  const [pinned, setPinned] = useState<string | null>(null)
-  const active = hovered ?? pinned
+  // Hover and keyboard focus trace a route. Tapping used to pin one; it opens
+  // the match now, which is what a tap on a fixture means everywhere else and
+  // the thing a reader on a phone is reaching for.
+  const [active, setActive] = useState<string | null>(null)
   const route = useMemo(() => {
     if (!active) return null
     const [r, s] = active.split(':').map(Number)
@@ -204,7 +230,7 @@ export function BracketBoard({
   if (!tree.length) {
     return entry.length ? (
       <section className={cn('mt-5', className)}>
-        <EntryRounds rounds={entry} competitionId={competitionId} />
+        <EntryRounds rounds={entry} competitionId={competitionId} season={season} />
       </section>
     ) : null
   }
@@ -272,7 +298,7 @@ export function BracketBoard({
         <div
           ref={scroller}
           className={cn(plan.fits ? undefined : 'overflow-x-auto pb-2 [scrollbar-width:thin]')}
-          onMouseLeave={() => setHovered(null)}
+          onMouseLeave={() => setActive(null)}
         >
           <div
             style={{
@@ -365,15 +391,17 @@ export function BracketBoard({
                       width: card.w,
                       height: card.h,
                     }}
-                    onMouseEnter={() => setHovered(key)}
-                    onFocus={() => setHovered(key)}
-                    onBlur={() => setHovered(null)}
+                    onMouseEnter={() => setActive(key)}
+                    onFocus={() => setActive(key)}
+                    onBlur={() => setActive(null)}
                   >
                     <TieCard
                       tie={tie}
                       competitionId={competitionId}
                       emphasis={card.side === 'centre'}
-                      onSelect={() => setPinned((p) => (p === key ? null : key))}
+                      href={
+                        tie ? tieHref(competitionId, season, tree[card.round].slug, tie) : null
+                      }
                       placeholder={placeholderFor(card, bySlot)}
                     />
                   </div>
@@ -396,7 +424,7 @@ export function BracketBoard({
         </div>
       ) : null}
 
-      {entry.length ? <EntryRounds rounds={entry} competitionId={competitionId} /> : null}
+      {entry.length ? <EntryRounds rounds={entry} competitionId={competitionId} season={season} /> : null}
     </section>
   )
 }
@@ -446,13 +474,14 @@ function TieCard({
   tie,
   competitionId,
   emphasis,
-  onSelect,
+  href,
   placeholder,
 }: {
   tie: BracketTie | null
   competitionId: string
   emphasis?: boolean
-  onSelect?: () => void
+  /** Where this tie opens. Null when the edition is not addressable. */
+  href?: string | null
   placeholder?: [string, string] | null
 }) {
   if (!tie) {
@@ -498,17 +527,30 @@ function TieCard({
     tie.winner_id !== null &&
     (tie.winner_id === tie.team_a_id || tie.winner_id === tie.team_b_id)
 
+  const shell = cn(
+    'flex h-full w-full flex-col justify-center overflow-hidden rounded-lg border bg-[var(--card-bg)] text-left transition-colors',
+    emphasis
+      ? 'border-[color-mix(in_srgb,var(--accent-primary)_55%,var(--border-color))]'
+      : 'border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-primary)_45%,var(--border-color))]',
+  )
+
+  const Shell = href
+    ? ({ children }: { children: React.ReactNode }) => (
+        <Link
+          href={href}
+          aria-label={`${tie.team_a} against ${tie.team_b} — match detail`}
+          className={cn(
+            shell,
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]',
+          )}
+        >
+          {children}
+        </Link>
+      )
+    : ({ children }: { children: React.ReactNode }) => <div className={shell}>{children}</div>
+
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        'flex h-full w-full flex-col justify-center overflow-hidden rounded-lg border bg-[var(--card-bg)] text-left transition-colors',
-        emphasis
-          ? 'border-[color-mix(in_srgb,var(--accent-primary)_55%,var(--border-color))]'
-          : 'border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-primary)_45%,var(--border-color))]',
-      )}
-    >
+    <Shell>
       {sides.map((side, i) => {
         const won = settled && side.id === tie.winner_id
         const out = settled && !won
@@ -572,7 +614,7 @@ function TieCard({
           {meta}
         </div>
       ) : null}
-    </button>
+    </Shell>
   )
 }
 
@@ -584,9 +626,11 @@ function TieCard({
 function EntryRounds({
   rounds,
   competitionId,
+  season,
 }: {
   rounds: BracketRound[]
   competitionId: string
+  season?: number
 }) {
   return (
     <div className="mt-6">
@@ -614,7 +658,11 @@ function EntryRounds({
                   key={`${tie.team_a_id}-${tie.team_b_id}-${tie.kickoff}`}
                   style={{ height: METRICS.cardH }}
                 >
-                  <TieCard tie={tie} competitionId={competitionId} />
+                  <TieCard
+                    tie={tie}
+                    competitionId={competitionId}
+                    href={tieHref(competitionId, season, round.slug, tie)}
+                  />
                 </li>
               ))}
             </ul>

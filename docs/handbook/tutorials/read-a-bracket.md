@@ -95,7 +95,32 @@ are the ones still in it.
 **Point at any tie to trace its route.** The rest of the board dims and what is
 left is that team's remaining path to the final. Who could still meet whom is
 the only reason to draw a bracket rather than list the rounds, and this is that
-question asked directly. On a phone, tap instead — tapping again lets go.
+question asked directly. Keyboard focus does the same.
+
+## 6. Opening a tie
+
+**Click any tie and you get the match behind it** — the timeline, the full
+commentary, both team sheets in their real shapes with the bench, the match
+statistics, the head-to-head record and each side's recent form. A two-legged
+tie shows both legs.
+
+Two things on that page come from different places, and the page keeps them
+apart:
+
+| | source | when it is missing |
+|---|---|---|
+| who played, the round, the model's price on the tie | our own forecast artifact | never — it is a file on disk |
+| timeline, commentary, lineups, stats, head-to-head | ESPN, live | the page says so and keeps the tie |
+
+The join between them is by **name and date**, because the forecast artifact
+carries no match id. That is the join this project measured at 68.9% once
+before, so it was measured again here before anything was built on it: **99.2%
+over 520 ties** across all fourteen competitions. The four that do not resolve
+say so rather than opening a fixture that might be the wrong one.
+
+**Players are shirt numbers, not faces.** Portraits are licensed data; ESPN has
+a headshot for one player in forty-six, and a grid of grey silhouettes is not a
+lineup. The number is on the actual shirt.
 
 ## Next
 

@@ -335,7 +335,7 @@ function Forecast({ tournament: t }: { tournament: TournamentForecast }) {
       ) : null}
 
       {t.bracket?.length ? (
-        <BracketBoard rounds={t.bracket} competitionId={t.competition_id} />
+        <BracketBoard rounds={t.bracket} competitionId={t.competition_id} season={t.season} />
       ) : null}
 
       {noForecast && t.power_ranking?.length ? (

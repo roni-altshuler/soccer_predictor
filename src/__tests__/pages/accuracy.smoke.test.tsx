@@ -119,7 +119,9 @@ describe('AccuracyPage — per competition', () => {
     mockFetch()
     render(<AccuracyPage />)
 
-    await waitFor(() => expect(screen.getAllByText('54.8%')).toHaveLength(2))
+    // Three endpoints have to land before this page has a number on it, which
+    // is slower than the 1s default when the whole suite runs at once.
+    await waitFor(() => expect(screen.getAllByText('54.8%')).toHaveLength(2), { timeout: 5000 })
     expect(screen.getByText('420')).toBeInTheDocument()
     expect(screen.getByText('0.1830')).toBeInTheDocument()
   })
