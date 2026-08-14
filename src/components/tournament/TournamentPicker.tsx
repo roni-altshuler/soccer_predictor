@@ -154,14 +154,19 @@ function groupByCompetition(tournaments: TournamentForecast[]): Competition[] {
 
 export function TournamentPicker({
   tournaments,
+  initialId,
   className,
 }: {
   tournaments: TournamentForecast[]
+  /** Which competition to open on — the card the reader clicked in the directory. */
+  initialId?: string
   className?: string
 }) {
   const comps = useMemo(() => groupByCompetition(tournaments), [tournaments])
 
-  const [selectedId, setSelectedId] = useState<string>(comps[0]?.id ?? '')
+  const [selectedId, setSelectedId] = useState<string>(
+    (initialId && comps.some((c) => c.id === initialId) ? initialId : comps[0]?.id) ?? '',
+  )
   // Null means "whichever edition is current", so switching competition lands
   // on the live one rather than on whatever year happened to be chosen last.
   const [season, setSeason] = useState<number | null>(null)
@@ -195,15 +200,10 @@ export function TournamentPicker({
         <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
           Pick a tournament
         </h2>
-        <p className="mt-1.5 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          Trained on every previous edition, asked about the next one. A tournament that is
-          still to be played gets odds; one that has finished shows the call the model made
-          before a ball was kicked, next to what happened.
-        </p>
       </header>
 
       <CompetitionSelect
-        className="mt-3.5"
+        className="mt-3"
         kind="Tournament"
         options={options}
         value={competition.id}

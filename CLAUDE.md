@@ -431,9 +431,25 @@ leaves the previous valid forecast serving rather than a truncated file.
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
 | `/evaluation` | the model, one competition at a time: what it believed and what that was worth. Pooled evidence sits below a heading that says it is pooled |
 | `/accuracy` | the published-pick record, same furniture as `/evaluation`, with the per-competition table as a section rather than a tab |
-| `/tournaments` | knockout ties and trophy odds — the football only |
-| `/leagues` | directory of the nine projected leagues, each with the walk-forward record that admitted it |
-| `/about` | "How it works": the short version, handing off to `docs/handbook/` |
+| `/tournaments` | directory of the fourteen knockout competitions, then one in full — the football only |
+| `/leagues` | directory of the nine projected leagues, each card carrying its own title race |
+| `/about` | "How it works": the floors and the calibration as pictures, read from the artifacts |
+
+**The bracket is drawn at FULL SIZE and pans; it is never silently shrunk.**
+The previous board guaranteed it fitted the viewport and paid with a transform —
+0.62 on a phone, 0.91 on a desktop — so the thing a reader came for was rendered
+at two thirds size. `planBoard` (pure, tested) picks the widest layout that fits
+at scale 1: mirrored two-sided, else a single left-to-right flow, else flow with
+scroll-snap panning, a round navigator and pinned round headings. Scaling
+happens only when the reader presses *Fit on screen*. Cards are FotMob-shaped:
+two rows, crest and club, and the number that settles it on the right — the
+aggregate split onto the two clubs (`splitScore`), or the chance to advance,
+never both.
+
+**Both competition sections are directory-then-detail.** `/leagues` and
+`/tournaments` open on cards — title race, or title odds / who won it / when the
+next edition starts — and each has a back control. A dropdown showing one
+competition and hiding thirteen is a control, not a home page.
 
 **Football and evidence are different destinations, and that split is load-bearing.**
 `/leagues` and `/tournaments` answer "what is happening and what does the model

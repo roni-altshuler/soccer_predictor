@@ -272,12 +272,9 @@ export function MarketBenchmarkPanel() {
           </div>
         )}
         <p className="mt-4 text-[11px] leading-relaxed text-[var(--text-secondary)]">
-          The model serving today has no settled fixture that the market also priced, so there is
-          no paired comparison to draw. That number appears here when it exists and not before &mdash;
-          a gap measured on a retired model is not this model&rsquo;s gap.
-        </p>
-        <p className="mt-3 border-t border-[var(--border-color)] pt-3 text-[10px] leading-relaxed text-[var(--text-tertiary)]">
-          Value flags stay switched off in every league until that comparison exists and closes.
+          No settled fixture yet that the serving model and the market both priced, so there
+          is no paired comparison to draw. A gap measured on a retired model is not this
+          model&rsquo;s gap.
         </p>
       </section>
     )
@@ -290,10 +287,8 @@ export function MarketBenchmarkPanel() {
           Against the closing line
         </h2>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-          The bookmaker&rsquo;s closing price is the best public forecast of a football match, so it
-          is the yardstick we score against. Every number here is Brier &mdash; squared error on the
-          probabilities &mdash; where <strong className="text-[var(--text-secondary)]">lower is
-          better</strong> and a blind three-way guess scores .667.
+          Brier on identical fixtures &mdash; lower is better, and a blind three-way guess
+          scores .667.
         </p>
       </header>
 
@@ -357,9 +352,8 @@ export function MarketBenchmarkPanel() {
       </div>
 
       <p className="mt-5 border-t border-[var(--border-color)] pt-3 text-[10px] leading-relaxed text-[var(--text-tertiary)]">
-        A model can only add value in the space between a constant that ignores the fixture and the
-        market price. Anything short of the closing line means no betting edge &mdash; which is why
-        value flags stay switched off until a league closes this gap.
+        Short of the closing line means no betting edge, which is why value flags stay off
+        until a league closes this gap.
       </p>
     </section>
   )

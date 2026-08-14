@@ -470,8 +470,7 @@ function PooledMatchRecord({
         <Panel title="Live published forecasts">
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
             Nothing has been scored yet — no fixture has both a published forecast and a
-            result. That is a fact about the calendar rather than a failure, and it is not
-            a loading state.
+            result. A fact about the calendar, not a failure.
           </p>
         </Panel>
       )}
@@ -481,7 +480,7 @@ function PooledMatchRecord({
       {store ? (
         <Panel
           title="What has been recorded"
-          description="Every forecast is written down before kickoff and never rewritten. Without that, a forecast that moved would quietly become the forecast we claim to have made."
+          description="Written down before kickoff, never rewritten — otherwise a forecast that moved becomes the one we claim to have made."
         >
           <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatTile label="Snapshots" value={store.rows.toLocaleString()} />
@@ -563,7 +562,7 @@ function JoinPanel({ join }: { join: JoinReport }) {
   return (
     <Panel
       title="Why the sample is this size"
-      description="&ldquo;Not played yet&rdquo; and &ldquo;we no longer recognise this club&rdquo; both shrink the sample, and only one of them means something is broken."
+      description="&ldquo;Not played yet&rdquo; and &ldquo;club not recognised&rdquo; both shrink the sample. Only one means something is broken."
     >
       <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatTile label="Forecasts held" value={(join.snapshots ?? 0).toLocaleString()} />

@@ -12,6 +12,21 @@
  * clock now, so the season a reader lands on is always the one being played.
  */
 
+/**
+ * Leagues whose season is a calendar year rather than a split one.
+ *
+ * Kept here rather than beside one page's rendering, because two pages now ask
+ * the question and the wrong answer is invisible: labelling MLS 2026 as
+ * "2026-27" looks like every other row on the directory and is simply false.
+ * Both spellings are listed — the artifact says `usa.1`, some providers say
+ * `mls`.
+ */
+const CALENDAR_YEAR_LEAGUE_IDS = new Set(['usa.1', 'mls'])
+
+export function isCalendarYearLeague(competitionId: string): boolean {
+  return CALENDAR_YEAR_LEAGUE_IDS.has(competitionId)
+}
+
 /** Seasons offered, newest first. The first entry is what a page opens on. */
 export interface SeasonOption {
   /** The value the providers key on — the starting year. */

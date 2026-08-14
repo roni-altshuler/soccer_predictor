@@ -306,11 +306,31 @@ afterEach(() => {
   jest.resetAllMocks()
 })
 
+/** One club's side of a tie, on the board — its name also appears in the odds. */
+function bracketRow(club: string): HTMLElement {
+  const row = document.querySelector(`[data-club="${club}"]`)
+  if (!row) throw new Error(`no bracket row for ${club}`)
+  return row as HTMLElement
+}
+
 /**
- * Choose a tournament from the picker.
+ * Open a competition from the directory — the page's front door.
  *
- * It was a row of chips and is now the same listbox the league picker uses —
- * nine competitions permanently on screen was the thing to fix.
+ * The page is two views now: every competition as a card, then one in full. A
+ * dropdown showing one competition and hiding thirteen was a control, not a
+ * home page.
+ */
+async function openCompetition(name: RegExp) {
+  await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
+  await userEvent.click(screen.getByRole('button', { name }))
+  await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+}
+
+/**
+ * Switch competition from inside the detail view, without going back.
+ *
+ * The same listbox the league picker uses — its whole keyboard contract is
+ * hand-built, so it stays tested.
  */
 async function chooseTournament(name: RegExp) {
   await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
@@ -327,7 +347,7 @@ describe('TournamentsPage', () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await openCompetition(/Copa Libertadores/i)
     expect(screen.queryByText(/Coin flip/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/What the confidence means/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Where it is strong/i)).not.toBeInTheDocument()
@@ -341,7 +361,7 @@ describe('TournamentsPage', () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
     const link = screen.getByText(/How to read this/i).closest('a')
     expect(link).toHaveAttribute(
       'href',
@@ -355,8 +375,7 @@ describe('TournamentsPage', () => {
 
     // A page of finished tournaments is a record; the undecided one is the
     // forecast. Ordering by status is what makes it the first thing seen.
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
     expect(screen.getByRole('heading', { name: /Copa Libertadores/i })).toBeInTheDocument()
     expect(screen.getByText('Cruzeiro')).toBeInTheDocument()
     expect(screen.getByText('23.4%')).toBeInTheDocument()
@@ -372,15 +391,14 @@ describe('TournamentsPage', () => {
   it('draws both halves of the draw meeting once', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
 
     // Round of 16 down each side, the final once in the middle. A round that
     // appeared once, or a final that appeared twice, would not be a bracket.
-    const columns = screen
-      .getAllByText(/./, { selector: 'div.truncate.font-mono' })
-      .map((n) => n.textContent)
-    expect(columns).toEqual(['Round of 16', 'Final', 'Not drawn', 'Round of 16'])
+    const columns = Array.from(document.querySelectorAll('[data-round]')).map((n) =>
+      n.getAttribute('data-round'),
+    )
+    expect(columns).toEqual(['Round of 16', 'Final', 'Round of 16'])
   })
 
   it('shows a round nobody has drawn yet as empty boxes', async () => {
@@ -389,8 +407,7 @@ describe('TournamentsPage', () => {
     // would draw a bracket that stops halfway.
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
 
     expect(screen.getByText('Not drawn')).toBeInTheDocument()
   })
@@ -401,24 +418,25 @@ describe('TournamentsPage', () => {
     // pairing above them.
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
 
     expect(screen.getByText(/Getting there/i)).toBeInTheDocument()
     expect(screen.getByText('First stage')).toBeInTheDocument()
-    expect(screen.getByText('Cerro Porteño')).toBeInTheDocument()
-    expect(screen.getByText('3-1')).toBeInTheDocument()
+    // The aggregate is split onto the two clubs it belongs to, the way a
+    // scoreboard reads: Cerro Porteño 3, Nacional 1.
+    expect(bracketRow('Cerro Porteño')).toHaveTextContent('3')
+    expect(bracketRow('Nacional')).toHaveTextContent('1')
   })
 
   it('shows a shootout as well as the aggregate, not instead of it', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-
     // 1-1 alone reads as a drawn tie with a team advancing for no stated
-    // reason, which is what the scoreline looked like before the shootout was
-    // appended to it.
-    expect(screen.getByText('1-1 (4-2 pens)')).toBeInTheDocument()
+    // reason. The two rows carry the aggregate; the shootout gets its own line
+    // rather than being dropped as unparseable detail.
+    await openCompetition(/Champions League/i)
+    expect(screen.getByText(/4-2 pens/)).toBeInTheDocument()
+    expect(bracketRow('Arsenal')).toHaveTextContent('1')
   })
 
   // ----------------------------------------------------- the season explorer
@@ -426,8 +444,7 @@ describe('TournamentsPage', () => {
   it('opens on the current edition and walks back through earlier ones', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
 
     const seasons = screen.getByRole('group', { name: /season/i })
     expect(within(seasons).getByRole('button', { name: /2026/ })).toHaveAttribute(
@@ -442,13 +459,14 @@ describe('TournamentsPage', () => {
     await userEvent.click(within(seasons).getByRole('button', { name: /2025/ }))
     expect(screen.getByRole('heading', { name: /Copa Libertadores 2025/i })).toBeInTheDocument()
     expect(screen.getByText('Peñarol')).toBeInTheDocument()
-    expect(screen.getByText('2-0')).toBeInTheDocument()
+    expect(bracketRow('Botafogo')).toHaveTextContent('2')
+    expect(bracketRow('Peñarol')).toHaveTextContent('0')
   })
 
   it('lands on the current edition when the competition changes, not last pick', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await openCompetition(/Copa Libertadores/i)
 
     const seasons = () => screen.getByRole('group', { name: /season/i })
     await userEvent.click(within(seasons()).getByRole('button', { name: /2025/ }))
@@ -465,8 +483,7 @@ describe('TournamentsPage', () => {
   it('never calls a finished edition undrawn', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Champions League/i)
+    await openCompetition(/Champions League/i)
     await userEvent.click(
       within(screen.getByRole('group', { name: /season/i })).getByRole('button', {
         name: /2020/,
@@ -478,7 +495,7 @@ describe('TournamentsPage', () => {
     // paired into a tree, which is a different fact from "the draw has not
     // been made", and the page used to state the wrong one of the two.
     expect(screen.getByText(/This edition is finished/i)).toBeInTheDocument()
-    expect(screen.getByText('0-1')).toBeInTheDocument()
+    expect(bracketRow('Chelsea')).toHaveTextContent('1')
     expect(screen.queryByText(/Draw not made/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/has not been drawn/i)).not.toBeInTheDocument()
   })
@@ -489,8 +506,7 @@ describe('TournamentsPage', () => {
 
     // Only the round of 16 is drawn. Every later round is paired at random,
     // and that assumption changes the numbers, so it is on the page.
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Copa Libertadores/i)
+    await openCompetition(/Copa Libertadores/i)
     expect(screen.getByText(/paired by a fresh random draw/i)).toBeInTheDocument()
   })
 
@@ -498,8 +514,7 @@ describe('TournamentsPage', () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Champions League/i)
+    await openCompetition(/Champions League/i)
 
     // The call made BEFORE the knockout stage, next to who actually won —
     // never presented as though it were still open.
@@ -513,8 +528,7 @@ describe('TournamentsPage', () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
 
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
-    await chooseTournament(/Club World Cup/i)
+    await openCompetition(/Club World Cup/i)
 
     // A power ranking, explicitly not a forecast. Filling this state with last
     // edition's field would produce confident percentages backed by nothing.
@@ -536,61 +550,95 @@ describe('TournamentsPage', () => {
     expect(screen.queryByText(/Pick a tournament/i)).not.toBeInTheDocument()
   })
 
-  // ------------------------------------------------------------- the picker
+  // ---------------------------------------------------------- the directory
   //
-  // Nine tournaments as chips filled two lines on a phone with eight
-  // competitions the reader is not looking at. It is now the same listbox as
-  // /season. What must survive the change: a tournament's STATE has to be
-  // visible before you pick it, because it decides whether the numbers
-  // underneath are odds on something undecided or a record of a settled call.
+  // The front door. What has to be true of it: every competition is visible
+  // without opening anything, each one carries the STATE of its current
+  // edition — which decides whether the numbers under it are odds on something
+  // undecided or a record of a settled call — and the biggest competitions
+  // lead.
 
-  it('shows every tournament with its state, before one is chosen', async () => {
+  it('shows every competition with its state, before one is opened', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
 
-    await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
-    const options = within(screen.getByRole('listbox')).getAllByRole('option')
-    const text = options.map((o) => o.textContent ?? '')
-    expect(text.some((t) => /Champions League/.test(t))).toBe(true)
-    expect(text.some((t) => /Finished/.test(t))).toBe(true)
-    expect(text.some((t) => /Draw not made/.test(t))).toBe(true)
+    const cards = screen.getAllByRole('button').map((b) => b.textContent ?? '')
+    expect(cards.some((t) => /Champions League/.test(t))).toBe(true)
+    expect(cards.some((t) => /Copa Libertadores/.test(t))).toBe(true)
+    expect(cards.some((t) => /Finished/.test(t))).toBe(true)
+    expect(cards.some((t) => /Draw not made/.test(t))).toBe(true)
+  })
+
+  it('puts a live edition\'s title odds on its card', async () => {
+    // A directory that only names competitions is a menu. The number that
+    // makes a card worth reading is who is winning the thing.
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
+
+    const card = screen.getByRole('button', { name: /Copa Libertadores/i })
+    expect(card).toHaveTextContent(/Who lifts it/i)
+    expect(card).toHaveTextContent('Flamengo')
+    expect(card).toHaveTextContent('23%')
+  })
+
+  it('says who won a finished edition, and what the model gave them', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
+
+    const card = screen.getByRole('button', { name: /Champions League/i })
+    expect(card).toHaveTextContent(/Won it/i)
+    expect(card).toHaveTextContent('Arsenal')
+    // 15% — and the model did NOT make them favourite, which the card says
+    // rather than quietly implying the opposite.
+    expect(card).toHaveTextContent('15%')
+    expect(card).toHaveTextContent(/what the model gave them/i)
   })
 
   it('offers the biggest competitions first, whatever is live', async () => {
-    // This used to sort live-first, which reads well in the abstract and badly
-    // across a calendar: some minor competition is nearly always mid-flight,
-    // so the Champions League spent most of the year below it. A reader came
+    // Sorting live-first reads well in the abstract and badly across a
+    // calendar: some minor competition is nearly always mid-flight, so the
+    // Champions League would spend most of the year below it. A reader came
     // for a competition, not for whichever one happens to be playing — the
-    // live ones are still marked with a dot.
+    // live ones carry a dot instead.
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
 
-    await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
-    const names = within(screen.getByRole('listbox'))
-      .getAllByRole('option')
-      .map((o) => o.textContent ?? '')
-    expect(names[0]).toMatch(/Champions League/)
+    const names = screen.getAllByRole('button').map((b) => b.textContent ?? '')
     expect(names.findIndex((n) => /Champions League/.test(n))).toBeLessThan(
       names.findIndex((n) => /Libertadores/.test(n)),
     )
   })
 
-  it('opens on the most important competition rather than a minor live one', async () => {
+  it('goes back to the directory from a competition', async () => {
+    // The one control for leaving a competition. Without it the only way out
+    // of a bracket is the browser's own back button.
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await openCompetition(/Copa Libertadores/i)
+
+    await userEvent.click(screen.getByRole('button', { name: /All tournaments/i }))
+    expect(screen.getByText(/Every competition/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Pick a tournament/i)).not.toBeInTheDocument()
+  })
+
+  it('opens the competition the reader clicked, not the first one', async () => {
+    mockFetch(ARTIFACT, FORECASTS)
+    render(<TournamentsPage />)
+    await openCompetition(/Copa Libertadores/i)
 
     expect(
-      screen.getByRole('heading', { name: /UEFA Champions League/i }),
+      screen.getByRole('heading', { name: /Copa Libertadores/i }),
     ).toBeInTheDocument()
   })
 
   it('switches tournament from the keyboard alone', async () => {
     mockFetch(ARTIFACT, FORECASTS)
     render(<TournamentsPage />)
-    await waitFor(() => expect(screen.getByText(/Pick a tournament/i)).toBeInTheDocument())
+    await openCompetition(/Champions League/i)
 
     const trigger = screen.getByRole('button', { name: /change tournament/i })
     trigger.focus()

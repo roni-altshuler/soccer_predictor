@@ -64,7 +64,7 @@ export function LeagueEvidence({
       <Panel
         title="What it believed"
         right={<CompetitionHeading id={id} />}
-        description={`Walk-forward over ${accent.displayName} alone: refit as the seasons advanced, never shown a match before predicting it.`}
+        description={`Walk-forward over ${accent.displayName} alone — never shown a match before predicting it.`}
       >
         {!measured || !Number.isFinite(measured.brier ?? NaN) ? (
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
@@ -88,9 +88,8 @@ export function LeagueEvidence({
 
             {rows.length > 1 ? (
               <div className="mt-4 border-t border-[var(--border-color)] pt-4">
-                <p className="mb-3 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-                  Against the same fixtures. Lower is better, so the short bar is the
-                  better forecaster.
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                  Same fixtures · lower is better
                 </p>
                 <div className="space-y-2.5">
                   {rows.map((r) => (
@@ -106,10 +105,8 @@ export function LeagueEvidence({
               </div>
             ) : null}
 
-            <p className="mt-4 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-              {isCovered(id)
-                ? 'This league carries a closing price on every fixture, so it can also be scored against the market.'
-                : 'No closing price on every fixture here, so this league is never described as scored against the market.'}
+            <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+              {isCovered(id) ? 'Also scored against the closing line' : 'No closing price here · never scored against the market'}
             </p>
           </>
         )}
@@ -140,8 +137,8 @@ export function LeagueEvidence({
           </p>
         ) : (
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            Nothing published for this competition has been scored yet. The record above
-            is retrospective, and the two are never added together.
+            Nothing scored here yet. The record above is retrospective — the two are never
+            added together.
           </p>
         )}
       </Panel>
@@ -197,7 +194,7 @@ export function TournamentEvidence({
         right={<CompetitionHeading id={id} />}
         description={
           trophy
-            ? `${trophy.editions} ${accent.displayName} edition${trophy.editions === 1 ? '' : 's'} simulated to a champion, each by a model refit only on the seasons before it.`
+            ? `${trophy.editions} edition${trophy.editions === 1 ? '' : 's'} simulated to a champion, each by a model refit only on earlier seasons.`
             : undefined
         }
       >
@@ -221,9 +218,8 @@ export function TournamentEvidence({
 
             {ladder.length > 1 ? (
               <div className="mt-4 border-t border-[var(--border-color)] pt-4">
-                <p className="mb-3 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-                  How much probability each forecaster put on the team that actually won
-                  it. Lower is better.
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                  Probability put on the eventual winner · lower is better
                 </p>
                 <div className="space-y-2.5">
                   {ladder.map((r) => (
@@ -239,11 +235,18 @@ export function TournamentEvidence({
               </div>
             ) : null}
 
-            <p className="mt-4 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-              Backing the highest-rated side won {pct(trophy.eloTop1)} of these. The mean
-              probability it put on the eventual winner was {pct(trophy.meanP)} — a
-              favourite is rarely more likely than not.
-            </p>
+            <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-[var(--border-color)] pt-4">
+              <StatTile
+                label="Backing the highest-rated side"
+                value={pct(trophy.eloTop1)}
+                tone="muted"
+              />
+              <StatTile
+                label="Mean chance given to the winner"
+                value={pct(trophy.meanP)}
+                tone="muted"
+              />
+            </dl>
           </>
         )}
       </Panel>
@@ -256,7 +259,7 @@ export function TournamentEvidence({
               {tie.n.toLocaleString()} ties
             </span>
           }
-          description="Who advances, scored one tie at a time. The floor is a coin flip, not one in three."
+          description="Who advances, one tie at a time. The floor is a coin flip."
         >
           <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             <StatTile label="Picked the winner" value={pct(tie.accuracy)} size="lead" />

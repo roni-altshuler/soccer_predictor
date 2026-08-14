@@ -1,4 +1,4 @@
-import { currentSeasonYear, seasonLabel, seasonOptions } from '@/lib/seasons'
+import { currentSeasonYear, isCalendarYearLeague, seasonLabel, seasonOptions } from '@/lib/seasons'
 
 /**
  * The season a league page opens on.
@@ -87,5 +87,26 @@ describe('seasonOptions', () => {
   it('follows the calendar-year convention for MLS', () => {
     const opts = seasonOptions(true, 3, at('2026-08-13'))
     expect(opts.map((o) => o.label)).toEqual(['2026', '2025', '2024'])
+  })
+})
+
+describe('isCalendarYearLeague', () => {
+  // Two pages ask this now — the league page's season dropdown and the
+  // directory's card label — and the wrong answer is invisible: "2026-27" on
+  // an MLS card looks exactly like every other row and is simply false.
+  it('knows MLS runs on a calendar year', () => {
+    expect(isCalendarYearLeague('usa.1')).toBe(true)
+    expect(isCalendarYearLeague('mls')).toBe(true)
+  })
+
+  it('treats a European top flight as a split season', () => {
+    for (const id of ['eng.1', 'esp.1', 'ger.1', 'ita.1', 'fra.1', 'ned.1', 'por.1', 'tur.1']) {
+      expect([id, isCalendarYearLeague(id)]).toEqual([id, false])
+    }
+  })
+
+  it('labels each kind the way its own calendar reads', () => {
+    expect(seasonLabel(2026, isCalendarYearLeague('usa.1'))).toBe('2026')
+    expect(seasonLabel(2026, isCalendarYearLeague('eng.1'))).toBe('2026-27')
   })
 })

@@ -50,7 +50,7 @@ export function TieCalibrationPanel({ bands }: { bands: CalibrationBand[] }) {
   return (
     <Panel
       title="What the confidence means"
-      description="This is the number a bracket simulation actually consumes — a trophy is four or five rounds compounded, not a run of picks. A calibrated band has its two bars the same length."
+      description="A calibrated band has its two bars the same length. This is the number a bracket simulation consumes."
     >
       <ul className="mt-4 space-y-3.5">
         {bands.map((b) => (
@@ -114,7 +114,7 @@ export function TieRoundsPanel({ rounds }: { rounds: Record<string, RoundRow> })
   return (
     <Panel
       title="Where it is strong, and where it is not"
-      description="By round, across every competition. Bars are drawn from the coin flip up, so an empty bar is a model that has added nothing."
+      description="By round, across every competition. Bars start at the coin flip, so an empty bar has added nothing."
     >
       <ul className="mt-4 space-y-2.5">
         {entries.map(([key, row]) => (
@@ -131,9 +131,8 @@ export function TieRoundsPanel({ rounds }: { rounds: Record<string, RoundRow> })
         ))}
       </ul>
       <p className="mt-4 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-        Semi-finals are the hardest round, and that is not a flaw: by then the field is
-        four teams that all deserve to be there, so the rating gap the model runs on has
-        mostly closed.
+        Semi-finals are hardest: four teams that all deserve to be there, so the rating gap
+        has mostly closed.
       </p>
     </Panel>
   )
@@ -176,7 +175,7 @@ export function TieFeaturesPanel({ rows }: { rows: ImportanceRow[] }) {
   return (
     <Panel
       title="What it leaned on"
-      description="Each feature shuffled in turn, and the damage measured. A feature that can be shuffled without hurting the model was not carrying anything."
+      description="Each feature shuffled in turn, and the damage measured. No damage means it was carrying nothing."
     >
       <ul className="mt-4 space-y-2.5">
         {top.map((r) => (
@@ -207,7 +206,7 @@ export function ProgressionPanel({
   return (
     <Panel
       title="Does the data say what we think it says"
-      description="Every resolved tie is checked against the next round: the team recorded as advancing has to turn up in it. A wrong away-goals branch trains the model on the losing side and is otherwise invisible."
+      description="The team recorded as advancing has to turn up in the next round. A wrong branch trains the model on the losing side and is otherwise invisible."
     >
       <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatTile label="Confirmed" value={`${(rate * 100).toFixed(1)}%`} size="lead" />

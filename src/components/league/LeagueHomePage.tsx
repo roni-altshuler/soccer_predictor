@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
-import { seasonOptions } from '@/lib/seasons'
+import { isCalendarYearLeague, seasonOptions } from '@/lib/seasons'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import SeasonProjections from '@/components/league/SeasonProjections'
 import SeasonSimulationResults, {
@@ -148,10 +148,8 @@ interface LeagueHomePageProps {
 // out at 2025-26 with the default pinned to '2025', so once the 2026-27 season
 // came round every league page opened on last season's table and last season's
 // top scorers, and the current season was not even in the dropdown. A
-// hard-coded year stops being true and nothing notices — see lib/seasons.ts.
-
-// Calendar-year league IDs
-const CALENDAR_YEAR_LEAGUE_IDS = new Set(['usa.1', 'mls'])
+// hard-coded year stops being true and nothing notices — see lib/seasons.ts,
+// which also owns which leagues run on a calendar year.
 
 // Table column counts for colSpan calculations
 const MLS_CONFERENCE_TABLE_COLUMNS = 5  // #, Team, P, Pts, Form
@@ -359,7 +357,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator'>('overview')
   const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
-  const isCalendarYear = CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)
+  const isCalendarYear = isCalendarYearLeague(leagueId)
   // Recomputed only when the league flips between calendar-year and
   // split-year, which is a property of the competition and not of time.
   const seasons = useMemo(() => seasonOptions(isCalendarYear), [isCalendarYear])
@@ -794,8 +792,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       {/* Flat league header — crest, name, country line, season picker. */}
       <div className="border-b border-[var(--border-color)] bg-[var(--card-bg)]">
         <div className="mx-auto max-w-6xl px-4 pb-3">
+          {/* Back to where the reader came from. This said "All leagues" and
+              went to /matches, which is the match centre — so the one control
+              on the page for leaving a league led somewhere else entirely. */}
           <Link
-            href="/matches"
+            href="/leagues"
             className="inline-flex min-h-[40px] items-center gap-1 text-[12px] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
