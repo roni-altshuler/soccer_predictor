@@ -1,31 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { AuthModal } from '@/components/AuthModal'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCommandPalette } from '@/store/commandPaletteStore'
 
 /**
- * Glass topbar that sits above the main content column. Renders the brand
- * mark on mobile (sidebar is hidden there), a global search trigger that
- * opens the Cmd+K palette, the gender toggle, and the auth button / user
- * menu. Stays sticky on scroll.
+ * The topbar: brand mark on mobile, and the account control.
+ *
+ * The global search field is gone, and with it the command palette it opened
+ * and the Cmd/Ctrl+K shortcut that was advertised on it. It searched leagues,
+ * teams and matches — three things the app has one tap to each of anyway — and
+ * a keyboard shortcut printed in a chip is a promise that the product is
+ * bigger than it is. A directory of nine leagues and fourteen competitions
+ * does not need a search index over it.
  */
 export function TopBar() {
-  const setPaletteOpen = useCommandPalette((s) => s.setOpen)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
-  const [shortcut, setShortcut] = useState<'⌘K' | 'Ctrl K'>('⌘K')
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && !/Mac|iPhone|iPad/.test(navigator.platform)) {
-      setShortcut('Ctrl K')
-    }
-  }, [])
 
   return (
     <>
@@ -44,25 +38,8 @@ export function TopBar() {
           <span className="text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
         </Link>
 
-        {/* Global search trigger -> opens command palette. min-w-0 below sm so
-            the bar can never exceed the viewport: the search field absorbs the
-            squeeze instead of pushing the right cluster off-screen (its
-            placeholder text is hidden at that width anyway). */}
-        <button
-          type="button"
-          onClick={() => setPaletteOpen(true)}
-          className="group relative ml-auto md:ml-0 flex h-9 min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] px-3 text-left text-sm text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] focus-visible:border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)] sm:min-w-[160px]"
-          aria-label="Open command palette"
-        >
-          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]" />
-          <span className="hidden flex-1 truncate sm:inline">Search leagues, teams, matches…</span>
-          <span className="ml-auto hidden items-center gap-1 sm:inline-flex">
-            <span className="kbd">{shortcut}</span>
-          </span>
-        </button>
-
         {/* Right cluster */}
-        <div className="ml-auto flex shrink-0 items-center gap-2 md:ml-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {/* The men's/women's switch is not rendered while women's
               competitions sit outside the coverage waves (docs/PIVOT_2026-08.md
               §5). The preference plumbing stays — every fetch still threads

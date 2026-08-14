@@ -430,21 +430,47 @@ leaves the previous valid forecast serving rather than a truncated file.
 | `/season` | flagship: league picker, then Overview / Table / Fixtures tabs, with the evidence panel always below them |
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, both Elo ratings |
 | `/evaluation` | the model, one competition at a time: what it believed and what that was worth. Pooled evidence sits below a heading that says it is pooled |
-| `/accuracy` | the published-pick record, same furniture as `/evaluation`, with the per-competition table as a section rather than a tab |
+| `/accuracy` | the published-pick record, per competition, same furniture and same layer/picker control as `/evaluation` |
 | `/tournaments` | directory of the fourteen knockout competitions, then one in full — the football only |
 | `/leagues` | directory of the nine projected leagues, each card carrying its own title race |
 | `/about` | "How it works": the floors and the calibration as pictures, read from the artifacts |
 
-**The bracket is drawn at FULL SIZE and pans; it is never silently shrunk.**
-The previous board guaranteed it fitted the viewport and paid with a transform —
-0.62 on a phone, 0.91 on a desktop — so the thing a reader came for was rendered
-at two thirds size. `planBoard` (pure, tested) picks the widest layout that fits
-at scale 1: mirrored two-sided, else a single left-to-right flow, else flow with
-scroll-snap panning, a round navigator and pinned round headings. Scaling
-happens only when the reader presses *Fit on screen*. Cards are FotMob-shaped:
-two rows, crest and club, and the number that settles it on the right — the
-aggregate split onto the two clubs (`splitScore`), or the chance to advance,
-never both.
+**The bracket is COMPUTED, not laid out.** `bracketLayout.ts` returns every
+card position and every connector path as arithmetic; the component absolutely
+positions from it and draws one `<svg>` underneath. The version before it built
+the shape from nested flex boxes with `h-1/2` bordered divs for connectors,
+which gets a bracket approximately right and cannot be checked — whether a card
+sat on the centre line between the two feeding it was an emergent property of
+the box model. It is a test now: **the card at slot `s` sits exactly halfway
+between `2s` and `2s+1`**, on both halves of a mirrored board.
+
+That geometry is what makes the rest possible: elbow connectors between real
+card edges, an empty slot that reads *Winner of Arsenal / Real Madrid* instead
+of being blank, and hover/tap tracing a team's whole route to the final
+(`pathToFinal`) with everything else dimmed.
+
+**It is drawn at FULL SIZE and pans; it is never silently shrunk.** The board
+before it fitted the viewport by transform — 0.62 on a phone, 0.91 on a desktop
+— so the thing a reader came for was rendered at two thirds size. `planBoard`
+picks the widest layout that fits at scale 1: mirrored, else a single
+left-to-right flow, else flow with panning and a round navigator. Scaling
+happens only when the reader presses *Fit on screen*. Cards carry two rows,
+crest and club, and the number that settles it on the right — the aggregate
+split onto the two clubs (`splitScore`), or the chance to advance, never both.
+
+**Both evidence pages are per competition, and share `LayerTabs`.** `/accuracy`
+was reporting one pooled hit rate over every league — an average of leagues that
+differ by six points. Its league side reads `by_league` from the tracking
+summary; its knockout side folds `tournaments.json`'s settled editions
+(`tournamentCalls.ts`) into a per-competition call record. **That knockout
+record is a BACKTEST and is labelled one everywhere it appears** — a 2021
+edition's forecast was reconstructed by a model refit on earlier seasons, and
+this site does not let that blur into "published in advance".
+
+**There is no global search.** The topbar field, the Cmd/Ctrl+K palette and its
+store were removed: it searched leagues, teams and matches, all of which are one
+tap away, and a shortcut printed in a chip advertises a product bigger than this
+one. The mobile tab bar's fourth slot is the record instead.
 
 **Both competition sections are directory-then-detail.** `/leagues` and
 `/tournaments` open on cards — title race, or title odds / who won it / when the

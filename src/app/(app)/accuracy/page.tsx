@@ -6,55 +6,68 @@ import { AccuracyDeepCuts } from '@/components/accuracy/AccuracyDeepCuts'
 import { AccuracyHeadline } from '@/components/accuracy/AccuracyHeadline'
 import { AccuracyKpiStrip } from '@/components/accuracy/AccuracyKpiStrip'
 import { BaselineLadder } from '@/components/accuracy/BaselineLadder'
-import { LeagueTable } from '@/components/accuracy/LeagueTable'
+import {
+  LeagueAccuracy,
+  PooledCallRecord,
+  TournamentAccuracy,
+} from '@/components/accuracy/CompetitionAccuracy'
 import { MarketBenchmarkPanel } from '@/components/accuracy/MarketBenchmarkPanel'
 import { ReliabilityPanel } from '@/components/accuracy/ReliabilityPanel'
 import { ScopeNote } from '@/components/accuracy/ScopeNote'
 import { samplePhrase } from '@/components/accuracy/accuracyMetrics'
 import type { RecentPick } from '@/components/accuracy/RecentPicksFeed'
 import { DocsRow } from '@/components/evidence/DocsLink'
-import { EvidenceHeader, Panel } from '@/components/evidence/primitives'
+import { LayerTabs, SectionRule, type Layer } from '@/components/evidence/LayerTabs'
+import { EvidenceHeader } from '@/components/evidence/primitives'
+import { callRecord, callsFor } from '@/components/evidence/tournamentCalls'
+import { CompetitionSelect } from '@/components/forecast/CompetitionSelect'
+import type { CompetitionOption } from '@/components/forecast/CompetitionSelect'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
-import { getLeagueAccent } from '@/lib/leagueAccents'
+import {
+  SERVED_COMPETITION_IDS,
+  TOURNAMENT_COMPETITION_IDS,
+  getLeagueAccent,
+  tournamentRank,
+} from '@/lib/leagueAccents'
 import type { AccuracySummaryResponse, FlatAccuracyResponse } from '@/lib/types/accuracy'
 
 /**
- * The published-pick record: how the picks this site made have actually scored.
+ * The published record — per competition, like its sibling.
  *
- * The sibling of `/evaluation`, and built from the same furniture on purpose —
- * one section is one Panel, the eyebrow heading names the job, the numbers are
- * the biggest thing in the block. The two pages are one part of the app and
- * were rendering as two products.
+ * This page reported one pooled hit rate over every league at once. That is an
+ * average of leagues that differ by six points, and it is nobody's question: a
+ * reader wants the Premier League's record, or MLS's, or what the model has
+ * called in the Champions League. `/evaluation` was reorganised per competition
+ * for exactly that reason and this page had not caught up, so the two halves of
+ * one section answered at different resolutions.
  *
- * The division of labour between them: `/evaluation` is about the MODEL —
- * what it believed in each competition and what that belief was worth against
- * the baselines. This page is about the PICKS — the record of what was
- * published, scored after the fact. Both are organised per competition,
- * because a pooled hit rate over eleven competitions and three model
- * generations is a number that describes nothing.
+ * Same shape as `/evaluation` now: layer, competition, then that competition
+ * alone — and what is genuinely pooled below a heading that says it is pooled.
  *
- * Order, top to bottom:
- *   1. The headline rate, its sample, and the floor that makes it readable.
- *   2. A strip of supporting numbers, each carrying its own denominator.
- *   3. The market benchmark, then the rest of the baseline ladder.
- *   4. Calibration — the claim this page exists to support.
- *   5. The record per competition.
- *   6. The deep cuts, behind tabs rather than as four more cards.
- *   7. What the record covers and holds out.
+ * The two pages still answer different questions. `/evaluation` is about the
+ * MODEL: what it believed and what that belief was worth against the baselines.
+ * This page is about the PICKS: what was published, scored after the fact.
  *
- * Honesty rules that shape the layout: a section whose data is missing renders
- * nothing, rates below their minimum sample lose their verdict chips rather
- * than their context, and no number here is derived from anything other than
- * the settled record.
- *
- * The three paragraphs of "how to read this" that used to close the page are
- * in `docs/handbook/` now — linked, not inlined. They were explaining scoring
- * on a page whose job is to report it.
+ * The knockout layer is the one place that distinction needs care. There is no
+ * live per-tie record yet, so what this page can show is the call each edition
+ * carried at its first knockout round — reconstructed by a model refit on
+ * earlier seasons only. That is a backtest, it is labelled a backtest wherever
+ * it appears, and it is never added to anything on the league side.
  */
 
 interface RecentResponse {
   count: number
   predictions: RecentPick[]
+}
+
+interface TournamentEdition {
+  competition_id: string
+  season: number
+  actual_champion?: string
+  probability_on_actual?: number
+  called_it?: boolean
+  forecast_made_at_round?: string
+  forecast_from?: string
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -75,8 +88,13 @@ export default function AccuracyPage() {
   const [metrics, setMetrics] = useState<FlatAccuracyResponse | null>(null)
   const [picks, setPicks] = useState<RecentPick[]>([])
   const [summary, setSummary] = useState<AccuracySummaryResponse | null>(null)
+  const [editions, setEditions] = useState<TournamentEdition[]>([])
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+
+  const [layer, setLayer] = useState<Layer>('leagues')
+  const [leagueId, setLeagueId] = useState<string | null>(null)
+  const [tournamentId, setTournamentId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -89,12 +107,14 @@ export default function AccuracyPage() {
         `/api/v1/tracking/recent?gender=${asQueryParam}&limit=30&completed_only=true`
       ),
       fetchJson<AccuracySummaryResponse>(`/api/v1/tracking/accuracy/summary?gender=${asQueryParam}`),
-    ]).then(([accuracy, recent, summaryRes]) => {
+      fetchJson<{ tournaments?: TournamentEdition[] }>('/api/v1/tournaments/predictions'),
+    ]).then(([accuracy, recent, summaryRes, tournaments]) => {
       if (cancelled) return
       const acc = settledValue(accuracy)
       setMetrics(acc)
       setPicks(settledValue(recent)?.predictions ?? [])
       setSummary(settledValue(summaryRes))
+      setEditions(settledValue(tournaments)?.tournaments ?? [])
       setFailed(acc === null)
       setLoading(false)
     })
@@ -117,6 +137,51 @@ export default function AccuracyPage() {
     )
   }, [summary, asQueryParam])
 
+  /** Served leagues first, in the site's own order, then anything else scored. */
+  const leagues = useMemo(() => {
+    const byId = new Map(leagueRows.map((r) => [r.league, r]))
+    const ordered = (SERVED_COMPETITION_IDS as readonly string[]).filter((id) => byId.has(id))
+    const extra = leagueRows.map((r) => r.league).filter((id) => !ordered.includes(id))
+    return [...ordered, ...extra].map((id) => ({ id, row: byId.get(id) ?? null }))
+  }, [leagueRows])
+
+  const calls = useMemo(() => callsFor(editions), [editions])
+  const tournaments = useMemo(() => {
+    const withCalls = new Set(calls.map((c) => c.competitionId))
+    return TOURNAMENT_COMPETITION_IDS.filter((id) => withCalls.has(id)).sort(
+      (a, b) => tournamentRank(a) - tournamentRank(b),
+    )
+  }, [calls])
+
+  useEffect(() => {
+    if (!leagueId && leagues.length) setLeagueId(leagues[0].id)
+    if (!tournamentId && tournaments.length) setTournamentId(tournaments[0])
+  }, [leagues, tournaments, leagueId, tournamentId])
+
+  const leagueOptions: CompetitionOption[] = leagues.map(({ id, row }) => {
+    const accent = getLeagueAccent(id)
+    return {
+      id,
+      name: accent.displayName,
+      subtitle: row
+        ? `${accent.country} · ${row.total.toLocaleString()} settled`
+        : `${accent.country} · nothing settled`,
+    }
+  })
+
+  const tournamentOptions: CompetitionOption[] = tournaments.map((id) => {
+    const accent = getLeagueAccent(id)
+    const n = calls.filter((c) => c.competitionId === id).length
+    return {
+      id,
+      name: accent.displayName,
+      subtitle: `${accent.country} · ${n} edition${n === 1 ? '' : 's'} settled`,
+    }
+  })
+
+  const selected = layer === 'leagues' ? leagueId : tournamentId
+  const options = layer === 'leagues' ? leagueOptions : tournamentOptions
+
   if (loading && metrics === null) {
     return (
       <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
@@ -137,82 +202,117 @@ export default function AccuracyPage() {
             body="The settled-results feed didn't respond. Nothing is estimated in its place — try again in a moment."
           />
         </div>
-      ) : settled === 0 ? (
-        <div className="mt-8 space-y-6">
-          <ScopeNote scope={metrics?.scope} />
-          <EmptyState
-            heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
-            body={
-              total > 0 ? (
+      ) : (
+        <div className="mt-6 space-y-6">
+          {/* ---- the one control that changes everything below ---------- */}
+          {leagues.length || tournaments.length ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <LayerTabs
+                value={layer}
+                onChange={setLayer}
+                enabled={{
+                  leagues: leagues.length > 0,
+                  tournaments: tournaments.length > 0,
+                }}
+              />
+              {selected && options.length ? (
+                <CompetitionSelect
+                  options={options}
+                  value={selected}
+                  onChange={layer === 'leagues' ? setLeagueId : setTournamentId}
+                  kind={layer === 'leagues' ? 'League' : 'Tournament'}
+                  className="sm:flex-1"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* ---- the selected competition -------------------------------- */}
+          {layer === 'leagues' && leagueId ? (
+            <LeagueAccuracy
+              id={leagueId}
+              row={leagues.find((l) => l.id === leagueId)?.row ?? null}
+            />
+          ) : null}
+
+          {layer === 'tournaments' && tournamentId ? (
+            <TournamentAccuracy
+              id={tournamentId}
+              record={callRecord(calls.filter((c) => c.competitionId === tournamentId))}
+              calls={calls.filter((c) => c.competitionId === tournamentId)}
+            />
+          ) : null}
+
+          {/* ---- what is measured across all of them --------------------- */}
+          {layer === 'leagues' ? (
+            <>
+              <SectionRule label="Across every league" />
+              {settled === 0 ? (
                 <>
-                  {samplePhrase(total, 'pick')} recorded, none with a final result so far. The
-                  rates and breakdowns appear as soon as the first match finishes.
+                  <ScopeNote scope={metrics?.scope} />
+                  <EmptyState
+                    heading={total > 0 ? 'No results in yet' : 'Nothing tracked here yet'}
+                    body={
+                      total > 0 ? (
+                        <>
+                          {samplePhrase(total, 'pick')} recorded, none with a final result
+                          so far. The rates appear as soon as the first match finishes.
+                        </>
+                      ) : (
+                        <>
+                          Nothing in scope has been settled yet — the record covers the
+                          model serving today in the covered leagues, and that intersection
+                          is currently empty.
+                        </>
+                      )
+                    }
+                  />
+                  {/* An empty live record is the strongest reason to show the
+                      backtest: without it the page says nothing at all about
+                      whether the model is any good. */}
+                  <BaselineLadder />
                 </>
               ) : (
                 <>
-                  Nothing in scope has been settled yet. The record covers the model serving
-                  today in the five covered leagues, and that intersection is currently empty
-                  &mdash; see the note above for what is being held out and why.
+                  <AccuracyHeadline
+                    accuracy={metrics?.winner_accuracy ?? 0}
+                    settled={settled}
+                    pending={pending}
+                    recentForm={metrics?.recent_form ?? []}
+                    gender={gender}
+                  />
+
+                  <AccuracyKpiStrip
+                    settled={settled}
+                    probabilityScore={metrics?.brier_score ?? null}
+                    calibrationGap={metrics?.expected_calibration_error ?? null}
+                    recentAccuracy={metrics?.recent_accuracy ?? 0}
+                    recentWindow={Math.min(50, settled)}
+                  />
+
+                  {/* Sits under the headline because it is what makes the
+                      headline readable. Renders nothing if the benchmark has
+                      never run. */}
+                  <MarketBenchmarkPanel />
+                  <BaselineLadder />
+
+                  <ReliabilityPanel
+                    bins={metrics?.calibration_bins ?? []}
+                    gap={metrics?.expected_calibration_error ?? null}
+                    settled={settled}
+                  />
+
+                  <AccuracyDeepCuts metrics={metrics} picks={picks} />
+                  <ScopeNote scope={metrics?.scope} />
                 </>
-              )
-            }
-          />
-          {/* The live record being empty is the strongest reason to show the
-              backtest: without it the page says nothing at all about whether
-              the model is any good. */}
-          <BaselineLadder />
-        </div>
-      ) : (
-        <div className="mt-8 space-y-6">
-          <AccuracyHeadline
-            accuracy={metrics?.winner_accuracy ?? 0}
-            settled={settled}
-            pending={pending}
-            recentForm={metrics?.recent_form ?? []}
-            gender={gender}
-          />
-
-          <AccuracyKpiStrip
-            settled={settled}
-            probabilityScore={metrics?.brier_score ?? null}
-            calibrationGap={metrics?.expected_calibration_error ?? null}
-            recentAccuracy={metrics?.recent_accuracy ?? 0}
-            recentWindow={Math.min(50, settled)}
-          />
-
-          {/* Sits directly under the headline because it is what makes the
-              headline readable. A hit rate is meaningless without the closing
-              line beside it. Renders nothing if the benchmark has never run. */}
-          <MarketBenchmarkPanel />
-
-          {/* Where the model sits against yardsticks a reader would actually
-              use. The headline's floor is "always pick home"; this is the rest
-              of the ladder, up to the closing line. */}
-          <BaselineLadder />
-
-          <ReliabilityPanel
-            bins={metrics?.calibration_bins ?? []}
-            gap={metrics?.expected_calibration_error ?? null}
-            settled={settled}
-          />
-
-          {/* Per competition, out of the tabs it used to hide in. A pooled hit
-              rate is an average over leagues that differ by six points, and
-              the reader almost always cares about one of them. */}
-          {leagueRows.length ? (
-            <Panel title="The record, competition by competition">
-              <LeagueTable
-                className="-mx-4 mt-2 md:-mx-5"
-                rows={leagueRows}
-                overallAccuracy={metrics?.winner_accuracy ?? 0}
-                embedded
-              />
-            </Panel>
-          ) : null}
-
-          <AccuracyDeepCuts metrics={metrics} picks={picks} />
-
-          <ScopeNote scope={metrics?.scope} />
+              )}
+            </>
+          ) : (
+            <>
+              <SectionRule label={`Across all ${tournaments.length} knockout competitions`} />
+              <PooledCallRecord record={callRecord(calls)} competitions={tournaments.length} />
+            </>
+          )}
 
           <DocsRow
             docs={[
@@ -231,16 +331,14 @@ export default function AccuracyPage() {
  * The same header the other evidence page uses.
  *
  * `/accuracy` and `/evaluation` are one section of the app and were rendering
- * as two products: an 18px bold title with a grey line under it here, an
- * uppercase letterspaced display there, on containers with different padding
- * and different vertical rhythm. `EvidenceHeader` is the single one.
+ * as two products. `EvidenceHeader` is the single one.
  */
 function PageHeader() {
   return (
     <>
       <EvidenceHeader
         title="Accuracy"
-        lede="Every pick this site has published, scored against the final result."
+        lede="Every pick this site has published, scored against the final result — competition by competition."
       />
       <DocsRow
         className="mt-3"
@@ -264,14 +362,14 @@ function EmptyState({ heading, body }: { heading: string; body: React.ReactNode 
   )
 }
 
-/** Loading skeleton mirroring the final layout — headline, strip, chart, tabs. */
+/** Loading skeleton mirroring the final layout — control, competition, pooled. */
 function AccuracySkeleton() {
   return (
     <div className="mt-8 space-y-6" role="status" aria-label="Loading accuracy data">
+      <div className="skeleton-shimmer h-[44px] rounded-xl border border-[var(--border-color)]" />
       <div className="skeleton-shimmer h-[240px] rounded-xl border border-[var(--border-color)]" />
       <div className="skeleton-shimmer h-[300px] rounded-xl border border-[var(--border-color)] sm:h-[160px] lg:h-[92px]" />
       <div className="skeleton-shimmer h-[440px] rounded-xl border border-[var(--border-color)]" />
-      <div className="skeleton-shimmer h-[320px] rounded-xl border border-[var(--border-color)]" />
       <span className="sr-only">Loading…</span>
     </div>
   )

@@ -73,13 +73,23 @@ Two honest limits printed on the page:
   model's favourite lifted it 31.8% of the time — better than backing the
   highest-rated side (22.4%), and still less than a third.
 
-## 5. The bracket fits on your screen
+## 5. Reading the board
 
-The whole tree is visible without sideways scrolling at any width. On a narrow
-screen the two halves stack vertically and each reads inward toward the final,
-rather than shrinking twelve-pixel type to three pixels. The shape is the reason
-to draw a bracket at all — it tells you who could still meet whom — and a board
-that scrolls sideways shows you a third of it.
+**The board is drawn at full size.** It picks the widest layout that fits your
+screen without shrinking anything — both halves mirrored around the final where
+there is room, otherwise a single left-to-right flow — and pans, with a round
+navigator above it, when neither fits. If you want the whole shape at once,
+*Fit on screen* scales it down; that is a choice you make rather than one
+imposed on you.
+
+**An empty box says who it is waiting for.** A slot nobody has reached yet reads
+*Winner of Arsenal / Real Madrid*, or names the club that has already come
+through where the next round has not been drawn.
+
+**Point at any tie to trace its route.** The rest of the board dims and what is
+left is that team's remaining path to the final. Who could still meet whom is
+the only reason to draw a bracket rather than list the rounds, and this is that
+question asked directly. On a phone, tap instead — tapping again lets go.
 
 ## Next
 

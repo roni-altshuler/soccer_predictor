@@ -6,45 +6,42 @@ import { motion, useReducedMotion } from 'framer-motion'
 import {
   Activity,
   CalendarRange,
-  Search,
   Swords,
+  TrendingUp,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { springSnappy } from '@/lib/motion'
-import { useCommandPalette } from '@/store/commandPaletteStore'
 
 type Item = {
-  href?: string
+  href: string
   label: string
   icon: typeof Activity
   accent?: 'ai'
-  action?: 'palette'
 }
 
-// The destinations the sidebar leads with, minus the evidence pages a phone
-// reader reaches least: what is on, the two forecast surfaces, and search.
-// Deep enough that no primary destination is more than one tap away.
+// What is on, the two forecast surfaces, and the record. Deep enough that no
+// primary destination is more than one tap away.
 //
 // Standings are not among them because a table is not a destination — it is
 // part of the competition it ranks, and lives on the league page and under
-// the tournament's bracket.
+// the tournament's bracket. Search is not among them either: it opened a
+// palette over nine leagues and fourteen competitions that the other four tabs
+// already reach directly.
 const ITEMS: Item[] = [
   { href: '/', label: 'Today', icon: Activity },
   { href: '/leagues', label: 'Leagues', icon: CalendarRange },
-  { action: 'palette', label: 'Search', icon: Search },
   { href: '/tournaments', label: 'Cups', icon: Swords },
+  { href: '/accuracy', label: 'Record', icon: TrendingUp },
 ]
 
-function isActive(pathname: string, href?: string) {
-  if (!href) return false
+function isActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
   return pathname.startsWith(href)
 }
 
 export function MobileBottomNav() {
   const pathname = usePathname() || '/'
-  const setPaletteOpen = useCommandPalette((s) => s.setOpen)
   const reduceMotion = useReducedMotion()
 
   return (
@@ -80,21 +77,8 @@ export function MobileBottomNav() {
           </span>
         )
 
-        if (item.action === 'palette') {
-          return (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              aria-label="Open search"
-            >
-              {inner}
-            </button>
-          )
-        }
-
         return (
-          <Link key={item.label} href={item.href!} aria-current={active ? 'page' : undefined}>
+          <Link key={item.label} href={item.href} aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>
         )

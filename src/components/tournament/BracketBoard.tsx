@@ -1,46 +1,50 @@
 'use client'
 
-import { Maximize2, Minimize2 } from 'lucide-react'
+import { Maximize2, Minimize2, Trophy } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { TeamCrest } from '@/components/primitives/TeamCrest'
+import {
+  METRICS,
+  cardKey,
+  pathToFinal,
+  planBoard,
+  splitScore,
+  type PlacedCard,
+  type Plan,
+} from '@/components/tournament/bracketLayout'
 import { cn } from '@/lib/utils'
 
 /**
  * The path to the trophy, drawn as a bracket.
  *
- * **Legibility first.** The previous version guaranteed the whole board fitted
- * the viewport, and paid for it with a transform: a Champions League bracket
- * landed at 0.62 on a phone and 0.91 on a desktop, so the thing a reader
- * actually wanted — who plays whom — was rendered at two thirds size. A bracket
- * nobody can read is not an overview of anything.
+ * The board is **computed, not laid out** — every card position and every
+ * connector comes from `bracketLayout.ts`, which is arithmetic and therefore
+ * testable. The version this replaces built the shape out of nested flex boxes
+ * with `h-1/2` bordered divs standing in for connectors: it got a bracket
+ * approximately right, and whether a card sat on the centre line between the
+ * two that feed it was verifiable only by looking at it.
  *
- * So the board is drawn at full size, the way FotMob draws one, and the width
- * problem is solved the way FotMob solves it:
+ * What that buys, beyond correctness:
  *
- *  1. **Two-sided when it fits.** Final in the middle, halves running inwards.
- *     That shape is the information — it says who could still meet whom.
- *  2. **Otherwise a single flow**, left to right, ending at the final. Half the
- *     width of the mirrored board and identical in content.
- *  3. **When even that overflows, it pans**, with scroll snapping per round, a
- *     round navigator above it, and the round headings pinned to the top of
- *     the scroller. Panning a legible board beats staring at a small one.
- *  4. **A fit toggle** for the overview. The scaled board is still available —
- *     it is now something a reader asks for rather than something imposed on
- *     them.
+ *  1. **Real connectors.** One SVG under the cards, elbows with rounded
+ *     corners drawn between actual card edges. They know which two cards they
+ *     join, which is what makes (3) possible.
+ *  2. **Named empty slots.** A place in the draw nobody has reached is not a
+ *     blank box — it says *Winner of Arsenal / Real Madrid*, which is the
+ *     thing a reader is actually working out when they look at one.
+ *  3. **A route, on hover or tap.** Point at any tie and the rest of the board
+ *     dims to leave that team's remaining path to the final. "Who could still
+ *     meet whom" is the only reason to draw a bracket rather than list rounds,
+ *     and this is that question asked directly.
+ *  4. **Full size, always.** The board picks the widest layout that fits at
+ *     scale 1 — mirrored, else a single left-to-right flow — and pans when
+ *     neither does, with a round navigator above it. Scaling happens only when
+ *     the reader presses *Fit on screen*.
  *
- * The geometry comes from `slot`, published per tie by `_bracket_slots`: the
- * tie at slot `s` is fed by slots `2s` and `2s+1`, so a round holding `n` slots
- * splits `0..n/2-1` into the top half and the rest into the bottom. Nothing
- * here infers a pairing; an empty slot draws an empty card, which is what a
- * bracket shows before a draw is made.
- *
- * Alignment is nested flex rather than absolute coordinates. Every column is
- * the same height and every cell is `flex-1`, so a round with half as many
- * cards gets cells twice as tall and each card lands on the centre line between
- * the two that feed it. The connector is a `h-1/2` box inside its own cell —
- * spanning exactly 25% to 75%, the two centres it has to join — so the drawing
- * survives any card height without a hard-coded pixel.
+ * Rounds outside the trophy tree (`slots: 0`) are entry rounds — the Europa
+ * League play-off, the Libertadores group stages. They are ways INTO the
+ * bracket, not rounds of it, so they are listed rather than drawn.
  */
 
 export interface BracketTie {
@@ -74,90 +78,14 @@ export interface BracketRound {
   ties: BracketTie[]
 }
 
+export { planBoard, splitScore } from '@/components/tournament/bracketLayout'
+
 const fmtDate = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
   })
-
-/* -------------------------------------------------------------------------- */
-/*  Geometry                                                                   */
-/* -------------------------------------------------------------------------- */
-
-/**
- * One card is two rows of a real club name at a real size, so the column width
- * is not a free parameter: it is what "Borussia Mönchengladbach 2" needs.
- */
-export const GEOM = {
-  col: 196,
-  conn: 22,
-  /** The final is given more room — it is the one card everyone looks for. */
-  final: 212,
-  card: 62,
-  /** Vertical breathing room per card, kept out of the width arithmetic. */
-  gap: 10,
-  heading: 28,
-}
-
-export type Layout = 'two-sided' | 'flow'
-
-export interface Plan {
-  layout: Layout
-  /** 1 unless the reader asked to fit an oversized board to the width. */
-  scale: number
-  /** Whether the chosen layout fits without panning. */
-  fits: boolean
-  /** Natural width of the chosen layout, before any scale. */
-  width: number
-}
-
-/** Mirrored board: every side round twice, plus the final once. */
-export function twoSidedWidth(sideRounds: number): number {
-  return 2 * sideRounds * (GEOM.col + GEOM.conn) + GEOM.final
-}
-
-/** Single flow: every round once, left to right, ending at the final. */
-export function flowWidth(sideRounds: number): number {
-  return sideRounds * (GEOM.col + GEOM.conn) + GEOM.final
-}
-
-/**
- * Choose a layout for the width available.
- *
- * Pure, and exported, because the properties worth guaranteeing are properties
- * of this function: the board is never silently shrunk, the mirrored shape is
- * preferred wherever it is legible, and a reader who asks to fit an oversized
- * board gets something that genuinely fits.
- */
-export function planBoard(width: number, sideRounds: number, fit = false): Plan {
-  // Width 0 means it has not been measured — server render, or jsdom, which
-  // implements no layout. Draw the canonical shape rather than guessing.
-  if (!width || sideRounds < 1) {
-    return { layout: 'two-sided', scale: 1, fits: true, width: twoSidedWidth(Math.max(0, sideRounds)) }
-  }
-
-  const two = twoSidedWidth(sideRounds)
-  if (width >= two) return { layout: 'two-sided', scale: 1, fits: true, width: two }
-
-  const flow = flowWidth(sideRounds)
-  if (width >= flow) return { layout: 'flow', scale: 1, fits: true, width: flow }
-
-  // Too narrow for either at full size. Pan by default; scale only on request,
-  // and then scale the mirrored board, because the point of asking to fit is
-  // to see the shape.
-  if (fit) return { layout: 'two-sided', scale: width / two, fits: true, width: two }
-  return { layout: 'flow', scale: 1, fits: false, width: flow }
-}
-
-/** Aggregate scores are published as "3-1", sometimes "1-1 (4-2 pens)". */
-export function splitScore(score: string | null): [string, string, string | null] | null {
-  if (!score) return null
-  const m = /^\s*(\d+)\s*[-–]\s*(\d+)\s*(.*)$/.exec(score)
-  if (!m) return null
-  const extra = m[3].trim()
-  return [m[1], m[2], extra ? extra.replace(/^\(|\)$/g, '') : null]
-}
 
 function useWidth(): [React.RefObject<HTMLDivElement>, number] {
   const ref = useRef<HTMLDivElement>(null)
@@ -179,45 +107,6 @@ function useWidth(): [React.RefObject<HTMLDivElement>, number] {
   return [ref, width]
 }
 
-/**
- * Scales its child and reserves the height the scaled child needs.
- *
- * `transform` does not affect layout, so without the height correction the
- * board leaves a gap under it the size of the space it no longer uses.
- */
-function Scaled({ scale, children }: { scale: number; children: React.ReactNode }) {
-  const inner = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState<number | undefined>(undefined)
-
-  useEffect(() => {
-    const el = inner.current
-    if (!el) return
-    const measure = () => setHeight(el.offsetHeight * scale)
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [scale])
-
-  if (scale >= 1) return <>{children}</>
-
-  return (
-    <div style={{ height }}>
-      <div
-        ref={inner}
-        style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: `${100 / scale}%` }}
-      >
-        {children}
-      </div>
-    </div>
-  )
-}
-
-/* -------------------------------------------------------------------------- */
-/*  The board                                                                  */
-/* -------------------------------------------------------------------------- */
-
 export function BracketBoard({
   rounds,
   competitionId,
@@ -236,37 +125,55 @@ export function BracketBoard({
   )
   const entry = useMemo(() => rounds.filter((r) => !(r.slots ?? 0)), [rounds])
 
-  const final = tree.find((r) => r.slots === 1) ?? null
-  const sides = tree.filter((r) => (r.slots ?? 0) > 1)
+  const roundSlots = useMemo(() => tree.map((r) => r.slots ?? 0), [tree])
+  const bySlot = useMemo(() => {
+    const map = new Map<string, BracketTie>()
+    tree.forEach((round, i) => {
+      for (const tie of round.ties) {
+        if (tie.slot != null) map.set(cardKey(i, tie.slot), tie)
+      }
+    })
+    return map
+  }, [tree])
 
   const [fit, setFit] = useState(false)
   const [outerRef, width] = useWidth()
-  const plan = useMemo(() => planBoard(width, sides.length, fit), [width, sides.length, fit])
+  const plan: Plan = useMemo(
+    () => planBoard(width, roundSlots, fit),
+    [width, roundSlots, fit],
+  )
+
+  // Hover traces a route; tapping pins it, because a phone has no hover and
+  // this is the interaction the whole board exists to support.
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [pinned, setPinned] = useState<string | null>(null)
+  const active = hovered ?? pinned
+  const route = useMemo(() => {
+    if (!active) return null
+    const [r, s] = active.split(':').map(Number)
+    return new Set(pathToFinal(r, s, roundSlots.length))
+  }, [active, roundSlots.length])
 
   const scroller = useRef<HTMLDivElement>(null)
-  const columns = useRef<(HTMLDivElement | null)[]>([])
-  const [active, setActive] = useState(0)
+  const columnEls = useRef<(HTMLDivElement | null)[]>([])
+  const [activeRound, setActiveRound] = useState(0)
 
-  const visibleRounds = plan.layout === 'flow' ? [...sides, ...(final ? [final] : [])] : []
-
-  /** Move the pan window to a round, the way a round navigator should. */
   const goTo = useCallback((i: number) => {
-    const el = columns.current[i]
+    const el = columnEls.current[i]
     const box = scroller.current
     if (!el || !box) return
     box.scrollTo({ left: Math.max(0, el.offsetLeft - 8), behavior: 'smooth' })
-    setActive(i)
+    setActiveRound(i)
   }, [])
 
-  // Keep the navigator honest while the reader pans by hand: the active chip
-  // is whichever column starts nearest the left edge, not the last one clicked.
+  // Keep the navigator honest while the reader pans by hand.
   useEffect(() => {
     const box = scroller.current
     if (!box || plan.fits) return
     const onScroll = () => {
       let nearest = 0
       let best = Infinity
-      columns.current.forEach((el, i) => {
+      columnEls.current.forEach((el, i) => {
         if (!el) return
         const d = Math.abs(el.offsetLeft - box.scrollLeft - 8)
         if (d < best) {
@@ -274,59 +181,30 @@ export function BracketBoard({
           nearest = i
         }
       })
-      setActive(nearest)
+      setActiveRound(nearest)
     }
     box.addEventListener('scroll', onScroll, { passive: true })
     return () => box.removeEventListener('scroll', onScroll)
-  }, [plan.fits, plan.layout])
+  }, [plan.fits, plan.mode])
 
-  const board =
-    plan.layout === 'two-sided' ? (
-      <div className="flex items-stretch">
-        {sides.map((round, i) => (
-          <RoundGroup
-            key={`l-${round.slug}-${round.display}`}
-            round={round}
-            side="left"
-            competitionId={competitionId}
-            next={sides[i + 1] ?? final}
-          />
-        ))}
+  const finalRound = tree[tree.length - 1] ?? null
+  const finalTie = finalRound?.slots === 1 ? finalRound.ties[0] ?? null : null
+  const champion =
+    finalTie && finalTie.winner_id !== null
+      ? finalTie.winner_id === finalTie.team_a_id
+        ? finalTie.team_a
+        : finalTie.team_b
+      : null
 
-        {final ? <FinalColumn round={final} competitionId={competitionId} /> : null}
+  if (!tree.length) {
+    return entry.length ? (
+      <section className={cn('mt-5', className)}>
+        <EntryRounds rounds={entry} competitionId={competitionId} />
+      </section>
+    ) : null
+  }
 
-        {[...sides].reverse().map((round, i, arr) => (
-          <RoundGroup
-            key={`r-${round.slug}-${round.display}`}
-            round={round}
-            side="right"
-            competitionId={competitionId}
-            next={arr[i - 1] ?? final}
-          />
-        ))}
-      </div>
-    ) : (
-      <div className="flex items-stretch">
-        {sides.map((round, i) => (
-          <RoundGroup
-            key={`f-${round.slug}-${round.display}`}
-            round={round}
-            side="left"
-            whole
-            competitionId={competitionId}
-            next={sides[i + 1] ?? final}
-            columnRef={(el) => (columns.current[i] = el)}
-          />
-        ))}
-        {final ? (
-          <FinalColumn
-            round={final}
-            competitionId={competitionId}
-            columnRef={(el) => (columns.current[sides.length] = el)}
-          />
-        ) : null}
-      </div>
-    )
+  const { layout } = plan
 
   return (
     <section className={cn('mt-5', className)}>
@@ -335,63 +213,181 @@ export function BracketBoard({
           The bracket
         </h4>
 
-        {tree.length && !plan.fits ? (
-          <button
-            type="button"
-            onClick={() => setFit((v) => !v)}
-            aria-pressed={fit}
-            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md border border-[var(--border-color)] px-2.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-          >
-            {fit ? (
-              <Maximize2 className="h-3 w-3" aria-hidden="true" />
-            ) : (
-              <Minimize2 className="h-3 w-3" aria-hidden="true" />
-            )}
-            {fit ? 'Full size' : 'Fit on screen'}
-          </button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <span className="hidden font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--text-tertiary)] sm:inline">
+            Point at a tie to trace its route
+          </span>
+          {!plan.fits ? (
+            <button
+              type="button"
+              onClick={() => setFit((v) => !v)}
+              aria-pressed={fit}
+              className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md border border-[var(--border-color)] px-2.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+            >
+              {fit ? (
+                <Maximize2 className="h-3 w-3" aria-hidden="true" />
+              ) : (
+                <Minimize2 className="h-3 w-3" aria-hidden="true" />
+              )}
+              {fit ? 'Full size' : 'Fit on screen'}
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {tree.length ? (
-        <div ref={outerRef} className="mt-3">
-          {/* The round navigator. Only when the board pans — a control that
-              scrolls something already fully visible is noise. */}
-          {!plan.fits && visibleRounds.length > 1 ? (
-            <div
-              role="tablist"
-              aria-label="Jump to a round"
-              className="mb-2.5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {visibleRounds.map((round, i) => (
-                <button
-                  key={`nav-${round.slug}-${round.display}`}
-                  role="tab"
-                  type="button"
-                  aria-selected={i === active}
-                  onClick={() => goTo(i)}
-                  className={cn(
-                    'min-h-[30px] shrink-0 rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors',
-                    i === active
-                      ? 'border-[var(--accent-primary)] text-[var(--text-primary)]'
-                      : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-                  )}
-                >
-                  {round.display}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
+      <div ref={outerRef} className="mt-3">
+        {/* The round navigator. Only when the board pans — a control that
+            scrolls something already fully visible is noise. */}
+        {!plan.fits && tree.length > 1 ? (
           <div
-            ref={scroller}
-            className={cn(
-              plan.fits
-                ? undefined
-                : 'overflow-x-auto pb-2 [scrollbar-width:thin] [&>div]:snap-x [&>div]:snap-mandatory',
-            )}
+            role="tablist"
+            aria-label="Jump to a round"
+            className="mb-2.5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            <Scaled scale={plan.scale}>{board}</Scaled>
+            {tree.map((round, i) => (
+              <button
+                key={`nav-${round.slug}-${round.display}`}
+                role="tab"
+                type="button"
+                aria-selected={i === activeRound}
+                onClick={() => goTo(i)}
+                className={cn(
+                  'min-h-[30px] shrink-0 rounded-full border px-3 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors',
+                  i === activeRound
+                    ? 'border-[var(--accent-primary)] text-[var(--text-primary)]'
+                    : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
+                )}
+              >
+                {round.display}
+              </button>
+            ))}
           </div>
+        ) : null}
+
+        <div
+          ref={scroller}
+          className={cn(plan.fits ? undefined : 'overflow-x-auto pb-2 [scrollbar-width:thin]')}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <div
+            style={{
+              width: layout.width * plan.scale,
+              height: (layout.height + METRICS.headerH) * plan.scale,
+            }}
+          >
+            <div
+              className="relative"
+              style={{
+                width: layout.width,
+                height: layout.height + METRICS.headerH,
+                transform: plan.scale < 1 ? `scale(${plan.scale})` : undefined,
+                transformOrigin: 'top left',
+              }}
+            >
+              {/* Column headings, one per drawn column. In the mirrored board a
+                  round appears twice, so both get one. */}
+              {layout.columns.map((col, i) => {
+                const round = tree[col.round]
+                if (!round) return null
+                return (
+                  <div
+                    key={`head-${col.round}-${col.side}-${i}`}
+                    ref={(el) => {
+                      // Only the left-to-right columns anchor the navigator;
+                      // in the flow layout that is all of them.
+                      if (col.side !== 'right') columnEls.current[col.round] = el
+                    }}
+                    data-round={round.display}
+                    className="absolute top-0"
+                    style={{ left: col.x, width: col.w, height: METRICS.headerH }}
+                  >
+                    <div className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                      {round.display}
+                    </div>
+                    <div className="truncate font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                      {round.projected
+                        ? 'Not drawn'
+                        : `${round.ties.length} ${round.ties.length === 1 ? 'tie' : 'ties'}`}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* Connectors, under the cards. Dimmed unless they are part of
+                  the route being traced. */}
+              <svg
+                className="pointer-events-none absolute left-0"
+                style={{ top: METRICS.headerH }}
+                width={layout.width}
+                height={layout.height}
+                aria-hidden="true"
+              >
+                {layout.links.map((l) => {
+                  const on = !route || (route.has(l.from) && route.has(l.to))
+                  return (
+                    <path
+                      key={`${l.from}->${l.to}`}
+                      d={l.d}
+                      fill="none"
+                      strokeWidth={on && route ? 1.5 : 1}
+                      className="transition-[stroke,stroke-width] duration-150"
+                      stroke={
+                        on && route
+                          ? 'var(--accent-primary)'
+                          : route
+                            ? 'color-mix(in srgb, var(--border-color) 45%, transparent)'
+                            : 'var(--border-color)'
+                      }
+                    />
+                  )
+                })}
+              </svg>
+
+              {layout.cards.map((card) => {
+                const key = cardKey(card.round, card.slot)
+                const tie = bySlot.get(key) ?? null
+                const dimmed = Boolean(route && !route.has(key))
+                return (
+                  <div
+                    key={key}
+                    className={cn(
+                      'absolute transition-opacity duration-150',
+                      dimmed && 'opacity-30',
+                    )}
+                    style={{
+                      left: card.x,
+                      top: card.y + METRICS.headerH,
+                      width: card.w,
+                      height: card.h,
+                    }}
+                    onMouseEnter={() => setHovered(key)}
+                    onFocus={() => setHovered(key)}
+                    onBlur={() => setHovered(null)}
+                  >
+                    <TieCard
+                      tie={tie}
+                      competitionId={competitionId}
+                      emphasis={card.side === 'centre'}
+                      onSelect={() => setPinned((p) => (p === key ? null : key))}
+                      placeholder={placeholderFor(card, bySlot)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {champion ? (
+        <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-[color-mix(in_srgb,var(--accent-primary)_40%,var(--border-color))] bg-[color-mix(in_srgb,var(--accent-primary)_6%,var(--card-bg))] px-3.5 py-2.5">
+          <Trophy className="h-4 w-4 shrink-0 text-[var(--accent-primary)]" aria-hidden="true" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            Champion
+          </span>
+          <span className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+            {champion}
+          </span>
         </div>
       ) : null}
 
@@ -401,172 +397,32 @@ export function BracketBoard({
 }
 
 /**
- * One round, as a column of cards.
+ * What an empty slot should say.
  *
- * `whole` renders every slot in the round — the single-flow layout. Without it
- * the column renders one half of the draw, which is what the mirrored board
- * needs: low slots on the left, high slots on the right, exactly the split the
- * feeder rule (2s, 2s+1) produces.
+ * A place in the draw nobody has reached is not nothing: it is the winner of
+ * two known ties, and that is precisely what a reader is working out when they
+ * look at an empty box. Where a feeder is itself undecided the box names both
+ * clubs; where it is settled but the next round is not drawn, it names the club
+ * that came through.
  */
-function RoundGroup({
-  round,
-  side,
-  whole,
-  competitionId,
-  next,
-  columnRef,
-}: {
-  round: BracketRound
-  /** Which way the connector points — the drawing direction. */
-  side: 'left' | 'right'
-  whole?: boolean
-  competitionId: string
-  next: BracketRound | null
-  columnRef?: (el: HTMLDivElement | null) => void
-}) {
-  const slots = round.slots ?? 0
-  const half = slots / 2
-  const bySlot = new Map(round.ties.filter((t) => t.slot != null).map((t) => [t.slot as number, t]))
-  const range = whole
-    ? Array.from({ length: slots }, (_, i) => i)
-    : Array.from({ length: half }, (_, i) => (side === 'left' ? i : half + i))
-
-  const connectorPairs = whole ? next?.slots ?? 1 : Math.max(1, (next?.slots ?? 2) / 2)
-
-  const column = (
-    <div
-      ref={columnRef}
-      className="flex shrink-0 snap-start flex-col"
-      style={{ width: GEOM.col }}
-    >
-      <ColumnHeading round={round} count={round.ties.length} />
-      <div className="flex flex-1 flex-col">
-        {range.map((slot) => (
-          <div key={slot} className="flex flex-1 items-center" style={{ padding: `${GEOM.gap / 2}px 0` }}>
-            <Tie tie={bySlot.get(slot) ?? null} competitionId={competitionId} />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const connector = <Connector pairs={connectorPairs} side={side} />
-
-  return side === 'left' ? (
-    <>
-      {column}
-      {connector}
-    </>
-  ) : (
-    <>
-      {connector}
-      {column}
-    </>
-  )
-}
-
-function FinalColumn({
-  round,
-  competitionId,
-  columnRef,
-}: {
-  round: BracketRound
-  competitionId: string
-  columnRef?: (el: HTMLDivElement | null) => void
-}) {
-  const tie = round.ties[0] ?? null
-  return (
-    <div
-      ref={columnRef}
-      className="flex shrink-0 snap-start flex-col"
-      style={{ width: GEOM.final }}
-    >
-      <ColumnHeading round={round} center />
-      <div className="flex flex-1 items-center px-2">
-        <Tie tie={tie} competitionId={competitionId} emphasis />
-      </div>
-    </div>
-  )
-}
-
-/** Round headings sit above the board, pinned so they survive a vertical scroll. */
-function ColumnHeading({
-  round,
-  center,
-  count,
-}: {
-  round: BracketRound
-  center?: boolean
-  count?: number
-}) {
-  return (
-    <div
-      // The column's identity, for anything that needs to find a round without
-      // reaching into styling classes — the round navigator's own tests, and
-      // the smoke test that checks each round is drawn exactly where a bracket
-      // puts it.
-      data-round={round.display}
-      className={cn(
-        'sticky top-0 z-10 bg-[var(--background)] pb-2.5',
-        center ? 'text-center' : 'pr-2',
-      )}
-      style={{ minHeight: GEOM.heading }}
-    >
-      <div className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-        {round.display}
-      </div>
-      {round.projected ? (
-        <div className="truncate font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-          Not drawn
-        </div>
-      ) : count ? (
-        <div
-          className={cn(
-            'truncate font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]',
-            center && 'sr-only',
-          )}
-        >
-          {count} {count === 1 ? 'tie' : 'ties'}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-/**
- * The ⊐ joining two cards to the one they feed.
- *
- * `h-1/2` centred inside a `flex-1` cell spans 25% to 75% of that cell, and
- * because the cell covers exactly the two cards below it, those are their
- * centre lines. No pixel maths, and it survives any card height.
- */
-function Connector({ pairs, side }: { pairs: number; side: 'left' | 'right' }) {
-  return (
-    <div className="flex shrink-0 flex-col" style={{ width: GEOM.conn }} aria-hidden>
-      {/* Spacer matching the column heading, so the joins line up with cards. */}
-      <div className="pb-2.5" style={{ minHeight: GEOM.heading }}>
-        <div className="font-mono text-[11px] leading-normal">&nbsp;</div>
-        <div className="font-mono text-[9px] leading-normal">&nbsp;</div>
-      </div>
-      <div className="flex flex-1 flex-col">
-        {Array.from({ length: Math.max(1, Math.round(pairs)) }, (_, i) => (
-          <div key={i} className="flex flex-1 items-center">
-            <div
-              className={cn(
-                'h-1/2 w-full border-y border-[var(--border-color)]',
-                side === 'left' ? 'border-r' : 'border-l',
-              )}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+function placeholderFor(
+  card: PlacedCard,
+  bySlot: Map<string, BracketTie>,
+): [string, string] | null {
+  if (card.round === 0) return null
+  const feeders: string[] = []
+  for (const slot of [card.slot * 2, card.slot * 2 + 1]) {
+    const tie = bySlot.get(cardKey(card.round - 1, slot))
+    if (!tie) return null
+    if (tie.winner) feeders.push(tie.winner)
+    else feeders.push(`Winner of ${tie.team_a} / ${tie.team_b}`)
+  }
+  return [feeders[0], feeders[1]]
 }
 
 /**
  * One tie: two rows, one per club, crest and name on the left and the number
- * that decides it on the right.
+ * that settles it on the right.
  *
  * The number is the score for a settled tie and the chance to advance for an
  * undecided one — never both. A percentage next to a played tie reads as a
@@ -575,22 +431,33 @@ function Connector({ pairs, side }: { pairs: number; side: 'left' | 'right' }) {
  * The winner is the only club at full contrast. That is the whole reading of a
  * bracket at a glance: scan down the bold names and you have the path.
  */
-function Tie({
+function TieCard({
   tie,
   competitionId,
   emphasis,
+  onSelect,
+  placeholder,
 }: {
   tie: BracketTie | null
   competitionId: string
   emphasis?: boolean
+  onSelect?: () => void
+  placeholder?: [string, string] | null
 }) {
   if (!tie) {
     return (
-      <div
-        className="w-full rounded-lg border border-dashed border-[var(--border-color)]"
-        style={{ height: GEOM.card }}
-        aria-hidden
-      />
+      <div className="flex h-full w-full flex-col justify-center gap-[3px] overflow-hidden rounded-lg border border-dashed border-[var(--border-color)] px-2.5">
+        {(placeholder ?? ['To be decided', '']).map((line, i) =>
+          line ? (
+            <span
+              key={i}
+              className="truncate text-[11.5px] leading-tight text-[var(--text-tertiary)]"
+            >
+              {line}
+            </span>
+          ) : null,
+        )}
+      </div>
     )
   }
 
@@ -604,16 +471,24 @@ function Tie({
       goals: goals?.[1] ?? null,
     },
   ]
+  const meta = goals?.[2]
+    ? goals[2]
+    : tie.score && !goals
+      ? tie.score
+      : tie.pending
+        ? `${fmtDate(tie.kickoff)}${tie.two_legged ? ' · two legs' : ''}`
+        : null
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onSelect}
       className={cn(
-        'w-full overflow-hidden rounded-lg border bg-[var(--card-bg)] transition-colors',
+        'flex h-full w-full flex-col justify-center overflow-hidden rounded-lg border bg-[var(--card-bg)] text-left transition-colors',
         emphasis
           ? 'border-[color-mix(in_srgb,var(--accent-primary)_55%,var(--border-color))]'
-          : 'border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-primary)_35%,var(--border-color))]',
+          : 'border-[var(--border-color)] hover:border-[color-mix(in_srgb,var(--accent-primary)_45%,var(--border-color))]',
       )}
-      style={{ minHeight: GEOM.card }}
     >
       {sides.map((side, i) => {
         const won = tie.winner_id !== null && side.id === tie.winner_id
@@ -622,15 +497,11 @@ function Tie({
         return (
           <div
             key={`${side.id}-${side.name}`}
-            // One row is one club's side of the tie: its crest, its name and
-            // the number that settles it. Named so the row can be found as a
-            // unit — the club's name alone also appears in the odds list below
-            // the board.
             data-club={side.name}
             className={cn(
-              'flex items-center gap-2 px-2.5 py-[7px]',
+              'flex items-center gap-2 px-2.5 py-[5px]',
               i === 0 && 'border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)]',
-              won && 'bg-[color-mix(in_srgb,var(--accent-primary)_7%,transparent)]',
+              won && 'bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]',
             )}
           >
             <TeamCrest team={side.name} competitionId={competitionId} size="sm" />
@@ -669,24 +540,12 @@ function Tie({
         )
       })}
 
-      {/* One line of context, and only when it carries something the two rows
-          cannot: a shootout, or the date of a tie still to be played. An
-          unparseable score falls back to printing itself rather than vanishing. */}
-      {goals?.[2] ? (
-        <div className="border-t border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-2.5 py-[3px] text-right font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
-          {goals[2]}
-        </div>
-      ) : tie.score && !goals ? (
-        <div className="border-t border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-2.5 py-[3px] text-right font-mono text-[10px] tabular-nums text-[var(--text-secondary)]">
-          {tie.score}
-        </div>
-      ) : tie.pending ? (
-        <div className="border-t border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-2.5 py-[3px] text-right font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
-          {fmtDate(tie.kickoff)}
-          {tie.two_legged ? ' · two legs' : ''}
+      {meta ? (
+        <div className="truncate border-t border-[color-mix(in_srgb,var(--border-color)_60%,transparent)] px-2.5 py-[2px] text-right font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
+          {meta}
         </div>
       ) : null}
-    </div>
+    </button>
   )
 }
 
@@ -724,8 +583,11 @@ function EntryRounds({
             </div>
             <ul className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {round.ties.map((tie) => (
-                <li key={`${tie.team_a_id}-${tie.team_b_id}-${tie.kickoff}`}>
-                  <Tie tie={tie} competitionId={competitionId} />
+                <li
+                  key={`${tie.team_a_id}-${tie.team_b_id}-${tie.kickoff}`}
+                  style={{ height: METRICS.cardH }}
+                >
+                  <TieCard tie={tie} competitionId={competitionId} />
                 </li>
               ))}
             </ul>

@@ -5,7 +5,6 @@ import { type ReactNode } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { PageTransition } from '@/components/motion'
 
-import { CommandPalette } from './CommandPalette'
 import { MobileBottomNav } from './MobileBottomNav'
 import { SidebarNav } from './SidebarNav'
 import { TopBar } from './TopBar'
@@ -46,7 +45,6 @@ export function AppShell({
         {footer}
       </div>
       <MobileBottomNav />
-      <CommandPalette />
     </TooltipProvider>
   )
 }
