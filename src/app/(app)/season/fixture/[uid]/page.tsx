@@ -5,21 +5,25 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
+import { MatchDetail } from '@/components/fixture/MatchDetail'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { formatKickoff } from '@/components/forecast/FixtureCard'
 import type { FixtureForecast } from '@/components/forecast/FixtureCard'
+import type { MatchCard } from '@/lib/server/tieFixtures'
 
 /**
- * One match, in as much depth as the model actually has.
+ * One match: what the model expects, and what actually happened.
  *
- * Deliberately not a dashboard. The model has four things to say about a
- * fixture — who wins, how many goals, which scorelines, and how strong it
- * thinks the two clubs are — and padding that with panels the model cannot
- * fill would be the thing this product is trying not to be.
+ * **The match card here is the same component a knockout tie gets.** A reader
+ * who has learned to read a Premier League fixture should not have to learn a
+ * second layout for a Champions League one, so `MatchDetail` renders both and
+ * the forecast rides inside it. Before this, a league fixture showed four model
+ * panels and no match at all — no lineups, no timeline, no head-to-head — while
+ * a tie showed everything, which read as two different products.
  *
- * The Elo ratings are shown because they are the model's entire view of the
- * two clubs and a reader deserves to see what drove the number. They are
- * labelled as a rating rather than presented as a stat.
+ * Below the card sits the depth the model has and ESPN does not: the goal
+ * rates, the scoreline distribution and the two Elo ratings that drove the
+ * whole forecast.
  */
 
 interface Payload {
@@ -27,6 +31,7 @@ interface Payload {
   generated_at?: string
   method?: { model_version?: string; trained_through?: string }
   fixture?: FixtureForecast
+  match?: MatchCard | null
   reason?: string
 }
 
@@ -94,48 +99,73 @@ export default function FixtureForecastPage() {
         </div>
       ) : (
         <div className="mt-5 space-y-6">
-          <header>
-            <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-              {LEAGUE_NAMES[f.competition_id] ?? f.competition_id}
-              {f.round ? ` · ${f.round}` : ''}
-            </p>
-            <h1 className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)] md:text-[30px]">
-              {f.home}
-              <span className="mx-2 text-[16px] font-normal uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                vs
-              </span>
-              {f.away}
-            </h1>
-            <time
-              dateTime={`${f.date}${f.kickoff ? `T${f.kickoff}` : ''}`}
-              className="mt-1.5 block font-mono text-[12px] text-[var(--text-secondary)]"
-            >
-              {formatKickoff(f.date, f.kickoff)} UTC
-            </time>
-          </header>
-
-          <section
-            className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
-            aria-labelledby="outcome-heading"
-          >
-            <h2
-              id="outcome-heading"
-              className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
-            >
-              Match outcome
-            </h2>
-            <ProbabilityBar
-              className="mt-3.5"
-              probabilities={{ home: f.p_home, draw: f.p_draw, away: f.p_away }}
-              homeLabel={f.home}
-              awayLabel={f.away}
+          {data?.match ? (
+            <MatchDetail
+              card={data.match}
+              competitionId={f.competition_id}
+              heading={`${LEAGUE_NAMES[f.competition_id] ?? f.competition_id}${
+                f.round ? ` · Matchday ${f.round}` : ''
+              }`}
+              model={
+                <>
+                  <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                    What the model expected
+                  </h2>
+                  <ProbabilityBar
+                    className="mt-3"
+                    probabilities={{ home: f.p_home, draw: f.p_draw, away: f.p_away }}
+                    homeLabel={f.home}
+                    awayLabel={f.away}
+                  />
+                </>
+              }
             />
-            <p className="mt-3.5 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-              These three add to 100% and are the model&apos;s complete answer. There is
-              no fourth outcome and no &quot;likely winner&quot; beyond what the largest
-              of them says.
-            </p>
-          </section>
+          ) : (
+            <>
+              <header>
+                <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                  {LEAGUE_NAMES[f.competition_id] ?? f.competition_id}
+                  {f.round ? ` · ${f.round}` : ''}
+                </p>
+                <h1 className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)] md:text-[30px]">
+                  {f.home}
+                  <span className="mx-2 text-[16px] font-normal uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                    vs
+                  </span>
+                  {f.away}
+                </h1>
+                <time
+                  dateTime={`${f.date}${f.kickoff ? `T${f.kickoff}` : ''}`}
+                  className="mt-1.5 block font-mono text-[12px] text-[var(--text-secondary)]"
+                >
+                  {formatKickoff(f.date, f.kickoff)} UTC
+                </time>
+              </header>
+
+              <section
+                className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"
+                aria-labelledby="outcome-heading"
+              >
+                <h2
+                  id="outcome-heading"
+                  className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]"
+                >
+                  Match outcome
+                </h2>
+                <ProbabilityBar
+                  className="mt-3.5"
+                  probabilities={{ home: f.p_home, draw: f.p_draw, away: f.p_away }}
+                  homeLabel={f.home}
+                  awayLabel={f.away}
+                />
+                <p className="mt-3.5 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+                  These three add to 100% and are the model&apos;s complete answer. There is
+                  no fourth outcome and no &quot;likely winner&quot; beyond what the largest
+                  of them says.
+                </p>
+              </section>
+            </>
+          )}
 
           <section
             className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5"

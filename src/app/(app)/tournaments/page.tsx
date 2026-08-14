@@ -53,7 +53,7 @@ export default function TournamentsPage() {
   }, [])
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6 md:py-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8">
       <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div>
           {openId ? (

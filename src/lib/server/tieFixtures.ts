@@ -194,6 +194,10 @@ export interface StatRow {
 export interface LineupPlayer {
   id: string
   name: string
+  /** ESPN's own abbreviation — "V. Júnior". Never derived: dropping the first
+   *  token turns Vinícius Júnior into "Júnior", which is not what anyone calls
+   *  him, and the rule that works for European names fails for Brazilian ones. */
+  short: string
   jersey: string
   position: string
   formationPlace: number
@@ -417,6 +421,7 @@ export async function matchCard(
       player: {
         id: String(p.athlete?.id ?? ''),
         name: p.athlete?.displayName ?? p.athlete?.shortName ?? '',
+        short: p.athlete?.shortName ?? p.athlete?.displayName ?? '',
         jersey: p.jersey ?? '',
         position: p.position?.abbreviation ?? '',
         formationPlace: Number(p.formationPlace ?? 0),

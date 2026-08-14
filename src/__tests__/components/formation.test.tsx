@@ -18,6 +18,7 @@ import type { Lineup, LineupPlayer } from '@/lib/server/tieFixtures'
 const p = (n: number, over: Partial<LineupPlayer> = {}): LineupPlayer => ({
   id: `p${n}`,
   name: `Player ${n}`,
+  short: `P. ${n}`,
   jersey: String(n),
   position: 'M',
   formationPlace: n,
@@ -69,10 +70,18 @@ describe('dealRows', () => {
 })
 
 describe('shortLabel', () => {
-  it('drops the given name, which is what fits on a shirt-sized token', () => {
-    expect(shortLabel('Trent Alexander-Arnold')).toBe('Alexander-Arnold')
-    expect(shortLabel('Vinícius Júnior')).toBe('Júnior')
-    expect(shortLabel('Alisson')).toBe('Alisson')
+  it('uses the source’s own short name rather than deriving one', () => {
+    // Deriving it by dropping the first token gives "Júnior" for Vinícius
+    // Júnior — the rule that works for European surnames fails for Brazilian
+    // and Spanish ones, and a name nobody recognises is worse than a long one.
+    expect(shortLabel({ name: 'Vinícius Júnior', short: 'V. Júnior' })).toBe('V. Júnior')
+    expect(shortLabel({ name: 'Trent Alexander-Arnold', short: 'T. Alexander-Arnold' })).toBe(
+      'T. Alexander-Arnold',
+    )
+  })
+
+  it('falls back to the full name when the source published no short one', () => {
+    expect(shortLabel({ name: 'Alisson Becker', short: '' })).toBe('Alisson Becker')
   })
 })
 
@@ -100,7 +109,9 @@ describe('Formation', () => {
         awayName="Real Madrid"
       />,
     )
-    expect(screen.getByText(/4-2-3-1 · Arsenal/)).toBeInTheDocument()
+    // Each label sits against its own half — away above the pitch, home below
+    // — because side-by-side labels read as left-hand and right-hand teams.
+    expect(screen.getByText(/Arsenal · 4-2-3-1/)).toBeInTheDocument()
     expect(screen.getByText(/Real Madrid · 4-3-3/)).toBeInTheDocument()
   })
 
@@ -120,8 +131,11 @@ describe('Formation', () => {
   it('lists the bench and marks who came on', () => {
     render(<Formation lineups={[lineup()]} homeName="Arsenal" awayName="Real Madrid" />)
     const bench = screen.getByText('Arsenal · bench').parentElement!
-    expect(within(bench).getByText('Player 12')).toBeInTheDocument()
+    // The bench carries the source's short name too, and the row keeps the
+    // full one on the element for anyone hovering it.
+    expect(within(bench).getByText('P. 12')).toBeInTheDocument()
     expect(within(bench).getByText('on')).toBeInTheDocument()
+    expect(bench.querySelector('[data-player="Player 12"]')).toBeTruthy()
   })
 
   it('shows nothing rather than an empty pitch when no sheet was filed', () => {

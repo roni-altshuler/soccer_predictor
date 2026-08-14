@@ -3,17 +3,21 @@ import path from 'path'
 
 import { NextResponse } from 'next/server'
 
+import { matchCard, resolveTie, type MatchCard } from '@/lib/server/tieFixtures'
+
 /**
- * One fixture's forecast, plus how it has moved.
+ * One fixture's forecast, and the match itself.
  *
- * The current forecast comes from the published artifact — the same object
- * `/season` renders. The `history` array comes from `prediction_snapshots`,
- * which is append-only, so it answers "what were we saying about this match a
- * week ago" rather than only "what do we say now".
+ * The forecast comes from the published artifact — the same object `/season`
+ * renders. The `match` comes from ESPN, resolved by the SAME join a knockout
+ * tie uses, so a Premier League fixture and a Champions League tie reach the
+ * identical card. A league fixture is a single match, which is the easy case of
+ * that join: one competition, one date, two clubs.
  *
- * History is best-effort: it lives in the gitignored warehouse and is absent
- * on a fresh checkout or on Vercel. The current forecast must render without
- * it, so a missing history is an empty array, never an error.
+ * The match is best-effort and the forecast never depends on it. An upcoming
+ * fixture legitimately has no timeline and no team sheets — ESPN files those
+ * about an hour before kickoff — so an empty `match` is normal rather than a
+ * fault.
  */
 export const dynamic = 'force-dynamic'
 
@@ -41,11 +45,27 @@ export async function GET(
         { status: 404 },
       )
     }
+    let match: MatchCard | null = null
+    try {
+      const found = await resolveTie({
+        competitionId: fixture.competition_id,
+        kickoff: fixture.date,
+        teamA: fixture.home,
+        teamB: fixture.away,
+        twoLegged: false,
+      })
+      if (found) match = await matchCard(fixture.competition_id, found.eventIds[0])
+    } catch {
+      // ESPN being unreachable costs the match card, never the forecast.
+      match = null
+    }
+
     return NextResponse.json({
       available: true,
       generated_at: parsed.generated_at,
       method: parsed.method,
       fixture,
+      match,
     })
   } catch {
     return NextResponse.json(

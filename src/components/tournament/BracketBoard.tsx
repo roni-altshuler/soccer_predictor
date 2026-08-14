@@ -93,6 +93,33 @@ const fmtDate = (iso: string) =>
     timeZone: 'UTC',
   })
 
+/**
+ * The name as a bracket card prints it.
+ *
+ * The structural tokens a club's legal name carries — `FC`, `CF`, `SC`, `AC`,
+ * `Club`, `de` — are the same set `normTeam` already drops to match a crest,
+ * and they are pure width on a card 150px wide. `FC Bayern München` reads as
+ * `Bayern München`, `Real Madrid CF` as `Real Madrid`.
+ *
+ * It only ever removes tokens, never abbreviates: inventing `RMA` from `Real
+ * Madrid` would be a code this project has no source for, and a wrong code is
+ * read as a fact. Anything still too long is truncated by CSS with the full
+ * name on the element, so nothing is lost.
+ */
+const STRUCTURAL = new Set([
+  'fc', 'cf', 'afc', 'sc', 'ac', 'ss', 'ud', 'cd', 'rc', 'rcd', 'sv', 'tsv',
+  'vfl', 'vfb', 'fsv', 'bsc', 'sd', 'club', 'calcio', 'futbol', 'football',
+  'futebol', 'kv', 'rsc', 'kaa', 'sk',
+])
+
+export function bracketLabel(name: string): string {
+  const kept = name
+    .trim()
+    .split(/\s+/)
+    .filter((t) => !STRUCTURAL.has(t.toLowerCase().replace(/[.]/g, '')))
+  return kept.length ? kept.join(' ') : name
+}
+
 function useWidth(): [React.RefObject<HTMLDivElement>, number] {
   const ref = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
@@ -129,6 +156,23 @@ export function tieHref(
 ): string | null {
   if (season === undefined) return null
   return `/tournaments/tie/${competitionId}/${season}/${roundSlug}/${tie.team_a_id}v${tie.team_b_id}`
+}
+
+/** Height reserved above the final for the trophy block. */
+const CHAMPION_H = 62
+
+function Champion({ name }: { name: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 text-center">
+      <Trophy className="h-5 w-5 text-[var(--accent-primary)]" aria-hidden="true" />
+      <span className="max-w-full truncate text-[13px] font-semibold text-[var(--text-primary)]">
+        {name}
+      </span>
+      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+        Champion
+      </span>
+    </div>
+  )
 }
 
 export function BracketBoard({
@@ -236,6 +280,7 @@ export function BracketBoard({
   }
 
   const { layout } = plan
+  const finalCard = layout.cards.find((c) => c.round === roundSlots.length - 1) ?? null
 
   return (
     <section className={cn('mt-5', className)}>
@@ -301,6 +346,10 @@ export function BracketBoard({
           onMouseLeave={() => setActive(null)}
         >
           <div
+            // Centred when it is narrower than the space it has: a board
+            // pinned left with a third of the card empty beside it reads as
+            // something that failed to load.
+            className={plan.fits ? 'mx-auto' : undefined}
             style={{
               width: layout.width * plan.scale,
               height: (layout.height + METRICS.headerH) * plan.scale,
@@ -407,20 +456,32 @@ export function BracketBoard({
                   </div>
                 )
               })}
+
+              {/* The trophy sits in the middle of the board, above the final —
+                  the place a printed bracket puts it, and the thing a reader
+                  looks for first on a finished edition. It drops below the
+                  board only when the final card is too near the top for it to
+                  fit, which happens on a two-round bracket. */}
+              {champion && finalCard && finalCard.y >= CHAMPION_H ? (
+                <div
+                  className="absolute"
+                  style={{
+                    left: finalCard.x,
+                    top: finalCard.y + METRICS.headerH - CHAMPION_H,
+                    width: finalCard.w,
+                  }}
+                >
+                  <Champion name={champion} />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
       </div>
 
-      {champion ? (
-        <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-[color-mix(in_srgb,var(--accent-primary)_40%,var(--border-color))] bg-[color-mix(in_srgb,var(--accent-primary)_6%,var(--card-bg))] px-3.5 py-2.5">
-          <Trophy className="h-4 w-4 shrink-0 text-[var(--accent-primary)]" aria-hidden="true" />
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-            Champion
-          </span>
-          <span className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
-            {champion}
-          </span>
+      {champion && !(finalCard && finalCard.y >= CHAMPION_H) ? (
+        <div className="mt-3">
+          <Champion name={champion} />
         </div>
       ) : null}
 
@@ -447,8 +508,8 @@ function placeholderFor(
   for (const slot of [card.slot * 2, card.slot * 2 + 1]) {
     const tie = bySlot.get(cardKey(card.round - 1, slot))
     if (!tie) return null
-    if (tie.winner) feeders.push(tie.winner)
-    else feeders.push(`Winner of ${tie.team_a} / ${tie.team_b}`)
+    if (tie.winner) feeders.push(bracketLabel(tie.winner))
+    else feeders.push(`Winner of ${bracketLabel(tie.team_a)} / ${bracketLabel(tie.team_b)}`)
   }
   return [feeders[0], feeders[1]]
 }
@@ -561,7 +622,7 @@ function TieCard({
             data-club={side.name}
             data-out={out ? 'true' : undefined}
             className={cn(
-              'flex items-center gap-2 px-2.5 py-[5px]',
+              'flex items-center gap-1.5 px-2 py-[3px]',
               i === 0 && 'border-b border-[color-mix(in_srgb,var(--border-color)_60%,transparent)]',
               won && 'bg-[color-mix(in_srgb,var(--accent-primary)_8%,transparent)]',
             )}
@@ -569,12 +630,13 @@ function TieCard({
             <TeamCrest
               team={side.name}
               competitionId={competitionId}
-              size="sm"
+              size="xs"
               className={out ? 'opacity-40' : undefined}
             />
             <span
+              title={side.name}
               className={cn(
-                'min-w-0 flex-1 truncate text-[12.5px]',
+                'min-w-0 flex-1 truncate text-[11.5px]',
                 // Elimination is read before anything else, so it is checked
                 // first: a club that went out is never also bolded as favoured.
                 out
@@ -584,12 +646,12 @@ function TieCard({
                     : 'text-[var(--text-secondary)]',
               )}
             >
-              {side.name}
+              {bracketLabel(side.name)}
             </span>
             {side.goals !== null ? (
               <span
                 className={cn(
-                  'shrink-0 font-mono text-[12.5px] tabular-nums',
+                  'shrink-0 font-mono text-[11.5px] tabular-nums',
                   won ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]',
                 )}
               >
@@ -598,7 +660,7 @@ function TieCard({
             ) : side.p !== null ? (
               <span
                 className={cn(
-                  'shrink-0 font-mono text-[11.5px] tabular-nums',
+                  'shrink-0 font-mono text-[10.5px] tabular-nums',
                   favoured ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)]',
                 )}
               >

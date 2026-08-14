@@ -6,8 +6,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
-import { LegDetail } from '@/components/fixture/LegDetail'
-import { FormGuide, HeadToHead } from '@/components/fixture/TieContext'
+import { MatchDetail } from '@/components/fixture/MatchDetail'
 import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { splitScore } from '@/components/tournament/bracketLayout'
 import type { MatchCard } from '@/lib/server/tieFixtures'
@@ -106,12 +105,6 @@ export default function TiePage() {
   const legs = data?.legs ?? []
   const back = competition ? `/tournaments?competition=${competition}` : '/tournaments'
 
-  const names: Record<string, string> = {}
-  for (const leg of legs) {
-    names[leg.home.id] = leg.home.name
-    names[leg.away.id] = leg.away.name
-  }
-
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6 md:py-8">
       <Link
@@ -147,10 +140,14 @@ export default function TiePage() {
                 .join(' · ')}
             </p>
 
+            {/* The aggregate, placed by column so the score cannot drift into
+                the away side's cell. It is the TIE, which is a different thing
+                from either leg — so it is drawn even when one match card below
+                repeats the same two clubs. */}
             <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
               {[
-                { name: tie.team_a, id: tie.team_a_id, goals: splitScore(tie.score)?.[0] },
-                { name: tie.team_b, id: tie.team_b_id, goals: splitScore(tie.score)?.[1] },
+                { name: tie.team_a, id: tie.team_a_id },
+                { name: tie.team_b, id: tie.team_b_id },
               ].map((side, i) => {
                 const settled =
                   tie.winner_id !== null &&
@@ -163,7 +160,9 @@ export default function TiePage() {
                     data-out={out ? 'true' : undefined}
                     className={cn(
                       'flex min-w-0 items-center gap-2.5',
-                      i === 1 && 'flex-row-reverse text-right',
+                      i === 0
+                        ? 'col-start-1 row-start-1'
+                        : 'col-start-3 row-start-1 flex-row-reverse text-right',
                     )}
                   >
                     <TeamCrest
@@ -185,9 +184,9 @@ export default function TiePage() {
                   </div>
                 )
               })}
-              <span className="order-none font-mono text-[22px] tabular-nums text-[var(--text-primary)] md:text-[26px]">
+              <span className="col-start-2 row-start-1 font-mono text-[22px] tabular-nums text-[var(--text-primary)] md:text-[26px]">
                 {splitScore(tie.score)
-                  ? `${splitScore(tie.score)![0]}:${splitScore(tie.score)![1]}`
+                  ? `${splitScore(tie.score)![0]} - ${splitScore(tie.score)![1]}`
                   : tie.score || '–'}
               </span>
             </div>
@@ -241,10 +240,14 @@ export default function TiePage() {
           ) : null}
 
           {legs.map((leg, i) => (
-            <LegDetail
+            <MatchDetail
               key={leg.eventId}
               card={leg}
-              legLabel={legs.length > 1 ? `Leg ${i + 1} of ${legs.length}` : null}
+              competitionId={data?.competition?.id}
+              // A single-leg tie is the match, so the page heading above has
+              // already named the competition and the round; repeating it on
+              // the card is noise. Two legs need telling apart.
+              heading={legs.length > 1 ? `Leg ${i + 1} of ${legs.length}` : null}
             />
           ))}
 
@@ -261,8 +264,6 @@ export default function TiePage() {
             </section>
           ) : null}
 
-          {legs[0]?.headToHead ? <HeadToHead h2h={legs[0].headToHead} /> : null}
-          {legs[0]?.form.length ? <FormGuide form={legs[0].form} names={names} /> : null}
         </div>
       )}
     </div>

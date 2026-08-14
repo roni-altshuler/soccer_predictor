@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import TiePage from '@/app/(app)/tournaments/tie/[...key]/page'
 
@@ -105,7 +106,7 @@ describe('TiePage', () => {
   it('strikes the side that went out, the way the bracket does', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText(/Champions League · Final/)).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
     expect(document.querySelector('[data-club="Liverpool"]')).toHaveAttribute('data-out', 'true')
     expect(document.querySelector('[data-club="Real Madrid"]')).not.toHaveAttribute('data-out')
   })
@@ -113,15 +114,21 @@ describe('TiePage', () => {
   it('carries the match through: timeline, ground and crowd', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText('Vinícius Júnior')).toBeInTheDocument())
+    // Named twice on purpose: once on the scorer line under the score, once
+    // on the timeline.
+    await waitFor(() => expect(screen.getAllByText(/Vinícius Júnior/)).toHaveLength(2))
     expect(screen.getByText(/Stade de France/)).toBeInTheDocument()
-    expect(screen.getByText(/75,000 in/)).toBeInTheDocument()
+    expect(screen.getByText('Clément Turpin')).toBeInTheDocument()
   })
 
   it('shows the head-to-head record and recent form as real results', async () => {
+    // Both sit behind the card's own H2H tab, the same place a league fixture
+    // keeps them — the two pages share one component.
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText('RMA leads series 4-0-1')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'H2H' })).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('tab', { name: 'H2H' }))
+    expect(screen.getByText('RMA leads series 4-0-1')).toBeInTheDocument()
     expect(screen.getByText('Tottenham')).toBeInTheDocument()
     expect(screen.getByText('1-1')).toBeInTheDocument()
   })
@@ -137,7 +144,7 @@ describe('TiePage', () => {
   it('shows no forecast beside a result it already knows', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText(/Champions League · Final/)).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
     expect(screen.queryByText(/What the model expects/i)).not.toBeInTheDocument()
   })
 
@@ -152,7 +159,7 @@ describe('TiePage', () => {
       }),
     )
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText(/Champions League · Final/)).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
     expect(screen.getByText(/could not be matched/i)).toBeInTheDocument()
     expect(screen.getByText(/is from our own record and is unaffected/i)).toBeInTheDocument()
   })
@@ -160,7 +167,7 @@ describe('TiePage', () => {
   it('offers the way back to the competition it came from', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(screen.getByText(/Champions League · Final/)).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
     expect(screen.getByRole('link', { name: /The bracket/i })).toHaveAttribute(
       'href',
       '/tournaments?competition=uefa.champions',

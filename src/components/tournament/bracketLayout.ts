@@ -42,14 +42,26 @@ export interface BracketMetrics {
   radius: number
 }
 
+/**
+ * Sized so a whole bracket is one shape rather than something to be panned.
+ *
+ * A printed bracket earns its keep by being seen at once — FotMob fits a
+ * 32-team World Cup on a laptop screen, and it does that by giving each card a
+ * crest pair and a three-letter code. We show real club names, which cannot go
+ * that small, so the width comes down the honest way instead: a shorter LABEL
+ * (`bracketLabel` drops `FC`, `CF`, `SC` and the rest of the structural tokens
+ * from what is printed, never from the name itself) and tighter type. 196 to
+ * 150 takes a 16-team mirrored board from 1568px to 1224px, which is the
+ * difference between panning on a laptop and not.
+ */
 export const METRICS: BracketMetrics = {
-  cardH: 62,
-  gap: 12,
-  colW: 196,
-  connW: 30,
-  finalW: 212,
-  headerH: 34,
-  radius: 8,
+  cardH: 54,
+  gap: 10,
+  colW: 150,
+  connW: 26,
+  finalW: 172,
+  headerH: 32,
+  radius: 6,
 }
 
 export type Side = 'left' | 'right' | 'centre'

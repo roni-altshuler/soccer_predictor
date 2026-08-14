@@ -241,11 +241,21 @@ describe('planBoard', () => {
   })
 
   it('keeps a card wide enough for a real club name', () => {
-    // Two rows of "Borussia Mönchengladbach" plus a crest and a score is what
-    // sets the column width; dropping below this is how a board becomes
-    // unreadable.
-    expect(METRICS.colW).toBeGreaterThanOrEqual(180)
-    expect(METRICS.cardH).toBeGreaterThanOrEqual(56)
+    // Two rows of a club name plus a crest and a score is what sets the column
+    // width; below this a board stops being readable. The floor came down from
+    // 180 when `bracketLabel` started dropping `FC`/`CF`/`SC` from what is
+    // PRINTED — the same information in less width, not less information.
+    expect(METRICS.colW).toBeGreaterThanOrEqual(140)
+    expect(METRICS.cardH).toBeGreaterThanOrEqual(48)
+  })
+
+  it('fits a 16-team bracket on a laptop without panning', () => {
+    // The whole reason the card got smaller. A printed bracket earns its keep
+    // by being seen at once, and the old geometry put a Champions League
+    // knockout stage at 1568px — panning on every screen anyone owns.
+    const ucl = planBoard(1440, [8, 4, 2, 1])
+    expect([ucl.mode, ucl.fits, ucl.scale]).toEqual(['mirrored', true, 1])
+    expect(layoutMirrored([8, 4, 2, 1]).width).toBeLessThanOrEqual(1440)
   })
 })
 

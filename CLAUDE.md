@@ -494,6 +494,27 @@ by a test, because two copies of that map drift invisibly.
 **1 of the 46** players in a Champions League final squad list. Portraits are
 licensed data (api-football and SportMonks both serve them); a grid of grey
 silhouettes is not a lineup, and the number is what is on the actual shirt.
+Names on the pitch are ESPN's own `shortName` — deriving one by dropping the
+first token turns Vinícius Júnior into "Júnior".
+
+**`MatchDetail` is ONE component and both competitions render it.** A league
+fixture and a knockout tie reach the identical card — header, timeline down a
+centre line, stats, the two elevens on a pitch, head-to-head, commentary — with
+our forecast passed in as `model`. Before it, `/season/fixture` showed four
+model panels and no match at all while a tie showed everything, which read as
+two products. A second copy of this layout is the thing `matchDetail.test.tsx`
+exists to prevent. Its ESPN half is resolved by the SAME join for both: a
+league fixture is the easy case (one competition, one date, two clubs).
+
+**The bracket is sized to be seen at once.** FotMob fits a 32-team World Cup on
+a laptop by using crest pairs and three-letter codes; we print real club names,
+so the width came down the honest way — `bracketLabel` drops `FC`/`CF`/`SC` and
+the rest of the structural tokens from what is PRINTED, never from the name,
+and `colW` went 196 → 150. A 16-team mirrored board is 1228px instead of 1568.
+**Do not "abbreviate" a club to a code**: this project has no source for one,
+and a wrong code is read as a fact. The champion is a trophy in the middle of
+the board above the final, dropping below it only when the final sits too near
+the top to fit.
 
 **Both evidence pages are per competition, and share `LayerTabs`.** `/accuracy`
 was reporting one pooled hit rate over every league — an average of leagues that
