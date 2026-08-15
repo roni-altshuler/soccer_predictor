@@ -1,5 +1,17 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
+import { configure } from '@testing-library/react'
+
+// testing-library defaults `waitFor` to 1000ms, which is fine for a component
+// and tight for a page smoke test: those mount, fire several fetches and
+// render a full layout. On an unloaded machine they finish in ~50ms; running
+// jest alongside `next build` or `next lint` pushed them past a second and
+// suites failed one or two tests at random.
+//
+// A flaky suite is worse than a slow one — it trains everyone to re-run and
+// shrug, which is how a real regression gets waved through. Raised once here
+// rather than sprinkled across call sites, so a new test inherits it.
+configure({ asyncUtilTimeout: 5000 })
 
 // jsdom doesn't ship IntersectionObserver or ResizeObserver — many UI libs
 // (framer-motion's useInView, radix, etc.) reference them on mount.

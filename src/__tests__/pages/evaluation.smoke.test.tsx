@@ -154,7 +154,7 @@ describe('EvaluationPage — one competition at a time', () => {
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
     await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /MLS/i }))
 
-    expect(screen.getAllByText('0.62101').length).toBeGreaterThan(0)
+    await waitFor(() => expect(screen.getAllByText('0.62101').length).toBeGreaterThan(0))
     expect(screen.queryByText('0.58266')).not.toBeInTheDocument()
   })
 
@@ -198,7 +198,7 @@ describe('EvaluationPage — one competition at a time', () => {
     expect(screen.getByText(/Across every league/i)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-    expect(screen.getByText(/Across all 14 knockout competitions/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Across all 14 knockout competitions/i)).toBeInTheDocument())
   })
 })
 
@@ -291,7 +291,7 @@ describe('EvaluationPage — the two records', () => {
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
     await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /MLS/i }))
 
-    expect(screen.getByText(/too few to score/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/too few to score/i)).toBeInTheDocument())
   })
 })
 

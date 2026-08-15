@@ -127,7 +127,7 @@ describe('AccuracyPage — per competition', () => {
 
     // Three endpoints have to land before this page has a number on it, which
     // is slower than the 1s default when the whole suite runs at once.
-    await waitFor(() => expect(screen.getAllByText('54.8%')).toHaveLength(2), { timeout: 5000 })
+    await waitFor(() => expect(screen.getAllByText('54.8%')).toHaveLength(2))
     expect(screen.getByText('420')).toBeInTheDocument()
     expect(screen.getByText('0.1830')).toBeInTheDocument()
   })
@@ -140,7 +140,7 @@ describe('AccuracyPage — per competition', () => {
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
     await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
 
-    expect(screen.getAllByText('75.0%').length).toBeGreaterThan(0)
+    await waitFor(() => expect(screen.getAllByText('75.0%').length).toBeGreaterThan(0))
     expect(screen.queryByText('54.8%')).not.toBeInTheDocument()
   })
 
@@ -153,7 +153,7 @@ describe('AccuracyPage — per competition', () => {
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
     await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
 
-    expect(screen.getByText(/not yet evidence of anything/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/not yet evidence of anything/i)).toBeInTheDocument())
   })
 
   it('shows every league against the floors that make its rate readable', async () => {
@@ -187,7 +187,7 @@ describe('AccuracyPage — per competition', () => {
     await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
     await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
 
-    expect(screen.getByText(/a backtest, not something published in advance/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/a backtest, not something published in advance/i)).toBeInTheDocument())
   })
 
   it('offers only competitions with a settled edition behind them', async () => {
@@ -213,7 +213,7 @@ describe('AccuracyPage — per competition', () => {
     expect(screen.getByText(/Across every league/i)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-    expect(screen.getByText(/Across all 2 knockout competitions/i)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Across all 2 knockout competitions/i)).toBeInTheDocument())
   })
 
   it('disables the knockout layer when no edition has been settled', async () => {
@@ -276,7 +276,7 @@ describe('AccuracyPage — per competition', () => {
     const back = screen.getByRole('tab', { name: /leagues/i })
     expect(back).toBeEnabled()
     await userEvent.click(back)
-    expect(screen.getByRole('tab', { name: /leagues/i })).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByRole('tab', { name: /leagues/i })).toHaveAttribute('aria-selected', 'true'))
   })
 
   it('finds a league record that the endpoint keyed by display name', async () => {
