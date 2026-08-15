@@ -580,14 +580,50 @@ export default function MatchDetailPage() {
         ) : (
           /* No ESPN summary for this fixture — a FotMob-sourced match, or ESPN
              unreachable. The old layout still answers rather than the page
-             showing nothing. */
-          <OverviewTab
-            match={match}
-            isLive={isLive}
-            isFinished={isFinished}
-            isScheduled={isScheduled}
-            onSelectTab={selectTab}
-          />
+             showing nothing, but it carries no scoreline of its own, and this
+             page stopped drawing one when the shared card took over. Without
+             this the reader gets momentum and events for a match whose score
+             is nowhere on the page. */
+          <div className="space-y-5">
+            <header className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 pb-4 pt-4 md:px-5">
+              <p className="text-center font-mono text-[10.5px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+                {leagueAccent && leagueAccent.competitionId !== 'unknown'
+                  ? leagueAccent.displayName
+                  : match.league}
+              </p>
+              <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">
+                <span className="col-start-1 min-w-0 truncate text-[15px] font-semibold leading-tight text-[var(--text-primary)] md:text-[18px]">
+                  {match.home_team}
+                </span>
+                <div className="col-start-2 px-1 text-center">
+                  {match.home_score === null || match.away_score === null ? (
+                    <div className="font-mono text-[15px] uppercase leading-none tracking-[0.14em] text-[var(--text-tertiary)] md:text-[17px]">
+                      vs
+                    </div>
+                  ) : (
+                    <div className="font-mono text-[26px] leading-none tabular-nums text-[var(--text-primary)] md:text-[32px]">
+                      {match.home_score}
+                      <span className="mx-1.5 text-[var(--text-tertiary)]">-</span>
+                      {match.away_score}
+                    </div>
+                  )}
+                  <div className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+                    {isFinished ? 'FT' : isScheduled ? 'Not started' : match.status}
+                  </div>
+                </div>
+                <span className="col-start-3 min-w-0 truncate text-right text-[15px] font-semibold leading-tight text-[var(--text-primary)] md:text-[18px]">
+                  {match.away_team}
+                </span>
+              </div>
+            </header>
+            <OverviewTab
+              match={match}
+              isLive={isLive}
+              isFinished={isFinished}
+              isScheduled={isScheduled}
+              onSelectTab={selectTab}
+            />
+          </div>
         )}
       </div>
     </div>
