@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-08-15T06:27:15.841899+00:00",
+  "captured_rows": 18,
+  "scored_fixtures": 0,
+  "joined_by": {},
+  "not_scored": {
+    "no_result_yet": 14,
+    "ours_never_forecast_this_competition": 4
+  },
+  "vendor_degeneracy": {
+    "n": 18,
+    "two_legs_identical": 18,
+    "share": 1.0,
+    "distinct_triples": 5
+  },
+  "ours": {
+    "n": 0,
+    "brier": null,
+    "log_loss": null,
+    "accuracy": null,
+    "impossible_calls": 0
+  },
+  "vendor": {
+    "n": 0,
+    "brier": null,
+    "log_loss": null,
+    "accuracy": null,
+    "impossible_calls": 0
+  },
+  "paired_brier_bootstrap_vendor_minus_ours": {},
+  "on_fixtures_with_a_price": null,
+  "sample": {
+    "floor": 200,
+    "needed_for_a_0.01_gap_at_80pct_power": null
+  },
+  "verdict": {
+    "decision": "keep ours",
+    "because": "0 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "final": false
+  }
+}

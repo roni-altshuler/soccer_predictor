@@ -283,6 +283,62 @@ Soccerway via a Google search, which this machine cannot reach anyway. Its
 README's 55% accuracy would beat the closing line's 54.0% on 1X2 — per the
 landmine list, that is the signature of a harness bug, not an edge.
 
+### The decision rule is pre-registered (2026-08-15)
+
+Written into `score_vendor_predictions.py` **before the sample existed**, so
+neither side of the argument can move the goalposts once numbers arrive. The
+vendor's triple replaces ours only if all three hold:
+
+1. it beats the served model on paired Brier over the scored fixtures,
+2. the paired bootstrap CI on that difference excludes zero, and
+3. it is closer to the market price than ours, on fixtures where a pre-kickoff
+   price exists.
+
+Beating us but not the market makes it a candidate **feature** for
+`benchmark_market_blend.py`, not a replacement. Beating *the market* is not a
+promotion either — it routes to "audit the harness", because this repo has
+already lost months to a benchmark bug that announced itself exactly that way.
+Failing (1) or (2) means keep ours, which is the default and needs no argument.
+
+**Both sides are held to the kickoff rule, not just the challenger.** The vendor
+row carries `before_kickoff`; our record carries `prediction_timestamp`; a pair
+is scored only when both precede that kickoff. Enforcing point-in-time on the
+challenger while exempting the incumbent would win the comparison by
+construction. (Known asymmetry, not yet fixed: the two forecasts are not made at
+the *same* time before kickoff, only both before it.)
+
+**Score ours from `predictions_*.json`, never `season_fixtures.json`.** The
+latter is the *remaining* set — a fixture leaves it once played, so by the time
+a result exists our forecast for it is gone. Reconstructing one afterwards is
+the exact sin this exercise is set up to catch.
+
+**The join needed a uniqueness gate, same as the tie join.** The exact key
+missed 4 of 14 joinable fixtures on the first capture, every one cosmetic:
+`academico viseu`/`academico de viseu`, `cambuur`/`sc cambuur`,
+`dc united`/`d c united`, `new york red bulls`/`red bull new york`.
+`relaxed_key()` drops noise tokens anywhere, glues split initials, singularises
+and compares as a set — deliberately loose, and therefore **only used when it
+matches exactly one fixture on that competition and date**. Two candidates is a
+refusal. A wrong join is worse than a missing one: it puts a real number on the
+wrong result.
+
+**`required_n()` returns None when the pair never disagrees.** Subtracting two
+constant series leaves float dust near 1e-17, not a clean zero, and that dust
+divided through to "you need 1 more fixture" — the most dangerous answer the
+function could give. Guard is `sd < 1e-9`, not `sd <= 0`.
+
+**Vendor degeneracy is tracked as a running statistic.** The first 18 captures
+had two identical legs in **18 of 18** triples and only 5 distinct triples.
+P(draw) landing exactly on P(home) every time is a two-way strength comparison
+wearing three numbers. If their model warms up once the season gives it data,
+`vendor_degeneracy` in `backend/data/diagnostics/vendor_vs_ours.json` is where
+that shows up — rather than being assumed either way.
+
+Captured by `.github/workflows/capture_vendor_predictions.yml`, every 6 hours
+over today and tomorrow (~25 of the 100 daily requests). It fails loudly on a
+missing `API_FOOTBALL` secret, because a scheduled job that captures nothing
+looks exactly like a quiet day.
+
 ## Production forecasting (2026-08-11)
 
 The 2026-27 season is served from `forecast_season.py`. **The model is frozen**

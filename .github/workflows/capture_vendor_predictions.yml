@@ -1,0 +1,104 @@
+name: Capture Vendor Predictions
+
+# Buy the challenger's answer before kickoff, then score it against ours.
+#
+# The comparison this feeds — "if theirs is better, use theirs" — is only
+# answerable if both forecasts were fixed BEFORE the match. A number fetched
+# afterwards is not a forecast, whoever sold it, so a missed capture cannot be
+# recovered: the fixture is simply never scoreable. That is the entire reason
+# this runs on a schedule instead of being a command someone remembers.
+#
+# Cost: the free plan allows 100 requests/day. Each run spends one call listing
+# a date plus one per fixture it has not already captured, and capture is
+# idempotent on (vendor, fixture_id) — so four runs over two dates cost roughly
+# 25 requests a day in total, not 4x25.
+#
+# HONESTY RULE (this repo once lost 3 months to a masked crash): no
+# `continue-on-error`, no `|| true`. A missing key or a throttled vendor must
+# fail the run visibly rather than commit a quiet zero.
+
+on:
+  schedule:
+    # Every 6 hours. Kickoffs are spread across every time zone we serve, and a
+    # once-daily run would arrive after the early ones.
+    - cron: '0 2,8,14,20 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Capture a specific date (YYYY-MM-DD) instead of today + tomorrow'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture-vendor-predictions
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install numpy
+
+      # `capture_vendor_predictions.py` treats a missing key as "nothing to do"
+      # and exits 0, which is right for a local run and wrong here: a scheduled
+      # job that silently captures nothing looks exactly like a quiet day.
+      - name: Require the API key
+        env:
+          API_FOOTBALL: ${{ secrets.API_FOOTBALL }}
+        run: |
+          if [ -z "$API_FOOTBALL" ]; then
+            echo "::error::API_FOOTBALL is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Capture pre-kickoff probabilities
+        env:
+          API_FOOTBALL: ${{ secrets.API_FOOTBALL }}
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python -m backend.scripts.capture_vendor_predictions --date "${{ github.event.inputs.date }}"
+          else
+            # Tomorrow as well as today: a fixture kicking off at 00:30 UTC is
+            # already unreachable by the time the 02:00 run lists "today".
+            python -m backend.scripts.capture_vendor_predictions
+            python -m backend.scripts.capture_vendor_predictions \
+              --date "$(date -u -d '+1 day' +%Y-%m-%d)"
+          fi
+
+      # Scores whatever has settled since the last run. Prints the verdict
+      # under the pre-registered rule, which will read "keep ours" until the
+      # sample is large enough to say anything else.
+      - name: Score the vendor against us
+        run: python -m backend.scripts.score_vendor_predictions
+
+      - name: Commit the capture
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/data/predictions/vendor_predictions.jsonl \
+                  backend/data/diagnostics/vendor_vs_ours.json
+          if git diff --cached --quiet; then
+            echo "no new forecasts (no fixtures in our leagues today)"
+            exit 0
+          fi
+          n=$(git diff --cached --numstat -- backend/data/predictions/vendor_predictions.jsonl \
+              | awk '{s+=$1} END {print s+0}')
+          git commit -m "chore: capture ${n} vendor forecasts [automated]"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
