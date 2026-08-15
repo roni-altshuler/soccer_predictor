@@ -1,7 +1,7 @@
 # LLM adapter & the Boardroom (internal — not user-facing)
 
 This document is for maintainers. It is **not** surfaced in the product UI. See
-`docs/design-language.md` §"Copy policy" — provider names, model/algorithm
+`DESIGN.md` §"Copy" — provider names, model/algorithm
 names, and pipeline details never appear on the website.
 
 ## The one rule: LLM calls run at pipeline time

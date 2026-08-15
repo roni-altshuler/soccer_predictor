@@ -128,8 +128,8 @@ backend/
     ├── folder-tree.md
     ├── component-dependency-map.md
     ├── route-architecture.md
-    ├── design-tokens.md
     └── screenshot-comparison.md
+                                      # design tokens + language: ../DESIGN.md (repo root)
 ```
 
 ## Counts at a glance

@@ -11,6 +11,11 @@ import {
   type WatchTeam,
 } from '@/lib/watchlist'
 import { EmptyState } from '@/components/EmptyState'
+import {
+  EvidencePanel,
+  type Historical,
+  type Live,
+} from '@/components/forecast/EvidencePanel'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { FeaturedStrip } from '@/components/match/FeaturedStrip'
@@ -144,6 +149,8 @@ export default function Home() {
   const [tab, setTab] = useState<'all' | 'live' | 'finished'>('all')
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
   const [watchlistOnly, setWatchlistOnly] = useState(false)
+  const [historical, setHistorical] = useState<Historical | null>(null)
+  const [liveRecord, setLiveRecord] = useState<Live | null>(null)
 
   // Watchlist state — load from localStorage and react to cross-tab updates.
   useEffect(() => {
@@ -183,6 +190,26 @@ export default function Home() {
       setWatchlistOnly(false)
     }
   }, [trackedTeams.length, watchlistOnly])
+
+  // The record behind every percentage in the list below. Fetched once, not on
+  // the 60s match poll — it changes when a result is scored, not by the minute.
+  useEffect(() => {
+    let alive = true
+    fetch('/api/v1/evaluation', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!alive) return
+        setHistorical((data?.historical ?? null) as Historical | null)
+        setLiveRecord((data?.live ?? null) as Live | null)
+      })
+      .catch(() => {
+        // The panel renders its own "not available" state. A failed fetch must
+        // not take the scores list down with it.
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // Today's matches — refetch every minute for live updates, and every
   // time the user toggles the men's/women's universe.
@@ -361,6 +388,14 @@ export default function Home() {
             Model probabilities, scored against the closing line on the accuracy page.
           </p>
         </div>
+
+        {/* The record behind the percentages above.
+            Every 1X2 box in the list is a claim, and a claim a reader cannot
+            check is decoration. The evidence panel is deliberately not a tab
+            and not a link — a tab is a place things go to be unread, and this
+            page shows forecasts, so it carries their record. It renders BELOW
+            the list because the scores list is still the page. */}
+        <EvidencePanel historical={historical} live={liveRecord} className="mt-6" />
       </div>
     </div>
   )

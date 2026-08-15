@@ -1078,7 +1078,15 @@ that only works under a named venv is a script CI cannot run.
 ### Frontend (`src/`)
 Next.js 15 App Router, **10 pages** (was 26), **32 API routes** (was 67).
 
-Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_predictions`): pure black `#000`, surfaces `#0d0d0d`/`#141414`, hairlines `#262626`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No gradients, no shadows, no glassmorphism, no chrome.** Colour carries meaning only — never decoration.
+Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_predictions`) and shared with Hardwood (`../nba_predictor`): pure black `#000`, surfaces `#0d0d0d`/`#141414`, hairlines `#262626`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No gradients, no shadows, no glassmorphism, no chrome.** Colour carries meaning only — never decoration.
+
+**The spec is [DESIGN.md](DESIGN.md) at the repo root, and it is authored FROM `globals.css`.** It replaced `docs/design-tokens.md` and `docs/design-language.md` on 2026-08-15, which between them published six hexes that existed nowhere in the product, eight table rows of a deleted light mode, and a rule mandating cyan for AI data in a product with no cyan. **A design spec that lies is worse than none** — an agent trusting those docs would faithfully rebuild the theme they replaced. If DESIGN.md and `globals.css` ever disagree, the CSS is right.
+
+**`globals.css` went 1,011 → 340 lines the same day: 64 selectors had zero consumers**, and they carried the gradients, glows and hover-lift Bugatti exists to remove (`.btn-primary` had a `linear-gradient` *and* a hardcoded `box-shadow: 0 8px 16px` bypassing `--shadow-sm: none`; `.fm-select`'s chevron hardcoded `#16a34a`, an accent from two palettes ago). Dead CSS is what the next person writing a button copies. **Before deleting a selector, grep `src/` excluding `globals.css` itself** — its own definitions otherwise count as consumers, which is how "11 dead classes" was really 64.
+
+**`.dark` is always on, so any `.dark X` rule beats its unprefixed twin unconditionally.** `.dark .skeleton-shimmer` painted `#161b22` over the token-built default, so every loading state on the site rendered in retired navy-charcoal instead of on the black surface — visible in a screenshot, invisible to every test.
+
+**Component catalogues were evaluated on 2026-08-15 and rejected.** 21st.dev is mechanically compatible (shadcn `new-york`, radix, cva, lucide all present) but its centre of gravity — 1,152 animated heroes, 501 CTAs, dedicated Gradients/Shaders/ASCII sections — is itemised in DESIGN.md's "why the previous theme failed". Its strongest structural candidate, a ⌘K palette, is a thing this repo already removed on purpose. getdesign.md sells DESIGN.md specs scraped from other products: right idea, wrong source. Take structure and interaction patterns; never visual treatments.
 
 **Dark-only.** `<html class="dark">` is hardcoded and there is no theme provider; `:root` in `globals.css` is the single source of truth and the `.dark` block is intentionally empty.
 

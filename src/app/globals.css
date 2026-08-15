@@ -6,16 +6,20 @@
    Design tokens — Bugatti, dark only.
    shadcn/ui primitives read these via tailwind.config.js. There is
    no light theme and no toggle: :root is the single source of truth.
+
+   The written spec is DESIGN.md at the repo root, and it is authored FROM
+   this file. If the two ever disagree, this file is right and DESIGN.md is
+   the bug — that is exactly how `docs/design-tokens.md` came to publish six
+   hexes that no longer existed anywhere in the product.
    ──────────────────────────────────────────────────────────── */
 :root {
   /* ────────────────────────────────────────────────────────────
      Bugatti palette — dark only.
 
-     Ported from the sibling RaceIQ project (f1_predictions). Pure black
-     canvas, hairline borders, no gradients, no shadows, no chrome. Colour
-     carries MEANING only — live state, positive/negative, positional tier —
-     never decoration. Every token name from the old Matchday v3 theme is
-     preserved and repointed, so components keep compiling untouched.
+     Ported from the sibling RaceIQ project (f1_predictions) and shared with
+     Hardwood (nba_predictor). Pure black canvas, hairline borders, no
+     gradients, no shadows, no chrome. Colour carries MEANING only — live
+     state, positive/negative, positional tier — never decoration.
 
      Light mode is gone. The reference is dark-only and the second theme was
      an entire axis of complexity serving a product that no longer exists.
@@ -47,7 +51,8 @@
   --accent-loss-soft: #d4655e;
   --accent-info: #c3d9f3;             /* links, informational — the ice-blue */
   --accent-info-soft: #d6e5f7;
-  /* Retired hues, aliased so legacy consumers stay calm rather than neon. */
+  /* Retired hues, aliased so legacy consumers stay calm rather than neon.
+     There is no cyan in this product: `--accent-ai` IS the ice-blue. */
   --accent-ai: var(--accent-info);
   --accent-ai-soft: var(--accent-info-soft);
   --accent-market: var(--accent-info);
@@ -81,9 +86,8 @@
   --surface-highlight: color-mix(in srgb, var(--accent-ai) 10%, transparent);
   --surface-glow: color-mix(in srgb, var(--accent-primary) 18%, transparent);
 
-  /* Theme tokens added during the light-mode sweep — see Stream B of the
-     bug-fix + FotMob polish plan. Components should pick from these tokens
-     instead of hard-coding Tailwind grays / `text-white` / `bg-black`. */
+  /* Components should pick from these tokens instead of hard-coding Tailwind
+     grays / `text-white` / `bg-black`. */
   --accent-on-primary: #000000;       /* text on a filled accent */
   --overlay-bg: rgba(0, 0, 0, 0.72);  /* page-loader, modal backdrops */
   --pitch-bg: #0d0d0d;                 /* lineup pitch surface — flat, hairline-drawn */
@@ -98,7 +102,6 @@
   --shell-sidebar-w-expanded: 220px;
   --shell-topbar-h: 56px;
   --shell-content-max: 1160px;
-  /* Ask Pitchverse rail: docked from xl, slide-over below it. */
   --shell-rail-w: 340px;
 
   /* Logo plate. Competition and club marks are authored for light backgrounds
@@ -109,66 +112,36 @@
   --logo-plate: #ffffff;
   --logo-plate-ring: rgba(19, 19, 22, 0.12);
 
-  /* Glass / surface mix tokens used by the shell (flat in v3) */
-  --glass-bg: #0d0d0d;   /* no glassmorphism — flat surface */
+  /* Surface mix tokens used by the shadcn card variants. Flat — there is no
+     glassmorphism here; `--glass-blur: none` is why `backdrop-blur` utilities
+     elsewhere paint nothing over an opaque `--nav-bg`. */
+  --glass-bg: #0d0d0d;
   --glass-border: #262626;
   --glass-blur: none;
-  --bento-hl: color-mix(in srgb, var(--accent-ai) 16%, transparent);
-  --bento-hl-primary: color-mix(in srgb, var(--accent-primary) 16%, transparent);
 
-  /* ────────────────────────────────────────────────────────────
-     FotMob-inspired redesign tokens (Phase 0.A — see docs/design-tokens.md)
-     ──────────────────────────────────────────────────────────── */
+  /* Retired bloom, kept as hairlines/neutrals so the shadcn card variants that
+     still name them render calm surfaces instead of neon. */
+  --glow-ai: 0 0 0 1px var(--border-color);
+  --elev-1: var(--card-bg);
+  --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
+
+  /* Pitch / rating surfaces */
   --accent-pitch-line: rgba(241, 245, 251, 0.18);
   --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
   --rating-bg-high: color-mix(in srgb, var(--accent-primary) 22%, transparent);
   --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 22%, transparent);
   --rating-bg-low: color-mix(in srgb, var(--muted-bg) 80%, var(--text-tertiary) 20%);
   /* Per-match team tints — components override inline via
-     style={{ '--team-tint-home': brandColor }}. Defaults give a sensible
-     fallback when the league/club lookup hasn't resolved yet. */
+     style={{ '--team-tint-home': brandColor }}. */
   --team-tint-home: var(--accent-primary);
   --team-tint-away: var(--accent-loss);
   --headshot-ring: rgba(15, 26, 44, 0.18);
   --score-numeric-shadow: none;
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
 
-  /* ────────────────────────────────────────────────────────────
-     Cinematic layer (whole-site redesign) — coloured glows, aurora
-     mesh stops, elevated surface gradients, and team-tinted hero
-     gradients. Light-mode values stay restrained; .dark turns them up.
-     ──────────────────────────────────────────────────────────── */
-  /* Matchday v3: glows and aurora washes are retired — kept as flat/neutral
-     values so legacy consumers render calm surfaces instead of neon bloom. */
-  --glow-ai: 0 0 0 1px var(--border-color);
-  --glow-primary: 0 0 0 1px var(--border-color);
-  --glow-loss: 0 0 0 1px var(--border-color);
-  --aurora-1: transparent;
-  --aurora-2: transparent;
-  --aurora-3: transparent;
-  --elev-1: var(--card-bg);
-  --elev-2: var(--card-bg);
-  --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
-  --hairline-bright: color-mix(in srgb, white 14%, transparent);
-
-  /* Ambient washes and the lifted-panel "glass edge" are retired — Bugatti
-     has no bloom and no premium sheen. Kept as transparent so any lingering
-     consumer paints nothing. */
-  --ambient-primary: transparent;
-  --ambient-ai: transparent;
-  --panel-top-hl: transparent;
-  /* Team-tint hero gradient — match-detail / cards override --team-tint-home
-     & --team-tint-away inline to paint a broadcast-style header. */
-  /* Was a 135° three-stop team-tinted wash. Bugatti has no gradients, so the
-     match header is a flat surface and club identity is carried by the crest
-     and the score, not by a painted background. */
-  --team-header-gradient: var(--background-secondary);
-
-  /* ────────────────────────────────────────────────────────────
-     Marketing landing tokens (used by /welcome). Spacing rhythm is
-     deliberately roomier than the dense app surfaces; widths reuse
-     the existing shell scale so the two experiences feel related.
-     ──────────────────────────────────────────────────────────── */
+  /* Marketing landing tokens (used by /welcome). Spacing rhythm is
+     deliberately roomier than the dense app surfaces; widths reuse the
+     existing shell scale so the two experiences feel related. */
   --mkt-section-y: clamp(4rem, 9vw, 8rem);
   --mkt-section-gap: clamp(1.5rem, 3vw, 3rem);
   --mkt-prose-max: 720px;
@@ -183,6 +156,13 @@
    * every token in :root with the Matchday v3.1 charcoal palette. Bugatti is
    * dark-only, so the single source of truth now lives in :root and this
    * selector is kept purely so the hardcoded class stays harmless.
+   *
+   * BEWARE: because the class is always on, ANY `.dark X` rule beats its
+   * unprefixed twin unconditionally. `.dark .skeleton-shimmer` used to paint
+   * #161b22 over the token-built default, so every loading state on the site
+   * rendered in the retired navy-charcoal rather than on the black surface.
+   * If a rule needs a `.dark` prefix here, it is a rule that only ever runs —
+   * write it once, without the prefix.
    *
    * If a light mode ever returns, invert this: put the light values in :root
    * and the dark ones here. Do not reintroduce a second full palette without
@@ -238,212 +218,51 @@ nav, button, .caption, th, [role='tab'] {
 *:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 4px; }
 
 /* ────────────────────────────────────────────────────────────
-   Surface primitives (legacy fm-* classes — kept for now)
+   Surface primitives
+
+   These are the only hand-written surface classes left. Everything else on
+   this file's previous version — .fm-surface, .fm-hero, .fm-chip, .btn-*,
+   .bento-card, .cine-card, .live-hero, .aurora-bg, .grain, .spotlight,
+   .gradient-border, .glow-*, .mkt-headline-gradient, .kbd and the rest, 64
+   selectors in total — had ZERO consumers and carried the gradients, glows
+   and lift that Bugatti exists to remove. They were not harmless: they are
+   what the next person writing a button would have copied.
    ──────────────────────────────────────────────────────────── */
+
+/* Flat. The 10%-white gradient this used to carry was already being fought:
+   MatchCalendar applied .fm-card and then inline-overrode the background back
+   to a solid --card-bg. */
 .fm-card {
-  background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 90%, white 10%), var(--card-bg));
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
-  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  transition: border-color 0.18s;
 }
-.fm-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md), inset 0 1px 0 0 var(--panel-top-hl); }
-
-.fm-card-pop {
-  background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 90%, white 10%), var(--card-bg));
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-  cursor: pointer;
-}
-.fm-card-pop:hover {
-  border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-hover));
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.fm-surface {
-  background: linear-gradient(170deg, color-mix(in srgb, var(--card-bg) 92%, white 8%), var(--card-bg));
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
-}
-
-.fm-hero {
-  display: block;
-  border-radius: 18px;
-  transition: transform 0.18s, box-shadow 0.18s;
-}
-
-.fm-hero:hover > div {
-  border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-hover));
-  box-shadow: var(--shadow-lg);
-}
-
-.fm-hero:active {
-  transform: translateY(1px);
-}
-
-.fm-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--muted-bg) 84%, transparent);
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 5px 10px;
-}
+.fm-card:hover { border-color: var(--border-hover); }
 
 .match-card {
-  background: linear-gradient(170deg, color-mix(in srgb, var(--match-card-bg) 90%, white 10%), var(--match-card-bg));
+  background: var(--match-card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  /* Mobile-first: tighter gaps + padding to fit more cards above the fold (B.5 density pass) */
+  /* Mobile-first: tighter gaps + padding to fit more cards above the fold */
   margin: 4px 8px;
   padding: 8px 12px;
-  transition: border-color 0.16s, background-color 0.16s, transform 0.16s, box-shadow 0.16s;
+  transition: border-color 0.16s, background-color 0.16s;
   cursor: pointer;
   display: flex;
   align-items: center;
-  box-shadow: var(--shadow-sm);
 }
 .match-card:hover {
   background: var(--card-hover);
-  border-color: color-mix(in srgb, var(--accent-primary) 35%, var(--border-hover));
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  border-color: var(--border-hover);
 }
 .match-card:last-child { margin-bottom: 10px; }
 
-.league-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 14px;
-  margin: 0 8px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--card-bg) 75%, var(--muted-bg) 25%);
-  border: 1px solid var(--border-color);
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
+/* ────────────────────────────────────────────────────────────
+   Loading states
+   ──────────────────────────────────────────────────────────── */
 
-.btn-primary {
-  background: linear-gradient(160deg, var(--accent-primary-soft), var(--accent-primary));
-  color: #02150a;
-  font-weight: 700;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 8px 16px color-mix(in srgb, var(--surface-glow) 85%, transparent);
-  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-.btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-.btn-secondary {
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-secondary:hover { background: var(--card-hover); border-color: var(--accent-primary); }
-
-.btn-ai {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-ai) 75%, white), var(--accent-ai));
-  color: #041320;
-  font-weight: 700;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent-ai) 32%, transparent);
-  transition: all 0.15s;
-}
-.btn-ai:hover { opacity: 0.92; transform: translateY(-1px); }
-
-.fm-input, .fm-select {
-  width: 100%;
-  background: var(--input-bg);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.fm-input:focus, .fm-select:focus {
-  border-color: color-mix(in srgb, var(--accent-primary) 60%, var(--accent-ai));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 16%, transparent);
-  outline: none;
-}
-.fm-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2316a34a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
-
-.stats-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; transition: border-color 0.15s; }
-.stats-card:hover { border-color: var(--accent-primary); }
-
-.prediction-bar { height: 6px; background: color-mix(in srgb, var(--border-color) 80%, transparent); border-radius: 999px; overflow: hidden; }
-.prediction-bar-fill { height: 100%; border-radius: 999px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
-.prediction-bar-fill.home { background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-soft)); }
-.prediction-bar-fill.draw { background: linear-gradient(90deg, var(--accent-warn), var(--accent-warn-soft)); }
-.prediction-bar-fill.away { background: linear-gradient(90deg, var(--accent-loss), var(--accent-loss-soft)); }
-
-.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.badge-success { background: color-mix(in srgb, var(--accent-primary) 16%, transparent); color: var(--accent-primary); }
-.badge-warning { background: color-mix(in srgb, var(--accent-warn) 16%, transparent); color: var(--accent-warn); }
-.badge-danger { background: color-mix(in srgb, var(--accent-loss) 16%, transparent); color: var(--accent-loss); }
-.badge-info { background: color-mix(in srgb, var(--accent-ai) 16%, transparent); color: var(--accent-ai); }
-.badge-ai { background: color-mix(in srgb, var(--accent-ai) 18%, transparent); color: var(--accent-ai); }
-
-.tab-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border-color); overflow-x: auto; scrollbar-width: none; }
-.tab-nav::-webkit-scrollbar { display: none; }
-.tab-item { padding: 12px 20px; font-weight: 600; font-size: 13px; color: var(--text-secondary); white-space: nowrap; transition: color 0.15s; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.tab-item:hover { color: var(--text-primary); }
-.tab-item.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); font-weight: 600; }
-
-.score-display { font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.team-name { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner { width: 32px; height: 32px; border: 2px solid var(--border-color); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
-.animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
-.animate-slide-in { animation: slideIn 0.25s ease-out forwards; }
-.animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
-.animate-slideIn { animation: slideIn 0.25s ease-out forwards; }
-.animate-scaleIn { animation: scaleIn 0.25s ease-out forwards; }
-.animate-slideUp { animation: slideUp 0.35s ease-out forwards; }
-.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-.animate-delay-100 { animation-delay: 100ms; }
-.animate-delay-200 { animation-delay: 200ms; }
-.animate-delay-300 { animation-delay: 300ms; }
-.animate-delay-400 { animation-delay: 400ms; }
-.animate-delay-500 { animation-delay: 500ms; }
-
-.ai-glow { box-shadow: 0 0 24px color-mix(in srgb, var(--accent-ai) 28%, transparent); border-color: var(--accent-ai) !important; }
 
 /* Shimmer used by Skeleton fallback */
 .shimmer {
@@ -457,14 +276,17 @@ nav, button, .caption, th, [role='tab'] {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Skeleton loader shimmer (used by src/components/Skeleton.tsx) */
+/* Skeleton loader shimmer (used by src/components/Skeleton.tsx).
+   Built from tokens so a loading state sits on the same black surface as the
+   content that replaces it. The `.dark` twin that used to override this with
+   #161b22 / rgba(42,48,56,.85) is gone — see the note in `.dark` above. */
 @keyframes skeleton-shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton-shimmer {
-  background-color: color-mix(in srgb, var(--muted-bg) 65%, var(--card-bg));
+  background-color: var(--card-hover);
   background-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -476,44 +298,34 @@ nav, button, .caption, th, [role='tab'] {
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
-.dark .skeleton-shimmer {
-  background-color: #161b22;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(42, 48, 56, 0.85) 50%,
-    transparent 100%
-  );
-}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer { animation: none; }
 }
 
-@media (max-width: 768px) {
-  .bottom-nav {
-    position: fixed;
-    bottom: 8px;
-    left: 10px;
-    right: 10px;
-    z-index: 50;
-    background: linear-gradient(150deg, color-mix(in srgb, var(--nav-bg) 93%, white 7%), var(--nav-bg));
-    border: 1px solid var(--nav-border);
-    border-radius: 18px;
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    justify-content: space-around;
-    padding: 7px 4px calc(env(safe-area-inset-bottom, 8px) + 3px);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-  main { padding-bottom: 70px; }
+/* ────────────────────────────────────────────────────────────
+   Small utilities with live consumers
+   ──────────────────────────────────────────────────────────── */
+
+/* Animated segmented win-probability bar — used by match rows / detail. */
+.prob-segment {
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.text-accent { color: var(--accent-primary); }
-.bg-accent { background-color: var(--accent-primary); }
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 .border-accent { border-color: var(--accent-primary); }
-.text-ai { color: var(--accent-ai); }
+
+/* The mobile tab bar is `position: fixed` (MobileBottomNav), so the page needs
+   room under its last row. The `.bottom-nav` class that used to style it here
+   was never applied — the component carries its own utilities. */
+@media (max-width: 768px) {
+  main { padding-bottom: 70px; }
+}
 
 /* Respect prefers-reduced-motion globally for our custom animations */
 @media (prefers-reduced-motion: reduce) {
@@ -525,487 +337,4 @@ nav, button, .caption, th, [role='tab'] {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ────────────────────────────────────────────────────────────
-   App shell — glass utilities, bento card, gradient ambient
-   ──────────────────────────────────────────────────────────── */
-
-.glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-
-.glass-strong {
-  background: color-mix(in srgb, var(--glass-bg) 92%, var(--card-bg));
-  border: 1px solid var(--glass-border);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-
-.bento-card {
-  position: relative;
-  border-radius: 18px;
-  border: 1px solid var(--border-color);
-  background: linear-gradient(168deg, color-mix(in srgb, var(--card-bg) 88%, white 12%), var(--card-bg));
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition: border-color 0.18s, box-shadow 0.2s, transform 0.18s;
-}
-.bento-card:hover {
-  border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-hover));
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-.bento-card.bento-ai:hover {
-  border-color: color-mix(in srgb, var(--accent-ai) 55%, var(--border-hover));
-}
-
-/* Faint gradient halo that sits behind a bento card to give it depth */
-.bento-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 0% 0%, var(--bento-hl), transparent 55%),
-    radial-gradient(circle at 100% 100%, var(--bento-hl-primary), transparent 55%);
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-.bento-card:hover::before { opacity: 1; }
-
-/* Conic gradient border (used on the hero AI card) */
-.gradient-border {
-  position: relative;
-  border-radius: 18px;
-  background: var(--card-bg);
-}
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(
-    from 140deg,
-    var(--accent-primary) 0deg,
-    var(--accent-ai) 120deg,
-    var(--accent-warn) 240deg,
-    var(--accent-primary) 360deg
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Ambient page backdrop — soft accent washes for the main content column */
-.ambient-bg {
-  /* Matchday v3: ambient accent washes retired — flat page surface. */
-  background: var(--background);
-}
-
-/* Spotlight that follows the cursor on the hero card */
-.spotlight {
-  position: relative;
-  overflow: hidden;
-}
-.spotlight::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    480px circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--accent-ai) 14%, transparent),
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.18s ease;
-}
-.spotlight:hover::after { opacity: 1; }
-
-/* Marquee for ticker-style strips */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.marquee {
-  display: inline-flex;
-  animation: marquee 30s linear infinite;
-  will-change: transform;
-}
-.marquee:hover { animation-play-state: paused; }
-
-/* Sidebar item — base + active + hover */
-.shell-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 13px;
-  transition: background-color 0.16s, color 0.16s, transform 0.16s;
-  position: relative;
-}
-.shell-nav-item:hover {
-  background: var(--card-hover);
-  color: var(--text-primary);
-}
-.shell-nav-item[data-active='true'] {
-  color: var(--accent-primary);
-}
-.shell-nav-item[data-active='true'][data-accent='ai'] {
-  color: var(--accent-ai);
-}
-
-/* Kbd chip styling for the Cmd+K hint */
-.kbd {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 6px;
-  border: 1px solid var(--border-color);
-  border-bottom-width: 2px;
-  border-radius: 6px;
-  background: var(--card-bg);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-weight: 600;
-}
-
-/* ────────────────────────────────────────────────────────────
-   Marketing landing (/welcome) — utilities scoped to the flagship
-   page. Composes existing accent tokens so light/dark just work.
-   ──────────────────────────────────────────────────────────── */
-
-/* Gradient headline text — the accent-primary → accent-ai sweep used
-   across the marketing hero and section titles. */
-.mkt-headline-gradient {
-  background: linear-gradient(
-    100deg,
-    var(--accent-primary) 0%,
-    var(--accent-ai) 55%,
-    var(--accent-primary-soft) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Eyebrow label — small uppercase tracking-wide kicker above section titles. */
-.mkt-eyebrow {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-/* Soft grid/radial backdrop for marketing sections that want depth without
-   the full ambient-bg wash. */
-.mkt-section-glow {
-  position: relative;
-  isolation: isolate;
-}
-.mkt-section-glow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent-ai) 10%, transparent), transparent 70%);
-}
-
-/* ────────────────────────────────────────────────────────────
-   CINEMATIC LAYER (whole-site redesign)
-   Reusable surfaces, glows, aurora backdrops, and motion that any
-   page or component can opt into. Built entirely on the design
-   tokens above, so light/dark + reduced-motion all just work.
-   ──────────────────────────────────────────────────────────── */
-
-/* Elevated cinematic card — layered gradient, hairline top highlight,
-   hover lift + soft accent glow. The workhorse surface for the refresh. */
-.cine-card {
-  position: relative;
-  border-radius: 18px;
-  border: 1px solid var(--border-color);
-  background: var(--elev-1);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.25s ease, border-color 0.25s ease;
-}
-/* Crisp top hairline that reads as a light catching the card's edge. */
-.cine-card::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hairline-bright), transparent);
-  pointer-events: none;
-}
-.cine-card:hover {
-  transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-hover));
-  box-shadow: var(--shadow-lg);
-}
-.cine-card.is-ai:hover {
-  border-color: color-mix(in srgb, var(--accent-ai) 55%, var(--border-hover));
-  box-shadow: var(--shadow-lg), var(--glow-ai);
-}
-
-/* Persistent neon glow rings (no hover required) — for hero/AI surfaces. */
-.glow-ai { box-shadow: var(--glow-ai); }
-.glow-primary { box-shadow: var(--glow-primary); }
-.glow-loss { box-shadow: var(--glow-loss); }
-
-/* Neon text — accent fill + soft halo. Use sparingly on big numerals. */
-.glow-text-ai {
-  color: var(--accent-ai);
-  text-shadow: 0 0 24px color-mix(in srgb, var(--accent-ai) 55%, transparent);
-}
-.glow-text-primary {
-  color: var(--accent-primary);
-  text-shadow: 0 0 24px color-mix(in srgb, var(--accent-primary) 55%, transparent);
-}
-
-/* Animated aurora backdrop for hero sections — three drifting blobs.
-   Sits in an absolutely-positioned layer; parent should be `relative`. */
-.aurora-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: -1;
-}
-.aurora-bg::before,
-.aurora-bg::after {
-  content: '';
-  position: absolute;
-  width: 60vmax;
-  height: 60vmax;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.7;
-  will-change: transform;
-}
-.aurora-bg::before {
-  top: -28vmax;
-  left: -14vmax;
-  background: radial-gradient(circle, var(--aurora-2), transparent 62%);
-  animation: aurora-drift-a 22s ease-in-out infinite alternate;
-}
-.aurora-bg::after {
-  top: -20vmax;
-  right: -16vmax;
-  left: auto;
-  background: radial-gradient(circle, var(--aurora-1), transparent 62%);
-  animation: aurora-drift-b 26s ease-in-out infinite alternate;
-}
-
-@keyframes aurora-drift-a {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(12vmax, 8vmax, 0) scale(1.18); }
-}
-@keyframes aurora-drift-b {
-  0% { transform: translate3d(0, 0, 0) scale(1.1); }
-  100% { transform: translate3d(-10vmax, 6vmax, 0) scale(0.9); }
-}
-
-/* Fine grain/noise overlay — kills banding on big gradients, adds texture.
-   Apply to a hero's `::after`-free child or use the utility directly. */
-.grain {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Broadcast-style team-tinted header — paint --team-tint-home / -away inline. */
-.team-header {
-  position: relative;
-  background: var(--team-header-gradient);
-  isolation: isolate;
-}
-
-/* Animated sheen sweep — for buttons / chips / live badges on hover. */
-.sheen {
-  position: relative;
-  overflow: hidden;
-}
-.sheen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  transform: translateX(-120%) skewX(-18deg);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, white 28%, transparent), transparent);
-  pointer-events: none;
-}
-.sheen:hover::before {
-  animation: sheen-sweep 0.85s ease;
-}
-@keyframes sheen-sweep {
-  to { transform: translateX(120%) skewX(-18deg); }
-}
-
-/* Score pop — trigger by toggling the class when a goal lands. */
-@keyframes score-pop {
-  0% { transform: scale(1); }
-  35% { transform: scale(1.28); }
-  100% { transform: scale(1); }
-}
-.animate-score-pop { animation: score-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
-
-/* Soft pulsing glow ring — for AI/live emphasis. */
-@keyframes glow-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-ai) 0%, transparent); }
-  50% { box-shadow: 0 0 28px 2px color-mix(in srgb, var(--accent-ai) 32%, transparent); }
-}
-.animate-glow-breathe { animation: glow-breathe 3.2s ease-in-out infinite; }
-
-/* Reusable live dot (pulse ring) — replaces ad-hoc copies across components. */
-.live-dot {
-  position: relative;
-  display: inline-flex;
-  height: 0.5rem;
-  width: 0.5rem;
-  flex: none;
-}
-.live-dot::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: var(--accent-loss);
-  opacity: 0.75;
-  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-.live-dot::after {
-  content: '';
-  position: relative;
-  display: inline-block;
-  height: 0.5rem;
-  width: 0.5rem;
-  border-radius: 9999px;
-  background: var(--accent-loss);
-}
-@keyframes ping {
-  75%, 100% { transform: scale(2.2); opacity: 0; }
-}
-
-/* Scroll-reveal base — paired with the <Reveal> component / IntersectionObserver. */
-.reveal {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.reveal.is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* Animated segmented win-probability bar — used by match rows / detail. */
-.prob-segment {
-  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora-bg::before,
-  .aurora-bg::after,
-  .animate-glow-breathe,
-  .live-dot::before { animation: none !important; }
-  .reveal { opacity: 1; transform: none; transition: none; }
-}
-
-/* ─── Broadcast utilities (Phase: broadcast foundation) ─────────────────────
-   Additive helpers for the shared broadcast primitives. Do not fold these
-   into existing rules — they are meant to be dropped onto any surface. */
-.surface-elevated {
-  position: relative;
-  box-shadow: var(--shadow-lg);
-}
-.surface-elevated::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--text-primary) 18%, transparent),
-    transparent
-  );
-  border-radius: inherit;
-  pointer-events: none;
-}
-.hero-band {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--accent-ai) 7%, var(--card-bg)),
-    var(--card-bg) 55%
-  );
-}
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ─── Live Intelligence (flagship live surface) ─────────────────────────────
-   Scoped cinematic treatment for /live. This is the one surface where the
-   "tasteful AI-accent glow" is intentional — built on tokens so it stays quiet
-   in light mode, gains atmosphere in dark, and respects reduced-motion. */
-
-/* Hero band — a soft cyan/green intelligence wash over an elevated card. */
-.live-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background:
-    radial-gradient(90% 130% at 10% -20%, color-mix(in srgb, var(--accent-ai) 14%, transparent), transparent 60%),
-    radial-gradient(80% 130% at 100% 0%, color-mix(in srgb, var(--accent-primary) 9%, transparent), transparent 55%),
-    linear-gradient(160deg, color-mix(in srgb, var(--card-bg) 88%, white 12%), var(--card-bg));
-  box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--panel-top-hl);
-}
-.dark .live-hero {
-  background:
-    radial-gradient(90% 130% at 10% -20%, color-mix(in srgb, var(--accent-ai) 20%, transparent), transparent 60%),
-    radial-gradient(80% 130% at 100% 0%, color-mix(in srgb, var(--accent-primary) 14%, transparent), transparent 55%),
-    linear-gradient(160deg, color-mix(in srgb, var(--card-bg) 92%, white 8%), var(--card-bg));
-}
-
-/* Featured spotlight — persistent, restrained AI glow (no hover required). */
-.live-featured {
-  box-shadow: var(--shadow-lg), 0 0 42px -14px color-mix(in srgb, var(--accent-ai) 32%, transparent);
-}
-
-/* Corner aura behind the featured card content. */
-.live-aura::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background:
-    radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--accent-ai) 10%, transparent), transparent 55%),
-    radial-gradient(70% 90% at 100% 100%, color-mix(in srgb, var(--accent-primary) 8%, transparent), transparent 55%);
-}
-.live-aura > * {
-  position: relative;
-  z-index: 1;
 }
