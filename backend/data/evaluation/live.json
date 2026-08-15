@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-08-14T08:49:29.254045+00:00",
+  "generated_at": "2026-08-15T07:57:21.202823+00:00",
   "snapshot_store": {
-    "rows": 89228,
+    "rows": 91221,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-14T08:49:26.643533+00:00",
+    "last_generated": "2026-08-15T07:57:18.351161+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
       "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384,
-      "2026.08.1+4277ba19": 1993
+      "2026.08.1+4277ba19": 3986
     }
   },
   "join": {
     "snapshots": 5041,
-    "scored": 0,
-    "awaiting_result": 4705,
+    "scored": 15,
+    "awaiting_result": 4690,
     "unresolved_clubs": {
       "eng.2:Lincoln City": 46,
       "esp.1:Dep. A Coru\u00f1a": 38,
@@ -32,8 +32,123 @@
   },
   "live": {
     "basis": "live_published",
-    "n": 0,
-    "note": "no scored fixtures yet \u2014 nothing has both a published forecast and a result"
+    "n": 15,
+    "brier": 0.65086,
+    "log_loss": 1.05807,
+    "accuracy": 0.46667,
+    "ece": 0.12968,
+    "reliability": [
+      {
+        "bin_low": 0.0,
+        "bin_high": 0.1,
+        "n": 2,
+        "stated": 0.0728,
+        "observed": 0.0
+      },
+      {
+        "bin_low": 0.1,
+        "bin_high": 0.2,
+        "n": 3,
+        "stated": 0.1478,
+        "observed": 0.0
+      },
+      {
+        "bin_low": 0.2,
+        "bin_high": 0.3,
+        "n": 19,
+        "stated": 0.2614,
+        "observed": 0.3684
+      },
+      {
+        "bin_low": 0.3,
+        "bin_high": 0.4,
+        "n": 10,
+        "stated": 0.3488,
+        "observed": 0.3
+      },
+      {
+        "bin_low": 0.4,
+        "bin_high": 0.5,
+        "n": 5,
+        "stated": 0.4522,
+        "observed": 0.6
+      },
+      {
+        "bin_low": 0.5,
+        "bin_high": 0.6,
+        "n": 3,
+        "stated": 0.5292,
+        "observed": 0.0
+      },
+      {
+        "bin_low": 0.6,
+        "bin_high": 0.7,
+        "n": 2,
+        "stated": 0.6268,
+        "observed": 0.5
+      },
+      {
+        "bin_low": 0.8,
+        "bin_high": 0.9,
+        "n": 1,
+        "stated": 0.8544,
+        "observed": 1.0
+      }
+    ],
+    "xg_mae": 0.9157,
+    "top_scoreline_hit_rate": 0.0,
+    "by_league": {
+      "ger.2": {
+        "n": 2,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      },
+      "eng.2": {
+        "n": 1,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      },
+      "ned.1": {
+        "n": 1,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      },
+      "por.1": {
+        "n": 1,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      },
+      "esp.2": {
+        "n": 1,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      },
+      "fra.2": {
+        "n": 9,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      }
+    },
+    "by_model_version": {
+      "2026.08.1+4e57ca7c": {
+        "n": 13,
+        "brier": 0.68232,
+        "log_loss": 1.10366,
+        "accuracy": 0.46154
+      },
+      "2026.08.1+c919f68a": {
+        "n": 2,
+        "brier": null,
+        "note": "fewer than 10 scored fixtures"
+      }
+    },
+    "first_kickoff": "2026-08-14T18:30:00+00:00",
+    "last_kickoff": "2026-08-14T20:45:00+00:00",
+    "baselines": {
+      "uniform": 0.66667,
+      "sample_base_rate": 0.66667,
+      "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
+    }
   },
   "historical": {
     "basis": "historical_walkforward",
