@@ -233,6 +233,55 @@ none of it is unservable the way the market block was.
 | Ingest drawn-but-unplayed fixtures | `python3 -m backend.scripts.ingest_scheduled_fixtures --all` |
 | Forward title odds | `python3 -m backend.scripts.predict_tournaments` |
 | Lineup ablation | `python3 -m backend.scripts.benchmark_lineup_features` |
+| Capture a vendor's pre-match odds | `python3 -m backend.scripts.capture_vendor_predictions` |
+
+## Benchmarking a bought forecast (2026-08-15)
+
+`api-football` is wired as a **challenger to measure, never a source to serve**.
+`capture_vendor_predictions.py` appends its pre-match 1X2 triple to
+`backend/data/predictions/vendor_predictions.jsonl`, and the comparison is
+scored later against results, on the same fixtures as ours.
+
+- **It has to be captured FORWARD.** Asking a vendor today about a match played
+  last season returns a number computed today, and nothing in the response says
+  it could have been acted on. Every row carries `captured_at` and
+  `before_kickoff`; the same rule `final_before_kickoff()` enforces on our own
+  snapshots. Buying a number does not exempt it.
+- **The free plan blocks `season=`, not the data.** `fixtures?league=39&season=2026`
+  is refused with "try from 2022 to 2024", but `fixtures?date=<today>` returned
+  1,216 fixtures including 18 in our nine leagues at season 2026, and
+  `predictions?fixture=<id>` answered for all of them. Query by DATE.
+- **It rate-limits per MINUTE as well as per day, and reports it two ways** —
+  HTTP 429, or **HTTP 200 carrying `{"errors": {"rateLimit": ...}}` and an empty
+  `response`**. Reading only the status code makes a throttled run look like a
+  day with no fixtures: a run reported "0 forecasts, 1 request used" and nothing
+  about it looked wrong. `get()` treats a non-empty `errors` object as a
+  failure. Default pause is 7s between calls.
+- Leagues are matched on **(country, league name)**, not a hard-coded id table.
+  Five of the nine ids were verified live; the other four were not playing that
+  day, and four unchecked ids is how a table goes silently wrong about one
+  league.
+
+**First capture, 2026-08-15, 18 fixtures: the vendor's answers were
+`45/45/10`, `10/45/45`, `0/50/50` and `50/50/0` — four buckets.** It is matchday
+one, their model runs on running-season statistics, and with none it degenerates.
+Two of the eighteen put **0%** on a real outcome, which is a claim no result can
+justify and an infinite log loss if it lands. Do not read the early sample as
+their steady-state quality — and do not discard those rows either, because
+scoring them is the measurement.
+
+**`smartbetsAPI` (github.com/Simatwa/smartbetsAPI) cannot be benchmarked this
+way, and that is a property of its output, not a judgement of it.** Read
+`bet_analyzer.py` and `predictor.finalizer`: it converts last-five form and
+league position into ad-hoc percentages (`(wins*100)/5`, `105 - position*5`),
+normalises the two teams' strengths to sum to 100, and emits a LABEL from
+`{1, 1X, X, X2, 2}`. There is no P(draw) — a draw is inferred from the two
+strengths being within one point — so there is no 1X2 triple to score with a
+proper scoring rule. Mapping its strength share onto probabilities would
+benchmark our mapping, not their model. It also sources data by scraping
+Soccerway via a Google search, which this machine cannot reach anyway. Its
+README's 55% accuracy would beat the closing line's 54.0% on 1X2 — per the
+landmine list, that is the signature of a harness bug, not an edge.
 
 ## Production forecasting (2026-08-11)
 
