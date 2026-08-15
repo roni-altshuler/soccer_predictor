@@ -104,11 +104,39 @@ describe('TiePage', () => {
   })
 
   it('strikes the side that went out, the way the bracket does', async () => {
+    // Liverpool lost the tie, and the strikethrough now lives in the shared
+    // card's own header rather than in a second header this page used to draw
+    // above it.
     mock(payload())
     render(<TiePage />)
+    await waitFor(() => expect(document.querySelector('[data-side="home"]')).toBeTruthy())
+    expect(document.querySelector('[data-side="home"]')).toHaveAttribute('data-out', 'true')
+    expect(document.querySelector('[data-side="away"]')).not.toHaveAttribute('data-out')
+  })
+
+  it('draws the two clubs once, not twice', async () => {
+    // A one-legged tie IS its match, so this page used to print the clubs, the
+    // score and the date, and then the card printed all three again directly
+    // underneath. The league fixture page, on the same card, printed them
+    // once — which is the inconsistency this removes.
+    mock(payload())
+    render(<TiePage />)
+    await waitFor(() => expect(document.querySelector('[data-side="home"]')).toBeTruthy())
+    expect(document.querySelectorAll('[data-side="home"]')).toHaveLength(1)
+    expect(screen.getAllByText('Liverpool')).toHaveLength(1)
+  })
+
+  it('still heads a two-legged tie itself, because the aggregate is not on either leg', async () => {
+    mock(
+      payload({
+        tie: { ...TIE, two_legged: true, score: '2-3' },
+        legs: [LEG, { ...LEG, eventId: '634862' }],
+      }),
+    )
+    render(<TiePage />)
     await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
-    expect(document.querySelector('[data-club="Liverpool"]')).toHaveAttribute('data-out', 'true')
-    expect(document.querySelector('[data-club="Real Madrid"]')).not.toHaveAttribute('data-out')
+    expect(screen.getByText(/Leg 1 of 2/)).toBeInTheDocument()
+    expect(screen.getByText(/Leg 2 of 2/)).toBeInTheDocument()
   })
 
   it('carries the match through: timeline, ground and crowd', async () => {
@@ -144,8 +172,18 @@ describe('TiePage', () => {
   it('shows no forecast beside a result it already knows', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
-    expect(screen.queryByText(/What the model expects/i)).not.toBeInTheDocument()
+    await waitFor(() => expect(document.querySelector('[data-side="home"]')).toBeTruthy())
+    expect(screen.queryByText(/What the model expected/i)).not.toBeInTheDocument()
+  })
+
+  it('puts its forecast in the same slot a league fixture uses', async () => {
+    // Inside the card, above the tabs — not in a separate panel floating over
+    // it. One card, one place to look, whichever competition brought you here.
+    mock(payload({ tie: { ...TIE, p_team_a: 0.42 } }))
+    render(<TiePage />)
+    await waitFor(() => expect(screen.getByText(/What the model expected/i)).toBeInTheDocument())
+    const card = document.querySelector('[data-side="home"]')!.closest('section')!
+    expect(card.textContent).toContain('42%')
   })
 
   it('keeps the tie and says so when the fixture cannot be matched', async () => {
@@ -167,7 +205,7 @@ describe('TiePage', () => {
   it('offers the way back to the competition it came from', async () => {
     mock(payload())
     render(<TiePage />)
-    await waitFor(() => expect(document.querySelector('[data-club="Liverpool"]')).toBeTruthy())
+    await waitFor(() => expect(document.querySelector('[data-side="home"]')).toBeTruthy())
     expect(screen.getByRole('link', { name: /The bracket/i })).toHaveAttribute(
       'href',
       '/tournaments?competition=uefa.champions',

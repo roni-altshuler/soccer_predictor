@@ -193,4 +193,59 @@ describe('MatchDetail', () => {
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
     expect(screen.getByText(/about an hour before kickoff/i)).toBeInTheDocument()
   })
+
+  it('opens no Lineups tab for team sheets ESPN has not filled in', () => {
+    // Before kickoff ESPN files both sheets as empty shells. Counting the
+    // shells rather than the players put a Lineups tab on every upcoming
+    // fixture and rendered two club names above nothing at all — which is
+    // what a league page looked like all preseason.
+    render(
+      <MatchDetail
+        card={card({
+          state: 'pre',
+          lineups: [
+            { teamId: '1', homeAway: 'home', formation: null, starters: [], bench: [] },
+            { teamId: '2', homeAway: 'away', formation: null, starters: [], bench: [] },
+          ],
+        })}
+      />,
+    )
+    expect(screen.queryByRole('tab', { name: 'Lineups' })).not.toBeInTheDocument()
+  })
+
+  it('reads "vs" before kickoff rather than two dashes', () => {
+    // "– - –" where a scoreline belongs reads as data we failed to load, not
+    // as a match that has not started.
+    render(
+      <MatchDetail
+        card={card({
+          state: 'pre',
+          statusDetail: 'Fri, August 21st at 3:00 PM EDT',
+          home: { ...card().home, score: null, winner: false },
+          away: { ...card().away, score: null, winner: false },
+        })}
+      />,
+    )
+    expect(document.querySelector('[data-score="pending"]')).toHaveTextContent('vs')
+    expect(document.querySelector('[data-score="final"]')).toBeNull()
+  })
+
+  it('keeps the real score once there is one', () => {
+    render(<MatchDetail card={card()} />)
+    expect(document.querySelector('[data-score="final"]')).toHaveTextContent('2')
+    expect(document.querySelector('[data-score="pending"]')).toBeNull()
+  })
+
+  it('strikes through the club that went out, and only in a knockout', () => {
+    // The bracket's strikethrough, carried onto the card so a one-legged tie
+    // does not need a second header above it to say who went out.
+    const { rerender } = render(<MatchDetail card={card()} eliminated="Real Madrid CF" />)
+    expect(document.querySelector('[data-side="away"]')).toHaveAttribute('data-out', 'true')
+    expect(document.querySelector('[data-side="home"]')).not.toHaveAttribute('data-out')
+
+    // A league fixture passes nothing, and nothing is struck.
+    rerender(<MatchDetail card={card()} />)
+    expect(document.querySelector('[data-side="away"]')).not.toHaveAttribute('data-out')
+    expect(document.querySelector('[data-side="home"]')).not.toHaveAttribute('data-out')
+  })
 })

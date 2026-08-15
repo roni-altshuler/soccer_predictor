@@ -122,6 +122,12 @@ say so rather than opening a fixture that might be the wrong one.
 a headshot for one player in forty-six, and a grid of grey silhouettes is not a
 lineup. The number is on the actual shirt.
 
+**It is the same card a league fixture opens.** A World Cup final and a Tuesday
+night in the Premier League are laid out identically — same header, same tabs in
+the same order, our forecast in the same slot inside the card. The only thing a
+knockout adds is the strikethrough on the club that went out, because only a
+knockout has one. Nothing here should need learning twice.
+
 ## Next
 
 - [Models § knockout tie](../concepts/models.md#3-knockout-tie--random-forest)

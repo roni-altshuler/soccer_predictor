@@ -5,6 +5,7 @@ import { useState } from 'react'
 
 import { Formation } from '@/components/fixture/Formation'
 import { TeamCrest } from '@/components/primitives/TeamCrest'
+import { normTeam } from '@/lib/normTeam'
 import type { MatchCard, StatRow, TimelineEvent } from '@/lib/server/tieFixtures'
 import { cn } from '@/lib/utils'
 
@@ -78,11 +79,17 @@ function ScoreHeader({
   card,
   competitionId,
   heading,
+  eliminated,
 }: {
   card: MatchCard
   competitionId?: string
   heading?: string | null
+  eliminated?: string | null
 }) {
+  // Matched on the normalised name because the tie comes from our artifact and
+  // the card comes from ESPN, and the two spell clubs differently.
+  const outName = eliminated ? normTeam(eliminated) : null
+  const isOut = (name: string) => outName !== null && normTeam(name) === outName
   const meta = [
     card.date
       ? {
@@ -129,19 +136,50 @@ function ScoreHeader({
       {/* Home, score, away — placed by column rather than by source order, so
           the score cannot drift into the away side's cell. */}
       <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">
-        <div data-side="home" className="col-start-1 flex min-w-0 items-center gap-2.5">
-          <TeamCrest team={card.home.name} competitionId={competitionId} size="lg" />
-          <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight text-[var(--text-primary)] md:text-[18px]">
+        <div
+          data-side="home"
+          data-out={isOut(card.home.name) ? 'true' : undefined}
+          className="col-start-1 flex min-w-0 items-center gap-2.5"
+        >
+          <TeamCrest
+            team={card.home.name}
+            competitionId={competitionId}
+            size="lg"
+            className={isOut(card.home.name) ? 'opacity-40' : undefined}
+          />
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight md:text-[18px]',
+              isOut(card.home.name)
+                ? 'text-[var(--text-tertiary)] line-through decoration-1'
+                : 'text-[var(--text-primary)]',
+            )}
+          >
             {card.home.name}
           </span>
         </div>
 
         <div className="col-start-2 px-1 text-center">
-          <div className="font-mono text-[26px] leading-none tabular-nums text-[var(--text-primary)] md:text-[32px]">
-            {card.home.score ?? '–'}
-            <span className="mx-1.5 text-[var(--text-tertiary)]">-</span>
-            {card.away.score ?? '–'}
-          </div>
+          {/* A match with no score yet gets "vs", not "– - –". Two dashes
+              where a scoreline belongs reads as data we failed to load
+              rather than as a match that has not kicked off. */}
+          {card.home.score === null && card.away.score === null ? (
+            <div
+              data-score="pending"
+              className="font-mono text-[15px] uppercase leading-none tracking-[0.14em] text-[var(--text-tertiary)] md:text-[17px]"
+            >
+              vs
+            </div>
+          ) : (
+            <div
+              data-score="final"
+              className="font-mono text-[26px] leading-none tabular-nums text-[var(--text-primary)] md:text-[32px]"
+            >
+              {card.home.score ?? '–'}
+              <span className="mx-1.5 text-[var(--text-tertiary)]">-</span>
+              {card.away.score ?? '–'}
+            </div>
+          )}
           <div className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
             {card.statusDetail || (card.state === 'pre' ? 'Not started' : '')}
           </div>
@@ -149,10 +187,23 @@ function ScoreHeader({
 
         <div
           data-side="away"
+          data-out={isOut(card.away.name) ? 'true' : undefined}
           className="col-start-3 flex min-w-0 flex-row-reverse items-center gap-2.5"
         >
-          <TeamCrest team={card.away.name} competitionId={competitionId} size="lg" />
-          <span className="min-w-0 flex-1 truncate text-right text-[15px] font-semibold leading-tight text-[var(--text-primary)] md:text-[18px]">
+          <TeamCrest
+            team={card.away.name}
+            competitionId={competitionId}
+            size="lg"
+            className={isOut(card.away.name) ? 'opacity-40' : undefined}
+          />
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate text-right text-[15px] font-semibold leading-tight md:text-[18px]',
+              isOut(card.away.name)
+                ? 'text-[var(--text-tertiary)] line-through decoration-1'
+                : 'text-[var(--text-primary)]',
+            )}
+          >
             {card.away.name}
           </span>
         </div>
@@ -428,6 +479,7 @@ export function MatchDetail({
   competitionId,
   heading,
   model,
+  eliminated,
   className,
 }: {
   card: MatchCard
@@ -437,12 +489,20 @@ export function MatchDetail({
   /** Our own forecast for this match, shown first. Optional by design: a
    *  competition we do not forecast still gets the whole card. */
   model?: React.ReactNode
+  /** The club that went out of the tournament on this result, if any. Struck
+   *  through, exactly as the bracket draws it. A league fixture never passes
+   *  it, which is the only difference between the two pages' cards. */
+  eliminated?: string | null
   className?: string
 }) {
+  // Every count is of CONTENT, never of the container that holds it. ESPN
+  // files both team sheets as empty shells before kickoff, so counting
+  // `lineups.length` opened a Lineups tab on every upcoming fixture and
+  // rendered two club names above nothing at all.
   const tabs: Array<[string, number]> = [
     ['Timeline', card.events.length],
     ['Stats', card.stats.length],
-    ['Lineups', card.lineups.length],
+    ['Lineups', card.lineups.filter((l) => l.starters.length).length],
     ['H2H', (card.headToHead?.meetings.length ?? 0) + card.form.filter((f) => f.games.length).length],
     ['Commentary', card.commentary.length],
   ]
@@ -457,7 +517,12 @@ export function MatchDetail({
         className,
       )}
     >
-      <ScoreHeader card={card} competitionId={competitionId} heading={heading} />
+      <ScoreHeader
+        card={card}
+        competitionId={competitionId}
+        heading={heading}
+        eliminated={eliminated}
+      />
 
       {model ? <div className="border-b border-[var(--border-color)] px-4 py-4 md:px-5">{model}</div> : null}
 

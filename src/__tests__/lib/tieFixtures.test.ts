@@ -195,6 +195,9 @@ describe('matchCard', () => {
       { id: 'k1', type: { type: 'kickoff' }, clock: { displayValue: '' } },
       { id: 'k2', type: { type: 'goal' }, clock: { displayValue: "12'" }, scoringPlay: true, team: { id: '1' }, participants: [{ athlete: { displayName: 'Saka' } }] },
       { id: 'k3', type: { type: 'halftime' }, clock: { displayValue: '' } },
+      // ESPN files a delay pair per club for every drinks break and VAR check.
+      { id: 'k4', type: { type: 'start-delay' }, clock: { displayValue: "25'" }, team: { id: '1' } },
+      { id: 'k5', type: { type: 'end-delay' }, clock: { displayValue: "27'" }, team: { id: '1' } },
     ],
     commentary: [
       { sequence: 2, time: { displayValue: "12'" }, text: 'Goal' },
@@ -237,8 +240,22 @@ describe('matchCard', () => {
       {
         team: { id: '1', displayName: 'Arsenal' },
         events: [
-          { id: 'f1', gameDate: '2026-04-01T19:00Z', atVs: 'vs', score: '2-0', gameResult: 'W', homeTeamId: '1', awayTeamName: 'Spurs' },
-          { id: 'f2', gameDate: '2026-03-25T19:00Z', score: '', gameResult: 'D' },
+          // ESPN nests the other club under `opponent`, as an object. This
+          // fixture used to carry `awayTeamName`, a field the real payload
+          // never sends, so the parser looked right and produced a blank
+          // club for every game on both pages.
+          {
+            id: 'f1',
+            gameDate: '2026-04-01T19:00Z',
+            atVs: 'vs',
+            score: '2-0',
+            gameResult: 'W',
+            homeTeamId: '1',
+            opponent: { id: '2', displayName: 'Spurs' },
+          },
+          { id: 'f2', gameDate: '2026-03-25T19:00Z', score: '', gameResult: 'D', opponent: { displayName: 'Chelsea' } },
+          // Scored, but ESPN named no opponent: a result next to nothing.
+          { id: 'f3', gameDate: '2026-03-18T19:00Z', score: '1-1', gameResult: 'D' },
         ],
       },
     ],
@@ -253,6 +270,11 @@ describe('matchCard', () => {
   it('keeps incidents and drops the structural markers', async () => {
     // Kickoff and half-time are the shape of a match, not things that happened
     // in it, and a timeline that leads with "Kickoff" buries the goal.
+    //
+    // Delays are neither shape nor incident: ESPN files a start/end pair per
+    // club for every drinks break and VAR check, and on the 2026 World Cup
+    // final that was 20 of 43 rows — a timeline where nearly half the entries
+    // read "Start Delay" and the winning goal was one line among them.
     mockSummary(SUMMARY)
     const card = (await matchCard('uefa.champions', '1'))!
     expect(card.events.map((e) => e.type)).toEqual(['goal'])
@@ -289,7 +311,9 @@ describe('matchCard', () => {
     const card = (await matchCard('uefa.champions', '1'))!
     expect(card.headToHead?.summary).toBe('ARS leads 2-0-1')
     expect(card.headToHead?.meetings[0].home).toMatchObject({ name: 'Arsenal', score: '3' })
-    // The second recent game has no score, so there is nothing to show for it.
+    // f2 has no score and f3 no opponent, and each on its own is a row with
+    // nothing to say — a blank club beside a scoreline reads as a rendering
+    // fault rather than as missing data.
     expect(card.form[0].games.map((g) => g.id)).toEqual(['f1'])
     expect(card.form[0].games[0].opponent).toBe('Spurs')
   })

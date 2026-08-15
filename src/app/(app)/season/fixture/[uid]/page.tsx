@@ -43,6 +43,7 @@ const LEAGUE_NAMES: Record<string, string> = {
   'fra.1': 'Ligue 1',
   'ned.1': 'Eredivisie',
   'por.1': 'Primeira Liga',
+  'usa.1': 'MLS',
 }
 
 export default function FixtureForecastPage() {

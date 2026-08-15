@@ -105,6 +105,60 @@ export default function TiePage() {
   const legs = data?.legs ?? []
   const back = competition ? `/tournaments?competition=${competition}` : '/tournaments'
 
+  /**
+   * A one-legged tie IS its match, so the card below already carries the two
+   * clubs, the score and how it finished. Drawing our own header above it
+   * printed the same three things again — and the league fixture page, using
+   * the same card, printed them once. Two legs still need the header, because
+   * the aggregate is a fact about the TIE that neither leg shows; so does a
+   * tie whose match detail never resolved, where the header is all there is.
+   */
+  const singleLeg = legs.length === 1
+
+  const eliminated =
+    tie && tie.winner_id !== null
+      ? tie.winner_id === tie.team_a_id
+        ? tie.team_b
+        : tie.winner_id === tie.team_b_id
+          ? tie.team_a
+          : null
+      : null
+
+  /** The advance probability, in the panel slot the league page uses. */
+  const modelPanel =
+    tie && tie.p_team_a !== null ? (
+      <>
+        <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+          What the model expected
+        </h2>
+        <div className="mt-3 flex items-baseline justify-between gap-3">
+          <span className="truncate text-[12.5px] text-[var(--text-secondary)]">{tie.team_a}</span>
+          <span className="truncate text-right text-[12.5px] text-[var(--text-secondary)]">
+            {tie.team_b}
+          </span>
+        </div>
+        <div
+          aria-hidden="true"
+          className="mt-1.5 flex h-[6px] w-full overflow-hidden rounded-full bg-[var(--border-color)]"
+        >
+          <span
+            className="block h-full bg-[var(--accent-primary)]"
+            style={{ width: `${tie.p_team_a * 100}%` }}
+          />
+        </div>
+        <div className="mt-1.5 flex items-baseline justify-between gap-3 font-mono text-[13px] tabular-nums">
+          <span className="text-[var(--text-primary)]">{(tie.p_team_a * 100).toFixed(0)}%</span>
+          <span className="text-[var(--text-primary)]">
+            {((1 - tie.p_team_a) * 100).toFixed(0)}%
+          </span>
+        </div>
+        <p className="mt-3 text-[11.5px] leading-relaxed text-[var(--text-tertiary)]">
+          The chance each side advances. A tie has two outcomes, so the floor here is 50%
+          rather than the 33% a league match starts from.
+        </p>
+      </>
+    ) : null
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6 md:py-8">
       <Link
@@ -133,6 +187,7 @@ export default function TiePage() {
         </div>
       ) : (
         <div className="mt-5 space-y-5">
+          {singleLeg ? null : (
           <header>
             <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
               {[data?.competition?.name, data?.round?.display, data?.season]
@@ -201,41 +256,13 @@ export default function TiePage() {
                 .join(' · ')}
             </p>
           </header>
+          )}
 
-          {tie.p_team_a !== null ? (
+          {/* Two legs: the aggregate lives in the header above, so the panel
+              belongs there too rather than being repeated on each leg. */}
+          {!singleLeg && modelPanel ? (
             <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 md:px-5 md:py-5">
-              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                What the model expects
-              </h2>
-              <div className="mt-3 flex items-baseline justify-between gap-3">
-                <span className="truncate text-[12.5px] text-[var(--text-secondary)]">
-                  {tie.team_a}
-                </span>
-                <span className="truncate text-right text-[12.5px] text-[var(--text-secondary)]">
-                  {tie.team_b}
-                </span>
-              </div>
-              <div
-                aria-hidden="true"
-                className="mt-1.5 flex h-[6px] w-full overflow-hidden rounded-full bg-[var(--border-color)]"
-              >
-                <span
-                  className="block h-full bg-[var(--accent-primary)]"
-                  style={{ width: `${tie.p_team_a * 100}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex items-baseline justify-between gap-3 font-mono text-[13px] tabular-nums">
-                <span className="text-[var(--text-primary)]">
-                  {(tie.p_team_a * 100).toFixed(0)}%
-                </span>
-                <span className="text-[var(--text-primary)]">
-                  {((1 - tie.p_team_a) * 100).toFixed(0)}%
-                </span>
-              </div>
-              <p className="mt-3 text-[11.5px] leading-relaxed text-[var(--text-tertiary)]">
-                The chance each side advances. A tie has two outcomes, so the floor here
-                is 50% rather than the 33% a league match starts from.
-              </p>
+              {modelPanel}
             </section>
           ) : null}
 
@@ -244,10 +271,18 @@ export default function TiePage() {
               key={leg.eventId}
               card={leg}
               competitionId={data?.competition?.id}
-              // A single-leg tie is the match, so the page heading above has
-              // already named the competition and the round; repeating it on
-              // the card is noise. Two legs need telling apart.
-              heading={legs.length > 1 ? `Leg ${i + 1} of ${legs.length}` : null}
+              // Single leg: the card is the whole page, so it names the
+              // competition exactly as a league fixture's card does. Two legs
+              // need telling apart instead.
+              heading={
+                singleLeg
+                  ? [data?.competition?.name, data?.round?.display, data?.season, settledBy(tie)]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : `Leg ${i + 1} of ${legs.length}`
+              }
+              model={singleLeg ? modelPanel : null}
+              eliminated={singleLeg ? eliminated : null}
             />
           ))}
 

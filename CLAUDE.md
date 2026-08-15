@@ -611,6 +611,40 @@ two products. A second copy of this layout is the thing `matchDetail.test.tsx`
 exists to prevent. Its ESPN half is resolved by the SAME join for both: a
 league fixture is the easy case (one competition, one date, two clubs).
 
+**Sharing the component was not enough; four things still made the two pages
+look unrelated (fixed 2026-08-15).** Every one of them was found by
+screenshotting our own pages, not by a test:
+
+1. **The tie page drew a second header.** A one-legged tie IS its match, so the
+   page printed the clubs, the score and the date, and the card printed all
+   three again immediately below. The league page printed them once. The header
+   now renders only when it says something the card cannot — a two-legged
+   aggregate, or a tie whose match never resolved. The bracket's strikethrough
+   moved onto the card as the optional `eliminated` prop, matched on
+   `normTeam` because our artifact and ESPN spell clubs differently.
+2. **A pre-match score read `– - –`.** Two dashes where a scoreline belongs
+   reads as data we failed to load. It reads `vs` now, on `data-score="pending"`.
+3. **Every upcoming fixture opened an empty Lineups tab.** ESPN files both team
+   sheets as empty shells before kickoff, and the tab counted
+   `lineups.length` — the containers — instead of the players in them. **Count
+   content, never the container that holds it.**
+4. **Recent form showed a score next to a blank club, on both pages.** ESPN
+   nests the other club under `opponent` as an OBJECT; we read
+   `opponentTeamName`/`homeTeamName`, fields the payload has never sent. The
+   test fixture encoded the same invented shape, so it passed throughout. When
+   a parser and its fixture agree with each other and not with the source,
+   nothing fails — check a live payload.
+
+**Delays are not timeline events.** ESPN files a `start-delay`/`end-delay` pair
+per club for every drinks break and VAR check. On the 2026 World Cup final that
+was **20 of 43 entries**, so nearly half the timeline read "Start Delay" and the
+winning goal was one line among them. Filtered at the source, alongside the
+kickoff and half-time markers. Extra-time markers are kept: they tell a reader
+of a 120-minute match where the periods broke.
+
+`gameResult` is ESPN's, and it accounts for shootouts — a 1-1 marked `L` is the
+Champions League final Arsenal lost on penalties, not a bug. Do not "fix" it.
+
 **The bracket is sized to be seen at once.** FotMob fits a 32-team World Cup on
 a laptop by using crest pairs and three-letter codes; we print real club names,
 so the width came down the honest way — `bracketLabel` drops `FC`/`CF`/`SC` and

@@ -370,7 +370,22 @@ export async function matchCard(
       }
     })
     // Kickoff, half-time and full-time markers are structure, not incident.
-    .filter((e) => !['kickoff', 'halftime', 'start-2nd-half', 'end-regular-time'].includes(e.type))
+    // Delays are neither: ESPN files a `start-delay` and an `end-delay` for
+    // every drinks break and VAR check, once per club, and on the 2026 World
+    // Cup final that was 20 of 43 entries — a timeline where nearly half the
+    // rows said "Start Delay". No scoreboard shows them, and nothing else on
+    // this card reads them.
+    .filter(
+      (e) =>
+        ![
+          'kickoff',
+          'halftime',
+          'start-2nd-half',
+          'end-regular-time',
+          'start-delay',
+          'end-delay',
+        ].includes(e.type),
+    )
 
   const commentary: CommentaryLine[] = (d.commentary ?? [])
     .map((raw) => {
@@ -497,16 +512,14 @@ export async function matchCard(
             score?: string
             gameResult?: string
             competitionName?: string
-            homeTeamId?: string
-            awayTeamId?: string
-            opponentTeamName?: string
-            homeTeamName?: string
-            awayTeamName?: string
+            opponent?: { displayName?: string; shortDisplayName?: string }
           }
+          // ESPN nests the other club under `opponent`, as an object. Reading
+          // it as `opponentTeamName`/`homeTeamName` — fields this payload does
+          // not have — left every recent-form row with a blank club and a
+          // score floating next to nothing.
           const opponent =
-            String(e.homeTeamId ?? '') === teamId
-              ? e.awayTeamName ?? e.opponentTeamName ?? ''
-              : e.homeTeamName ?? e.opponentTeamName ?? ''
+            e.opponent?.displayName ?? e.opponent?.shortDisplayName ?? ''
           return {
             id: String(e.id ?? ''),
             date: (e.gameDate ?? '').slice(0, 10),
@@ -517,7 +530,9 @@ export async function matchCard(
             competition: e.competitionName ?? null,
           }
         })
-        .filter((e) => e.score),
+        // A row with no opponent is a score next to nothing. Drop it rather
+        // than print a blank club.
+        .filter((e) => e.score && e.opponent),
     }
   })
 
