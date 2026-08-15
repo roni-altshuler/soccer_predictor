@@ -236,6 +236,34 @@ describe('MatchDetail', () => {
     expect(document.querySelector('[data-score="pending"]')).toBeNull()
   })
 
+  it('counts a headed goal as a goal', () => {
+    // ESPN qualifies the type with how it happened: `goal---header`, not
+    // `goal`. Matching the raw string dropped every header from the scorer
+    // line and drew it with the fallback dot — Arsenal 3-0 Fulham listed two
+    // scorers for three goals, live on the site.
+    const c = card({
+      events: [
+        { id: 'g1', minute: "45'+4'", type: 'goal---header', scoring: true, teamId: '1', text: '', short: '', players: ['Gyökeres', 'Trossard'] },
+      ],
+    })
+    expect(scorerLines(c.events, '1')).toEqual([{ name: 'Gyökeres', minutes: "45'+4'" }])
+    render(<MatchDetail card={c} />)
+    expect(document.querySelector('[data-event="goal---header"]')).toBeTruthy()
+  })
+
+  it('still marks a penalty and an own goal as such', () => {
+    const c = card({
+      events: [
+        { id: 'p1', minute: "20'", type: 'penalty-goal', scoring: true, teamId: '1', text: '', short: '', players: ['Saka'] },
+        { id: 'o1', minute: "70'", type: 'own-goal', scoring: true, teamId: '1', text: '', short: '', players: ['Rüdiger'] },
+      ],
+    })
+    expect(scorerLines(c.events, '1')).toEqual([
+      { name: 'Saka', minutes: "20' (pen)" },
+      { name: 'Rüdiger', minutes: "70' (og)" },
+    ])
+  })
+
   it('strikes through the club that went out, and only in a knockout', () => {
     // The bracket's strikethrough, carried onto the card so a one-legged tie
     // does not need a second header above it to say who went out.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { ESPN_SITE } from '@/lib/espnHost'
+import { matchCard, type MatchCard } from '@/lib/server/tieFixtures'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -278,6 +279,8 @@ type FotMobShot = {
 
 interface MatchDetailsResponse {
   id: string
+  /** The card `/season/fixture` and `/tournaments/tie` render, unchanged. */
+  card?: MatchCard | null
   source?: 'espn' | 'fotmob'
   sourceDetail?: string
   generatedAt?: string
@@ -1304,7 +1307,22 @@ export async function GET(
   const backendPrediction =
     unifiedPrediction ??
     (await fetchBackendPrediction(matchData.home_team, matchData.away_team, matchData.leagueId))
-  
+
+  // The SAME card `/season/fixture` and `/tournaments/tie` render, built by the
+  // same function from the same ESPN summary. This page reached the match
+  // through an id in its URL, so it skips the name-and-date join those two
+  // need — competition and event are already known. Best-effort: an unreachable
+  // ESPN costs the card, never the rest of the response.
+  let card: MatchCard | null = null
+  if (matchData.leagueId) {
+    try {
+      card = await matchCard(matchData.leagueId, matchId)
+    } catch {
+      card = null
+    }
+  }
+  matchData.card = card
+
   // Add H2H and prediction to response
   matchData.h2h = h2h || {
     homeWins: 0,

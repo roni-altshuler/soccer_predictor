@@ -2,34 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'lucide-react'
 
+import { MatchDetail } from '@/components/fixture/MatchDetail'
+import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
 import { adaptMatchPrediction } from '@/components/match/detail/adaptPrediction'
-import { H2HTab } from '@/components/match/detail/H2HTab'
-import { LineupsTab } from '@/components/match/detail/LineupsTab'
 import { OverviewTab } from '@/components/match/detail/OverviewTab'
-import { StatsTab } from '@/components/match/detail/StatsTab'
 import { TableTab } from '@/components/match/detail/TableTab'
 import {
-  DETAIL_TABS,
-  DETAIL_TAB_LABELS,
-  formatMatchDate,
   normalizeDetailTab,
   type DetailTab,
   type MatchDetails,
   type MatchEvent,
   type TeamStanding,
 } from '@/components/match/detail/types'
-import { ClubColorBar } from '@/components/motion'
-import { FlagBadge, TeamBadge } from '@/components/primitives'
 import { MatchDetailSkeleton } from '@/components/skeletons'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
-import { springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import { ESPN_V2 } from '@/lib/espnHost'
@@ -52,86 +44,27 @@ const NATIONAL_TEAM_COMPETITIONS = new Set([
   'afc.asian.cup',
 ])
 
+/**
+ * The URL's `?tab=` onto the shared card's labels. `/matches/[id]` has always
+ * taken a tab in the query string, and the card owns its own tab state, so a
+ * link into a section has to be translated rather than dropped.
+ */
+const CARD_TAB: Record<DetailTab, string> = {
+  overview: 'Timeline',
+  prediction: 'Prediction',
+  lineups: 'Lineups',
+  stats: 'Stats',
+  h2h: 'H2H',
+  table: 'Table',
+}
+
 function isNationalTeamMatch(leagueId?: string, leagueName?: string): boolean {
   if (leagueId && NATIONAL_TEAM_COMPETITIONS.has(leagueId)) return true
   const name = (leagueName || '').toLowerCase()
   return /world cup|euro(pean championship)?|copa america|nations league|gold cup|international friendl/.test(name)
 }
 
-/** Aggregate the hero scorer line — one line per scorer, minutes joined. */
-function scorerLines(events: MatchEvent[], team: 'home' | 'away'): Array<{ name: string; detail: string }> {
-  const byScorer = new Map<string, string[]>()
-  for (const e of events) {
-    if (e.team !== team || (e.type !== 'goal' && e.type !== 'own_goal')) continue
-    const minute = `${e.minute}'${e.addedTime ? `+${e.addedTime}` : ''}${e.type === 'own_goal' ? ' (OG)' : ''}`
-    const minutes = byScorer.get(e.player) ?? []
-    minutes.push(minute)
-    byScorer.set(e.player, minutes)
-  }
-  return [...byScorer.entries()].map(([name, minutes]) => ({ name, detail: minutes.join(', ') }))
-}
 
-function TeamNameWithCrest({
-  name,
-  teamId,
-  align,
-  isNational,
-  accent,
-}: {
-  name: string
-  teamId?: string
-  align: 'left' | 'right'
-  isNational?: boolean
-  /** Club identity tint — renders a flat colour sliver under the name. */
-  accent?: string
-}) {
-  const content = (
-    <span className="block min-w-0">
-      <span
-        className={cn(
-          'flex items-center gap-2.5 min-w-0',
-          align === 'right' ? 'flex-row-reverse justify-start' : 'justify-start',
-        )}
-      >
-        {isNational ? (
-          <FlagBadge country={name} teamName={name} size={32} />
-        ) : (
-          <TeamBadge teamId={teamId} name={name} size={32} className="shrink-0" />
-        )}
-        <span className="font-display text-[clamp(1.1rem,2.4vw,1.85rem)] font-bold leading-tight text-[var(--text-primary)] truncate">
-          {name}
-        </span>
-      </span>
-      {accent && (
-        <span
-          className={cn(
-            'mt-1.5 flex',
-            align === 'right' ? 'justify-end pr-[42px]' : 'justify-start pl-[42px]',
-          )}
-        >
-          <ClubColorBar
-            color={accent}
-            team={name}
-            orientation="horizontal"
-            size="sm"
-            animate="draw"
-            style={{ width: 44, height: 3 }}
-          />
-        </span>
-      )}
-    </span>
-  )
-  if (!teamId) return content
-  return (
-    <Link
-      href={`/teams/${teamId}`}
-      className="block transition-opacity hover:opacity-80"
-      aria-label={`${name} team page`}
-    >
-      {content}
-    </Link>
-  )
-}
 
 export default function MatchDetailPage() {
   const params = useParams()
@@ -142,10 +75,8 @@ export default function MatchDetailPage() {
   const leagueId = searchParams.get('league') || ''
 
   const { asQueryParam: genderParam } = useGenderQuery()
-  const reduceMotion = useReducedMotion()
   const [match, setMatch] = useState<MatchDetails | null>(null)
   const [loading, setLoading] = useState(true)
-  const [halftimeCountdown, setHalftimeCountdown] = useState<string>('')
   const [refreshKey, setRefreshKey] = useState(0) // bump to refetch (retry button + live polling)
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
 
@@ -163,7 +94,6 @@ export default function MatchDetailPage() {
 
   // Derived state for live status - compute before hooks that depend on it
   const isLive = match?.status?.includes('IN_PROGRESS') || match?.status?.includes('HALF') || match?.status?.includes('LIVE') || false
-  const isHalftime = match?.status?.toLowerCase().includes('half') && !match?.status?.toLowerCase().includes('first') && !match?.status?.toLowerCase().includes('second') || false
   const isFinished = !!match && (match.status.includes('FINAL') || match.status.toLowerCase().includes('finished') || match.status.toLowerCase().includes('ft'))
 
   // Ref to the match hero <section>. StickyScoreBar uses an IntersectionObserver
@@ -174,34 +104,6 @@ export default function MatchDetailPage() {
     [trackedTeams]
   )
 
-  // Halftime countdown effect - must be before early returns
-  useEffect(() => {
-    if (!isHalftime) {
-      setHalftimeCountdown('')
-      return
-    }
-
-    const estimatedResumeTime = new Date()
-    estimatedResumeTime.setMinutes(estimatedResumeTime.getMinutes() + 10)
-
-    const updateCountdown = () => {
-      const now = new Date()
-      const diff = estimatedResumeTime.getTime() - now.getTime()
-
-      if (diff <= 0) {
-        setHalftimeCountdown('Resuming soon...')
-        return
-      }
-
-      const minutes = Math.floor(diff / 60000)
-      const seconds = Math.floor((diff % 60000) / 1000)
-      setHalftimeCountdown(`${minutes}:${seconds.toString().padStart(2, '0')}`)
-    }
-
-    updateCountdown()
-    const interval = setInterval(updateCountdown, 1000)
-    return () => clearInterval(interval)
-  }, [isHalftime])
 
   useEffect(() => {
     try {
@@ -245,6 +147,10 @@ export default function MatchDetailPage() {
         // Map the API response to MatchDetails format
         const matchDetails: MatchDetails = {
           id: data.id,
+          // The shared card, straight through. This object is rebuilt field by
+          // field rather than spread, so anything not named here is silently
+          // dropped — which is exactly what happened to `card` the first time.
+          card: data.card ?? null,
           source: data.source,
           sourceDetail: data.sourceDetail,
           generatedAt: data.generatedAt,
@@ -492,8 +398,6 @@ export default function MatchDetailPage() {
 
   // Additional derived state (isLive, isHalftime and isFinished already computed above before hooks)
   const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
-
-  const visibleTabs: ReadonlyArray<DetailTab> = DETAIL_TABS
   const activeTab: DetailTab = normalizeDetailTab(requestedTab)
 
   // Navigate back to the league page - go directly to full league page
@@ -525,9 +429,6 @@ export default function MatchDetailPage() {
   const isNational = isNationalTeamMatch(match.leagueId, match.league)
 
   const leagueAccent = getLeagueAccent(match.leagueId ?? match.league)
-
-  const homeScorers = scorerLines(match.events, 'home')
-  const awayScorers = scorerLines(match.events, 'away')
 
   return (
     <div
@@ -566,151 +467,6 @@ export default function MatchDetailPage() {
             <span>Back to {match.league || 'matches'}</span>
           </button>
 
-          {/* League line */}
-          <div className="mb-4 flex items-center justify-center gap-2">
-            {leagueAccent?.logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={leagueAccent.logoUrl} alt="" className="h-4 w-4 object-contain" aria-hidden="true" />
-            )}
-            <span className="text-xs font-semibold text-[var(--text-secondary)]">
-              {leagueAccent && leagueAccent.competitionId !== 'unknown'
-                ? leagueAccent.displayName
-                : match.league}
-            </span>
-          </div>
-
-          {/* Score block — three columns */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-6">
-            {/* Home team */}
-            <div className="min-w-0 text-right">
-              <TeamNameWithCrest
-                name={match.home_team}
-                teamId={match.home_team_id}
-                align="right"
-                isNational={isNational}
-                accent="var(--team-tint-home, var(--accent-primary))"
-              />
-              {homeScorers.length > 0 && (
-                <div className="mt-2 space-y-0.5">
-                  {homeScorers.map((scorer) => (
-                    <p key={scorer.name} className="truncate text-[11px] leading-4 text-[var(--text-tertiary)]">
-                      {scorer.name}
-                      <span className="ml-1 font-numeric tabular-nums">{scorer.detail}</span>
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Score / kickoff */}
-            <div className="flex-shrink-0 px-2 text-center">
-              {isScheduled ? (
-                <div>
-                  <p className="font-numeric text-[clamp(1.4rem,3.4vw,2rem)] font-bold leading-none tabular-nums text-[var(--text-primary)]">
-                    {(() => {
-                      try {
-                        return new Date(match.date).toLocaleTimeString(undefined, {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: false,
-                        })
-                      } catch {
-                        return 'TBD'
-                      }
-                    })()}
-                  </p>
-                </div>
-              ) : (
-                <motion.div
-                  className="flex items-center gap-3 md:gap-4"
-                  initial={reduceMotion ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <span className="font-numeric text-[clamp(2rem,5vw,3rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
-                    {match.home_score}
-                  </span>
-                  <span className="text-[clamp(1.2rem,3vw,1.8rem)] font-bold leading-none text-[var(--text-tertiary)]">
-                    –
-                  </span>
-                  <span className="font-numeric text-[clamp(2rem,5vw,3rem)] font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
-                    {match.away_score}
-                  </span>
-                </motion.div>
-              )}
-
-              {/* Status line */}
-              <div className="mt-1.5">
-                {isLive && !isHalftime && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold tabular-nums text-[var(--live-text)]">
-                    <span className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-loss)] opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-loss)]" />
-                    </span>
-                    {match.minute != null ? `${match.minute}'` : 'Live'}
-                  </span>
-                )}
-                {isHalftime && (
-                  <span className="text-xs font-bold text-[var(--accent-warn)]">
-                    HT{halftimeCountdown ? ` · ${halftimeCountdown}` : ''}
-                  </span>
-                )}
-                {isFinished && (
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-                    FT
-                  </span>
-                )}
-                {isScheduled && (
-                  <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
-                    {(() => {
-                      try {
-                        return new Date(match.date).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        })
-                      } catch {
-                        return ''
-                      }
-                    })()}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Away team */}
-            <div className="min-w-0 text-left">
-              <TeamNameWithCrest
-                name={match.away_team}
-                teamId={match.away_team_id}
-                align="left"
-                isNational={isNational}
-                accent="var(--team-tint-away, var(--accent-info))"
-              />
-              {awayScorers.length > 0 && (
-                <div className="mt-2 space-y-0.5">
-                  {awayScorers.map((scorer) => (
-                    <p key={scorer.name} className="truncate text-[11px] leading-4 text-[var(--text-tertiary)]">
-                      {scorer.name}
-                      <span className="ml-1 font-numeric tabular-nums">{scorer.detail}</span>
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Venue + date line — small, quiet */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-[var(--text-tertiary)]">
-            <span>{formatMatchDate(match.date)}</span>
-            {match.venue && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span>{match.venue}</span>
-              </>
-            )}
-          </div>
-
           {/* Follow buttons — one quiet row */}
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
             {[match.home_team, match.away_team].map((teamName) => {
@@ -745,48 +501,75 @@ export default function MatchDetailPage() {
         </div>
       </section>
 
-      {/* Tab row — underline grammar (green bar on active), same as DateStrip.
-          Horizontally scrollable on mobile. */}
-      <div className="sticky top-[var(--shell-topbar-h)] z-10 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-md">
-        <div
-          className="mx-auto flex w-full max-w-4xl items-stretch overflow-x-auto px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label="Match sections"
-        >
-          {visibleTabs.map((tab) => {
-            const active = activeTab === tab
-            return (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => selectTab(tab)}
-                className={cn(
-                  'relative flex min-h-[44px] items-center justify-center whitespace-nowrap px-4 text-xs font-semibold transition-colors',
-                  active
-                    ? 'text-[var(--text-primary)]'
-                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-                )}
-              >
-                {DETAIL_TAB_LABELS[tab]}
-                {active && (
-                  <motion.span
-                    {...(reduceMotion ? {} : { layoutId: 'matchdetail-tab-active', transition: springSnappy })}
-                    className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-[var(--accent-primary)]"
-                    aria-hidden
-                  />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* The card — the SAME component `/season/fixture` and
+          `/tournaments/tie` render, so one fixture looks like one product
+          wherever you reach it from. Its header carries the crests, the score,
+          the ground, the date and the referee, which is why this page stopped
+          drawing its own above it.
 
-      {/* Content — one column of stacked cards, tab bodies live in
-          src/components/match/detail/ */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {activeTab === 'overview' && (
+          The two things this page has and they do not — the full prediction
+          breakdown and the league table — ride in as extra tabs rather than as
+          a second layout. That is what `extraTabs` is for. */}
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
+        {match.card ? (
+          <MatchDetail
+            card={match.card}
+            competitionId={match.leagueId}
+            initialTab={CARD_TAB[activeTab]}
+            heading={
+              leagueAccent && leagueAccent.competitionId !== 'unknown'
+                ? leagueAccent.displayName
+                : match.league
+            }
+            model={
+              match.prediction ? (
+                <>
+                  <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                    What the model expected
+                  </h2>
+                  <ProbabilityBar
+                    className="mt-3"
+                    probabilities={{
+                      home: match.prediction.home_win,
+                      draw: match.prediction.draw,
+                      away: match.prediction.away_win,
+                    }}
+                    homeLabel={match.home_team}
+                    awayLabel={match.away_team}
+                  />
+                </>
+              ) : null
+            }
+            extraTabs={[
+              {
+                label: 'Prediction',
+                has: true,
+                render: () => (
+                  <AIPredictionTab
+                    prediction={match.prediction ? adaptMatchPrediction(match) : null}
+                    matchState={isFinished ? 'finished' : isLive ? 'live' : 'upcoming'}
+                    retrospectiveContext={{
+                      home_team: match.home_team,
+                      away_team: match.away_team,
+                      league: match.league,
+                      leagueId: match.leagueId,
+                      home_score: match.home_score,
+                      away_score: match.away_score,
+                    }}
+                  />
+                ),
+              },
+              {
+                label: 'Table',
+                has: (match.fullStandings?.length ?? 0) > 0,
+                render: () => <TableTab match={match} />,
+              },
+            ]}
+          />
+        ) : (
+          /* No ESPN summary for this fixture — a FotMob-sourced match, or ESPN
+             unreachable. The old layout still answers rather than the page
+             showing nothing. */
           <OverviewTab
             match={match}
             isLive={isLive}
@@ -795,29 +578,6 @@ export default function MatchDetailPage() {
             onSelectTab={selectTab}
           />
         )}
-
-        {activeTab === 'prediction' && (
-          <AIPredictionTab
-            prediction={match.prediction ? adaptMatchPrediction(match) : null}
-            matchState={isFinished ? 'finished' : isLive ? 'live' : 'upcoming'}
-            retrospectiveContext={{
-              home_team: match.home_team,
-              away_team: match.away_team,
-              league: match.league,
-              leagueId: match.leagueId,
-              home_score: match.home_score,
-              away_score: match.away_score,
-            }}
-          />
-        )}
-
-        {activeTab === 'lineups' && <LineupsTab match={match} />}
-
-        {activeTab === 'stats' && <StatsTab match={match} isScheduled={isScheduled} />}
-
-        {activeTab === 'h2h' && <H2HTab match={match} />}
-
-        {activeTab === 'table' && <TableTab match={match} />}
       </div>
     </div>
   )

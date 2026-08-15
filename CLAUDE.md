@@ -642,6 +642,24 @@ winning goal was one line among them. Filtered at the source, alongside the
 kickoff and half-time markers. Extra-time markers are kept: they tell a reader
 of a 120-minute match where the periods broke.
 
+**All THREE match surfaces render `MatchDetail` (2026-08-15).** `/matches/[id]`
+was a fourth layout with its own tab set, so the same fixture looked like two
+products depending on how you reached it. It now renders the shared card and
+contributes its extra depth through `extraTabs` — Prediction and Table appended
+after the five every match gets. `?tab=` still deep-links, via `CARD_TAB`.
+Reaching a match by id skips the name-and-date join the other two need.
+
+**Watch for a rebuilt response object.** That page constructs `MatchDetails`
+field by field rather than spreading, so `card` arrived at the API and was
+dropped on the client — the page silently fell back to the old layout and
+looked like the conversion had not worked.
+
+**ESPN qualifies an event type with how it happened: `goal---header`, not
+`goal`.** Matching the raw string dropped every headed goal from the scorer
+line and drew it under the fallback dot — Arsenal 3-0 Fulham listed two scorers
+for three goals. `baseEventType()` splits on `---`; the qualifier is
+presentation, the base type is the event.
+
 `gameResult` is ESPN's, and it accounts for shootouts — a 1-1 marked `L` is the
 Champions League final Arsenal lost on penalties, not a bug. Do not "fix" it.
 

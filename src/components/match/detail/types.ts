@@ -1,3 +1,5 @@
+import type { MatchCard } from '@/lib/server/tieFixtures'
+
 import type { LiveWinProbabilityResult } from '@/lib/liveWinProbability'
 
 /**
@@ -80,6 +82,8 @@ export interface ShotmapShot {
 
 export interface MatchDetails {
   id: string
+  /** The card `/season/fixture` and `/tournaments/tie` render, unchanged. */
+  card?: MatchCard | null
   source?: 'espn' | 'fotmob'
   sourceDetail?: string
   generatedAt?: string

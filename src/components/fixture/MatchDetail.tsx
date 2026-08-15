@@ -40,6 +40,15 @@ import { cn } from '@/lib/utils'
 
 const GOAL_TYPES = new Set(['goal', 'penalty-goal', 'own-goal'])
 
+/**
+ * ESPN qualifies an event type with how it happened: a headed goal arrives as
+ * `goal---header`, not `goal`. Matching the raw string meant a header was
+ * neither counted as a goal nor drawn as one — Arsenal 3-0 Fulham listed two
+ * scorers for three goals, and the third sat on the timeline under the
+ * fallback dot. The qualifier is presentation; the base type is the event.
+ */
+export const baseEventType = (type: string): string => type.split('---')[0]
+
 const KIND: Record<string, { mark: string; tone: string; label: string }> = {
   goal: { mark: '●', tone: 'text-[var(--text-primary)]', label: 'Goal' },
   'own-goal': { mark: '●', tone: 'text-[var(--accent-loss)]', label: 'Own goal' },
@@ -61,7 +70,7 @@ export function scorerLines(
   const order: string[] = []
   const byPlayer = new Map<string, string[]>()
   for (const e of events) {
-    if (!GOAL_TYPES.has(e.type) || e.teamId !== teamId) continue
+    if (!GOAL_TYPES.has(baseEventType(e.type)) || e.teamId !== teamId) continue
     const name = e.players[0] ?? ''
     if (!name) continue
     if (!byPlayer.has(name)) {
@@ -70,7 +79,15 @@ export function scorerLines(
     }
     byPlayer
       .get(name)!
-      .push(`${e.minute}${e.type === 'penalty-goal' ? ' (pen)' : e.type === 'own-goal' ? ' (og)' : ''}`)
+      .push(
+        `${e.minute}${
+          baseEventType(e.type) === 'penalty-goal'
+            ? ' (pen)'
+            : baseEventType(e.type) === 'own-goal'
+              ? ' (og)'
+              : ''
+        }`,
+      )
   }
   return order.map((name) => ({ name, minutes: byPlayer.get(name)!.join(', ') }))
 }
@@ -246,7 +263,7 @@ function Timeline({ card }: { card: MatchCard }) {
         className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[var(--border-color)]"
       />
       {card.events.map((e) => {
-        const k = KIND[e.type] ?? fallbackKind
+        const k = KIND[baseEventType(e.type)] ?? fallbackKind
         const home = e.teamId === card.home.id
         return (
           <li key={e.id} data-event={e.type} className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2">
@@ -480,6 +497,8 @@ export function MatchDetail({
   heading,
   model,
   eliminated,
+  extraTabs,
+  initialTab,
   className,
 }: {
   card: MatchCard
@@ -493,6 +512,20 @@ export function MatchDetail({
    *  through, exactly as the bracket draws it. A league fixture never passes
    *  it, which is the only difference between the two pages' cards. */
   eliminated?: string | null
+  /**
+   * Tabs a particular page has and the others do not, appended after the five
+   * every match gets.
+   *
+   * This is how a page adds depth WITHOUT forking the card. `/matches/[id]`
+   * carries a full prediction breakdown and a league table that the other two
+   * surfaces have no data for; before this it expressed that by having an
+   * entirely different layout, which is what made the same fixture look like
+   * two products. The shared five stay shared, in the same order, so nothing
+   * has to be learned twice.
+   */
+  extraTabs?: Array<{ label: string; has: boolean; render: () => React.ReactNode }>
+  /** Which tab to open on. Ignored when that tab has nothing behind it. */
+  initialTab?: string | null
   className?: string
 }) {
   // Every count is of CONTENT, never of the container that holds it. ESPN
@@ -505,9 +538,11 @@ export function MatchDetail({
     ['Lineups', card.lineups.filter((l) => l.starters.length).length],
     ['H2H', (card.headToHead?.meetings.length ?? 0) + card.form.filter((f) => f.games.length).length],
     ['Commentary', card.commentary.length],
+    // Page-specific depth, after the five every match gets.
+    ...(extraTabs ?? []).map((t): [string, number] => [t.label, t.has ? 1 : 0]),
   ]
   const available = tabs.filter(([, n]) => n > 0).map(([t]) => t)
-  const [tab, setTab] = useState<string>('Timeline')
+  const [tab, setTab] = useState<string>(initialTab || 'Timeline')
   const active = available.includes(tab) ? tab : available[0]
 
   return (
@@ -566,8 +601,10 @@ export function MatchDetail({
               />
             ) : active === 'H2H' ? (
               <HeadToHead card={card} />
-            ) : (
+            ) : active === 'Commentary' ? (
               <Commentary lines={card.commentary} />
+            ) : (
+              (extraTabs ?? []).find((t) => t.label === active)?.render() ?? null
             )}
           </div>
         </>
