@@ -102,15 +102,37 @@ class PredictionRecord:
     # Timestamps
     prediction_timestamp: str = ""
     outcome_timestamp: Optional[str] = None
-    
+
+    # Anything the writer of this row carried that this class does not name.
+    #
+    # `from_dict` drops unknown keys so an older or newer schema still LOADS,
+    # which is right. The consequence on SAVE was not: `_save_predictions`
+    # rewrites every row in the month for a single outcome update, so the first
+    # write silently deleted `model_selection`, `draw_min_prob` and
+    # `draw_margin` from 1,635 records — fields the scheduled pipeline writes
+    # and this class has never known about. Nothing read them, so nothing
+    # broke; the next field will not be so lucky.
+    #
+    # Carried through verbatim and re-merged on the way out. Excluded from
+    # `asdict` by being a private name, so it can never collide with a real
+    # column or appear twice.
+    _extra: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        out = {k: v for k, v in asdict(self).items() if k != "_extra"}
+        # Known columns win: this class is the authority on what it names.
+        for key, value in self._extra.items():
+            out.setdefault(key, value)
+        return out
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PredictionRecord":
-        # Ignore unknown keys so older/newer prediction schemas still load safely.
-        valid_keys = {f.name for f in dataclass_fields(cls)}
+        # Ignore unknown keys so older/newer prediction schemas still load
+        # safely — but KEEP them, so saving cannot quietly delete a column this
+        # class does not happen to name.
+        valid_keys = {f.name for f in dataclass_fields(cls) if not f.name.startswith("_")}
         filtered = {k: v for k, v in data.items() if k in valid_keys}
+        extra = {k: v for k, v in data.items() if k not in valid_keys}
 
         # Normalize confidence for internal consistency (0..1).
         conf = filtered.get("confidence")
@@ -141,7 +163,7 @@ class PredictionRecord:
             edge_val = float(filtered.get("edge_score", 0.0) or 0.0)
             filtered["threshold_qualified"] = cls._is_threshold_qualified(conf_val, edge_val)
 
-        return cls(**filtered)
+        return cls(**filtered, _extra=extra)
 
     @staticmethod
     def _normalize_probabilities(home_win: float, draw: float, away_win: float) -> Tuple[float, float, float]:
