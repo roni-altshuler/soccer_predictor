@@ -1,15 +1,16 @@
 {
-  "generated_at": "2026-08-15T06:27:15.841899+00:00",
-  "captured_rows": 18,
+  "generated_at": "2026-08-15T12:40:07.799538+00:00",
+  "captured_rows": 39,
   "scored_fixtures": 0,
   "joined_by": {},
   "not_scored": {
-    "no_result_yet": 14,
-    "ours_never_forecast_this_competition": 4
+    "no_result_yet": 27,
+    "ours_never_forecast_this_competition": 7,
+    "name_join_failed": 5
   },
   "vendor_degeneracy": {
-    "n": 18,
-    "two_legs_identical": 18,
+    "n": 39,
+    "two_legs_identical": 39,
     "share": 1.0,
     "distinct_triples": 5
   },
