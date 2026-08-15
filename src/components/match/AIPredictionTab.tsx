@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -41,13 +41,27 @@ interface AIPredictionTabProps {
 }
 
 /**
- * AI Prediction tab for the match detail page. Three flows:
- *   1) Live prediction in feed → render PredictionResultViz directly.
- *   2) No prediction + match is past or live → polished empty card with a
- *      "Run retrospective analysis" button that hits /api/predict/any-teams
- *      and shows the result with a "retrospective, not the live pick" banner.
- *   3) No prediction + upcoming → explain when the pipeline next runs and
- *      offer an on-demand prediction.
+ * AI Prediction tab for the match detail page.
+ *
+ * **Opening the tab IS the request.** There is nothing to decide before asking
+ * for a prediction, so a button that only means "yes, the thing you just
+ * clicked on" is a gate, not a choice — and the two other match cards on this
+ * site (`/season/fixture` and `/tournaments/tie`) already show the model's
+ * answer the moment they render. This one now does the same: if the live
+ * pipeline has not picked the fixture up, the on-demand number is fetched on
+ * mount and the tab shows a loading card rather than a call to action.
+ *
+ * **What does not change is where the number came from.** A prediction computed
+ * on demand is not the recorded pre-match pick, and for a match already played
+ * it is not a forecast at all — this whole project is built on that
+ * distinction. So every on-demand result carries a provenance line, and the
+ * wording follows the match state rather than being softened into one label.
+ * Removing a click must not remove the caveat.
+ *
+ *   1) Live prediction in the feed → render it, unlabelled: it is the real pick.
+ *   2) No live pick → fetch immediately, then render under a provenance line.
+ *   3) The fetch failed → say so, and offer a retry. A button here is a
+ *      response to an error, not a gate in front of the answer.
  */
 export function AIPredictionTab({
   prediction,
@@ -61,6 +75,9 @@ export function AIPredictionTab({
   const params = useParams()
   const matchId = (params?.id as string) ?? ''
 
+  const ctx = useRef(retrospectiveContext)
+  ctx.current = retrospectiveContext
+
   const runRetrospective = useCallback(async () => {
     setRetroLoading(true)
     setRetroError(null)
@@ -69,10 +86,10 @@ export function AIPredictionTab({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          home_team: retrospectiveContext.home_team,
-          away_team: retrospectiveContext.away_team,
-          home_league: retrospectiveContext.league ?? '',
-          away_league: retrospectiveContext.league ?? '',
+          home_team: ctx.current.home_team,
+          away_team: ctx.current.away_team,
+          home_league: ctx.current.league ?? '',
+          away_league: ctx.current.league ?? '',
           gender: asQueryParam,
         }),
       })
@@ -81,37 +98,51 @@ export function AIPredictionTab({
         throw new Error(body?.error || 'Retrospective prediction failed')
       }
       const data = await res.json()
-      setRetro(adaptLegacyPrediction(data, retrospectiveContext))
+      setRetro(adaptLegacyPrediction(data, ctx.current))
     } catch (err) {
       setRetroError(err instanceof Error ? err.message : 'Retrospective prediction failed')
     } finally {
       setRetroLoading(false)
     }
-  }, [asQueryParam, retrospectiveContext])
+  }, [asQueryParam])
+
+  // Fetch as soon as the tab mounts without a live pick. Guarded by a ref
+  // rather than by the effect's dependencies: the parent builds
+  // `retrospectiveContext` inline, so it is a new object on every render and
+  // a dependency on it would re-fire this on each one.
+  const started = useRef(false)
+  useEffect(() => {
+    if (prediction || started.current) return
+    started.current = true
+    void runRetrospective()
+  }, [prediction, runRetrospective])
 
   // The prediction-tab body switches on match state; the Boardroom debate (when
   // a committed one exists for this fixture) sits below whatever renders, and
   // self-hides otherwise — honest absence, no chrome.
   let body: ReactNode
   if (prediction) {
-    // 1) The live pipeline already picked this fixture — render straight away.
+    // 1) The live pipeline picked this fixture. It is the recorded pre-match
+    //    pick, so it carries no caveat — it is the thing the caveats are about.
     body = <PredictionResultViz prediction={prediction} />
   } else if (retro) {
-    // 2) The user already ran a retrospective on this load — show it with a banner.
+    // 2) Fetched on demand. Always labelled with where it came from.
     body = (
       <div className="flex flex-col gap-3">
-        <RetrospectiveBanner />
+        <ProvenanceNote matchState={matchState} />
         <PredictionResultViz prediction={retro} />
       </div>
     )
+  } else if (retroLoading) {
+    body = <LoadingCard matchState={matchState} />
   } else {
-    // 3) Otherwise — polished empty state tuned to match state.
+    // 3) The fetch failed, or there was nothing to ask about. A control here
+    //    answers an error; it does not stand between the reader and the answer.
     body = (
-      <EmptyState
+      <FailedState
         matchState={matchState}
-        loading={retroLoading}
         error={retroError}
-        onRun={runRetrospective}
+        onRetry={runRetrospective}
         retrospectiveContext={retrospectiveContext}
       />
     )
@@ -124,17 +155,43 @@ export function AIPredictionTab({
   )
 }
 
-function EmptyState({
+/** The card that holds the space while the on-demand number is being fetched. */
+function LoadingCard({ matchState }: { matchState: MatchState }) {
+  const label =
+    matchState === 'finished'
+      ? 'Running the model over what was known before kickoff'
+      : 'Asking the model for this fixture'
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      data-prediction="loading"
+      className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-6 md:p-8"
+    >
+      <div className="flex items-center gap-3">
+        <Loader2
+          className="h-4 w-4 animate-spin text-[var(--accent-ai)]"
+          aria-hidden="true"
+        />
+        <p className="text-[13px] text-[var(--text-secondary)]">{label}…</p>
+      </div>
+      <div
+        aria-hidden="true"
+        className="mt-5 h-40 animate-pulse rounded-xl border border-[var(--border-color)]"
+      />
+    </div>
+  )
+}
+
+function FailedState({
   matchState,
-  loading,
   error,
-  onRun,
+  onRetry,
   retrospectiveContext,
 }: {
   matchState: MatchState
-  loading: boolean
   error: string | null
-  onRun: () => void
+  onRetry: () => void
   retrospectiveContext: AIPredictionTabProps['retrospectiveContext']
 }) {
   const finalScore =
@@ -143,29 +200,28 @@ function EmptyState({
       ? `${retrospectiveContext.home_score}–${retrospectiveContext.away_score}`
       : null
 
-  const copy: Record<MatchState, { eyebrow: string; title: string; body: string; cta: string; Icon: typeof Brain }> = {
+  // The copy describes what failed, not what the reader might like to do:
+  // asking was automatic, so there is no offer left to make.
+  const copy: Record<MatchState, { eyebrow: string; title: string; body: string; Icon: typeof Brain }> = {
     finished: {
       eyebrow: 'Past fixture',
-      title: 'No live pre-match pick on file',
+      title: 'Could not reach the model for this match',
       body:
-        'This match has already finished. Live picks only cover upcoming fixtures, but you can run a retrospective analysis — what the AI would have predicted given everything we knew before kickoff.',
-      cta: 'Run retrospective analysis',
+        'This match has already finished and no live pre-match pick was recorded for it, so the number here has to be computed on demand — and that request did not come back.',
       Icon: History,
     },
     live: {
       eyebrow: 'Match in progress',
-      title: 'Live prediction not in the feed yet',
+      title: 'Could not reach the model for this match',
       body:
-        "This fixture didn't get a pick before kickoff. You can still run an on-demand analysis — same AI, but it doesn't see in-play events.",
-      cta: 'Run on-demand prediction',
+        "This fixture did not get a pick before kickoff, so the number here has to be computed on demand — and that request did not come back.",
       Icon: Radio,
     },
     upcoming: {
       eyebrow: 'Upcoming fixture',
-      title: 'Live pick pending',
+      title: 'Could not reach the model for this match',
       body:
-        'Predictions refresh several times a day and cover all matches in the next 7 days. This fixture will appear here after the next refresh — or you can generate an on-demand prediction now.',
-      cta: 'Run prediction now',
+        'The recorded pick appears here after the next refresh, which runs several times a day and covers the next 7 days. In the meantime the on-demand request did not come back.',
       Icon: Clock,
     },
   }
@@ -210,23 +266,13 @@ function EmptyState({
 
           <button
             type="button"
-            onClick={onRun}
-            disabled={loading}
+            onClick={onRetry}
             className={cn(
-              'inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+              'inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-bold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90'
             )}
           >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Running…
-              </>
-            ) : (
-              <>
-                <Brain className="h-4 w-4" aria-hidden="true" />
-                {c.cta}
-              </>
-            )}
+            <Brain className="h-4 w-4" aria-hidden="true" />
+            Try again
           </button>
         </div>
 
@@ -243,15 +289,37 @@ function EmptyState({
   )
 }
 
-function RetrospectiveBanner() {
+/**
+ * Where an on-demand number came from — the caveat the removed button used to
+ * carry implicitly.
+ *
+ * The wording follows the match state rather than collapsing into one label,
+ * because the two cases are not equally serious. For an upcoming fixture this
+ * is a genuine forecast that simply is not the recorded one. For a match
+ * already played it is not a forecast at all, and calling it one is the single
+ * mistake this project is most careful about.
+ */
+function ProvenanceNote({ matchState }: { matchState: MatchState }) {
+  const past = matchState !== 'upcoming'
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
+    <div
+      data-provenance={past ? 'retrospective' : 'on-demand'}
+      className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--accent-warn)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent-warn)_8%,transparent)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]"
+    >
       <History className="h-3.5 w-3.5 shrink-0 text-[var(--accent-warn)]" aria-hidden="true" />
-      <span>
-        Retrospective analysis — same AI, but{' '}
-        <span className="font-semibold text-[var(--text-primary)]">not</span> the live pre-match
-        pick. Useful for auditing predictions on past fixtures.
-      </span>
+      {past ? (
+        <span>
+          Run just now, after the match —{' '}
+          <span className="font-semibold text-[var(--text-primary)]">not</span> a forecast, and not
+          the recorded pre-match pick. Useful for auditing, never for scoring.
+        </span>
+      ) : (
+        <span>
+          Computed on demand just now. It is a real pre-match forecast, but{' '}
+          <span className="font-semibold text-[var(--text-primary)]">not</span> the recorded pick —
+          that one appears here after the next refresh, and it is the one that gets scored.
+        </span>
+      )}
     </div>
   )
 }
