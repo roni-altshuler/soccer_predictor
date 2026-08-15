@@ -10,6 +10,14 @@ import { cn } from '@/lib/utils'
  * matters more than the styling: a layer with no evidence is DISABLED, not
  * hidden and not clickable into an empty page. A tab that leads nowhere is a
  * worse answer than a tab that says it has nothing.
+ *
+ * **A disabled tab must never be a one-way door.** `/accuracy` reported its
+ * league layer as empty while that layer was also the default, so the page
+ * opened on a dead tab and the first click into Tournaments could not be
+ * undone. The page bug is fixed at its source, but the guarantee belongs here
+ * too: the layer you are currently on is never rendered as disabled, and if
+ * every layer is empty the control disables nothing rather than trapping the
+ * reader in whichever one it happened to open on.
  */
 
 export type Layer = 'leagues' | 'tournaments'
@@ -30,6 +38,10 @@ export function LayerTabs({
     { key: 'tournaments', label: 'Tournaments' },
   ]
 
+  const nothingHasEvidence = !tabs.some((t) => enabled[t.key])
+  /** Disabled only where it cannot strand the reader. */
+  const isDisabled = (key: Layer) => !enabled[key] && value !== key && !nothingHasEvidence
+
   return (
     <div
       role="tablist"
@@ -45,14 +57,14 @@ export function LayerTabs({
           role="tab"
           type="button"
           aria-selected={value === t.key}
-          disabled={!enabled[t.key]}
+          disabled={isDisabled(t.key)}
           onClick={() => onChange(t.key)}
           className={cn(
             'min-h-[36px] rounded-md px-3 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors',
             value === t.key
               ? 'bg-[color-mix(in_srgb,var(--accent-primary)_14%,transparent)] text-[var(--text-primary)]'
               : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-            !enabled[t.key] && 'cursor-not-allowed opacity-40',
+            isDisabled(t.key) && 'cursor-not-allowed opacity-40',
           )}
         >
           {t.label}

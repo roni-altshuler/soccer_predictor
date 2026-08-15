@@ -38,8 +38,11 @@ const FLAT = {
   scope: { total: 1200, inScope: 820, outOfScopeLeague: 300, retiredModel: 80 },
 }
 
+// `by_league` is keyed by the DISPLAY NAME a prediction stores, because that
+// is what the record on disk carries — not "eng.1". This fixture used the id,
+// so every lookup in the page matched here and missed in production.
 const league = (over: Record<string, unknown>) => ({
-  league: 'eng.1',
+  league: 'Premier League',
   total: 420,
   predictions: 420,
   pending: 0,
@@ -55,8 +58,8 @@ const league = (over: Record<string, unknown>) => ({
 
 const SUMMARY = {
   by_league: {
-    'eng.1': league({}),
-    'usa.1': league({ league: 'usa.1', total: 12, accuracy: 0.75, brier_score: 0.24 }),
+    'Premier League': league({}),
+    MLS: league({ league: 'MLS', total: 12, accuracy: 0.75, brier_score: 0.24 }),
   },
 }
 
@@ -225,5 +228,48 @@ describe('AccuracyPage — per competition', () => {
       expect(screen.getByText(/Nothing tracked here yet|No results in yet/i)).toBeInTheDocument(),
     )
     expect(screen.queryByText('0.0000')).not.toBeInTheDocument()
+  })
+
+  it('still lists every served league when nothing at all has settled', async () => {
+    // The reported bug, and the reason it had two symptoms. Deriving the league
+    // list from settled rows made every league vanish the moment the record was
+    // scoped to a model generation with nothing finished yet — which is exactly
+    // the state a new season starts in. `/evaluation` never had this: it takes
+    // membership from the registry and lets the artifact supply only numbers.
+    mockFetch({ summary: { by_league: {} }, flat: { ...FLAT, completed_predictions: 0 } })
+    render(<AccuracyPage />)
+
+    await waitFor(() =>
+      expect(screen.getByText(/No pick in this competition has been settled yet/i)).toBeInTheDocument(),
+    )
+    expect(screen.getByRole('tab', { name: /leagues/i })).toBeEnabled()
+    expect(screen.getByText(/nothing settled/i)).toBeInTheDocument()
+  })
+
+  it('lets you back to the leagues after visiting the tournaments', async () => {
+    // The second symptom of the same cause: leagues was the DEFAULT layer and
+    // reported itself empty, so the first click away was a one-way trip.
+    mockFetch({ summary: { by_league: {} }, flat: { ...FLAT, completed_predictions: 0 } })
+    render(<AccuracyPage />)
+    await waitFor(() => expect(screen.getByRole('tab', { name: /leagues/i })).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
+    const back = screen.getByRole('tab', { name: /leagues/i })
+    expect(back).toBeEnabled()
+    await userEvent.click(back)
+    expect(screen.getByRole('tab', { name: /leagues/i })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('finds a league record that the endpoint keyed by display name', async () => {
+    // The record on disk stores "Premier League", never "eng.1". A page that
+    // looks up by competition id has to resolve the name first — and when it
+    // did not, every per-league block silently fell through to "nothing
+    // settled" even with a full season scored.
+    mockFetch({})
+    render(<AccuracyPage />)
+    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
+    expect(
+      screen.queryByText(/No pick in this competition has been settled yet/i),
+    ).not.toBeInTheDocument()
   })
 })

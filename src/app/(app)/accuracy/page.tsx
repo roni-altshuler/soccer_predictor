@@ -29,7 +29,11 @@ import {
   getLeagueAccent,
   tournamentRank,
 } from '@/lib/leagueAccents'
-import type { AccuracySummaryResponse, FlatAccuracyResponse } from '@/lib/types/accuracy'
+import type {
+  AccuracySummaryResponse,
+  FlatAccuracyResponse,
+  LeagueAccuracySummary,
+} from '@/lib/types/accuracy'
 
 /**
  * The published record — per competition, like its sibling.
@@ -127,23 +131,40 @@ export default function AccuracyPage() {
   const total = metrics?.total_predictions ?? 0
   const pending = metrics?.pending_predictions ?? Math.max(0, total - settled)
 
-  // Per-league rollup filtered to the active universe. The summary endpoint
-  // rolls up the whole pool rather than slicing by universe, but league
-  // records are single-gender, so this slice is exact.
+  // Per-league rollup, rekeyed by competition id. The endpoint keys `by_league`
+  // by the DISPLAY NAME a prediction stores ("Premier League"), not by
+  // "eng.1" — so every lookup against a competition id missed, silently.
   const leagueRows = useMemo(() => {
-    if (!summary?.by_league) return []
-    return Object.values(summary.by_league).filter(
-      (row) => row.total > 0 && getLeagueAccent(row.league).gender === asQueryParam
-    )
-  }, [summary, asQueryParam])
+    if (!summary?.by_league) return new Map<string, LeagueAccuracySummary>()
+    const byId = new Map<string, LeagueAccuracySummary>()
+    for (const row of Object.values(summary.by_league)) {
+      if (row.total > 0) byId.set(getLeagueAccent(row.league).competitionId, row)
+    }
+    return byId
+  }, [summary])
 
-  /** Served leagues first, in the site's own order, then anything else scored. */
-  const leagues = useMemo(() => {
-    const byId = new Map(leagueRows.map((r) => [r.league, r]))
-    const ordered = (SERVED_COMPETITION_IDS as readonly string[]).filter((id) => byId.has(id))
-    const extra = leagueRows.map((r) => r.league).filter((id) => !ordered.includes(id))
-    return [...ordered, ...extra].map((id) => ({ id, row: byId.get(id) ?? null }))
-  }, [leagueRows])
+  /**
+   * Every served league, in the site's own order — exactly as `/evaluation`
+   * does it, and for the same reason: **the registry decides membership, the
+   * record only supplies numbers.**
+   *
+   * Deriving this list from the settled rows instead made a league vanish the
+   * moment it had nothing settled, and right now that is every one of them:
+   * the record is scoped to the serving model, and the serving model's 46
+   * covered-league picks are all still pending. An empty list then disabled
+   * the Leagues tab — the DEFAULT layer — so the page opened on a dead tab,
+   * and switching to Tournaments was a one-way trip.
+   *
+   * "Nothing settled yet" is a real answer, and `LeagueAccuracy` has always
+   * known how to say it. It was simply never reachable.
+   */
+  const leagues = useMemo(
+    () =>
+      (SERVED_COMPETITION_IDS as readonly string[])
+        .filter((id) => getLeagueAccent(id).gender === asQueryParam)
+        .map((id) => ({ id, row: leagueRows.get(id) ?? null })),
+    [leagueRows, asQueryParam],
+  )
 
   const calls = useMemo(() => callsFor(editions), [editions])
   const tournaments = useMemo(() => {
