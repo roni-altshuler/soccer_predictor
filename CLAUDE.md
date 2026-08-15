@@ -373,6 +373,34 @@ unknown keys — so the first live save deleted `model_selection`,
 pipeline. Nothing read them, which was luck. They now ride through in `_extra`
 and re-merge on the way out, with known columns winning.
 
+## Projection history (2026-08-15)
+
+`season_projections.json` is a snapshot regenerated in place, so the previous
+value is gone the moment the next run finishes. `capture_projection_history.py`
+appends each run's figures to `projection_history.jsonl` first, from the
+`season_forecast` workflow, immediately after the forecast and before anything
+can overwrite it.
+
+- **Forward only. Git history is NOT a substitute.** The twenty committed
+  revisions of `season_projections.json` span five days, and across them the
+  league count goes 14 → 7 → 9 → 6 while every European league still reads
+  `played: 0`. Those differences are scope changes and retrains during
+  development, not a forecast responding to football. Backfilling them would
+  manufacture movement that never happened.
+- **`played` is captured with every row, and it is the important column.** Two
+  snapshots with the same `played` differ because the MODEL changed, not
+  because results did. A delta must never narrate a retrain as a story about a
+  team — that is the whole reason the column is there.
+- Append-only, idempotent on `(generated_at, competition_id, team)`. No
+  `continue-on-error` on the step: a capture that silently does not happen is a
+  day of movement that can never be recovered and looks exactly like a quiet
+  day.
+
+**The UI comes after the data.** Nothing is rendered from this yet, because
+every European league is at matchday zero and the only deltas available would
+be retrain noise. It becomes worth showing once two snapshots exist with real
+football between them, which is days away.
+
 ## Production forecasting (2026-08-11)
 
 The 2026-27 season is served from `forecast_season.py`. **The model is frozen**

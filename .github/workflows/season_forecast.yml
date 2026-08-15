@@ -150,6 +150,17 @@ jobs:
           python -m backend.scripts.forecast_season \
             --sims ${{ github.event.inputs.sims || '20000' }}
 
+      # Immediately after the forecast and BEFORE anything can overwrite it:
+      # `season_projections.json` is regenerated in place, so the value this run
+      # published is gone the moment the next one finishes. Append-only and
+      # idempotent on `generated_at`, so a re-run captures nothing twice.
+      #
+      # No `continue-on-error`: a capture that silently does not happen is a
+      # day of movement that can never be recovered, and it looks identical to
+      # a quiet day.
+      - name: Record what this forecast said
+        run: python -m backend.scripts.capture_projection_history
+
       - name: Score the live published forecasts
         # Reads the final pre-kickoff snapshot for every fixture that now has a
         # result. Never fabricates a row for a fixture that has not happened.
@@ -162,6 +173,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add backend/data/predictions/season_fixtures.json \
                   backend/data/predictions/season_projections.json \
+                  backend/data/predictions/projection_history.jsonl \
                   backend/data/conferences.json \
                   backend/data/evaluation/ || true
           # conferences.json stamps generated_at on every build, so ignore that
