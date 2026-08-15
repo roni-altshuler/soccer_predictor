@@ -7,8 +7,10 @@ import { useEffect, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { MatchDetail } from '@/components/fixture/MatchDetail'
+import { RecordedForecastPanel } from '@/components/fixture/RecordedForecast'
 import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { splitScore } from '@/components/tournament/bracketLayout'
+import type { RecordedForecast } from '@/lib/server/recordedForecast'
 import type { MatchCard } from '@/lib/server/tieFixtures'
 import { cn } from '@/lib/utils'
 
@@ -51,6 +53,7 @@ interface Payload {
   round?: { slug: string; display: string; label: string }
   tie?: Tie
   legs?: MatchCard[]
+  recorded?: RecordedForecast[]
   resolution?: { how: string; events: string[] } | null
   reason?: string | null
 }
@@ -114,6 +117,10 @@ export default function TiePage() {
    * tie whose match detail never resolved, where the header is all there is.
    */
   const singleLeg = legs.length === 1
+
+  /** The recorded 1X2 for one leg, matched on the ESPN event id. */
+  const recordedFor = (leg: MatchCard) =>
+    (data?.recorded ?? []).find((r) => r.matchId === leg.eventId) ?? null
 
   const eliminated =
     tie && tie.winner_id !== null
@@ -281,7 +288,24 @@ export default function TiePage() {
                       .join(' · ')
                   : `Leg ${i + 1} of ${legs.length}`
               }
-              model={singleLeg ? modelPanel : null}
+              model={
+                // Two different questions, and a tie can answer both: the
+                // advance probability is about the TIE, the recorded 1X2 is
+                // about this match. Neither substitutes for the other, so
+                // whichever exists is shown.
+                singleLeg || recordedFor(leg) ? (
+                  <div className="space-y-5">
+                    {singleLeg ? modelPanel : null}
+                    {recordedFor(leg) ? (
+                      <RecordedForecastPanel
+                        recorded={recordedFor(leg)!}
+                        homeName={leg.home.name}
+                        awayName={leg.away.name}
+                      />
+                    ) : null}
+                  </div>
+                ) : null
+              }
               eliminated={singleLeg ? eliminated : null}
             />
           ))}

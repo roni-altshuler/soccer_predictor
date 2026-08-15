@@ -339,6 +339,40 @@ over today and tomorrow (~25 of the 100 daily requests). It fails loudly on a
 missing `API_FOOTBALL` secret, because a scheduled job that captures nothing
 looks exactly like a quiet day.
 
+## What we said, and what happened (2026-08-15)
+
+`RecordedForecastPanel` puts the project's central claim on the match itself
+rather than only on `/accuracy`: the forecast that was written down, the
+timestamp proving it was written down first, and the result. All three match
+surfaces render it in `MatchDetail`'s `model` slot.
+
+- **Read from `predictions_*.json`, keyed on the ESPN event id.** The durable
+  record keeps a fixture after it is played; `season_fixtures.json` is the
+  remaining set and loses it. All three surfaces already hold the event id.
+- **A forecast that cannot be shown to predate kickoff is NOT DRAWN.** Not a
+  caveat, a refusal — the panel's whole value is the ordering of two events, so
+  without the ordering there is no panel. `beforeKickoff` comes from comparing
+  the row's `prediction_timestamp` against the card's kickoff.
+- **The probability it gave the outcome that happened leads**, with Brier
+  beside it. "It gave this 16%" is what a person can reason about.
+- **The one-match caveat prints on a hit as well as a miss.** A hit read as
+  proof is the same error in the flattering direction. It quotes no specific
+  percentage: a hard-coded "62%" sat under a bar reading 40.5% and looked like
+  a contradiction.
+
+**`/accuracy` lists `WAVE_A`, not `SERVED` — do not conflate them.**
+`/evaluation` lists the six leagues the site PROJECTS, which is right for a
+projection. `/accuracy` states distance from the closing line, and only the five
+with a paired market price can carry that claim. Listing MLS beside them offers
+a league that can never show a number.
+
+**The tracker no longer deletes columns it does not name.** `_save_predictions`
+rewrites every row in a month for one outcome update, and `from_dict` filtered
+unknown keys — so the first live save deleted `model_selection`,
+`draw_min_prob` and `draw_margin` from 1,635 records written by the scheduled
+pipeline. Nothing read them, which was luck. They now ride through in `_extra`
+and re-merge on the way out, with known columns winning.
+
 ## Production forecasting (2026-08-11)
 
 The 2026-27 season is served from `forecast_season.py`. **The model is frozen**

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { ESPN_SITE } from '@/lib/espnHost'
+import { recordedForecast, type RecordedForecast } from '@/lib/server/recordedForecast'
 import { matchCard, type MatchCard } from '@/lib/server/tieFixtures'
 
 export const dynamic = 'force-dynamic'
@@ -281,6 +282,8 @@ interface MatchDetailsResponse {
   id: string
   /** The card `/season/fixture` and `/tournaments/tie` render, unchanged. */
   card?: MatchCard | null
+  /** The forecast on file for this fixture, and how it scored. */
+  recorded?: RecordedForecast | null
   source?: 'espn' | 'fotmob'
   sourceDetail?: string
   generatedAt?: string
@@ -1322,6 +1325,10 @@ export async function GET(
     }
   }
   matchData.card = card
+  // What we said about this fixture before it was played, from the durable
+  // record. Keyed on the ESPN event id, and compared against the card's own
+  // kickoff so the panel can prove the ordering rather than assert it.
+  matchData.recorded = await recordedForecast(matchId, card?.date ?? matchData.date ?? null)
 
   // Add H2H and prediction to response
   matchData.h2h = h2h || {

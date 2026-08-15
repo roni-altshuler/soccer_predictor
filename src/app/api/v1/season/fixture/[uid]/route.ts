@@ -3,6 +3,7 @@ import path from 'path'
 
 import { NextResponse } from 'next/server'
 
+import { recordedForecast, type RecordedForecast } from '@/lib/server/recordedForecast'
 import { matchCard, resolveTie, type MatchCard } from '@/lib/server/tieFixtures'
 
 /**
@@ -46,6 +47,7 @@ export async function GET(
       )
     }
     let match: MatchCard | null = null
+    let recorded: RecordedForecast | null = null
     try {
       const found = await resolveTie({
         competitionId: fixture.competition_id,
@@ -54,7 +56,12 @@ export async function GET(
         teamB: fixture.away,
         twoLegged: false,
       })
-      if (found) match = await matchCard(fixture.competition_id, found.eventIds[0])
+      if (found) {
+        match = await matchCard(fixture.competition_id, found.eventIds[0])
+        // The same join that finds the match finds the forecast we recorded
+        // for it: both are keyed on the ESPN event id.
+        recorded = await recordedForecast(found.eventIds[0], match?.date ?? fixture.date)
+      }
     } catch {
       // ESPN being unreachable costs the match card, never the forecast.
       match = null
@@ -66,6 +73,7 @@ export async function GET(
       method: parsed.method,
       fixture,
       match,
+      recorded,
     })
   } catch {
     return NextResponse.json(

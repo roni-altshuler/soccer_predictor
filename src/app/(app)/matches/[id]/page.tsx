@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'lucide-react'
 
 import { MatchDetail } from '@/components/fixture/MatchDetail'
+import { RecordedForecastPanel } from '@/components/fixture/RecordedForecast'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
 import { StickyScoreBar } from '@/components/match/StickyScoreBar'
@@ -151,6 +152,7 @@ export default function MatchDetailPage() {
           // field rather than spread, so anything not named here is silently
           // dropped — which is exactly what happened to `card` the first time.
           card: data.card ?? null,
+          recorded: data.recorded ?? null,
           source: data.source,
           sourceDetail: data.sourceDetail,
           generatedAt: data.generatedAt,
@@ -522,7 +524,16 @@ export default function MatchDetailPage() {
                 : match.league
             }
             model={
-              match.prediction ? (
+              // The recorded forecast first: it is the one that was written
+              // down before kickoff and can be scored. The live prediction is
+              // the fallback, and makes neither claim.
+              match.recorded ? (
+                <RecordedForecastPanel
+                  recorded={match.recorded}
+                  homeName={match.home_team}
+                  awayName={match.away_team}
+                />
+              ) : match.prediction ? (
                 <>
                   <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
                     What the model expected

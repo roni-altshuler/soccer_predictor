@@ -1,3 +1,4 @@
+import type { RecordedForecast } from '@/lib/server/recordedForecast'
 import type { MatchCard } from '@/lib/server/tieFixtures'
 
 import type { LiveWinProbabilityResult } from '@/lib/liveWinProbability'
@@ -84,6 +85,8 @@ export interface MatchDetails {
   id: string
   /** The card `/season/fixture` and `/tournaments/tie` render, unchanged. */
   card?: MatchCard | null
+  /** The forecast on file for this fixture, and how it scored. */
+  recorded?: RecordedForecast | null
   source?: 'espn' | 'fotmob'
   sourceDetail?: string
   generatedAt?: string

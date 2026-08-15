@@ -3,6 +3,7 @@ import path from 'path'
 
 import { NextResponse } from 'next/server'
 
+import { recordedForecast, type RecordedForecast } from '@/lib/server/recordedForecast'
 import { matchCard, resolveTie, type MatchCard } from '@/lib/server/tieFixtures'
 
 /**
@@ -118,6 +119,7 @@ export async function GET(request: Request) {
 
   let resolution = null
   let legs: MatchCard[] = []
+  let recorded: RecordedForecast[] = []
   try {
     resolution = await resolveTie({
       competitionId: competition,
@@ -131,15 +133,22 @@ export async function GET(request: Request) {
         resolution.eventIds.map((id) => matchCard(competition, id)),
       )
       legs = cards.filter((c): c is MatchCard => c !== null)
+      // One per leg, in the same order, so a two-legged tie can show what was
+      // said about each match rather than one number for both.
+      recorded = (
+        await Promise.all(legs.map((leg) => recordedForecast(leg.eventId, leg.date)))
+      ).filter((r): r is RecordedForecast => r !== null)
     }
   } catch {
     // ESPN being unreachable costs the match detail, never the tie.
     legs = []
+    recorded = []
   }
 
   return NextResponse.json({
     ...base,
     legs,
+    recorded,
     resolution: resolution ? { how: resolution.how, events: resolution.eventIds } : null,
     reason: legs.length
       ? null

@@ -6,9 +6,11 @@ import { useEffect, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { MatchDetail } from '@/components/fixture/MatchDetail'
+import { RecordedForecastPanel } from '@/components/fixture/RecordedForecast'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { formatKickoff } from '@/components/forecast/FixtureCard'
 import type { FixtureForecast } from '@/components/forecast/FixtureCard'
+import type { RecordedForecast } from '@/lib/server/recordedForecast'
 import type { MatchCard } from '@/lib/server/tieFixtures'
 
 /**
@@ -32,6 +34,7 @@ interface Payload {
   method?: { model_version?: string; trained_through?: string }
   fixture?: FixtureForecast
   match?: MatchCard | null
+  recorded?: RecordedForecast | null
   reason?: string
 }
 
@@ -108,17 +111,29 @@ export default function FixtureForecastPage() {
                 f.round ? ` · Matchday ${f.round}` : ''
               }`}
               model={
-                <>
-                  <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                    What the model expected
-                  </h2>
-                  <ProbabilityBar
-                    className="mt-3"
-                    probabilities={{ home: f.p_home, draw: f.p_draw, away: f.p_away }}
-                    homeLabel={f.home}
-                    awayLabel={f.away}
+                // The recorded forecast when one is on file — it can prove it
+                // predates kickoff and it knows how it scored. The live
+                // artifact is the fallback for a fixture the record has not
+                // caught up with, and it can claim neither.
+                data.recorded ? (
+                  <RecordedForecastPanel
+                    recorded={data.recorded}
+                    homeName={f.home}
+                    awayName={f.away}
                   />
-                </>
+                ) : (
+                  <>
+                    <h2 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                      What the model expects
+                    </h2>
+                    <ProbabilityBar
+                      className="mt-3"
+                      probabilities={{ home: f.p_home, draw: f.p_draw, away: f.p_away }}
+                      homeLabel={f.home}
+                      awayLabel={f.away}
+                    />
+                  </>
+                )
               }
             />
           ) : (
