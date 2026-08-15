@@ -59,7 +59,10 @@ const league = (over: Record<string, unknown>) => ({
 const SUMMARY = {
   by_league: {
     'Premier League': league({}),
-    MLS: league({ league: 'MLS', total: 12, accuracy: 0.75, brier_score: 0.24 }),
+    // A Wave A league, because the endpoint scopes to Wave A: MLS is served
+    // and projected but never scored against a price, so it can never appear
+    // in this payload at all.
+    'Serie A': league({ league: 'Serie A', total: 12, accuracy: 0.75, brier_score: 0.24 }),
   },
 }
 
@@ -135,20 +138,20 @@ describe('AccuracyPage — per competition', () => {
     await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
 
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
-    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /MLS/i }))
+    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
 
     expect(screen.getAllByText('75.0%').length).toBeGreaterThan(0)
     expect(screen.queryByText('54.8%')).not.toBeInTheDocument()
   })
 
   it('keeps the context and drops the verdict on a thin sample', async () => {
-    // MLS has twelve settled picks. The rate is real and it is not evidence.
+    // Serie A has twelve settled picks here. The rate is real and it is not evidence.
     mockFetch()
     render(<AccuracyPage />)
     await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
 
     await userEvent.click(screen.getByRole('button', { name: /change league/i }))
-    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /MLS/i }))
+    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
 
     expect(screen.getByText(/not yet evidence of anything/i)).toBeInTheDocument()
   })
@@ -230,7 +233,23 @@ describe('AccuracyPage — per competition', () => {
     expect(screen.queryByText('0.0000')).not.toBeInTheDocument()
   })
 
-  it('still lists every served league when nothing at all has settled', async () => {
+  it('never lists a league it cannot score', async () => {
+    // MLS is SERVED and projected, so `/evaluation` lists it — but only the
+    // five Wave A leagues carry a paired market price, and this page's whole
+    // claim is distance from that price. Putting MLS beside them would offer a
+    // league that can never show a number, and invite equal trust in all six.
+    mockFetch({})
+    render(<AccuracyPage />)
+    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
+    await userEvent.click(screen.getByRole('button', { name: /league/i }))
+    const options = within(screen.getByRole('listbox'))
+      .getAllByRole('option')
+      .map((o) => o.textContent ?? '')
+    expect(options.some((o) => /MLS/i.test(o))).toBe(false)
+    expect(options.some((o) => /Premier League/i.test(o))).toBe(true)
+  })
+
+  it('still lists every scorable league when nothing at all has settled', async () => {
     // The reported bug, and the reason it had two symptoms. Deriving the league
     // list from settled rows made every league vanish the moment the record was
     // scoped to a model generation with nothing finished yet — which is exactly

@@ -24,7 +24,7 @@ import { CompetitionSelect } from '@/components/forecast/CompetitionSelect'
 import type { CompetitionOption } from '@/components/forecast/CompetitionSelect'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import {
-  SERVED_COMPETITION_IDS,
+  WAVE_A_COMPETITION_IDS,
   TOURNAMENT_COMPETITION_IDS,
   getLeagueAccent,
   tournamentRank,
@@ -144,9 +144,19 @@ export default function AccuracyPage() {
   }, [summary])
 
   /**
-   * Every served league, in the site's own order — exactly as `/evaluation`
-   * does it, and for the same reason: **the registry decides membership, the
-   * record only supplies numbers.**
+   * Every league this page can actually score, in the site's own order.
+   *
+   * **`WAVE_A`, not `SERVED` — the two must not be conflated.** `/evaluation`
+   * lists the six leagues the site PROJECTS, which is the right set for a
+   * projection. This page states distance from the closing line, and only the
+   * five with a paired market price on every fixture can carry that claim.
+   * Listing MLS beside them would have put a league here that can never show a
+   * number, which is exactly what `WAVE_A_COMPETITION_IDS` warns against:
+   * "listing a competition we have never scored, next to five we have, invites
+   * the reader to trust all six equally."
+   *
+   * The registry still decides membership and the record only supplies
+   * numbers — the same rule `/evaluation` follows, applied to the right list.
    *
    * Deriving this list from the settled rows instead made a league vanish the
    * moment it had nothing settled, and right now that is every one of them:
@@ -160,7 +170,7 @@ export default function AccuracyPage() {
    */
   const leagues = useMemo(
     () =>
-      (SERVED_COMPETITION_IDS as readonly string[])
+      (WAVE_A_COMPETITION_IDS as readonly string[])
         .filter((id) => getLeagueAccent(id).gender === asQueryParam)
         .map((id) => ({ id, row: leagueRows.get(id) ?? null })),
     [leagueRows, asQueryParam],
