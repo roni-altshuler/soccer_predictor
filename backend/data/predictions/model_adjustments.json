@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-16T06:53:36.786981",
-  "total_predictions_analyzed": 1572,
-  "overall_accuracy": 0.4351,
+  "generated_at": "2026-08-16T14:25:07.418234",
+  "total_predictions_analyzed": 1574,
+  "overall_accuracy": 0.4352,
   "by_league": {
     "La Liga": {
       "predictions": 166,
@@ -88,26 +88,26 @@
       }
     },
     "Eredivisie": {
-      "predictions": 155,
-      "accuracy": 0.4452,
-      "brier_score": 0.6413,
-      "scoreline_rate": 0.1032,
-      "actual_draw_rate": 0.2581,
-      "predicted_draw_rate": 0.2946,
-      "draw_rate_adjustment": -0.01096,
-      "actual_home_win_rate": 0.4065,
-      "predicted_home_win_rate": 0.4123,
-      "home_adv_adjustment": -0.00118,
-      "avg_goals_diff": 0.006,
-      "goals_scale_adjustment": 0.00032,
+      "predictions": 157,
+      "accuracy": 0.4459,
+      "brier_score": 0.641,
+      "scoreline_rate": 0.1019,
+      "actual_draw_rate": 0.2548,
+      "predicted_draw_rate": 0.2943,
+      "draw_rate_adjustment": -0.01187,
+      "actual_home_win_rate": 0.4076,
+      "predicted_home_win_rate": 0.4137,
+      "home_adv_adjustment": -0.00121,
+      "avg_goals_diff": 0.031,
+      "goals_scale_adjustment": 0.00156,
       "confidence_calibration": {
         "high": {
-          "count": 23,
-          "accuracy": 0.5652
+          "count": 24,
+          "accuracy": 0.5833
         },
         "medium": {
-          "count": 132,
-          "accuracy": 0.4242
+          "count": 133,
+          "accuracy": 0.4211
         },
         "low": {
           "count": 0,
