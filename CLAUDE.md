@@ -1039,6 +1039,14 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
   were empty. `players` is `UNIQUE(name, gender, current_team_id)`, so a repointed player can
   collide with their own twin — fold them together rather than deleting, or the delete
   cascades their appearances away.
+- **A season in progress is not a corrupt one, and `matches` is results-only.** `train_unified` failed 2026-08-16 on `season_team_counts`: *"esp.1 2026: 2 distinct teams, expected 20"* — the morning after La Liga kicked off, with one matchday played. `check_season_row_counts` already exempted the live season and `check_season_team_counts` did not; both now read one `_current_season()`, because two copies of that expression drift and a shape check disagreeing with its neighbour about which season is live cries wolf every August.
+
+  **The exemption is ONE-SIDED and must stay that way.** Every defect the check exists to catch *inflates* the count — a split identity turns one club into two rows, a foreign competition filed under this league adds strangers (football-data's National League fixtures made `eng.1` a 44-team league). Only "not everyone has played yet" deflates it. A live season **over** its expected size still fails. Exempting both directions would retire the check during exactly the window when a new season's ingest is most likely to invent a club.
+
+- **A weekly gate is a weekly-resolution detector.** `train_unified` runs Sundays 02:00 and was the *only* thing running the integrity gate, so the 2026-08-16 break cost the whole week's retrain and would not have been retried until the next Sunday. The same gate now runs in `event_backfill` (daily 08:30) immediately before it publishes the warehouse, as a **`continue-on-error` canary** that writes to the step summary. That is the one place the no-`continue-on-error` rule does not apply: the rule exists because a silent step that CAPTURES something is indistinguishable from a quiet day, and this one captures nothing and gates nothing. `train_unified` still blocks; the canary only shortens discovery from seven days to one. **Do not make it blocking** — that adds a new way for a daily pipeline to fail, which is the opposite of its purpose.
+
+- **`GATE HOLD BACK` with `Publish … artifacts` skipped is a SUCCESS, not a failure.** The 2026-08-16 retrain ended that way on both genders: models retrained, promotion gate refused, Dixon-Coles keeps serving, run concluded green. Do not "fix" a held-back gate by loosening it.
+
 - **The prediction pipeline bot** commits to `main` 3×/day. Rebase feature branches often.
 - **Vercel escalates ESLint warnings to errors.** Run `npx next lint` before pushing; `npm run build` is not enough.
 
