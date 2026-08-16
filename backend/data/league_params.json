@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-08-16T14:25:05.071592+00:00",
+  "updated_at": "2026-08-16T22:19:56.220963+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -18,10 +18,10 @@
     "esp.1": {
       "display_name": "La Liga",
       "country": "Spain",
-      "avg_goals": 1.3091,
-      "home_adv": 0.3673,
+      "avg_goals": 1.3097,
+      "home_adv": 0.3688,
       "rho": -0.12,
-      "draw_rate": 0.2536,
+      "draw_rate": 0.2539,
       "league_coefficient": 1.1,
       "total_matchdays": 38,
       "relegation_spots": 3,
@@ -66,10 +66,10 @@
     "ned.1": {
       "display_name": "Eredivisie",
       "country": "Netherlands",
-      "avg_goals": 1.5592,
-      "home_adv": 0.3696,
+      "avg_goals": 1.5602,
+      "home_adv": 0.3703,
       "rho": -0.11,
-      "draw_rate": 0.248,
+      "draw_rate": 0.249,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -78,10 +78,10 @@
     "por.1": {
       "display_name": "Primeira Liga",
       "country": "Portugal",
-      "avg_goals": 1.3266,
-      "home_adv": 0.2943,
+      "avg_goals": 1.327,
+      "home_adv": 0.2976,
       "rho": -0.13,
-      "draw_rate": 0.2409,
+      "draw_rate": 0.2403,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
