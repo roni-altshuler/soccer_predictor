@@ -194,6 +194,47 @@ jobs:
             exit 1
           fi
 
+      - name: Warehouse integrity canary (report only)
+        # The SAME gate `train_unified` blocks on, run daily against the same
+        # warehouse this job is about to publish.
+        #
+        # Why it exists: that gate runs Sundays. When it broke on 2026-08-16
+        # — `season_team_counts` reporting "esp.1 2026: 2 distinct teams,
+        # expected 20" the morning after La Liga kicked off — the retrain was
+        # lost and the next attempt was seven days away. A weekly gate is a
+        # weekly-resolution detector, and warehouse damage arrives daily.
+        #
+        # Deliberately `continue-on-error`. This is the one place CLAUDE.md's
+        # rule against it does not apply: the argument there is that a silent
+        # step is indistinguishable from a quiet day, which is true of a step
+        # that CAPTURES something. This one captures nothing and decides
+        # nothing — `train_unified` still blocks, and the coverage guard above
+        # still fails this run on real regression. Making it blocking would
+        # add a new way for a daily pipeline to fail, which is the opposite of
+        # what it is for.
+        continue-on-error: true
+        run: |
+          set +e
+          OUT=$(python -m backend.scripts.validate_warehouse_integrity \
+                  --min-season 2005 --leagues wave-a --verbose 2>&1)
+          CODE=$?
+          echo "$OUT"
+          {
+            echo "### Warehouse integrity (canary)"
+            echo
+            if [ "$CODE" -eq 0 ]; then
+              echo "All checks passed. Sunday's retrain gate should be green."
+            else
+              echo ":warning: **This is what \`train_unified\` will fail on next Sunday.**"
+              echo "Fix it before then, or the weekly retrain is lost again."
+              echo
+              echo '```'
+              echo "$OUT" | grep -E '^\[(FAIL|WARN)\]|^ +- ' | head -40
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
       - name: Publish updated warehouse to models-latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

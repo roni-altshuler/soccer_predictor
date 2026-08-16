@@ -602,3 +602,51 @@ class TestSeasonInProgress:
         assert IntegrityValidator(wh)._current_season() == 2025
         _match(wh, "m2", "esp.1", 2026, "2026-08-15T15:00:00+00:00", a, b)
         assert IntegrityValidator(wh)._current_season() == 2026
+
+    # -- the weeks actually ahead ------------------------------------------
+
+    @pytest.mark.parametrize(
+        "comp,size",
+        [("eng.1", 20), ("esp.1", 20), ("ita.1", 20), ("fra.1", 20), ("ger.1", 18)],
+    )
+    def test_every_wave_a_league_can_kick_off_without_blocking_the_retrain(
+        self, wh, comp, size
+    ):
+        """The next month, league by league.
+
+        La Liga started 2026-08-15 and broke the weekly retrain. The Premier
+        League follows on the 21st, and the rest within the fortnight. The
+        retrain runs Sundays, so one false positive costs a week of training
+        and nobody finds out until the next Sunday — which is why this is
+        parameterised over every league rather than left at the one that
+        happened to fail.
+        """
+        wh.upsert_competition(comp, comp, "M", country="XX", tier=1)
+        for played in (1, 2, size // 2, size - 1):
+            sub = Warehouse(wh.path.parent / f"{comp}_{played}.sqlite")
+            sub.migrate()
+            sub.upsert_competition(comp, comp, "M", country="XX", tier=1)
+            self._kickoff(sub, comp=comp, season=2026, n_teams=played)
+            result = _check(sub, "season_team_counts")
+            sub.close()
+            assert result.passed, (
+                f"{comp} with {played}/{size} clubs having played blocked the "
+                f"retrain: {result.failures}")
+
+    def test_a_league_that_finished_its_season_is_judged_again(self, wh):
+        """The exemption must expire, or the check dies quietly.
+
+        Once 2026 is history it has to be held to its full size again. An
+        exemption keyed on ">= current_season" does that by construction, and
+        this pins it: the same 2-club season passes while live and fails once
+        a later season exists.
+        """
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        self._kickoff(wh, season=2026, n_teams=2)
+        assert _check(wh, "season_team_counts").passed, "live season should be exempt"
+
+        # A later season arrives; 2026 is now history and must stand up.
+        self._kickoff(wh, comp="esp.1", season=2027, n_teams=2)
+        result = _check(wh, "season_team_counts")
+        assert not result.passed, "the exemption never expired"
+        assert any("2026" in f for f in result.failures), result.failures
