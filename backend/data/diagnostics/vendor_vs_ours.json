@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-16T14:22:02.885156+00:00",
+  "generated_at": "2026-08-16T20:21:13.822878+00:00",
   "captured_rows": 44,
-  "scored_fixtures": 18,
+  "scored_fixtures": 20,
   "joined_by": {
-    "exact": 14,
+    "exact": 16,
     "relaxed": 4
   },
   "not_scored": {
-    "no_result_yet": 13,
+    "no_result_yet": 11,
     "ours_never_forecast_this_competition": 8,
     "name_join_failed": 5
   },
@@ -18,24 +18,24 @@
     "distinct_triples": 6
   },
   "ours": {
-    "n": 18,
-    "brier": 0.60739,
-    "log_loss": 1.01019,
+    "n": 20,
+    "brier": 0.60826,
+    "log_loss": 1.01403,
     "accuracy": 0.5,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 18,
-    "brier": 0.73028,
-    "log_loss": 3.00946,
-    "accuracy": 0.4444,
+    "n": 20,
+    "brier": 0.708,
+    "log_loss": 2.7831,
+    "accuracy": 0.45,
     "impossible_calls": 1
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.12289,
-    "ci95_low": -0.04556,
-    "ci95_high": 0.29923,
-    "p_a_better": 0.0851,
+    "mean_diff": 0.09974,
+    "ci95_low": -0.05945,
+    "ci95_high": 0.26826,
+    "p_a_better": 0.118,
     "significant": false
   },
   "on_fixtures_with_a_price": {
@@ -64,11 +64,11 @@
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 11615
+    "needed_for_a_0.01_gap_at_80pct_power": 11626
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "18 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "20 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
