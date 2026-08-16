@@ -513,3 +513,92 @@ class TestDedupeSurvivesTheNextIngest:
             "SELECT COUNT(*) FROM matches WHERE competition_id='eng.1' "
             "AND season=2006").fetchone()[0]
         assert n == 2, "the second meeting was merged into the first"
+
+
+# --------------------------------------------------------------------------
+# 1. season_team_counts — a season in progress is not a corrupt one
+# --------------------------------------------------------------------------
+
+class TestSeasonInProgress:
+    """`matches` is results-only, so a young season holds few clubs.
+
+    Train Unified Models failed on 2026-08-16 with "esp.1 2026: 2 distinct
+    teams, expected 20" — the morning after La Liga kicked off. Nothing was
+    wrong with the warehouse: one matchday had been played, so two clubs had
+    appeared. Left alone it would have blocked the nightly train for the first
+    month of every season, in every league.
+
+    The exemption is ONE-SIDED, and these tests are mostly about that. Every
+    defect this check exists to catch inflates the count; only "not everyone
+    has played yet" deflates it. An exemption that swallowed both would quietly
+    retire the check during exactly the window when a new season's ingest is
+    most likely to invent a club.
+    """
+
+    def _kickoff(self, wh, comp="esp.1", season=2026, n_teams=2, day=15):
+        """`n_teams` clubs having played in a season that just started.
+
+        Every club hosts once, because the check reads
+        `max(COUNT(DISTINCT home_team_id), COUNT(DISTINCT away_team_id))` —
+        pairing the clubs off into half as many fixtures would report half the
+        clubs, which is a property of the check worth knowing about.
+        """
+        ids = [_team(wh, f"{comp} Club {i}") for i in range(n_teams)]
+        for i, home in enumerate(ids):
+            _match(
+                wh, f"{comp}_{season}_{i}", comp, season,
+                f"{season}-08-{day:02d}T15:00:00+00:00",
+                home, ids[(i + 1) % len(ids)],
+            )
+        return ids
+
+    def test_a_season_that_just_kicked_off_does_not_fail(self, wh):
+        # The exact shape that broke the workflow.
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        self._kickoff(wh)
+        result = _check(wh, "season_team_counts")
+        assert result.passed, f"a one-matchday season blocked the run: {result.failures}"
+        assert result.data["in_progress"], "the exemption was silent about what it skipped"
+
+    def test_a_live_season_OVER_its_size_still_fails(self, wh):
+        # THE test. A split identity turns one club into two rows, and a
+        # foreign competition filed under this league adds strangers —
+        # football-data served National League fixtures as `eng.1` and made it
+        # a 44-team league. Both inflate. Neither may be exempted.
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        self._kickoff(wh, n_teams=22)
+        result = _check(wh, "season_team_counts")
+        assert not result.passed, "an over-sized live season was waved through"
+        assert any("22 distinct" in f for f in result.failures)
+
+    def test_a_COMPLETED_season_under_its_size_still_fails(self, wh):
+        # The exemption must key on the season being live, not on the count
+        # being low. History is finished and its shape is knowable.
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        self._kickoff(wh, season=2019, day=15)   # long finished, 2 clubs
+        self._kickoff(wh, season=2026, day=15)   # live, 2 clubs
+        result = _check(wh, "season_team_counts")
+        assert not result.passed
+        assert any("2019" in f for f in result.failures), result.failures
+        assert not any("2026" in f for f in result.failures), (
+            "the live season was reported as a failure")
+
+    def test_both_season_shape_checks_agree_on_which_season_is_live(self, wh):
+        # Two copies of this expression drift, and a shape check disagreeing
+        # with its neighbour cries wolf for a month every August.
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        self._kickoff(wh)
+        results = {r.name: r for r in IntegrityValidator(wh).run_all()}
+        assert (
+            results["season_team_counts"].data["current_season"]
+            == results["season_row_counts"].data["current_season"]
+        )
+
+    def test_the_august_boundary_is_what_splits_the_seasons(self, wh):
+        # A May fixture belongs to the season that started the previous August.
+        wh.upsert_competition("esp.1", "La Liga", "M", country="ES", tier=1)
+        a, b = _team(wh, "A"), _team(wh, "B")
+        _match(wh, "m1", "esp.1", 2025, "2026-05-30T15:00:00+00:00", a, b)
+        assert IntegrityValidator(wh)._current_season() == 2025
+        _match(wh, "m2", "esp.1", 2026, "2026-08-15T15:00:00+00:00", a, b)
+        assert IntegrityValidator(wh)._current_season() == 2026

@@ -226,6 +226,25 @@ class IntegrityValidator:
         with self.wh._lock:  # noqa: SLF001
             return self.wh._conn.execute(sql, args).fetchall()  # noqa: SLF001
 
+    def _current_season(self) -> int:
+        """The season the warehouse is currently inside, by its own latest match.
+
+        Derived from the data rather than the clock, so a validator run against
+        an old snapshot judges that snapshot rather than today. August is the
+        boundary: a match dated 2026-08-15 belongs to season 2026, one dated
+        2026-05-30 to season 2025.
+
+        **Every season-shape check must read this one, not re-derive it.** Two
+        copies of this expression drift silently — the same failure mode that
+        put `ESPN_SLUG` under a pinning test — and a shape check disagreeing
+        with its neighbour about which season is live means one of them cries
+        wolf every night for the first month of a season.
+        """
+        latest = self._q("SELECT MAX(date_utc) AS d FROM matches")[0]["d"] or ""
+        if not latest:
+            return 0
+        return int(latest[:4]) - (0 if latest[5:7] >= "08" else 1)
+
     # -- 1 -----------------------------------------------------------------
     def check_season_team_counts(self) -> CheckResult:
         rows = self._q(
@@ -240,27 +259,59 @@ class IntegrityValidator:
             """.format(", ".join("?" * len(LEAGUE_SIZE))),
             tuple(LEAGUE_SIZE),
         )
-        failures, checked = [], 0
+        failures, checked, in_progress = [], 0, []
         if self.min_season is not None:
             rows = [r for r in rows if r["season"] >= self.min_season]
         if self.leagues is not None:
             rows = [r for r in rows if r["competition_id"] in self.leagues]
+        current_season = self._current_season()
         for r in rows:
             sizes = LEAGUE_SIZE[r["competition_id"]]
             expected = sizes.get(str(r["season"]), sizes["default"])
-            checked += 1
             observed = max(r["home_teams"], r["away_teams"])
+
+            # `matches` is results-only, so a season that has played one
+            # matchday genuinely holds two clubs. Blocking the nightly train on
+            # that is a guard crying wolf for the first month of every season
+            # in every league — esp.1 2026 failed this way on 2026-08-16, the
+            # day after La Liga kicked off, reporting "2 distinct teams,
+            # expected 20".
+            #
+            # The exemption is ONE-SIDED, and that is the whole point. Every
+            # defect this check exists to catch INFLATES the count: a split
+            # identity turns one club into two rows, and a foreign competition
+            # filed under this league adds strangers (football-data served
+            # National League fixtures as `eng.1`, making it a 44-team league).
+            # Only "not everyone has played yet" deflates it. So a live season
+            # over its expected size still fails, and a live season under it is
+            # reported rather than blocking.
+            if r["season"] >= current_season and observed < expected:
+                in_progress.append(
+                    f"{r['competition_id']} {r['season']}: {observed}/{expected} "
+                    f"clubs seen so far"
+                )
+                continue
+
+            checked += 1
             if observed != expected:
                 failures.append(
                     f"{r['competition_id']} {r['season']}: {observed} distinct "
                     f"teams, expected {expected}"
                 )
+        detail = f"{checked - len(failures)}/{checked} league-seasons have the right team count"
+        if in_progress:
+            detail += f" ({len(in_progress)} season(s) still in progress)"
         return CheckResult(
             name="season_team_counts",
             passed=not failures,
-            detail=f"{checked - len(failures)}/{checked} league-seasons have the right team count",
+            detail=detail,
             failures=failures,
-            data={"checked": checked, "bad": len(failures)},
+            data={
+                "checked": checked,
+                "bad": len(failures),
+                "current_season": current_season,
+                "in_progress": in_progress,
+            },
         )
 
     # -- 2 -----------------------------------------------------------------
@@ -511,8 +562,7 @@ class IntegrityValidator:
             """.format(", ".join("?" * len(LEAGUE_SIZE))),
             tuple(LEAGUE_SIZE),
         )
-        latest = self._q("SELECT MAX(date_utc) AS d FROM matches")[0]["d"] or ""
-        current_season = int(latest[:4]) - (0 if latest[5:7] >= "08" else 1) if latest else 0
+        current_season = self._current_season()
 
         failures, truncated = [], []
         if self.min_season is not None:
