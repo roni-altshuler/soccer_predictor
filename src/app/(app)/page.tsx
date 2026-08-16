@@ -22,6 +22,7 @@ import { FeaturedStrip } from '@/components/match/FeaturedStrip'
 import { LeagueSection } from '@/components/match/LeagueSection'
 import type { MatchRowMatch } from '@/components/match/MatchRow'
 import { MatchCardSkeleton } from '@/components/skeletons'
+import { TodayTiles } from '@/components/match/TodayTiles'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -284,6 +285,21 @@ export default function Home() {
             (live first, then league priority). Sits between the date strip and
             the filter row so the segment control stays glued to the list it
             filters. Renders nothing below two crest-complete fixtures. */}
+        {/* Season context — football facts about the day, counted from the
+            same payload that draws the list below. Never pipeline telemetry:
+            see TodayTiles for why that distinction is load-bearing here. */}
+        <TodayTiles
+          dateKey={selectedDate}
+          total={live.length + upcoming.length + completed.length}
+          live={live.length}
+          leagues={
+            new Set(
+              [...live, ...upcoming, ...completed].map((m) => m.league).filter(Boolean),
+            ).size
+          }
+          className="mb-2"
+        />
+
         <FeaturedStrip
           matches={[...live, ...upcoming, ...completed]}
           priorityFor={leaguePriority}

@@ -11,9 +11,11 @@ import type { FixtureForecast } from '@/components/forecast/FixtureCard'
 import { FixtureList } from '@/components/forecast/FixtureList'
 import { LeagueSelect, orderLeagues, seasonLabel } from '@/components/forecast/LeagueSelect'
 import { ProbabilityRow } from '@/components/forecast/ProbabilityBar'
+import { ProjectionMovement } from '@/components/forecast/ProjectionMovement'
 import type { ProjectedRow } from '@/components/forecast/ProjectedTable'
 import { StandingsTable } from '@/components/forecast/StandingsTable'
 import type { GroupMeta } from '@/components/forecast/StandingsTable'
+import type { Movement } from '@/lib/server/projectionHistory'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /**
@@ -112,6 +114,7 @@ export default function SeasonPage() {
   const [historical, setHistorical] = useState<Historical | null>(null)
   const [live, setLive] = useState<Live | null>(null)
   const [selected, setSelected] = useState<string>('')
+  const [movement, setMovement] = useState<Movement | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -144,6 +147,31 @@ export default function SeasonPage() {
       alive = false
     }
   }, [])
+
+  // What moved since the last forecast — per competition, so it refetches
+  // with the picker. Renders nothing unless two recorded forecasts exist with
+  // football played between them.
+  useEffect(() => {
+    if (!selected) return
+    let alive = true
+    setMovement(null)
+    fetch(`/api/v1/season/movement?competition=${encodeURIComponent(selected)}`, {
+      cache: 'no-store',
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        // Validate the shape, not just the flag. `available: true` is a claim
+        // the payload makes about itself; `moves` being an array is the thing
+        // the component actually needs.
+        if (alive && d?.available && Array.isArray(d.moves)) setMovement(d as Movement)
+      })
+      .catch(() => {
+        // A missing history is the normal case early in a season, not an error.
+      })
+    return () => {
+      alive = false
+    }
+  }, [selected])
 
   const selectLeague = useCallback((id: string) => {
     setSelected(id)
@@ -410,6 +438,8 @@ export default function SeasonPage() {
               </section>
             </TabsContent>
           </Tabs>
+
+          <ProjectionMovement movement={movement} />
 
           <LeagueRecord league={league} />
 

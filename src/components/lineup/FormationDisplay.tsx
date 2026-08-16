@@ -380,20 +380,25 @@ export function PitchBackground({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="relative p-4 min-h-[350px] overflow-hidden"
-      style={{
-        background: `linear-gradient(to bottom,
-          var(--pitch-bg),
-          color-mix(in srgb, var(--pitch-bg) 88%, white 12%),
-          var(--pitch-bg)
-        )`,
-      }}
+      // Flat, as `--pitch-bg` has always documented itself to be. The vertical
+      // lighten-then-darken wash here was the last gradient in the product
+      // outside the two loading shimmers.
+      style={{ background: 'var(--pitch-bg)' }}
     >
-      {/* Pitch pattern stripes */}
+      {/* Mowing stripes. These stay: they depict a real property of a real
+          pitch rather than decorating a surface, which is the line DESIGN.md
+          draws. Retokenised from `bg-black/10` — a raw Tailwind colour on a
+          token-built surface, and invisible anyway against #0d0d0d. */}
       <div className="absolute inset-0 opacity-20">
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
-            className={`h-[10%] ${i % 2 === 0 ? 'bg-black/10' : ''}`}
+            className="h-[10%]"
+            style={
+              i % 2 === 0
+                ? { background: 'color-mix(in srgb, var(--text-primary) 4%, transparent)' }
+                : undefined
+            }
           />
         ))}
       </div>

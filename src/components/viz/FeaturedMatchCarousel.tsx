@@ -116,11 +116,13 @@ export function FeaturedMatchCarousel({ matches, className }: FeaturedMatchCarou
     const panelStyle = {
       '--fm-home-color': match.homeColor,
       '--fm-away-color': match.awayColor,
-      background: `linear-gradient(100deg,
-        color-mix(in srgb, var(--fm-home-color) 16%, var(--card-bg)) 0%,
-        var(--card-bg) 42%,
-        var(--card-bg) 58%,
-        color-mix(in srgb, var(--fm-away-color) 16%, var(--card-bg)) 100%)`,
+      // Flat, like every other card. This was a 100° two-club wash that made
+      // the featured strip the most gradient-looking thing on a site whose
+      // design language has none — a Sevilla/Rayo card read as a maroon panel.
+      // The club colours stay: they are carried by the per-side bars below,
+      // which are solid fills, so identity survives without a painted
+      // background. Colour carries meaning here, never atmosphere.
+      background: 'var(--card-bg)',
     } as CSSProperties
 
     const inner = (

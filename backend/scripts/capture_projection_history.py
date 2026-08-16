@@ -45,7 +45,22 @@ OUT = ROOT / "backend" / "data" / "predictions" / "projection_history.jsonl"
 
 # The figures the product actually shows. Anything else can be recomputed from
 # the artifact of the day; these are the ones whose HISTORY is the point.
-FIGURES = ("p_title", "p_top_cut", "p_relegated", "exp_points", "exp_position")
+#
+# `p_group_title` and `p_qualify` are here for the GROUPED leagues. In MLS
+# `p_title` is the Supporters' Shield and `p_top_cut` is the same number under
+# a second name, so without these two a grouped league has no history for the
+# figures that actually decide its season — which conference a club wins, and
+# whether it reaches the playoffs. Absent in ungrouped leagues, and a missing
+# key is simply not recorded.
+FIGURES = (
+    "p_title",
+    "p_top_cut",
+    "p_relegated",
+    "p_group_title",
+    "p_qualify",
+    "exp_points",
+    "exp_position",
+)
 
 
 def rows_for(payload: dict) -> List[dict]:

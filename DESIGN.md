@@ -221,19 +221,26 @@ Everything new should be Tailwind utilities reading `var(--*)`, or a component i
 `src/components/primitives/`. Add to this file only when a rule genuinely cannot be
 expressed as a utility.
 
-### Known exceptions to "no gradients"
+### "No gradients" means no gradients
 
-Recorded rather than quietly tolerated, because an unrecorded exception is how a rule stops
-meaning anything. Two remain in the product, both built inline in components rather than in
-`globals.css`, and **neither has been signed off** — they are open questions, not precedent:
+Resolved 2026-08-16. Two inline gradients survived the CSS sweep because they lived in
+components rather than `globals.css`; both are now flat:
 
-| Where | What | Reading |
-|---|---|---|
-| [FeaturedMatchCarousel.tsx:119](src/components/viz/FeaturedMatchCarousel.tsx#L119) | `linear-gradient(100deg, …)` tinting each end of the card with the two clubs' brand colours at 16% | Defensible as club identity — colour carrying meaning — but it is still a decorative wash, and it is the most gradient-looking thing on the site |
-| [FormationDisplay.tsx:384](src/components/lineup/FormationDisplay.tsx#L384) | vertical `linear-gradient` on the pitch surface, plus stripes at 20% opacity | Depicts a real object (mowing stripes) rather than chrome — but `--pitch-bg` is documented as "flat, hairline-drawn", so the token and the component disagree |
+- **FeaturedMatchCarousel** painted a 100° two-club wash across the card, which made the
+  featured strip the most gradient-looking thing on the site — a Sevilla/Rayo card read as
+  a maroon panel. The clubs' colours stay, carried by the solid per-side bars. Identity
+  survives without a painted background.
+- **FormationDisplay** washed the pitch vertically, contradicting `--pitch-bg`'s own
+  documented "flat, hairline-drawn". The mowing stripes stay: they depict a real property
+  of a real pitch rather than decorating a surface, and that is the line. They were
+  retokenised off `bg-black/10` at the same time.
 
-The two shimmer keyframes in `globals.css` are **not** exceptions: a shimmer is a moving
-gradient by definition, and it marks a loading state rather than decorating a surface.
+The **only** remaining gradients are the two shimmer keyframes in `globals.css`, and they
+are not an exception: a shimmer is a moving gradient by definition, and it marks a loading
+state rather than decorating a surface.
+
+If a third one appears, record it here rather than tolerating it quietly — an unrecorded
+exception is how a rule stops meaning anything.
 
 ---
 
