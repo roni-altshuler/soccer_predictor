@@ -214,12 +214,12 @@ class TestUniquenessGate:
 
 class TestDropTaxonomy:
     def test_a_clean_pair_is_scored(self):
-        paired, dropped = svp.pair_rows([vendor_row()], ours_map(our_pred()), {})
+        paired, dropped, _unjoined = svp.pair_rows([vendor_row()], ours_map(our_pred()), {})
         assert len(paired) == 1 and not dropped
         assert paired[0]["outcome"] == "home" and paired[0]["joined_by"] == "exact"
 
     def test_a_vendor_capture_after_kickoff_is_refused(self):
-        paired, dropped = svp.pair_rows(
+        paired, dropped, _unjoined = svp.pair_rows(
             [vendor_row(before_kickoff=False)], ours_map(our_pred()), {}
         )
         assert not paired and dropped["vendor_captured_after_kickoff"] == 1
@@ -229,16 +229,16 @@ class TestDropTaxonomy:
         # point-in-time on the challenger, wave it through for the incumbent,
         # and win by construction.
         late = our_pred(prediction_timestamp=(KICK + timedelta(minutes=1)).isoformat())
-        paired, dropped = svp.pair_rows([vendor_row()], ours_map(late), {})
+        paired, dropped, _unjoined = svp.pair_rows([vendor_row()], ours_map(late), {})
         assert not paired and dropped["ours_not_stamped_before_kickoff"] == 1
 
     def test_an_unstamped_forecast_of_ours_is_also_refused(self):
         blank = our_pred(prediction_timestamp=None)
-        paired, dropped = svp.pair_rows([vendor_row()], ours_map(blank), {})
+        paired, dropped, _unjoined = svp.pair_rows([vendor_row()], ours_map(blank), {})
         assert not paired and dropped["ours_not_stamped_before_kickoff"] == 1
 
     def test_an_unplayed_fixture_waits_rather_than_scoring(self):
-        paired, dropped = svp.pair_rows(
+        paired, dropped, _unjoined = svp.pair_rows(
             [vendor_row()], ours_map(our_pred(actual_winner=None)), {}
         )
         assert not paired and dropped["no_result_yet"] == 1
@@ -246,11 +246,11 @@ class TestDropTaxonomy:
     def test_a_competition_we_do_not_forecast_is_named_as_such(self):
         # Süper Lig is captured and never scoreable. That is a scope fact worth
         # reading, not a join bug worth chasing.
-        paired, dropped = svp.pair_rows([vendor_row(cid="tur.1")], ours_map(our_pred()), {})
+        paired, dropped, _unjoined = svp.pair_rows([vendor_row(cid="tur.1")], ours_map(our_pred()), {})
         assert not paired and dropped["ours_never_forecast_this_competition"] == 1
 
     def test_a_missing_triple_is_refused_before_anything_else(self):
-        paired, dropped = svp.pair_rows(
+        paired, dropped, _unjoined = svp.pair_rows(
             [vendor_row(p_draw=None)], ours_map(our_pred()), {}
         )
         assert not paired and dropped["vendor_gave_no_triple"] == 1
@@ -263,7 +263,7 @@ class TestDropTaxonomy:
             vendor_row(fixture_id=4, p_home=None),
             vendor_row(fixture_id=5, home="Nowhere United", away="Nobody"),
         ]
-        paired, dropped = svp.pair_rows(rows, ours_map(our_pred()), {})
+        paired, dropped, _unjoined = svp.pair_rows(rows, ours_map(our_pred()), {})
         assert len(paired) + sum(dropped.values()) == len(rows)
 
 
@@ -363,7 +363,7 @@ class TestEndToEnd:
         vendor = tmp_path / "v.jsonl"
         vendor.write_text(json.dumps(vendor_row()) + "\n", encoding="utf8")
         rows = svp.load_vendor(vendor)
-        paired, _ = svp.pair_rows(rows, ours_map(our_pred(winner="away")), {})
+        paired, _, _unjoined = svp.pair_rows(rows, ours_map(our_pred(winner="away")), {})
         summary = svp.summarise(paired, svp.Counter(), rows)
         # Vendor said 10% away, we said 27%, and away happened.
         assert summary["vendor"]["brier"] > summary["ours"]["brier"]
@@ -378,3 +378,53 @@ class TestEndToEnd:
             encoding="utf8",
         )
         assert len(svp.load_vendor(vendor)) == 2
+
+
+class TestUnjoinedAreNamed:
+    """A drop reason a name can explain must carry the name.
+
+    `name_join_failed: 5` says 11% of the sample vanished and offers no way to
+    do anything about it. The same five with their spellings beside ours is a
+    to-do list — and that is not theoretical here: the first capture's four
+    failures (`cambuur`/`sc cambuur`, `dc united`/`d c united`, and two more)
+    are what produced `relaxed_key()`, and they were fixable because somebody
+    wrote them down.
+    """
+
+    def test_a_join_failure_names_both_spellings(self):
+        vendor = [vendor_row(home="Wanderers Athletic", away="Rovers United")]
+        ours = ours_map(our_pred(home="Bolton Wanderers", away="Blackburn Rovers"))
+        _, dropped, unjoined = svp.pair_rows(vendor, ours, {})
+        assert dropped["name_join_failed"] == 1
+        assert len(unjoined) == 1
+        entry = unjoined[0]
+        assert entry["vendor"] == "Wanderers Athletic v Rovers United"
+        # THE point: our own spelling for that day, so the pair is reconcilable
+        # by reading one line instead of re-deriving the join by hand.
+        assert entry["ours_same_day"] == ["Bolton Wanderers v Blackburn Rovers"]
+        assert entry["reason"] == "name_join_failed"
+
+    def test_it_does_not_pad_the_list_with_scope_or_timing(self):
+        # A competition we never forecast is a product decision and a fixture
+        # with no result yet is the calendar. Neither is a spelling problem, and
+        # listing them is how a useful list stops being read.
+        _, dropped, unjoined = svp.pair_rows(
+            [vendor_row(cid="tur.1")], ours_map(our_pred()), {}
+        )
+        assert dropped["ours_never_forecast_this_competition"] == 1
+        assert unjoined == []
+
+    def test_a_clean_join_names_nothing(self):
+        paired, _, unjoined = svp.pair_rows([vendor_row()], ours_map(our_pred()), {})
+        assert len(paired) == 1
+        assert unjoined == []
+
+    def test_the_summary_carries_them_through(self):
+        vendor = [vendor_row(home="Wanderers Athletic", away="Rovers United")]
+        ours = ours_map(our_pred(home="Bolton Wanderers", away="Blackburn Rovers"))
+        paired, dropped, unjoined = svp.pair_rows(vendor, ours, {})
+        summary = svp.summarise(paired, dropped, vendor, unjoined)
+        assert summary["unjoined_fixtures"] == unjoined
+        # And it reaches the printed report, because a list nobody sees is no
+        # better than the count it replaced.
+        assert "Wanderers Athletic v Rovers United" in svp.report(summary)

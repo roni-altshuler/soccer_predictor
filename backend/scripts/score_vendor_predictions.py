@@ -360,10 +360,57 @@ def pair_rows(
     vendor: List[dict],
     ours: Dict[Tuple[str, str, str, str], dict],
     prices: Dict[str, List[dict]],
-) -> Tuple[List[dict], Counter]:
-    """Every vendor row lands in exactly one bucket. Nothing is dropped quietly."""
+) -> Tuple[List[dict], Counter, List[dict]]:
+    """Every vendor row lands in exactly one bucket. Nothing is dropped quietly.
+
+    Returns `(paired, dropped, unjoined)`.
+
+    **`unjoined` NAMES the fixtures a count cannot fix.** A bucket reading
+    `name_join_failed: 5` says 11% of the sample vanished and gives no way to
+    do anything about it; the same five with their spellings beside ours is a
+    to-do list. That is not a new idea here — the first capture's four failures
+    (`academico viseu`/`academico de viseu`, `cambuur`/`sc cambuur`,
+    `dc united`/`d c united`, `new york red bulls`/`red bull new york`) are
+    what produced `relaxed_key()`, and they were fixable precisely because
+    somebody had written them down.
+
+    Only the buckets where a NAME is the diagnosis are listed. A competition we
+    do not forecast is a scope decision and a fixture with no result yet is
+    timing; neither is a spelling problem, and padding the list with them is
+    how a useful list becomes ignored.
+    """
     dropped: Counter = Counter()
     paired: List[dict] = []
+    unjoined: List[dict] = []
+
+    # The buckets a name can explain. Everything else is scope or timing.
+    NAME_DIAGNOSABLE = {
+        "name_join_failed",
+        "name_join_ambiguous",
+        "ours_never_forecast_this_fixture",
+    }
+
+    def note_unjoined(reason: str, key: Tuple[str, str, str, str], row: dict) -> None:
+        if reason not in NAME_DIAGNOSABLE:
+            return
+        # RAW spellings on both sides, not the normalised key. The normalised
+        # forms are what failed to match, but the raw ones are what somebody
+        # would add to `team_aliases.yml` — printing `wanderers athletic` hides
+        # the apostrophe or the suffix that is the actual difference.
+        ours_that_day = sorted(
+            f"{p.get('home_team')} v {p.get('away_team')}"
+            for cand, p in ours.items()
+            if cand[0] == key[0] and cand[1] == key[1]
+        )
+        unjoined.append(
+            {
+                "reason": reason,
+                "competition_id": key[0],
+                "date": key[1],
+                "vendor": f"{row.get('home')} v {row.get('away')}",
+                "ours_same_day": ours_that_day[:8],
+            }
+        )
 
     by_day: Dict[Tuple[str, str], List[Tuple[Tuple[str, str, str, str], dict]]] = {}
     for cand, pred in ours.items():
@@ -395,14 +442,22 @@ def pair_rows(
             # first is a scope decision, the second is a bug.
             if not any(k[0] == key[0] for k in ours):
                 dropped["ours_never_forecast_this_competition"] += 1
+                # Offered to the same gate as every other drop, so
+                # NAME_DIAGNOSABLE is the ONE place that decides what gets
+                # named. Filtering by call site instead makes the set look
+                # load-bearing while doing nothing — a test asserting scope
+                # drops stay out then passes for the wrong reason.
+                note_unjoined("ours_never_forecast_this_competition", key, row)
                 continue
             same_day = by_day.get((key[0], key[1]))
             if not same_day:
                 dropped["ours_never_forecast_this_fixture"] += 1
+                note_unjoined("ours_never_forecast_this_fixture", key, row)
                 continue
             mine, joined_by = relaxed_lookup(key, same_day)
             if mine is None:
                 dropped[joined_by] += 1
+                note_unjoined(joined_by, key, row)
                 continue
 
         made_at = parse_ts(mine.get("prediction_timestamp"))
@@ -439,7 +494,7 @@ def pair_rows(
             }
         )
 
-    return paired, dropped
+    return paired, dropped, unjoined
 
 
 # --------------------------------------------------------------------------
@@ -487,7 +542,12 @@ def score_set(rows: List[dict], who: str) -> Dict[str, object]:
     }
 
 
-def summarise(paired: List[dict], dropped: Counter, vendor: List[dict]) -> Dict[str, object]:
+def summarise(
+    paired: List[dict],
+    dropped: Counter,
+    vendor: List[dict],
+    unjoined: Optional[List[dict]] = None,
+) -> Dict[str, object]:
     ours = score_set(paired, "ours")
     theirs = score_set(paired, "vendor")
     boot = paired_bootstrap(theirs["_brier"], ours["_brier"])
@@ -511,6 +571,11 @@ def summarise(paired: List[dict], dropped: Counter, vendor: List[dict]) -> Dict[
         # weight it was not meant to carry. Worth seeing, not worth hiding.
         "joined_by": dict(Counter(r["joined_by"] for r in paired)),
         "not_scored": dict(sorted(dropped.items(), key=lambda kv: -kv[1])),
+        # Counted AND named. A bucket reading `name_join_failed: 5` is a
+        # statistic; the same five with their spellings beside ours is a
+        # to-do list, and this repo has fixed a join from exactly such a list
+        # before.
+        "unjoined_fixtures": list(unjoined or []),
         "vendor_degeneracy": degeneracy(vendor),
         "ours": {k: v for k, v in ours.items() if not k.startswith("_")},
         "vendor": {k: v for k, v in theirs.items() if not k.startswith("_")},
@@ -602,6 +667,20 @@ def report(summary: Dict[str, object]) -> str:
         for reason, count in summary["not_scored"].items():  # type: ignore[union-attr]
             lines.append(f"  {count:5d}  {reason}")
 
+    # Named, not just counted. A join failure is the one drop reason somebody
+    # can act on, and only if they can see which spelling to reconcile.
+    unjoined = summary.get("unjoined_fixtures") or []
+    if unjoined:
+        lines.append("")
+        lines.append("fixtures a NAME could not reach — each is a fixable join:")
+        for u in unjoined[:20]:  # type: ignore[index]
+            lines.append(f"  {u['competition_id']} {u['date']}  vendor: {u['vendor']}")
+            lines.append(f"      reason: {u['reason']}")
+            for mine in u["ours_same_day"]:
+                lines.append(f"      ours:   {mine}")
+        if len(unjoined) > 20:  # type: ignore[arg-type]
+            lines.append(f"  ... and {len(unjoined) - 20} more")  # type: ignore[arg-type]
+
     deg = summary["vendor_degeneracy"]
     if deg.get("n"):  # type: ignore[union-attr]
         lines.append(
@@ -656,8 +735,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"no vendor rows at {args.vendor} — nothing to score.")
         return 0
 
-    paired, dropped = pair_rows(vendor, load_ours(args.predictions), load_prices(args.odds))
-    summary = summarise(paired, dropped, vendor)
+    paired, dropped, unjoined = pair_rows(
+        vendor, load_ours(args.predictions), load_prices(args.odds)
+    )
+    summary = summarise(paired, dropped, vendor, unjoined)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf8")

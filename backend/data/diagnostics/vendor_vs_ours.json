@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T14:27:22.414033+00:00",
+  "generated_at": "2026-08-17T16:09:36.745282+00:00",
   "captured_rows": 44,
   "scored_fixtures": 28,
   "joined_by": {
@@ -11,6 +11,76 @@
     "name_join_failed": 5,
     "no_result_yet": 3
   },
+  "unjoined_fixtures": [
+    {
+      "reason": "name_join_failed",
+      "competition_id": "usa.1",
+      "date": "2026-08-16",
+      "vendor": "Houston Dynamo v Los Angeles Galaxy",
+      "ours_same_day": [
+        "Chicago Fire FC v Portland Timbers",
+        "Colorado Rapids v Sporting Kansas City",
+        "Houston Dynamo FC v LA Galaxy",
+        "LAFC v San Diego FC",
+        "Nashville SC v Inter Miami CF",
+        "New York City FC v Philadelphia Union",
+        "Real Salt Lake v Minnesota United FC",
+        "San Jose Earthquakes v St. Louis CITY SC"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "usa.1",
+      "date": "2026-08-16",
+      "vendor": "Los Angeles FC v San Diego",
+      "ours_same_day": [
+        "Chicago Fire FC v Portland Timbers",
+        "Colorado Rapids v Sporting Kansas City",
+        "Houston Dynamo FC v LA Galaxy",
+        "LAFC v San Diego FC",
+        "Nashville SC v Inter Miami CF",
+        "New York City FC v Philadelphia Union",
+        "Real Salt Lake v Minnesota United FC",
+        "San Jose Earthquakes v St. Louis CITY SC"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "ned.1",
+      "date": "2026-08-16",
+      "vendor": "Feyenoord v GO Ahead Eagles",
+      "ours_same_day": [
+        "ADO Den Haag v FC Groningen",
+        "Ajax Amsterdam v Heerenveen",
+        "FC Twente v PEC Zwolle",
+        "Feyenoord Rotterdam v Go Ahead Eagles"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "por.1",
+      "date": "2026-08-16",
+      "vendor": "Nacional v Estoril",
+      "ours_same_day": [
+        "Arouca v Moreirense",
+        "Braga v Gil Vicente",
+        "C.D. Nacional v Estoril",
+        "FC Famalicao v Maritimo"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "ned.1",
+      "date": "2026-08-16",
+      "vendor": "Ajax v Heerenveen",
+      "ours_same_day": [
+        "ADO Den Haag v FC Groningen",
+        "Ajax Amsterdam v Heerenveen",
+        "FC Twente v PEC Zwolle",
+        "Feyenoord Rotterdam v Go Ahead Eagles"
+      ]
+    }
+  ],
   "vendor_degeneracy": {
     "n": 44,
     "two_legs_identical": 44,
