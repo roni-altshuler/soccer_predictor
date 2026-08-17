@@ -60,10 +60,10 @@
   },
   {
    "competition_id": "bra.1",
-   "coverage": 0.1254,
-   "covered": 218,
+   "coverage": 0.1284,
+   "covered": 224,
    "gender": "M",
-   "matches": 1738,
+   "matches": 1744,
    "name": "Brasileir\u00e3o S\u00e9rie A",
    "seasons": [
     {
@@ -104,17 +104,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 218,
-     "matches": 218,
+     "covered": 224,
+     "matches": 224,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 9,
-     "with_events": 209
+     "with_events": 215
     }
    ],
    "uncovered": 1520,
    "verified_empty": 9,
-   "with_events": 209
+   "with_events": 215
   },
   {
    "competition_id": "caf.nations",
@@ -1347,10 +1347,10 @@
   },
   {
    "competition_id": "eng.2",
-   "coverage": 0.1418,
-   "covered": 314,
+   "coverage": 0.1426,
+   "covered": 316,
    "gender": "M",
-   "matches": 2214,
+   "matches": 2216,
    "name": "EFL Championship",
    "seasons": [
     {
@@ -1391,24 +1391,24 @@
     },
     {
      "coverage": 1.0,
-     "covered": 9,
-     "matches": 9,
+     "covered": 11,
+     "matches": 11,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 1,
-     "with_events": 8
+     "with_events": 10
     }
    ],
    "uncovered": 1900,
    "verified_empty": 24,
-   "with_events": 290
+   "with_events": 292
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4825,
-   "covered": 3973,
+   "coverage": 0.4826,
+   "covered": 3975,
    "gender": "M",
-   "matches": 8234,
+   "matches": 8236,
    "name": "La Liga",
    "seasons": [
     {
@@ -1620,24 +1620,24 @@
     },
     {
      "coverage": 1.0,
-     "covered": 2,
-     "matches": 2,
+     "covered": 4,
+     "matches": 4,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 2
+     "with_events": 4
     }
    ],
    "uncovered": 4261,
    "verified_empty": 273,
-   "with_events": 3700
+   "with_events": 3702
   },
   {
    "competition_id": "esp.2",
-   "coverage": 0.1465,
-   "covered": 275,
+   "coverage": 0.1483,
+   "covered": 279,
    "gender": "M",
-   "matches": 1877,
+   "matches": 1881,
    "name": "LaLiga 2",
    "seasons": [
     {
@@ -1678,17 +1678,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 5,
-     "matches": 5,
+     "covered": 9,
+     "matches": 9,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 2,
-     "with_events": 3
+     "with_events": 7
     }
    ],
    "uncovered": 1602,
    "verified_empty": 17,
-   "with_events": 258
+   "with_events": 262
   },
   {
    "competition_id": "fifa.cwc",
@@ -2499,10 +2499,10 @@
   },
   {
    "competition_id": "ger.2",
-   "coverage": 0.17,
-   "covered": 177,
+   "coverage": 0.1724,
+   "covered": 180,
    "gender": "M",
-   "matches": 1041,
+   "matches": 1044,
    "name": "2. Bundesliga",
    "seasons": [
     {
@@ -2543,17 +2543,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 15,
-     "matches": 15,
+     "covered": 18,
+     "matches": 18,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 2,
-     "with_events": 13
+     "with_events": 16
     }
    ],
    "uncovered": 864,
    "verified_empty": 8,
-   "with_events": 169
+   "with_events": 172
   },
   {
    "competition_id": "ita.1",
@@ -2817,10 +2817,10 @@
   },
   {
    "competition_id": "ned.1",
-   "coverage": 0.1063,
-   "covered": 581,
+   "coverage": 0.1069,
+   "covered": 585,
    "gender": "M",
-   "matches": 5466,
+   "matches": 5470,
    "name": "Eredivisie",
    "seasons": [
     {
@@ -2987,24 +2987,24 @@
     },
     {
      "coverage": 1.0,
-     "covered": 14,
-     "matches": 14,
+     "covered": 18,
+     "matches": 18,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 14
+     "with_events": 18
     }
    ],
    "uncovered": 4885,
    "verified_empty": 22,
-   "with_events": 559
+   "with_events": 563
   },
   {
    "competition_id": "por.1",
-   "coverage": 0.1196,
-   "covered": 527,
+   "coverage": 0.1202,
+   "covered": 530,
    "gender": "M",
-   "matches": 4407,
+   "matches": 4410,
    "name": "Primeira Liga",
    "seasons": [
     {
@@ -3171,24 +3171,24 @@
     },
     {
      "coverage": 1.0,
-     "covered": 13,
-     "matches": 13,
+     "covered": 16,
+     "matches": 16,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 13
+     "with_events": 16
     }
    ],
    "uncovered": 3880,
    "verified_empty": 44,
-   "with_events": 483
+   "with_events": 486
   },
   {
    "competition_id": "tur.1",
-   "coverage": 0.9709,
-   "covered": 1335,
+   "coverage": 0.971,
+   "covered": 1338,
    "gender": "M",
-   "matches": 1375,
+   "matches": 1378,
    "name": "S\u00fcper Lig",
    "seasons": [
     {
@@ -3229,17 +3229,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 5,
-     "matches": 5,
+     "covered": 8,
+     "matches": 8,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 5
+     "with_events": 8
     }
    ],
    "uncovered": 40,
    "verified_empty": 81,
-   "with_events": 1254
+   "with_events": 1257
   },
   {
    "competition_id": "uefa.champions",
@@ -3910,10 +3910,10 @@
   },
   {
    "competition_id": "usa.1",
-   "coverage": 0.8918,
-   "covered": 1360,
+   "coverage": 0.8921,
+   "covered": 1364,
    "gender": "M",
-   "matches": 1525,
+   "matches": 1529,
    "name": "Major League Soccer",
    "seasons": [
     {
@@ -4098,17 +4098,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 281,
-     "matches": 281,
+     "covered": 285,
+     "matches": 285,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 12,
-     "with_events": 269
+     "with_events": 273
     }
    ],
    "uncovered": 165,
    "verified_empty": 68,
-   "with_events": 1292
+   "with_events": 1296
   },
   {
    "competition_id": "usa.1.w",
@@ -4232,14 +4232,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-08-16T09:08:09+00:00",
+ "generated_at": "2026-08-17T09:18:34+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4352,
-  "covered": 35581,
-  "matches": 81760,
+  "coverage": 0.4354,
+  "covered": 35612,
+  "matches": 81791,
   "uncovered": 46179,
   "verified_empty": 2266,
-  "with_events": 33315
+  "with_events": 33346
  }
 }
