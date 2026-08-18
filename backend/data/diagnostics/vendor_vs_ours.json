@@ -1,15 +1,16 @@
 {
-  "generated_at": "2026-08-17T20:26:12.199993+00:00",
-  "captured_rows": 44,
-  "scored_fixtures": 28,
+  "generated_at": "2026-08-18T02:55:57.489873+00:00",
+  "captured_rows": 52,
+  "scored_fixtures": 30,
   "joined_by": {
-    "exact": 24,
+    "exact": 26,
     "relaxed": 4
   },
   "not_scored": {
     "ours_never_forecast_this_competition": 8,
+    "ours_never_forecast_this_fixture": 7,
     "name_join_failed": 5,
-    "no_result_yet": 3
+    "no_result_yet": 2
   },
   "unjoined_fixtures": [
     {
@@ -79,66 +80,115 @@
         "FC Twente v PEC Zwolle",
         "Feyenoord Rotterdam v Go Ahead Eagles"
       ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "Philadelphia Union v Inter Miami",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "FC Cincinnati v New York City FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "Columbus Crew v CF Montreal",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "New York Red Bulls v Nashville SC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "Orlando City SC v Chicago Fire",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "Toronto FC v Charlotte",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-19",
+      "vendor": "DC United v New England Revolution",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 44,
-    "two_legs_identical": 44,
+    "n": 52,
+    "two_legs_identical": 52,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 28,
-    "brier": 0.60349,
-    "log_loss": 1.01229,
-    "accuracy": 0.5357,
+    "n": 30,
+    "brier": 0.59706,
+    "log_loss": 1.00314,
+    "accuracy": 0.5333,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 28,
-    "brier": 0.71018,
-    "log_loss": 2.33422,
-    "accuracy": 0.3929,
+    "n": 30,
+    "brier": 0.69667,
+    "log_loss": 2.22833,
+    "accuracy": 0.4,
     "impossible_calls": 1
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.10669,
-    "ci95_low": -0.03411,
-    "ci95_high": 0.25501,
-    "p_a_better": 0.0711,
+    "mean_diff": 0.09961,
+    "ci95_low": -0.0381,
+    "ci95_high": 0.2425,
+    "p_a_better": 0.0797,
     "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 4,
-      "brier": 0.61185,
-      "log_loss": 1.01914,
-      "accuracy": 0.75,
+      "n": 5,
+      "brier": 0.6332,
+      "log_loss": 1.04779,
+      "accuracy": 0.6,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 4,
-      "brier": 0.58512,
-      "log_loss": 0.99354,
-      "accuracy": 0.75,
+      "n": 5,
+      "brier": 0.64671,
+      "log_loss": 1.07892,
+      "accuracy": 0.6,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 4,
-      "brier": 0.75375,
-      "log_loss": 9.18089,
-      "accuracy": 0.5,
+      "n": 5,
+      "brier": 0.703,
+      "log_loss": 7.48335,
+      "accuracy": 0.6,
       "impossible_calls": 1
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 12285
+    "needed_for_a_0.01_gap_at_80pct_power": 12333
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "28 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "30 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
