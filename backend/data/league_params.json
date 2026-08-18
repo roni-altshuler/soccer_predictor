@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-08-17T22:22:35.827167+00:00",
+  "updated_at": "2026-08-18T06:57:31.571021+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -78,10 +78,10 @@
     "por.1": {
       "display_name": "Primeira Liga",
       "country": "Portugal",
-      "avg_goals": 1.327,
-      "home_adv": 0.2976,
+      "avg_goals": 1.3288,
+      "home_adv": 0.2917,
       "rho": -0.13,
-      "draw_rate": 0.2403,
+      "draw_rate": 0.2401,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
