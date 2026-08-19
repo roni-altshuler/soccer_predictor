@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-18T20:23:09.236512+00:00",
-  "captured_rows": 52,
+  "generated_at": "2026-08-19T02:58:25.558254+00:00",
+  "captured_rows": 61,
   "scored_fixtures": 30,
   "joined_by": {
     "exact": 26,
     "relaxed": 4
   },
   "not_scored": {
+    "ours_never_forecast_this_fixture": 15,
     "ours_never_forecast_this_competition": 8,
-    "ours_never_forecast_this_fixture": 7,
     "name_join_failed": 5,
-    "no_result_yet": 2
+    "no_result_yet": 3
   },
   "unjoined_fixtures": [
     {
@@ -129,11 +129,67 @@
       "date": "2026-08-19",
       "vendor": "DC United v New England Revolution",
       "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Sporting Kansas City v St. Louis City",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Minnesota United FC v Atlanta United FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Colorado Rapids v Los Angeles FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Seattle Sounders v Austin",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Real Salt Lake v FC Dallas",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Los Angeles Galaxy v San Jose Earthquakes",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Vancouver Whitecaps v Houston Dynamo",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-20",
+      "vendor": "Portland Timbers v San Diego",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 52,
-    "two_legs_identical": 52,
+    "n": 61,
+    "two_legs_identical": 61,
     "share": 1.0,
     "distinct_triples": 6
   },
