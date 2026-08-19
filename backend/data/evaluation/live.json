@@ -1,39 +1,38 @@
 {
-  "generated_at": "2026-08-18T08:07:24.937512+00:00",
+  "generated_at": "2026-08-19T08:09:04.509822+00:00",
   "snapshot_store": {
-    "rows": 97146,
+    "rows": 99118,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-18T08:07:21.968437+00:00",
+    "last_generated": "2026-08-19T08:09:01.591487+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
       "2026.08.1+c919f68a": 20251,
-      "2026.08.1+4277ba19": 9911,
+      "2026.08.1+4277ba19": 11883,
       "2026.08.1+27734fb2": 9384
     }
   },
   "join": {
     "snapshots": 5041,
-    "scored": 93,
-    "awaiting_result": 4728,
+    "scored": 94,
+    "awaiting_result": 4765,
     "unresolved_clubs": {
-      "esp.1:Dep. A Coru\u00f1a": 38,
       "esp.2:Celta de Vigo B": 42,
       "ita.2:Arezzo": 38,
       "ita.2:Vicenza Virtus": 38,
       "tur.1:Amedspor": 34,
       "tur.1:Yeni \u00c7orumspor": 34
     },
-    "unresolved_count": 224
+    "unresolved_count": 186
   },
   "live": {
     "basis": "live_published",
-    "n": 93,
-    "brier": 0.65261,
-    "log_loss": 1.07365,
-    "accuracy": 0.45161,
-    "ece": 0.07383,
+    "n": 94,
+    "brier": 0.65455,
+    "log_loss": 1.07666,
+    "accuracy": 0.44681,
+    "ece": 0.07613,
     "reliability": [
       {
         "bin_low": 0.0,
@@ -52,23 +51,23 @@
       {
         "bin_low": 0.2,
         "bin_high": 0.3,
-        "n": 120,
+        "n": 121,
         "stated": 0.2609,
-        "observed": 0.3
+        "observed": 0.3058
       },
       {
         "bin_low": 0.3,
         "bin_high": 0.4,
-        "n": 47,
-        "stated": 0.3521,
-        "observed": 0.4468
+        "n": 48,
+        "stated": 0.3511,
+        "observed": 0.4375
       },
       {
         "bin_low": 0.4,
         "bin_high": 0.5,
-        "n": 34,
-        "stated": 0.4514,
-        "observed": 0.3235
+        "n": 35,
+        "stated": 0.4509,
+        "observed": 0.3143
       },
       {
         "bin_low": 0.5,
@@ -99,8 +98,8 @@
         "observed": 1.0
       }
     ],
-    "xg_mae": 0.9189,
-    "top_scoreline_hit_rate": 0.1075,
+    "xg_mae": 0.9138,
+    "top_scoreline_hit_rate": 0.117,
     "by_league": {
       "ger.2": {
         "n": 9,
@@ -152,7 +151,7 @@
         "accuracy": 0.46667
       },
       "esp.1": {
-        "n": 4,
+        "n": 5,
         "brier": null,
         "note": "fewer than 10 scored fixtures"
       }
@@ -171,17 +170,17 @@
         "accuracy": 0.5
       },
       "2026.08.1+4277ba19": {
-        "n": 19,
-        "brier": 0.63486,
-        "log_loss": 1.05325,
-        "accuracy": 0.52632
+        "n": 20,
+        "brier": 0.64487,
+        "log_loss": 1.06843,
+        "accuracy": 0.5
       }
     },
     "first_kickoff": "2026-08-14T18:30:00+00:00",
     "last_kickoff": "2026-08-17T21:30:00+00:00",
     "baselines": {
       "uniform": 0.66667,
-      "sample_base_rate": 0.6595,
+      "sample_base_rate": 0.66071,
       "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
     }
   },
