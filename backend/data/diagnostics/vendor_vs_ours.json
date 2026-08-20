@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-19T20:27:18.924522+00:00",
-  "captured_rows": 61,
-  "scored_fixtures": 30,
+  "generated_at": "2026-08-20T02:56:57.266481+00:00",
+  "captured_rows": 65,
+  "scored_fixtures": 31,
   "joined_by": {
-    "exact": 26,
+    "exact": 27,
     "relaxed": 4
   },
   "not_scored": {
     "ours_never_forecast_this_fixture": 15,
-    "ours_never_forecast_this_competition": 8,
-    "name_join_failed": 5,
-    "no_result_yet": 3
+    "ours_never_forecast_this_competition": 9,
+    "name_join_failed": 6,
+    "no_result_yet": 4
   },
   "unjoined_fixtures": [
     {
@@ -185,66 +185,75 @@
       "date": "2026-08-20",
       "vendor": "Portland Timbers v San Diego",
       "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-21",
+      "vendor": "Arsenal v Coventry",
+      "ours_same_day": [
+        "Arsenal v Coventry City"
+      ]
     }
   ],
   "vendor_degeneracy": {
-    "n": 61,
-    "two_legs_identical": 61,
+    "n": 65,
+    "two_legs_identical": 65,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 30,
-    "brier": 0.59706,
-    "log_loss": 1.00314,
-    "accuracy": 0.5333,
+    "n": 31,
+    "brier": 0.59245,
+    "log_loss": 0.99655,
+    "accuracy": 0.5484,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 30,
-    "brier": 0.69667,
-    "log_loss": 2.22833,
-    "accuracy": 0.4,
+    "n": 31,
+    "brier": 0.69032,
+    "log_loss": 2.17881,
+    "accuracy": 0.4194,
     "impossible_calls": 1
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.09961,
-    "ci95_low": -0.0381,
-    "ci95_high": 0.2425,
-    "p_a_better": 0.0797,
+    "mean_diff": 0.09787,
+    "ci95_low": -0.03429,
+    "ci95_high": 0.23405,
+    "p_a_better": 0.0756,
     "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 5,
-      "brier": 0.6332,
-      "log_loss": 1.04779,
-      "accuracy": 0.6,
+      "n": 6,
+      "brier": 0.559,
+      "log_loss": 0.94554,
+      "accuracy": 0.6667,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 5,
-      "brier": 0.64671,
-      "log_loss": 1.07892,
-      "accuracy": 0.6,
+      "n": 6,
+      "brier": 0.61463,
+      "log_loss": 1.03226,
+      "accuracy": 0.6667,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 5,
-      "brier": 0.703,
-      "log_loss": 7.48335,
-      "accuracy": 0.6,
+      "n": 6,
+      "brier": 0.66917,
+      "log_loss": 6.35165,
+      "accuracy": 0.6667,
       "impossible_calls": 1
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 12333
+    "needed_for_a_0.01_gap_at_80pct_power": 11929
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "30 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "31 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
