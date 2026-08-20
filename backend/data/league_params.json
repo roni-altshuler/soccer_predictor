@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-08-20T06:59:07.688662+00:00",
+  "updated_at": "2026-08-20T22:25:41.998333+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -18,10 +18,10 @@
     "esp.1": {
       "display_name": "La Liga",
       "country": "Spain",
-      "avg_goals": 1.3091,
-      "home_adv": 0.3694,
+      "avg_goals": 1.3089,
+      "home_adv": 0.3691,
       "rho": -0.12,
-      "draw_rate": 0.2547,
+      "draw_rate": 0.2552,
       "league_coefficient": 1.1,
       "total_matchdays": 38,
       "relegation_spots": 3,
