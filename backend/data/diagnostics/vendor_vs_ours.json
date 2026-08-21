@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-20T20:27:31.519326+00:00",
-  "captured_rows": 65,
-  "scored_fixtures": 31,
+  "generated_at": "2026-08-21T03:05:58.377711+00:00",
+  "captured_rows": 98,
+  "scored_fixtures": 33,
   "joined_by": {
-    "exact": 27,
+    "exact": 29,
     "relaxed": 4
   },
   "not_scored": {
-    "ours_never_forecast_this_fixture": 15,
-    "ours_never_forecast_this_competition": 9,
-    "name_join_failed": 6,
-    "no_result_yet": 4
+    "ours_never_forecast_this_fixture": 28,
+    "name_join_failed": 13,
+    "ours_never_forecast_this_competition": 12,
+    "no_result_yet": 12
   },
   "unjoined_fixtures": [
     {
@@ -194,66 +194,247 @@
       "ours_same_day": [
         "Arsenal v Coventry City"
       ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-22",
+      "vendor": "Ipswich v Sunderland",
+      "ours_same_day": [
+        "Brentford v Tottenham Hotspur",
+        "Everton v Crystal Palace",
+        "Hull City v Manchester United",
+        "Ipswich Town v Sunderland",
+        "Nottingham Forest v Leeds United"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-22",
+      "vendor": "Nottingham Forest v Leeds",
+      "ours_same_day": [
+        "Brentford v Tottenham Hotspur",
+        "Everton v Crystal Palace",
+        "Hull City v Manchester United",
+        "Ipswich Town v Sunderland",
+        "Nottingham Forest v Leeds United"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-22",
+      "vendor": "Fortuna Sittard v AZ Alkmaar",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-22",
+      "vendor": "Maritimo v Academico Viseu",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "fra.1",
+      "date": "2026-08-22",
+      "vendor": "Lens v Auxerre",
+      "ours_same_day": [
+        "Le Mans v Brest",
+        "Lens v AJ Auxerre",
+        "Nice v Lorient",
+        "Toulouse v Lyon",
+        "Troyes v Paris FC"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "ita.1",
+      "date": "2026-08-22",
+      "vendor": "Inter v Monza",
+      "ours_same_day": [
+        "Genoa v Napoli",
+        "Internazionale v Monza",
+        "Parma v Cagliari",
+        "Udinese v Como"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-22",
+      "vendor": "Brentford v Tottenham",
+      "ours_same_day": [
+        "Brentford v Tottenham Hotspur",
+        "Everton v Crystal Palace",
+        "Hull City v Manchester United",
+        "Ipswich Town v Sunderland",
+        "Nottingham Forest v Leeds United"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-22",
+      "vendor": "Sparta Rotterdam v Utrecht",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-22",
+      "vendor": "Estoril v Rio Ave",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-22",
+      "vendor": "NEC Nijmegen v Excelsior",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "fra.1",
+      "date": "2026-08-22",
+      "vendor": "Le Mans v Stade Brestois 29",
+      "ours_same_day": [
+        "Le Mans v Brest",
+        "Lens v AJ Auxerre",
+        "Nice v Lorient",
+        "Toulouse v Lyon",
+        "Troyes v Paris FC"
+      ]
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "fra.1",
+      "date": "2026-08-22",
+      "vendor": "Estac Troyes v Paris FC",
+      "ours_same_day": [
+        "Le Mans v Brest",
+        "Lens v AJ Auxerre",
+        "Nice v Lorient",
+        "Toulouse v Lyon",
+        "Troyes v Paris FC"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-22",
+      "vendor": "Heerenveen v PEC Zwolle",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-22",
+      "vendor": "Sporting CP v Alverca",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "Inter Miami v Toronto FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "FC Cincinnati v Seattle Sounders",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "CF Montreal v Los Angeles Galaxy",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "New York Red Bulls v Chicago Fire",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "Orlando City SC v Real Salt Lake",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-22",
+      "vendor": "Charlotte v DC United",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 65,
-    "two_legs_identical": 65,
+    "n": 98,
+    "two_legs_identical": 98,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 31,
-    "brier": 0.59245,
-    "log_loss": 0.99655,
-    "accuracy": 0.5484,
+    "n": 33,
+    "brier": 0.61442,
+    "log_loss": 1.02735,
+    "accuracy": 0.5152,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 31,
-    "brier": 0.69032,
-    "log_loss": 2.17881,
-    "accuracy": 0.4194,
-    "impossible_calls": 1
+    "n": 33,
+    "brier": 0.70955,
+    "log_loss": 3.11759,
+    "accuracy": 0.4242,
+    "impossible_calls": 2
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.09787,
-    "ci95_low": -0.03429,
-    "ci95_high": 0.23405,
-    "p_a_better": 0.0756,
+    "mean_diff": 0.09513,
+    "ci95_low": -0.03362,
+    "ci95_high": 0.22637,
+    "p_a_better": 0.0778,
     "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 6,
-      "brier": 0.559,
-      "log_loss": 0.94554,
-      "accuracy": 0.6667,
+      "n": 8,
+      "brier": 0.66004,
+      "log_loss": 1.10257,
+      "accuracy": 0.5,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 6,
-      "brier": 0.61463,
-      "log_loss": 1.03226,
-      "accuracy": 0.6667,
+      "n": 8,
+      "brier": 0.69971,
+      "log_loss": 1.15036,
+      "accuracy": 0.5,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 6,
-      "brier": 0.66917,
-      "log_loss": 6.35165,
-      "accuracy": 0.6667,
-      "impossible_calls": 1
+      "n": 8,
+      "brier": 0.75375,
+      "log_loss": 9.18089,
+      "accuracy": 0.625,
+      "impossible_calls": 2
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 11929
+    "needed_for_a_0.01_gap_at_80pct_power": 11949
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "31 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "33 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
