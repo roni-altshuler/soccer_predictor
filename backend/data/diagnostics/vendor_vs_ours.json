@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-08-22T14:20:45.092265+00:00",
+  "generated_at": "2026-08-22T20:21:25.340405+00:00",
   "captured_rows": 130,
-  "scored_fixtures": 36,
+  "scored_fixtures": 37,
   "joined_by": {
-    "exact": 32,
+    "exact": 33,
     "relaxed": 4
   },
   "not_scored": {
     "ours_never_forecast_this_fixture": 43,
-    "no_result_yet": 19,
+    "no_result_yet": 18,
     "ours_never_forecast_this_competition": 16,
     "name_join_failed": 16
   },
@@ -522,57 +522,57 @@
     "distinct_triples": 6
   },
   "ours": {
-    "n": 36,
-    "brier": 0.60117,
-    "log_loss": 1.00817,
-    "accuracy": 0.5278,
+    "n": 37,
+    "brier": 0.60159,
+    "log_loss": 1.00855,
+    "accuracy": 0.5405,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 36,
-    "brier": 0.70176,
-    "log_loss": 2.94156,
-    "accuracy": 0.4722,
-    "impossible_calls": 2
+    "n": 37,
+    "brier": 0.72334,
+    "log_loss": 3.79554,
+    "accuracy": 0.4595,
+    "impossible_calls": 3
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.10059,
-    "ci95_low": -0.01858,
-    "ci95_high": 0.22481,
-    "p_a_better": 0.0487,
-    "significant": false
+    "mean_diff": 0.12174,
+    "ci95_low": 0.00011,
+    "ci95_high": 0.25198,
+    "p_a_better": 0.025,
+    "significant": true
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 11,
-      "brier": 0.58109,
-      "log_loss": 0.98931,
-      "accuracy": 0.6364,
+      "n": 12,
+      "brier": 0.64729,
+      "log_loss": 1.09964,
+      "accuracy": 0.5833,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 11,
-      "brier": 0.63308,
-      "log_loss": 1.05403,
-      "accuracy": 0.5455,
+      "n": 12,
+      "brier": 0.63173,
+      "log_loss": 1.0514,
+      "accuracy": 0.5833,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 11,
-      "brier": 0.71622,
-      "log_loss": 6.95118,
-      "accuracy": 0.7273,
-      "impossible_calls": 2
+      "n": 12,
+      "brier": 0.78153,
+      "log_loss": 9.25015,
+      "accuracy": 0.6667,
+      "impossible_calls": 3
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 11242
+    "needed_for_a_0.01_gap_at_80pct_power": 12229
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "36 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "37 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
