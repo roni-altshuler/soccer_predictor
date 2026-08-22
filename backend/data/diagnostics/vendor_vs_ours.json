@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-21T20:25:15.094895+00:00",
-  "captured_rows": 98,
-  "scored_fixtures": 33,
+  "generated_at": "2026-08-22T02:57:28.605851+00:00",
+  "captured_rows": 130,
+  "scored_fixtures": 36,
   "joined_by": {
-    "exact": 29,
+    "exact": 32,
     "relaxed": 4
   },
   "not_scored": {
-    "ours_never_forecast_this_fixture": 28,
-    "name_join_failed": 13,
-    "ours_never_forecast_this_competition": 12,
-    "no_result_yet": 12
+    "ours_never_forecast_this_fixture": 43,
+    "no_result_yet": 19,
+    "ours_never_forecast_this_competition": 16,
+    "name_join_failed": 16
   },
   "unjoined_fixtures": [
     {
@@ -375,66 +375,204 @@
       "date": "2026-08-22",
       "vendor": "Charlotte v DC United",
       "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "Nashville SC v Columbus Crew",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "St. Louis City v Houston Dynamo",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "Austin v Philadelphia Union",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "Vancouver Whitecaps v FC Dallas",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "Los Angeles FC v Portland Timbers",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "San Diego v Colorado Rapids",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "San Jose Earthquakes v Minnesota United FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-23",
+      "vendor": "GO Ahead Eagles v ADO Den Haag",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-23",
+      "vendor": "PSV Eindhoven v Groningen",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-23",
+      "vendor": "Brighton v Aston Villa",
+      "ours_same_day": [
+        "Brighton & Hove Albion v Aston Villa",
+        "Manchester City v AFC Bournemouth",
+        "Newcastle United v Liverpool"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-23",
+      "vendor": "Vitória SC v Nacional",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-23",
+      "vendor": "Cambuur v Feyenoord",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "eng.1",
+      "date": "2026-08-23",
+      "vendor": "Newcastle v Liverpool",
+      "ours_same_day": [
+        "Brighton & Hove Albion v Aston Villa",
+        "Manchester City v AFC Bournemouth",
+        "Newcastle United v Liverpool"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-23",
+      "vendor": "Santa Clara v Famalicao",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "fra.1",
+      "date": "2026-08-23",
+      "vendor": "Rennes v Paris Saint Germain",
+      "ours_same_day": [
+        "Angers v Lille",
+        "Le Havre AC v AS Monaco",
+        "Paris Saint-Germain v Stade Rennais"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-23",
+      "vendor": "FC Porto v Arouca",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "New England Revolution v New York City FC",
+      "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "usa.1",
+      "date": "2026-08-23",
+      "vendor": "Atlanta United FC v Sporting Kansas City",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 98,
-    "two_legs_identical": 98,
+    "n": 130,
+    "two_legs_identical": 130,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 33,
-    "brier": 0.61442,
-    "log_loss": 1.02735,
-    "accuracy": 0.5152,
+    "n": 36,
+    "brier": 0.60117,
+    "log_loss": 1.00817,
+    "accuracy": 0.5278,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 33,
-    "brier": 0.70955,
-    "log_loss": 3.11759,
-    "accuracy": 0.4242,
+    "n": 36,
+    "brier": 0.70176,
+    "log_loss": 2.94156,
+    "accuracy": 0.4722,
     "impossible_calls": 2
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.09513,
-    "ci95_low": -0.03362,
-    "ci95_high": 0.22637,
-    "p_a_better": 0.0778,
+    "mean_diff": 0.10059,
+    "ci95_low": -0.01858,
+    "ci95_high": 0.22481,
+    "p_a_better": 0.0487,
     "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 8,
-      "brier": 0.66125,
-      "log_loss": 1.10374,
-      "accuracy": 0.5,
+      "n": 11,
+      "brier": 0.58171,
+      "log_loss": 0.98973,
+      "accuracy": 0.6364,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 8,
-      "brier": 0.69971,
-      "log_loss": 1.15036,
-      "accuracy": 0.5,
+      "n": 11,
+      "brier": 0.63308,
+      "log_loss": 1.05403,
+      "accuracy": 0.5455,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 8,
-      "brier": 0.75375,
-      "log_loss": 9.18089,
-      "accuracy": 0.625,
+      "n": 11,
+      "brier": 0.71622,
+      "log_loss": 6.95118,
+      "accuracy": 0.7273,
       "impossible_calls": 2
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 11949
+    "needed_for_a_0.01_gap_at_80pct_power": 11242
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "33 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "36 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
