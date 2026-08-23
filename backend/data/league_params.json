@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-08-23T06:54:21.679508+00:00",
+  "updated_at": "2026-08-23T14:25:37.934872+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -66,10 +66,10 @@
     "ned.1": {
       "display_name": "Eredivisie",
       "country": "Netherlands",
-      "avg_goals": 1.5605,
-      "home_adv": 0.3662,
+      "avg_goals": 1.5608,
+      "home_adv": 0.3675,
       "rho": -0.11,
-      "draw_rate": 0.2492,
+      "draw_rate": 0.249,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -90,10 +90,10 @@
     "usa.1": {
       "display_name": "MLS",
       "country": "USA",
-      "avg_goals": 1.5328,
-      "home_adv": 0.4025,
+      "avg_goals": 1.5342,
+      "home_adv": 0.4046,
       "rho": -0.1,
-      "draw_rate": 0.2461,
+      "draw_rate": 0.2469,
       "league_coefficient": 0.8,
       "total_matchdays": 34,
       "relegation_spots": 0,

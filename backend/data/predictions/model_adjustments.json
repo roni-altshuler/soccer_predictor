@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-08-23T06:54:24.241776",
-  "total_predictions_analyzed": 1615,
+  "generated_at": "2026-08-23T14:25:40.430720",
+  "total_predictions_analyzed": 1617,
   "overall_accuracy": 0.4372,
   "by_league": {
     "La Liga": {
-      "predictions": 179,
-      "accuracy": 0.4581,
-      "brier_score": 0.6286,
-      "scoreline_rate": 0.1061,
-      "actual_draw_rate": 0.2514,
-      "predicted_draw_rate": 0.3118,
-      "draw_rate_adjustment": -0.01813,
-      "actual_home_win_rate": 0.514,
-      "predicted_home_win_rate": 0.4041,
-      "home_adv_adjustment": 0.02197,
-      "avg_goals_diff": -0.048,
-      "goals_scale_adjustment": -0.00239,
+      "predictions": 181,
+      "accuracy": 0.4586,
+      "brier_score": 0.6269,
+      "scoreline_rate": 0.1105,
+      "actual_draw_rate": 0.2541,
+      "predicted_draw_rate": 0.3108,
+      "draw_rate_adjustment": -0.01701,
+      "actual_home_win_rate": 0.5138,
+      "predicted_home_win_rate": 0.4061,
+      "home_adv_adjustment": 0.02154,
+      "avg_goals_diff": -0.054,
+      "goals_scale_adjustment": -0.0027,
       "confidence_calibration": {
         "high": {
-          "count": 23,
-          "accuracy": 0.5217
+          "count": 24,
+          "accuracy": 0.5417
         },
         "medium": {
-          "count": 136,
-          "accuracy": 0.4632
+          "count": 137,
+          "accuracy": 0.4599
         },
         "low": {
           "count": 20,
