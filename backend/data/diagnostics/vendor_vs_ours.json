@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-22T20:21:25.340405+00:00",
-  "captured_rows": 130,
-  "scored_fixtures": 37,
+  "generated_at": "2026-08-23T03:02:44.882050+00:00",
+  "captured_rows": 137,
+  "scored_fixtures": 46,
   "joined_by": {
-    "exact": 33,
-    "relaxed": 4
+    "exact": 41,
+    "relaxed": 5
   },
   "not_scored": {
-    "ours_never_forecast_this_fixture": 43,
-    "no_result_yet": 18,
-    "ours_never_forecast_this_competition": 16,
-    "name_join_failed": 16
+    "ours_never_forecast_this_fixture": 44,
+    "ours_never_forecast_this_competition": 17,
+    "name_join_failed": 16,
+    "no_result_yet": 14
   },
   "unjoined_fixtures": [
     {
@@ -513,66 +513,73 @@
       "date": "2026-08-23",
       "vendor": "Atlanta United FC v Sporting Kansas City",
       "ours_same_day": []
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-24",
+      "vendor": "GIL Vicente v Casa Pia",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 130,
-    "two_legs_identical": 130,
+    "n": 137,
+    "two_legs_identical": 137,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 37,
-    "brier": 0.60159,
-    "log_loss": 1.00855,
-    "accuracy": 0.5405,
+    "n": 46,
+    "brier": 0.61065,
+    "log_loss": 1.02059,
+    "accuracy": 0.5217,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 37,
-    "brier": 0.72334,
-    "log_loss": 3.79554,
-    "accuracy": 0.4595,
-    "impossible_calls": 3
+    "n": 46,
+    "brier": 0.70533,
+    "log_loss": 3.93565,
+    "accuracy": 0.4565,
+    "impossible_calls": 4
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.12174,
-    "ci95_low": 0.00011,
-    "ci95_high": 0.25198,
-    "p_a_better": 0.025,
-    "significant": true
+    "mean_diff": 0.09468,
+    "ci95_low": -0.0119,
+    "ci95_high": 0.20749,
+    "p_a_better": 0.0408,
+    "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 12,
-      "brier": 0.64729,
-      "log_loss": 1.09964,
-      "accuracy": 0.5833,
+      "n": 21,
+      "brier": 0.65178,
+      "log_loss": 1.09526,
+      "accuracy": 0.5238,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 12,
-      "brier": 0.63173,
-      "log_loss": 1.0514,
-      "accuracy": 0.5833,
+      "n": 21,
+      "brier": 0.63866,
+      "log_loss": 1.0594,
+      "accuracy": 0.5238,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 12,
-      "brier": 0.78153,
-      "log_loss": 9.25015,
-      "accuracy": 0.6667,
-      "impossible_calls": 3
+      "n": 21,
+      "brier": 0.71715,
+      "log_loss": 7.21936,
+      "accuracy": 0.5714,
+      "impossible_calls": 4
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 12229
+    "needed_for_a_0.01_gap_at_80pct_power": 11617
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "37 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "46 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
