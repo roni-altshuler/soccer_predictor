@@ -332,10 +332,15 @@ nav, button, .caption, th, [role='tab'] {
    pitch at night rather than a void. The bounds that keep it Bugatti:
 
    - it lives BEHIND everything (fixed, z-index -1, pointer-events none);
-   - line work is white at ≤8% alpha, mowing stripes at ≤2%, glow is
-     accent-green at ≤11%, the tactics-board match's marks at ≤25% and its
-     ball at ≤40% — content sits on opaque cards, and on the bare canvas
-     those levels cost no text its contrast;
+   - it must never distract from the content: pitch lines are white at ≤8%
+     alpha, mowing stripes at ≤2%, glow is accent-green at ≤11%, the
+     tactics-board match's marks at ≤15% and its ball at ≤30% — content sits
+     on opaque cards, and on the bare canvas those levels cost no text its
+     contrast and no reader their attention;
+   - the pitch is seen WHOLE: lines and match live in one canvas
+     (PitchMatchAnimation) with a contain fit — the full field, both goals
+     included, centred at every viewport, rotated upright on portrait
+     screens. Never a crop that hides a goal;
    - motion is two light pools drifting on 90s+ cycles (transform/opacity
      only) plus the match canvas (one rAF loop, 30fps cap, ~23 entities);
      both are still under prefers-reduced-motion — the pools by the rules
@@ -355,35 +360,34 @@ nav, button, .caption, th, [role='tab'] {
   pointer-events: none;
 }
 
-.pitch-backdrop__lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* The tactics-board match canvas (PitchMatchAnimation) — same footprint as
-   the SVG, drawn above it so the chalk teams play on the lines. */
+/* The one canvas (PitchMatchAnimation): the pitch lines AND the
+   tactics-board match, drawn together so they can never fall out of
+   register. It computes its own contain fit from this footprint — which is
+   the CONTENT viewport, not the window: below the topbar, right of the
+   sidebar on desktop, above the tab bar on mobile. Centring on the raw
+   window put the left goal underneath the opaque sidebar. Keep these
+   insets in step with the shell (--shell-topbar-h, --shell-sidebar-w,
+   MobileBottomNav's ~64px). */
 .pitch-backdrop__match {
   position: absolute;
-  inset: 0;
+  top: var(--shell-topbar-h);
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% - var(--shell-topbar-h) - 64px);
 }
 
-.pitch-backdrop__lines line,
-.pitch-backdrop__lines circle,
-.pitch-backdrop__lines rect,
-.pitch-backdrop__lines path {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.07);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
+@media (min-width: 768px) {
+  .pitch-backdrop__match {
+    left: var(--shell-sidebar-w);
+    width: calc(100% - var(--shell-sidebar-w));
+    height: calc(100% - var(--shell-topbar-h));
+  }
 }
 
-/* Mowing stripes — alternating vertical bands of barely-lighter grass, the
-   single most recognisable pitch texture there is. Static; the motion in
-   this layer belongs to the light, not the grass. */
+/* Mowing stripes — alternating bands of barely-lighter grass, the single
+   most recognisable pitch texture there is. Static; the motion in this
+   layer belongs to the light, not the grass. They run across the pitch, so
+   they follow it when it rotates upright on portrait screens. */
 .pitch-backdrop__stripes {
   position: absolute;
   inset: 0;
@@ -394,6 +398,18 @@ nav, button, .caption, th, [role='tab'] {
     transparent 120px,
     transparent 240px
   );
+}
+
+@media (orientation: portrait) {
+  .pitch-backdrop__stripes {
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.02) 0,
+      rgba(255, 255, 255, 0.02) 120px,
+      transparent 120px,
+      transparent 240px
+    );
+  }
 }
 
 .pitch-backdrop__glow {

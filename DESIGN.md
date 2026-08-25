@@ -32,17 +32,20 @@ of the canvas is a *cast* on the neutrals, not a fifth accent, and `--accent-pri
 still means exactly one thing.
 
 **The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night
-with a match being played on it: static mowing stripes (white, ≤2% alpha), pitch markings
-(white, ≤8%), two accent-green light pools (≤11%) drifting on 90s+ cycles, and the
+with a match being played on it: static mowing stripes (white, ≤2% alpha), two
+accent-green light pools (≤11%) drifting on 90s+ cycles, and one canvas
+(`PitchMatchAnimation`) that draws the pitch markings (white, ≤8%) together with the
 **tactics-board match** — chalk circles vs X-marks passing, pressing, shooting and scoring
-in a simulated game (`PitchMatchAnimation`: one canvas, ~23 entities, 30fps cap, marks ≤25%,
-ball ≤40%) — all rendered once by `PitchBackdrop` behind everything at `z-index: -1`
-(2026-08-25 product decisions). Its bounds are load-bearing: reduced motion stills
-everything (pools via `animation: none`, the match by drawing one static frame); alphas low
-enough that no text anywhere loses contrast; **the match never renders a score, clock, name
-or anything readable as data** — it is decoration in a product whose grammar is real
-numbers; and **nothing else on the site may pick up a gradient or glow because this
-exists** — one layer, defined once, consumed once.
+in a simulated game (~23 entities, 30fps cap, marks ≤15%, ball ≤30%) — all rendered once
+by `PitchBackdrop` behind everything at `z-index: -1` (2026-08-25 product decisions). Its
+bounds are load-bearing: **the pitch is seen whole** — a contain fit keeps the full field,
+both goals included, centred at every viewport, rotated upright on portrait screens, never
+a crop that hides a goal; **it never distracts from the content** — the alphas above are
+ceilings chosen so no text loses contrast and no reader their attention; reduced motion
+stills everything (pools via `animation: none`, the match by drawing one static frame);
+**the match never renders a score, clock, name or anything readable as data** — it is
+decoration in a product whose grammar is real numbers; and **nothing else on the site may
+pick up a gradient or glow because this exists** — one layer, defined once, consumed once.
 
 **Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
 there is no theme provider. `:root` is the single source of truth and the `.dark` block is

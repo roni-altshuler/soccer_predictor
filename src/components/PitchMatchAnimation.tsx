@@ -12,19 +12,24 @@ import { useEffect, useRef } from 'react'
  * dribble bursts, four seconds of sprint-tempo counterattack after an
  * interception, a keeper who dives at shots, and a goal celebration — the
  * scorer wheels away, the nearest teammates converge, a ring pulses, then
- * everyone jogs back for kickoff. Drawn in the same 1600×1000 world as the
- * PitchBackdrop SVG and mapped with the same "slice" fit.
+ * everyone jogs back for kickoff.
+ *
+ * The canvas also draws the pitch itself (outline, boxes, arcs, both goals)
+ * so the lines and the game share one mapping and cannot drift apart. The
+ * fit is CONTAIN, never crop: the whole field, both goals included, is
+ * centred in the viewport at every size, and on portrait screens the pitch
+ * rotates upright so a phone gets a full vertical pitch instead of a strip.
  *
  * Bounds, all load-bearing:
  * - It is DECORATION. It must never render a score, a name, a clock, or
  *   anything readable as data — a fake number in the background of a
  *   product whose whole grammar is real numbers would be a lie.
+ * - It must never compete with content: mark alpha ≤0.15, ball ≤0.3, trail
+ *   and flashes below that, pitch lines ≤8% — above the stripes, far below
+ *   text. Colours are casts of the existing palette, never a new hue.
  * - One <canvas>, ~23 entities, capped at 30fps, dt clamped; rAF stops on
  *   hidden tabs by itself. Under prefers-reduced-motion it draws a single
  *   static formation and never animates.
- * - Mark alpha ≤0.25, ball ≤0.4, trail fades below the ball, pass flashes
- *   ≤0.12 — above the pitch lines, far below content. Colours are casts of
- *   the existing palette, never a new hue.
  */
 
 const W = 1600
@@ -32,6 +37,8 @@ const H = 1000
 const GOAL_TOP = 430
 const GOAL_BOT = 570
 const GOAL_Y = (GOAL_TOP + GOAL_BOT) / 2
+/** How far the goal nets stick out behind the goal line, in world px. */
+const GOAL_DEPTH = 26
 
 /** Formation lines as [distance from own goal 0..1, lane ys, push factor]. */
 const LINES: Array<{ x: number; ys: number[]; stretch: number; pull: number }> = [
@@ -86,6 +93,12 @@ interface Sim {
   trail: Array<{ x: number; y: number }>
   flashes: Array<{ x1: number; y1: number; x2: number; y2: number; t: number }>
   time: number
+}
+
+/** CSS px per world unit, kept current by fit() so draw() can hold minimum
+ *  on-screen sizes when the whole pitch is small (phones). */
+interface View {
+  scale: number
 }
 
 const dirOf = (team: 0 | 1) => (team === 0 ? 1 : -1)
@@ -172,7 +185,7 @@ function kickoff(s: Sim, toTeam: 0 | 1) {
   s.shooter = null
   for (const p of s.players) p.run = null
   s.holder = nearest(s.players, toTeam, W / 2, H / 2, true)
-  s.holdUntil = s.time + 1.1
+  s.holdUntil = s.time + 1.4
 }
 
 function launch(s: Sim, kind: FlightKind, toX: number, toY: number, receiver: Player | null) {
@@ -194,7 +207,7 @@ function launch(s: Sim, kind: FlightKind, toX: number, toY: number, receiver: Pl
   }
   if (kind === 'through' || kind === 'loft') {
     s.flashes.push({ x1: s.ball.x, y1: s.ball.y, x2: toX, y2: toY, t: 0 })
-    if (s.flashes.length > 3) s.flashes.shift()
+    if (s.flashes.length > 2) s.flashes.shift()
   }
   s.holder = null
 }
@@ -265,7 +278,7 @@ function decide(s: Sim, holder: Player) {
     }
     if (Math.random() < 0.55) {
       s.shooter = holder
-      const gx = dir === 1 ? W - 34 : 34
+      const gx = dir === 1 ? W - 6 : 6
       const gy = GOAL_TOP + 20 + Math.random() * (GOAL_BOT - GOAL_TOP - 40)
       launch(s, 'shot', gx, gy, null)
       return
@@ -416,7 +429,7 @@ function tick(s: Sim, dt: number) {
     ball.y = f.fromY + (f.toY - f.fromY) * e
     ball.h = f.loft * Math.sin(Math.PI * u)
     s.trail.push({ x: ball.x, y: ball.y - ball.h })
-    if (s.trail.length > 9) s.trail.shift()
+    if (s.trail.length > 7) s.trail.shift()
     // Flat balls can be cut out at midflight — lofted ones sail over.
     if (f.kind === 'short' && u > 0.45 && u < 0.55 && Math.random() < 0.05) {
       s.possession = defending
@@ -434,7 +447,7 @@ function tick(s: Sim, dt: number) {
         const inMouth = ball.y > GOAL_TOP - 14 && ball.y < GOAL_BOT + 14
         const scored = inMouth && Math.random() < 0.42
         if (scored && s.shooter) {
-          s.goalPulse = { x: f.toX < W / 2 ? 48 : W - 48, y: GOAL_Y, t: 0 }
+          s.goalPulse = { x: f.toX < W / 2 ? 40 : W - 40, y: GOAL_Y, t: 0 }
           s.celebration = { scorer: s.shooter, until: s.time + 2.0 }
           s.flight = null
           s.holder = null
@@ -457,7 +470,7 @@ function tick(s: Sim, dt: number) {
         s.holdUntil =
           f.kind === 'loft' && prog > 0.78
             ? s.time + 0.12
-            : s.time + (counter ? 0.2 : 0.35 + Math.random() * 0.7)
+            : s.time + (counter ? 0.2 : 0.5 + Math.random() * 0.9)
       }
     }
     return
@@ -468,7 +481,7 @@ function tick(s: Sim, dt: number) {
     ball.x = s.holder.x + dir * 14
     ball.y = s.holder.y
     s.trail.push({ x: ball.x, y: ball.y })
-    if (s.trail.length > 9) s.trail.shift()
+    if (s.trail.length > 7) s.trail.shift()
     if (s.time >= s.holdUntil) decide(s, s.holder)
     return
   }
@@ -476,30 +489,98 @@ function tick(s: Sim, dt: number) {
   kickoff(s, s.possession)
 }
 
-function draw(ctx: CanvasRenderingContext2D, s: Sim) {
-  ctx.clearRect(-W, -H, W * 3, H * 3)
+/** The pitch itself: outline, halfway line, circles, boxes, arcs, goals.
+ *  Drawn by the same canvas as the match so the two can never fall out of
+ *  register. Proportions follow a real 105×68m pitch mapped onto 1600×1000. */
+function drawPitch(ctx: CanvasRenderingContext2D, view: View) {
+  const px = (cssPx: number) => cssPx / view.scale
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
+  ctx.lineWidth = px(1.5)
+
+  // Touchlines and goal lines — with the whole field in view, the boundary
+  // is what makes it read as a pitch rather than floating markings.
+  ctx.strokeRect(0, 0, W, H)
+  // Halfway line, centre circle, centre spot.
+  ctx.beginPath()
+  ctx.moveTo(W / 2, 0)
+  ctx.lineTo(W / 2, H)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(W / 2, H / 2, 140, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(W / 2, H / 2, px(2), 0, Math.PI * 2)
+  ctx.fill()
+  // Penalty boxes and six-yard boxes.
+  ctx.strokeRect(0, 230, 270, 540)
+  ctx.strokeRect(0, 370, 70, 260)
+  ctx.strokeRect(W - 270, 230, 270, 540)
+  ctx.strokeRect(W - 70, 370, 70, 260)
+  // Penalty spots and the arcs on the edge of each box (r=140 on the spot;
+  // 0.7754 = acos(100/140), where the arc meets the box edge).
+  const ARC = 0.7754
+  ctx.beginPath()
+  ctx.arc(170, H / 2, px(2), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(W - 170, H / 2, px(2), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(170, H / 2, 140, -ARC, ARC)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(W - 170, H / 2, 140, Math.PI - ARC, Math.PI + ARC)
+  ctx.stroke()
+  // Corner arcs.
+  ctx.beginPath()
+  ctx.arc(0, 0, 40, 0, Math.PI / 2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(W, 0, 40, Math.PI / 2, Math.PI)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(W, H, 40, Math.PI, Math.PI * 1.5)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(0, H, 40, Math.PI * 1.5, Math.PI * 2)
+  ctx.stroke()
+  // Both goals, behind the goal lines — the user should always see them.
+  ctx.strokeRect(-GOAL_DEPTH, GOAL_TOP, GOAL_DEPTH, GOAL_BOT - GOAL_TOP)
+  ctx.strokeRect(W, GOAL_TOP, GOAL_DEPTH, GOAL_BOT - GOAL_TOP)
+}
+
+function draw(ctx: CanvasRenderingContext2D, s: Sim, view: View) {
+  // Minimum on-screen sizes: when the contain fit makes the pitch small
+  // (portrait phones), marks hold ~3 CSS px instead of vanishing.
+  const px = (cssPx: number) => cssPx / view.scale
+
+  ctx.clearRect(-W * 2, -H * 2, W * 5, H * 5)
+
+  drawPitch(ctx, view)
 
   for (const f of s.flashes) {
-    const a = 0.12 * (1 - f.t / 0.5)
+    const a = 0.07 * (1 - f.t / 0.5)
     ctx.strokeStyle = `rgba(255, 255, 255, ${a})`
-    ctx.lineWidth = 1
+    ctx.lineWidth = px(1)
     ctx.beginPath()
     ctx.moveTo(f.x1, f.y1)
     ctx.lineTo(f.x2, f.y2)
     ctx.stroke()
   }
 
+  const markW = Math.max(1.6, px(1.1))
   for (const p of s.players) {
     if (p.team === 0) {
-      ctx.strokeStyle = 'rgba(120, 200, 110, 0.22)'
-      ctx.lineWidth = 1.6
+      ctx.strokeStyle = 'rgba(120, 200, 110, 0.15)'
+      ctx.lineWidth = markW
       ctx.beginPath()
-      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2)
+      ctx.arc(p.x, p.y, Math.max(7, px(3.2)), 0, Math.PI * 2)
       ctx.stroke()
     } else {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)'
-      ctx.lineWidth = 1.6
-      const r = 5.5
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.11)'
+      ctx.lineWidth = markW
+      const r = Math.max(5.5, px(2.6))
       ctx.beginPath()
       ctx.moveTo(p.x - r, p.y - r)
       ctx.lineTo(p.x + r, p.y + r)
@@ -511,29 +592,29 @@ function draw(ctx: CanvasRenderingContext2D, s: Sim) {
 
   // Trail first, then the ball on top of it.
   s.trail.forEach((t, i) => {
-    const a = 0.2 * ((i + 1) / s.trail.length)
+    const a = 0.13 * ((i + 1) / s.trail.length)
     ctx.fillStyle = `rgba(255, 255, 255, ${a})`
     ctx.beginPath()
-    ctx.arc(t.x, t.y, 1.6, 0, Math.PI * 2)
+    ctx.arc(t.x, t.y, Math.max(1.6, px(1)), 0, Math.PI * 2)
     ctx.fill()
   })
 
   if (s.ball.h > 8) {
     // Ground shadow under a lofted ball.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.10)'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
     ctx.beginPath()
-    ctx.arc(s.ball.x, s.ball.y, 2.2, 0, Math.PI * 2)
+    ctx.arc(s.ball.x, s.ball.y, Math.max(2.2, px(1.4)), 0, Math.PI * 2)
     ctx.fill()
   }
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.38)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)'
   ctx.beginPath()
-  ctx.arc(s.ball.x, s.ball.y - s.ball.h, 3.4 + s.ball.h * 0.02, 0, Math.PI * 2)
+  ctx.arc(s.ball.x, s.ball.y - s.ball.h, Math.max(3.4 + s.ball.h * 0.02, px(2.2)), 0, Math.PI * 2)
   ctx.fill()
 
   if (s.goalPulse) {
     const u = Math.min(1, s.goalPulse.t / 1.2)
-    ctx.strokeStyle = `rgba(120, 200, 110, ${0.24 * (1 - u)})`
-    ctx.lineWidth = 2
+    ctx.strokeStyle = `rgba(120, 200, 110, ${0.18 * (1 - u)})`
+    ctx.lineWidth = Math.max(2, px(1.2))
     ctx.beginPath()
     ctx.arc(s.goalPulse.x, s.goalPulse.y, 12 + u * 90, 0, Math.PI * 2)
     ctx.stroke()
@@ -550,6 +631,7 @@ export function PitchMatchAnimation() {
     if (!ctx) return // jsdom and very old browsers: quietly render nothing
 
     const sim = buildSim()
+    const view: View = { scale: 1 }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     const fit = () => {
@@ -558,10 +640,28 @@ export function PitchMatchAnimation() {
       const ch = canvas.clientHeight
       canvas.width = Math.round(cw * dpr)
       canvas.height = Math.round(ch * dpr)
-      // Same "slice" mapping as the SVG's preserveAspectRatio, so the game
-      // runs on the drawn pitch.
-      const scale = Math.max(cw / W, ch / H) * dpr
-      ctx.setTransform(scale, 0, 0, scale, (cw * dpr - W * scale) / 2, (ch * dpr - H * scale) / 2)
+      // CONTAIN fit, centred: the entire pitch — both goals included — is
+      // always in view. The margin leaves room for the goal nets, which sit
+      // outside the goal lines.
+      const margin = GOAL_DEPTH + 10
+      const availW = Math.max(1, cw - margin * 2)
+      const availH = Math.max(1, ch - margin * 2)
+      const portrait = ch > cw
+      view.scale = portrait
+        ? Math.min(availW / H, availH / W)
+        : Math.min(availW / W, availH / H)
+      const k = view.scale * dpr
+      const cx = (cw * dpr) / 2
+      const cy = (ch * dpr) / 2
+      if (portrait) {
+        // Rotate the pitch upright: one goal at the top of the screen, one
+        // at the bottom, the way a phone shows a football pitch.
+        ctx.setTransform(0, k, -k, 0, cx + (H / 2) * k, cy - (W / 2) * k)
+      } else {
+        ctx.setTransform(k, 0, 0, k, cx - (W / 2) * k, cy - (H / 2) * k)
+      }
+      // A resize mid-animation must not leave a stale frame.
+      draw(ctx, sim, view)
     }
     fit()
     window.addEventListener('resize', fit)
@@ -579,7 +679,7 @@ export function PitchMatchAnimation() {
       acc += dt
       if (acc >= FRAME) {
         tick(sim, acc)
-        draw(ctx, sim)
+        draw(ctx, sim, view)
         acc = 0
       }
       raf = requestAnimationFrame(loop)
@@ -588,7 +688,7 @@ export function PitchMatchAnimation() {
     if (reduced.matches) {
       // A single still of the kickoff shape — present, never moving.
       tick(sim, 0.001)
-      draw(ctx, sim)
+      draw(ctx, sim, view)
     } else {
       raf = requestAnimationFrame(loop)
     }
