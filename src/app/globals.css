@@ -14,26 +14,29 @@
    ──────────────────────────────────────────────────────────── */
 :root {
   /* ────────────────────────────────────────────────────────────
-     Bugatti palette — dark only.
+     Floodlight palette — dark only. Bugatti's structure, soccer's material.
 
-     Ported from the sibling RaceIQ project (f1_predictions) and shared with
-     Hardwood (nba_predictor). Pure black canvas, hairline borders, no
-     gradients, no shadows, no chrome. Colour carries MEANING only — live
-     state, positive/negative, positional tier — never decoration.
+     The grammar is still Bugatti (ported from RaceIQ, shared with Hardwood):
+     hairline borders, no shadows, no chrome, colour carries MEANING only.
+     What changed (2026-08-25, product decision): the canvas is no longer a
+     void. Every neutral is pulled toward pitch green — the site reads as a
+     floodlit stadium at night. The greens are cast, not colour: they sit at
+     the same luminance steps the old greys did (#000→#071009, #0d0d0d→#0c1a10,
+     #262626→#20402a…), so every contrast relationship in the product is
+     preserved and the four accents still carry all the meaning.
 
-     Light mode is gone. The reference is dark-only and the second theme was
-     an entire axis of complexity serving a product that no longer exists.
-     `.dark` below is kept as an alias so `<html class="dark">` is harmless.
+     Light mode is gone. `.dark` below is kept as an alias so
+     `<html class="dark">` is harmless.
      ──────────────────────────────────────────────────────────── */
-  --background: #000000;
-  --background-secondary: #0d0d0d;
-  --background-tertiary: #141414;
-  --card-bg: #0d0d0d;
-  --card-hover: #141414;
-  --input-bg: #141414;
-  --muted-bg: #1f1f1f;
-  --nav-bg: #000000;
-  --nav-border: #262626;
+  --background: #071009;
+  --background-secondary: #0c1a10;
+  --background-tertiary: #122417;
+  --card-bg: #0c1a10;
+  --card-hover: #122417;
+  --input-bg: #122417;
+  --muted-bg: #1d3023;
+  --nav-bg: #071009;
+  --nav-border: #20402a;
 
   /* Text */
   --text-primary: #ffffff;
@@ -60,9 +63,10 @@
   --accent-women: var(--accent-info);
   --accent-women-soft: var(--accent-info-soft);
 
-  /* Borders & shadows — flat product: hairlines carry the structure */
-  --border-color: #262626;
-  --border-hover: #3a3a3a;
+  /* Borders & shadows — flat product: hairlines carry the structure.
+     Chalk-line greens: same luminance as the old #262626/#3a3a3a greys. */
+  --border-color: #20402a;
+  --border-hover: #305c3d;
   /* Shadows are nuked. Depth comes from hairlines, never from bloom. */
   --shadow-sm: none;
   --shadow-md: none;
@@ -88,11 +92,11 @@
 
   /* Components should pick from these tokens instead of hard-coding Tailwind
      grays / `text-white` / `bg-black`. */
-  --accent-on-primary: #000000;       /* text on a filled accent */
-  --overlay-bg: rgba(0, 0, 0, 0.72);  /* page-loader, modal backdrops */
-  --pitch-bg: #0d0d0d;                 /* lineup pitch surface — flat, hairline-drawn */
+  --accent-on-primary: #04130a;       /* text on a filled accent — night-pitch dark */
+  --overlay-bg: rgba(4, 10, 6, 0.74); /* modal backdrops — green-cast, not pure black */
+  --pitch-bg: #0d2113;                 /* lineup pitch surface — actual grass-dark now */
   --pitch-text: #cccccc;
-  --ticker-bg: #0d0d0d;                /* was a two-stop gradient; Bugatti has none */
+  --ticker-bg: #0c1a10;                /* was a two-stop gradient; the grammar has none */
 
   /* shadcn radius tokens */
   --radius: 0.75rem;
@@ -328,8 +332,9 @@ nav, button, .caption, th, [role='tab'] {
    pitch at night rather than a void. The bounds that keep it Bugatti:
 
    - it lives BEHIND everything (fixed, z-index -1, pointer-events none);
-   - line work is white at ≤4% alpha, glow is accent-green at ≤7% — at
-     those levels it cannot cost text contrast anywhere;
+   - line work is white at ≤8% alpha, mowing stripes at ≤2%, glow is
+     accent-green at ≤11% — content sits on opaque cards, and on the bare
+     canvas those levels cost no text its contrast;
    - the only motion is two light pools drifting on 90s+ cycles, transform
      and opacity only, killed by the global reduced-motion rule above;
    - nothing else on the site may pick up gradients or glows because this
@@ -357,9 +362,24 @@ nav, button, .caption, th, [role='tab'] {
 .pitch-backdrop__lines rect,
 .pitch-backdrop__lines path {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.035);
+  stroke: rgba(255, 255, 255, 0.07);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+}
+
+/* Mowing stripes — alternating vertical bands of barely-lighter grass, the
+   single most recognisable pitch texture there is. Static; the motion in
+   this layer belongs to the light, not the grass. */
+.pitch-backdrop__stripes {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0,
+    rgba(255, 255, 255, 0.02) 120px,
+    transparent 120px,
+    transparent 240px
+  );
 }
 
 .pitch-backdrop__glow {
@@ -375,14 +395,14 @@ nav, button, .caption, th, [role='tab'] {
 .pitch-backdrop__glow--a {
   top: -18vw;
   left: 4vw;
-  background: radial-gradient(circle, rgba(95, 166, 87, 0.07) 0%, transparent 62%);
+  background: radial-gradient(circle, rgba(95, 166, 87, 0.11) 0%, transparent 62%);
   animation: pitch-drift-a 96s ease-in-out infinite alternate;
 }
 
 .pitch-backdrop__glow--b {
   bottom: -22vw;
   right: -8vw;
-  background: radial-gradient(circle, rgba(95, 166, 87, 0.05) 0%, transparent 62%);
+  background: radial-gradient(circle, rgba(95, 166, 87, 0.085) 0%, transparent 62%);
   animation: pitch-drift-b 132s ease-in-out infinite alternate;
 }
 

@@ -4,8 +4,8 @@
   "description": "Calibrated football intelligence across the world's leagues. Live scores, AI match probabilities, and accuracy tracking.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#07101f",
-  "theme_color": "#22c55e",
+  "background_color": "#071009",
+  "theme_color": "#5fa657",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -57,7 +57,10 @@
       "purpose": "maskable any"
     }
   ],
-  "categories": ["sports", "entertainment"],
+  "categories": [
+    "sports",
+    "entertainment"
+  ],
   "screenshots": [
     {
       "src": "/screenshots/home.png",

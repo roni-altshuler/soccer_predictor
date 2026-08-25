@@ -77,9 +77,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  // Matches --background. The old value was the retired navy theme, so the
-  // browser chrome around the app disagreed with the app.
-  themeColor: '#000000',
+  // Matches --background (Floodlight night-pitch green).
+  themeColor: '#071009',
 }
 
 export default function RootLayout({
