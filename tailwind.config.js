@@ -16,23 +16,6 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Legacy brand palette (kept for backward compatibility)
-        brand: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
-        },
-        slate: {
-          850: '#1a2332',
-          950: '#0f172a',
-        },
         // shadcn/ui token bridge — read CSS variables so dark mode flips automatically
         border: 'var(--border-color)',
         input: 'var(--input-bg)',
@@ -90,9 +73,6 @@ module.exports = {
       boxShadow: {
         card: '0 1px 3px var(--shadow-sm)',
         'card-lg': '0 4px 12px var(--shadow-md)',
-        glow: '0 0 20px color-mix(in srgb, var(--accent-primary) 35%, transparent)',
-        'glow-ai': '0 0 24px color-mix(in srgb, var(--accent-ai) 35%, transparent)',
-        'glow-lg': '0 0 40px color-mix(in srgb, var(--accent-primary) 45%, transparent)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -104,8 +84,6 @@ module.exports = {
       },
       fontSize: {
         // Typography scale — every entry is [size, { lineHeight, letterSpacing, fontWeight? }]
-        display: ['clamp(2.5rem, 5vw, 4rem)', { lineHeight: '1.05', letterSpacing: '-0.04em', fontWeight: '800' }],
-        h1: ['clamp(2rem, 3.5vw, 2.75rem)', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
         h2: ['clamp(1.5rem, 2.5vw, 2rem)', { lineHeight: '1.2', letterSpacing: '-0.025em', fontWeight: '700' }],
         h3: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
         h4: ['1.125rem', { lineHeight: '1.4', letterSpacing: '-0.015em', fontWeight: '600' }],
@@ -142,45 +120,6 @@ module.exports = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
-        'live-pulse': {
-          '0%, 100%': { boxShadow: '0 0 0 0 color-mix(in srgb, var(--accent-loss) 60%, transparent)' },
-          '50%': { boxShadow: '0 0 0 6px color-mix(in srgb, var(--accent-loss) 0%, transparent)' },
-        },
-        // magic-ui keyframes
-        'shimmer-slide': {
-          to: { transform: 'translate(calc(100cqw - 100%), 0)' },
-        },
-        'spin-around': {
-          '0%': { transform: 'translateZ(0) rotate(0)' },
-          '15%, 35%': { transform: 'translateZ(0) rotate(90deg)' },
-          '65%, 85%': { transform: 'translateZ(0) rotate(270deg)' },
-          '100%': { transform: 'translateZ(0) rotate(360deg)' },
-        },
-        marquee: {
-          from: { transform: 'translateX(0)' },
-          to: { transform: 'translateX(calc(-100% - var(--gap)))' },
-        },
-        'marquee-vertical': {
-          from: { transform: 'translateY(0)' },
-          to: { transform: 'translateY(calc(-100% - var(--gap)))' },
-        },
-        gradient: {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' },
-        },
-        'neon-pulse': {
-          '0%, 100%': { backgroundPosition: '0% 0%' },
-          '50%': { backgroundPosition: '100% 100%' },
-        },
-        'pulse-ring': {
-          '0%': { transform: 'translate(-50%, -50%) scale(1)', opacity: '0.5' },
-          '80%, 100%': { transform: 'translate(-50%, -50%) scale(2.0)', opacity: '0' },
-        },
-        orbit: {
-          '0%': { transform: 'rotate(0deg) translateY(calc(var(--radius) * 1px)) rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg) translateY(calc(var(--radius) * 1px)) rotate(-360deg)' },
-        },
       },
       animation: {
         'fade-in': 'fade-in 0.5s ease-out',
@@ -189,15 +128,6 @@ module.exports = {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         shimmer: 'shimmer 1.6s linear infinite',
-        'live-pulse': 'live-pulse 1.6s ease-out infinite',
-        // magic-ui animations
-        'shimmer-slide': 'shimmer-slide var(--speed) ease-in-out infinite alternate',
-        'spin-around': 'spin-around calc(var(--speed) * 2) infinite linear',
-        marquee: 'marquee var(--duration) linear infinite',
-        'marquee-vertical': 'marquee-vertical var(--duration) linear infinite',
-        gradient: 'gradient 8s linear infinite',
-        'pulse-ring': 'pulse-ring var(--duration, 1.5s) ease-out infinite',
-        orbit: 'orbit calc(var(--duration) * 1s) linear infinite',
       },
     },
   },

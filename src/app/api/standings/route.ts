@@ -103,7 +103,7 @@ async function fetchESPNStandings(espnId: string, season?: string): Promise<Team
     const seasonParam = season ? `?season=${season}` : ''
     const res = await fetch(
       `${ESPN_V2}/${espnId}/standings${seasonParam}`,
-      { next: { revalidate: 300 }, signal: AbortSignal.timeout(10000) }
+      { next: { revalidate: 900 }, signal: AbortSignal.timeout(10000) }
     )
     if (!res.ok) return []
     const data = await res.json()

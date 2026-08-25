@@ -20,7 +20,9 @@ type Json = Record<string, unknown>
 
 async function fetchJson(url: string): Promise<Json | null> {
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    // One hour: team meta, schedule and roster barely move, and every expiry
+    // is an ISR write per URL per team — quota is the binding constraint.
+    const res = await fetch(url, { next: { revalidate: 3600 } })
     if (!res.ok) return null
     return (await res.json()) as Json
   } catch {

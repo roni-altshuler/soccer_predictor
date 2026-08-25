@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      next: { revalidate: 300 },
+      next: { revalidate: 900 },
       signal: AbortSignal.timeout(12000),
     })
     if (!res.ok) {

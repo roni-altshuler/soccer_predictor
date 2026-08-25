@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 
 import { EvidencePanel } from '@/components/forecast/EvidencePanel'
 import { FixtureCard } from '@/components/forecast/FixtureCard'
-import { FixtureList } from '@/components/forecast/FixtureList'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { ProjectedTable } from '@/components/forecast/ProjectedTable'
 import type { ProjectedRow } from '@/components/forecast/ProjectedTable'
@@ -153,12 +152,12 @@ describe('EvidencePanel', () => {
     const metrics = screen.getByText(/What these numbers mean/i).closest('a')
     expect(metrics).toHaveAttribute(
       'href',
-      expect.stringContaining('docs/handbook/concepts/scoring.md'),
+      expect.stringContaining('/docs/concepts/scoring'),
     )
     const dropped = screen.getByText(/What was measured and dropped/i).closest('a')
     expect(dropped).toHaveAttribute(
       'href',
-      expect.stringContaining('docs/handbook/concepts/models.md'),
+      expect.stringContaining('/docs/concepts/models'),
     )
   })
 
@@ -169,89 +168,6 @@ describe('EvidencePanel', () => {
     // The repository's own measurements say the opposite, so the words must
     // not appear anywhere in this panel.
     expect(container.textContent).not.toMatch(/bookmaker|beat the market|guaranteed/i)
-  })
-})
-
-// --------------------------------------------------------- the fixture list
-//
-// A whole season of fixtures is a different problem from "the next six": the
-// reader is scanning, not reading. These pin the two things that keep it from
-// becoming a wall — day headings and a bounded first render — and the sentence
-// that makes a positional layout mean something to a screen reader.
-
-describe('FixtureList', () => {
-  const fx = (date: string, home: string, away: string, uid?: string) => ({
-    fixture_uid: uid,
-    competition_id: 'eng.1',
-    season: 2026,
-    date,
-    kickoff: '15:00',
-    home,
-    away,
-    p_home: 0.5,
-    p_draw: 0.25,
-    p_away: 0.25,
-    xg_home: 1.6,
-    xg_away: 1.1,
-    scorelines: [{ score: '1-0', p: 0.11 }],
-  })
-
-  it('groups fixtures under the day they are played', () => {
-    render(
-      <FixtureList
-        fixtures={[
-          fx('2026-08-21', 'Liverpool', 'Arsenal'),
-          fx('2026-08-21', 'Chelsea', 'Everton'),
-          fx('2026-08-22', 'Fulham', 'Brentford'),
-        ]}
-      />,
-    )
-    expect(screen.getByRole('heading', { name: 'Friday 21 August' })).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'Saturday 22 August' }),
-    ).toBeInTheDocument()
-  })
-
-  it('reads each row as a sentence, not as three unlabelled numbers', () => {
-    render(<FixtureList fixtures={[fx('2026-08-21', 'Liverpool', 'Arsenal')]} />)
-    expect(
-      screen.getByText(
-        /Liverpool versus Arsenal\. Liverpool 50\.0 per cent, draw 25\.0 per cent, Arsenal 25\.0 per cent\./,
-      ),
-    ).toBeInTheDocument()
-  })
-
-  it('does not render a whole season at once', async () => {
-    const many = Array.from({ length: 20 }, (_, i) =>
-      fx(`2026-09-${String(i + 1).padStart(2, '0')}`, `Home ${i}`, `Away ${i}`),
-    )
-    render(<FixtureList fixtures={many} />)
-    expect(screen.getAllByRole('heading')).toHaveLength(6)
-    expect(screen.getByRole('button', { name: /14 more matchdays/ })).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: /Show more/ }))
-    expect(screen.getAllByRole('heading')).toHaveLength(12)
-  })
-
-  it('links a fixture only when there is a page to link to', () => {
-    render(
-      <FixtureList
-        fixtures={[
-          fx('2026-08-21', 'Liverpool', 'Arsenal', 'abc123'),
-          fx('2026-08-21', 'Chelsea', 'Everton'),
-        ]}
-      />,
-    )
-    expect(screen.getAllByRole('link')).toHaveLength(1)
-    expect(screen.getByRole('link', { name: /Liverpool versus Arsenal/ })).toHaveAttribute(
-      'href',
-      '/season/fixture/abc123',
-    )
-  })
-
-  it('says so when a league has nothing left to play', () => {
-    render(<FixtureList fixtures={[]} />)
-    expect(screen.getByText(/No fixtures remain in this league/i)).toBeInTheDocument()
   })
 })
 

@@ -358,7 +358,11 @@ async function fetchFromESPN(matchId: string, leagueId?: string): Promise<MatchD
           'Accept': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
-        next: { revalidate: 30 }, // Cache for 30 seconds for live data
+        // no-store: the match page polls this route every 60s while live, so
+        // a 30s data-cache entry was two ISR writes a minute per open match —
+        // the class of write that exhausted the Vercel free tier. A dynamic
+        // route paying one uncached ESPN roundtrip is the cheaper trade.
+        cache: 'no-store',
       })
       
       if (!res.ok) continue
@@ -684,7 +688,8 @@ async function fetchFromFotMob(matchId: string): Promise<MatchDetailsResponse | 
         'Accept-Language': 'en-US,en;q=0.9',
         'Referer': 'https://www.fotmob.com/',
       },
-      next: { revalidate: 30 },
+      // no-store, same reason as the ESPN summary fetch above.
+      cache: 'no-store',
     })
     
     if (!res.ok) return null

@@ -317,7 +317,10 @@ export async function matchCard(
   eventId: string,
 ): Promise<MatchCard | null> {
   const url = `${ESPN_SITE}/${espnSlug(competitionId)}/summary?event=${eventId}`
-  const res = await fetch(url, { headers: ESPN_SERVER_HEADERS, next: { revalidate: 60 } })
+  // no-store: a per-event summary at revalidate:60 is one ISR write per
+  // minute per open match page — free-tier quota, not freshness, is the
+  // binding constraint (see the todays_matches route).
+  const res = await fetch(url, { headers: ESPN_SERVER_HEADERS, cache: 'no-store' })
   if (!res.ok) return null
   const d = (await res.json()) as EspnSummary
 

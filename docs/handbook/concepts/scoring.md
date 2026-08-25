@@ -106,6 +106,14 @@ happens about 69.8%. That is recorded, it is why raw simulation probabilities
 in that band are not printed as-is, and it is the kind of thing this section
 exists to make findable.
 
+The correction is an isotonic map fitted from that same backtest
+(`fit_projection_calibrator` → `projection_calibrator.json`): every published
+projection percentage is passed through the measured curve, then rescaled so a
+league's column still sums to one champion and the right number of relegations.
+The backtest deliberately keeps scoring the **uncorrected** simulator, so the
+overconfidence number stays a live measure of the error being corrected rather
+than a score of the correction itself.
+
 ---
 
 ## The floors

@@ -104,8 +104,8 @@ mark all vanish on black. FotMob and ESPN seat them on a light tile for exactly 
 ## Hard rules
 
 1. **The scores list IS the page.** App routes open with data — a date strip and fixture
-   rows, a scoreboard, a table. Never a hero, tagline, or CTA banner. Marketing copy lives
-   at `/welcome` only.
+   rows, a scoreboard, a table. Never a hero, tagline, or CTA banner. The product has no
+   marketing surface.
 2. **Tokens only.** `var(--*)` for every colour: `text-[var(--text-primary)]`,
    `bg-[var(--card-bg)]`. A hardcoded `text-white` / `bg-black` / `text-gray-400` bypasses
    the token layer and is a lint-visible defect.

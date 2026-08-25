@@ -120,7 +120,7 @@ async function fetchRefereeName(matchId: string): Promise<{ name: string | null;
   for (const league of LEAGUE_ENDPOINTS) {
     try {
       const url = `${ESPN_SITE}/${league}/summary?event=${matchId}`
-      const resp = await fetch(url, { signal: AbortSignal.timeout(8000), next: { revalidate: 300 } })
+      const resp = await fetch(url, { signal: AbortSignal.timeout(8000), next: { revalidate: 3600 } })
       if (!resp.ok) continue
       const data = await resp.json()
 

@@ -87,7 +87,7 @@ async function fetchJson(url: string): Promise<any | null> {
   try {
     const response = await fetch(url, {
       headers: ESPN_HEADERS,
-      next: { revalidate: 300 },
+      next: { revalidate: 1800 },
     })
     if (!response.ok) return null
     return await response.json()

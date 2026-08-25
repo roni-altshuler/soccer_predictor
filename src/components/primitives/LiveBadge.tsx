@@ -9,8 +9,8 @@ interface LiveBadgeProps {
 }
 
 /**
- * Live pulse pill — used on match cards and detail headers. Uses the
- * project's `live-pulse` keyframe from globals.css.
+ * Live pulse pill — used on match cards and detail headers. The pulsing dot
+ * uses Tailwind's built-in `animate-ping`.
  */
 export function LiveBadge({ minute, compact = false, className }: LiveBadgeProps) {
   if (compact) {

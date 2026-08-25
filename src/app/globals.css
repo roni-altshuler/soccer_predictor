@@ -112,19 +112,6 @@
   --logo-plate: #ffffff;
   --logo-plate-ring: rgba(19, 19, 22, 0.12);
 
-  /* Surface mix tokens used by the shadcn card variants. Flat — there is no
-     glassmorphism here; `--glass-blur: none` is why `backdrop-blur` utilities
-     elsewhere paint nothing over an opaque `--nav-bg`. */
-  --glass-bg: #0d0d0d;
-  --glass-border: #262626;
-  --glass-blur: none;
-
-  /* Retired bloom, kept as hairlines/neutrals so the shadcn card variants that
-     still name them render calm surfaces instead of neon. */
-  --glow-ai: 0 0 0 1px var(--border-color);
-  --elev-1: var(--card-bg);
-  --hairline: color-mix(in srgb, var(--border-color) 60%, transparent);
-
   /* Pitch / rating surfaces */
   --accent-pitch-line: rgba(241, 245, 251, 0.18);
   --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
@@ -138,13 +125,6 @@
   --headshot-ring: rgba(15, 26, 44, 0.18);
   --score-numeric-shadow: none;
   --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
-
-  /* Marketing landing tokens (used by /welcome). Spacing rhythm is
-     deliberately roomier than the dense app surfaces; widths reuse the
-     existing shell scale so the two experiences feel related. */
-  --mkt-section-y: clamp(4rem, 9vw, 8rem);
-  --mkt-section-gap: clamp(1.5rem, 3vw, 3rem);
-  --mkt-prose-max: 720px;
 }
 
 .dark {

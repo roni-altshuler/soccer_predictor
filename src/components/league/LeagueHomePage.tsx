@@ -167,6 +167,9 @@ const LEAGUE_NUMERIC_ID_MAP: Record<string, number> = {
 }
 
 // Tab label mapping for display
+type LeagueTab = 'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator'
+const LEAGUE_TABS: readonly LeagueTab[] = ['overview', 'standings', 'scorers', 'fixtures', 'simulator']
+
 const TAB_LABELS: Record<string, string> = {
   'scorers': 'Top Scorers',
   'simulator': 'Simulator',
@@ -354,7 +357,23 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [picks, setPicks] = useState<Record<string, CommittedPick>>({})
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'standings' | 'scorers' | 'fixtures' | 'simulator'>('overview')
+  const [activeTab, setActiveTab] = useState<LeagueTab>('overview')
+
+  // `?tab=` is the source of truth on load, so a refresh keeps the tab and a
+  // tab can be shared — same contract as /matches/[id]. replaceState (not
+  // push): switching tabs is not a navigation the Back button should replay.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && (LEAGUE_TABS as readonly string[]).includes(t)) setActiveTab(t as LeagueTab)
+  }, [])
+  const selectTab = (tab: LeagueTab) => {
+    const next = new URLSearchParams(window.location.search)
+    if (tab === 'overview') next.delete('tab')
+    else next.set('tab', tab)
+    const qs = next.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`)
+    setActiveTab(tab)
+  }
   const { asQueryParam: genderParam } = useGenderQuery()
   const isMLS = leagueId === 'usa.1' || leagueId === 'mls'
   const isCalendarYear = isCalendarYearLeague(leagueId)
@@ -857,14 +876,21 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           aria-label="League sections"
           className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {(['overview', 'standings', 'scorers', 'fixtures', 'simulator'] as const).map((tab) => {
+          {/* The Simulator tab only exists where the simulation can actually
+              run — a competition outside LEAGUE_NUMERIC_ID_MAP (tur.1, the
+              cups) used to show the tab anyway, permanently in its empty
+              state. A tab that can never hold content is a broken button. */}
+          {(numericLeagueId
+            ? (['overview', 'standings', 'scorers', 'fixtures', 'simulator'] as const)
+            : (['overview', 'standings', 'scorers', 'fixtures'] as const)
+          ).map((tab) => {
             const active = activeTab === tab
             return (
               <button
                 key={tab}
                 role="tab"
                 aria-selected={active}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => selectTab(tab)}
                 className={`relative min-h-[44px] whitespace-nowrap px-3 text-[13px] font-semibold capitalize transition-colors ${
                   active
                     ? 'text-[var(--text-primary)]'
@@ -909,7 +935,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   className="border-b border-[var(--border-color)] px-4 py-3"
                   action={
                     <button
-                      onClick={() => setActiveTab('fixtures')}
+                      onClick={() => selectTab('fixtures')}
                       className="min-h-[40px] rounded-lg border border-[var(--border-color)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
                     >
                       Calendar
@@ -961,7 +987,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   className="border-b border-[var(--border-color)] px-4 py-3"
                   action={
                     <button
-                      onClick={() => setActiveTab('standings')}
+                      onClick={() => selectTab('standings')}
                       className="min-h-[40px] px-1 text-xs font-semibold text-[var(--accent-primary)] hover:underline"
                     >
                       View All

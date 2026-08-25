@@ -1,12 +1,13 @@
 'use client'
 
-import { ArrowUpRight } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 import { DOCS, docsUrl, type DocKey } from '@/lib/docs'
 import { cn } from '@/lib/utils'
 
 /**
- * "Learn more" — the one shape an outbound documentation link takes here.
+ * "Learn more" — the one shape a documentation link takes here.
  *
  * Every page that used to carry an explanation now carries one of these
  * instead. Keeping it a single component is what stops the site drifting back:
@@ -14,8 +15,9 @@ import { cn } from '@/lib/utils'
  * sentence of context per page is the wall of methodology prose these links
  * replaced.
  *
- * The arrow is the standard mark for leaving the site, and it is hidden from
- * assistive technology because the destination already says so in the label.
+ * These stay in-app now — `/docs` renders the same handbook files that used
+ * to require a trip to github.com, so following one no longer costs the
+ * reader their place in the product.
  */
 export function DocsLink({
   doc,
@@ -31,10 +33,8 @@ export function DocsLink({
   className?: string
 }) {
   return (
-    <a
+    <Link
       href={docsUrl(doc, hash)}
-      target="_blank"
-      rel="noopener noreferrer"
       className={cn(
         'inline-flex items-baseline gap-0.5 font-mono text-[11px] uppercase tracking-[0.08em]',
         'text-[var(--text-tertiary)] underline-offset-4 transition-colors hover:text-[var(--accent-primary)] hover:underline',
@@ -42,8 +42,8 @@ export function DocsLink({
       )}
     >
       {label ?? DOCS[doc].title}
-      <ArrowUpRight className="h-3 w-3 shrink-0 translate-y-[1px]" aria-hidden="true" />
-    </a>
+      <ArrowRight className="h-3 w-3 shrink-0 translate-y-[1px]" aria-hidden="true" />
+    </Link>
   )
 }
 

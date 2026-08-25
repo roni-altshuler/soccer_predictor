@@ -29,7 +29,7 @@ export default function AppError({
             <button
               type="button"
               onClick={reset}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90"
             >
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
               Try again
@@ -39,7 +39,7 @@ export default function AppError({
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--card-hover)]"
             >
               <Home className="h-4 w-4" aria-hidden="true" />
-              Match Centre
+              Today
             </Link>
           </>
         }

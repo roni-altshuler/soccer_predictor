@@ -274,6 +274,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* The scores list is the page, FotMob-style, so the heading is for
+          assistive tech only — a visual TODAY banner would push the scores
+          down to say what the nav already says. */}
+      <h1 className="sr-only">Today&apos;s matches</h1>
       <DateStrip
         dateOptions={dateOptions}
         selectedDate={selectedDate}
@@ -401,7 +405,14 @@ export default function Home() {
         {/* Disclaimer — one quiet line, not a banner */}
         <div className="mt-3 flex flex-wrap items-center justify-end gap-2 px-1">
           <p className="text-[10px] text-[var(--text-tertiary)]">
-            Model probabilities, scored against the closing line on the accuracy page.
+            Model probabilities,{' '}
+            <Link
+              href="/accuracy"
+              className="underline underline-offset-2 transition-colors hover:text-[var(--text-secondary)]"
+            >
+              scored against the closing line
+            </Link>
+            .
           </p>
         </div>
 

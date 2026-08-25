@@ -8,6 +8,7 @@ import {
   CalendarRange,
   Info,
   Swords,
+  Target,
   TrendingUp,
 } from 'lucide-react'
 
@@ -55,6 +56,11 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/leagues', label: 'Leagues', icon: CalendarRange },
       { href: '/tournaments', label: 'Tournaments', icon: Swords },
+      // The matchup builder is the one forecast surface that is not a
+      // competition — pick any two clubs, get the model's 1X2. It used to be
+      // reachable only from the desktop-only footer, i.e. invisible on
+      // mobile and undiscoverable everywhere.
+      { href: '/predict', label: 'Any matchup', icon: Target },
     ],
   },
   {
@@ -116,6 +122,21 @@ export function SidebarNav() {
           </div>
         ))}
       </nav>
+
+      {/* The footer's one honest job, in the sidebar's bottom block — same
+          grammar as the sibling apps, which ship no <footer> at all. */}
+      <div className="border-t border-[var(--nav-border)] px-4 py-3">
+        <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
+          Probability estimates, not advice. Every pick is{' '}
+          <Link
+            href="/accuracy"
+            className="underline underline-offset-2 transition-colors hover:text-[var(--text-secondary)]"
+          >
+            scored against the closing line
+          </Link>
+          .
+        </p>
+      </div>
     </aside>
   )
 }

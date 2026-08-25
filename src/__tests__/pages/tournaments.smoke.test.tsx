@@ -302,6 +302,14 @@ const ARTIFACT = {
   },
 }
 
+beforeEach(() => {
+  // Opening a competition now writes `?competition=` into the URL (so the
+  // browser's Back returns to the directory and a bracket can be linked).
+  // jsdom keeps `location` across tests, so clear it or every test after the
+  // first mounts on the previous test's competition.
+  window.history.replaceState(null, '', '/tournaments')
+})
+
 afterEach(() => {
   jest.resetAllMocks()
 })
@@ -362,10 +370,12 @@ describe('TournamentsPage', () => {
     render(<TournamentsPage />)
 
     await waitFor(() => expect(screen.getByText(/Every competition/i)).toBeInTheDocument())
+    // In-app now — /docs renders the same handbook file that used to require
+    // a trip to github.com.
     const link = screen.getByText(/How to read this/i).closest('a')
     expect(link).toHaveAttribute(
       'href',
-      expect.stringContaining('docs/handbook/tutorials/read-a-bracket.md'),
+      expect.stringContaining('/docs/tutorials/read-a-bracket'),
     )
   })
 
@@ -494,7 +504,7 @@ describe('TournamentsPage', () => {
     // prints the final. It has no forecast because its rounds could not be
     // paired into a tree, which is a different fact from "the draw has not
     // been made", and the page used to state the wrong one of the two.
-    expect(screen.getByText(/This edition is finished/i)).toBeInTheDocument()
+    expect(screen.getByText(/a result, not a call/i)).toBeInTheDocument()
     expect(bracketRow('Chelsea')).toHaveTextContent('1')
     expect(screen.queryByText(/Draw not made/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/has not been drawn/i)).not.toBeInTheDocument()
@@ -532,7 +542,7 @@ describe('TournamentsPage', () => {
 
     // A power ranking, explicitly not a forecast. Filling this state with last
     // edition's field would produce confident percentages backed by nothing.
-    expect(screen.getByText(/no title odds to give/i)).toBeInTheDocument()
+    expect(screen.getByText(/no path to the trophy to simulate/i)).toBeInTheDocument()
     expect(screen.getByText(/power\s+ranking, not a forecast/i)).toBeInTheDocument()
     expect(screen.getByText('Real Madrid')).toBeInTheDocument()
   })

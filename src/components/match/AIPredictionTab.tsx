@@ -117,9 +117,9 @@ export function AIPredictionTab({
     void runRetrospective()
   }, [prediction, runRetrospective])
 
-  // The prediction-tab body switches on match state; the Boardroom debate (when
-  // a committed one exists for this fixture) sits below whatever renders, and
-  // self-hides otherwise — honest absence, no chrome.
+  // The prediction-tab body switches on match state: a recorded live pick
+  // renders as-is, otherwise the on-demand retrospective (labelled with its
+  // provenance), a loading card while it fetches, or the failed/empty state.
   let body: ReactNode
   if (prediction) {
     // 1) The live pipeline picked this fixture. It is the recorded pre-match

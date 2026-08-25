@@ -140,7 +140,7 @@ async function fetchRemainingFixtures(
         Accept: 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
-      next: { revalidate: 300 },
+      next: { revalidate: 900 },
     },
   )
 
@@ -236,7 +236,7 @@ export async function GET(
           'Accept': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
-        next: { revalidate: 300 },
+        next: { revalidate: 900 },
       }
     )
 

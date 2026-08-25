@@ -24,6 +24,7 @@ import { MatchDetailSkeleton } from '@/components/skeletons'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
+import { useSmartBack } from '@/lib/useSmartBack'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import { ESPN_V2 } from '@/lib/espnHost'
 
@@ -84,6 +85,13 @@ export default function MatchDetailPage() {
   // ?tab= deep link is the source of truth. Legacy values
   // (summary/ai/lineup/…) are normalised onto the new tab set.
   const requestedTab = searchParams.get('tab')
+
+  // Back returns to wherever the reader actually came from — Today, a league
+  // page, the bracket — and only falls back to the league page (or home) on a
+  // deep link. Hard-coding the league here dumped a reader who arrived from
+  // Today onto a page they had never been to.
+  const handleBack = useSmartBack(leagueId ? `/leagues/${leagueId}` : '/')
+
   const selectTab = useCallback(
     (tab: DetailTab) => {
       const next = new URLSearchParams(searchParams.toString())
@@ -376,10 +384,10 @@ export default function MatchDetailPage() {
           </ul>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/matches"
+              href="/"
               className="px-6 py-3 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-on-primary)] font-semibold hover:opacity-90 transition-opacity"
             >
-              Browse matches
+              Today&apos;s matches
             </Link>
             <button
               onClick={() => {
@@ -401,15 +409,6 @@ export default function MatchDetailPage() {
   // Additional derived state (isLive, isHalftime and isFinished already computed above before hooks)
   const isScheduled = match.status.toLowerCase().includes('scheduled') || match.status.toLowerCase().includes('pre')
   const activeTab: DetailTab = normalizeDetailTab(requestedTab)
-
-  // Navigate back to the league page - go directly to full league page
-  const handleBack = () => {
-    if (leagueId) {
-      router.push(`/leagues/${leagueId}`)
-    } else {
-      router.back()
-    }
-  }
 
   const trackTeam = (teamName: string) => {
     const normalized = normalizeTeamName(teamName)
@@ -466,7 +465,7 @@ export default function MatchDetailPage() {
             className="group mb-2 -ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-xs font-medium text-[var(--text-tertiary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Back to {match.league || 'matches'}</span>
+            <span>Back</span>
           </button>
 
           {/* Follow buttons — one quiet row */}

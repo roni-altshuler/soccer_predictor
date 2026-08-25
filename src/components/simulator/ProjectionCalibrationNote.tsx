@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { DocsLink } from '@/components/evidence/DocsLink'
+
 /**
  * The measured overconfidence of the season projections — and the note that it
  * is now corrected for rather than merely disclosed.
@@ -62,6 +64,10 @@ export function ProjectionCalibrationNote() {
   if (!data?.available || !data.worst_bin) return null
   const w = data.worst_bin
 
+  // One epistemic footnote, not an essay. The mechanics of the correction
+  // (isotonic map, column rescale, why the backtest scores the raw simulator)
+  // live in the handbook's scoring chapter — the page states what was
+  // measured and what was done about it, in two sentences.
   return (
     <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
@@ -70,22 +76,14 @@ export function ProjectionCalibrationNote() {
       <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
         {data.overstates ? (
           <>
-            The raw simulation runs{' '}
-            <strong className="text-[var(--text-primary)]">high at the confident end</strong>:
-            across <span className="font-mono tabular-nums">{data.n?.toLocaleString()}</span>{' '}
-            scored projections, when it said{' '}
-            <span className="font-mono tabular-nums">{pct(w.stated)}</span> the thing happened{' '}
-            <span className="font-mono tabular-nums">{pct(w.happened)}</span> of the time
-            &mdash; <span className="font-mono tabular-nums">{Math.abs(Math.round(w.gap * 100))} points</span>{' '}
-            short, over <span className="font-mono tabular-nums">{w.n.toLocaleString()}</span>{' '}
-            cases in that band.{' '}
+            Backtested over{' '}
+            <span className="font-mono tabular-nums">{data.n?.toLocaleString()}</span>{' '}
+            projections, the raw simulation ran hot: where it said{' '}
+            <span className="font-mono tabular-nums">{pct(w.stated)}</span>, it happened{' '}
+            <span className="font-mono tabular-nums">{pct(w.happened)}</span> of the time.{' '}
             <strong className="text-[var(--text-primary)]">
-              The percentages above have that correction applied.
-            </strong>{' '}
-            Each one is mapped through the curve this backtest measured, then rescaled so the
-            column still adds up to one champion and three relegations. The backtest keeps
-            scoring the uncorrected simulator, so this number stays an honest measure of what
-            is being corrected rather than a score of the correction itself.
+              These percentages carry that correction.
+            </strong>
           </>
         ) : (
           <>
@@ -100,6 +98,12 @@ export function ProjectionCalibrationNote() {
           </>
         )}
       </p>
+      <DocsLink
+        doc="scoring"
+        hash="the-one-place-the-season-model-is-known-to-be-overconfident"
+        label="How the correction works"
+        className="mt-2"
+      />
     </section>
   )
 }

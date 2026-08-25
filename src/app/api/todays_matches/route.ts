@@ -212,7 +212,14 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
             'Accept': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
-          next: { revalidate: 60 },
+          // no-store, deliberately. The home page polls this route every 60s,
+          // and `revalidate: 60` wrote every scoreboard URL (per league, per
+          // date on the strip) back into Vercel's ISR cache every minute it
+          // was touched — five figures of ISR writes a day, which is what
+          // exhausted the free tier's 200k/month. An uncached ESPN roundtrip
+          // costs ~200ms on a route that is already dynamic; the cache write
+          // costs quota that pauses the whole site.
+          cache: 'no-store',
         }
       ).then(async (response) => ({
         league,
@@ -306,7 +313,9 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
         'Accept-Language': 'en-US,en;q=0.9',
         'Referer': 'https://www.fotmob.com/',
       },
-      next: { revalidate: 60 },
+      // no-store for the same reason as the ESPN scoreboards above: a 60s
+      // data-cache entry on a polled route is an ISR write per minute.
+      cache: 'no-store',
     })
     
     if (!response.ok) {

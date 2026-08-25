@@ -106,14 +106,32 @@ export const DOCS = {
 export type DocKey = keyof typeof DOCS
 
 /**
+ * Repo-relative handbook path → in-app route under `/docs`.
+ * `docs/handbook/concepts/scoring.md` → `/docs/concepts/scoring`;
+ * the README is the `/docs` index itself.
+ */
+export function docsRoute(path: string): string {
+  const inner = path.replace(/^docs\/handbook\//, '').replace(/\.md$/, '')
+  if (inner === 'README') return '/docs'
+  return `/docs/${inner}`
+}
+
+/**
  * A link to one document, optionally to a heading inside it.
  *
- * GitHub renders anchors as `#lower-case-hyphenated`, and passing the hash
- * through unchanged is deliberate: the caller writes the anchor GitHub itself
- * generates, rather than this module guessing a slug rule that changes.
+ * These used to point at github.com — every "learn more" ejected the reader
+ * out of the product into raw markdown. `/docs` renders the same files
+ * in-app now. Anchors are still `#lower-case-hyphenated` exactly as GitHub
+ * generates them (rehype-slug uses the same slugger), so every existing
+ * `hash` keeps working in both places.
  */
 export function docsUrl(key: DocKey, hash?: string): string {
-  return `${REPO}/blob/${BRANCH}/${DOCS[key].path}${hash ? `#${hash}` : ''}`
+  return `${docsRoute(DOCS[key].path)}${hash ? `#${hash}` : ''}`
+}
+
+/** The same document on GitHub — for "view source" rather than reading. */
+export function docsSourceUrl(key: DocKey): string {
+  return `${REPO}/blob/${BRANCH}/${DOCS[key].path}`
 }
 
 /** The repository itself — for "read the code" rather than "read the docs". */

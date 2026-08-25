@@ -298,32 +298,22 @@ function Forecast({ tournament: t }: { tournament: TournamentForecast }) {
 
       {t.status === 'awaiting_draw' ? (
         <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          The bracket for this edition has not been drawn in full, so there is no path to a
-          trophy to simulate and no title odds to give. What follows is a rating table — a
-          power ranking, not a forecast.
+          No draw yet, so no path to the trophy to simulate. The table below is a power
+          ranking, not a forecast.
         </p>
       ) : null}
 
       {t.status === 'awaiting_fixtures' ? (
-        <>
-          <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
-            This edition has not started. Its fixtures are published, but the knockout
-            draw has not been made — and a bracket is a field of teams, so there is
-            nothing here to forecast yet. No odds are shown rather than odds built on
-            last season&apos;s entrants.
-          </p>
-          <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-            The bracket and the title odds appear here automatically on the first run
-            after the draw lands. Nothing needs to be switched on.
-          </p>
-        </>
+        <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          Not started and no draw made — no odds rather than odds built on last
+          season&apos;s entrants. The bracket appears here when the draw lands.
+        </p>
       ) : null}
 
       {t.status === 'not_reconstructed' ? (
         <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          This edition is finished and the bracket below is what happened. Its rounds could
-          not be paired into a single tree, so no forecast was made for it and there are no
-          title odds to show — a result, not a call.
+          Finished — the bracket below is what happened. Its rounds could not be paired
+          into one tree, so there was no forecast: a result, not a call.
         </p>
       ) : null}
 
@@ -505,9 +495,7 @@ function NextEdition({ tournament: t }: { tournament: TournamentForecast }) {
 
   return (
     <p className="mt-3 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-      No fixtures for the next edition have been published yet, so there is nothing to
-      show for it — not even a start date. This page picks them up on the first run
-      after the fixture list appears, and the bracket follows when the draw is made.
+      No fixtures published for the next edition yet — it appears here when they are.
     </p>
   )
 }

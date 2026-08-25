@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, Brain, Goal, ShieldAlert, Sparkles } from 'lucide-react'
 
@@ -398,6 +399,10 @@ function KeyDriversPanel({
 /* ---------------- main ---------------- */
 
 export function PredictionResult({ prediction, className }: PredictionResultProps) {
+  // Radix tooltips never open on touch, so the "What are these?" trigger was
+  // a dead button on every phone. Controlled open + click toggle serves both
+  // input types; hover/focus still drive it through onOpenChange.
+  const [driversHelpOpen, setDriversHelpOpen] = useState(false)
   const totalXg = prediction.goals.total_expected_goals
   const { home_win, draw, away_win } = prediction.outcome
   const predictedOutcome: 'home' | 'draw' | 'away' =
@@ -466,11 +471,13 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
         <div className="mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-[var(--accent-ai)]" strokeWidth={2.5} />
           <h3 className="text-h4 font-bold text-[var(--text-primary)]">Key drivers</h3>
-          <Tooltip>
+          <Tooltip open={driversHelpOpen} onOpenChange={setDriversHelpOpen}>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 aria-label="What are these?"
+                aria-expanded={driversHelpOpen}
+                onClick={() => setDriversHelpOpen((v) => !v)}
                 className="ml-auto rounded-full p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               >
                 <ShieldAlert className="h-3.5 w-3.5" />

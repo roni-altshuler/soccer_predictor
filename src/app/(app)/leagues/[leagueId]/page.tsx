@@ -1,5 +1,4 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
-import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { LeagueTrackRecord } from '@/components/accuracy/LeagueTrackRecord'
 import { SERVED_COMPETITION_IDS, getLeagueAccent } from '@/lib/leagueAccents'
 
@@ -42,15 +41,9 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto px-4 pt-3 pb-1">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Leagues', href: '/leagues' },
-            { label: config.name },
-          ]}
-        />
-      </div>
+      {/* No breadcrumb trail here — LeagueHomePage carries the one back
+          control ("All leagues"), same grammar as the sibling apps. Two
+          competing back affordances forty pixels apart was the old layout. */}
       {/* The league's report card sits here, OUTSIDE LeagueHomePage, on
           purpose. That component gates everything behind a loading state fed
           by live ESPN calls, so anything inside it disappears whenever the

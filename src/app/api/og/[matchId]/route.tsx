@@ -2,7 +2,9 @@ import { ImageResponse } from 'next/og'
 import type { NextRequest } from 'next/server'
 
 export const runtime = 'edge'
-export const revalidate = 60
+// One hour, not one minute: every regeneration of an OG image is an ISR
+// write per matchId, and a share card does not need a live score.
+export const revalidate = 3600
 
 // Brand palette (mirrored from globals.css so the OG image is fully
 // self-contained and does not depend on Tailwind at runtime).

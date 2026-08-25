@@ -7,6 +7,7 @@ import {
   Activity,
   CalendarRange,
   Swords,
+  Target,
   TrendingUp,
 } from 'lucide-react'
 
@@ -32,6 +33,7 @@ const ITEMS: Item[] = [
   { href: '/', label: 'Today', icon: Activity },
   { href: '/leagues', label: 'Leagues', icon: CalendarRange },
   { href: '/tournaments', label: 'Cups', icon: Swords },
+  { href: '/predict', label: 'Predict', icon: Target },
   { href: '/accuracy', label: 'Record', icon: TrendingUp },
 ]
 

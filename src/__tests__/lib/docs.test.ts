@@ -59,13 +59,17 @@ describe('the documentation the app links to', () => {
     }
   })
 
-  it('builds a GitHub URL that names the branch and the path', () => {
+  it('builds an in-app /docs route with the GitHub-style anchor intact', () => {
+    // Docs render in-app now (/docs/[[...slug]]) — a "learn more" that ejects
+    // the reader onto github.com costs them their place in the product. The
+    // anchor scheme is unchanged: rehype-slug generates the same slugs GitHub
+    // does, so every hash written for the old URLs still resolves.
     const url = docsUrl('scoring', 'calibration')
-    expect(url).toBe(
-      'https://github.com/roni-altshuler/soccer_predictor/blob/main/docs/handbook/concepts/scoring.md#calibration',
-    )
-    // No hash means no trailing '#' — GitHub tolerates it, readers do not.
-    expect(docsUrl('scoring').endsWith('.md')).toBe(true)
+    expect(url).toBe('/docs/concepts/scoring#calibration')
+    // No hash means no trailing '#'.
+    expect(docsUrl('scoring')).toBe('/docs/concepts/scoring')
+    // The README is the /docs index itself, not /docs/README.
+    expect(docsUrl('handbook')).toBe('/docs')
   })
 
   it('resolves every cross-link inside the handbook', () => {

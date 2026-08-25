@@ -154,8 +154,7 @@ export function BaselineLadder({ className }: { className?: string }) {
           ).toFixed(1)}{' '}
           points
         </span>{' '}
-        behind the closing line. The closing line is the practical ceiling — it aggregates
-        everyone who has money on the match.
+        behind the closing line — the practical ceiling.
       </p>
 
       {data.calibration?.length ? (

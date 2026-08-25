@@ -4,13 +4,12 @@ import { usePathname } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import { type ReactNode } from 'react'
 
-import { EASE_OUT } from '@/lib/motion'
-
 /**
- * Animates each route's content in on navigation. Keyed by pathname so a fresh
- * entrance plays every time the path changes — a subtle blur-up + rise that
- * makes navigation feel fluid without an exit animation (App Router unmounts
- * the old tree immediately, so we lean on a polished enter instead).
+ * A fast fade on route change — just enough to smooth the swap, never enough
+ * to be waited on. The previous version ran 400ms with a 12px rise and a
+ * 6px blur, which put a visible animation between every tap and its page;
+ * blur in particular forces the compositor to repaint the whole tree. The
+ * sibling apps ship no entrance animation at all, so this errs their way.
  *
  * Respects prefers-reduced-motion by rendering statically.
  */
@@ -23,10 +22,9 @@ export function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ duration: 0.4, ease: EASE_OUT }}
-      style={{ willChange: 'opacity, transform' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
     >
       {children}
     </motion.div>

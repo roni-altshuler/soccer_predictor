@@ -4,24 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 /**
- * Card surface for the cinematic redesign. The default keeps the old flat look
- * (so existing call-sites are unchanged) but reads the elevated gradient token,
- * and new variants opt into hover-lift + accent glow without bespoke CSS.
+ * Flat card surface. One variant: `default`. Former decorative variants
+ * (elevated/interactive/ai/glass, with hover-lift and glow) had zero call
+ * sites and contradicted the design language, so they were removed.
  */
 const cardVariants = cva(
-  'relative rounded-2xl border text-[var(--text-primary)] transition-[border-color,box-shadow,transform] duration-300',
+  'relative rounded-2xl border text-[var(--text-primary)] transition-[border-color,box-shadow] duration-300',
   {
     variants: {
       variant: {
         default: 'border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-sm)]',
-        elevated:
-          'border-[var(--border-color)] [background:var(--elev-1)] shadow-[var(--shadow-md)]',
-        interactive:
-          'border-[var(--border-color)] [background:var(--elev-1)] shadow-[var(--shadow-md)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-lg)] hover:border-[color-mix(in_srgb,var(--accent-primary)_45%,var(--border-hover))]',
-        ai:
-          'border-[color-mix(in_srgb,var(--accent-ai)_28%,var(--border-color))] [background:var(--elev-1)] shadow-[var(--shadow-md)] hover:-translate-y-[3px] hover:shadow-[var(--shadow-lg),var(--glow-ai)]',
-        glass:
-          'border-[var(--glass-border)] [background:var(--glass-bg)] shadow-[var(--shadow-md)] backdrop-blur-xl',
       },
     },
     defaultVariants: { variant: 'default' },

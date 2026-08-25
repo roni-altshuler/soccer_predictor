@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { EmptyState } from '@/components/EmptyState'
 import { DocsRow } from '@/components/evidence/DocsLink'
@@ -29,12 +29,29 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
 
-  // Coming back from a tie says which competition to reopen. Read from
-  // `location` rather than `useSearchParams` so the page needs no Suspense
-  // boundary to prerender.
+  // The open competition IS the URL — `?competition=<id>`. The first version
+  // held it in component state only, which broke the two things a reader
+  // expects of a page: the browser's Back button returned them to wherever
+  // they were before /tournaments instead of to the directory, and a bracket
+  // could not be linked to. Opening pushes a history entry; closing and
+  // popstate walk it back. Read from `location` rather than `useSearchParams`
+  // so the page needs no Suspense boundary to prerender.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('competition')
-    if (id) setOpenId(id)
+    const sync = () =>
+      setOpenId(new URLSearchParams(window.location.search).get('competition'))
+    sync()
+    window.addEventListener('popstate', sync)
+    return () => window.removeEventListener('popstate', sync)
+  }, [])
+
+  const openCompetition = useCallback((id: string) => {
+    window.history.pushState(null, '', `/tournaments?competition=${encodeURIComponent(id)}`)
+    setOpenId(id)
+  }, [])
+
+  const closeCompetition = useCallback(() => {
+    window.history.pushState(null, '', '/tournaments')
+    setOpenId(null)
   }, [])
 
   useEffect(() => {
@@ -59,7 +76,7 @@ export default function TournamentsPage() {
           {openId ? (
             <button
               type="button"
-              onClick={() => setOpenId(null)}
+              onClick={closeCompetition}
               className="-ml-1 inline-flex min-h-[36px] items-center gap-1 px-1 text-[12px] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
@@ -95,12 +112,12 @@ export default function TournamentsPage() {
           />
         </div>
       ) : openId ? (
-        <TournamentPicker className="mt-6" tournaments={forecasts} initialId={openId} />
+        <TournamentPicker key={openId} className="mt-6" tournaments={forecasts} initialId={openId} />
       ) : (
         <TournamentDirectory
           className="mt-6"
           tournaments={forecasts}
-          onOpen={(id) => setOpenId(id)}
+          onOpen={openCompetition}
         />
       )}
     </div>

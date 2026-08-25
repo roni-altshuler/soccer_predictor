@@ -224,11 +224,12 @@ export type WaveACompetitionId = (typeof WAVE_A_COMPETITION_IDS)[number]
  *
  * `WAVE_A_COMPETITION_IDS` above is the benchmark corpus: five leagues with a
  * paired market price on every fixture, which is what lets `/accuracy` say how
- * far the model sits from the bookmaker. These nine are the ones admitted by
- * `league_gate.py` — a day-blocked walk-forward in which the league beat a
- * one-in-three guess, its own running base rate, and picking the home side
- * every time. Every one of the nine publishes a projected table; only five of
- * them can be placed against the market.
+ * far the model sits from the bookmaker. These SIX are what the product
+ * serves: the five Wave A leagues plus MLS. `league_gate.py` admitted more
+ * (ned.1, por.1, tur.1 each cleared it), but scope is a product decision —
+ * they sit in `HELD`, their gate evidence untouched, and adding one back is
+ * one line here plus one in `LEAGUES`. Every one of the six publishes a
+ * projected table; only the Wave A five can be placed against the market.
  *
  * Mirrors `LEAGUES` in `backend/scripts/forecast_season.py`, in its order:
  * the European top flight, then MLS.
