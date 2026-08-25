@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T08:41:21.890424+00:00",
+  "generated_at": "2026-08-25T14:44:12.553901+00:00",
   "captured_rows": 139,
   "scored_fixtures": 61,
   "joined_by": {
@@ -553,8 +553,8 @@
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
       "n": 36,
-      "brier": 0.57249,
-      "log_loss": 0.97774,
+      "brier": 0.57264,
+      "log_loss": 0.97801,
       "accuracy": 0.5833,
       "impossible_calls": 0
     },
