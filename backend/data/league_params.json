@@ -1,15 +1,15 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-08-24T22:24:28.592696+00:00",
+  "updated_at": "2026-08-25T14:47:37.475828+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
       "display_name": "Premier League",
       "country": "England",
       "avg_goals": 1.4771,
-      "home_adv": 0.2902,
+      "home_adv": 0.292,
       "rho": -0.13,
-      "draw_rate": 0.2399,
+      "draw_rate": 0.2397,
       "league_coefficient": 1.15,
       "total_matchdays": 38,
       "relegation_spots": 3,
