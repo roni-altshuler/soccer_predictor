@@ -4,6 +4,7 @@ import { type ReactNode } from 'react'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { PageTransition } from '@/components/motion'
+import { PitchBackdrop } from '@/components/PitchBackdrop'
 import { useNavDepthTracker } from '@/lib/useSmartBack'
 
 import { MobileBottomNav } from './MobileBottomNav'
@@ -31,8 +32,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     // without ceremony. Nested providers (CalibrationPlot, ConfidenceIndicator,
     // FactorsPanel) are harmless per Radix docs.
     <TooltipProvider delayDuration={200} skipDelayDuration={400}>
+      <PitchBackdrop />
       <SidebarNav />
-      <div className="flex min-h-screen flex-col bg-[var(--background)] md:pl-[var(--shell-sidebar-w)]">
+      {/* No background on the column — body paints --background and the
+          pitch backdrop sits between it and the content (z-index -1). An
+          opaque column here would blank the one ambient layer the app has. */}
+      <div className="flex min-h-screen flex-col md:pl-[var(--shell-sidebar-w)]">
         <TopBar />
         <main id="main" className="flex-1 pb-20 md:pb-0">
           <PageTransition>{children}</PageTransition>

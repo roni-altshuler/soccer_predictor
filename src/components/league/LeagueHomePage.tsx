@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
 import { isCalendarYearLeague, seasonOptions } from '@/lib/seasons'
 import MatchCalendar from '@/components/match/MatchCalendar'
 import SeasonProjections from '@/components/league/SeasonProjections'
@@ -1021,6 +1021,32 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                   ))}
                 </div>
               </div>
+
+              {/* The what-if lab is the most playful thing this product owns,
+                  and it used to sit two levels deep with no pointer anywhere.
+                  One quiet teaser on the overview, only where the simulation
+                  can actually run. */}
+              {numericLeagueId ? (
+                <button
+                  type="button"
+                  onClick={() => selectTab('simulator')}
+                  className="group w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-4 text-left transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                    What if?
+                  </p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                    Lock one result and rerun the season — watch the title race move.
+                  </p>
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-primary)]">
+                    Open the simulator
+                    <ArrowRight
+                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </button>
+              ) : null}
 
             </div>
           </div>

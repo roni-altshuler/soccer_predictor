@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SmartBackLink } from '@/components/SmartBackLink'
+import { FollowTeamButton } from '@/components/team/FollowTeamButton'
 import { fetchTeamOverview } from '@/lib/server/espnTeamOverview'
 
 /**
@@ -256,6 +257,11 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
               </p>
             ) : null}
           </div>
+          <FollowTeamButton
+            teamName={team.name}
+            league={league.name}
+            className="ml-auto shrink-0"
+          />
         </div>
       </header>
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
-import { Bookmark, BookmarkCheck } from 'lucide-react'
+import { Bookmark, BookmarkCheck, X } from 'lucide-react'
 
 import {
   WATCHLIST_STORAGE_KEY,
@@ -27,6 +27,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+
+// One-time discovery hint for the follow feature; '1' once dismissed.
+const FOLLOW_HINT_DISMISSED_KEY = 'fotpredict-follow-hint-dismissed-v1'
 
 /* ── data shapes mirror /api/todays_matches ── */
 
@@ -150,6 +153,11 @@ export default function Home() {
   const [tab, setTab] = useState<'all' | 'live' | 'finished'>('all')
   const [trackedTeams, setTrackedTeams] = useState<WatchTeam[]>([])
   const [watchlistOnly, setWatchlistOnly] = useState(false)
+  // Following was invisible until you had followed someone — the toggle only
+  // renders with a non-empty watchlist, and nothing anywhere said the feature
+  // existed. One dismissible line fills that gap. Starts true so the hint
+  // never flashes before localStorage is read.
+  const [followHintDismissed, setFollowHintDismissed] = useState(true)
   const [historical, setHistorical] = useState<Historical | null>(null)
   const [liveRecord, setLiveRecord] = useState<Live | null>(null)
 
@@ -175,6 +183,11 @@ export default function Home() {
       }
     }
     load()
+    try {
+      setFollowHintDismissed(localStorage.getItem(FOLLOW_HINT_DISMISSED_KEY) === '1')
+    } catch {
+      /* private mode: keep the hint hidden rather than undismissable */
+    }
     const onStorage = (e: StorageEvent) => {
       if (e.key === WATCHLIST_STORAGE_KEY) load()
     }
@@ -341,6 +354,32 @@ export default function Home() {
               </button>
             )
           })}
+
+          {trackedTeams.length === 0 && !followHintDismissed && (
+            <span className="ml-auto inline-flex min-h-[36px] items-center gap-1.5 px-1 text-[11px] text-[var(--text-tertiary)]">
+              <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                Follow a club from{' '}
+                <span className="text-[var(--text-secondary)]">its page</span> to filter
+                Today to your teams
+              </span>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => {
+                  setFollowHintDismissed(true)
+                  try {
+                    localStorage.setItem(FOLLOW_HINT_DISMISSED_KEY, '1')
+                  } catch {
+                    /* private mode: dismissal lasts the session only */
+                  }
+                }}
+                className="ml-0.5 flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-secondary)]"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </span>
+          )}
 
           {trackedTeams.length > 0 && (
             <button

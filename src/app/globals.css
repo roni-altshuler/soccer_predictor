@@ -155,8 +155,9 @@
    ──────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
-  /* Flat black. The two radial ambient washes are gone — Bugatti's only depth
-     element is photography, and a data grid does not need atmosphere. */
+  /* Flat black canvas. The one piece of atmosphere is the pitch backdrop
+     (see the .pitch-backdrop block at the end of this file) — a bounded,
+     documented exception that sits behind everything at z-index -1. */
   background-color: var(--background);
   color: var(--text-secondary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
@@ -316,5 +317,93 @@ nav, button, .caption, th, [role='tab'] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Ambient pitch backdrop — the one sanctioned piece of atmosphere.
+
+   A deliberate, bounded exception to "no gradients", requested and owned as
+   a product decision (2026-08-25): the canvas should read as a floodlit
+   pitch at night rather than a void. The bounds that keep it Bugatti:
+
+   - it lives BEHIND everything (fixed, z-index -1, pointer-events none);
+   - line work is white at ≤4% alpha, glow is accent-green at ≤7% — at
+     those levels it cannot cost text contrast anywhere;
+   - the only motion is two light pools drifting on 90s+ cycles, transform
+     and opacity only, killed by the global reduced-motion rule above;
+   - nothing else on the site may pick up gradients or glows because this
+     exists. One ambient layer, defined once, consumed once (PitchBackdrop).
+
+   DESIGN.md documents the same exception — keep the two in sync.
+   ──────────────────────────────────────────────────────────── */
+.pitch-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pitch-backdrop__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pitch-backdrop__lines line,
+.pitch-backdrop__lines circle,
+.pitch-backdrop__lines rect,
+.pitch-backdrop__lines path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.035);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.pitch-backdrop__glow {
+  position: absolute;
+  width: 58vw;
+  height: 58vw;
+  min-width: 480px;
+  min-height: 480px;
+  border-radius: 9999px;
+  will-change: transform, opacity;
+}
+
+.pitch-backdrop__glow--a {
+  top: -18vw;
+  left: 4vw;
+  background: radial-gradient(circle, rgba(95, 166, 87, 0.07) 0%, transparent 62%);
+  animation: pitch-drift-a 96s ease-in-out infinite alternate;
+}
+
+.pitch-backdrop__glow--b {
+  bottom: -22vw;
+  right: -8vw;
+  background: radial-gradient(circle, rgba(95, 166, 87, 0.05) 0%, transparent 62%);
+  animation: pitch-drift-b 132s ease-in-out infinite alternate;
+}
+
+@keyframes pitch-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+  50%  { opacity: 1; }
+  to   { transform: translate3d(9vw, 6vh, 0) scale(1.12); opacity: 0.8; }
+}
+
+@keyframes pitch-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); opacity: 0.9; }
+  50%  { opacity: 0.7; }
+  to   { transform: translate3d(-8vw, -7vh, 0) scale(1); opacity: 1; }
+}
+
+/* Explicit, not just the global duration clamp: an infinite-alternate
+   animation under a duration clamp depends on the iteration-count override
+   to avoid strobing, and that coupling is too subtle to rely on silently.
+   The pools simply hold still. */
+@media (prefers-reduced-motion: reduce) {
+  .pitch-backdrop__glow {
+    animation: none;
   }
 }

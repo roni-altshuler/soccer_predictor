@@ -23,6 +23,14 @@ chrome**. Colour carries meaning only — live state, positive/negative, positio
 never decoration. Restraint everywhere is what lets the display type and the numbers read as
 deliberate.
 
+**The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night:
+faint pitch markings (white, ≤4% alpha) and two accent-green light pools drifting on 90s+
+cycles, rendered once by `PitchBackdrop` behind everything at `z-index: -1`
+(a 2026-08-25 product decision). Its bounds are load-bearing: transform/opacity motion
+only, killed under reduced motion; alphas low enough that no text anywhere loses contrast;
+and **nothing else on the site may pick up a gradient or glow because this exists** — one
+layer, defined once in `globals.css`, consumed once.
+
 **Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
 there is no theme provider. `:root` is the single source of truth and the `.dark` block is
 intentionally empty.
