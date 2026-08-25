@@ -2,16 +2,20 @@
  * The floodlit pitch behind the product — the one sanctioned ambient layer.
  *
  * Static mowing stripes, pitch markings at ≤8% white (halfway line, centre
- * circle, both boxes with their penalty arcs, corner arcs) and two
- * accent-green light pools drifting on 90s+ cycles. Everything about its
- * restraint is documented at the `.pitch-backdrop` block in globals.css and
- * in DESIGN.md's "Ambient layer" section — change those, not just this file.
+ * circle, both boxes with their penalty arcs, corner arcs), two accent-green
+ * light pools drifting on 90s+ cycles, and — on top of the lines — the
+ * tactics-board match (see PitchMatchAnimation: chalk circles vs X-marks
+ * playing a simulated game). Everything about the layer's restraint is
+ * documented at the `.pitch-backdrop` block in globals.css and in DESIGN.md's
+ * "Ambient layer" section — change those, not just this file.
  *
- * Static server markup: no client JS, no props, mounted once in AppShell.
- * The viewBox is a full pitch seen from above, sliced by
- * `preserveAspectRatio` so the centre circle stays near the viewport's
- * middle on any screen.
+ * The stripes/glows/lines are static markup; the match is the one client
+ * canvas. Mounted once in AppShell. The viewBox is a full pitch seen from
+ * above, sliced by `preserveAspectRatio` so the centre circle stays near the
+ * viewport's middle on any screen — the canvas replicates the same mapping.
  */
+import { PitchMatchAnimation } from '@/components/PitchMatchAnimation'
+
 export function PitchBackdrop() {
   return (
     <div aria-hidden="true" className="pitch-backdrop">
@@ -43,6 +47,8 @@ export function PitchBackdrop() {
         <path d="M 0 960 A 40 40 0 0 1 40 1000" />
         <path d="M 1600 960 A 40 40 0 0 0 1560 1000" />
       </svg>
+      {/* The match plays ON the lines, so the canvas sits above them. */}
+      <PitchMatchAnimation />
     </div>
   )
 }

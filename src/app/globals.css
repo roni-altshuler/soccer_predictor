@@ -333,10 +333,15 @@ nav, button, .caption, th, [role='tab'] {
 
    - it lives BEHIND everything (fixed, z-index -1, pointer-events none);
    - line work is white at ≤8% alpha, mowing stripes at ≤2%, glow is
-     accent-green at ≤11% — content sits on opaque cards, and on the bare
-     canvas those levels cost no text its contrast;
-   - the only motion is two light pools drifting on 90s+ cycles, transform
-     and opacity only, killed by the global reduced-motion rule above;
+     accent-green at ≤11%, the tactics-board match's marks at ≤25% and its
+     ball at ≤40% — content sits on opaque cards, and on the bare canvas
+     those levels cost no text its contrast;
+   - motion is two light pools drifting on 90s+ cycles (transform/opacity
+     only) plus the match canvas (one rAF loop, 30fps cap, ~23 entities);
+     both are still under prefers-reduced-motion — the pools by the rules
+     below, the match by drawing a single static frame;
+   - the match is DECORATION and never renders a score, a clock, a name, or
+     anything readable as data — fake numbers behind real ones would lie;
    - nothing else on the site may pick up gradients or glows because this
      exists. One ambient layer, defined once, consumed once (PitchBackdrop).
 
@@ -351,6 +356,15 @@ nav, button, .caption, th, [role='tab'] {
 }
 
 .pitch-backdrop__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The tactics-board match canvas (PitchMatchAnimation) — same footprint as
+   the SVG, drawn above it so the chalk teams play on the lines. */
+.pitch-backdrop__match {
   position: absolute;
   inset: 0;
   width: 100%;

@@ -31,14 +31,18 @@ meaning only — live state, positive/negative, positional tier — never decora
 of the canvas is a *cast* on the neutrals, not a fifth accent, and `--accent-primary` green
 still means exactly one thing.
 
-**The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night:
-static mowing stripes (white, ≤2% alpha), pitch markings (white, ≤8%) and two accent-green
-light pools (≤11%) drifting on 90s+ cycles, rendered once by `PitchBackdrop` behind
-everything at `z-index: -1` (2026-08-25 product decisions). Its bounds are load-bearing:
-transform/opacity motion only, explicit `animation: none` under reduced motion; alphas low
-enough that no text anywhere loses contrast; and **nothing else on the site may pick up a
-gradient or glow because this exists** — one layer, defined once in `globals.css`, consumed
-once.
+**The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night
+with a match being played on it: static mowing stripes (white, ≤2% alpha), pitch markings
+(white, ≤8%), two accent-green light pools (≤11%) drifting on 90s+ cycles, and the
+**tactics-board match** — chalk circles vs X-marks passing, pressing, shooting and scoring
+in a simulated game (`PitchMatchAnimation`: one canvas, ~23 entities, 30fps cap, marks ≤25%,
+ball ≤40%) — all rendered once by `PitchBackdrop` behind everything at `z-index: -1`
+(2026-08-25 product decisions). Its bounds are load-bearing: reduced motion stills
+everything (pools via `animation: none`, the match by drawing one static frame); alphas low
+enough that no text anywhere loses contrast; **the match never renders a score, clock, name
+or anything readable as data** — it is decoration in a product whose grammar is real
+numbers; and **nothing else on the site may pick up a gradient or glow because this
+exists** — one layer, defined once, consumed once.
 
 **Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
 there is no theme provider. `:root` is the single source of truth and the `.dark` block is
