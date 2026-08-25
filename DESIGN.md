@@ -1,4 +1,4 @@
-# Pitchverse design language — Bugatti
+# Pitchverse design language — Floodlight (Bugatti grammar, night-pitch material)
 
 **This file is authored FROM [`src/app/globals.css`](src/app/globals.css).** That file is
 the single source of truth; this one explains it. If the two disagree, the CSS is right and
@@ -11,25 +11,34 @@ that had been deleted, and a rule mandating cyan for AI data in a product with n
 it. An agent that trusted them would faithfully rebuild the theme this one replaced — which
 is worse than having no spec at all.
 
-Bugatti is shared with two sibling repos: **RaceIQ** (`../f1_predictions`), where it
-originated, and **Hardwood** (`../nba_predictor`). A change here is a change to a family.
+The grammar (Bugatti) is shared with two sibling repos: **RaceIQ** (`../f1_predictions`),
+where it originated, and **Hardwood** (`../nba_predictor`) — structure, typography, the
+four-accent meaning system, and the one-ambient-layer exception are family law. The
+*material* is per sport: Pitchverse's neutrals are night-pitch greens (Floodlight,
+2026-08-25); the siblings keep their own casts. A grammar change here is a change to a
+family; a material change is this repo's own.
 
 ---
 
 ## The palette
 
-Pure black canvas, hairline borders, **no gradients, no shadows, no glassmorphism, no
-chrome**. Colour carries meaning only — live state, positive/negative, positional tier —
-never decoration. Restraint everywhere is what lets the display type and the numbers read as
-deliberate.
+**Floodlight: a night-pitch canvas, Bugatti's grammar.** The canvas is a deep pitch-green
+(`#071009`), surfaces and hairlines carry the same green cast (`#0c1a10`, `#20402a`), and
+every neutral sits at the luminance step its old grey equivalent did — so all contrast
+relationships hold. Hairline borders, **no shadows, no glassmorphism, no chrome**; the only
+gradients on the site live inside the sanctioned ambient layer below. Colour still carries
+meaning only — live state, positive/negative, positional tier — never decoration: the green
+of the canvas is a *cast* on the neutrals, not a fifth accent, and `--accent-primary` green
+still means exactly one thing.
 
 **The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night:
-faint pitch markings (white, ≤4% alpha) and two accent-green light pools drifting on 90s+
-cycles, rendered once by `PitchBackdrop` behind everything at `z-index: -1`
-(a 2026-08-25 product decision). Its bounds are load-bearing: transform/opacity motion
-only, killed under reduced motion; alphas low enough that no text anywhere loses contrast;
-and **nothing else on the site may pick up a gradient or glow because this exists** — one
-layer, defined once in `globals.css`, consumed once.
+static mowing stripes (white, ≤2% alpha), pitch markings (white, ≤8%) and two accent-green
+light pools (≤11%) drifting on 90s+ cycles, rendered once by `PitchBackdrop` behind
+everything at `z-index: -1` (2026-08-25 product decisions). Its bounds are load-bearing:
+transform/opacity motion only, explicit `animation: none` under reduced motion; alphas low
+enough that no text anywhere loses contrast; and **nothing else on the site may pick up a
+gradient or glow because this exists** — one layer, defined once in `globals.css`, consumed
+once.
 
 **Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
 there is no theme provider. `:root` is the single source of truth and the `.dark` block is
@@ -45,15 +54,15 @@ intentionally empty.
 
 | Token | Value | Use |
 |---|---|---|
-| `--background` | `#000000` | page canvas |
-| `--background-secondary` | `#0d0d0d` | section surfaces |
-| `--background-tertiary` | `#141414` | subtle elevation |
-| `--card-bg` / `--match-card-bg` | `#0d0d0d` | cards, list containers |
-| `--card-hover` | `#141414` | row hover |
-| `--input-bg` | `#141414` | form fields |
-| `--muted-bg` | `#1f1f1f` | muted containers |
-| `--nav-bg` | `#000000` | sidebar / topbar (opaque — see below) |
-| `--overlay-bg` | `rgba(0,0,0,0.72)` | modal scrim, page loader |
+| `--background` | `#071009` | page canvas — night pitch |
+| `--background-secondary` | `#0c1a10` | section surfaces |
+| `--background-tertiary` | `#122417` | subtle elevation |
+| `--card-bg` / `--match-card-bg` | `#0c1a10` | cards, list containers |
+| `--card-hover` | `#122417` | row hover |
+| `--input-bg` | `#122417` | form fields |
+| `--muted-bg` | `#1d3023` | muted containers |
+| `--nav-bg` | `#071009` | sidebar / topbar (opaque — see below) |
+| `--overlay-bg` | `rgba(4,10,6,0.74)` | modal scrim |
 
 `--nav-bg` is **fully opaque**, so the `backdrop-blur-*` utilities still sitting on the
 topbar, footer and date strip paint nothing. They are inert, not load-bearing; `--glass-blur`
@@ -86,8 +95,8 @@ things" — that rule belonged to the retired v3 palette.
 
 | Token | Value | Note |
 |---|---|---|
-| `--border-color` | `#262626` | the hairline that carries all structure |
-| `--border-hover` | `#3a3a3a` | hover hairline |
+| `--border-color` | `#20402a` | the hairline that carries all structure — chalk-line green |
+| `--border-hover` | `#305c3d` | hover hairline |
 | `--shadow-sm/md/lg` | `none` | **all three.** Depth is surface steps + hairlines, never bloom |
 | `--radius` | `0.75rem` | shadcn radius base |
 

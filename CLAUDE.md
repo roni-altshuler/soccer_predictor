@@ -1086,7 +1086,7 @@ that only works under a named venv is a script CI cannot run.
 ### Frontend (`src/`)
 Next.js 15 App Router, **10 pages** (was 26), **32 API routes** (was 67).
 
-Design language is **Bugatti**, ported from the sibling RaceIQ project (`../f1_predictions`) and shared with Hardwood (`../nba_predictor`): pure black `#000`, surfaces `#0d0d0d`/`#141414`, hairlines `#262626`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No gradients, no shadows, no glassmorphism, no chrome.** Colour carries meaning only — never decoration.
+Design language is **Floodlight** (2026-08-25): Bugatti's grammar — ported from RaceIQ (`../f1_predictions`), shared with Hardwood (`../nba_predictor`) — on soccer's material. Night-pitch green canvas `#071009`, surfaces `#0c1a10`/`#122417`, chalk-green hairlines `#20402a`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No shadows, no glassmorphism, no chrome; the only gradients live in the one sanctioned ambient layer** (`PitchBackdrop`: mowing stripes, pitch markings, drifting floodlight pools — bounds in DESIGN.md). Colour carries meaning only — the canvas green is a cast on the neutrals, never a fifth accent.
 
 **The spec is [DESIGN.md](DESIGN.md) at the repo root, and it is authored FROM `globals.css`.** It replaced `docs/design-tokens.md` and `docs/design-language.md` on 2026-08-15, which between them published six hexes that existed nowhere in the product, eight table rows of a deleted light mode, and a rule mandating cyan for AI data in a product with no cyan. **A design spec that lies is worse than none** — an agent trusting those docs would faithfully rebuild the theme they replaced. If DESIGN.md and `globals.css` ever disagree, the CSS is right.
 

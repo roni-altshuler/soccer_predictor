@@ -1,11 +1,11 @@
 /**
  * The floodlit pitch behind the product — the one sanctioned ambient layer.
  *
- * Pitch markings at ≤4% white (halfway line, centre circle, both boxes with
- * their penalty arcs, corner arcs) and two accent-green light pools drifting
- * on 90s+ cycles. Everything about its restraint is documented at the
- * `.pitch-backdrop` block in globals.css and in DESIGN.md's "Ambient layer"
- * section — change those, not just this file.
+ * Static mowing stripes, pitch markings at ≤8% white (halfway line, centre
+ * circle, both boxes with their penalty arcs, corner arcs) and two
+ * accent-green light pools drifting on 90s+ cycles. Everything about its
+ * restraint is documented at the `.pitch-backdrop` block in globals.css and
+ * in DESIGN.md's "Ambient layer" section — change those, not just this file.
  *
  * Static server markup: no client JS, no props, mounted once in AppShell.
  * The viewBox is a full pitch seen from above, sliced by
@@ -15,6 +15,7 @@
 export function PitchBackdrop() {
   return (
     <div aria-hidden="true" className="pitch-backdrop">
+      <div className="pitch-backdrop__stripes" />
       <div className="pitch-backdrop__glow pitch-backdrop__glow--a" />
       <div className="pitch-backdrop__glow pitch-backdrop__glow--b" />
       <svg

@@ -9,16 +9,18 @@ export const revalidate = 3600
 // Brand palette (mirrored from globals.css so the OG image is fully
 // self-contained and does not depend on Tailwind at runtime).
 const COLORS = {
-  bg0: '#07101f',
-  bg1: '#0c182a',
-  bg2: '#111e36',
-  border: '#243954',
-  text: '#f1f5fb',
-  textMuted: '#a8bcdb',
-  primary: '#22c55e',
-  ai: '#22d3ee',
-  warn: '#f59e0b',
-  loss: '#f87171',
+  // Floodlight night-pitch — mirrors globals.css :root (this route is edge-
+  // rendered and cannot read the CSS, so keep the mirror in sync by hand).
+  bg0: '#071009',
+  bg1: '#0c1a10',
+  bg2: '#122417',
+  border: '#20402a',
+  text: '#ffffff',
+  textMuted: '#9fb3a5',
+  primary: '#5fa657',
+  ai: '#c3d9f3',
+  warn: '#d4a017',
+  loss: '#d4655e',
 } as const
 
 function pct(value: number): string {
