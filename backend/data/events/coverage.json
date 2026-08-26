@@ -1042,10 +1042,10 @@
   },
   {
    "competition_id": "eng.1",
-   "coverage": 0.5654,
-   "covered": 4569,
+   "coverage": 0.5653,
+   "covered": 4568,
    "gender": "M",
-   "matches": 8081,
+   "matches": 8080,
    "name": "Premier League",
    "seasons": [
     {
@@ -1257,17 +1257,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 11,
-     "matches": 11,
+     "covered": 10,
+     "matches": 10,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 11
+     "with_events": 10
     }
    ],
    "uncovered": 3512,
    "verified_empty": 295,
-   "with_events": 4274
+   "with_events": 4273
   },
   {
    "competition_id": "eng.1.w",
@@ -4268,14 +4268,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-08-26T09:19:22+00:00",
+ "generated_at": "2026-08-26T14:34:17+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4365,
-  "covered": 35765,
-  "matches": 81945,
+  "coverage": 0.4364,
+  "covered": 35764,
+  "matches": 81944,
   "uncovered": 46180,
   "verified_empty": 2275,
-  "with_events": 33490
+  "with_events": 33489
  }
 }
