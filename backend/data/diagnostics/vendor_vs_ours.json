@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-25T20:28:11.338965+00:00",
-  "captured_rows": 139,
+  "generated_at": "2026-08-26T03:04:32.245600+00:00",
+  "captured_rows": 141,
   "scored_fixtures": 61,
   "joined_by": {
     "exact": 56,
@@ -9,8 +9,8 @@
   "not_scored": {
     "ours_never_forecast_this_fixture": 44,
     "ours_never_forecast_this_competition": 17,
-    "name_join_failed": 16,
-    "no_result_yet": 1
+    "name_join_failed": 17,
+    "no_result_yet": 2
   },
   "unjoined_fixtures": [
     {
@@ -520,11 +520,20 @@
       "date": "2026-08-24",
       "vendor": "GIL Vicente v Casa Pia",
       "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "esp.1",
+      "date": "2026-08-27",
+      "vendor": "Celta Vigo v Osasuna",
+      "ours_same_day": [
+        "Barcelona v Athletic Club"
+      ]
     }
   ],
   "vendor_degeneracy": {
-    "n": 139,
-    "two_legs_identical": 139,
+    "n": 141,
+    "two_legs_identical": 141,
     "share": 1.0,
     "distinct_triples": 6
   },
@@ -553,8 +562,8 @@
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
       "n": 36,
-      "brier": 0.57225,
-      "log_loss": 0.97739,
+      "brier": 0.5721,
+      "log_loss": 0.97713,
       "accuracy": 0.5833,
       "impossible_calls": 0
     },
