@@ -38,6 +38,7 @@ Every step is idempotent — running twice is a no-op the second time.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from datetime import datetime, timezone
@@ -882,6 +883,12 @@ def main(argv: Optional[List[str]] = None) -> int:
              "--max-passes.",
     )
     parser.add_argument("--max-passes", type=int, default=6)
+    parser.add_argument(
+        "--report", type=Path,
+        help="Write a JSON summary of what the repair changed (accumulated "
+             "across fixpoint passes). The event-coverage guard reads "
+             "`match_rows_removed` from it to allow the covered count to "
+             "shrink by exactly the duplicates removed, and no more.")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -904,7 +911,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         wh.migrate()
         print(f"{'DRY RUN — ' if args.dry_run else ''}repairing {args.db}")
 
-        changed = _run_once(wh, steps, args)
+        report: Dict[str, int] = {}
+        changed = _run_once(wh, steps, args, report)
         if args.fixpoint and not args.dry_run:
             # Each merge exposes duplicates that expose more split identities, so
             # a single pass leaves work behind. Loop until a pass changes nothing.
@@ -912,7 +920,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 if changed == 0:
                     break
                 print(f"\n-- pass {extra} (previous pass made {changed:,} changes) --")
-                changed = _run_once(wh, steps, args)
+                changed = _run_once(wh, steps, args, report)
             else:
                 if changed:
                     print(
@@ -926,6 +934,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not args.dry_run:
             with wh._lock:  # noqa: SLF001
                 wh._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")  # noqa: SLF001
+
+        if args.report:
+            # A dry run's counts are hypothetical (each step reports what it
+            # WOULD change against unrepaired state), so say so in the file
+            # rather than letting a guard consume them as fact.
+            args.report.write_text(json.dumps(
+                {"dry_run": args.dry_run, **report}, indent=2))
+            print(f"report written to {args.report}")
     finally:
         wh.close()
 
@@ -933,8 +949,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     return 0
 
 
-def _run_once(wh: Warehouse, steps: set, args) -> int:
-    """One full pass of the selected steps. Returns how many rows it changed."""
+def _run_once(wh: Warehouse, steps: set, args,
+              report: Optional[Dict[str, int]] = None) -> int:
+    """One full pass of the selected steps. Returns how many rows it changed.
+
+    `report` accumulates the counts a caller can act on across fixpoint
+    passes — today that is `match_rows_removed`, the number of `matches` rows
+    deleted outright. The event-coverage guard in `event_backfill.yml` needs
+    it: a deduped twin can carry a coverage row of its own (the secondary
+    backfill covers football-data rows the primary has no event id for), so
+    collapsing the pair legitimately shrinks the covered-match count by one.
+    The guard allows a drop of at most this number — exact accounting, not a
+    tolerance.
+    """
     changed = 0
     if "merge-identities" in steps:
         r = merge_identities(wh, dry_run=args.dry_run)
@@ -973,6 +1000,9 @@ def _run_once(wh: Warehouse, steps: set, args) -> int:
         print(f"  drop-non-participants: {r['rows']} rows for clubs that were not in "
               f"that league-season")
         changed += r['rows']
+        if report is not None:
+            report["match_rows_removed"] = (
+                report.get("match_rows_removed", 0) + r["rows"])
 
     if "dedupe-fixtures" in steps:
         r = wh.merge_duplicate_fixtures(dry_run=args.dry_run)
@@ -980,6 +1010,9 @@ def _run_once(wh: Warehouse, steps: set, args) -> int:
               f"{r['rows_removed']:,} rows removed, "
               f"{r['fields_coalesced']:,} fields coalesced into survivors")
         changed += r['rows_removed']
+        if report is not None:
+            report["match_rows_removed"] = (
+                report.get("match_rows_removed", 0) + r["rows_removed"])
 
     # Runs AFTER dedupe on purpose. Its round-robin precondition is measured
     # from the season itself, and a season still carrying split identities

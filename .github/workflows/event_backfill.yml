@@ -149,7 +149,7 @@ jobs:
         run: |
           python -m backend.scripts.repair_warehouse \
             --only merge-identities --only merge-normalised \
-            --only dedupe-fixtures
+            --only dedupe-fixtures --report /tmp/repair_report.json
 
       - name: Backfill events — primary source (incremental)
         # Only matches absent from match_event_coverage inside the lookback
@@ -189,11 +189,22 @@ jobs:
           python -m backend.scripts.build_sim_priors
 
       - name: Coverage regression guard
-        # matches_covered may only grow: the backfill adds coverage rows and
-        # never removes them. A drop means this run operated on a warehouse
-        # that lost its event history (e.g. the release asset was rebuilt
-        # from scratch) — committing would clobber good artifacts with a
-        # thin corpus. Fail BEFORE the publish/commit steps.
+        # matches_covered may not shrink by more than the duplicate rows this
+        # run's repair removed. The backfill only ever adds coverage rows, but
+        # the dedupe deletes whole match rows and a deduped twin can carry a
+        # coverage row of its own — the secondary backfill covers
+        # football-data rows the primary has no event id for, so both halves
+        # of a duplicate get covered independently. Collapsing the pair then
+        # legitimately drops the covered count by one, which is what failed
+        # this job on 2026-08-26 the day the repair healed the split Coventry
+        # duplicate. The allowance is the repair's own accounting of rows it
+        # deleted (each deleted row can take at most one coverage row with
+        # it), never a tolerance someone picked.
+        #
+        # A drop beyond that means this run operated on a warehouse that lost
+        # its event history (e.g. the release asset was rebuilt from scratch)
+        # — committing would clobber good artifacts with a thin corpus. Fail
+        # BEFORE the publish/commit steps.
         #
         # Reads the event-coverage summary directly. It used to read the rarity
         # artifact, which measured the same corpus only as a side effect of
@@ -201,9 +212,10 @@ jobs:
         run: |
           NEW=$(python -c "import json; print(json.load(open('backend/data/events/coverage.json'))['totals']['covered'])")
           OLD=$(git show HEAD:backend/data/events/coverage.json | python -c "import json,sys; print(json.load(sys.stdin)['totals']['covered'])")
-          echo "matches_covered: HEAD=$OLD -> new=$NEW"
-          if [ "$NEW" -lt "$OLD" ]; then
-            echo "::error::Event corpus regressed ($OLD -> $NEW covered matches). The release warehouse is missing event history — restore a warehouse that contains match_event_coverage before re-running."
+          ALLOWED=$(python -c "import json; r=json.load(open('/tmp/repair_report.json')); print(0 if r.get('dry_run') else r.get('match_rows_removed', 0))" 2>/dev/null || echo 0)
+          echo "matches_covered: HEAD=$OLD -> new=$NEW (repair removed $ALLOWED duplicate rows)"
+          if [ "$NEW" -lt "$((OLD - ALLOWED))" ]; then
+            echo "::error::Event corpus regressed ($OLD -> $NEW covered matches; only $ALLOWED removable as deduped duplicates). The release warehouse is missing event history — restore a warehouse that contains match_event_coverage before re-running."
             exit 1
           fi
 
