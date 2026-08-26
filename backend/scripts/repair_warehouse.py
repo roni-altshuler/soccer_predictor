@@ -71,6 +71,7 @@ SPLIT_IDENTITIES: Tuple[Tuple[str, str, str], ...] = (
     ("eng.1", "Cardiff", "Cardiff City"),
     ("eng.1", "Luton", "Luton Town"),
     ("eng.1", "Ipswich", "Ipswich Town"),
+    ("eng.1", "Coventry", "Coventry City"),
 
     ("esp.1", "Ath Madrid", "Atletico Madrid"),
     ("esp.1", "La Coruna", "Deportivo La Coruña"),

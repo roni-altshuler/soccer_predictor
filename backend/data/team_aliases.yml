@@ -438,6 +438,14 @@ teams:
     gender: M
     country: GB
     aliases: [Ipswich]
+  # Promoted to eng.1 for 2026-27. football-data's terse "Coventry" scored
+  # below the fuzzy threshold against ESPN's "Coventry City", minted a second
+  # teams row, and the duplicate fixture put 381 rows in a 380-match season —
+  # which cost eng.1 its projected table on 2026-08-26.
+  - canonical: Coventry City
+    gender: M
+    country: GB
+    aliases: [Coventry]
 
   # ---- Spain ----
   # "Ath Madrid" is Atletico (pinned on the Atletico Madrid entry above);

@@ -400,8 +400,11 @@ def group_config(competition: str) -> Optional[Dict]:
 
 
 def league_participants(entrants: Sequence[str],
-                        appearances: Dict[str, int]) -> List[str]:
-    """The clubs actually playing the league season.
+                        appearances: Dict[str, int],
+                        fixtures: Sequence[dict],
+                        played: Sequence[dict],
+                        ) -> Tuple[List[str], List[dict], List[dict]]:
+    """The clubs actually playing the league season, and their fixtures.
 
     A season's fixture list can contain sides that are not in the league. MLS
     is the live example: ESPN files the All-Star Game under `usa.1`, so
@@ -412,9 +415,20 @@ def league_participants(entrants: Sequence[str],
     error is the general one — a side that plays once in a competition where
     everyone else plays thirty times is not in that competition — and a name
     filter only ever catches the instance someone already noticed.
+
+    The fixture lists are filtered HERE, in the same motion, because dropping
+    a club while keeping its matches is never coherent: the All-Star Game
+    must not contribute points to whoever ESPN listed as the home side, and a
+    stray fixture must not count against the league's expected shape. On
+    2026-08-26 the filter ran after the round-robin check instead: a
+    football-data duplicate of a match ESPN already carried arrived under a
+    split identity (`coventry` beside `coventry city`), the identity was
+    correctly dropped — and its fixture stayed in the count, so eng.1
+    measured 381 fixtures against a 380 expectation, read as more than a
+    double round robin, and the shape check withdrew the league's table.
     """
     if not entrants:
-        return []
+        return [], list(fixtures), list(played)
     counts = sorted(appearances.get(t, 0) for t in entrants)
     median = counts[len(counts) // 2]
     floor = median * 0.25
@@ -426,7 +440,12 @@ def league_participants(entrants: Sequence[str],
                     len(dropped),
                     ", ".join(sorted(d.split("::")[-1] for d in dropped)[:4]),
                     median)
-    return keep
+    member = set(keep)
+    fixtures = [f for f in fixtures
+                if f["home_key"] in member and f["away_key"] in member]
+    played = [m for m in played
+              if m["home_key"] in member and m["away_key"] in member]
+    return keep, fixtures, played
 
 
 def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
@@ -682,7 +701,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         for row in list(fs) + list(done_this_season):
             for k in (row["home_key"], row["away_key"]):
                 appearances[k] = appearances.get(k, 0) + 1
-        entrants = league_participants(entrants, appearances)
+        entrants, fs, done_this_season = league_participants(
+            entrants, appearances, fs, done_this_season)
 
         cfg_early = LEAGUES.get(comp, {})
         groups = None
@@ -718,15 +738,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             logger.info("  %s: %d of %d fixtures scheduled (%.1f%%) — table "
                         "projected from what exists", comp, n_total, expected,
                         100 * completeness)
-
-        # Both sides must be in the league for the match to be part of it.
-        # Without this the All-Star Game still contributes points to whoever
-        # ESPN listed as the home side.
-        member = set(entrants)
-        fs = [f for f in fs
-              if f["home_key"] in member and f["away_key"] in member]
-        done_this_season = [m for m in done_this_season
-                            if m["home_key"] in member and m["away_key"] in member]
 
         # Points already banked this season, if any of it has been played.
         table = {t: {"points": 0, "gd": 0, "gf": 0, "played": 0} for t in entrants}

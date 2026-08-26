@@ -127,16 +127,29 @@ jobs:
         # re-ingested tomorrow), coalesces every column the loser had into it,
         # and MOVES the timeline across, so this costs no odds and no coverage.
         #
-        # `merge-identities` runs FIRST and is not optional: a duplicate is
+        # The identity merges run FIRST and are not optional: a duplicate is
         # only visible once both rows point at the same club. football-data
         # spells clubs tersely enough to fall under the resolver's 0.92 fuzzy
         # threshold, so it keeps minting second `teams` rows — ger.1 2025 sat
         # at 340 rows for a 306-match season behind a split Heidenheim, and
-        # deduping alone could not see it. That pass is the hand-curated
-        # SPLIT_IDENTITIES list, not a heuristic.
+        # deduping alone could not see it.
+        #
+        # `merge-normalised` is here because the hand-curated SPLIT_IDENTITIES
+        # list is permanently behind reality: it only knows clubs someone has
+        # already been burned by. On 2026-08-25 this job ingested newly
+        # promoted Coventry City's first Premier League result under
+        # football-data's "Coventry", a spelling no list had ever needed; the
+        # hand list missed it, dedupe could not see the duplicate behind the
+        # split, and the next morning's season forecast measured eng.1 at 381
+        # fixtures in a 380-match season and withdrew the league's table.
+        # The structural pass folds exactly what the integrity validator
+        # flags (same normalised name, or containment gated on the two never
+        # having met + DISTINCT_CLUB_PAIRS), so the next promoted club heals
+        # the same day it splits rather than at Sunday's fixpoint repair.
         run: |
           python -m backend.scripts.repair_warehouse \
-            --only merge-identities --only dedupe-fixtures
+            --only merge-identities --only merge-normalised \
+            --only dedupe-fixtures
 
       - name: Backfill events — primary source (incremental)
         # Only matches absent from match_event_coverage inside the lookback
