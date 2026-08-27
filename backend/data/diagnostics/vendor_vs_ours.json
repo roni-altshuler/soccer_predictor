@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-08-26T22:45:27.627112+00:00",
-  "captured_rows": 141,
-  "scored_fixtures": 61,
+  "generated_at": "2026-08-27T12:24:08.646904+00:00",
+  "captured_rows": 150,
+  "scored_fixtures": 62,
   "joined_by": {
-    "exact": 56,
+    "exact": 57,
     "relaxed": 5
   },
   "not_scored": {
-    "ours_never_forecast_this_fixture": 44,
-    "ours_never_forecast_this_competition": 17,
-    "name_join_failed": 17,
-    "no_result_yet": 2
+    "ours_never_forecast_this_fixture": 46,
+    "ours_never_forecast_this_competition": 18,
+    "name_join_failed": 18,
+    "no_result_yet": 6
   },
   "unjoined_fixtures": [
     {
@@ -529,66 +529,89 @@
       "ours_same_day": [
         "Barcelona v Athletic Club"
       ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "ned.1",
+      "date": "2026-08-28",
+      "vendor": "Groningen v Fortuna Sittard",
+      "ours_same_day": []
+    },
+    {
+      "reason": "name_join_failed",
+      "competition_id": "ger.1",
+      "date": "2026-08-28",
+      "vendor": "Bayern München v VfB Stuttgart",
+      "ours_same_day": [
+        "Bayern Munich v VfB Stuttgart"
+      ]
+    },
+    {
+      "reason": "ours_never_forecast_this_fixture",
+      "competition_id": "por.1",
+      "date": "2026-08-28",
+      "vendor": "Rio Ave v Sporting CP",
+      "ours_same_day": []
     }
   ],
   "vendor_degeneracy": {
-    "n": 141,
-    "two_legs_identical": 141,
+    "n": 150,
+    "two_legs_identical": 150,
     "share": 1.0,
     "distinct_triples": 6
   },
   "ours": {
-    "n": 61,
-    "brier": 0.58577,
-    "log_loss": 0.98625,
-    "accuracy": 0.541,
+    "n": 62,
+    "brier": 0.59168,
+    "log_loss": 0.99339,
+    "accuracy": 0.5323,
     "impossible_calls": 0
   },
   "vendor": {
-    "n": 61,
-    "brier": 0.67101,
-    "log_loss": 3.1836,
-    "accuracy": 0.4262,
+    "n": 62,
+    "brier": 0.6685,
+    "log_loss": 3.14513,
+    "accuracy": 0.4194,
     "impossible_calls": 4
   },
   "paired_brier_bootstrap_vendor_minus_ours": {
-    "mean_diff": 0.08524,
-    "ci95_low": -0.005,
-    "ci95_high": 0.17914,
-    "p_a_better": 0.0309,
+    "mean_diff": 0.07682,
+    "ci95_low": -0.01398,
+    "ci95_high": 0.1698,
+    "p_a_better": 0.0502,
     "significant": false
   },
   "on_fixtures_with_a_price": {
     "note": "latest price sampled before kickoff, NOT the closing line",
     "market": {
-      "n": 36,
-      "brier": 0.57083,
-      "log_loss": 0.97485,
-      "accuracy": 0.5833,
+      "n": 37,
+      "brier": 0.57751,
+      "log_loss": 0.984,
+      "accuracy": 0.5676,
       "impossible_calls": 0
     },
     "ours": {
-      "n": 36,
-      "brier": 0.58483,
-      "log_loss": 0.98505,
-      "accuracy": 0.5556,
+      "n": 37,
+      "brier": 0.59476,
+      "log_loss": 0.99703,
+      "accuracy": 0.5405,
       "impossible_calls": 0
     },
     "vendor": {
-      "n": 36,
-      "brier": 0.65408,
-      "log_loss": 4.57684,
-      "accuracy": 0.4722,
+      "n": 37,
+      "brier": 0.65032,
+      "log_loss": 4.47472,
+      "accuracy": 0.4595,
       "impossible_calls": 4
     }
   },
   "sample": {
     "floor": 200,
-    "needed_for_a_0.01_gap_at_80pct_power": 10556
+    "needed_for_a_0.01_gap_at_80pct_power": 10728
   },
   "verdict": {
     "decision": "keep ours",
-    "because": "61 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
+    "because": "62 scored fixture(s), below the 200 floor. Not evidence of a tie — evidence of nothing yet.",
     "final": false
   }
 }
