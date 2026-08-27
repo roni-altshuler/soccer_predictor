@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4834,
-   "covered": 3988,
+   "coverage": 0.4835,
+   "covered": 3989,
    "gender": "M",
-   "matches": 8250,
+   "matches": 8251,
    "name": "La Liga",
    "seasons": [
     {
@@ -1628,18 +1628,18 @@
      "with_events": 283
     },
     {
-     "coverage": 0.9444,
-     "covered": 17,
-     "matches": 18,
+     "coverage": 0.9474,
+     "covered": 18,
+     "matches": 19,
      "season": 2026,
      "uncovered": 1,
      "verified_empty": 2,
-     "with_events": 15
+     "with_events": 16
     }
    ],
    "uncovered": 4262,
    "verified_empty": 275,
-   "with_events": 3713
+   "with_events": 3714
   },
   {
    "competition_id": "esp.2",
@@ -4268,14 +4268,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-08-26T14:34:17+00:00",
+ "generated_at": "2026-08-27T19:23:00+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4364,
-  "covered": 35764,
-  "matches": 81944,
+  "coverage": 0.4365,
+  "covered": 35765,
+  "matches": 81945,
   "uncovered": 46180,
   "verified_empty": 2275,
-  "with_events": 33489
+  "with_events": 33490
  }
 }
