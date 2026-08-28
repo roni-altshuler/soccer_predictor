@@ -139,6 +139,8 @@ class TestRateLimit:
         calls = {"n": 0}
 
         class Resp:
+            headers = {}
+
             def __enter__(self):
                 return self
 
@@ -165,6 +167,8 @@ class TestRateLimit:
         calls = {"n": 0}
 
         class Resp:
+            headers = {}
+
             def __enter__(self):
                 return self
 
@@ -192,6 +196,8 @@ class TestRateLimit:
         body = {"errors": [], "response": [fixture()]}
 
         class Resp:
+            headers = {}
+
             def __enter__(self):
                 return self
 
@@ -204,3 +210,57 @@ class TestRateLimit:
         monkeypatch.setattr(cvp.urllib.request, "urlopen", lambda *a, **k: Resp())
         monkeypatch.setattr(cvp.json, "load", lambda fh: json.loads(fh.read()))
         assert cvp.get("x", "k") == body
+
+
+class TestDailyQuota:
+    def test_get_reads_the_days_remaining_from_the_headers(self, monkeypatch):
+        class Resp:
+            headers = {"x-ratelimit-requests-remaining": "63"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                return json.dumps({"errors": [], "response": []}).encode()
+
+        monkeypatch.setattr(cvp.urllib.request, "urlopen", lambda *a, **k: Resp())
+        monkeypatch.setattr(cvp.json, "load", lambda fh: json.loads(fh.read()))
+        meter = {"remaining": None}
+        cvp.get("x", "k", meter=meter)
+        assert meter["remaining"] == 63
+
+    def test_capture_stops_at_the_reserve_instead_of_spending_it(
+        self, monkeypatch, tmp_path
+    ):
+        # The 100/day quota belongs to the KEY, and the schedule alone is
+        # eight invocations against it. `--max-requests` cannot see the other
+        # seven — the vendor's remaining-count header can, so a day that is
+        # nearly spent captures nothing rather than reaching the cap, which
+        # is what got the account suspended on 2026-08-28.
+        asked = []
+
+        def fake_get(path, key, *, pause=0.0, retries=3, meter=None):
+            asked.append(path)
+            if meter is not None:
+                meter["remaining"] = cvp.DAILY_RESERVE  # already at the floor
+            return {"errors": [], "response": [fixture(fid=1), fixture(fid=2)]}
+
+        monkeypatch.setattr(cvp, "get", fake_get)
+        rows, used, left = cvp.capture("2026-08-28", "k", 30, tmp_path / "v.jsonl")
+        assert rows == [] and used == 1 and left == cvp.DAILY_RESERVE
+        assert asked == ["fixtures?date=2026-08-28"], "no predictions may be bought"
+
+    def test_capture_proceeds_when_the_day_has_room(self, monkeypatch, tmp_path):
+        def fake_get(path, key, *, pause=0.0, retries=3, meter=None):
+            if meter is not None:
+                meter["remaining"] = 80
+            if path.startswith("fixtures"):
+                return {"errors": [], "response": [fixture(fid=1), fixture(fid=2)]}
+            return prediction({"home": "45%", "draw": "45%", "away": "10%"})
+
+        monkeypatch.setattr(cvp, "get", fake_get)
+        rows, used, left = cvp.capture("2026-08-28", "k", 30, tmp_path / "v.jsonl")
+        assert len(rows) == 2 and used == 3 and left == 80

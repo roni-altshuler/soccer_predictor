@@ -47,6 +47,16 @@ from typing import Dict, Iterable, List, Optional, Tuple
 HOST = "https://v3.football.api-sports.io"
 VENDOR = "api-football"
 
+# Stop asking for predictions once the DAY has this many requests left. The
+# 100/day quota is spent by the whole key, not by one invocation — the
+# schedule alone is eight invocations (four runs over two dates), plus
+# retries, plus any hand run — and `--max-requests` bounds only its own
+# invocation, so no local number can promise the day stays under the cap.
+# The vendor can: every response carries `x-ratelimit-requests-remaining`,
+# the day's true remaining after everything the key has done. Capture stops
+# at this floor, whoever spent the rest.
+DAILY_RESERVE = 15
+
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "backend" / "data" / "predictions" / "vendor_predictions.jsonl"
 
@@ -78,6 +88,22 @@ def read_key() -> Optional[str]:
     return None
 
 
+def _read_quota(headers, meter: Optional[dict]) -> None:
+    """Record the day's remaining quota from a response's own headers.
+
+    Read on every answer, including a 429 — a throttled request still spends
+    quota, and its headers still tell the truth about what is left.
+    """
+    if meter is None or headers is None:
+        return
+    remaining = headers.get("x-ratelimit-requests-remaining")
+    if remaining is not None:
+        try:
+            meter["remaining"] = int(remaining)
+        except ValueError:
+            pass
+
+
 class VendorRefusal(RuntimeError):
     """The vendor answered, and the answer is that it will not serve us.
 
@@ -88,7 +114,14 @@ class VendorRefusal(RuntimeError):
     """
 
 
-def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
+def get(
+    path: str,
+    key: str,
+    *,
+    pause: float = 0.0,
+    retries: int = 3,
+    meter: Optional[dict] = None,
+) -> dict:
     """One call, throttled.
 
     The free plan caps requests per MINUTE as well as per day, and it answers
@@ -108,6 +141,7 @@ def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 body = json.load(resp)
+                _read_quota(resp.headers, meter)
             # The vendor reports a rate limit BOTH ways: sometimes HTTP 429,
             # sometimes HTTP 200 carrying `{"errors": {"rateLimit": ...}}` and
             # an empty response. Reading only the status code makes the second
@@ -124,6 +158,7 @@ def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
                     time.sleep(pause)
                 return body
         except urllib.error.HTTPError as exc:
+            _read_quota(exc.headers, meter)
             if exc.code != 429 or attempt == retries - 1:
                 raise
             limited = True
@@ -213,10 +248,17 @@ def row_for(entry: dict, prediction: dict, captured_at: datetime) -> dict:
 
 def capture(
     date: str, key: str, budget: int, out: Path, pause: float = 10.0
-) -> Tuple[List[dict], int]:
+) -> Tuple[List[dict], int, Optional[int]]:
     used = 0
-    day = get(f"fixtures?date={date}", key, pause=pause)
+    meter: dict = {"remaining": None}
+    day = get(f"fixtures?date={date}", key, pause=pause, meter=meter)
     used += 1
+    if meter["remaining"] is None:
+        # Without the header the reserve cannot be honoured and only the
+        # per-invocation budget is protecting the day. Say so rather than
+        # silently flying blind — the vendor has always sent it.
+        print("  !! no daily-quota header on the response; "
+              "capturing on the request budget alone", file=sys.stderr)
     entries = served_fixtures(day)
     seen = already_captured(out)
     rows: List[dict] = []
@@ -226,17 +268,28 @@ def capture(
         fid = (entry["fixture"].get("fixture") or {}).get("id")
         if fid is None or (VENDOR, fid) in seen:
             continue
+        if meter["remaining"] is not None and meter["remaining"] <= DAILY_RESERVE:
+            # Deliberate and printed, not a masked failure: the next run is
+            # six hours away and the quota day will have moved on. A fixture
+            # kicking off before then is lost to the reserve — which is still
+            # cheaper than the suspension that losing the whole KEY costs.
+            print(
+                f"stopping at the daily-quota reserve "
+                f"({meter['remaining']} of the day left, floor {DAILY_RESERVE})",
+                file=sys.stderr,
+            )
+            break
         if used >= budget:
             print(f"stopping at the request budget ({budget})", file=sys.stderr)
             break
         try:
-            pred = get(f"predictions?fixture={fid}", key, pause=pause)
+            pred = get(f"predictions?fixture={fid}", key, pause=pause, meter=meter)
         except urllib.error.URLError as exc:
             print(f"  !! fixture {fid}: {exc}", file=sys.stderr)
             continue
         used += 1
         rows.append(row_for(entry, pred, now))
-    return rows, used
+    return rows, used, meter["remaining"]
 
 
 def append(rows: Iterable[dict], out: Path) -> int:
@@ -253,7 +306,12 @@ def append(rows: Iterable[dict], out: Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--date", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
-    ap.add_argument("--max-requests", type=int, default=90)
+    # The backstop behind the quota meter, for the response that arrives with
+    # no quota header. 90 read as "under the day's 100" but it is a
+    # PER-INVOCATION number and the schedule runs eight invocations a day —
+    # 30 still clears the busiest measured day (18 fixtures + the listing)
+    # with room, without being able to spend a whole day's quota alone.
+    ap.add_argument("--max-requests", type=int, default=30)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument(
         "--sleep",
@@ -274,7 +332,7 @@ def main() -> int:
         return 0
 
     try:
-        rows, used = capture(args.date, key, args.max_requests, args.out, args.sleep)
+        rows, used, left = capture(args.date, key, args.max_requests, args.out, args.sleep)
     except VendorRefusal as exc:
         # Still exit 1 — a capture that cannot happen is a fixture that is
         # never scoreable, and the workflow's honesty rule forbids dressing
@@ -285,7 +343,8 @@ def main() -> int:
         return 1
     kept = 0 if args.dry_run else append(rows, args.out)
 
-    print(f"{args.date}: {len(rows)} forecast(s) from {VENDOR}, {used} request(s) used")
+    quota = f", {left} of the day's quota left" if left is not None else ""
+    print(f"{args.date}: {len(rows)} forecast(s) from {VENDOR}, {used} request(s) used{quota}")
     for r in rows:
         pct = r["percent_raw"]
         flag = "" if r["before_kickoff"] else "  [AFTER KICKOFF]"

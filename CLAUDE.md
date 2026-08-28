@@ -259,6 +259,13 @@ scored later against results, on the same fixtures as ours.
   failure. Default pause is 10s between calls — 7s paced at the cap's edge,
   still drew 429s, and a pattern of them is what the vendor's ToS names as
   grounds for suspension (which it did, 2026-08-28, mid-retry).
+- **The daily quota is metered from the vendor's own headers, and the cap is
+  never reached.** The 100/day belongs to the key, not to one invocation —
+  the schedule alone is eight invocations a day, and `--max-requests` cannot
+  see the other seven. Every response carries `x-ratelimit-requests-remaining`;
+  capture stops buying predictions at a reserve of 15 (`DAILY_RESERVE`),
+  whoever spent the rest. Reaching the cap is what suspended the account on
+  2026-08-28.
 - Leagues are matched on **(country, league name)**, not a hard-coded id table.
   Five of the nine ids were verified live; the other four were not playing that
   day, and four unchecked ids is how a table goes silently wrong about one

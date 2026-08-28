@@ -13,6 +13,11 @@ name: Capture Vendor Predictions
 # idempotent on (vendor, fixture_id) — so four runs over two dates cost roughly
 # 25 requests a day in total, not 4x25.
 #
+# The day's quota belongs to the KEY, not to one invocation, and reaching the
+# cap is what got the account suspended on 2026-08-28. The script reads the
+# vendor's own `x-ratelimit-requests-remaining` header on every response and
+# stops capturing at a reserve of 15, whoever spent the rest of the day.
+#
 # HONESTY RULE (this repo once lost 3 months to a masked crash): no
 # `continue-on-error`, no `|| true`. A missing key or a throttled vendor must
 # fail the run visibly rather than commit a quiet zero.
