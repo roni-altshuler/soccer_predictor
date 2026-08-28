@@ -78,6 +78,16 @@ def read_key() -> Optional[str]:
     return None
 
 
+class VendorRefusal(RuntimeError):
+    """The vendor answered, and the answer is that it will not serve us.
+
+    A suspended account or an exhausted daily quota is an operational state
+    with a human fix (the dashboard, or midnight UTC), not a bug in this
+    script — so it deserves one clear line naming the vendor's own words,
+    not a traceback that reads like our code broke.
+    """
+
+
 def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
     """One call, throttled.
 
@@ -85,6 +95,12 @@ def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
     the eleventh with a bare 429 — the first run captured nine fixtures and
     lost the other nine to it. Sleeping between calls costs nothing (a daily
     capture is twenty requests) and losing half a matchday costs a day.
+
+    Only a rate limit is worth backing off for. The vendor files every other
+    refusal under the same `errors` key, and on 2026-08-28 a suspended
+    account spent a minute being retried as "rate limited" before dying on
+    the third identical answer. Waiting cannot lift a suspension or refill a
+    daily quota — anything that is not a rate limit raises immediately.
     """
     req = urllib.request.Request(f"{HOST}/{path}", headers={"x-apisports-key": key})
     for attempt in range(retries):
@@ -100,8 +116,8 @@ def get(path: str, key: str, *, pause: float = 0.0, retries: int = 3) -> dict:
             # wrong-looking about it.
             errors = body.get("errors")
             if isinstance(errors, dict) and errors:
-                if attempt == retries - 1:
-                    raise RuntimeError(f"{path}: {errors}")
+                if set(errors) != {"rateLimit"} or attempt == retries - 1:
+                    raise VendorRefusal(f"{path}: {errors}")
                 limited = True
             else:
                 if pause:
@@ -253,7 +269,16 @@ def main() -> int:
         print("API_FOOTBALL is not set (env or .env.local) — nothing captured.")
         return 0
 
-    rows, used = capture(args.date, key, args.max_requests, args.out, args.sleep)
+    try:
+        rows, used = capture(args.date, key, args.max_requests, args.out, args.sleep)
+    except VendorRefusal as exc:
+        # Still exit 1 — a capture that cannot happen is a fixture that is
+        # never scoreable, and the workflow's honesty rule forbids dressing
+        # that up as a quiet day. But surface it as one actionable line
+        # (::error:: becomes the run annotation in Actions) instead of a
+        # traceback: the fix is at the dashboard, not in this file.
+        print(f"::error::api-football refused the capture: {exc}")
+        return 1
     kept = 0 if args.dry_run else append(rows, args.out)
 
     print(f"{args.date}: {len(rows)} forecast(s) from {VENDOR}, {used} request(s) used")

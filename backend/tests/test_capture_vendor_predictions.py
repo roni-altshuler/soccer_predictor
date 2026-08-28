@@ -157,6 +157,37 @@ class TestRateLimit:
             cvp.get("fixtures?date=2026-08-15", "k", retries=2)
         assert calls["n"] == 2, "it should have retried rather than given up on the first"
 
+    def test_a_suspended_account_is_not_retried_as_a_rate_limit(self, monkeypatch):
+        # 2026-08-28: the account was suspended mid-run and the log read
+        # "rate limited, waiting 20s ... 40s" before a traceback. Backoff
+        # cannot lift a suspension — the first such answer must raise, in
+        # the vendor's own words, without sleeping on it.
+        calls = {"n": 0}
+
+        class Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                calls["n"] += 1
+                return json.dumps(
+                    {"errors": {"access": "Your account is suspended"}, "response": []}
+                ).encode()
+
+        def no_sleep(*_):
+            raise AssertionError("an unretryable refusal must not back off")
+
+        monkeypatch.setattr(cvp.urllib.request, "urlopen", lambda *a, **k: Resp())
+        monkeypatch.setattr(cvp.time, "sleep", no_sleep)
+        monkeypatch.setattr(cvp.json, "load", lambda fh: json.loads(fh.read()))
+
+        with pytest.raises(cvp.VendorRefusal, match="suspended"):
+            cvp.get("predictions?fixture=1", "k")
+        assert calls["n"] == 1, "it should have raised on the first answer"
+
     def test_a_clean_body_is_returned_untouched(self, monkeypatch):
         body = {"errors": [], "response": [fixture()]}
 

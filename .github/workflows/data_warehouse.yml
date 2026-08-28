@@ -86,10 +86,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -113,7 +113,7 @@ jobs:
       # Handed to the enrich job so the slow scrapers have matches and teams to
       # attach to, instead of rebuilding the base themselves.
       - name: Upload core warehouse
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: warehouse-core
           path: |
@@ -134,10 +134,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -151,7 +151,7 @@ jobs:
       # Restores warehouse.sqlite + cache/ under backend/data/, so ClubElo sees
       # the team table and FBref/Understat see the match rows they enrich.
       - name: Download core warehouse
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: warehouse-core
           path: backend/data
@@ -167,7 +167,7 @@ jobs:
         run: python -m backend.scripts.build_warehouse --stats
 
       - name: Upload enriched warehouse
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: warehouse-enriched
           path: |
