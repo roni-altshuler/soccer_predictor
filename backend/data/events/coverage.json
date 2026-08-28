@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4835,
-   "covered": 3989,
+   "coverage": 0.4836,
+   "covered": 3992,
    "gender": "M",
-   "matches": 8251,
+   "matches": 8254,
    "name": "La Liga",
    "seasons": [
     {
@@ -1628,18 +1628,18 @@
      "with_events": 283
     },
     {
-     "coverage": 0.9474,
-     "covered": 18,
-     "matches": 19,
+     "coverage": 0.9545,
+     "covered": 21,
+     "matches": 22,
      "season": 2026,
      "uncovered": 1,
      "verified_empty": 2,
-     "with_events": 16
+     "with_events": 19
     }
    ],
    "uncovered": 4262,
    "verified_empty": 275,
-   "with_events": 3714
+   "with_events": 3717
   },
   {
    "competition_id": "esp.2",
@@ -2517,10 +2517,10 @@
   },
   {
    "competition_id": "ger.2",
-   "coverage": 0.1724,
-   "covered": 180,
+   "coverage": 0.174,
+   "covered": 182,
    "gender": "M",
-   "matches": 1044,
+   "matches": 1046,
    "name": "2. Bundesliga",
    "seasons": [
     {
@@ -2561,17 +2561,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 18,
-     "matches": 18,
+     "covered": 20,
+     "matches": 20,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 2,
-     "with_events": 16
+     "with_events": 18
     }
    ],
    "uncovered": 864,
    "verified_empty": 8,
-   "with_events": 172
+   "with_events": 174
   },
   {
    "competition_id": "ita.1",
@@ -4268,14 +4268,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-08-27T19:23:00+00:00",
+ "generated_at": "2026-08-28T20:27:55+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4365,
-  "covered": 35765,
-  "matches": 81945,
+  "covered": 35770,
+  "matches": 81950,
   "uncovered": 46180,
   "verified_empty": 2275,
-  "with_events": 33490
+  "with_events": 33495
  }
 }
