@@ -212,7 +212,7 @@ def row_for(entry: dict, prediction: dict, captured_at: datetime) -> dict:
 
 
 def capture(
-    date: str, key: str, budget: int, out: Path, pause: float = 7.0
+    date: str, key: str, budget: int, out: Path, pause: float = 10.0
 ) -> Tuple[List[dict], int]:
     used = 0
     day = get(f"fixtures?date={date}", key, pause=pause)
@@ -258,7 +258,11 @@ def main() -> int:
     ap.add_argument(
         "--sleep",
         type=float,
-        default=7.0,
+        default=10.0,
+        # 7s paced right at the free plan's per-minute cap and still drew
+        # 429s, and the vendor's ToS calls a pattern of them "a material
+        # breach" — the 2026-08-28 suspension landed mid-retry. 6/min is
+        # comfortably inside the limit and costs a 20-fixture run one minute.
         help="seconds between calls; the free plan limits requests per minute",
     )
     ap.add_argument("--dry-run", action="store_true")

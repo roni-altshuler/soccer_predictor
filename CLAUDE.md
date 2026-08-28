@@ -256,7 +256,9 @@ scored later against results, on the same fixtures as ours.
   `response`**. Reading only the status code makes a throttled run look like a
   day with no fixtures: a run reported "0 forecasts, 1 request used" and nothing
   about it looked wrong. `get()` treats a non-empty `errors` object as a
-  failure. Default pause is 7s between calls.
+  failure. Default pause is 10s between calls — 7s paced at the cap's edge,
+  still drew 429s, and a pattern of them is what the vendor's ToS names as
+  grounds for suspension (which it did, 2026-08-28, mid-retry).
 - Leagues are matched on **(country, league name)**, not a hard-coded id table.
   Five of the nine ids were verified live; the other four were not playing that
   day, and four unchecked ids is how a table goes silently wrong about one
