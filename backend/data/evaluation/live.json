@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-08-28T19:36:06.005634+00:00",
+  "generated_at": "2026-08-29T13:23:12.747321+00:00",
   "snapshot_store": {
-    "rows": 116407,
+    "rows": 118299,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-28T19:36:03.276053+00:00",
+    "last_generated": "2026-08-29T13:23:09.933729+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
-      "2026.08.1+4277ba19": 29172,
+      "2026.08.1+4277ba19": 31064,
       "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384
     }
   },
   "join": {
     "snapshots": 5041,
-    "scored": 237,
-    "awaiting_result": 4658,
+    "scored": 254,
+    "awaiting_result": 4641,
     "unresolved_clubs": {
       "esp.2:Celta de Vigo B": 42,
       "ita.2:Vicenza Virtus": 38,
@@ -27,67 +27,67 @@
   },
   "live": {
     "basis": "live_published",
-    "n": 237,
-    "brier": 0.63766,
-    "log_loss": 1.06075,
-    "accuracy": 0.43038,
-    "ece": 0.0669,
+    "n": 254,
+    "brier": 0.6392,
+    "log_loss": 1.06237,
+    "accuracy": 0.42126,
+    "ece": 0.07471,
     "reliability": [
       {
         "bin_low": 0.0,
         "bin_high": 0.1,
-        "n": 21,
-        "stated": 0.0686,
+        "n": 23,
+        "stated": 0.0687,
         "observed": 0.0
       },
       {
         "bin_low": 0.1,
         "bin_high": 0.2,
-        "n": 85,
-        "stated": 0.1576,
-        "observed": 0.2353
+        "n": 93,
+        "stated": 0.158,
+        "observed": 0.2258
       },
       {
         "bin_low": 0.2,
         "bin_high": 0.3,
-        "n": 297,
-        "stated": 0.2615,
-        "observed": 0.2997
+        "n": 316,
+        "stated": 0.2617,
+        "observed": 0.3101
       },
       {
         "bin_low": 0.3,
         "bin_high": 0.4,
-        "n": 109,
-        "stated": 0.345,
-        "observed": 0.3853
+        "n": 117,
+        "stated": 0.3448,
+        "observed": 0.3846
       },
       {
         "bin_low": 0.4,
         "bin_high": 0.5,
-        "n": 94,
-        "stated": 0.4465,
-        "observed": 0.2979
+        "n": 101,
+        "stated": 0.4474,
+        "observed": 0.2772
       },
       {
         "bin_low": 0.5,
         "bin_high": 0.6,
-        "n": 52,
-        "stated": 0.5472,
-        "observed": 0.4423
+        "n": 55,
+        "stated": 0.5483,
+        "observed": 0.4364
       },
       {
         "bin_low": 0.6,
         "bin_high": 0.7,
-        "n": 33,
-        "stated": 0.6337,
-        "observed": 0.5455
+        "n": 34,
+        "stated": 0.6334,
+        "observed": 0.5294
       },
       {
         "bin_low": 0.7,
         "bin_high": 0.8,
-        "n": 15,
-        "stated": 0.7444,
-        "observed": 0.8
+        "n": 18,
+        "stated": 0.7454,
+        "observed": 0.8333
       },
       {
         "bin_low": 0.8,
@@ -104,8 +104,8 @@
         "observed": 1.0
       }
     ],
-    "xg_mae": 0.902,
-    "top_scoreline_hit_rate": 0.135,
+    "xg_mae": 0.9095,
+    "top_scoreline_hit_rate": 0.1339,
     "by_league": {
       "ger.2": {
         "n": 11,
@@ -114,34 +114,34 @@
         "accuracy": 0.27273
       },
       "eng.2": {
-        "n": 24,
-        "brier": 0.75425,
-        "log_loss": 1.20406,
-        "accuracy": 0.29167
+        "n": 25,
+        "brier": 0.76024,
+        "log_loss": 1.21479,
+        "accuracy": 0.28
       },
       "ned.1": {
-        "n": 15,
-        "brier": 0.50572,
-        "log_loss": 0.85868,
-        "accuracy": 0.6
+        "n": 16,
+        "brier": 0.52882,
+        "log_loss": 0.89295,
+        "accuracy": 0.5625
       },
       "por.1": {
-        "n": 15,
-        "brier": 0.47565,
-        "log_loss": 0.83298,
-        "accuracy": 0.6
+        "n": 16,
+        "brier": 0.45092,
+        "log_loss": 0.79675,
+        "accuracy": 0.625
       },
       "esp.2": {
-        "n": 20,
-        "brier": 0.6796,
-        "log_loss": 1.11817,
-        "accuracy": 0.4
+        "n": 21,
+        "brier": 0.67951,
+        "log_loss": 1.11781,
+        "accuracy": 0.38095
       },
       "fra.2": {
-        "n": 18,
-        "brier": 0.64311,
-        "log_loss": 1.0524,
-        "accuracy": 0.5
+        "n": 23,
+        "brier": 0.68119,
+        "log_loss": 1.10184,
+        "accuracy": 0.3913
       },
       "bra.1": {
         "n": 20,
@@ -150,10 +150,10 @@
         "accuracy": 0.3
       },
       "tur.1": {
-        "n": 14,
-        "brier": 0.6432,
-        "log_loss": 1.08924,
-        "accuracy": 0.35714
+        "n": 15,
+        "brier": 0.65352,
+        "log_loss": 1.10099,
+        "accuracy": 0.33333
       },
       "usa.1": {
         "n": 45,
@@ -162,59 +162,65 @@
         "accuracy": 0.4
       },
       "esp.1": {
-        "n": 18,
-        "brier": 0.53096,
-        "log_loss": 0.90221,
-        "accuracy": 0.55556
+        "n": 20,
+        "brier": 0.54695,
+        "log_loss": 0.92415,
+        "accuracy": 0.55
       },
       "eng.1": {
-        "n": 10,
-        "brier": 0.60326,
-        "log_loss": 1.01848,
-        "accuracy": 0.5
+        "n": 11,
+        "brier": 0.57119,
+        "log_loss": 0.97346,
+        "accuracy": 0.54545
       },
       "fra.1": {
-        "n": 8,
+        "n": 9,
         "brier": null,
         "note": "fewer than 10 scored fixtures"
       },
       "ita.1": {
-        "n": 10,
-        "brier": 0.45613,
-        "log_loss": 0.79873,
-        "accuracy": 0.6
+        "n": 11,
+        "brier": 0.42291,
+        "log_loss": 0.75117,
+        "accuracy": 0.63636
       },
       "ita.2": {
-        "n": 9,
+        "n": 10,
+        "brier": 0.79095,
+        "log_loss": 1.30932,
+        "accuracy": 0.2
+      },
+      "ger.1": {
+        "n": 1,
         "brier": null,
         "note": "fewer than 10 scored fixtures"
       }
     },
     "by_model_version": {
       "2026.08.1+4e57ca7c": {
-        "n": 102,
-        "brier": 0.70434,
-        "log_loss": 1.14887,
-        "accuracy": 0.34314
+        "n": 110,
+        "brier": 0.71446,
+        "log_loss": 1.1629,
+        "accuracy": 0.31818
       },
       "2026.08.1+c919f68a": {
-        "n": 44,
-        "brier": 0.53921,
-        "log_loss": 0.92328,
-        "accuracy": 0.52273
+        "n": 47,
+        "brier": 0.5421,
+        "log_loss": 0.92659,
+        "accuracy": 0.51064
       },
       "2026.08.1+4277ba19": {
-        "n": 91,
-        "brier": 0.61053,
-        "log_loss": 1.02845,
-        "accuracy": 0.48352
+        "n": 97,
+        "brier": 0.60089,
+        "log_loss": 1.01416,
+        "accuracy": 0.49485
       }
     },
     "first_kickoff": "2026-08-14T18:30:00+00:00",
-    "last_kickoff": "2026-08-28T18:30:00+00:00",
+    "last_kickoff": "2026-08-28T21:30:00+00:00",
     "baselines": {
       "uniform": 0.66667,
-      "sample_base_rate": 0.65502,
+      "sample_base_rate": 0.65636,
       "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
     }
   },
