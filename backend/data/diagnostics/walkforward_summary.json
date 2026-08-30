@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T04:50:59.332200Z",
+  "generated_at": "2026-08-30T09:58:57.074044Z",
   "leagues": [
     {
       "league": "premier_league",
@@ -12,20 +12,20 @@
     },
     {
       "league": "la_liga",
-      "accuracy_mean": 0.4191,
-      "accuracy_std": 0.0343,
-      "log_loss_mean": 1.128,
-      "brier_mean": 0.6733,
-      "ece_mean": 0.1557,
-      "n_test_seasons": 14
+      "accuracy_mean": 0.4152,
+      "accuracy_std": 0.0363,
+      "log_loss_mean": 1.1367,
+      "brier_mean": 0.6777,
+      "ece_mean": 0.1595,
+      "n_test_seasons": 15
     },
     {
       "league": "bundesliga",
-      "accuracy_mean": 0.4064,
-      "accuracy_std": 0.0385,
-      "log_loss_mean": 1.154,
-      "brier_mean": 0.688,
-      "ece_mean": 0.158,
+      "accuracy_mean": 0.4017,
+      "accuracy_std": 0.0323,
+      "log_loss_mean": 1.1594,
+      "brier_mean": 0.6916,
+      "ece_mean": 0.1681,
       "n_test_seasons": 14
     },
     {

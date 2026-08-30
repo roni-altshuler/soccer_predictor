@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T04:50:59.333923Z",
+  "generated_at": "2026-08-30T09:58:57.076187Z",
   "rotation": "per_league",
   "leagues": [
     {
@@ -22,11 +22,11 @@
     },
     {
       "league": "bundesliga",
-      "accuracy_mean": 0.4064,
-      "accuracy_std": 0.0385,
-      "log_loss_mean": 1.154,
-      "brier_mean": 0.688,
-      "ece_mean": 0.158,
+      "accuracy_mean": 0.4017,
+      "accuracy_std": 0.0323,
+      "log_loss_mean": 1.1594,
+      "brier_mean": 0.6916,
+      "ece_mean": 0.1681,
       "n_test_seasons": 14
     },
     {

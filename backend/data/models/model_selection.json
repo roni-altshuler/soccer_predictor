@@ -1,10 +1,9 @@
 {
   "policy_version": "2026-05-09",
-  "generated_at": "2026-08-23T04:50:21.285714",
+  "generated_at": "2026-08-30T09:58:21.183266",
   "global_default": false,
   "fallback_to_global_when_league_missing": true,
   "promoted_leagues": [
-    "esp.1",
     "ger.1"
   ],
   "gates": {
@@ -14,42 +13,42 @@
     "max_brier_increase": 0.015
   },
   "global_holdout_overall": {
-    "sample_size": 6999,
-    "accuracy": 0.5533647663951993,
-    "precision_macro": 0.5488620076239555,
-    "recall_macro": 0.5447476848043615,
-    "f1_macro": 0.5428615366714548,
-    "precision_weighted": 0.5764370066378431,
-    "recall_weighted": 0.5533647663951993,
-    "f1_weighted": 0.5612067428804945,
-    "log_loss": 0.9350256181845548,
-    "brier_score": 0.5520501169647263,
+    "sample_size": 7017,
+    "accuracy": 0.553085364115719,
+    "precision_macro": 0.5333155396750752,
+    "recall_macro": 0.5361896841329555,
+    "f1_macro": 0.5334307800426245,
+    "precision_weighted": 0.5585735813546379,
+    "recall_weighted": 0.553085364115719,
+    "f1_weighted": 0.5543589312988316,
+    "log_loss": 0.94206806833179,
+    "brier_score": 0.5570250145308498,
     "class_distribution": {
-      "home_win": 3031,
-      "draw": 1750,
-      "away_win": 2218
+      "home_win": 3033,
+      "draw": 1752,
+      "away_win": 2232
     },
     "per_class": {
       "home_win": {
-        "precision": 0.6821166473541908,
-        "recall": 0.5826459914219729,
-        "f1": 0.6284697508896797,
-        "support": 3031
+        "precision": 0.6629915472252849,
+        "recall": 0.594790636333663,
+        "f1": 0.627042057698992,
+        "support": 3033
       },
       "draw": {
-        "precision": 0.36796158882584024,
-        "recall": 0.4817142857142857,
-        "f1": 0.4172234595397179,
-        "support": 1750
+        "precision": 0.38047138047138046,
+        "recall": 0.386986301369863,
+        "f1": 0.3837011884550085,
+        "support": 1752
       },
       "away_win": {
-        "precision": 0.5965077866918358,
-        "recall": 0.569882777276826,
-        "f1": 0.5828913995849666,
-        "support": 2218
+        "precision": 0.55648369132856,
+        "recall": 0.6267921146953405,
+        "f1": 0.5895490939738728,
+        "support": 2232
       }
     },
-    "objective": 0.8009841927576148
+    "objective": 0.8073029995014609
   },
   "league_decisions": {
     "eng.1": {
