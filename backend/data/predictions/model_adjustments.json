@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-30T11:47:17.766901",
-  "total_predictions_analyzed": 1663,
-  "overall_accuracy": 0.4378,
+  "generated_at": "2026-08-30T17:59:34.603154",
+  "total_predictions_analyzed": 1670,
+  "overall_accuracy": 0.4389,
   "by_league": {
     "La Liga": {
       "predictions": 192,
@@ -32,26 +32,26 @@
       }
     },
     "Premier League": {
-      "predictions": 196,
-      "accuracy": 0.4031,
-      "brier_score": 0.6541,
-      "scoreline_rate": 0.0918,
-      "actual_draw_rate": 0.3163,
-      "predicted_draw_rate": 0.3087,
-      "draw_rate_adjustment": 0.00228,
-      "actual_home_win_rate": 0.3724,
-      "predicted_home_win_rate": 0.4073,
-      "home_adv_adjustment": -0.00697,
-      "avg_goals_diff": -0.274,
-      "goals_scale_adjustment": -0.0137,
+      "predictions": 199,
+      "accuracy": 0.407,
+      "brier_score": 0.6534,
+      "scoreline_rate": 0.0955,
+      "actual_draw_rate": 0.3166,
+      "predicted_draw_rate": 0.3077,
+      "draw_rate_adjustment": 0.00266,
+      "actual_home_win_rate": 0.3769,
+      "predicted_home_win_rate": 0.4071,
+      "home_adv_adjustment": -0.00604,
+      "avg_goals_diff": -0.264,
+      "goals_scale_adjustment": -0.0132,
       "confidence_calibration": {
         "high": {
-          "count": 33,
-          "accuracy": 0.4848
+          "count": 34,
+          "accuracy": 0.4706
         },
         "medium": {
-          "count": 153,
-          "accuracy": 0.3987
+          "count": 155,
+          "accuracy": 0.4065
         },
         "low": {
           "count": 10,
@@ -60,26 +60,26 @@
       }
     },
     "Ligue 1": {
-      "predictions": 144,
-      "accuracy": 0.4167,
-      "brier_score": 0.6457,
-      "scoreline_rate": 0.0833,
-      "actual_draw_rate": 0.25,
-      "predicted_draw_rate": 0.2944,
-      "draw_rate_adjustment": -0.01333,
-      "actual_home_win_rate": 0.4375,
-      "predicted_home_win_rate": 0.4119,
-      "home_adv_adjustment": 0.00512,
-      "avg_goals_diff": 0.07,
-      "goals_scale_adjustment": 0.00351,
+      "predictions": 146,
+      "accuracy": 0.4178,
+      "brier_score": 0.6458,
+      "scoreline_rate": 0.0822,
+      "actual_draw_rate": 0.2466,
+      "predicted_draw_rate": 0.2946,
+      "draw_rate_adjustment": -0.01442,
+      "actual_home_win_rate": 0.4452,
+      "predicted_home_win_rate": 0.4109,
+      "home_adv_adjustment": 0.00686,
+      "avg_goals_diff": 0.094,
+      "goals_scale_adjustment": 0.00468,
       "confidence_calibration": {
         "high": {
           "count": 28,
           "accuracy": 0.5
         },
         "medium": {
-          "count": 108,
-          "accuracy": 0.3981
+          "count": 110,
+          "accuracy": 0.4
         },
         "low": {
           "count": 8,
@@ -116,26 +116,26 @@
       }
     },
     "Bundesliga": {
-      "predictions": 157,
-      "accuracy": 0.4395,
-      "brier_score": 0.6081,
-      "scoreline_rate": 0.0637,
-      "actual_draw_rate": 0.2739,
+      "predictions": 159,
+      "accuracy": 0.4465,
+      "brier_score": 0.6056,
+      "scoreline_rate": 0.0629,
+      "actual_draw_rate": 0.2704,
       "predicted_draw_rate": 0.2761,
-      "draw_rate_adjustment": -0.00068,
-      "actual_home_win_rate": 0.4459,
-      "predicted_home_win_rate": 0.4141,
-      "home_adv_adjustment": 0.00634,
-      "avg_goals_diff": 0.086,
-      "goals_scale_adjustment": 0.00429,
+      "draw_rate_adjustment": -0.00169,
+      "actual_home_win_rate": 0.4528,
+      "predicted_home_win_rate": 0.4149,
+      "home_adv_adjustment": 0.00758,
+      "avg_goals_diff": 0.099,
+      "goals_scale_adjustment": 0.00497,
       "confidence_calibration": {
         "high": {
-          "count": 31,
-          "accuracy": 0.7097
+          "count": 32,
+          "accuracy": 0.7188
         },
         "medium": {
-          "count": 122,
-          "accuracy": 0.3689
+          "count": 123,
+          "accuracy": 0.374
         },
         "low": {
           "count": 4,
