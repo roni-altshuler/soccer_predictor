@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-08-31T15:20:43.971026+00:00",
+  "generated_at": "2026-09-01T12:44:58.949522+00:00",
   "snapshot_store": {
-    "rows": 121995,
+    "rows": 123830,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-08-31T15:20:41.185495+00:00",
+    "last_generated": "2026-09-01T12:44:55.911335+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
-      "2026.08.1+4277ba19": 34760,
+      "2026.08.1+4277ba19": 36595,
       "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384
     }
   },
   "join": {
     "snapshots": 5041,
-    "scored": 371,
-    "awaiting_result": 4524,
+    "scored": 380,
+    "awaiting_result": 4515,
     "unresolved_clubs": {
       "esp.2:Celta de Vigo B": 42,
       "ita.2:Vicenza Virtus": 38,
@@ -27,74 +27,74 @@
   },
   "live": {
     "basis": "live_published",
-    "n": 371,
-    "brier": 0.62822,
-    "log_loss": 1.04637,
-    "accuracy": 0.44205,
-    "ece": 0.05534,
+    "n": 380,
+    "brier": 0.62178,
+    "log_loss": 1.03688,
+    "accuracy": 0.45263,
+    "ece": 0.05084,
     "reliability": [
       {
         "bin_low": 0.0,
         "bin_high": 0.1,
-        "n": 32,
-        "stated": 0.0711,
+        "n": 34,
+        "stated": 0.0704,
         "observed": 0.0
       },
       {
         "bin_low": 0.1,
         "bin_high": 0.2,
-        "n": 132,
-        "stated": 0.1584,
-        "observed": 0.2045
+        "n": 137,
+        "stated": 0.1581,
+        "observed": 0.1971
       },
       {
         "bin_low": 0.2,
         "bin_high": 0.3,
-        "n": 471,
-        "stated": 0.2614,
-        "observed": 0.2951
+        "n": 481,
+        "stated": 0.2613,
+        "observed": 0.2911
       },
       {
         "bin_low": 0.3,
         "bin_high": 0.4,
-        "n": 164,
-        "stated": 0.3444,
-        "observed": 0.378
+        "n": 166,
+        "stated": 0.3446,
+        "observed": 0.3795
       },
       {
         "bin_low": 0.4,
         "bin_high": 0.5,
-        "n": 152,
-        "stated": 0.4478,
-        "observed": 0.3289
+        "n": 154,
+        "stated": 0.4482,
+        "observed": 0.3377
       },
       {
         "bin_low": 0.5,
         "bin_high": 0.6,
-        "n": 83,
-        "stated": 0.5477,
-        "observed": 0.4699
+        "n": 86,
+        "stated": 0.5476,
+        "observed": 0.4767
       },
       {
         "bin_low": 0.6,
         "bin_high": 0.7,
-        "n": 48,
-        "stated": 0.64,
-        "observed": 0.5625
+        "n": 49,
+        "stated": 0.6399,
+        "observed": 0.5714
       },
       {
         "bin_low": 0.7,
         "bin_high": 0.8,
-        "n": 24,
-        "stated": 0.7437,
-        "observed": 0.875
+        "n": 25,
+        "stated": 0.7456,
+        "observed": 0.88
       },
       {
         "bin_low": 0.8,
         "bin_high": 0.9,
-        "n": 5,
-        "stated": 0.8551,
-        "observed": 0.8
+        "n": 6,
+        "stated": 0.8515,
+        "observed": 0.8333
       },
       {
         "bin_low": 0.9,
@@ -104,8 +104,8 @@
         "observed": 1.0
       }
     ],
-    "xg_mae": 0.9394,
-    "top_scoreline_hit_rate": 0.1294,
+    "xg_mae": 0.9424,
+    "top_scoreline_hit_rate": 0.1289,
     "by_league": {
       "ger.2": {
         "n": 18,
@@ -126,22 +126,22 @@
         "accuracy": 0.625
       },
       "por.1": {
-        "n": 22,
-        "brier": 0.4893,
-        "log_loss": 0.84768,
-        "accuracy": 0.54545
+        "n": 24,
+        "brier": 0.45863,
+        "log_loss": 0.8034,
+        "accuracy": 0.58333
       },
       "esp.2": {
-        "n": 29,
-        "brier": 0.65964,
-        "log_loss": 1.08916,
-        "accuracy": 0.37931
+        "n": 30,
+        "brier": 0.66649,
+        "log_loss": 1.09529,
+        "accuracy": 0.36667
       },
       "fra.2": {
-        "n": 26,
-        "brier": 0.68386,
-        "log_loss": 1.10754,
-        "accuracy": 0.38462
+        "n": 27,
+        "brier": 0.67908,
+        "log_loss": 1.10113,
+        "accuracy": 0.40741
       },
       "bra.1": {
         "n": 29,
@@ -162,16 +162,16 @@
         "accuracy": 0.4
       },
       "esp.1": {
-        "n": 25,
-        "brier": 0.53481,
-        "log_loss": 0.90541,
-        "accuracy": 0.56
+        "n": 27,
+        "brier": 0.51302,
+        "log_loss": 0.87447,
+        "accuracy": 0.59259
       },
       "eng.1": {
-        "n": 19,
-        "brier": 0.60173,
-        "log_loss": 1.01029,
-        "accuracy": 0.52632
+        "n": 20,
+        "brier": 0.59207,
+        "log_loss": 0.99666,
+        "accuracy": 0.55
       },
       "fra.1": {
         "n": 17,
@@ -180,10 +180,10 @@
         "accuracy": 0.47059
       },
       "ita.1": {
-        "n": 18,
-        "brier": 0.45624,
-        "log_loss": 0.81035,
-        "accuracy": 0.66667
+        "n": 20,
+        "brier": 0.44352,
+        "log_loss": 0.79225,
+        "accuracy": 0.7
       },
       "ita.2": {
         "n": 18,
@@ -199,29 +199,29 @@
     },
     "by_model_version": {
       "2026.08.1+4e57ca7c": {
-        "n": 156,
-        "brier": 0.68236,
-        "log_loss": 1.11977,
-        "accuracy": 0.35897
+        "n": 158,
+        "brier": 0.68271,
+        "log_loss": 1.11957,
+        "accuracy": 0.36076
       },
       "2026.08.1+c919f68a": {
-        "n": 67,
-        "brier": 0.54924,
-        "log_loss": 0.9324,
-        "accuracy": 0.52239
+        "n": 69,
+        "brier": 0.53684,
+        "log_loss": 0.91454,
+        "accuracy": 0.53623
       },
       "2026.08.1+4277ba19": {
-        "n": 148,
-        "brier": 0.6069,
-        "log_loss": 1.0206,
-        "accuracy": 0.49324
+        "n": 153,
+        "brier": 0.59718,
+        "log_loss": 1.00667,
+        "accuracy": 0.5098
       }
     },
     "first_kickoff": "2026-08-14T18:30:00+00:00",
-    "last_kickoff": "2026-08-30T21:30:00+00:00",
+    "last_kickoff": "2026-08-31T21:30:00+00:00",
     "baselines": {
       "uniform": 0.66667,
-      "sample_base_rate": 0.65466,
+      "sample_base_rate": 0.65359,
       "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
     }
   },
