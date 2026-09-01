@@ -19,7 +19,7 @@ every European league still reads `played: 0`. Those differences are scope
 changes and retrains during development, not a forecast responding to football.
 Backfilling them would manufacture movement that never happened, and label a
 product decision as evidence about a team. So this starts from empty and fills
-up from matchday one, exactly as `capture_vendor_predictions.py` does.
+up from matchday one.
 
 WHAT IS KEPT
 ------------

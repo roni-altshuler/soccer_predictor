@@ -233,133 +233,24 @@ none of it is unservable the way the market block was.
 | Ingest drawn-but-unplayed fixtures | `python3 -m backend.scripts.ingest_scheduled_fixtures --all` |
 | Forward title odds | `python3 -m backend.scripts.predict_tournaments` |
 | Lineup ablation | `python3 -m backend.scripts.benchmark_lineup_features` |
-| Capture a vendor's pre-match odds | `python3 -m backend.scripts.capture_vendor_predictions` |
 
-## Benchmarking a bought forecast (2026-08-15)
+## The bought-forecast benchmark was removed (2026-09-01)
 
-`api-football` is wired as a **challenger to measure, never a source to serve**.
-`capture_vendor_predictions.py` appends its pre-match 1X2 triple to
-`backend/data/predictions/vendor_predictions.jsonl`, and the comparison is
-scored later against results, on the same fixtures as ours.
-
-- **It has to be captured FORWARD.** Asking a vendor today about a match played
-  last season returns a number computed today, and nothing in the response says
-  it could have been acted on. Every row carries `captured_at` and
-  `before_kickoff`; the same rule `final_before_kickoff()` enforces on our own
-  snapshots. Buying a number does not exempt it.
-- **The free plan blocks `season=`, not the data.** `fixtures?league=39&season=2026`
-  is refused with "try from 2022 to 2024", but `fixtures?date=<today>` returned
-  1,216 fixtures including 18 in our nine leagues at season 2026, and
-  `predictions?fixture=<id>` answered for all of them. Query by DATE.
-- **It rate-limits per MINUTE as well as per day, and reports it two ways** —
-  HTTP 429, or **HTTP 200 carrying `{"errors": {"rateLimit": ...}}` and an empty
-  `response`**. Reading only the status code makes a throttled run look like a
-  day with no fixtures: a run reported "0 forecasts, 1 request used" and nothing
-  about it looked wrong. `get()` treats a non-empty `errors` object as a
-  failure. Default pause is 10s between calls — 7s paced at the cap's edge,
-  still drew 429s, and a pattern of them is what the vendor's ToS names as
-  grounds for suspension (which it did, 2026-08-28, mid-retry).
-- **The daily quota is metered from the vendor's own headers, and the cap is
-  never reached.** The 100/day belongs to the key, not to one invocation —
-  the schedule alone is eight invocations a day, and `--max-requests` cannot
-  see the other seven. Every response carries `x-ratelimit-requests-remaining`;
-  capture stops buying predictions at a reserve of 15 (`DAILY_RESERVE`),
-  whoever spent the rest. Reaching the cap is what suspended the account on
-  2026-08-28.
-- Leagues are matched on **(country, league name)**, not a hard-coded id table.
-  Five of the nine ids were verified live; the other four were not playing that
-  day, and four unchecked ids is how a table goes silently wrong about one
-  league.
-
-**First capture, 2026-08-15, 18 fixtures: the vendor's answers were
-`45/45/10`, `10/45/45`, `0/50/50` and `50/50/0` — four buckets.** It is matchday
-one, their model runs on running-season statistics, and with none it degenerates.
-Two of the eighteen put **0%** on a real outcome, which is a claim no result can
-justify and an infinite log loss if it lands. Do not read the early sample as
-their steady-state quality — and do not discard those rows either, because
-scoring them is the measurement.
-
-**`smartbetsAPI` (github.com/Simatwa/smartbetsAPI) cannot be benchmarked this
-way, and that is a property of its output, not a judgement of it.** Read
-`bet_analyzer.py` and `predictor.finalizer`: it converts last-five form and
-league position into ad-hoc percentages (`(wins*100)/5`, `105 - position*5`),
-normalises the two teams' strengths to sum to 100, and emits a LABEL from
-`{1, 1X, X, X2, 2}`. There is no P(draw) — a draw is inferred from the two
-strengths being within one point — so there is no 1X2 triple to score with a
-proper scoring rule. Mapping its strength share onto probabilities would
-benchmark our mapping, not their model. It also sources data by scraping
-Soccerway via a Google search, which this machine cannot reach anyway. Its
-README's 55% accuracy would beat the closing line's 54.0% on 1X2 — per the
-landmine list, that is the signature of a harness bug, not an edge.
-
-### The decision rule is pre-registered (2026-08-15)
-
-Written into `score_vendor_predictions.py` **before the sample existed**, so
-neither side of the argument can move the goalposts once numbers arrive. The
-vendor's triple replaces ours only if all three hold:
-
-1. it beats the served model on paired Brier over the scored fixtures,
-2. the paired bootstrap CI on that difference excludes zero, and
-3. it is closer to the market price than ours, on fixtures where a pre-kickoff
-   price exists.
-
-Beating us but not the market makes it a candidate **feature** for
-`benchmark_market_blend.py`, not a replacement. Beating *the market* is not a
-promotion either — it routes to "audit the harness", because this repo has
-already lost months to a benchmark bug that announced itself exactly that way.
-Failing (1) or (2) means keep ours, which is the default and needs no argument.
-
-**Both sides are held to the kickoff rule, not just the challenger.** The vendor
-row carries `before_kickoff`; our record carries `prediction_timestamp`; a pair
-is scored only when both precede that kickoff. Enforcing point-in-time on the
-challenger while exempting the incumbent would win the comparison by
-construction. (Known asymmetry, not yet fixed: the two forecasts are not made at
-the *same* time before kickoff, only both before it.)
-
-**Score ours from `predictions_*.json`, never `season_fixtures.json`.** The
-latter is the *remaining* set — a fixture leaves it once played, so by the time
-a result exists our forecast for it is gone. Reconstructing one afterwards is
-the exact sin this exercise is set up to catch.
-
-**The join needed a uniqueness gate, same as the tie join.** The exact key
-missed 4 of 14 joinable fixtures on the first capture, every one cosmetic:
-`academico viseu`/`academico de viseu`, `cambuur`/`sc cambuur`,
-`dc united`/`d c united`, `new york red bulls`/`red bull new york`.
-`relaxed_key()` drops noise tokens anywhere, glues split initials, singularises
-and compares as a set — deliberately loose, and therefore **only used when it
-matches exactly one fixture on that competition and date**. Two candidates is a
-refusal. A wrong join is worse than a missing one: it puts a real number on the
-wrong result.
-
-**`required_n()` returns None when the pair never disagrees.** Subtracting two
-constant series leaves float dust near 1e-17, not a clean zero, and that dust
-divided through to "you need 1 more fixture" — the most dangerous answer the
-function could give. Guard is `sd < 1e-9`, not `sd <= 0`.
-
-**Vendor degeneracy is tracked as a running statistic.** The first 18 captures
-had two identical legs in **18 of 18** triples and only 5 distinct triples.
-P(draw) landing exactly on P(home) every time is a two-way strength comparison
-wearing three numbers. If their model warms up once the season gives it data,
-`vendor_degeneracy` in `backend/data/diagnostics/vendor_vs_ours.json` is where
-that shows up — rather than being assumed either way.
-
-Captured by `.github/workflows/capture_vendor_predictions.yml`, every 6 hours
-over today and tomorrow (~25 of the 100 daily requests). It fails loudly on a
-missing `API_FOOTBALL` secret, because a scheduled job that captures nothing
-looks exactly like a quiet day.
-
-**A vendor refusal is a recorded state, reported once (2026-09-01).** The
-account suspension of 2026-08-28 turned the schedule into four identical red
-runs a day, and an alarm that fires every six hours for a week stops being
-read. The script writes the vendor's answer — `ok`, or `refused` with the
-vendor's own error key and prose and the moment it was first heard — to
-`backend/data/diagnostics/vendor_status.json`, and exits 75 (`EXIT_REFUSED`)
-rather than 1 when refused. The workflow fails the run only when that record
-CHANGES to a refusal (one email per outage), warns on every run while the
-refusal holds, and prints a notice when the vendor serves us again. The file
-only changes on a transition, so a quiet check commits nothing. Real crashes
-still fail every run. The suspension itself is lifted at
-https://dashboard.api-football.com, not in this repo.
+`api-football` was wired in on 2026-08-15 as a challenger to measure — never a
+source to serve — with a pre-registered rule under which its 1X2 triple could
+have replaced ours. It never came close: two weeks of captures, early answers
+that were four degenerate buckets with 0% legs, and then the free account was
+suspended on 2026-08-28 for reaching the daily cap. Nothing served depended on
+it, so the capture and scoring scripts, their tests, the six-hourly workflow
+and the captured rows were removed rather than left idling. They are in git
+history before this note (`capture_vendor_predictions.py`,
+`score_vendor_predictions.py`, `vendor_predictions.jsonl`, `vendor_vs_ours.json`).
+What survives is what they taught: a forecast has to be captured FORWARD,
+whoever made it, and a challenger that beats the closing line is a harness bug
+until proven otherwise (landmine list above). The `API_FOOTBALL` Actions secret
+is now unused. `API_FOOTBALL_KEY` in `.env.example` belongs to the separate,
+opt-in data-pipeline loader (`backend/pipeline/loaders/api_football.py`) and was
+never part of this.
 
 ## What we said, and what happened (2026-08-15)
 

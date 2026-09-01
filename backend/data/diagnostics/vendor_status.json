@@ -1,7 +1,0 @@
-{
-  "vendor": "api-football",
-  "state": "refused",
-  "reason": "access",
-  "message": "Your account is suspended, check on https://dashboard.api-football.com.",
-  "since": "2026-08-28T13:49:24+00:00"
-}
