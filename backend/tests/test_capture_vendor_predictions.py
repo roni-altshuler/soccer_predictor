@@ -6,7 +6,9 @@ that can quietly stop being true: the point-in-time stamp, the parsing of a
 percentage the vendor may not have given, and a rate limit the vendor reports
 inside a 200 response.
 """
+import io
 import json
+import urllib.error
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -264,3 +266,211 @@ class TestDailyQuota:
         monkeypatch.setattr(cvp, "get", fake_get)
         rows, used, left = cvp.capture("2026-08-28", "k", 30, tmp_path / "v.jsonl")
         assert len(rows) == 2 and used == 3 and left == 80
+
+
+SUSPENDED = {"access": "Your account is suspended, check on https://dashboard.api-football.com."}
+
+
+class TestVendorRefusal:
+    def test_carries_the_vendors_key_and_prose(self):
+        exc = cvp.VendorRefusal("fixtures?date=2026-08-29", SUSPENDED)
+        assert exc.reason == "access"
+        assert exc.message == SUSPENDED["access"]
+        assert "suspended" in str(exc) and "fixtures?date=2026-08-29" in str(exc)
+
+
+class TestHttpRefusals:
+    """The vendor also says no as a bare status code, with no JSON `errors`.
+
+    Measured 2026-09-01: an invalid key is HTTP 403 with an empty body. Left as
+    a traceback, a revoked key would fail every scheduled run exactly the way
+    the suspension did — so the codes that mean "the vendor will not serve
+    us" become the same recorded refusal, and only a wrong request of OURS
+    (any other 4xx) is still a crash.
+    """
+
+    @staticmethod
+    def raising(monkeypatch, code, reason="", body=b""):
+        def boom(*a, **k):
+            raise urllib.error.HTTPError("https://x", code, reason, {}, io.BytesIO(body))
+
+        monkeypatch.setattr(cvp.urllib.request, "urlopen", boom)
+        monkeypatch.setattr(cvp.time, "sleep", lambda *_: None)
+
+    def test_a_bare_403_is_a_refusal_keyed_on_the_status(self, monkeypatch):
+        self.raising(monkeypatch, 403, "Forbidden")
+        with pytest.raises(cvp.VendorRefusal) as info:
+            cvp.get("fixtures?date=2026-09-01", "bogus")
+        assert info.value.reason == "http_403" and info.value.message == "Forbidden"
+
+    def test_a_json_body_keeps_the_vendors_own_key(self, monkeypatch):
+        self.raising(monkeypatch, 403, "Forbidden", json.dumps({"errors": SUSPENDED}).encode())
+        with pytest.raises(cvp.VendorRefusal) as info:
+            cvp.get("fixtures?date=2026-09-01", "k")
+        assert info.value.reason == "access"
+
+    def test_a_vendor_outage_is_a_refusal(self, monkeypatch):
+        self.raising(monkeypatch, 503, "Service Unavailable")
+        with pytest.raises(cvp.VendorRefusal) as info:
+            cvp.get("fixtures?date=2026-09-01", "k")
+        assert info.value.reason == "http_503"
+
+    def test_our_own_bad_request_is_still_a_crash(self, monkeypatch):
+        self.raising(monkeypatch, 404, "Not Found")
+        with pytest.raises(urllib.error.HTTPError):
+            cvp.get("fixturez?date=2026-09-01", "k")
+
+    def test_a_429_is_retried_then_recorded_if_it_persists(self, monkeypatch):
+        self.raising(monkeypatch, 429, "Too Many Requests")
+        with pytest.raises(cvp.VendorRefusal) as info:
+            cvp.get("fixtures?date=2026-09-01", "k", retries=2)
+        assert info.value.reason == "http_429"
+
+
+class TestVendorStatus:
+    """The record that turns a refusal from a daily alarm into a state.
+
+    The account was suspended on 2026-08-28 and the schedule then failed the
+    same way four times a day. What the workflow needs to know is not "did the
+    vendor refuse" but "is this the same refusal I already reported" — and
+    that is exactly what `since` being carried forward encodes.
+    """
+
+    NOW = datetime(2026, 9, 1, 8, 0, tzinfo=timezone.utc)
+    EARLIER = datetime(2026, 8, 28, 13, 49, tzinfo=timezone.utc)
+
+    def test_a_first_refusal_starts_the_clock_now(self, tmp_path):
+        status, previous = cvp.record_status(
+            tmp_path / "s.json", cvp.VendorRefusal("x", SUSPENDED), self.NOW
+        )
+        assert previous is None
+        assert status["state"] == "refused" and status["reason"] == "access"
+        assert status["since"] == "2026-09-01T08:00:00+00:00"
+        assert not cvp.same_state(status, previous)
+
+    def test_the_same_refusal_keeps_the_original_since(self, tmp_path):
+        path = tmp_path / "s.json"
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.EARLIER)
+        status, previous = cvp.record_status(path, cvp.VendorRefusal("y", SUSPENDED), self.NOW)
+        assert status["since"] == "2026-08-28T13:49:00+00:00"
+        assert cvp.same_state(status, previous)
+
+    def test_the_prose_may_change_without_it_being_news(self, tmp_path):
+        # Same key, reworded notice: still the same suspension.
+        path = tmp_path / "s.json"
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.EARLIER)
+        status, previous = cvp.record_status(
+            path, cvp.VendorRefusal("x", {"access": "Account suspended."}), self.NOW
+        )
+        assert cvp.same_state(status, previous)
+        assert status["since"] == "2026-08-28T13:49:00+00:00"
+
+    def test_a_different_reason_is_a_new_refusal(self, tmp_path):
+        path = tmp_path / "s.json"
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.EARLIER)
+        quota = cvp.VendorRefusal("predictions?fixture=1", {"requests": "daily limit reached"})
+        status, previous = cvp.record_status(path, quota, self.NOW)
+        assert not cvp.same_state(status, previous)
+        assert status["reason"] == "requests"
+        assert status["since"] == "2026-09-01T08:00:00+00:00"
+
+    def test_recovery_is_recorded_as_ok(self, tmp_path):
+        path = tmp_path / "s.json"
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.EARLIER)
+        status, previous = cvp.record_status(path, None, self.NOW)
+        assert status["state"] == "ok"
+        assert status["reason"] is None and status["message"] is None
+        assert previous["state"] == "refused"
+
+    def test_the_file_only_changes_on_a_transition(self, tmp_path):
+        # The workflow commits this file. A check that finds the same state
+        # must leave the bytes alone, or every six-hourly run becomes a commit.
+        path = tmp_path / "s.json"
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.EARLIER)
+        before = path.read_bytes()
+        cvp.record_status(path, cvp.VendorRefusal("x", SUSPENDED), self.NOW)
+        assert path.read_bytes() == before
+
+    def test_an_unreadable_record_counts_as_no_record(self, tmp_path):
+        path = tmp_path / "s.json"
+        path.write_text("{ not json", encoding="utf8")
+        assert cvp.read_status(path) is None
+        path.write_text("[]", encoding="utf8")
+        assert cvp.read_status(path) is None
+
+
+class TestMainExitCodes:
+    """What the workflow sees: 0 when served, 75 when refused — and new or known."""
+
+    @pytest.fixture
+    def paths(self, tmp_path, monkeypatch):
+        gh = tmp_path / "github_output"
+        gh.write_text("", encoding="utf8")
+        monkeypatch.setenv("API_FOOTBALL", "k")
+        monkeypatch.setenv("GITHUB_OUTPUT", str(gh))
+        return {"out": tmp_path / "v.jsonl", "status": tmp_path / "s.json", "gh": gh}
+
+    @staticmethod
+    def args(paths, *extra):
+        return ["--out", str(paths["out"]), "--status", str(paths["status"]), *extra]
+
+    @staticmethod
+    def refusing(monkeypatch):
+        def refuse(date, key, budget, out, pause=10.0):
+            raise cvp.VendorRefusal(f"fixtures?date={date}", SUSPENDED)
+
+        monkeypatch.setattr(cvp, "capture", refuse)
+
+    def test_a_new_refusal_exits_75_and_is_an_error(self, paths, monkeypatch, capsys):
+        self.refusing(monkeypatch)
+        assert cvp.main(self.args(paths)) == cvp.EXIT_REFUSED == 75
+        assert json.loads(paths["status"].read_text(encoding="utf8"))["state"] == "refused"
+        assert "vendor_refused=new" in paths["gh"].read_text(encoding="utf8")
+        assert "::error::" in capsys.readouterr().out
+
+    def test_a_known_refusal_is_a_warning_not_an_error(self, paths, monkeypatch, capsys):
+        self.refusing(monkeypatch)
+        cvp.main(self.args(paths))
+        paths["gh"].write_text("", encoding="utf8")
+        capsys.readouterr()
+
+        assert cvp.main(self.args(paths)) == cvp.EXIT_REFUSED
+        out = capsys.readouterr().out
+        assert "::warning::" in out and "::error::" not in out
+        assert "since " in out, "the warning should say how long this has been going on"
+        assert "vendor_refused=known" in paths["gh"].read_text(encoding="utf8")
+
+    def test_a_served_run_records_ok_and_announces_the_recovery(
+        self, paths, monkeypatch, capsys
+    ):
+        self.refusing(monkeypatch)
+        cvp.main(self.args(paths))
+        monkeypatch.setattr(cvp, "capture", lambda *a, **k: ([], 1, 80))
+        capsys.readouterr()
+
+        assert cvp.main(self.args(paths)) == 0
+        assert json.loads(paths["status"].read_text(encoding="utf8"))["state"] == "ok"
+        assert "::notice::" in capsys.readouterr().out
+
+    def test_a_served_run_with_no_history_is_quiet(self, paths, monkeypatch, capsys):
+        monkeypatch.setattr(cvp, "capture", lambda *a, **k: ([], 1, 80))
+        assert cvp.main(self.args(paths)) == 0
+        assert "::" not in capsys.readouterr().out
+        assert json.loads(paths["status"].read_text(encoding="utf8"))["state"] == "ok"
+
+    def test_days_walks_consecutive_dates(self, paths, monkeypatch):
+        asked = []
+
+        def fake(date, key, budget, out, pause=10.0):
+            asked.append(date)
+            return [], 1, 80
+
+        monkeypatch.setattr(cvp, "capture", fake)
+        assert cvp.main(self.args(paths, "--date", "2026-08-31", "--days", "2")) == 0
+        assert asked == ["2026-08-31", "2026-09-01"], "month boundary included"
+
+    def test_a_dry_run_leaves_the_record_alone(self, paths, monkeypatch):
+        self.refusing(monkeypatch)
+        assert cvp.main(self.args(paths, "--dry-run")) == cvp.EXIT_REFUSED
+        assert not paths["status"].exists()
+        assert paths["gh"].read_text(encoding="utf8") == ""

@@ -348,6 +348,19 @@ over today and tomorrow (~25 of the 100 daily requests). It fails loudly on a
 missing `API_FOOTBALL` secret, because a scheduled job that captures nothing
 looks exactly like a quiet day.
 
+**A vendor refusal is a recorded state, reported once (2026-09-01).** The
+account suspension of 2026-08-28 turned the schedule into four identical red
+runs a day, and an alarm that fires every six hours for a week stops being
+read. The script writes the vendor's answer — `ok`, or `refused` with the
+vendor's own error key and prose and the moment it was first heard — to
+`backend/data/diagnostics/vendor_status.json`, and exits 75 (`EXIT_REFUSED`)
+rather than 1 when refused. The workflow fails the run only when that record
+CHANGES to a refusal (one email per outage), warns on every run while the
+refusal holds, and prints a notice when the vendor serves us again. The file
+only changes on a transition, so a quiet check commits nothing. Real crashes
+still fail every run. The suspension itself is lifted at
+https://dashboard.api-football.com, not in this repo.
+
 ## What we said, and what happened (2026-08-15)
 
 `RecordedForecastPanel` puts the project's central claim on the match itself
