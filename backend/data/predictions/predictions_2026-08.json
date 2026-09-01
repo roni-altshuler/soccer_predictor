@@ -22878,15 +22878,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
+      "actual_home_goals": 1,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": true,
+      "scoreline_correct": false,
       "scoreline_in_top5": null,
-      "goals_diff": null,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-08-24T07:19:05.935299",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-09-01T01:00:12.755010"
     },
     {
       "match_id": "401879295",
@@ -22994,15 +22994,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
+      "actual_home_goals": 0,
+      "actual_away_goals": 1,
+      "actual_winner": "away",
+      "winner_correct": true,
+      "scoreline_correct": false,
       "scoreline_in_top5": null,
-      "goals_diff": null,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-08-24T07:19:05.935693",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-09-01T01:00:12.890823"
     },
     {
       "match_id": "401882903",
@@ -23110,15 +23110,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
+      "actual_home_goals": 5,
+      "actual_away_goals": 2,
+      "actual_winner": "home",
+      "winner_correct": true,
+      "scoreline_correct": false,
       "scoreline_in_top5": null,
-      "goals_diff": null,
+      "goals_diff": 4,
       "prediction_timestamp": "2026-08-24T07:19:05.936183",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-09-01T01:00:13.041598"
     }
   ]
 }
