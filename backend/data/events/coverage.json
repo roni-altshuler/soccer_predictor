@@ -1356,10 +1356,10 @@
   },
   {
    "competition_id": "eng.2",
-   "coverage": 0.1522,
-   "covered": 341,
+   "coverage": 0.1552,
+   "covered": 349,
    "gender": "M",
-   "matches": 2241,
+   "matches": 2249,
    "name": "EFL Championship",
    "seasons": [
     {
@@ -1400,17 +1400,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 36,
-     "matches": 36,
+     "covered": 44,
+     "matches": 44,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 3,
-     "with_events": 33
+     "with_events": 41
     }
    ],
    "uncovered": 1900,
    "verified_empty": 26,
-   "with_events": 315
+   "with_events": 323
   },
   {
    "competition_id": "esp.1",
@@ -4277,14 +4277,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-01T13:58:53+00:00",
+ "generated_at": "2026-09-02T13:05:05+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4375,
-  "covered": 35918,
-  "matches": 82098,
+  "coverage": 0.4376,
+  "covered": 35926,
+  "matches": 82106,
   "uncovered": 46180,
   "verified_empty": 2280,
-  "with_events": 33638
+  "with_events": 33646
  }
 }
