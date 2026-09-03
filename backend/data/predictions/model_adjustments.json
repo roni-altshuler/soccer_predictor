@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-09-03T17:38:00.082189",
-  "total_predictions_analyzed": 1680,
-  "overall_accuracy": 0.4399,
+  "generated_at": "2026-09-03T23:48:15.058086",
+  "total_predictions_analyzed": 1682,
+  "overall_accuracy": 0.44,
   "by_league": {
     "La Liga": {
-      "predictions": 194,
-      "accuracy": 0.4588,
-      "brier_score": 0.623,
-      "scoreline_rate": 0.1134,
-      "actual_draw_rate": 0.2526,
-      "predicted_draw_rate": 0.3058,
-      "draw_rate_adjustment": -0.01598,
-      "actual_home_win_rate": 0.5103,
-      "predicted_home_win_rate": 0.4082,
-      "home_adv_adjustment": 0.02042,
-      "avg_goals_diff": -0.039,
-      "goals_scale_adjustment": -0.00195,
+      "predictions": 195,
+      "accuracy": 0.4564,
+      "brier_score": 0.624,
+      "scoreline_rate": 0.1128,
+      "actual_draw_rate": 0.2564,
+      "predicted_draw_rate": 0.3056,
+      "draw_rate_adjustment": -0.01476,
+      "actual_home_win_rate": 0.5077,
+      "predicted_home_win_rate": 0.4084,
+      "home_adv_adjustment": 0.01987,
+      "avg_goals_diff": -0.051,
+      "goals_scale_adjustment": -0.00257,
       "confidence_calibration": {
         "high": {
           "count": 31,
           "accuracy": 0.5484
         },
         "medium": {
-          "count": 143,
-          "accuracy": 0.4545
+          "count": 144,
+          "accuracy": 0.4514
         },
         "low": {
           "count": 20,
@@ -60,26 +60,26 @@
       }
     },
     "Ligue 1": {
-      "predictions": 147,
-      "accuracy": 0.415,
-      "brier_score": 0.6462,
-      "scoreline_rate": 0.0816,
-      "actual_draw_rate": 0.2449,
-      "predicted_draw_rate": 0.2945,
-      "draw_rate_adjustment": -0.01488,
-      "actual_home_win_rate": 0.449,
-      "predicted_home_win_rate": 0.4103,
-      "home_adv_adjustment": 0.00774,
-      "avg_goals_diff": 0.088,
-      "goals_scale_adjustment": 0.0044,
+      "predictions": 148,
+      "accuracy": 0.4189,
+      "brier_score": 0.6454,
+      "scoreline_rate": 0.0811,
+      "actual_draw_rate": 0.2432,
+      "predicted_draw_rate": 0.2946,
+      "draw_rate_adjustment": -0.0154,
+      "actual_home_win_rate": 0.4459,
+      "predicted_home_win_rate": 0.4095,
+      "home_adv_adjustment": 0.0073,
+      "avg_goals_diff": 0.079,
+      "goals_scale_adjustment": 0.00393,
       "confidence_calibration": {
         "high": {
           "count": 28,
           "accuracy": 0.5
         },
         "medium": {
-          "count": 111,
-          "accuracy": 0.3964
+          "count": 112,
+          "accuracy": 0.4018
         },
         "low": {
           "count": 8,
