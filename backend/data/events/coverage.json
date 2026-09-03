@@ -60,10 +60,10 @@
   },
   {
    "competition_id": "bra.1",
-   "coverage": 0.1388,
-   "covered": 245,
+   "coverage": 0.1393,
+   "covered": 246,
    "gender": "M",
-   "matches": 1765,
+   "matches": 1766,
    "name": "Brasileir\u00e3o S\u00e9rie A",
    "seasons": [
     {
@@ -104,17 +104,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 245,
-     "matches": 245,
+     "covered": 246,
+     "matches": 246,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 10,
-     "with_events": 235
+     "with_events": 236
     }
    ],
    "uncovered": 1520,
    "verified_empty": 10,
-   "with_events": 235
+   "with_events": 236
   },
   {
    "competition_id": "caf.nations",
@@ -1356,10 +1356,10 @@
   },
   {
    "competition_id": "eng.2",
-   "coverage": 0.1552,
-   "covered": 349,
+   "coverage": 0.1567,
+   "covered": 353,
    "gender": "M",
-   "matches": 2249,
+   "matches": 2253,
    "name": "EFL Championship",
    "seasons": [
     {
@@ -1400,17 +1400,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 44,
-     "matches": 44,
+     "covered": 48,
+     "matches": 48,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 3,
-     "with_events": 41
+     "with_events": 45
     }
    ],
    "uncovered": 1900,
    "verified_empty": 26,
-   "with_events": 323
+   "with_events": 327
   },
   {
    "competition_id": "esp.1",
@@ -4277,14 +4277,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-02T13:05:05+00:00",
+ "generated_at": "2026-09-03T13:07:35+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4376,
-  "covered": 35926,
-  "matches": 82106,
+  "covered": 35931,
+  "matches": 82111,
   "uncovered": 46180,
   "verified_empty": 2280,
-  "with_events": 33646
+  "with_events": 33651
  }
 }
