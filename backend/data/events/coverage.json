@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4842,
-   "covered": 4001,
+   "coverage": 0.4843,
+   "covered": 4002,
    "gender": "M",
-   "matches": 8263,
+   "matches": 8264,
    "name": "La Liga",
    "seasons": [
     {
@@ -1628,17 +1628,17 @@
      "with_events": 283
     },
     {
-     "coverage": 0.9677,
-     "covered": 30,
-     "matches": 31,
+     "coverage": 0.9688,
+     "covered": 31,
+     "matches": 32,
      "season": 2026,
      "uncovered": 1,
-     "verified_empty": 2,
+     "verified_empty": 3,
      "with_events": 28
     }
    ],
    "uncovered": 4262,
-   "verified_empty": 275,
+   "verified_empty": 276,
    "with_events": 3726
   },
   {
@@ -2028,10 +2028,10 @@
   },
   {
    "competition_id": "fra.1",
-   "coverage": 0.5222,
-   "covered": 4008,
+   "coverage": 0.5223,
+   "covered": 4009,
    "gender": "M",
-   "matches": 7675,
+   "matches": 7676,
    "name": "Ligue 1",
    "seasons": [
     {
@@ -2225,17 +2225,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 18,
-     "matches": 18,
+     "covered": 19,
+     "matches": 19,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 2,
-     "with_events": 16
+     "with_events": 17
     }
    ],
    "uncovered": 3667,
    "verified_empty": 292,
-   "with_events": 3716
+   "with_events": 3717
   },
   {
    "competition_id": "fra.2",
@@ -4277,14 +4277,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-03T13:07:35+00:00",
+ "generated_at": "2026-09-04T13:02:21+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4376,
-  "covered": 35931,
-  "matches": 82111,
+  "covered": 35933,
+  "matches": 82113,
   "uncovered": 46180,
-  "verified_empty": 2280,
-  "with_events": 33651
+  "verified_empty": 2281,
+  "with_events": 33652
  }
 }
