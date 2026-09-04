@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-09-03T12:15:41.943857+00:00",
+  "generated_at": "2026-09-04T12:16:34.904359+00:00",
   "snapshot_store": {
-    "rows": 127500,
+    "rows": 129333,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-09-03T12:15:39.375785+00:00",
+    "last_generated": "2026-09-04T12:16:32.436599+00:00",
     "by_version": {
       "2026.08.1+4e57ca7c": 57600,
-      "2026.08.1+4277ba19": 40265,
+      "2026.08.1+4277ba19": 42098,
       "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384
     }
   },
   "join": {
     "snapshots": 5041,
-    "scored": 392,
-    "awaiting_result": 4503,
+    "scored": 394,
+    "awaiting_result": 4501,
     "unresolved_clubs": {
       "esp.2:Celta de Vigo B": 42,
       "ita.2:Vicenza Virtus": 38,
@@ -27,11 +27,11 @@
   },
   "live": {
     "basis": "live_published",
-    "n": 392,
-    "brier": 0.6233,
-    "log_loss": 1.03859,
-    "accuracy": 0.44643,
-    "ece": 0.05362,
+    "n": 394,
+    "brier": 0.62331,
+    "log_loss": 1.03861,
+    "accuracy": 0.4467,
+    "ece": 0.05317,
     "reliability": [
       {
         "bin_low": 0.0,
@@ -50,9 +50,9 @@
       {
         "bin_low": 0.2,
         "bin_high": 0.3,
-        "n": 497,
-        "stated": 0.2614,
-        "observed": 0.2918
+        "n": 501,
+        "stated": 0.2615,
+        "observed": 0.2914
       },
       {
         "bin_low": 0.3,
@@ -64,9 +64,9 @@
       {
         "bin_low": 0.4,
         "bin_high": 0.5,
-        "n": 159,
+        "n": 161,
         "stated": 0.448,
-        "observed": 0.3333
+        "observed": 0.3354
       },
       {
         "bin_low": 0.5,
@@ -104,8 +104,8 @@
         "observed": 1.0
       }
     ],
-    "xg_mae": 0.9404,
-    "top_scoreline_hit_rate": 0.1276,
+    "xg_mae": 0.9409,
+    "top_scoreline_hit_rate": 0.1269,
     "by_league": {
       "ger.2": {
         "n": 18,
@@ -162,10 +162,10 @@
         "accuracy": 0.4
       },
       "esp.1": {
-        "n": 27,
-        "brier": 0.51302,
-        "log_loss": 0.87447,
-        "accuracy": 0.59259
+        "n": 28,
+        "brier": 0.52353,
+        "log_loss": 0.88975,
+        "accuracy": 0.57143
       },
       "eng.1": {
         "n": 20,
@@ -174,10 +174,10 @@
         "accuracy": 0.55
       },
       "fra.1": {
-        "n": 17,
-        "brier": 0.65635,
-        "log_loss": 1.08951,
-        "accuracy": 0.47059
+        "n": 18,
+        "brier": 0.64449,
+        "log_loss": 1.07253,
+        "accuracy": 0.5
       },
       "ita.1": {
         "n": 20,
@@ -211,17 +211,17 @@
         "accuracy": 0.53623
       },
       "2026.08.1+4277ba19": {
-        "n": 153,
-        "brier": 0.59718,
-        "log_loss": 1.00667,
-        "accuracy": 0.5098
+        "n": 155,
+        "brier": 0.59754,
+        "log_loss": 1.00714,
+        "accuracy": 0.50968
       }
     },
     "first_kickoff": "2026-08-14T18:30:00+00:00",
-    "last_kickoff": "2026-09-02T20:00:00+00:00",
+    "last_kickoff": "2026-09-03T21:00:00+00:00",
     "baselines": {
       "uniform": 0.66667,
-      "sample_base_rate": 0.65405,
+      "sample_base_rate": 0.65455,
       "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
     }
   },
