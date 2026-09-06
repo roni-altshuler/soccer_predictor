@@ -1,0 +1,284 @@
+{
+  "generated_at": "2026-09-06T08:29:56.532584Z",
+  "retrained_leagues": [
+    "eng.1",
+    "esp.1",
+    "ger.1",
+    "ita.1",
+    "fra.1",
+    "global"
+  ],
+  "baseline_present": true,
+  "overall": {
+    "status": "gate_enforced",
+    "n_leagues_evaluated": 5,
+    "n_comparable": 5,
+    "n_wins": 3,
+    "n_regressions": 2,
+    "n_held_back": 2,
+    "n_promoted": 3,
+    "n_skipped": 0,
+    "systemic_regression": false
+  },
+  "thresholds": {
+    "accuracy_regression": -0.015,
+    "log_loss_regression": 0.03,
+    "brier_regression": 0.02
+  },
+  "leagues": [
+    {
+      "league": "bundesliga",
+      "runtime_key": "ger.1",
+      "before": {
+        "league": "bundesliga",
+        "accuracy_mean": 0.4017,
+        "accuracy_std": 0.0323,
+        "log_loss_mean": 1.1594,
+        "brier_mean": 0.6916,
+        "ece_mean": 0.1681,
+        "n_test_seasons": 14
+      },
+      "after": {
+        "accuracy_mean": 0.4014,
+        "accuracy_std": 0.0319,
+        "log_loss_mean": 1.1602,
+        "brier_mean": 0.6903,
+        "ece_mean": 0.1609
+      },
+      "deltas": {
+        "accuracy_delta": -0.0003,
+        "log_loss_delta": 0.0008,
+        "brier_delta": -0.0013,
+        "ece_delta": -0.0072
+      },
+      "comparable": true,
+      "regression": false,
+      "regression_reasons": [],
+      "win": false,
+      "wins_count": 1,
+      "decision": "promoted",
+      "serving_policy": {
+        "decision": "dixon_coles",
+        "reason": "dixon_coles_retained_clears_floor",
+        "global_blend_weight": 0.0,
+        "prior_decision": "global",
+        "dc_backtest": {
+          "season": 2024,
+          "n": 306,
+          "dc_accuracy": 0.4804,
+          "dc_brier": 0.6149,
+          "dc_log_loss": 1.0312,
+          "always_home_accuracy": 0.3856
+        },
+        "incumbent_accuracy": null,
+        "incumbent_brier": null
+      }
+    },
+    {
+      "league": "la_liga",
+      "runtime_key": "esp.1",
+      "before": {
+        "league": "la_liga",
+        "accuracy_mean": 0.4399,
+        "accuracy_std": 0.0816,
+        "log_loss_mean": 1.2521,
+        "brier_mean": 0.7204,
+        "ece_mean": 0.2217,
+        "n_test_seasons": 7
+      },
+      "after": {
+        "accuracy_mean": 0.4159,
+        "accuracy_std": 0.0353,
+        "log_loss_mean": 1.1375,
+        "brier_mean": 0.6772,
+        "ece_mean": 0.158
+      },
+      "deltas": {
+        "accuracy_delta": -0.024,
+        "log_loss_delta": -0.1146,
+        "brier_delta": -0.0432,
+        "ece_delta": -0.0637
+      },
+      "comparable": true,
+      "regression": true,
+      "regression_reasons": [
+        "accuracy -0.0240 < -0.015"
+      ],
+      "win": true,
+      "wins_count": 2,
+      "decision": "held_back",
+      "serving_policy": {
+        "decision": "dixon_coles",
+        "reason": "dixon_coles_retained_clears_floor",
+        "global_blend_weight": 0.0,
+        "prior_decision": "global",
+        "dc_backtest": {
+          "season": 2024,
+          "n": 363,
+          "dc_accuracy": 0.5344,
+          "dc_brier": 0.5774,
+          "dc_log_loss": 0.9741,
+          "always_home_accuracy": 0.449
+        },
+        "incumbent_accuracy": null,
+        "incumbent_brier": null
+      },
+      "rollback": "no_prior_artifact"
+    },
+    {
+      "league": "ligue_1",
+      "runtime_key": "fra.1",
+      "before": {
+        "league": "ligue_1",
+        "accuracy_mean": 0.4043,
+        "accuracy_std": 0.027,
+        "log_loss_mean": 1.1342,
+        "brier_mean": 0.6811,
+        "ece_mean": 0.1502,
+        "n_test_seasons": 14
+      },
+      "after": {
+        "accuracy_mean": 0.3932,
+        "accuracy_std": 0.0489,
+        "log_loss_mean": 1.1424,
+        "brier_mean": 0.6876,
+        "ece_mean": 0.1593
+      },
+      "deltas": {
+        "accuracy_delta": -0.0111,
+        "log_loss_delta": 0.0082,
+        "brier_delta": 0.0065,
+        "ece_delta": 0.0091
+      },
+      "comparable": true,
+      "regression": false,
+      "regression_reasons": [],
+      "win": false,
+      "wins_count": 0,
+      "decision": "promoted",
+      "serving_policy": {
+        "decision": "dixon_coles",
+        "reason": "dixon_coles_retained_clears_floor",
+        "global_blend_weight": 0.0,
+        "prior_decision": "blend",
+        "dc_backtest": {
+          "season": 2025,
+          "n": 1,
+          "dc_accuracy": 0.0,
+          "dc_brier": 0.7424,
+          "dc_log_loss": 1.2062,
+          "always_home_accuracy": 0.0
+        },
+        "incumbent_accuracy": null,
+        "incumbent_brier": null
+      }
+    },
+    {
+      "league": "premier_league",
+      "runtime_key": "eng.1",
+      "before": {
+        "league": "premier_league",
+        "accuracy_mean": 0.4416,
+        "accuracy_std": 0.0409,
+        "log_loss_mean": 1.1202,
+        "brier_mean": 0.6637,
+        "ece_mean": 0.1436,
+        "n_test_seasons": 14
+      },
+      "after": {
+        "accuracy_mean": 0.4469,
+        "accuracy_std": 0.0441,
+        "log_loss_mean": 1.12,
+        "brier_mean": 0.6632,
+        "ece_mean": 0.1479
+      },
+      "deltas": {
+        "accuracy_delta": 0.0053,
+        "log_loss_delta": -0.0002,
+        "brier_delta": -0.0005,
+        "ece_delta": 0.0043
+      },
+      "comparable": true,
+      "regression": false,
+      "regression_reasons": [],
+      "win": true,
+      "wins_count": 3,
+      "decision": "promoted",
+      "serving_policy": {
+        "decision": "dixon_coles",
+        "reason": "dixon_coles_retained_clears_floor",
+        "global_blend_weight": 0.0,
+        "prior_decision": "blend",
+        "dc_backtest": {
+          "season": 2024,
+          "n": 366,
+          "dc_accuracy": 0.5301,
+          "dc_brier": 0.5906,
+          "dc_log_loss": 0.9879,
+          "always_home_accuracy": 0.3989
+        },
+        "incumbent_accuracy": null,
+        "incumbent_brier": null
+      }
+    },
+    {
+      "league": "serie_a",
+      "runtime_key": "ita.1",
+      "before": {
+        "league": "serie_a",
+        "accuracy_mean": 0.4599,
+        "accuracy_std": 0.1178,
+        "log_loss_mean": 1.2237,
+        "brier_mean": 0.7062,
+        "ece_mean": 0.2596,
+        "n_test_seasons": 6
+      },
+      "after": {
+        "accuracy_mean": 0.4344,
+        "accuracy_std": 0.0324,
+        "log_loss_mean": 1.1052,
+        "brier_mean": 0.6605,
+        "ece_mean": 0.1463
+      },
+      "deltas": {
+        "accuracy_delta": -0.0255,
+        "log_loss_delta": -0.1185,
+        "brier_delta": -0.0457,
+        "ece_delta": -0.1133
+      },
+      "comparable": true,
+      "regression": true,
+      "regression_reasons": [
+        "accuracy -0.0255 < -0.015"
+      ],
+      "win": true,
+      "wins_count": 2,
+      "decision": "held_back",
+      "serving_policy": {
+        "decision": "dixon_coles",
+        "reason": "dixon_coles_retained_clears_floor",
+        "global_blend_weight": 0.0,
+        "prior_decision": "global",
+        "dc_backtest": {
+          "season": 2024,
+          "n": 374,
+          "dc_accuracy": 0.5374,
+          "dc_brier": 0.5833,
+          "dc_log_loss": 0.974,
+          "always_home_accuracy": 0.3957
+        },
+        "incumbent_accuracy": null,
+        "incumbent_brier": null
+      },
+      "rollback": "no_prior_artifact"
+    }
+  ],
+  "promotion_enforcement": {
+    "rolled_back": [],
+    "no_prior_artifact": [
+      "esp.1",
+      "ita.1"
+    ],
+    "rollback_failed": []
+  }
+}

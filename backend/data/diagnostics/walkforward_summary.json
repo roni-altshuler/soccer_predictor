@@ -1,50 +1,50 @@
 {
-  "generated_at": "2026-08-30T09:58:57.074044Z",
+  "generated_at": "2026-09-06T08:29:56.531791Z",
   "leagues": [
     {
       "league": "premier_league",
-      "accuracy_mean": 0.4416,
-      "accuracy_std": 0.0409,
-      "log_loss_mean": 1.1202,
-      "brier_mean": 0.6637,
-      "ece_mean": 0.1436,
-      "n_test_seasons": 14
+      "accuracy_mean": 0.4469,
+      "accuracy_std": 0.0441,
+      "log_loss_mean": 1.12,
+      "brier_mean": 0.6632,
+      "ece_mean": 0.1479,
+      "n_test_seasons": 15
     },
     {
       "league": "la_liga",
-      "accuracy_mean": 0.4152,
-      "accuracy_std": 0.0363,
-      "log_loss_mean": 1.1367,
-      "brier_mean": 0.6777,
-      "ece_mean": 0.1595,
+      "accuracy_mean": 0.4159,
+      "accuracy_std": 0.0353,
+      "log_loss_mean": 1.1375,
+      "brier_mean": 0.6772,
+      "ece_mean": 0.158,
       "n_test_seasons": 15
     },
     {
       "league": "bundesliga",
-      "accuracy_mean": 0.4017,
-      "accuracy_std": 0.0323,
-      "log_loss_mean": 1.1594,
-      "brier_mean": 0.6916,
-      "ece_mean": 0.1681,
+      "accuracy_mean": 0.4014,
+      "accuracy_std": 0.0319,
+      "log_loss_mean": 1.1602,
+      "brier_mean": 0.6903,
+      "ece_mean": 0.1609,
       "n_test_seasons": 14
     },
     {
       "league": "serie_a",
-      "accuracy_mean": 0.4417,
-      "accuracy_std": 0.0184,
-      "log_loss_mean": 1.1086,
-      "brier_mean": 0.6602,
-      "ece_mean": 0.14,
-      "n_test_seasons": 14
+      "accuracy_mean": 0.4344,
+      "accuracy_std": 0.0324,
+      "log_loss_mean": 1.1052,
+      "brier_mean": 0.6605,
+      "ece_mean": 0.1463,
+      "n_test_seasons": 15
     },
     {
       "league": "ligue_1",
-      "accuracy_mean": 0.4043,
-      "accuracy_std": 0.027,
-      "log_loss_mean": 1.1342,
-      "brier_mean": 0.6811,
-      "ece_mean": 0.1502,
-      "n_test_seasons": 14
+      "accuracy_mean": 0.3932,
+      "accuracy_std": 0.0489,
+      "log_loss_mean": 1.1424,
+      "brier_mean": 0.6876,
+      "ece_mean": 0.1593,
+      "n_test_seasons": 15
     }
   ]
 }

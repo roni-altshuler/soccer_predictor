@@ -1,10 +1,12 @@
 {
   "policy_version": "2026-05-09",
-  "generated_at": "2026-08-30T09:58:21.183266",
+  "generated_at": "2026-09-06T08:29:19.267729",
   "global_default": false,
   "fallback_to_global_when_league_missing": true,
   "promoted_leagues": [
-    "ger.1"
+    "eng.1",
+    "ger.1",
+    "ita.1"
   ],
   "gates": {
     "min_global_holdout_samples": 25,
@@ -13,42 +15,42 @@
     "max_brier_increase": 0.015
   },
   "global_holdout_overall": {
-    "sample_size": 7017,
-    "accuracy": 0.553085364115719,
-    "precision_macro": 0.5333155396750752,
-    "recall_macro": 0.5361896841329555,
-    "f1_macro": 0.5334307800426245,
-    "precision_weighted": 0.5585735813546379,
-    "recall_weighted": 0.553085364115719,
-    "f1_weighted": 0.5543589312988316,
-    "log_loss": 0.94206806833179,
-    "brier_score": 0.5570250145308498,
+    "sample_size": 4433,
+    "accuracy": 0.48951048951048953,
+    "precision_macro": 0.4854039032318029,
+    "recall_macro": 0.47599159175024663,
+    "f1_macro": 0.4771310997665859,
+    "precision_weighted": 0.5163967841510961,
+    "recall_weighted": 0.48951048951048953,
+    "f1_weighted": 0.49940449534670567,
+    "log_loss": 1.0038593813608332,
+    "brier_score": 0.6001223452684377,
     "class_distribution": {
-      "home_win": 3033,
-      "draw": 1752,
-      "away_win": 2232
+      "home_win": 1914,
+      "draw": 1113,
+      "away_win": 1406
     },
     "per_class": {
       "home_win": {
-        "precision": 0.6629915472252849,
-        "recall": 0.594790636333663,
-        "f1": 0.627042057698992,
-        "support": 3033
+        "precision": 0.6401752190237797,
+        "recall": 0.5344827586206896,
+        "f1": 0.5825740318906606,
+        "support": 1914
       },
       "draw": {
-        "precision": 0.38047138047138046,
-        "recall": 0.386986301369863,
-        "f1": 0.3837011884550085,
-        "support": 1752
+        "precision": 0.2848318462594372,
+        "recall": 0.3728661275831087,
+        "f1": 0.3229571984435798,
+        "support": 1113
       },
       "away_win": {
-        "precision": 0.55648369132856,
-        "recall": 0.6267921146953405,
-        "f1": 0.5895490939738728,
-        "support": 2232
+        "precision": 0.5312046444121916,
+        "recall": 0.5206258890469416,
+        "f1": 0.5258620689655172,
+        "support": 1406
       }
     },
-    "objective": 0.8073029995014609
+    "objective": 0.8625514187284948
   },
   "league_decisions": {
     "eng.1": {
