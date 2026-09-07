@@ -117,6 +117,8 @@ class LoadStats:
     error: Optional[str] = None
     kickoffs_applied: int = 0  # rows given a real UTC kickoff from `Time`
     duplicates_skipped: int = 0  # same fixture already present under other ids
+    phantom_rows_skipped: int = 0  # rows refused because a club would be created
+    phantom_names: Tuple[str, ...] = ()  # the spellings that would have created clubs
 
 
 def _to_float(v) -> Optional[float]:
@@ -483,10 +485,49 @@ async def _load_one(
         return LoadStats(competition_id, season, 0, 0, 0,
                          error="wrong_competition")
 
+    # A spelling the resolver cannot place, in a league-season ESPN already
+    # covers, is a SPLIT IDENTITY — never a new club. Every football-data row
+    # is a PLAYED match, and ESPN ingests daily, so any genuine participant is
+    # in the warehouse before football-data's weekly file mentions it. On
+    # 2026-09-06 football-data respelled newly promoted Deportivo as
+    # "Dep. A Coruna" — not in any alias list, no containable tokens for the
+    # structural merge ("dep"≠"deportivo", "a"≠"la"), fuzzy score under 0.85 —
+    # so the resolver minted a 21st esp.1 club, the fixture inserted twice, and
+    # the weekly retrain gate failed on season_team_counts. Refusing the row
+    # here costs one fixture's odds until someone pins the spelling in
+    # team_aliases.yml (the warning below names it); creating the club costs a
+    # corrupted corpus and the week's retrain. Historical fdcouk-only seasons
+    # (Paderborn, Nancy, Almere City — clubs ESPN never covered) have no ESPN
+    # rows in-season, so creation stays allowed exactly where it is genuine.
+    phantom_names: Set[str] = set()
+    espn_covers_season = warehouse._conn.execute(  # noqa: SLF001
+        "SELECT 1 FROM matches WHERE competition_id = ? AND season = ?"
+        " AND source = 'espn' LIMIT 1",
+        (competition_id, season),
+    ).fetchone() is not None
+    if espn_covers_season:
+        file_names = {
+            (raw.get(side) or "").strip()
+            for raw in raw_matches
+            for side in ("home_team", "away_team")
+        }
+        file_names.discard("")
+        for club in sorted(file_names):
+            if resolver.would_create(club, gender="M"):
+                phantom_names.add(club)
+                logger.error(
+                    "FD %s %s: %r resolves to NO existing club in a season "
+                    "ESPN already covers — a split identity in the making. "
+                    "Its rows are skipped. Pin the spelling in "
+                    "backend/data/team_aliases.yml to accept its odds.",
+                    competition_id, season, club,
+                )
+
     kickoffs = kickoffs or {}
     enriched = 0
     kickoffs_applied = 0
     duplicates_skipped = 0
+    phantom_rows_skipped = 0
     new_rows: List[MatchRow] = []
     # Guard against the source file itself listing a fixture twice.
     seen_fixtures: Set[Tuple[int, int]] = set()
@@ -498,6 +539,9 @@ async def _load_one(
         home_name = raw.get("home_team")
         away_name = raw.get("away_team")
         if not home_name or not away_name:
+            continue
+        if home_name.strip() in phantom_names or away_name.strip() in phantom_names:
+            phantom_rows_skipped += 1
             continue
 
         # Upgrade midnight-UTC to the real kickoff where football-data
@@ -569,6 +613,8 @@ async def _load_one(
         inserted=inserted,
         kickoffs_applied=kickoffs_applied,
         duplicates_skipped=duplicates_skipped,
+        phantom_rows_skipped=phantom_rows_skipped,
+        phantom_names=tuple(sorted(phantom_names)),
     )
 
 
@@ -639,6 +685,20 @@ async def load_football_data(
             "NOT merged. Pin them in backend/data/team_aliases.yml: %s",
             len(resolver.near_duplicates),
             ", ".join(f"{n!r}~{e!r}({s:.2f})" for n, e, s in resolver.near_duplicates[:20]),
+        )
+
+    refused = [(s.competition_id, s.season, n) for s in stats for n in s.phantom_names]
+    if refused:
+        # A real Actions annotation, not a log line — a refused spelling means
+        # a club's odds are silently missing every run until someone pins it,
+        # and that must not read as a quiet day. Workflow commands are only
+        # parsed from stdout, so this is a print, not a logger call.
+        detail = "; ".join(f"{c} {y}: {n!r}" for c, y, n in refused[:10])
+        print(
+            "::warning title=football-data spelling needs an alias pin::"
+            f"{len(refused)} club spelling(s) were refused rather than allowed "
+            f"to create split identities — their rows carry no odds until "
+            f"pinned in backend/data/team_aliases.yml: {detail}"
         )
     return stats
 

@@ -117,3 +117,43 @@ def test_no_alias_is_claimed_by_two_clubs():
             seen = owner.setdefault((_normalise(spelling), key[1]), key)
             assert seen == key, (
                 f"{spelling!r} is claimed by both {seen[0]!r} and {key[0]!r}")
+
+
+def test_the_galician_respelling_lands_on_deportivo(warehouse: Warehouse):
+    """football-data's 2026-27 file calls promoted Deportivo "Dep. A Coruna" —
+    a spelling no list had needed, with no containable tokens for the
+    structural merge and a fuzzy score under the near-miss floor. It minted a
+    21st esp.1 club and failed the 2026-09-06 retrain gate."""
+    r = TeamResolver(warehouse, gender_default="M")
+    canonical = r.resolve("Deportivo La Coruña", gender="M")
+    for spelling in ("Dep. A Coruna", "Dep A Coruna", "La Coruna", "Dep La Coruna"):
+        assert r.resolve(spelling, gender="M").team_id == canonical.team_id, spelling
+
+
+class TestWouldCreate:
+    """`would_create` is the loaders' read-only probe: it must agree with
+    `resolve` about creation without performing any of resolve's writes."""
+
+    def test_false_for_yaml_pinned_and_existing_spellings(self, warehouse: Warehouse):
+        r = TeamResolver(warehouse, gender_default="M")
+        assert r.would_create("Dep. A Coruna", gender="M") is False  # YAML pin
+        existing = r.resolve("Very Real Existing Club", gender="M")
+        assert existing.created is True
+        assert r.would_create("Very Real Existing Club", gender="M") is False
+
+    def test_true_for_an_unplaceable_name_and_no_row_is_created(self, warehouse: Warehouse):
+        r = TeamResolver(warehouse, gender_default="M")
+        before = warehouse._conn.execute("SELECT COUNT(*) FROM teams").fetchone()[0]
+        assert r.would_create("Mysteryville Rovers", gender="M") is True
+        after = warehouse._conn.execute("SELECT COUNT(*) FROM teams").fetchone()[0]
+        assert after == before, "the probe wrote a teams row"
+        # And resolve() afterwards behaves exactly as it would have anyway.
+        assert r.resolve("Mysteryville Rovers", gender="M").created is True
+
+    def test_false_at_or_above_the_fuzzy_threshold(self, warehouse: Warehouse):
+        r = TeamResolver(warehouse, gender_default="M")
+        r.resolve("Borussia Dortmund", gender="M")
+        # Normalisation drops the trailing "FC", so the fuzzy pass scores 1.0
+        # while the exact alias lookup misses — the fuzzy branch is what this
+        # exercises.
+        assert r.would_create("Borussia Dortmund FC", gender="M") is False

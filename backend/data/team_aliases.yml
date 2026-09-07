@@ -453,7 +453,11 @@ teams:
   - canonical: Deportivo La Coruña
     gender: M
     country: ES
-    aliases: [La Coruna, Deportivo, Dep La Coruna]
+    # "Dep. A Coruna" is football-data's 2026-27 respelling (the Galician
+    # article: A Coruña, not La Coruña) — it split the club on promotion and
+    # cost the 2026-09-06 weekly retrain. Normalisation folds the punctuation,
+    # so this one entry also covers "Dep A Coruna".
+    aliases: [La Coruna, Deportivo, Dep La Coruna, Dep. A Coruna]
   - canonical: Rayo Vallecano
     gender: M
     country: ES

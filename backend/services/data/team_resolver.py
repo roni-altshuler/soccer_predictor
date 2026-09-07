@@ -294,6 +294,29 @@ class TeamResolver:
             created=True,
         )
 
+    def would_create(self, name: str, *, gender: Optional[str] = None) -> bool:
+        """True if `resolve(name)` would mint a brand-new `teams` row.
+
+        Read-only: mirrors steps 1–5 of `resolve` without writing an alias,
+        materialising a YAML override or touching the cache. Loaders that must
+        not let a non-authoritative source create clubs (football-data can only
+        describe matches ESPN has already written) probe with this before
+        resolving — by the time `TeamResolution.created` says so, the junk row
+        already exists and competes with every later fuzzy match.
+        """
+        gender = (gender or self.gender_default).upper()
+        if not name or not name.strip():
+            return False
+        key = (_normalise(name), gender)
+        if key in self._cache or key in self._yaml_overrides:
+            return False
+        if self.warehouse.find_team_id_by_alias(name, gender) is not None:
+            return False
+        if self.warehouse.find_team_id_by_alias(_normalise(name), gender) is not None:
+            return False
+        candidates = self._fuzzy_candidates(name, gender)
+        return not (candidates and candidates[0][2] >= 0.92)
+
     def _fuzzy_candidates(
         self, name: str, gender: str
     ) -> List[Tuple[int, str, float]]:

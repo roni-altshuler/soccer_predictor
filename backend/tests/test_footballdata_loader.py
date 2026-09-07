@@ -308,3 +308,55 @@ class TestResolverPinning:
         b = resolver.resolve("Sturm Grazz", gender="M").team_id
         assert a == b
         assert resolver.near_duplicates == []
+
+
+class TestPhantomClubGuard:
+    """A spelling the resolver cannot place, in a league-season ESPN already
+    covers, is a split identity — never a new club. football-data respelled
+    promoted Deportivo as "Dep. A Coruna" in 2026-27; the resolver minted a
+    21st esp.1 club, the fixture inserted twice, and the weekly retrain gate
+    failed on season_team_counts. The loader now refuses the row instead."""
+
+    def _espn_row(self, wh, resolver, home, away, season=2020,
+                  date="2020-09-05T15:00:00+00:00", match_id="espn_1"):
+        home_id = resolver.resolve(home, gender="M").team_id
+        away_id = resolver.resolve(away, gender="M").team_id
+        wh.upsert_matches([MatchRow(
+            match_id=match_id, source="espn", competition_id="eng.1",
+            season=season, date_utc=date, home_team_id=home_id,
+            away_team_id=away_id, home_score=2, away_score=1,
+        )])
+
+    def test_a_phantom_spelling_is_refused_in_an_espn_covered_season(self, wh):
+        resolver = TeamResolver(wh, gender_default="M")
+        self._espn_row(wh, resolver, "Manchester United", "Chelsea")
+        teams_before = wh._conn.execute("SELECT COUNT(*) FROM teams").fetchone()[0]
+
+        collector = _FakeCollector([
+            # Resolvable via the shipped aliases — must still enrich.
+            _fd_row("Man United", "Chelsea", odds_home=2.1),
+            # Would mint a new club in a season ESPN already wrote — refused.
+            _fd_row("Mysteryville Rovers", "Chelsea", date="2020-09-06T00:00:00"),
+        ])
+        stats = asyncio.run(_load_one(
+            collector, wh, resolver, league="premier_league", season=2020, force=False,
+        ))
+
+        assert stats.phantom_rows_skipped == 1
+        assert stats.phantom_names == ("Mysteryville Rovers",)
+        assert stats.enriched == 1
+        assert stats.inserted == 0
+        teams_after = wh._conn.execute("SELECT COUNT(*) FROM teams").fetchone()[0]
+        assert teams_after == teams_before, "the refused spelling created a club anyway"
+
+    def test_creation_stays_allowed_where_espn_never_covered_the_season(self, wh):
+        """Historical fdcouk-only seasons (Paderborn, Nancy, Almere City) have
+        no ESPN rows — refusing creation there would lose their matches on
+        every full rebuild."""
+        resolver = TeamResolver(wh, gender_default="M")
+        collector = _FakeCollector([_fd_row("Mysteryville Rovers", "Chelsea")])
+        stats = asyncio.run(_load_one(
+            collector, wh, resolver, league="premier_league", season=2020, force=False,
+        ))
+        assert stats.phantom_rows_skipped == 0
+        assert stats.inserted == 1

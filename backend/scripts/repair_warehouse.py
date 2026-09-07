@@ -76,6 +76,12 @@ SPLIT_IDENTITIES: Tuple[Tuple[str, str, str], ...] = (
 
     ("esp.1", "Ath Madrid", "Atletico Madrid"),
     ("esp.1", "La Coruna", "Deportivo La Coruña"),
+    # football-data respelled the club AGAIN on its 2026-27 promotion — the
+    # Galician article this time. Neither containment nor fuzzy can see it
+    # ("dep"≠"deportivo", "a"≠"la"), so it minted a 21st esp.1 club and failed
+    # the 2026-09-06 retrain gate. This heals warehouses written before the
+    # alias pin + the loader's phantom-club guard landed.
+    ("esp.1", "Dep. A Coruna", "Deportivo La Coruña"),
     ("esp.1", "Vallecano", "Rayo Vallecano"),
     ("esp.1", "Sp Gijon", "Sporting Gijón"),
     ("esp.1", "Valladolid", "Real Valladolid"),

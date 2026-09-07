@@ -956,6 +956,23 @@ MLS is Wave B; UCL/UEL/Euros/World Cup/Copa América are Wave C. Each wave advan
 
   **The exemption is ONE-SIDED and must stay that way.** Every defect the check exists to catch *inflates* the count — a split identity turns one club into two rows, a foreign competition filed under this league adds strangers (football-data's National League fixtures made `eng.1` a 44-team league). Only "not everyone has played yet" deflates it. A live season **over** its expected size still fails. Exempting both directions would retire the check during exactly the window when a new season's ingest is most likely to invent a club.
 
+- **football-data cannot MINT a club in a season ESPN already covers (guard added 2026-09-07).**
+  The over-count branch of the check above fired for real on 2026-09-06:
+  football-data respelled newly promoted Deportivo as `Dep. A Coruna` (the
+  Galician article — their old spelling `La Coruna` was already pinned), which
+  no alias knew, no containable token could fold ("dep"≠"deportivo",
+  "a"≠"la"), and fuzzy scored below even the 0.85 near-miss floor. The
+  resolver minted a 21st esp.1 club, the Elche fixture inserted twice, and the
+  weekly retrain was lost. No name-based rule can catch this class, so the
+  loader now refuses it structurally: every football-data row is a PLAYED
+  match and ESPN ingests daily, so in a league-season with ESPN rows a
+  spelling that `TeamResolver.would_create` cannot place is a split identity
+  by construction — its rows are skipped with a `::warning::` annotation
+  naming the spelling to pin (`phantom_names` in `LoadStats`). The odds arrive
+  on the next ingest after pinning; nothing is corrupted meanwhile. Creation
+  stays allowed where ESPN never covered the season (Paderborn, Nancy, Almere
+  City — fdcouk-only history would be lost on a full rebuild otherwise).
+
 - **A weekly gate is a weekly-resolution detector.** `train_unified` runs Sundays 02:00 and was the *only* thing running the integrity gate, so the 2026-08-16 break cost the whole week's retrain and would not have been retried until the next Sunday. The same gate now runs in `event_backfill` (daily 08:30) immediately before it publishes the warehouse, as a **`continue-on-error` canary** that writes to the step summary. That is the one place the no-`continue-on-error` rule does not apply: the rule exists because a silent step that CAPTURES something is indistinguishable from a quiet day, and this one captures nothing and gates nothing. `train_unified` still blocks; the canary only shortens discovery from seven days to one. **Do not make it blocking** — that adds a new way for a daily pipeline to fail, which is the opposite of its purpose.
 
 - **`GATE HOLD BACK` with `Publish … artifacts` skipped is a SUCCESS, not a failure.** The 2026-08-16 retrain ended that way on both genders: models retrained, promotion gate refused, Dixon-Coles keeps serving, run concluded green. Do not "fix" a held-back gate by loosening it.
