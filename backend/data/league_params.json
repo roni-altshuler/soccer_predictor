@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-09-08T17:49:08.648457+00:00",
+  "updated_at": "2026-09-08T23:51:11.382356+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -66,10 +66,10 @@
     "ned.1": {
       "display_name": "Eredivisie",
       "country": "Netherlands",
-      "avg_goals": 1.5737,
-      "home_adv": 0.3467,
+      "avg_goals": 1.574,
+      "home_adv": 0.3465,
       "rho": -0.11,
-      "draw_rate": 0.2498,
+      "draw_rate": 0.2504,
       "league_coefficient": 0.9,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -102,10 +102,10 @@
     "uefa.champions": {
       "display_name": "Champions League",
       "country": "Europe",
-      "avg_goals": 1.6048,
-      "home_adv": 0.4323,
+      "avg_goals": 1.6045,
+      "home_adv": 0.4309,
       "rho": -0.12,
-      "draw_rate": 0.1806,
+      "draw_rate": 0.1801,
       "league_coefficient": 1.2,
       "total_matchdays": 8,
       "relegation_spots": 0,
