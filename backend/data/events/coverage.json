@@ -1356,10 +1356,10 @@
   },
   {
    "competition_id": "eng.2",
-   "coverage": 0.1611,
-   "covered": 365,
+   "coverage": 0.1634,
+   "covered": 371,
    "gender": "M",
-   "matches": 2265,
+   "matches": 2271,
    "name": "EFL Championship",
    "seasons": [
     {
@@ -1400,17 +1400,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 60,
-     "matches": 60,
+     "covered": 66,
+     "matches": 66,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 4,
-     "with_events": 56
+     "with_events": 62
     }
    ],
    "uncovered": 1900,
    "verified_empty": 27,
-   "with_events": 338
+   "with_events": 344
   },
   {
    "competition_id": "esp.1",
@@ -2862,10 +2862,10 @@
   },
   {
    "competition_id": "ned.1",
-   "coverage": 0.1108,
-   "covered": 609,
+   "coverage": 0.111,
+   "covered": 610,
    "gender": "M",
-   "matches": 5494,
+   "matches": 5495,
    "name": "Eredivisie",
    "seasons": [
     {
@@ -3032,17 +3032,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 42,
-     "matches": 42,
+     "covered": 43,
+     "matches": 43,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 42
+     "with_events": 43
     }
    ],
    "uncovered": 4885,
    "verified_empty": 22,
-   "with_events": 587
+   "with_events": 588
   },
   {
    "competition_id": "por.1",
@@ -3288,10 +3288,10 @@
   },
   {
    "competition_id": "uefa.champions",
-   "coverage": 0.9706,
-   "covered": 3239,
+   "coverage": 0.9707,
+   "covered": 3245,
    "gender": "M",
-   "matches": 3337,
+   "matches": 3343,
    "name": "UEFA Champions League",
    "seasons": [
     {
@@ -3482,11 +3482,20 @@
      "uncovered": 7,
      "verified_empty": 8,
      "with_events": 174
+    },
+    {
+     "coverage": 1.0,
+     "covered": 6,
+     "matches": 6,
+     "season": 2026,
+     "uncovered": 0,
+     "verified_empty": 0,
+     "with_events": 6
     }
    ],
    "uncovered": 98,
    "verified_empty": 194,
-   "with_events": 3045
+   "with_events": 3051
   },
   {
    "competition_id": "uefa.champions.w",
@@ -4277,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-08T13:10:08+00:00",
+ "generated_at": "2026-09-09T13:16:13+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4386,
-  "covered": 36082,
-  "matches": 82261,
+  "coverage": 0.4387,
+  "covered": 36095,
+  "matches": 82274,
   "uncovered": 46179,
   "verified_empty": 2292,
-  "with_events": 33790
+  "with_events": 33803
  }
 }
