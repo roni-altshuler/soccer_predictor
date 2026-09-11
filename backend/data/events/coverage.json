@@ -3046,10 +3046,10 @@
   },
   {
    "competition_id": "por.1",
-   "coverage": 0.1255,
-   "covered": 557,
+   "coverage": 0.1257,
+   "covered": 558,
    "gender": "M",
-   "matches": 4437,
+   "matches": 4438,
    "name": "Primeira Liga",
    "seasons": [
     {
@@ -3216,17 +3216,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 43,
-     "matches": 43,
+     "covered": 44,
+     "matches": 44,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 3,
-     "with_events": 40
+     "with_events": 41
     }
    ],
    "uncovered": 3880,
    "verified_empty": 47,
-   "with_events": 510
+   "with_events": 511
   },
   {
    "competition_id": "tur.1",
@@ -3288,10 +3288,10 @@
   },
   {
    "competition_id": "uefa.champions",
-   "coverage": 0.9707,
-   "covered": 3251,
+   "coverage": 0.9708,
+   "covered": 3257,
    "gender": "M",
-   "matches": 3349,
+   "matches": 3355,
    "name": "UEFA Champions League",
    "seasons": [
     {
@@ -3485,17 +3485,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 12,
-     "matches": 12,
+     "covered": 18,
+     "matches": 18,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 12
+     "with_events": 18
     }
    ],
    "uncovered": 98,
    "verified_empty": 194,
-   "with_events": 3057
+   "with_events": 3063
   },
   {
    "competition_id": "uefa.champions.w",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-10T13:13:56+00:00",
+ "generated_at": "2026-09-11T13:03:59+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4389,
-  "covered": 36120,
-  "matches": 82299,
+  "covered": 36127,
+  "matches": 82306,
   "uncovered": 46179,
   "verified_empty": 2293,
-  "with_events": 33827
+  "with_events": 33834
  }
 }

@@ -1229,245 +1229,245 @@
     "usa.1": {
       "espn_league_slug": "usa.1",
       "fitted_matches": 1009,
-      "home_adv": 0.2475,
+      "home_adv": 0.247498,
       "last_match_date": "2026-09-10T02:30:00+00:00",
-      "rho": -0.051303,
+      "rho": -0.051294,
       "teams": {
         "Atlanta United FC": {
-          "attack": -0.211515,
-          "defence": -0.380944,
+          "attack": -0.211486,
+          "defence": -0.380931,
           "espn_team_id": "18418",
           "match": "normalized",
           "params_name": "Atlanta United",
-          "prior_ppg": 1.0047
+          "prior_ppg": 1.0048
         },
         "Austin FC": {
-          "attack": -0.178054,
-          "defence": -0.299074,
+          "attack": -0.178046,
+          "defence": -0.29908,
           "espn_team_id": "20906",
           "match": "exact",
           "params_name": "Austin FC",
           "prior_ppg": 1.1092
         },
         "CF Montréal": {
-          "attack": -0.236996,
-          "defence": -0.428399,
+          "attack": -0.236963,
+          "defence": -0.42839,
           "espn_team_id": "9720",
           "match": "exact",
           "params_name": "CF Montréal",
           "prior_ppg": 0.9399
         },
         "Charlotte FC": {
-          "attack": 0.10141,
-          "defence": -0.142127,
+          "attack": 0.101419,
+          "defence": -0.14211,
           "espn_team_id": "21300",
           "match": "exact",
           "params_name": "Charlotte FC",
           "prior_ppg": 1.5246
         },
         "Chicago Fire FC": {
-          "attack": 0.265286,
-          "defence": -0.27372,
+          "attack": 0.2653,
+          "defence": -0.273709,
           "espn_team_id": "182",
           "match": "exact",
           "params_name": "Chicago Fire FC",
           "prior_ppg": 1.5804
         },
         "Colorado Rapids": {
-          "attack": -0.1252,
-          "defence": -0.209845,
+          "attack": -0.125209,
+          "defence": -0.209839,
           "espn_team_id": "184",
           "match": "exact",
           "params_name": "Colorado Rapids",
           "prior_ppg": 1.2385
         },
         "Columbus Crew": {
-          "attack": 0.050794,
-          "defence": -0.272638,
+          "attack": 0.050801,
+          "defence": -0.272625,
           "espn_team_id": "183",
           "match": "exact",
           "params_name": "Columbus Crew",
-          "prior_ppg": 1.3504
+          "prior_ppg": 1.3505
         },
         "D.C. United": {
-          "attack": -0.273204,
-          "defence": -0.375968,
+          "attack": -0.273228,
+          "defence": -0.375947,
           "espn_team_id": "193",
           "match": "exact",
           "params_name": "D.C. United",
           "prior_ppg": 0.9595
         },
         "FC Cincinnati": {
-          "attack": 0.191723,
-          "defence": -0.40777,
+          "attack": 0.191736,
+          "defence": -0.407769,
           "espn_team_id": "18267",
           "match": "exact",
           "params_name": "FC Cincinnati",
           "prior_ppg": 1.3644
         },
         "FC Dallas": {
-          "attack": 0.219225,
-          "defence": -0.324576,
+          "attack": 0.219226,
+          "defence": -0.324575,
           "espn_team_id": "185",
           "match": "exact",
           "params_name": "FC Dallas",
           "prior_ppg": 1.4788
         },
         "Houston Dynamo FC": {
-          "attack": -0.089942,
-          "defence": -0.081827,
+          "attack": -0.089954,
+          "defence": -0.081823,
           "espn_team_id": "6077",
           "match": "exact",
           "params_name": "Houston Dynamo FC",
-          "prior_ppg": 1.3857
+          "prior_ppg": 1.3856
         },
         "Inter Miami CF": {
-          "attack": 0.550717,
-          "defence": -0.328035,
+          "attack": 0.550736,
+          "defence": -0.328018,
           "espn_team_id": "20232",
           "match": "normalized",
           "params_name": "Inter Miami",
           "prior_ppg": 1.8664
         },
         "LA Galaxy": {
-          "attack": -0.119242,
-          "defence": -0.352835,
+          "attack": -0.119245,
+          "defence": -0.352837,
           "espn_team_id": "187",
           "match": "exact",
           "params_name": "LA Galaxy",
-          "prior_ppg": 1.1107
+          "prior_ppg": 1.1106
         },
         "LAFC": {
-          "attack": 0.179132,
-          "defence": 0.131754,
+          "attack": 0.179121,
+          "defence": 0.131761,
           "espn_team_id": "18966",
           "match": "exact",
           "params_name": "LAFC",
-          "prior_ppg": 1.8349
+          "prior_ppg": 1.8348
         },
         "Minnesota United FC": {
-          "attack": 0.071804,
-          "defence": -0.201687,
+          "attack": 0.071801,
+          "defence": -0.201683,
           "espn_team_id": "17362",
           "match": "exact",
           "params_name": "Minnesota United FC",
-          "prior_ppg": 1.4391
+          "prior_ppg": 1.439
         },
         "Nashville SC": {
-          "attack": 0.181484,
-          "defence": 0.117469,
+          "attack": 0.181492,
+          "defence": 0.117497,
           "espn_team_id": "18986",
           "match": "exact",
           "params_name": "Nashville SC",
           "prior_ppg": 1.8265
         },
         "New England Revolution": {
-          "attack": 0.005046,
-          "defence": -0.155354,
+          "attack": 0.005052,
+          "defence": -0.155341,
           "espn_team_id": "189",
           "match": "exact",
           "params_name": "New England Revolution",
           "prior_ppg": 1.4136
         },
         "New York City FC": {
-          "attack": 0.013861,
-          "defence": -0.064849,
+          "attack": 0.013872,
+          "defence": -0.064831,
           "espn_team_id": "17606",
           "match": "exact",
           "params_name": "New York City FC",
-          "prior_ppg": 1.5026
+          "prior_ppg": 1.5027
         },
         "Orlando City SC": {
-          "attack": 0.189882,
-          "defence": -0.447475,
+          "attack": 0.189889,
+          "defence": -0.44747,
           "espn_team_id": "12011",
           "match": "exact",
           "params_name": "Orlando City SC",
           "prior_ppg": 1.3212
         },
         "Philadelphia Union": {
-          "attack": 0.139506,
-          "defence": -0.090779,
+          "attack": 0.139518,
+          "defence": -0.090767,
           "espn_team_id": "10739",
           "match": "exact",
           "params_name": "Philadelphia Union",
           "prior_ppg": 1.6108
         },
         "Portland Timbers": {
-          "attack": 0.108714,
-          "defence": -0.32262,
+          "attack": 0.108717,
+          "defence": -0.322609,
           "espn_team_id": "9723",
           "match": "exact",
           "params_name": "Portland Timbers",
           "prior_ppg": 1.3616
         },
         "Real Salt Lake": {
-          "attack": -0.052053,
-          "defence": -0.257062,
+          "attack": -0.052052,
+          "defence": -0.257064,
           "espn_team_id": "4771",
           "match": "exact",
           "params_name": "Real Salt Lake",
           "prior_ppg": 1.2636
         },
         "Red Bull New York": {
-          "attack": -0.099243,
-          "defence": -0.325709,
+          "attack": -0.099238,
+          "defence": -0.325697,
           "espn_team_id": "190",
           "match": "exact",
           "params_name": "Red Bull New York",
           "prior_ppg": 1.1546
         },
         "San Diego FC": {
-          "attack": 0.197994,
-          "defence": -0.133375,
+          "attack": 0.197986,
+          "defence": -0.133379,
           "espn_team_id": "22529",
           "match": "exact",
           "params_name": "San Diego FC",
           "prior_ppg": 1.6363
         },
         "San Jose Earthquakes": {
-          "attack": 0.169024,
-          "defence": -0.346273,
+          "attack": 0.169023,
+          "defence": -0.346272,
           "espn_team_id": "191",
           "match": "exact",
           "params_name": "San Jose Earthquakes",
           "prior_ppg": 1.4022
         },
         "Seattle Sounders FC": {
-          "attack": -0.039516,
-          "defence": -0.133739,
+          "attack": -0.039531,
+          "defence": -0.133734,
           "espn_team_id": "9726",
           "match": "normalized",
           "params_name": "Seattle Sounders",
           "prior_ppg": 1.3888
         },
         "Sporting Kansas City": {
-          "attack": -0.203153,
-          "defence": -0.64171,
+          "attack": -0.20315,
+          "defence": -0.641704,
           "espn_team_id": "186",
           "match": "exact",
           "params_name": "Sporting Kansas City",
           "prior_ppg": 0.7654
         },
         "St. Louis CITY SC": {
-          "attack": 0.036232,
-          "defence": -0.249037,
+          "attack": 0.036221,
+          "defence": -0.249033,
           "espn_team_id": "21812",
           "match": "exact",
           "params_name": "St. Louis CITY SC",
-          "prior_ppg": 1.3582
+          "prior_ppg": 1.3581
         },
         "Toronto FC": {
-          "attack": -0.066375,
-          "defence": -0.218696,
+          "attack": -0.066369,
+          "defence": -0.218682,
           "espn_team_id": "7318",
           "match": "exact",
           "params_name": "Toronto FC",
           "prior_ppg": 1.2856
         },
         "Vancouver Whitecaps": {
-          "attack": 0.342209,
-          "defence": 0.11455,
+          "attack": 0.342213,
+          "defence": 0.114581,
           "espn_team_id": "9727",
           "match": "exact",
           "params_name": "Vancouver Whitecaps",
@@ -1623,7 +1623,7 @@
       ]
     }
   },
-  "generated_at": "2026-09-10T13:14:19+00:00",
-  "params_generated_at": "2026-09-10T13:13:58+00:00",
+  "generated_at": "2026-09-11T13:04:11+00:00",
+  "params_generated_at": "2026-09-11T13:04:00+00:00",
   "schema": 1
 }
