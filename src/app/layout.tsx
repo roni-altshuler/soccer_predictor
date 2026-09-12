@@ -26,6 +26,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchverse.vercel.app'
 
+// The reader's ambient preference (soft · vivid · off), applied to <html>
+// BEFORE first paint so a reader who turned the pitch off never sees it
+// flash on. Blocking on purpose and tiny (~170 bytes); the key and the
+// states are defined in src/lib/ambient.ts — keep them in step.
+const AMBIENT_BOOT =
+  "(function(){var d=document.documentElement,v='soft';try{var s=localStorage.getItem('pitchverse-ambient');if(s==='vivid'||s==='off')v=s}catch(e){}d.dataset.ambient=v})()"
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -91,8 +98,10 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      data-ambient="soft"
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: AMBIENT_BOOT }} />
         {/* Alias the legacy --font-body/--font-heading vars to Inter so any
             older inline styles or third-party CSS keeps working. */}
         <style>{`:root { --font-body: var(--font-sans); --font-heading: var(--font-sans); --font-display: var(--font-sans); }`}</style>

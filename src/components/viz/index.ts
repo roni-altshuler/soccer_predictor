@@ -6,7 +6,12 @@
  */
 export { ChartContainer } from './ChartContainer'
 export { OutcomeBars, type OutcomeBarDatum } from './OutcomeBars'
-export { ScorelineHeatmap, type ScorelineCell } from './ScorelineHeatmap'
+export {
+  ScorelineHeatmap,
+  ScorelineChips,
+  type ScorelineCell,
+  type ScorelinePick,
+} from './ScorelineHeatmap'
 export { ProgressionChart, type ProgressionSeries } from './ProgressionChart'
 export { FactorMeters, type FactorMeterDatum } from './FactorMeters'
 export { H2HMatrix, type H2HEntity } from './H2HMatrix'

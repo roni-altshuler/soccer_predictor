@@ -121,28 +121,26 @@ export function RecordedForecastPanel({
           </dl>
 
           {/* Rule 2. Printed every time, not only on a miss — a hit read as
-              proof is the same error in the flattering direction. */}
-          <p className="mt-3 text-[11.5px] leading-relaxed text-[var(--text-tertiary)]">
+              proof is the same error in the flattering direction. One
+              sentence: the caveat, and where the real verdict lives. */}
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
             {recorded.calledIt
-              ? 'Its highest of the three landed on the result. '
-              : 'Its highest of the three did not land on the result. '}
-            One match cannot judge a forecast: a probability is only right or wrong
-            across many of them, and this one was never a prediction that the result
-            would happen.{' '}
+              ? 'Its highest of the three landed on the result'
+              : 'Its highest of the three did not land on the result'}
+            , but one match cannot judge a forecast:{' '}
             <a
               href="/accuracy"
               className="text-[var(--text-secondary)] underline underline-offset-2 hover:text-[var(--text-primary)]"
             >
-              The record across every settled pick
+              the record across every settled pick
             </a>{' '}
             is where it can be.
           </p>
         </>
       ) : (
-        <p className="mt-3 text-[11.5px] leading-relaxed text-[var(--text-tertiary)]">
-          These three add to 100% and are the model&apos;s complete answer. It is recorded
-          now and kept, so it can be scored against the result rather than remembered
-          selectively.
+        <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-tertiary)]">
+          Recorded now and kept, so it is scored against the result rather than
+          remembered selectively.
         </p>
       )}
     </div>

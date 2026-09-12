@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { EmptyState } from '@/components/EmptyState'
 import { MatchDetail } from '@/components/fixture/MatchDetail'
 import { RecordedForecastPanel } from '@/components/fixture/RecordedForecast'
+import { predictHref } from '@/lib/predictHref'
 import { TeamCrest } from '@/components/primitives/TeamCrest'
 import { splitScore } from '@/components/tournament/bracketLayout'
 import type { RecordedForecast } from '@/lib/server/recordedForecast'
@@ -307,6 +308,7 @@ export default function TiePage() {
                 ) : null
               }
               eliminated={singleLeg ? eliminated : null}
+              predictHref={predictHref(leg.home.name, leg.away.name, data?.competition?.id)}
             />
           ))}
 

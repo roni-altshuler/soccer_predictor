@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
+import { AMBIENT_EVENT, readAmbient } from '@/lib/ambient'
+
 /**
  * The tactics-board match — the animated half of the ambient layer.
  *
@@ -24,12 +26,19 @@ import { useEffect, useRef } from 'react'
  * - It is DECORATION. It must never render a score, a name, a clock, or
  *   anything readable as data — a fake number in the background of a
  *   product whose whole grammar is real numbers would be a lie.
- * - It must never compete with content: mark alpha ≤0.15, ball ≤0.3, trail
- *   and flashes below that, pitch lines ≤8% — above the stripes, far below
+ * - It must never compete with content: mark alpha ≤0.11, ball ≤0.2, trail
+ *   and flashes below that, pitch lines ≤6% — above the stripes, far below
  *   text. Colours are casts of the existing palette, never a new hue.
+ *   (2026-09-12: cut from 0.15 / 0.3 / 8% and the idle pauses lengthened
+ *   ~1.5×, after the owner found the layer too sharp to read over.)
  * - One <canvas>, ~23 entities, capped at 30fps, dt clamped; rAF stops on
  *   hidden tabs by itself. Under prefers-reduced-motion it draws a single
  *   static formation and never animates.
+ * - The reader holds the dial: `data-ambient` on <html> (src/lib/ambient.ts).
+ *   While it is `off` the CSS hides the layer AND this loop is not running;
+ *   it resumes on the `ambientchange` event when the reader turns it back.
+ *   `soft`, the default, is applied by CSS (opacity + blur) over these
+ *   ceilings; the canvas itself does not need to know.
  */
 
 const W = 1600
@@ -185,7 +194,9 @@ function kickoff(s: Sim, toTeam: 0 | 1) {
   s.shooter = null
   for (const p of s.players) p.run = null
   s.holder = nearest(s.players, toTeam, W / 2, H / 2, true)
-  s.holdUntil = s.time + 1.4
+  // Kickoff pause — ~1.5× the original 1.4s: the calm between phases is
+  // what keeps the layer from pulling the eye.
+  s.holdUntil = s.time + 2.0
 }
 
 function launch(s: Sim, kind: FlightKind, toX: number, toY: number, receiver: Player | null) {
@@ -411,7 +422,7 @@ function tick(s: Sim, dt: number) {
 
   if (s.goalPulse) {
     s.goalPulse.t += dt
-    if (s.goalPulse.t > 2.1) {
+    if (s.goalPulse.t > 1.8) {
       const conceded = (s.goalPulse.x < W / 2 ? 0 : 1) as 0 | 1
       s.goalPulse = null
       s.celebration = null
@@ -438,7 +449,7 @@ function tick(s: Sim, dt: number) {
       s.holder = nearest(s.players, s.possession, ball.x, ball.y, true)
       s.flight = null
       ball.h = 0
-      s.holdUntil = s.time + 0.35
+      s.holdUntil = s.time + 0.5
       return
     }
     if (u >= 1) {
@@ -448,7 +459,7 @@ function tick(s: Sim, dt: number) {
         const scored = inMouth && Math.random() < 0.42
         if (scored && s.shooter) {
           s.goalPulse = { x: f.toX < W / 2 ? 40 : W - 40, y: GOAL_Y, t: 0 }
-          s.celebration = { scorer: s.shooter, until: s.time + 2.0 }
+          s.celebration = { scorer: s.shooter, until: s.time + 1.8 }
           s.flight = null
           s.holder = null
         } else {
@@ -458,7 +469,7 @@ function tick(s: Sim, dt: number) {
           s.oneTwoBack = null
           s.holder = nearest(s.players, defending, ball.x, ball.y)
           s.flight = null
-          s.holdUntil = s.time + 0.9
+          s.holdUntil = s.time + 1.3
         }
         s.shooter = null
       } else {
@@ -470,7 +481,7 @@ function tick(s: Sim, dt: number) {
         s.holdUntil =
           f.kind === 'loft' && prog > 0.78
             ? s.time + 0.12
-            : s.time + (counter ? 0.2 : 0.5 + Math.random() * 0.9)
+            : s.time + (counter ? 0.3 : 0.75 + Math.random() * 1.3)
       }
     }
     return
@@ -494,8 +505,8 @@ function tick(s: Sim, dt: number) {
  *  register. Proportions follow a real 105×68m pitch mapped onto 1600×1000. */
 function drawPitch(ctx: CanvasRenderingContext2D, view: View) {
   const px = (cssPx: number) => cssPx / view.scale
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)'
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'
   ctx.lineWidth = px(1.5)
 
   // Touchlines and goal lines — with the whole field in view, the boundary
@@ -560,7 +571,7 @@ function draw(ctx: CanvasRenderingContext2D, s: Sim, view: View) {
   drawPitch(ctx, view)
 
   for (const f of s.flashes) {
-    const a = 0.07 * (1 - f.t / 0.5)
+    const a = 0.05 * (1 - f.t / 0.5)
     ctx.strokeStyle = `rgba(255, 255, 255, ${a})`
     ctx.lineWidth = px(1)
     ctx.beginPath()
@@ -572,13 +583,13 @@ function draw(ctx: CanvasRenderingContext2D, s: Sim, view: View) {
   const markW = Math.max(1.6, px(1.1))
   for (const p of s.players) {
     if (p.team === 0) {
-      ctx.strokeStyle = 'rgba(120, 200, 110, 0.15)'
+      ctx.strokeStyle = 'rgba(120, 200, 110, 0.11)'
       ctx.lineWidth = markW
       ctx.beginPath()
       ctx.arc(p.x, p.y, Math.max(7, px(3.2)), 0, Math.PI * 2)
       ctx.stroke()
     } else {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.11)'
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
       ctx.lineWidth = markW
       const r = Math.max(5.5, px(2.6))
       ctx.beginPath()
@@ -592,7 +603,7 @@ function draw(ctx: CanvasRenderingContext2D, s: Sim, view: View) {
 
   // Trail first, then the ball on top of it.
   s.trail.forEach((t, i) => {
-    const a = 0.13 * ((i + 1) / s.trail.length)
+    const a = 0.09 * ((i + 1) / s.trail.length)
     ctx.fillStyle = `rgba(255, 255, 255, ${a})`
     ctx.beginPath()
     ctx.arc(t.x, t.y, Math.max(1.6, px(1)), 0, Math.PI * 2)
@@ -601,19 +612,19 @@ function draw(ctx: CanvasRenderingContext2D, s: Sim, view: View) {
 
   if (s.ball.h > 8) {
     // Ground shadow under a lofted ball.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
     ctx.beginPath()
     ctx.arc(s.ball.x, s.ball.y, Math.max(2.2, px(1.4)), 0, Math.PI * 2)
     ctx.fill()
   }
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'
   ctx.beginPath()
   ctx.arc(s.ball.x, s.ball.y - s.ball.h, Math.max(3.4 + s.ball.h * 0.02, px(2.2)), 0, Math.PI * 2)
   ctx.fill()
 
   if (s.goalPulse) {
-    const u = Math.min(1, s.goalPulse.t / 1.2)
-    ctx.strokeStyle = `rgba(120, 200, 110, ${0.18 * (1 - u)})`
+    const u = Math.min(1, s.goalPulse.t / 1.0)
+    ctx.strokeStyle = `rgba(120, 200, 110, ${0.13 * (1 - u)})`
     ctx.lineWidth = Math.max(2, px(1.2))
     ctx.beginPath()
     ctx.arc(s.goalPulse.x, s.goalPulse.y, 12 + u * 90, 0, Math.PI * 2)
@@ -669,6 +680,7 @@ export function PitchMatchAnimation() {
     kickoff(sim, 0)
 
     let raf = 0
+    let running = false
     let last = performance.now()
     let acc = 0
     const FRAME = 1 / 30
@@ -685,16 +697,40 @@ export function PitchMatchAnimation() {
       raf = requestAnimationFrame(loop)
     }
 
+    const start = () => {
+      if (running) return
+      running = true
+      // The canvas had no box while hidden; refit before the first frame.
+      fit()
+      last = performance.now()
+      acc = 0
+      raf = requestAnimationFrame(loop)
+    }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(raf)
+    }
+
+    // The reader's dial: no rAF at all while the layer is off. The CSS hides
+    // it on the same attribute, so the two can never disagree.
+    const applyAmbient = () => {
+      if (readAmbient() === 'off') stop()
+      else start()
+    }
+
     if (reduced.matches) {
       // A single still of the kickoff shape — present, never moving.
       tick(sim, 0.001)
       draw(ctx, sim, view)
     } else {
-      raf = requestAnimationFrame(loop)
+      applyAmbient()
+      window.addEventListener(AMBIENT_EVENT, applyAmbient)
     }
 
     return () => {
-      cancelAnimationFrame(raf)
+      stop()
+      window.removeEventListener(AMBIENT_EVENT, applyAmbient)
       window.removeEventListener('resize', fit)
     }
   }, [])

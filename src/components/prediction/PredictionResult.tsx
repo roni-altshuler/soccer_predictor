@@ -14,7 +14,9 @@ import {
   OutcomeBars,
   ScorelineHeatmap,
   type OutcomeBarDatum,
+  ScorelineChips,
   type ScorelineCell,
+  type ScorelinePick,
 } from '@/components/viz'
 import type { AttributionItem } from '@/lib/types/attribution'
 import { cn, clamp, formatPct } from '@/lib/utils'
@@ -204,18 +206,31 @@ function ScorelinePanel({
   cells: ScorelineCell[]
   mostLikely: PredictionPayload['most_likely_score']
 }) {
+  // One pick, shared by the chips above the grid and the cells inside it.
+  const [pick, setPick] = useState<ScorelinePick | null>(null)
   if (cells.length >= 3) {
     return (
-      /* Heatmap height ≈ width (square grid + 48px axes); cap the width so
-         the reserved box never clips the bottom rows. */
-      <ChartContainer height={332} label="Loading scoreline probabilities">
-        <div className="mx-auto" style={{ maxWidth: 328 }}>
-          {/* No `predicted` override — the heatmap outlines its true peak
-              cell, so an unsorted upstream list can't outline an off-mode
-              scoreline. */}
-          <ScorelineHeatmap cells={cells} maxGoals={4} />
-        </div>
-      </ChartContainer>
+      <div>
+        {/* The chips live OUTSIDE the fixed-height chart box: it positions
+            its children absolutely, so anything that wraps in there would
+            overlap the card below. */}
+        <ScorelineChips cells={cells} selected={pick} onSelect={setPick} className="mb-3" />
+        {/* Heatmap height ≈ width (square grid + 48px axes) plus the one
+            readout line; cap the width so the reserved box never clips. */}
+        <ChartContainer height={356} label="Loading scoreline probabilities">
+          <div className="mx-auto" style={{ maxWidth: 328 }}>
+            {/* No `predicted` override — the heatmap outlines its true peak
+                cell, so an unsorted upstream list can't outline an off-mode
+                scoreline. */}
+            <ScorelineHeatmap
+              cells={cells}
+              maxGoals={4}
+              selected={pick}
+              onSelect={setPick}
+            />
+          </div>
+        </ChartContainer>
+      </div>
     )
   }
   return (

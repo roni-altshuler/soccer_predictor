@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
+import { AmbientToggle } from '@/components/AmbientToggle'
 import { AuthModal } from '@/components/AuthModal'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -40,6 +41,9 @@ export function TopBar() {
 
         {/* Right cluster */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          {/* The pitch dial, where a phone can reach it — the sidebar that
+              carries it on desktop is hidden below md. */}
+          <AmbientToggle label="Pitch" compact className="md:hidden" />
           {/* The men's/women's switch is not rendered while women's
               competitions sit outside the coverage waves (docs/PIVOT_2026-08.md
               §5). The preference plumbing stays — every fetch still threads

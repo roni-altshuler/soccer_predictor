@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowRight,
   Brain,
+  ChevronDown,
   Globe2,
   Goal,
   ListTree,
@@ -143,29 +144,44 @@ const OUTPUT_EXPLAINERS = [
     Icon: Percent,
     tint: 'text-[var(--accent-ai)] bg-[color-mix(in_srgb,var(--accent-ai)_12%,transparent)]',
     title: 'Honest probabilities',
-    desc: 'Win/draw/loss chances with a confidence we track publicly — when we say 60%, it should happen about 60% of the time.',
+    desc: 'Win, draw and loss, scored publicly against the closing line.',
   },
   {
     Icon: Goal,
     tint: 'text-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_12%,transparent)]',
     title: 'Scoreline distribution',
-    desc: 'Every plausible final score gets a probability, with the most likely ones surfaced first.',
+    desc: 'A probability for every plausible final score.',
   },
   {
     Icon: ListTree,
     tint: 'text-[var(--accent-warn)] bg-[color-mix(in_srgb,var(--accent-warn)_12%,transparent)]',
     title: 'Why this prediction',
-    desc: 'A factor panel showing which signals — rating gap, form, home edge — moved the needle.',
+    desc: 'Which signals moved the number.',
   },
 ] as const
 
+/** `?league=` may be an ESPN id (`eng.1`) or a catalog name; either resolves. */
+function catalogLeagueFor(param: string | null): string | undefined {
+  if (!param) return undefined
+  return ESPN_TO_CATALOG[param] ?? param
+}
+
 function PredictPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  // The matchup IS the URL: /predict?home=&away=&league=[&away_league=].
+  // Read once on arrival, written back as the reader changes it, so a
+  // pairing is shareable and a match card can link into a priced one.
+  const preferredLeague = catalogLeagueFor(searchParams.get('league'))
   const [homeTeam, setHomeTeam] = useState<TeamPick | null>(() =>
-    resolveCatalogTeam(searchParams.get('home') ?? '')
+    resolveCatalogTeam(searchParams.get('home') ?? '', preferredLeague)
   )
   const [awayTeam, setAwayTeam] = useState<TeamPick | null>(() =>
-    resolveCatalogTeam(searchParams.get('away') ?? '')
+    resolveCatalogTeam(
+      searchParams.get('away') ?? '',
+      catalogLeagueFor(searchParams.get('away_league')) ?? preferredLeague
+    )
   )
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PredictionResult | null>(null)
@@ -217,7 +233,22 @@ function PredictPageContent() {
     setAwayTeam(homeTeam)
   }, [homeTeam, awayTeam])
 
-  const handlePredict = async () => {
+  // Keep the address bar in step with the picker. Replace, not push: the
+  // picker is one control, not a history of every club tried in it.
+  useEffect(() => {
+    const next = new URLSearchParams()
+    if (homeTeam) next.set('home', homeTeam.name)
+    if (awayTeam) next.set('away', awayTeam.name)
+    if (homeTeam) next.set('league', homeTeam.league)
+    if (homeTeam && awayTeam && awayTeam.league !== homeTeam.league) {
+      next.set('away_league', awayTeam.league)
+    }
+    const qs = next.toString()
+    if (qs === searchParams.toString()) return
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [homeTeam, awayTeam, pathname, router, searchParams])
+
+  const handlePredict = useCallback(async () => {
     if (!homeTeam || !awayTeam) return
     if (homeTeam.name === awayTeam.name) { setResult({ error: 'Please select different teams' }); return }
     setLoading(true); setResult(null)
@@ -236,7 +267,16 @@ function PredictPageContent() {
       setResult(await response.json())
     } catch (error) { setResult({ error: error instanceof Error ? error.message : 'Prediction failed' }) }
     finally { setLoading(false) }
-  }
+  }, [homeTeam, awayTeam, asQueryParam])
+
+  // A deep link that names both sides is a matchup, so it is priced on
+  // arrival rather than parked behind the button. Once, on mount.
+  const autoRan = useRef(false)
+  useEffect(() => {
+    if (autoRan.current) return
+    autoRan.current = true
+    if (homeTeam && awayTeam && homeTeam.name !== awayTeam.name) void handlePredict()
+  }, [homeTeam, awayTeam, handlePredict])
 
   const canPredict = Boolean(homeTeam && awayTeam && homeTeam.name !== awayTeam.name)
   const isCrossLeague = Boolean(
@@ -356,10 +396,10 @@ function PredictPageContent() {
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
-              AI predict
+              Any matchup
             </h1>
-            <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
-              Pick two teams — calibrated win/draw/loss, scoreline, and the factors behind it.
+            <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+              Any two clubs · 1X2 · scoreline · drivers
             </p>
           </div>
           {/* Gender toggle removed with the coverage waves — see TopBar. */}
@@ -502,33 +542,34 @@ function PredictPageContent() {
           </AsyncSection>
         )}
 
-        {/* Empty state — honest explainer of the model's outputs */}
-        {!loading && !result && (
-          <section>
-            <p className="mb-2 px-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-              What the model returns
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {OUTPUT_EXPLAINERS.map(({ Icon, tint, title, desc }) => (
-                <div
-                  key={title}
-                  className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4"
-                >
-                  <span className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg ${tint}`}>
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-                  <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">{desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2.5 text-[12px] text-[var(--text-secondary)]">
-              <Brain className="h-4 w-4 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
-              Cross-league pairings work too — team strength is put on a common scale so a
-              UCL-vs-MLS matchup stays grounded instead of guessing.
-            </div>
-          </section>
-        )}
+        {/* What comes back — folded, so the page opens on the picker and
+            the result. One line each; the long form lives on /about. */}
+        <details className="group rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between px-4 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] [&::-webkit-details-marker]:hidden">
+            What the model returns
+            <ChevronDown
+              className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <ul className="grid grid-cols-1 gap-3 border-t border-[var(--border-color)] px-4 py-3 sm:grid-cols-3">
+            {OUTPUT_EXPLAINERS.map(({ Icon, tint, title, desc }) => (
+              <li key={title} className="flex items-start gap-2.5">
+                <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint}`}>
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-semibold text-[var(--text-primary)]">{title}</span>
+                  <span className="block text-[11px] leading-snug text-[var(--text-tertiary)]">{desc}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="flex items-center gap-2 border-t border-[var(--border-color)] px-4 py-2.5 text-[11px] text-[var(--text-tertiary)]">
+            <Brain className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ai)]" aria-hidden="true" />
+            Cross-league pairings work: both sides sit on one strength scale.
+          </p>
+        </details>
       </div>
     </div>
   )

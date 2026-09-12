@@ -278,6 +278,17 @@ export default function Home() {
   const visibleMatches = watchlistOnly ? trackedMatchesInTab : tabMatches
   const matchesByLeague = groupMatchesByLeague(visibleMatches)
 
+  // Matches per competition across the whole day, for the tile row — the
+  // same payload the list is drawn from, before any filter is applied.
+  const competitionCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const m of [...live, ...upcoming, ...completed]) {
+      if (!m.league) continue
+      counts.set(m.league, (counts.get(m.league) ?? 0) + 1)
+    }
+    return Array.from(counts, ([name, count]) => ({ name, count }))
+  }, [live, upcoming, completed])
+
   const sortedLeagueNames = Object.keys(matchesByLeague).sort((a, b) => {
     const pa = leaguePriority(a)
     const pb = leaguePriority(b)
@@ -309,11 +320,10 @@ export default function Home() {
           dateKey={selectedDate}
           total={live.length + upcoming.length + completed.length}
           live={live.length}
-          leagues={
-            new Set(
-              [...live, ...upcoming, ...completed].map((m) => m.league).filter(Boolean),
-            ).size
-          }
+          upcoming={upcoming.length}
+          finished={completed.length}
+          leagues={competitionCounts.length}
+          competitions={competitionCounts}
           className="mb-2"
         />
 
@@ -360,8 +370,7 @@ export default function Home() {
               <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>
                 Follow a club from{' '}
-                <span className="text-[var(--text-secondary)]">its page</span> to filter
-                Today to your teams
+                <span className="text-[var(--text-secondary)]">its page</span> to filter Today
               </span>
               <button
                 type="button"
@@ -416,10 +425,10 @@ export default function Home() {
           <EmptyState
             illustration="no-matches"
             title={`No matches ${watchlistOnly ? 'for followed teams ' : ''}${tab === 'live' ? 'are live' : tab === 'finished' ? 'have finished' : 'scheduled'}`}
-            description="Try a different date, or run the AI on any matchup you like."
+            description="Try another date, or price any matchup."
             action={
               <Button asChild variant="default" size="sm">
-                <Link href="/predict">Open AI predict</Link>
+                <Link href="/predict">Any matchup</Link>
               </Button>
             }
           />

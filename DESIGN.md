@@ -34,11 +34,13 @@ still means exactly one thing.
 **The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night
 with a match being played on it: static mowing stripes (white, ≤2% alpha), two
 accent-green light pools (≤11%) drifting on 90s+ cycles, and one canvas
-(`PitchMatchAnimation`) that draws the pitch markings (white, ≤8%) together with the
+(`PitchMatchAnimation`) that draws the pitch markings (white, ≤6%) together with the
 **tactics-board match** — chalk circles vs X-marks passing, pressing, shooting and scoring
-in a simulated game (~23 entities, 30fps cap, marks ≤15%, ball ≤30%) — all rendered once
-by `PitchBackdrop` behind everything at `z-index: -1` (2026-08-25 product decisions). Its
-bounds are load-bearing: **the pitch is seen whole** — a contain fit keeps the full field,
+in a simulated game (~23 entities, 30fps cap, marks ≤11%, ball ≤20%, trail ≤9%, goal
+pulse ≤13% and gone in 1.8s, kickoff and hold pauses ~1.5× their first cut) — all
+rendered once by `PitchBackdrop` behind everything at `z-index: -1` (2026-08-25 product
+decisions; ceilings cut from 8 / 15 / 30 / 13 / 18% on 2026-09-12). Its bounds are
+load-bearing: **the pitch is seen whole** — a contain fit keeps the full field,
 both goals included, centred at every viewport, rotated upright on portrait screens, never
 a crop that hides a goal; **it never distracts from the content** — the alphas above are
 ceilings chosen so no text loses contrast and no reader their attention; reduced motion
@@ -46,6 +48,19 @@ stills everything (pools via `animation: none`, the match by drawing one static 
 **the match never renders a score, clock, name or anything readable as data** — it is
 decoration in a product whose grammar is real numbers; and **nothing else on the site may
 pick up a gradient or glow because this exists** — one layer, defined once, consumed once.
+
+**The reader holds the dial (2026-09-12).** The owner found the layer "a little too sharp"
+to read over, so the ceilings above are now the *vivid* setting and the default is softer.
+`data-ambient` on `<html>` is `soft` (the default: the match canvas at 60% opacity under a
+0.6px blur, the light pools at 60%), `vivid` (the ceilings above), or `off` (`display:
+none`, and the canvas stops its rAF loop — off costs nothing). It is stored under
+`pitchverse-ambient`, applied by a ~170-byte blocking script in the root layout before
+first paint so a reader who turned it off never sees it flash on, and set by
+`AmbientToggle` — *Pitch · soft / vivid / off*, mono caption type, `aria-pressed` — in the
+sidebar's bottom block and, below `md`, in the topbar. Reduced motion is unchanged and
+orthogonal: it stills the layer at whatever level the dial is on. The states live in
+`src/lib/ambient.ts` and the `html[data-ambient]` rules next to `.pitch-backdrop` in
+`globals.css`; those two files and this paragraph are the whole contract.
 
 **Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
 there is no theme provider. `:root` is the single source of truth and the `.dark` block is
@@ -205,8 +220,9 @@ green underline bar + primary text. Tab grammar, not pill grammar.
   grouped **Watch** (Today) · **Forecast** (Leagues, Tournaments) · **Evidence** (Evaluation,
   Accuracy, How it works). Active = soft green wash + green text. Flat `--card-bg`, hairline
   right.
-- **Topbar** — 56px flat bar: mobile brand mark and the account control. **There is no
-  search field and no ⌘K palette.** Both were removed deliberately: they searched nine
+- **Topbar** — 56px flat bar: mobile brand mark, the pitch dial below `md` (the sidebar
+  carries it on desktop), and the account control. **There is no search field and no ⌘K
+  palette.** Both were removed deliberately: they searched nine
   leagues and fourteen competitions that are each one tap away, and a shortcut printed in a
   chip advertises a product bigger than this one.
 - **Mobile** — bottom tab bar flush to the screen edge, **four** slots (Today, Leagues,

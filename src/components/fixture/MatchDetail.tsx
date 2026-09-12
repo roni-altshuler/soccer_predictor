@@ -1,6 +1,7 @@
 'use client'
 
-import { CalendarDays, MapPin, UserRound } from 'lucide-react'
+import { ArrowRight, CalendarDays, MapPin, UserRound } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 
 import { Formation } from '@/components/fixture/Formation'
@@ -97,11 +98,13 @@ function ScoreHeader({
   competitionId,
   heading,
   eliminated,
+  predictHref,
 }: {
   card: MatchCard
   competitionId?: string
   heading?: string | null
   eliminated?: string | null
+  predictHref?: string | null
 }) {
   // Matched on the normalised name because the tie comes from our artifact and
   // the card comes from ESPN, and the two spell clubs differently.
@@ -242,6 +245,23 @@ function ScoreHeader({
               ))}
             </ul>
           ))}
+        </div>
+      ) : null}
+
+      {/* Into the matchup builder with both clubs already picked — the one
+          place on the site a reader can flip the venue or swap a side and
+          see the number move. A link, so it costs the card nothing. */}
+      {predictHref ? (
+        <div className="mt-3 text-center">
+          <Link
+            href={predictHref}
+            prefetch={false}
+            data-predict-link
+            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md border border-[var(--border-color)] px-2.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
+          >
+            Price this matchup
+            <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
         </div>
       ) : null}
     </header>
@@ -499,12 +519,16 @@ export function MatchDetail({
   eliminated,
   extraTabs,
   initialTab,
+  predictHref,
   className,
 }: {
   card: MatchCard
   competitionId?: string
   /** Competition and round, printed above the score. */
   heading?: string | null
+  /** `/predict?home=&away=` for this pairing (see lib/predictHref). Optional:
+   *  a page whose clubs the builder cannot name passes nothing. */
+  predictHref?: string | null
   /** Our own forecast for this match, shown first. Optional by design: a
    *  competition we do not forecast still gets the whole card. */
   model?: React.ReactNode
@@ -557,6 +581,7 @@ export function MatchDetail({
         competitionId={competitionId}
         heading={heading}
         eliminated={eliminated}
+        predictHref={predictHref}
       />
 
       {model ? <div className="border-b border-[var(--border-color)] px-4 py-4 md:px-5">{model}</div> : null}

@@ -332,11 +332,17 @@ nav, button, .caption, th, [role='tab'] {
    pitch at night rather than a void. The bounds that keep it Bugatti:
 
    - it lives BEHIND everything (fixed, z-index -1, pointer-events none);
-   - it must never distract from the content: pitch lines are white at ≤8%
+   - it must never distract from the content: pitch lines are white at ≤6%
      alpha, mowing stripes at ≤2%, glow is accent-green at ≤11%, the
-     tactics-board match's marks at ≤15% and its ball at ≤30% — content sits
-     on opaque cards, and on the bare canvas those levels cost no text its
-     contrast and no reader their attention;
+     tactics-board match's marks at ≤11% and its ball at ≤20% (2026-09-12:
+     cut from 8/15/30 — the owner found it "too sharp" to read over) —
+     content sits on opaque cards, and on the bare canvas those levels cost
+     no text its contrast and no reader their attention;
+   - the READER holds the dial (2026-09-12): `data-ambient` on <html> is
+     soft (default: canvas at 60% with a hair of blur, pools at 60%), vivid
+     (the ceilings above) or off (display: none, and the canvas loop stops).
+     Set before first paint by the root layout, written by AmbientToggle,
+     persisted under `pitchverse-ambient` — see src/lib/ambient.ts;
    - the pitch is seen WHOLE: lines and match live in one canvas
      (PitchMatchAnimation) with a contain fit — the full field, both goals
      included, centred at every viewport, rotated upright on portrait
@@ -358,6 +364,24 @@ nav, button, .caption, th, [role='tab'] {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+}
+
+/* The reader's dial. `soft` is the default and is what a first visit sees:
+   the match canvas dimmed and softened, the light pools at 60%. `vivid` is
+   the layer at its ceilings. `off` removes it — and PitchMatchAnimation
+   stops its rAF loop on the same attribute, so off costs nothing. */
+html[data-ambient='soft'] .pitch-backdrop__match {
+  opacity: 0.6;
+  filter: blur(0.6px);
+}
+
+html[data-ambient='soft'] .pitch-backdrop__glow {
+  /* filter, not opacity: the drift keyframes animate opacity already. */
+  filter: opacity(0.6);
+}
+
+html[data-ambient='off'] .pitch-backdrop {
+  display: none;
 }
 
 /* The one canvas (PitchMatchAnimation): the pitch lines AND the

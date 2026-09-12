@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Bookmark, BookmarkCheck, ChevronLeft, CircleHelp, RefreshCw } from 'lucide-react'
 
 import { MatchDetail } from '@/components/fixture/MatchDetail'
+import { predictHref } from '@/lib/predictHref'
 import { RecordedForecastPanel } from '@/components/fixture/RecordedForecast'
 import { ProbabilityBar } from '@/components/forecast/ProbabilityBar'
 import { AIPredictionTab } from '@/components/match/AIPredictionTab'
@@ -365,23 +366,9 @@ export default function MatchDetailPage() {
         <div className="text-center max-w-md mx-auto px-4">
           <CircleHelp className="mx-auto mb-4 h-12 w-12 text-[var(--text-tertiary)]" aria-hidden />
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Match not available</h2>
-          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
-            We couldn&apos;t load details for this match. This might be because:
+          <p className="mb-6 text-[13px]" style={{ color: 'var(--text-tertiary)' }}>
+            No detail was published for this match yet.
           </p>
-          <ul className="text-left mb-6 space-y-2" style={{ color: 'var(--text-tertiary)' }}>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>The match hasn&apos;t started yet and detailed data isn&apos;t available</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>The match ID has changed or is from a different data source</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>Detailed data is temporarily unavailable</span>
-            </li>
-          </ul>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/"
@@ -517,6 +504,7 @@ export default function MatchDetailPage() {
             card={match.card}
             competitionId={match.leagueId}
             initialTab={CARD_TAB[activeTab]}
+            predictHref={predictHref(match.home_team, match.away_team, match.leagueId ?? match.league)}
             heading={
               leagueAccent && leagueAccent.competitionId !== 'unknown'
                 ? leagueAccent.displayName
@@ -613,6 +601,15 @@ export default function MatchDetailPage() {
                 <span className="col-start-3 min-w-0 truncate text-right text-[15px] font-semibold leading-tight text-[var(--text-primary)] md:text-[18px]">
                   {match.away_team}
                 </span>
+              </div>
+              <div className="mt-3 text-center">
+                <Link
+                  href={predictHref(match.home_team, match.away_team, match.leagueId ?? match.league)}
+                  prefetch={false}
+                  className="inline-flex min-h-[32px] items-center rounded-md border border-[var(--border-color)] px-2.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
+                >
+                  Price this matchup
+                </Link>
               </div>
             </header>
             <OverviewTab
