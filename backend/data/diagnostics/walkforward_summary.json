@@ -1,49 +1,49 @@
 {
-  "generated_at": "2026-09-06T08:29:56.531791Z",
+  "generated_at": "2026-09-13T09:00:13.841096Z",
   "leagues": [
     {
       "league": "premier_league",
-      "accuracy_mean": 0.4469,
-      "accuracy_std": 0.0441,
-      "log_loss_mean": 1.12,
-      "brier_mean": 0.6632,
-      "ece_mean": 0.1479,
+      "accuracy_mean": 0.4494,
+      "accuracy_std": 0.0492,
+      "log_loss_mean": 1.1149,
+      "brier_mean": 0.6606,
+      "ece_mean": 0.1405,
       "n_test_seasons": 15
     },
     {
       "league": "la_liga",
-      "accuracy_mean": 0.4159,
-      "accuracy_std": 0.0353,
-      "log_loss_mean": 1.1375,
-      "brier_mean": 0.6772,
-      "ece_mean": 0.158,
+      "accuracy_mean": 0.4173,
+      "accuracy_std": 0.0339,
+      "log_loss_mean": 1.1344,
+      "brier_mean": 0.6754,
+      "ece_mean": 0.1564,
       "n_test_seasons": 15
     },
     {
       "league": "bundesliga",
-      "accuracy_mean": 0.4014,
-      "accuracy_std": 0.0319,
-      "log_loss_mean": 1.1602,
-      "brier_mean": 0.6903,
-      "ece_mean": 0.1609,
-      "n_test_seasons": 14
+      "accuracy_mean": 0.4007,
+      "accuracy_std": 0.0338,
+      "log_loss_mean": 1.1628,
+      "brier_mean": 0.6949,
+      "ece_mean": 0.1631,
+      "n_test_seasons": 15
     },
     {
       "league": "serie_a",
-      "accuracy_mean": 0.4344,
-      "accuracy_std": 0.0324,
-      "log_loss_mean": 1.1052,
-      "brier_mean": 0.6605,
-      "ece_mean": 0.1463,
+      "accuracy_mean": 0.4338,
+      "accuracy_std": 0.0344,
+      "log_loss_mean": 1.1042,
+      "brier_mean": 0.6596,
+      "ece_mean": 0.147,
       "n_test_seasons": 15
     },
     {
       "league": "ligue_1",
-      "accuracy_mean": 0.3932,
-      "accuracy_std": 0.0489,
-      "log_loss_mean": 1.1424,
-      "brier_mean": 0.6876,
-      "ece_mean": 0.1593,
+      "accuracy_mean": 0.3995,
+      "accuracy_std": 0.0315,
+      "log_loss_mean": 1.138,
+      "brier_mean": 0.6843,
+      "ece_mean": 0.1537,
       "n_test_seasons": 15
     }
   ]
