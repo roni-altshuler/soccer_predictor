@@ -67,6 +67,8 @@ backend/data/historical/
 # artifact (Vercel reads it) and must NOT be ignored — `git add` on a tracked
 # file inside an ignored directory exits 1 and killed the daily backfill job.
 backend/data/models/*
+backend/data/.model_quarantine/
+backend/data/.model_promotion_snapshot/
 !backend/data/models/model_selection.json
 backend/data/warehouse.sqlite
 backend/data/warehouse.sqlite-journal

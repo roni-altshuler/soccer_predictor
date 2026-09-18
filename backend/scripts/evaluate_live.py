@@ -36,6 +36,29 @@ from backend.services.forecast.snapshots import SnapshotStore  # noqa: E402
 logger = logging.getLogger("evaluate_live")
 OUT = ROOT / "backend" / "data" / "evaluation" / "live.json"
 WALKFORWARD = ROOT / "reports" / "baselines" / "layered_wave_a_logistic.json"
+CURRENT_FORECAST = ROOT / "backend" / "data" / "predictions" / "season_fixtures.json"
+
+
+def evaluation_cohorts(rows: list, historical_competitions: list,
+                       served_competitions: list, current_version: Optional[str]) -> dict:
+    """Recompute on raw scored fixtures, never average rounded league metrics."""
+    scopes = {
+        "historical_leagues": (historical_competitions, None),
+        "currently_served": (served_competitions, None),
+        "current_version": (served_competitions, current_version),
+    }
+    result = {}
+    for name, (competitions, version) in scopes.items():
+        if name == "current_version" and not version:
+            result[name] = {"available": False, "note": "Current model version unavailable"}
+            continue
+        sample = [r for r in rows if r['competition_id'] in competitions
+                  and (version is None or r.get('model_version') == version)]
+        result[name] = {"available": True, "competitions": sorted(competitions),
+                        "model_version": version, **score(sample, basis="live_published")}
+        if sample:
+            result[name]['baselines'] = baselines(sample)
+    return result
 
 
 def historical_block() -> dict:
@@ -73,10 +96,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--competition")
     ap.add_argument("--model-version")
     ap.add_argument("--output", default=str(OUT))
+    ap.add_argument("--database", type=Path, default=None)
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    with SnapshotStore() as store:
+    with SnapshotStore(args.database) as store:
         stats = store.stats()
         finals = store.final_before_kickoff(competition_id=args.competition,
                                             model_version=args.model_version)
@@ -86,7 +110,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     logger.info("final pre-kickoff forecasts: %d", len(finals))
 
     join_report: dict = {}
-    scored = join_results(finals, report=join_report)
+    scored = join_results(finals, db=args.database, report=join_report)
     logger.info("of those, %d now have a result", len(scored))
     if join_report.get("unresolved_count"):
         # Distinct from "not played yet". A club whose name stopped resolving
@@ -109,12 +133,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                     "published forecast and a result. That is the correct "
                     "state before the season starts, not a failure.")
 
+    historical = historical_block()
+    from backend.scripts.forecast_season import LEAGUES
+    try:
+        current_version = json.loads(CURRENT_FORECAST.read_text())["method"]["model_version"]
+    except (OSError, ValueError, KeyError, TypeError):
+        current_version = None
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "snapshot_store": stats,
         "join": join_report,
         "live": live,
-        "historical": historical_block(),
+        "historical": historical,
+        "cohorts": evaluation_cohorts(scored, historical.get('competitions', []),
+                                       list(LEAGUES), current_version),
         "warning": "live and historical are different samples measuring "
                    "different things. Never add them together or present one "
                    "as the other.",

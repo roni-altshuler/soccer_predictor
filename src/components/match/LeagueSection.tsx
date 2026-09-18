@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
 import { MatchRow, type MatchRowMatch } from '@/components/match/MatchRow'
@@ -65,6 +65,7 @@ export function LeagueSection({
   tableLeader,
 }: LeagueSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
+  const reducedMotion = useReducedMotion()
   const accent = getLeagueAccent(leagueId ?? leagueName)
 
   if (matches.length === 0) return null
@@ -83,11 +84,12 @@ export function LeagueSection({
 
   return (
     <section className="relative border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] last:border-b-0">
+      <div className="flex items-center bg-[var(--background-secondary)]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex min-h-[40px] w-full items-center gap-2 bg-[color-mix(in_srgb,var(--background-secondary)_60%,transparent)] px-3 py-1.5 transition-colors',
+          'flex min-h-[44px] min-w-0 flex-1 items-center gap-2 px-3 py-1.5 transition-colors',
           'hover:bg-[var(--card-hover)] focus-visible:bg-[var(--card-hover)] focus-visible:outline-none'
         )}
         aria-expanded={open}
@@ -128,18 +130,19 @@ export function LeagueSection({
             </Badge>
           )}
           <span className="text-[10px] font-medium text-[var(--text-tertiary)]">{matches.length}</span>
+        </div>
+      </button>
           {leagueId && (
             <Link
               href={`/leagues/${leagueId}`}
-              onClick={(e) => e.stopPropagation()}
               prefetch={false}
-              className="-my-2 inline-flex min-h-[40px] items-center px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)] hover:underline"
+              aria-label={`View ${leagueName}`}
+              className="inline-flex min-h-[44px] shrink-0 items-center px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)] hover:underline"
             >
               View
             </Link>
           )}
-        </div>
-      </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {open && (
@@ -148,7 +151,7 @@ export function LeagueSection({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             <div className="divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]">

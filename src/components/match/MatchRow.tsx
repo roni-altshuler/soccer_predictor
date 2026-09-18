@@ -8,6 +8,7 @@ import { type FormEntry } from '@/components/match/TeamFormPill'
 import { FlagBadge, Prob1X2 } from '@/components/primitives'
 import { Badge } from '@/components/ui/badge'
 import { cn, clamp } from '@/lib/utils'
+import { isValidProbabilityTriple } from '@/lib/probabilityValidation'
 
 /**
  * Canonical fixture row — Matchday v3 (FotMob grammar, stacked teams):
@@ -55,7 +56,9 @@ export interface MatchRowMatch {
 function formatKickoff(timeStr?: string): string {
   if (!timeStr) return 'TBD'
   try {
-    return new Date(timeStr).toLocaleTimeString(undefined, {
+    const date = new Date(timeStr)
+    if (!Number.isFinite(date.getTime())) return 'TBD'
+    return date.toLocaleTimeString(undefined, {
       hour: 'numeric',
       minute: '2-digit',
       hour12: false,
@@ -141,7 +144,7 @@ function TeamLine({
             emphasis === 'loser' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'
           )}
         >
-          {score ?? 0}
+          {score ?? '–'}
         </span>
       )}
     </div>
@@ -167,9 +170,7 @@ export function MatchRow({
 }: MatchRowProps) {
   const hasAILean =
     showAILean &&
-    typeof match.ai_home_prob === 'number' &&
-    typeof match.ai_draw_prob === 'number' &&
-    typeof match.ai_away_prob === 'number'
+    isValidProbabilityTriple({ home: match.ai_home_prob, draw: match.ai_draw_prob, away: match.ai_away_prob })
   const aiHome = clamp(match.ai_home_prob ?? 0)
   const aiDraw = clamp(match.ai_draw_prob ?? 0)
   const aiAway = clamp(match.ai_away_prob ?? 0)

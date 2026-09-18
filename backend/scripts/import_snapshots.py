@@ -66,10 +66,10 @@ def _open(path: Path) -> io.TextIOBase:
 def parse(path: Path) -> List[Snapshot]:
     """Read the export into validated snapshots, or raise."""
     with _open(path) as fh:
-        rows = list(csv.DictReader(fh))
-    if not rows:
-        return []
-    missing = [c for c in REQUIRED if c not in rows[0]]
+        reader = csv.DictReader(fh)
+        columns = reader.fieldnames or []
+        rows = list(reader)
+    missing = [c for c in REQUIRED if c not in columns]
     if missing:
         raise ValueError(
             f"{path} is missing {missing} — this is not a prediction snapshot "

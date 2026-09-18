@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { getLeagueAccent, ALL_COMPETITION_IDS } from '@/lib/leagueAccents'
 import { ESPN_SITE } from '@/lib/espnHost'
+import { isValidProbabilityTriple } from '@/lib/probabilityValidation'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -41,6 +42,12 @@ interface ESPNCompetitor {
     name?: string
     logo?: string
   }
+}
+
+function recordedScore(value: unknown): number | null {
+  if (value == null || value === '' || typeof value === 'boolean') return null
+  const score = Number(value)
+  return Number.isInteger(score) && score >= 0 ? score : null
 }
 
 /* ── committed-prediction join ──
@@ -118,10 +125,10 @@ function attachPredictions(matches: Match[], preds: CommittedPrediction[]): void
       byTeams.get(`${dateKey}|${normalizeTeamKey(m.home_team)}|${normalizeTeamKey(m.away_team)}`)
     if (!p) continue
 
-    const h = Number(p.predicted_home_win)
-    const d = Number(p.predicted_draw)
-    const a = Number(p.predicted_away_win)
-    if (!Number.isFinite(h) || !Number.isFinite(d) || !Number.isFinite(a) || h + d + a <= 0) {
+    const h = p.predicted_home_win
+    const d = p.predicted_draw
+    const a = p.predicted_away_win
+    if (!isValidProbabilityTriple({ home: h, draw: d, away: a })) {
       continue
     }
     m.ai_home_prob = h
@@ -220,6 +227,7 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
           // costs ~200ms on a route that is already dynamic; the cache write
           // costs quota that pauses the whole site.
           cache: 'no-store',
+          signal: AbortSignal.timeout(8_000),
         }
       ).then(async (response) => ({
         league,
@@ -227,6 +235,10 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
       }))
     )
   )
+
+  if (!settled.some((result) => result.status === 'fulfilled' && Array.isArray(result.value.data?.events))) {
+    throw new Error('All ESPN scoreboards unavailable')
+  }
 
   for (const outcome of settled) {
     if (outcome.status === 'rejected') {
@@ -270,8 +282,8 @@ async function fetchESPNMatches(targetDate: Date, gender: 'M' | 'F' = 'M'): Prom
           id: String(event.id),
           home_team: homeTeam.team?.displayName || homeTeam.team?.name || '',
           away_team: awayTeam.team?.displayName || awayTeam.team?.name || '',
-          home_score: status !== 'upcoming' ? parseInt(String(homeTeam.score ?? '0'), 10) : null,
-          away_score: status !== 'upcoming' ? parseInt(String(awayTeam.score ?? '0'), 10) : null,
+          home_score: status !== 'upcoming' ? recordedScore(homeTeam.score) : null,
+          away_score: status !== 'upcoming' ? recordedScore(awayTeam.score) : null,
           time: event.date || '',
           status,
           league: league.name,
@@ -316,6 +328,7 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
       // no-store for the same reason as the ESPN scoreboards above: a 60s
       // data-cache entry on a polled route is an ISR write per minute.
       cache: 'no-store',
+      signal: AbortSignal.timeout(8_000),
     })
     
     if (!response.ok) {
@@ -355,8 +368,8 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
             id: String(match.id),
             home_team: homeName,
             away_team: awayName,
-            home_score: status !== 'upcoming' ? match.home?.score ?? 0 : null,
-            away_score: status !== 'upcoming' ? match.away?.score ?? 0 : null,
+            home_score: status !== 'upcoming' ? recordedScore(match.home?.score) : null,
+            away_score: status !== 'upcoming' ? recordedScore(match.away?.score) : null,
             time: match.status?.utcTime || '',
             status,
             league: leagueName,
@@ -376,6 +389,7 @@ async function fetchFotMobMatches(targetDate: Date): Promise<Match[]> {
     }
   } catch (error) {
     console.error('Error fetching from FotMob:', error)
+    throw error
   }
   
   return matches
@@ -389,13 +403,20 @@ export async function GET(request: NextRequest) {
 
     // Try ESPN first, then FotMob. Never synthesize match rows.
     let source: 'espn' | 'fotmob' | 'none' = 'espn'
-    let matches = await fetchESPNMatches(requestedDate, gender)
+    let espnUnavailable = false
+    let matches = await fetchESPNMatches(requestedDate, gender).catch(() => {
+      espnUnavailable = true
+      return [] as Match[]
+    })
 
     // FotMob's coverage is essentially men's-only; only fall back to it for
     // the men's universe. For women's, we trust the ESPN result (even if
     // empty) so the UI shows an honest "no women's matches today" state.
     if (matches.length === 0 && gender === 'M') {
-      const fotMobMatches = await fetchFotMobMatches(requestedDate)
+      const fotMobMatches = await fetchFotMobMatches(requestedDate).catch((error) => {
+        if (espnUnavailable) throw error
+        return [] as Match[]
+      })
       if (fotMobMatches.length > 0) {
         matches = fotMobMatches
         source = 'fotmob'
@@ -403,6 +424,7 @@ export async function GET(request: NextRequest) {
         source = 'none'
       }
     } else if (matches.length === 0) {
+      if (espnUnavailable) throw new Error('Scoreboards unavailable')
       source = 'none'
     }
 
@@ -457,6 +479,7 @@ export async function GET(request: NextRequest) {
       requestedDate: request.nextUrl.searchParams.get('date') || null,
       generatedAt: new Date().toISOString(),
     }, {
+      status: 503,
       headers: {
         'Cache-Control': 'no-store, max-age=0',
       },

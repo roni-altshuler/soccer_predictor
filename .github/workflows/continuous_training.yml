@@ -56,7 +56,9 @@ jobs:
         id: orchestrator
         run: |
           set +e
-          ARGS="--global-model"
+          # The current temporal gate scores league heads only. Do not spend
+          # weekly compute on a global candidate that cannot pass that gate.
+          ARGS=""
           if [ -n "${{ github.event.inputs.leagues }}" ]; then
             ARGS="$ARGS --leagues ${{ github.event.inputs.leagues }}"
           fi

@@ -1,13 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 
-import {
-  WATCHLIST_STORAGE_KEY,
-  normalizeTeamName,
-  type WatchTeam,
-} from '@/lib/watchlist'
+import { normalizeTeamName } from '@/lib/watchlist'
+import { useTeamWatchlist } from '@/hooks/useTeamWatchlist'
 import { cn } from '@/lib/utils'
 
 /**
@@ -31,48 +27,24 @@ export function FollowTeamButton({
   league: string
   className?: string
 }) {
-  const [tracked, setTracked] = useState(false)
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
-      const teams: WatchTeam[] = raw ? JSON.parse(raw) : []
-      const target = normalizeTeamName(teamName)
-      setTracked(teams.some((t) => normalizeTeamName(t.name) === target))
-    } catch {
-      /* private mode — the button still renders, it just starts unfollowed */
-    }
-  }, [teamName])
-
-  const toggle = () => {
-    try {
-      const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY)
-      const teams: WatchTeam[] = raw ? JSON.parse(raw) : []
-      const target = normalizeTeamName(teamName)
-      const next = tracked
-        ? teams.filter((t) => normalizeTeamName(t.name) !== target)
-        : [...teams, { name: teamName, league }]
-      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(next))
-      setTracked(!tracked)
-    } catch {
-      /* storage refused the write; leave the state as it was */
-    }
-  }
+  const { teams, toggle, error } = useTeamWatchlist()
+  const tracked = teams.some((t) => normalizeTeamName(t.name) === normalizeTeamName(teamName))
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => toggle({ name: teamName, league })}
+      aria-label={error ? `Couldn’t save ${teamName}. Retry` : `${tracked ? 'Unfollow' : 'Follow'} ${teamName}`}
       aria-pressed={tracked}
       className={cn(
-        'inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
+        'inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
         tracked
           ? 'border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] text-[var(--accent-primary)]'
           : 'border-[var(--border-color)] text-[var(--text-tertiary)] hover:border-[var(--border-hover)] hover:text-[var(--text-secondary)]',
         className,
       )}
     >
-      {tracked ? (
+      {error ? 'Couldn’t save · retry' : tracked ? (
         <>
           <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
           Following

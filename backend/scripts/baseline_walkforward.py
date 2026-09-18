@@ -298,8 +298,16 @@ def paired_bootstrap(pa: np.ndarray, pb_: np.ndarray, y: np.ndarray, *,
     ba = np.sum((pa - onehot) ** 2, axis=1)
     bb = np.sum((pb_ - onehot) ** 2, axis=1)
     diff = ba - bb
-    idx = rng.integers(0, len(diff), size=(n, len(diff)))
-    draws = diff[idx].mean(axis=1)
+    if len(diff) == 0 or n <= 0:
+        raise ValueError("Bootstrap requires observations and positive draws")
+    # At 200k matches the former full index matrix consumed >3 GB. Keep
+    # identical RNG order/results while bounding temporary arrays to ~32 MB.
+    batch = max(1, min(64, 2_000_000 // len(diff)))
+    draws = np.empty(n)
+    for start in range(0, n, batch):
+        end = min(n, start + batch)
+        idx = rng.integers(0, len(diff), size=(end - start, len(diff)))
+        draws[start:end] = diff[idx].mean(axis=1)
     return {"delta_brier": float(diff.mean()),
             "ci_low": float(np.percentile(draws, 2.5)),
             "ci_high": float(np.percentile(draws, 97.5)),
@@ -308,10 +316,10 @@ def paired_bootstrap(pa: np.ndarray, pb_: np.ndarray, y: np.ndarray, *,
 
 # ----------------------------------------------------------------------- walk
 def load_matches(competitions: Optional[Sequence[str]], min_season: int,
-                 max_season: Optional[int]) -> List[dict]:
+                 max_season: Optional[int], *, database: Optional[Path] = None) -> List[dict]:
     import duckdb
 
-    con = duckdb.connect(str(CANONICAL), read_only=True)
+    con = duckdb.connect(str(database or CANONICAL), read_only=True)
     where = ["result IS NOT NULL", f"season >= {int(min_season)}"]
     if max_season:
         where.append(f"season <= {int(max_season)}")

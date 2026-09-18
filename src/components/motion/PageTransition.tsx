@@ -1,7 +1,6 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { motion, useReducedMotion } from 'framer-motion'
 import { type ReactNode } from 'react'
 
 /**
@@ -15,18 +14,12 @@ import { type ReactNode } from 'react'
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const reduce = useReducedMotion()
-
-  if (reduce) return <>{children}</>
-
   return (
-    <motion.div
+    <div
       key={pathname}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className="animate-in fade-in duration-150 motion-reduce:animate-none"
     >
       {children}
-    </motion.div>
+    </div>
   )
 }

@@ -47,6 +47,21 @@ def test_an_empty_sample_says_so_rather_than_scoring_nothing():
         "dashboard reads as perfect, not as absent")
 
 
+def test_live_cohorts_use_raw_rows_and_keep_versions_separate():
+    from backend.scripts.evaluate_live import evaluation_cohorts
+    sample = rows([(0.6, 0.2, 0.2, 'H')] * 12 + [(0.1, 0.2, 0.7, 'A')] * 12)
+    for row in sample[12:]:
+        row['competition_id'] = 'usa.1'
+        row['model_version'] = 'new'
+    got = evaluation_cohorts(sample, ['eng.1'], ['eng.1', 'usa.1'], 'new')
+    assert got['historical_leagues']['n'] == 12
+    assert got['currently_served']['n'] == 24
+    assert got['current_version']['n'] == 12
+    assert got['historical_leagues']['brier'] == score(sample[:12], basis='live_published')['brier']
+    assert got['current_version']['brier'] == score(sample[12:], basis='live_published')['brier']
+    assert evaluation_cohorts([], ['eng.1'], ['eng.1'], None)['current_version']['available'] is False
+
+
 def test_a_perfect_forecaster_scores_zero():
     got = score(rows([(1 - 2e-9, 1e-9, 1e-9, "H")] * 20), basis="live_published")
     assert got["brier"] == pytest.approx(0.0, abs=1e-6)

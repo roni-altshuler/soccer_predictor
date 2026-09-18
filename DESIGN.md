@@ -131,6 +131,10 @@ mark all vanish on black. FotMob and ESPN seat them on a light tile for exactly 
 
 ## Typography
 
+The font variables resolve to native sans and monospace stacks. They do not
+depend on a build-time font download. Preserve the existing hierarchy and
+tabular numerals when extending the interface.
+
 - **Display (`h1`–`h3`)** — `--font-display`, white, uppercase, `letter-spacing: 0.08em`.
   The tracking is **positive**; the retired theme used `-0.02em`, the opposite instinct.
 - **Body** — `--font-sans`, `--text-secondary`.
@@ -188,6 +192,24 @@ not take visual treatments.
 ---
 
 ## Anatomy
+
+### Matchday home (2026-09-18)
+
+The date strip opens a matchday workspace: a compact date/title line, an interactive
+fixture spotlight, competition filters, then the canonical grouped fixture list.
+The spotlight uses real scores and explicit **pre-match forecast** labels even while
+a match is live; it never invents probabilities or a 0–0 score for missing data.
+Its fixture selector changes the scoreboard and match-centre destination together.
+
+On desktop a club-follow panel sits alongside the spotlight. Below `lg` it collapses
+to a 44px control so the list stays reachable. Following is local to the device and
+updates the feed immediately. Competition chips and status filters expose their
+pressed state and fit inside independently scrolling strips when necessary.
+
+Provider-wide errors have a retry state. Quiet polling preserves the current list;
+changing date or gender clears the previous scope. The season evidence panel names
+its scope and links separately to match-pick accuracy. These interactions extend the
+existing pitch material; they add no marketing hero, new palette, or animated wash.
 
 ### MatchRow — FotMob grammar, stacked teams
 

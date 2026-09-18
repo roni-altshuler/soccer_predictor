@@ -32,11 +32,11 @@ export function TopBar() {
         <Link
           href="/"
           aria-label="Pitchverse home"
-          className="md:hidden flex shrink-0 items-center gap-2"
+          className="md:hidden flex min-h-11 min-w-11 shrink-0 items-center gap-2"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
+          <span className="hidden text-sm font-bold text-[var(--text-primary)] min-[400px]:inline">Pitchverse</span>
         </Link>
 
         {/* Right cluster */}
@@ -55,7 +55,7 @@ export function TopBar() {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)]"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm font-bold text-[var(--accent-on-primary)]"
                 aria-label="Account menu"
               >
                 {user.avatar_url ? (
@@ -87,7 +87,7 @@ export function TopBar() {
           ) : (
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90"
+              className="min-h-11 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-on-primary)] transition-opacity hover:opacity-90"
             >
               Sign In
             </button>

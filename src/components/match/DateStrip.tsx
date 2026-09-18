@@ -34,8 +34,8 @@ export function DateStrip({ dateOptions, selectedDate, onSelectDate, className }
       )}
     >
       <div
-        className="mx-auto flex w-full max-w-5xl items-stretch overflow-x-auto px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="tablist"
+        className="mx-auto flex w-full max-w-6xl items-stretch overflow-x-auto px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="group"
         aria-label="Select date"
       >
         {dateOptions.map((opt) => {
@@ -44,8 +44,7 @@ export function DateStrip({ dateOptions, selectedDate, onSelectDate, className }
             <button
               key={opt.date}
               type="button"
-              role="tab"
-              aria-selected={active}
+              aria-pressed={active}
               onClick={() => onSelectDate(opt.date)}
               className={cn(
                 'relative flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap px-3 text-xs font-semibold transition-colors',

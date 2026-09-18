@@ -50,10 +50,13 @@ export function EvidencePanel({
   historical,
   live,
   className,
+  matchday = false,
 }: {
   historical?: Historical | null
   live?: Live | null
   className?: string
+  /** Today uses a different match-pick source; scope the season record explicitly. */
+  matchday?: boolean
 }) {
   return (
     <section
@@ -69,6 +72,7 @@ export function EvidencePanel({
       >
         How accurate is this?
       </h2>
+      {matchday && <p className="mt-2 text-xs leading-relaxed text-[var(--text-tertiary)]">This record covers season forecasts. Match picks have a separate <Link href="/accuracy" className="text-[var(--accent-info)] underline underline-offset-2">accuracy record</Link>.</p>}
 
       <div className="mt-3.5 grid gap-4 md:grid-cols-2">
         {/* ---- retrospective ------------------------------------------- */}
@@ -114,12 +118,14 @@ export function EvidencePanel({
                 </p>
               ) : null}
             </>
-          ) : (
+          ) : live?.n === 0 ? (
             <p className="mt-2.5 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
               <span className="text-[var(--text-secondary)]">Nothing scored yet.</span> Every
               forecast is recorded before kickoff and scored once the result lands, so this
               number is genuinely zero rather than pending.
             </p>
+          ) : (
+            <p className="mt-2.5 text-[12px] text-[var(--text-tertiary)]">Live record not available.</p>
           )}
         </div>
       </div>
@@ -129,7 +135,7 @@ export function EvidencePanel({
           href="/evaluation"
           className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)] underline-offset-4 transition-colors hover:text-[var(--accent-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-primary)]"
         >
-          This league&apos;s full record
+          {matchday ? 'Season forecast record' : 'This league’s full record'}
         </Link>
         <DocsLink doc="scoring" label="What these numbers mean" />
         <DocsLink doc="models" label="What was measured and dropped" hash="what-the-model-looks-at" />

@@ -1,29 +1,8 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
-// Single typeface — Inter — wired into both the sans & display CSS variables
-// referenced by tailwind.config.js (`font-sans`, `font-display`) and globals.css.
-// Legacy `--font-body` / `--font-heading` are kept as aliases so older
-// components that hard-coded them keep rendering during the transition.
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-  weight: ['400', '500', '600', '700', '800'],
-})
-
-// JetBrains Mono — used only for tabular scoreboard digits, minute counters,
-// and other monospaced numerics. Exposed as `--font-mono-numeric` and accessible
-// via the `font-numeric` Tailwind family (configured in tailwind.config.js).
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono-numeric',
-  display: 'swap',
-  weight: ['500', '700'],
-})
-
+// Native font stacks keep builds and first paint independent of font CDNs.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pitchverse.vercel.app'
 
 // The reader's ambient preference (soft · vivid · off), applied to <html>
@@ -97,14 +76,14 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      className="dark"
       data-ambient="soft"
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: AMBIENT_BOOT }} />
-        {/* Alias the legacy --font-body/--font-heading vars to Inter so any
+        {/* Alias the legacy --font-body/--font-heading vars so any
             older inline styles or third-party CSS keeps working. */}
-        <style>{`:root { --font-body: var(--font-sans); --font-heading: var(--font-sans); --font-display: var(--font-sans); }`}</style>
+        <style>{`:root { --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --font-mono-numeric: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --font-body: var(--font-sans); --font-heading: var(--font-sans); --font-display: var(--font-sans); }`}</style>
       </head>
       <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased font-sans">
         <a

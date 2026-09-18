@@ -18,6 +18,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -40,6 +41,8 @@ const nextConfig = {
   },
   // Include prediction data files in serverless function bundles
   outputFileTracingIncludes: {
+    '/lab': ['./backend/data/predictions/season_fixtures.json'],
+    '/api/v1/forecast-lab': ['./backend/data/predictions/season_fixtures.json'],
     '/api/v1/tracking/*': ['./backend/data/predictions/**'],
     '/api/v1/ai/*': ['./backend/data/diagnostics/**'],
     '/api/world-cup/*': ['./backend/data/worldcup/**'],

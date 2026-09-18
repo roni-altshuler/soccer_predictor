@@ -23,8 +23,8 @@ Pipeline:
                           that is actually still in production.
    10. Run record       : update last_training_run.json.
 
-The promotion gate is the ONLY thing that decides promotion. It is driven purely
-by the regression thresholds below. `model_selection.json` describes which
+The promotion gate requires complete finite comparison metrics and applies the
+regression thresholds below. `model_selection.json` describes which
 artifact the runtime *serves* (league / global / blend / dixon_coles); it is
 recorded in the report as context under "serving_policy" but has no vote here.
 Conflating the two is what let nine consecutive weeks of regressions ship.
@@ -49,9 +49,11 @@ import argparse
 import asyncio
 import json
 import logging
+import math
 import os
 import shutil
 import sys
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -83,6 +85,7 @@ DIAGNOSTICS_DIR = DATA_DIR / "diagnostics"
 MODEL_DIR = DATA_DIR / "models"
 # Kept outside MODEL_DIR so nothing walking models/ mistakes it for a league.
 SNAPSHOT_DIR = DATA_DIR / ".model_promotion_snapshot"
+QUARANTINE_DIR = DATA_DIR / ".model_quarantine"
 SUMMARY_PATH = DIAGNOSTICS_DIR / "walkforward_summary.json"
 BASELINE_PATH = DIAGNOSTICS_DIR / "walkforward_baseline.json"
 HISTORY_PATH = DIAGNOSTICS_DIR / "training_history.jsonl"
@@ -239,26 +242,24 @@ def _candidate_runtime_keys(leagues_for_train: Optional[List[str]]) -> List[str]
     """Runtime keys whose artifacts this run might overwrite."""
     if leagues_for_train:
         return sorted(set(leagues_for_train))
-    # Every league the runtime knows about that already has artifacts on disk.
-    known = set(ESPN_LEAGUES.values())
-    if not MODEL_DIR.exists():
-        return []
-    return sorted(p.name for p in MODEL_DIR.iterdir() if p.is_dir() and p.name in known)
+    return sorted(set(ESPN_LEAGUES.values()))
 
 
 def snapshot_production_models(runtime_keys: Iterable[str]) -> List[str]:
     """Copy each league's current production artifacts into SNAPSHOT_DIR.
 
-    Returns the keys that actually had something to snapshot. A league with no
-    prior artifacts (first ever train) simply cannot be rolled back, and that is
-    recorded rather than silently ignored.
-
-    The cross-league `global` model is intentionally not snapshotted: the drift
-    report scores per-league walk-forward only, so there is no per-run evidence
-    on which to hold the global model back.
+    Snapshot failure aborts BEFORE training can overwrite an incumbent. New
+    candidates without an incumbent are quarantined if they do not pass.
     """
-    shutil.rmtree(SNAPSHOT_DIR, ignore_errors=True)
+    runtime_keys = list(runtime_keys)
+    if SNAPSHOT_DIR.exists() and any(SNAPSHOT_DIR.iterdir()):
+        raise RuntimeError("An unresolved promotion snapshot exists; recover it before retraining")
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    # Global training also rewrites the runtime routing policy. It must travel
+    # with its model, otherwise rolling back weights can still change serving.
+    selection = MODEL_DIR / "model_selection.json"
+    if selection.exists():
+        shutil.copy2(selection, SNAPSHOT_DIR / selection.name)
 
     captured: List[str] = []
     for key in runtime_keys:
@@ -269,8 +270,9 @@ def snapshot_production_models(runtime_keys: Iterable[str]) -> List[str]:
             shutil.copytree(src, SNAPSHOT_DIR / key)
             captured.append(key)
         except Exception as exc:  # pragma: no cover - disk-level failure
-            logger.warning("could not snapshot %s: %s", key, exc)
+            raise RuntimeError(f"Cannot safely train: snapshot failed for {key}") from exc
     logger.info("Snapshotted %d production model dir(s) -> %s", len(captured), SNAPSHOT_DIR)
+    _atomic_write_json(SNAPSHOT_DIR / "candidates.json", {"keys": runtime_keys})
     return captured
 
 
@@ -279,39 +281,55 @@ def restore_production_model(runtime_key: str) -> str:
 
     Returns a short status string recorded in the drift report:
       restored           — previous production artifacts are back in place
-      no_prior_artifact  — nothing existed to roll back to (first train)
+      no_prior_artifact  — candidate quarantined; no incumbent exists (first train)
       failed             — the rollback itself errored (surfaced as a run error)
     """
     snap = SNAPSHOT_DIR / runtime_key
-    if not snap.is_dir():
-        return "no_prior_artifact"
-
     live = MODEL_DIR / runtime_key
-    rejected = MODEL_DIR / f".rejected_{runtime_key}"
+    rejected = QUARANTINE_DIR / uuid.uuid4().hex / runtime_key
+    staging = SNAPSHOT_DIR / f".restore_{runtime_key}"
     try:
-        shutil.rmtree(rejected, ignore_errors=True)
+        rejected.parent.mkdir(parents=True, exist_ok=True)
         if live.exists():
-            # Move the rejected candidate aside first so the swap never leaves
-            # the league without artifacts.
+            # Remove the candidate before any recovery step that could fail.
             live.rename(rejected)
-        shutil.copytree(snap, live)
-        shutil.rmtree(rejected, ignore_errors=True)
+        if runtime_key == "global":
+            policy = MODEL_DIR / "model_selection.json"
+            previous_policy = SNAPSHOT_DIR / policy.name
+            if previous_policy.exists():
+                temporary = MODEL_DIR / ".model_selection.restore.json"
+                shutil.copy2(previous_policy, temporary)
+                temporary.replace(policy)
+            else:
+                policy.unlink(missing_ok=True)
+        if not snap.is_dir():
+            return "no_prior_artifact"
+        shutil.rmtree(staging, ignore_errors=True)
+        shutil.copytree(snap, staging)
+        staging.rename(live)
         logger.info("[%s] rolled back to pre-retrain artifacts", runtime_key)
         return "restored"
     except Exception as exc:
         logger.error("[%s] ROLLBACK FAILED: %s", runtime_key, exc)
-        # Best effort: if we already moved the candidate aside, put it back so
-        # the league is at least servable.
-        if rejected.exists() and not live.exists():
-            try:
-                rejected.rename(live)
-            except Exception:  # pragma: no cover
-                pass
+        # Keep the snapshot for recovery. Never put a rejected candidate back.
         return "failed"
 
 
 def clear_snapshots() -> None:
     shutil.rmtree(SNAPSHOT_DIR, ignore_errors=True)
+
+
+def recover_snapshot_candidates() -> List[str]:
+    """Recover the complete attempted set, including candidates with no prior model."""
+    manifest = _load_json(SNAPSHOT_DIR / "candidates.json")
+    if not manifest:
+        # A partial backup never authorized training. Preserve it for diagnosis.
+        return []
+    keys = manifest.get("keys", [])
+    statuses = [restore_production_model(key) for key in keys]
+    if "failed" not in statuses:
+        clear_snapshots()
+    return keys
 
 
 def enforce_promotion_gate(drift: Dict[str, Any]) -> Dict[str, Any]:
@@ -428,8 +446,7 @@ def _classify_league(
 ) -> Dict[str, Any]:
     """Per-league before/after diff + promotion verdict.
 
-    The verdict depends on the regression thresholds and nothing else:
-    breach any one of them and the candidate is held back.
+    Missing evidence or a breached regression threshold holds the candidate back.
     """
     deltas: Dict[str, Optional[float]] = {
         "accuracy_delta": None,
@@ -447,6 +464,8 @@ def _classify_league(
             a = after.get(key)
             b = before.get(key)
             if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+                return None
+            if not math.isfinite(a) or not math.isfinite(b):
                 return None
             return round(float(a) - float(b), 4)
 
@@ -474,7 +493,7 @@ def _classify_league(
             )
 
         # No baseline metric at all means nothing to compare, not "no regression".
-        comparable = any(v is not None for v in (acc_d, ll_d, br_d))
+        comparable = all(v is not None for v in (acc_d, ll_d, br_d))
 
         win_flags = [
             acc_d is not None and acc_d > 0,
@@ -488,9 +507,8 @@ def _classify_league(
 
     runtime_key = ESPN_LEAGUES.get(league, league)
 
-    # THE GATE. A regression blocks promotion, full stop. Nothing else is
-    # consulted — see the module docstring for why.
-    decision = DECISION_HELD_BACK if is_regression else DECISION_PROMOTED
+    # Absence of comparable evidence is not evidence of non-regression.
+    decision = DECISION_HELD_BACK if is_regression or not comparable else DECISION_PROMOTED
 
     # Context only. `model_selection.json` says which artifact the runtime
     # serves (league / global / blend / dixon_coles). It is NOT a promotion
@@ -508,6 +526,7 @@ def _classify_league(
         "comparable": comparable,
         "regression": is_regression,
         "regression_reasons": regression_reasons,
+        "evidence_missing": not comparable,
         "win": is_win,
         "wins_count": wins_count,
         "decision": decision,
@@ -530,7 +549,7 @@ def build_drift_report(
                 "league": league,
                 "runtime_key": ESPN_LEAGUES.get(league, league),
                 "error": ev.error,
-                "decision": DECISION_SKIPPED,
+                "decision": DECISION_HELD_BACK,
             })
             continue
         before = baseline_idx.get(league)
@@ -546,9 +565,8 @@ def build_drift_report(
     # "did everything regress?" systemic check.
     n_comparable = sum(1 for r in leagues_report if r.get("comparable"))
 
-    # By construction n_held_back == n_regressions. Kept as separate fields
-    # because the dashboards read them, but they can no longer diverge.
-    systemic = n_comparable > 0 and n_held_back == n_comparable
+    # Missing evidence can hold a candidate without establishing regression.
+    systemic = n_comparable > 0 and n_regressions == n_comparable
 
     if systemic:
         overall_status = "systemic_regression"
@@ -664,7 +682,8 @@ def rotate_baseline_per_league(drift: Dict[str, Any]) -> Dict[str, List[str]]:
             merged.append(row)
             advanced.append(league)
         else:
-            merged.append(baseline_rows.get(league, row))
+            if league in baseline_rows:
+                merged.append(baseline_rows[league])
             frozen.append(league)
 
     # Preserve baseline-only leagues that this run did not evaluate at all.
@@ -703,7 +722,11 @@ async def run_pipeline(args: argparse.Namespace) -> int:
             return 0
 
     retrained_leagues: List[str] = []
-    snapshotted: List[str] = []
+    candidate_keys: List[str] = []
+
+    if args.skip_eval or (not args.eval_only and not args.rollback):
+        logger.error("Training requires evaluation and rollback; use a separate research experiment for unvalidated models.")
+        return 1
 
     # ── (b) snapshot + retrain ──
     if not args.eval_only:
@@ -713,7 +736,10 @@ async def run_pipeline(args: argparse.Namespace) -> int:
         # in place, so this copy is the only thing that makes "not promoted"
         # mean anything.
         if args.rollback:
-            snapshotted = snapshot_production_models(_candidate_runtime_keys(leagues_for_train))
+            candidate_keys = _candidate_runtime_keys(leagues_for_train)
+            if args.global_model:
+                candidate_keys.append("global")
+            snapshot_production_models(candidate_keys)
         else:
             logger.warning("--no-rollback set: a regressed model will NOT be rolled back.")
 
@@ -733,9 +759,9 @@ async def run_pipeline(args: argparse.Namespace) -> int:
             logger.exception("Retrain failed: %s", exc)
             # The retrain may have overwritten some leagues before dying. Put
             # every snapshot back so a crash never half-promotes.
-            for key in snapshotted:
-                restore_production_model(key)
-            clear_snapshots()
+            restored = [restore_production_model(key) for key in candidate_keys]
+            if "failed" not in restored:
+                clear_snapshots()
             _atomic_write_json(LAST_RUN_PATH, {
                 "ran_at": _utc_now_iso(),
                 "status": "error",
@@ -746,43 +772,43 @@ async def run_pipeline(args: argparse.Namespace) -> int:
             return 1
 
     # ── (c) walk-forward eval ──
-    if args.skip_eval:
-        # No evaluation means no evidence, which means the gate cannot run and
-        # everything just retrained is live. Say so loudly rather than
-        # reporting "held_back=0" as though the gate had passed.
-        logger.warning("--skip-eval set; finishing after retrain. PROMOTION GATE NOT APPLIED.")
-        clear_snapshots()
-        _atomic_write_json(LAST_RUN_PATH, {
-            "ran_at": _utc_now_iso(),
-            "status": "ok",
-            "retrained_leagues": retrained_leagues,
-            "summary_path": None,
-            "drift_report_path": None,
-            "note": "skip_eval — promotion gate not applied",
-        })
-        _gh_annotate(
-            "warning",
-            f"--skip-eval: {len(retrained_leagues)} model(s) retrained and promoted WITHOUT "
-            "walk-forward evaluation. The regression gate did not run.",
-        )
-        print(f"CONTINUOUS_TRAINING_SUMMARY: status=ok wins=0 regressions=0 held_back=0 gate=not_applied retrained={len(retrained_leagues)}")
-        return 0
-
     eval_keys = _resolve_keys_for_eval(args.leagues)
     logger.info("Walk-forward eval on %d leagues", len(eval_keys))
-    eval_results = run_walkforward(eval_keys)
+    try:
+        eval_results = run_walkforward(eval_keys)
+    except Exception:
+        restored = [restore_production_model(key) for key in candidate_keys]
+        if candidate_keys and "failed" not in restored:
+            clear_snapshots()
+        logger.exception("Evaluation failed; unevaluated candidates have been withdrawn")
+        return 1
 
     # ── (d, e) compare + promotion gates ──
     baseline = _load_json(BASELINE_PATH)
     policy = load_model_selection_policy()
 
-    if baseline is None:
+    if baseline is None and args.eval_only:
         # First run — seed the baseline and skip comparison.
         current_summary = _load_json(SUMMARY_PATH) or {}
         _atomic_write_json(BASELINE_PATH, current_summary)
         logger.info("Seeded initial baseline -> %s", BASELINE_PATH)
 
     drift = build_drift_report(retrained_leagues, eval_results, baseline, policy)
+    for row in drift['leagues']:
+        if candidate_keys and row.get('runtime_key') not in retrained_leagues:
+            if row['decision'] == DECISION_PROMOTED:
+                drift['overall']['n_promoted'] -= 1
+                drift['overall']['n_held_back'] += 1
+            row.update(decision=DECISION_HELD_BACK, error="No successful candidate training result")
+    evaluated = {r.get("runtime_key") for r in drift["leagues"]}
+    for key in candidate_keys:
+        if key not in evaluated:
+            drift["leagues"].append({"runtime_key": key, "league": key,
+                                    "decision": DECISION_HELD_BACK,
+                                    "error": "No candidate evaluation; withdrawn"})
+            drift["overall"]["n_held_back"] += 1
+    if drift['overall']['n_held_back'] and drift['overall']['status'] == 'ok':
+        drift['overall']['status'] = 'gate_enforced'
 
     # ── (f) ENFORCE the gate: roll back every held-back league ──
     if args.rollback and not args.eval_only:
@@ -792,7 +818,8 @@ async def run_pipeline(args: argparse.Namespace) -> int:
         reason = "eval_only" if args.eval_only else "rollback_disabled"
         enforcement = {"rolled_back": [], "no_prior_artifact": [], "rollback_failed": [], "skipped": reason}
         drift["promotion_enforcement"] = enforcement
-    clear_snapshots()
+    if candidate_keys and not enforcement.get("rollback_failed"):
+        clear_snapshots()
 
     # ── (g) drift report ──
     drift_report_path = DIAGNOSTICS_DIR / f"training_drift_{_today_str()}.json"
@@ -873,7 +900,7 @@ async def run_pipeline(args: argparse.Namespace) -> int:
         _gh_annotate(
             "notice",
             f"Promotion gate enforced: {n_promoted} model(s) promoted, {n_held} held back "
-            f"({held_detail}). Held-back leagues keep their previous production artifacts. "
+            f"({held_detail}). Rejected candidates withdrawn; incumbents restored where available. "
             "This is the guardrail working as designed — no action required unless a league "
             "stays held back across several runs.",
         )
@@ -916,12 +943,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--force-fetch", action="store_true",
                         help="Force re-fetch of historical data (passed to train_all_models).")
     parser.add_argument("--skip-eval", action="store_true",
-                        help="Only retrain; don't run the walk-forward eval.")
+                        help="Deprecated: rejected because unvalidated training cannot be promoted.")
     parser.add_argument("--eval-only", action="store_true",
                         help="Only run the walk-forward eval and drift comparison; skip retrain.")
     parser.add_argument("--no-rollback", dest="rollback", action="store_false",
-                        help="Do NOT restore previous artifacts for held-back leagues. "
-                             "Escape hatch for debugging only — it disables gate enforcement.")
+                        help="Deprecated: training without rollback is rejected.")
     parser.set_defaults(rollback=True)
     parser.add_argument("--verbose", action="store_true")
     return parser.parse_args(argv)
@@ -940,14 +966,10 @@ async def main() -> int:
         # freshly written (and unevaluated) artifacts are already live. Put the
         # snapshots back rather than leaving an unjudged model in production.
         logger.exception("Continuous training aborted: %s", exc)
-        if SNAPSHOT_DIR.is_dir():
-            recovered = [p.name for p in SNAPSHOT_DIR.iterdir() if p.is_dir()]
-            for key in recovered:
-                restore_production_model(key)
-            if recovered:
-                logger.warning("Rolled back %d unevaluated model(s) after abort: %s",
-                               len(recovered), ", ".join(sorted(recovered)))
-        clear_snapshots()
+        recovered = recover_snapshot_candidates()
+        if recovered:
+            logger.warning("Recovery attempted for %d unevaluated model(s): %s",
+                           len(recovered), ", ".join(sorted(recovered)))
         _gh_annotate("error", f"Continuous training aborted: {exc}")
         print(f"CONTINUOUS_TRAINING_SUMMARY: status=error stage=pipeline msg={exc}")
         return 1

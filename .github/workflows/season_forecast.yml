@@ -83,16 +83,16 @@ jobs:
         # below (`--clobber`) would replace last run's history with this run's,
         # and the append-only record would be one run deep forever.
         #
-        # First ever run has nothing to download, which is fine and not an
-        # error — hence --allow-missing.
+        # History already exists for this project. A missing asset, permission
+        # error or timeout must stop publication, never bootstrap a new log.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release download models-latest \
-            --pattern 'prediction_snapshots.csv.gz' --dir /tmp --clobber || \
-            echo "no published history yet"
+            --pattern 'prediction_snapshots.csv.gz' --dir /tmp --clobber
+          cp /tmp/prediction_snapshots.csv.gz /tmp/previous_prediction_snapshots.csv.gz
           python -m backend.scripts.import_snapshots \
-            --input /tmp/prediction_snapshots.csv.gz --allow-missing
+            --input /tmp/previous_prediction_snapshots.csv.gz
 
       - name: Refresh current-season results
         # New results are the entire reason this job runs. Failing here means
@@ -167,6 +167,21 @@ jobs:
         continue-on-error: true
         run: python -m backend.scripts.evaluate_live
 
+      - name: Publish snapshot table
+        # `prediction_snapshots` lives in the gitignored warehouse, so the
+        # provenance record has to leave the runner some other way or the whole
+        # point of an immutable history is lost the moment the job ends.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m backend.scripts.export_snapshots \
+            --output /tmp/prediction_snapshots.csv.gz \
+            --previous-input /tmp/previous_prediction_snapshots.csv.gz
+          # Keep a recoverable version before replacing the discovery alias.
+          cp /tmp/prediction_snapshots.csv.gz "/tmp/prediction_snapshots-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.csv.gz"
+          gh release upload models-latest "/tmp/prediction_snapshots-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.csv.gz"
+          gh release upload models-latest /tmp/prediction_snapshots.csv.gz --clobber
+
       - name: Commit refreshed forecast
         run: |
           git config user.name "github-actions[bot]"
@@ -182,17 +197,6 @@ jobs:
             echo "Forecast unchanged"
           else
             git commit -m "chore: refresh season forecast [automated]"
-            git pull --rebase --autostash origin main || true
+            git pull --rebase --autostash origin main
             git push
           fi
-
-      - name: Publish snapshot table
-        # `prediction_snapshots` lives in the gitignored warehouse, so the
-        # provenance record has to leave the runner some other way or the whole
-        # point of an immutable history is lost the moment the job ends.
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python -m backend.scripts.export_snapshots \
-            --output /tmp/prediction_snapshots.csv.gz
-          gh release upload models-latest /tmp/prediction_snapshots.csv.gz --clobber

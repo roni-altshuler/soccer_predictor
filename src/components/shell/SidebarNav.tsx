@@ -6,6 +6,7 @@ import {
   Activity,
   BarChart3,
   CalendarRange,
+  FlaskConical,
   Info,
   Swords,
   Target,
@@ -55,6 +56,7 @@ const GROUPS: NavGroup[] = [
   {
     title: 'Forecast',
     items: [
+      { href: '/lab', label: 'Forecast Lab', icon: FlaskConical },
       { href: '/leagues', label: 'Leagues', icon: CalendarRange },
       { href: '/tournaments', label: 'Tournaments', icon: Swords },
       // The matchup builder is the one forecast surface that is not a

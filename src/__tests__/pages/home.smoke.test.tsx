@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import HomePage from '@/app/(app)/page'
 
@@ -78,7 +79,7 @@ describe('HomePage — the list, and the record behind it', () => {
     render(<HomePage />)
 
     // The scores list is still the page.
-    await waitFor(() => expect(screen.getByText('Arsenal')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('link', { name: /Arsenal.*Fulham/ })).toBeInTheDocument())
 
     // ...and the claim it makes is checkable on the same page.
     expect(screen.getByText(/How accurate is this\?/i)).toBeInTheDocument()
@@ -104,7 +105,34 @@ describe('HomePage — the list, and the record behind it', () => {
     mockFetch({ evaluationFails: true })
     render(<HomePage />)
 
-    await waitFor(() => expect(screen.getByText('Arsenal')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('link', { name: /Arsenal.*Fulham/ })).toBeInTheDocument())
     expect(screen.getByText(/How accurate is this\?/i)).toBeInTheDocument()
+    expect(screen.getByText('Live record not available.')).toBeInTheDocument()
+    expect(screen.queryByText(/Nothing scored yet/)).not.toBeInTheDocument()
+  })
+
+  it('follows a club from the matchday and immediately filters fixtures', async () => {
+    mockFetch({ matches: { ...MATCHES, upcoming: [...MATCHES.upcoming, { id: '2', home_team: 'Barcelona', away_team: 'Valencia', league: 'La Liga', leagueId: 'esp.1', status: 'upcoming' }] } })
+    render(<HomePage />)
+    const user = userEvent.setup()
+    await screen.findByRole('link', { name: /Arsenal.*Fulham/ })
+    await user.click(screen.getByRole('button', { name: /Make it your matchday/ }))
+    await user.click(screen.getByRole('button', { name: 'Follow Arsenal' }))
+    await user.click(screen.getByRole('button', { name: /Following · 1/ }))
+    expect(screen.queryByRole('link', { name: /Barcelona.*Valencia/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Arsenal.*Fulham/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Unfollow Arsenal' }))
+    expect(screen.getByRole('link', { name: /Barcelona.*Valencia/ })).toBeInTheDocument()
+  })
+
+  it('filters the list by competition and restores all competitions', async () => {
+    mockFetch({ matches: { ...MATCHES, upcoming: [...MATCHES.upcoming, { id: '2', home_team: 'Barcelona', away_team: 'Valencia', league: 'La Liga', leagueId: 'esp.1', status: 'upcoming' }] } })
+    render(<HomePage />)
+    const user = userEvent.setup()
+    await screen.findByRole('link', { name: /Arsenal.*Fulham/ })
+    await user.click(screen.getByRole('button', { name: /^La Liga 1$/ }))
+    expect(screen.queryByRole('link', { name: /Arsenal.*Fulham/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /All competitions/ }))
+    expect(screen.getByRole('link', { name: /Arsenal.*Fulham/ })).toBeInTheDocument()
   })
 })

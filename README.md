@@ -32,6 +32,10 @@ and every claim here is a measured number with its sample printed next to it.
 
 ## What it does
 
+**New: [Forecast Lab](/lab).** Explore recorded match probabilities, scorelines,
+club following, and hypothetical points swings. Implementation details and the
+measured model experiment are in [the implementation report](docs/FORECAST_LAB_AND_MODEL_SAFETY.md).
+
 Four things.
 
 **1. Predicts match outcomes.** 1X2 and scoreline for the five big European
@@ -379,6 +383,11 @@ gitignored — build and train them locally. Committed prediction JSON under
 `/accuracy` works without the Python backend.
 
 ## Documentation
+
+**[September 2026 accuracy and matchday audit](docs/IMPROVEMENT_AUDIT_2026-09-18.md)**
+records the current serving/evaluation gaps, prioritized model experiments, and the
+new interactive matchday interface. Its dated artifact inventory supersedes the
+older live-sample and league-coverage figures elsewhere in this README.
 
 **[docs/handbook/](docs/handbook/README.md)** — the user-facing documentation
 the site links to wherever it stops explaining itself. The pages carry the
