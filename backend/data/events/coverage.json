@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4856,
-   "covered": 4022,
+   "coverage": 0.4861,
+   "covered": 4030,
    "gender": "M",
-   "matches": 8283,
+   "matches": 8291,
    "name": "La Liga",
    "seasons": [
     {
@@ -1629,17 +1629,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 51,
-     "matches": 51,
+     "covered": 59,
+     "matches": 59,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 4,
-     "with_events": 47
+     "with_events": 55
     }
    ],
    "uncovered": 4261,
    "verified_empty": 277,
-   "with_events": 3745
+   "with_events": 3753
   },
   {
    "competition_id": "esp.2",
@@ -2865,7 +2865,7 @@
    "coverage": 0.1126,
    "covered": 620,
    "gender": "M",
-   "matches": 5505,
+   "matches": 5506,
    "name": "Eredivisie",
    "seasons": [
     {
@@ -3031,16 +3031,16 @@
      "with_events": 19
     },
     {
-     "coverage": 1.0,
+     "coverage": 0.9815,
      "covered": 53,
-     "matches": 53,
+     "matches": 54,
      "season": 2026,
-     "uncovered": 0,
+     "uncovered": 1,
      "verified_empty": 1,
      "with_events": 52
     }
    ],
-   "uncovered": 4885,
+   "uncovered": 4886,
    "verified_empty": 23,
    "with_events": 597
   },
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-09-17T13:52:33+00:00",
+ "generated_at": "2026-09-18T13:13:32+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.44,
-  "covered": 36278,
-  "matches": 82457,
-  "uncovered": 46179,
+  "covered": 36286,
+  "matches": 82466,
+  "uncovered": 46180,
   "verified_empty": 2302,
-  "with_events": 33976
+  "with_events": 33984
  }
 }
