@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-09-20T09:08:11.946652Z",
+  "retrained_leagues": [
+    "eng.1",
+    "esp.1",
+    "ger.1",
+    "ita.1",
+    "fra.1"
+  ],
+  "baseline_present": true,
+  "overall": {
+    "status": "gate_enforced",
+    "n_leagues_evaluated": 5,
+    "n_comparable": 0,
+    "n_wins": 0,
+    "n_regressions": 0,
+    "n_held_back": 5,
+    "n_promoted": 0,
+    "n_skipped": 0,
+    "systemic_regression": false
+  },
+  "thresholds": {
+    "accuracy_regression": -0.015,
+    "log_loss_regression": 0.03,
+    "brier_regression": 0.02
+  },
+  "leagues": [
+    {
+      "league": "bundesliga",
+      "runtime_key": "ger.1",
+      "error": "no_cached_matches",
+      "decision": "held_back",
+      "rollback": "no_prior_artifact"
+    },
+    {
+      "league": "la_liga",
+      "runtime_key": "esp.1",
+      "error": "no_cached_matches",
+      "decision": "held_back",
+      "rollback": "no_prior_artifact"
+    },
+    {
+      "league": "ligue_1",
+      "runtime_key": "fra.1",
+      "error": "no_cached_matches",
+      "decision": "held_back",
+      "rollback": "no_prior_artifact"
+    },
+    {
+      "league": "premier_league",
+      "runtime_key": "eng.1",
+      "error": "no_cached_matches",
+      "decision": "held_back",
+      "rollback": "no_prior_artifact"
+    },
+    {
+      "league": "serie_a",
+      "runtime_key": "ita.1",
+      "error": "no_cached_matches",
+      "decision": "held_back",
+      "rollback": "no_prior_artifact"
+    }
+  ],
+  "promotion_enforcement": {
+    "rolled_back": [],
+    "no_prior_artifact": [
+      "ger.1",
+      "esp.1",
+      "fra.1",
+      "eng.1",
+      "ita.1"
+    ],
+    "rollback_failed": []
+  }
+}

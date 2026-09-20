@@ -1,42 +1,43 @@
 {
-  "ran_at": "2026-09-13T09:00:13.843419Z",
+  "ran_at": "2026-09-20T09:08:11.948138Z",
   "status": "gate_enforced",
   "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
-  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-09-13.json",
+  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-09-20.json",
   "retrained_leagues": [
     "eng.1",
     "esp.1",
     "ger.1",
     "ita.1",
-    "fra.1",
-    "global"
+    "fra.1"
   ],
-  "n_wins": 4,
-  "n_regressions": 2,
-  "n_held_back": 2,
-  "n_promoted": 3,
+  "n_wins": 0,
+  "n_regressions": 0,
+  "n_held_back": 5,
+  "n_promoted": 0,
   "promotion_enforcement": {
     "rolled_back": [],
     "no_prior_artifact": [
+      "ger.1",
       "esp.1",
+      "fra.1",
+      "eng.1",
       "ita.1"
     ],
     "rollback_failed": []
   },
   "baseline_rotation": {
-    "advanced": [
-      "bundesliga",
-      "ligue_1",
-      "premier_league"
-    ],
+    "advanced": [],
     "frozen": [
+      "bundesliga",
       "champions_league",
       "copa_america",
       "eredivisie",
       "euro",
       "europa_league",
       "la_liga",
+      "ligue_1",
       "mls",
+      "premier_league",
       "primeira_liga",
       "serie_a",
       "world_cup"
