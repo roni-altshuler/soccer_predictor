@@ -2,153 +2,173 @@
   "competitions": {
     "eng.1": {
       "espn_league_slug": "eng.1",
-      "fitted_matches": 1628,
-      "home_adv": 0.128842,
-      "last_match_date": "2025-05-25T00:00:00+00:00",
-      "rho": -0.005986,
+      "fitted_matches": 1368,
+      "home_adv": 0.148776,
+      "last_match_date": "2026-09-20T15:30:00+00:00",
+      "rho": -0.00931,
       "teams": {
         "AFC Bournemouth": {
-          "attack": 0.099649,
-          "defence": -0.199701,
+          "attack": 0.024451,
+          "defence": -0.20029,
           "espn_team_id": "349",
           "match": "normalized",
           "params_name": "Bournemouth",
-          "prior_ppg": 1.2455
+          "prior_ppg": 1.1839
         },
         "Arsenal": {
-          "attack": 0.402081,
-          "defence": 0.267995,
+          "attack": 0.33999,
+          "defence": 0.165381,
           "espn_team_id": "359",
           "match": "exact",
           "params_name": "Arsenal",
-          "prior_ppg": 1.9655
+          "prior_ppg": 1.8185
         },
         "Aston Villa": {
-          "attack": 0.222613,
-          "defence": -0.079117,
+          "attack": 0.217433,
+          "defence": -0.113063,
           "espn_team_id": "362",
           "match": "exact",
           "params_name": "Aston Villa",
-          "prior_ppg": 1.4839
+          "prior_ppg": 1.4524
         },
         "Brentford": {
-          "attack": 0.201738,
-          "defence": -0.21258,
+          "attack": 0.198011,
+          "defence": -0.20298,
           "espn_team_id": "337",
           "match": "exact",
           "params_name": "Brentford",
-          "prior_ppg": 1.3345
+          "prior_ppg": 1.3479
         },
         "Brighton & Hove Albion": {
-          "attack": 0.222667,
-          "defence": -0.194464,
+          "attack": 0.239362,
+          "defence": -0.186817,
           "espn_team_id": "331",
           "match": "exact",
           "params_name": "Brighton & Hove Albion",
-          "prior_ppg": 1.3739
+          "prior_ppg": 1.4057
         },
         "Chelsea": {
-          "attack": 0.267281,
-          "defence": -0.029317,
+          "attack": 0.20383,
+          "defence": -0.109711,
           "espn_team_id": "363",
           "match": "exact",
           "params_name": "Chelsea",
-          "prior_ppg": 1.5768
+          "prior_ppg": 1.4415
+        },
+        "Coventry City": {
+          "attack": -0.19763,
+          "defence": 3.0,
+          "espn_team_id": "388",
+          "match": "exact",
+          "params_name": "Coventry City",
+          "prior_ppg": 2.2442
         },
         "Crystal Palace": {
-          "attack": 0.080102,
-          "defence": -0.106638,
+          "attack": 0.003722,
+          "defence": -0.10287,
           "espn_team_id": "384",
           "match": "exact",
           "params_name": "Crystal Palace",
-          "prior_ppg": 1.3146
+          "prior_ppg": 1.2539
         },
         "Everton": {
-          "attack": -0.207108,
-          "defence": -0.017958,
+          "attack": -0.266736,
+          "defence": -0.027111,
           "espn_team_id": "368",
           "match": "exact",
           "params_name": "Everton",
-          "prior_ppg": 1.138
+          "prior_ppg": 1.092
         },
         "Fulham": {
-          "attack": 0.0637,
-          "defence": -0.16148,
+          "attack": 0.02753,
+          "defence": -0.190861,
           "espn_team_id": "370",
           "match": "exact",
           "params_name": "Fulham",
-          "prior_ppg": 1.2475
+          "prior_ppg": 1.1954
+        },
+        "Hull City": {
+          "attack": -0.107036,
+          "defence": -0.20837,
+          "espn_team_id": "306",
+          "match": "exact",
+          "params_name": "Hull City",
+          "prior_ppg": 1.0628
         },
         "Ipswich Town": {
-          "attack": -0.290108,
-          "defence": -0.558381,
+          "attack": -0.390839,
+          "defence": -0.568748,
           "espn_team_id": "373",
           "match": "exact",
           "params_name": "Ipswich Town",
-          "prior_ppg": 0.6034
+          "prior_ppg": 0.5618
         },
         "Leeds United": {
-          "attack": -0.059753,
-          "defence": -0.484241,
+          "attack": -0.330395,
+          "defence": -0.383,
           "espn_team_id": "357",
           "match": "exact",
           "params_name": "Leeds United",
-          "prior_ppg": 0.8282
+          "prior_ppg": 0.748
         },
         "Liverpool": {
-          "attack": 0.509092,
-          "defence": 0.087286,
+          "attack": 0.45883,
+          "defence": 0.098701,
           "espn_team_id": "364",
           "match": "exact",
           "params_name": "Liverpool",
-          "prior_ppg": 1.945
+          "prior_ppg": 1.8937
         },
         "Manchester City": {
-          "attack": 0.516442,
-          "defence": 0.188833,
+          "attack": 0.472661,
+          "defence": 0.160339,
           "espn_team_id": "382",
           "match": "exact",
           "params_name": "Manchester City",
-          "prior_ppg": 2.0318
+          "prior_ppg": 1.9557
         },
         "Manchester United": {
-          "attack": 0.025176,
-          "defence": -0.11521,
+          "attack": -0.03003,
+          "defence": -0.140012,
           "espn_team_id": "360",
           "match": "exact",
           "params_name": "Manchester United",
-          "prior_ppg": 1.2544
+          "prior_ppg": 1.1902
         },
         "Newcastle United": {
-          "attack": 0.361574,
-          "defence": -0.08343,
+          "attack": 0.336016,
+          "defence": -0.108771,
           "espn_team_id": "361",
           "match": "exact",
           "params_name": "Newcastle United",
-          "prior_ppg": 1.6301
+          "prior_ppg": 1.5818
         },
         "Nottingham Forest": {
-          "attack": 0.072608,
-          "defence": -0.167509,
+          "attack": 0.032973,
+          "defence": -0.199657,
           "espn_team_id": "393",
           "match": "exact",
           "params_name": "Nottingham Forest",
-          "prior_ppg": 1.2503
+          "prior_ppg": 1.1922
+        },
+        "Sunderland": {
+          "attack": 1.259567,
+          "defence": -0.987957,
+          "espn_team_id": "366",
+          "match": "exact",
+          "params_name": "Sunderland",
+          "prior_ppg": 1.7888
         },
         "Tottenham Hotspur": {
-          "attack": 0.35493,
-          "defence": -0.346345,
+          "attack": 0.326968,
+          "defence": -0.416954,
           "espn_team_id": "367",
           "match": "exact",
           "params_name": "Tottenham Hotspur",
-          "prior_ppg": 1.361
+          "prior_ppg": 1.2663
         }
       },
-      "unmatched_frontend_teams": [
-        "Coventry City",
-        "Hull City",
-        "Sunderland"
-      ],
+      "unmatched_frontend_teams": [],
       "unmatched_params_teams": [
         "Burnley",
         "Leicester City",
@@ -157,7 +177,6 @@
         "Sheffield United",
         "Southampton",
         "Watford",
-        "West Bromwich Albion",
         "West Ham United",
         "Wolverhampton Wanderers"
       ]
@@ -285,154 +304,154 @@
     },
     "esp.1": {
       "espn_league_slug": "esp.1",
-      "fitted_matches": 1321,
-      "home_adv": 0.238011,
-      "last_match_date": "2026-09-17T18:30:00+00:00",
-      "rho": 0.04617,
+      "fitted_matches": 1331,
+      "home_adv": 0.223329,
+      "last_match_date": "2026-09-20T18:00:00+00:00",
+      "rho": 0.037117,
       "teams": {
         "Alavés": {
-          "attack": -0.179732,
-          "defence": 0.101108,
+          "attack": -0.242861,
+          "defence": 0.12131,
           "espn_team_id": "96",
           "match": "exact",
           "params_name": "Alavés",
-          "prior_ppg": 1.1599
+          "prior_ppg": 1.1714
         },
         "Athletic Club": {
-          "attack": 0.198631,
-          "defence": 0.405979,
+          "attack": 0.12978,
+          "defence": 0.40483,
           "espn_team_id": "93",
           "match": "override",
           "params_name": "Athletic Bilbao",
-          "prior_ppg": 1.7201
+          "prior_ppg": 1.699
         },
         "Atlético Madrid": {
-          "attack": 0.51929,
-          "defence": 0.376182,
+          "attack": 0.504004,
+          "defence": 0.360594,
           "espn_team_id": "1068",
           "match": "normalized",
           "params_name": "Atletico Madrid",
-          "prior_ppg": 2.0181
+          "prior_ppg": 2.039
         },
         "Barcelona": {
-          "attack": 0.737639,
-          "defence": 0.226837,
+          "attack": 0.716981,
+          "defence": 0.148257,
           "espn_team_id": "83",
           "match": "exact",
           "params_name": "Barcelona",
-          "prior_ppg": 2.143
+          "prior_ppg": 2.1157
         },
         "Celta Vigo": {
-          "attack": 0.254658,
-          "defence": -0.093298,
+          "attack": 0.234963,
+          "defence": -0.094952,
           "espn_team_id": "85",
           "match": "exact",
           "params_name": "Celta Vigo",
-          "prior_ppg": 1.3729
+          "prior_ppg": 1.4053
         },
         "Elche": {
-          "attack": 0.044381,
-          "defence": -0.277465,
+          "attack": 0.228364,
+          "defence": -0.235329,
           "espn_team_id": "3751",
           "match": "exact",
           "params_name": "Elche",
-          "prior_ppg": 1.0149
+          "prior_ppg": 1.2699
         },
         "Espanyol": {
-          "attack": 0.060632,
-          "defence": -0.097273,
+          "attack": 0.006039,
+          "defence": -0.186404,
           "espn_team_id": "88",
           "match": "exact",
           "params_name": "Espanyol",
-          "prior_ppg": 1.191
+          "prior_ppg": 1.1158
         },
         "Getafe": {
-          "attack": -0.18434,
-          "defence": 0.169581,
+          "attack": -0.23988,
+          "defence": 0.151469,
           "espn_team_id": "2922",
           "match": "exact",
           "params_name": "Getafe",
-          "prior_ppg": 1.2096
+          "prior_ppg": 1.1965
         },
         "Levante": {
-          "attack": 0.107669,
-          "defence": -0.318456,
+          "attack": 0.0083,
+          "defence": -0.394611,
           "espn_team_id": "1538",
           "match": "exact",
           "params_name": "Levante",
-          "prior_ppg": 1.0294
+          "prior_ppg": 0.9299
         },
         "Málaga": {
-          "attack": -0.363293,
-          "defence": -0.523973,
+          "attack": -0.788649,
+          "defence": -0.428735,
           "espn_team_id": "99",
           "match": "exact",
           "params_name": "Málaga",
-          "prior_ppg": 0.5377
+          "prior_ppg": 0.4623
         },
         "Osasuna": {
-          "attack": 0.076002,
-          "defence": -0.071472,
+          "attack": 0.043589,
+          "defence": -0.107139,
           "espn_team_id": "97",
           "match": "exact",
           "params_name": "Osasuna",
-          "prior_ppg": 1.2271
+          "prior_ppg": 1.2176
         },
         "Rayo Vallecano": {
-          "attack": -0.112072,
-          "defence": 0.092435,
+          "attack": -0.142112,
+          "defence": 0.067035,
           "espn_team_id": "101",
           "match": "exact",
           "params_name": "Rayo Vallecano",
-          "prior_ppg": 1.2063
+          "prior_ppg": 1.2075
         },
         "Real Betis": {
-          "attack": 0.192765,
-          "defence": 0.120324,
+          "attack": 0.165824,
+          "defence": 0.066714,
           "espn_team_id": "244",
           "match": "exact",
           "params_name": "Real Betis",
-          "prior_ppg": 1.4979
+          "prior_ppg": 1.4778
         },
         "Real Madrid": {
-          "attack": 0.637368,
-          "defence": 0.326826,
+          "attack": 0.607553,
+          "defence": 0.287449,
           "espn_team_id": "86",
           "match": "exact",
           "params_name": "Real Madrid",
-          "prior_ppg": 2.1064
+          "prior_ppg": 2.097
         },
         "Real Sociedad": {
-          "attack": -0.013208,
-          "defence": 0.17961,
+          "attack": 0.032228,
+          "defence": 0.114055,
           "espn_team_id": "89",
           "match": "exact",
           "params_name": "Real Sociedad",
-          "prior_ppg": 1.358
+          "prior_ppg": 1.3929
         },
         "Sevilla": {
-          "attack": 0.066404,
-          "defence": -0.05743,
+          "attack": 0.041376,
+          "defence": -0.099269,
           "espn_team_id": "243",
           "match": "exact",
           "params_name": "Sevilla",
-          "prior_ppg": 1.2309
+          "prior_ppg": 1.2225
         },
         "Valencia": {
-          "attack": 0.013483,
-          "defence": 0.054857,
+          "attack": 0.020829,
+          "defence": -0.041632,
           "espn_team_id": "94",
           "match": "exact",
           "params_name": "Valencia",
-          "prior_ppg": 1.2804
+          "prior_ppg": 1.2542
         },
         "Villarreal": {
-          "attack": 0.499381,
-          "defence": -0.050353,
+          "attack": 0.482652,
+          "defence": -0.09161,
           "espn_team_id": "102",
           "match": "exact",
           "params_name": "Villarreal",
-          "prior_ppg": 1.6637
+          "prior_ppg": 1.6642
         }
       },
       "unmatched_frontend_teams": [
@@ -454,147 +473,159 @@
     },
     "fra.1": {
       "espn_league_slug": "fra.1",
-      "fitted_matches": 1180,
-      "home_adv": 0.150533,
-      "last_match_date": "2026-05-17T00:00:00+00:00",
-      "rho": -0.082331,
+      "fitted_matches": 999,
+      "home_adv": 0.171687,
+      "last_match_date": "2026-09-20T17:45:00+00:00",
+      "rho": -0.087124,
       "teams": {
         "AJ Auxerre": {
-          "attack": 0.008801,
-          "defence": -0.22099,
+          "attack": 0.016716,
+          "defence": -0.20271,
           "espn_team_id": "172",
           "match": "exact",
           "params_name": "AJ Auxerre",
-          "prior_ppg": 1.1846
+          "prior_ppg": 1.199
         },
         "AS Monaco": {
-          "attack": 0.380563,
-          "defence": -0.087184,
+          "attack": 0.376148,
+          "defence": -0.080708,
           "espn_team_id": "174",
           "match": "override",
           "params_name": "Monaco",
-          "prior_ppg": 1.6977
+          "prior_ppg": 1.6794
         },
         "Angers": {
-          "attack": -0.34611,
-          "defence": -0.310339,
+          "attack": -0.338303,
+          "defence": -0.270811,
           "espn_team_id": "7868",
           "match": "exact",
           "params_name": "Angers",
-          "prior_ppg": 0.8185
+          "prior_ppg": 0.8546
         },
         "Brest": {
-          "attack": 0.141797,
-          "defence": -0.215354,
+          "attack": 0.12481,
+          "defence": -0.223383,
           "espn_team_id": "6997",
           "match": "exact",
           "params_name": "Brest",
-          "prior_ppg": 1.319
+          "prior_ppg": 1.282
         },
         "Le Havre AC": {
-          "attack": -0.097092,
-          "defence": -0.408762,
+          "attack": -0.064428,
+          "defence": -0.442163,
           "espn_team_id": "3236",
           "match": "exact",
           "params_name": "Le Havre AC",
-          "prior_ppg": 0.9142
+          "prior_ppg": 0.9042
+        },
+        "Le Mans": {
+          "attack": 0.138606,
+          "defence": -0.011232,
+          "espn_team_id": "2697",
+          "match": "exact",
+          "params_name": "Le Mans",
+          "prior_ppg": 1.4893
         },
         "Lens": {
-          "attack": 0.057243,
-          "defence": 0.104106,
+          "attack": 0.027948,
+          "defence": 0.093189,
           "espn_team_id": "175",
           "match": "exact",
           "params_name": "Lens",
-          "prior_ppg": 1.5202
+          "prior_ppg": 1.469
         },
         "Lille": {
-          "attack": 0.159349,
-          "defence": 0.103973,
+          "attack": 0.15901,
+          "defence": 0.088925,
           "espn_team_id": "166",
           "match": "exact",
           "params_name": "Lille",
-          "prior_ppg": 1.6235
+          "prior_ppg": 1.5949
         },
         "Lorient": {
-          "attack": -0.002002,
-          "defence": -0.364948,
+          "attack": -0.011313,
+          "defence": -0.382835,
           "espn_team_id": "273",
           "match": "exact",
           "params_name": "Lorient",
-          "prior_ppg": 1.0368
+          "prior_ppg": 1.0044
         },
         "Lyon": {
-          "attack": 0.329542,
-          "defence": -0.167081,
+          "attack": 0.364437,
+          "defence": -0.129022,
           "espn_team_id": "167",
           "match": "exact",
           "params_name": "Lyon",
-          "prior_ppg": 1.5657
+          "prior_ppg": 1.6223
         },
         "Marseille": {
-          "attack": 0.387697,
-          "defence": -0.094341,
+          "attack": 0.360006,
+          "defence": -0.096879,
           "espn_team_id": "176",
           "match": "exact",
           "params_name": "Marseille",
-          "prior_ppg": 1.6992
+          "prior_ppg": 1.6469
         },
         "Nice": {
-          "attack": 0.213128,
-          "defence": 0.109967,
+          "attack": 0.223827,
+          "defence": 0.106225,
           "espn_team_id": "2502",
           "match": "exact",
           "params_name": "Nice",
-          "prior_ppg": 1.6846
+          "prior_ppg": 1.6758
+        },
+        "Paris FC": {
+          "attack": 0.400673,
+          "defence": 0.102341,
+          "espn_team_id": "6851",
+          "match": "exact",
+          "params_name": "Paris FC",
+          "prior_ppg": 1.8619
         },
         "Paris Saint-Germain": {
-          "attack": 0.658207,
-          "defence": 0.089833,
+          "attack": 0.641932,
+          "defence": 0.114238,
           "espn_team_id": "160",
           "match": "exact",
           "params_name": "Paris Saint-Germain",
-          "prior_ppg": 2.1629
+          "prior_ppg": 2.1381
         },
         "Stade Rennais": {
-          "attack": 0.207419,
-          "defence": -0.14195,
+          "attack": 0.148743,
+          "defence": -0.201164,
           "espn_team_id": "169",
           "match": "override",
           "params_name": "Rennes",
-          "prior_ppg": 1.4568
+          "prior_ppg": 1.3267
         },
         "Strasbourg": {
-          "attack": 0.120929,
-          "defence": -0.121368,
+          "attack": 0.10229,
+          "defence": -0.120782,
           "espn_team_id": "180",
           "match": "exact",
           "params_name": "Strasbourg",
-          "prior_ppg": 1.3866
+          "prior_ppg": 1.3555
         },
         "Toulouse": {
-          "attack": -0.021063,
-          "defence": -0.078057,
+          "attack": 0.006139,
+          "defence": -0.112155,
           "espn_team_id": "179",
           "match": "exact",
           "params_name": "Toulouse",
-          "prior_ppg": 1.288
+          "prior_ppg": 1.2717
         },
         "Troyes": {
-          "attack": -0.212868,
-          "defence": -0.546347,
+          "attack": -0.463214,
+          "defence": -0.655226,
           "espn_team_id": "170",
           "match": "exact",
           "params_name": "Troyes",
-          "prior_ppg": 0.7007
+          "prior_ppg": 0.4704
         }
       },
-      "unmatched_frontend_teams": [
-        "Le Mans",
-        "Paris FC"
-      ],
+      "unmatched_frontend_teams": [],
       "unmatched_params_teams": [
         "AC Ajaccio",
-        "Bordeaux",
         "Clermont Foot",
         "Metz",
         "Montpellier",
@@ -605,137 +636,157 @@
     },
     "ger.1": {
       "espn_league_slug": "ger.1",
-      "fitted_matches": 1346,
-      "home_adv": 0.16862,
-      "last_match_date": "2025-05-17T00:00:00+00:00",
-      "rho": -0.130189,
+      "fitted_matches": 1181,
+      "home_adv": 0.174645,
+      "last_match_date": "2026-09-20T16:30:00+00:00",
+      "rho": -0.110011,
       "teams": {
         "1. FC Union Berlin": {
-          "attack": -0.186366,
-          "defence": -0.154827,
+          "attack": -0.139828,
+          "defence": -0.172791,
           "espn_team_id": "598",
           "match": "exact",
           "params_name": "1. FC Union Berlin",
-          "prior_ppg": 1.0756
+          "prior_ppg": 0.9263
         },
         "Bayer Leverkusen": {
-          "attack": 0.461552,
-          "defence": 0.077812,
+          "attack": 0.542391,
+          "defence": 0.222848,
           "espn_team_id": "131",
           "match": "exact",
           "params_name": "Bayer Leverkusen",
-          "prior_ppg": 1.9536
+          "prior_ppg": 1.9026
         },
         "Bayern Munich": {
-          "attack": 0.698335,
-          "defence": 0.087206,
+          "attack": 0.836723,
+          "defence": 0.20842,
           "espn_team_id": "132",
           "match": "exact",
           "params_name": "Bayern Munich",
-          "prior_ppg": 2.2338
+          "prior_ppg": 2.2065
         },
         "Borussia Dortmund": {
-          "attack": 0.469034,
-          "defence": -0.115767,
+          "attack": 0.528214,
+          "defence": 0.039764,
           "espn_team_id": "124",
           "match": "exact",
           "params_name": "Borussia Dortmund",
-          "prior_ppg": 1.7938
+          "prior_ppg": 1.7412
         },
         "Borussia Mönchengladbach": {
-          "attack": 0.17775,
-          "defence": -0.336664,
+          "attack": 0.292326,
+          "defence": -0.304774,
           "espn_team_id": "268",
           "match": "normalized",
           "params_name": "Borussia Monchengladbach",
-          "prior_ppg": 1.2437
+          "prior_ppg": 1.1717
         },
         "Eintracht Frankfurt": {
-          "attack": 0.258032,
-          "defence": -0.129169,
+          "attack": 0.335593,
+          "defence": -0.059596,
           "espn_team_id": "125",
           "match": "exact",
           "params_name": "Eintracht Frankfurt",
-          "prior_ppg": 1.5368
+          "prior_ppg": 1.4477
         },
         "FC Augsburg": {
-          "attack": -0.158546,
-          "defence": -0.225298,
+          "attack": -0.044667,
+          "defence": -0.170604,
           "espn_team_id": "3841",
           "match": "exact",
           "params_name": "FC Augsburg",
-          "prior_ppg": 1.035
+          "prior_ppg": 1.0003
         },
         "FC Cologne": {
-          "attack": -0.210395,
-          "defence": -0.296935,
+          "attack": -0.139782,
+          "defence": -0.19362,
           "espn_team_id": "122",
           "match": "exact",
           "params_name": "FC Cologne",
-          "prior_ppg": 0.9268
+          "prior_ppg": 0.9087
+        },
+        "Hamburg SV": {
+          "attack": 0.324382,
+          "defence": -0.139779,
+          "espn_team_id": "127",
+          "match": "exact",
+          "params_name": "Hamburg SV",
+          "prior_ppg": 1.3623
         },
         "Mainz": {
-          "attack": 0.073743,
-          "defence": -0.092697,
+          "attack": 0.232594,
+          "defence": -0.044665,
           "espn_team_id": "2950",
           "match": "exact",
           "params_name": "Mainz",
-          "prior_ppg": 1.3748
+          "prior_ppg": 1.3578
         },
         "RB Leipzig": {
-          "attack": 0.294488,
-          "defence": -0.060311,
+          "attack": 0.34706,
+          "defence": 0.028728,
           "espn_team_id": "11420",
           "match": "exact",
           "params_name": "RB Leipzig",
-          "prior_ppg": 1.642
+          "prior_ppg": 1.5379
         },
         "SC Freiburg": {
-          "attack": 0.066272,
-          "defence": -0.202747,
+          "attack": 0.164479,
+          "defence": -0.117121,
           "espn_team_id": "126",
           "match": "exact",
           "params_name": "SC Freiburg",
-          "prior_ppg": 1.2633
+          "prior_ppg": 1.2276
+        },
+        "SC Paderborn 07": {
+          "attack": 0.589705,
+          "defence": 0.223192,
+          "espn_team_id": "3307",
+          "match": "exact",
+          "params_name": "SC Paderborn 07",
+          "prior_ppg": 1.9534
+        },
+        "SV Elversberg": {
+          "attack": -3.0,
+          "defence": 3.0,
+          "espn_team_id": "10388",
+          "match": "exact",
+          "params_name": "SV Elversberg",
+          "prior_ppg": 1.0417
         },
         "Schalke 04": {
-          "attack": -0.260361,
-          "defence": -0.503429,
+          "attack": -0.145986,
+          "defence": -0.390357,
           "espn_team_id": "133",
           "match": "exact",
           "params_name": "Schalke 04",
-          "prior_ppg": 0.7023
+          "prior_ppg": 0.7373
         },
         "TSG Hoffenheim": {
-          "attack": 0.144015,
-          "defence": -0.421062,
+          "attack": 0.223272,
+          "defence": -0.333943,
           "espn_team_id": "7911",
           "match": "override",
           "params_name": "Hoffenheim",
-          "prior_ppg": 1.122
+          "prior_ppg": 1.0779
         },
         "VfB Stuttgart": {
-          "attack": 0.306224,
-          "defence": -0.150661,
+          "attack": 0.343976,
+          "defence": -0.029972,
           "espn_team_id": "134",
           "match": "exact",
           "params_name": "VfB Stuttgart",
-          "prior_ppg": 1.5704
+          "prior_ppg": 1.483
         },
         "Werder Bremen": {
-          "attack": 0.104635,
-          "defence": -0.265289,
+          "attack": 0.231798,
+          "defence": -0.198852,
           "espn_team_id": "137",
           "match": "exact",
           "params_name": "Werder Bremen",
-          "prior_ppg": 1.2406
+          "prior_ppg": 1.2154
         }
       },
-      "unmatched_frontend_teams": [
-        "Hamburg SV",
-        "SC Paderborn 07",
-        "SV Elversberg"
-      ],
+      "unmatched_frontend_teams": [],
       "unmatched_params_teams": [
         "1. FC Heidenheim 1846",
         "Arminia Bielefeld",
@@ -750,171 +801,169 @@
     },
     "ita.1": {
       "espn_league_slug": "ita.1",
-      "fitted_matches": 1615,
-      "home_adv": 0.131063,
-      "last_match_date": "2025-05-25T00:00:00+00:00",
-      "rho": -0.073981,
+      "fitted_matches": 1338,
+      "home_adv": 0.149268,
+      "last_match_date": "2026-09-20T17:45:00+00:00",
+      "rho": -0.075435,
       "teams": {
         "AC Milan": {
-          "attack": 0.402707,
-          "defence": -0.006787,
+          "attack": 0.41529,
+          "defence": 0.012745,
           "espn_team_id": "103",
           "match": "exact",
           "params_name": "AC Milan",
-          "prior_ppg": 1.6971
+          "prior_ppg": 1.7333
         },
         "AS Roma": {
-          "attack": 0.26155,
-          "defence": 0.152885,
+          "attack": 0.280614,
+          "defence": 0.150468,
           "espn_team_id": "104",
           "match": "override",
           "params_name": "Roma",
-          "prior_ppg": 1.6783
+          "prior_ppg": 1.7021
         },
         "Atalanta": {
-          "attack": 0.496581,
-          "defence": 0.070511,
+          "attack": 0.464811,
+          "defence": 0.046847,
           "espn_team_id": "105",
           "match": "exact",
           "params_name": "Atalanta",
-          "prior_ppg": 1.8613
+          "prior_ppg": 1.8141
         },
         "Bologna": {
-          "attack": 0.220794,
-          "defence": 0.010993,
+          "attack": 0.213479,
+          "defence": 0.025034,
           "espn_team_id": "107",
           "match": "exact",
           "params_name": "Bologna",
-          "prior_ppg": 1.5236
+          "prior_ppg": 1.5351
         },
         "Cagliari": {
-          "attack": -0.069769,
-          "defence": -0.27703,
+          "attack": -0.076263,
+          "defence": -0.236681,
           "espn_team_id": "2925",
           "match": "exact",
           "params_name": "Cagliari",
-          "prior_ppg": 1.0098
+          "prior_ppg": 1.0486
         },
         "Como": {
-          "attack": 0.141277,
-          "defence": -0.033926,
+          "attack": 0.047112,
+          "defence": -0.073638,
           "espn_team_id": "2572",
           "match": "exact",
           "params_name": "Como",
-          "prior_ppg": 1.4081
+          "prior_ppg": 1.2945
         },
         "Fiorentina": {
-          "attack": 0.261227,
-          "defence": -0.02621,
+          "attack": 0.262404,
+          "defence": -0.001582,
           "espn_team_id": "109",
           "match": "exact",
           "params_name": "Fiorentina",
-          "prior_ppg": 1.5329
+          "prior_ppg": 1.5621
         },
         "Genoa": {
-          "attack": -0.084733,
-          "defence": -0.062798,
+          "attack": -0.092932,
+          "defence": -0.073942,
           "espn_team_id": "3263",
           "match": "exact",
           "params_name": "Genoa",
-          "prior_ppg": 1.1817
+          "prior_ppg": 1.1735
         },
         "Internazionale": {
-          "attack": 0.583352,
-          "defence": 0.342765,
+          "attack": 0.590243,
+          "defence": 0.300225,
           "espn_team_id": "110",
           "match": "override",
           "params_name": "Inter",
-          "prior_ppg": 2.1444
+          "prior_ppg": 2.1291
         },
         "Juventus": {
-          "attack": 0.220456,
-          "defence": 0.247487,
+          "attack": 0.225884,
+          "defence": 0.309041,
           "espn_team_id": "111",
           "match": "exact",
           "params_name": "Juventus",
-          "prior_ppg": 1.7078
+          "prior_ppg": 1.7629
         },
         "Lazio": {
-          "attack": 0.228722,
-          "defence": 0.02044,
+          "attack": 0.230554,
+          "defence": 0.058727,
           "espn_team_id": "112",
           "match": "exact",
           "params_name": "Lazio",
-          "prior_ppg": 1.5394
+          "prior_ppg": 1.5796
         },
         "Lecce": {
-          "attack": -0.407965,
-          "defence": -0.171156,
+          "attack": -0.446176,
+          "defence": -0.195268,
           "espn_team_id": "113",
           "match": "exact",
           "params_name": "Lecce",
-          "prior_ppg": 0.8588
+          "prior_ppg": 0.8243
         },
         "Monza": {
-          "attack": -0.2612,
-          "defence": -0.316694,
+          "attack": -0.2376,
+          "defence": -0.307256,
           "espn_team_id": "4007",
           "match": "exact",
           "params_name": "Monza",
-          "prior_ppg": 0.836
+          "prior_ppg": 0.8684
         },
         "Napoli": {
-          "attack": 0.295324,
-          "defence": 0.277418,
+          "attack": 0.272261,
+          "defence": 0.291091,
           "espn_team_id": "114",
           "match": "exact",
           "params_name": "Napoli",
-          "prior_ppg": 1.8043
+          "prior_ppg": 1.7964
         },
         "Parma": {
-          "attack": 0.002569,
-          "defence": -0.246146,
+          "attack": 0.058198,
+          "defence": -0.222319,
           "espn_team_id": "115",
           "match": "exact",
           "params_name": "Parma",
-          "prior_ppg": 1.0965
+          "prior_ppg": 1.1746
         },
         "Sassuolo": {
-          "attack": 0.024122,
-          "defence": -0.437966,
+          "attack": -0.032329,
+          "defence": -0.476521,
           "espn_team_id": "3997",
           "match": "exact",
           "params_name": "Sassuolo",
-          "prior_ppg": 0.9389
+          "prior_ppg": 0.8688
         },
         "Torino": {
-          "attack": -0.135895,
-          "defence": 0.059115,
+          "attack": -0.140202,
+          "defence": 0.089226,
           "espn_team_id": "239",
           "match": "exact",
           "params_name": "Torino",
-          "prior_ppg": 1.2381
+          "prior_ppg": 1.2653
         },
         "Udinese": {
-          "attack": -0.086821,
-          "defence": -0.192347,
+          "attack": -0.143008,
+          "defence": -0.180081,
           "espn_team_id": "118",
           "match": "exact",
           "params_name": "Udinese",
-          "prior_ppg": 1.0701
+          "prior_ppg": 1.0446
         },
         "Venezia": {
-          "attack": -0.292416,
-          "defence": -0.216357,
+          "attack": -0.362066,
+          "defence": -0.233479,
           "espn_team_id": "17530",
           "match": "exact",
           "params_name": "Venezia",
-          "prior_ppg": 0.8979
+          "prior_ppg": 0.8464
         }
       },
       "unmatched_frontend_teams": [
         "Frosinone"
       ],
       "unmatched_params_teams": [
-        "Benevento Calcio",
         "Cremonese",
-        "Crotone",
         "Empoli",
         "Frosinone Calcio",
         "Hellas Verona",
@@ -925,144 +974,157 @@
     },
     "ned.1": {
       "espn_league_slug": "ned.1",
-      "fitted_matches": 1149,
-      "home_adv": 0.251792,
-      "last_match_date": "2026-09-15T17:00:00+00:00",
-      "rho": -0.081727,
+      "fitted_matches": 1158,
+      "home_adv": 0.249227,
+      "last_match_date": "2026-09-20T13:45:00+00:00",
+      "rho": -0.087989,
       "teams": {
+        "ADO Den Haag": {
+          "attack": -0.552048,
+          "defence": -0.110271,
+          "espn_team_id": "2726",
+          "match": "exact",
+          "params_name": "ADO Den Haag",
+          "prior_ppg": 0.7383
+        },
         "AZ Alkmaar": {
-          "attack": 0.297029,
-          "defence": 0.124327,
+          "attack": 0.448658,
+          "defence": 0.28085,
           "espn_team_id": "140",
           "match": "exact",
           "params_name": "AZ Alkmaar",
-          "prior_ppg": 1.7795
+          "prior_ppg": 1.8345
         },
         "Ajax Amsterdam": {
-          "attack": 0.485001,
-          "defence": 0.036359,
+          "attack": 0.615539,
+          "defence": 0.153855,
           "espn_team_id": "139",
           "match": "override",
           "params_name": "Ajax",
-          "prior_ppg": 1.9114
+          "prior_ppg": 1.9157
         },
         "Excelsior": {
-          "attack": -0.049409,
-          "defence": -0.498574,
+          "attack": 0.182985,
+          "defence": -0.281518,
           "espn_team_id": "2566",
           "match": "exact",
           "params_name": "Excelsior",
-          "prior_ppg": 0.8842
+          "prior_ppg": 1.1074
         },
         "FC Groningen": {
-          "attack": -0.161774,
-          "defence": -0.285389,
+          "attack": 0.062917,
+          "defence": -0.093132,
           "espn_team_id": "145",
           "match": "exact",
           "params_name": "FC Groningen",
-          "prior_ppg": 0.9882
+          "prior_ppg": 1.1664
         },
         "FC Twente": {
-          "attack": 0.318697,
-          "defence": 0.043025,
+          "attack": 0.503247,
+          "defence": 0.197635,
           "espn_team_id": "152",
           "match": "exact",
           "params_name": "FC Twente",
-          "prior_ppg": 1.7366
+          "prior_ppg": 1.8296
         },
         "FC Utrecht": {
-          "attack": 0.20542,
-          "defence": -0.038575,
+          "attack": 0.335891,
+          "defence": 0.036601,
           "espn_team_id": "153",
           "match": "exact",
           "params_name": "FC Utrecht",
-          "prior_ppg": 1.5483
+          "prior_ppg": 1.5288
         },
         "Feyenoord Rotterdam": {
-          "attack": 0.546321,
-          "defence": 0.248924,
+          "attack": 0.743456,
+          "defence": 0.444598,
           "espn_team_id": "142",
           "match": "override",
           "params_name": "Feyenoord",
-          "prior_ppg": 2.1351
+          "prior_ppg": 2.2448
         },
         "Fortuna Sittard": {
-          "attack": -0.226003,
-          "defence": -0.227261,
+          "attack": -0.082194,
+          "defence": -0.040691,
           "espn_team_id": "143",
           "match": "exact",
           "params_name": "Fortuna Sittard",
-          "prior_ppg": 0.9884
+          "prior_ppg": 1.0914
         },
         "Go Ahead Eagles": {
-          "attack": 0.101885,
-          "defence": -0.169171,
+          "attack": 0.246121,
+          "defence": 0.007038,
           "espn_team_id": "3706",
           "match": "exact",
           "params_name": "Go Ahead Eagles",
-          "prior_ppg": 1.3277
+          "prior_ppg": 1.416
         },
         "Heerenveen": {
-          "attack": -0.019386,
-          "defence": -0.290869,
+          "attack": 0.225341,
+          "defence": -0.09942,
           "espn_team_id": "146",
           "match": "exact",
           "params_name": "Heerenveen",
-          "prior_ppg": 1.103
+          "prior_ppg": 1.3058
         },
         "NEC Nijmegen": {
-          "attack": 0.148415,
-          "defence": -0.083708,
+          "attack": 0.27927,
+          "defence": 0.078107,
           "espn_team_id": "147",
           "match": "exact",
           "params_name": "NEC Nijmegen",
-          "prior_ppg": 1.4506
+          "prior_ppg": 1.5068
         },
         "PEC Zwolle": {
-          "attack": -0.072813,
-          "defence": -0.239189,
+          "attack": 0.031495,
+          "defence": -0.128949,
           "espn_team_id": "2565",
           "match": "exact",
           "params_name": "PEC Zwolle",
-          "prior_ppg": 1.1034
+          "prior_ppg": 1.1103
         },
         "PSV Eindhoven": {
-          "attack": 0.774262,
-          "defence": 0.160975,
+          "attack": 0.927049,
+          "defence": 0.253677,
           "espn_team_id": "148",
           "match": "override",
           "params_name": "PSV",
-          "prior_ppg": 2.3137
+          "prior_ppg": 2.3146
         },
         "SC Cambuur": {
-          "attack": -0.264932,
-          "defence": -0.45973,
+          "attack": -0.110219,
+          "defence": -0.301211,
           "espn_team_id": "3736",
           "match": "exact",
           "params_name": "SC Cambuur",
-          "prior_ppg": 0.7589
+          "prior_ppg": 0.8613
         },
         "Sparta Rotterdam": {
-          "attack": -0.024119,
-          "defence": 0.027139,
+          "attack": 0.076971,
+          "defence": 0.083381,
           "espn_team_id": "151",
           "match": "exact",
           "params_name": "Sparta Rotterdam",
-          "prior_ppg": 1.3793
+          "prior_ppg": 1.3225
+        },
+        "Telstar": {
+          "attack": -3.0,
+          "defence": 0.697744,
+          "espn_team_id": "3735",
+          "match": "exact",
+          "params_name": "Telstar",
+          "prior_ppg": 0.5647
         },
         "Willem II": {
-          "attack": -0.319554,
-          "defence": -0.355992,
+          "attack": -0.264426,
+          "defence": -0.199344,
           "espn_team_id": "156",
           "match": "exact",
           "params_name": "Willem II",
-          "prior_ppg": 0.81
+          "prior_ppg": 0.8388
         }
       },
-      "unmatched_frontend_teams": [
-        "ADO Den Haag",
-        "Telstar"
-      ],
+      "unmatched_frontend_teams": [],
       "unmatched_params_teams": [
         "Almere City",
         "FC Emmen",
@@ -1075,144 +1137,157 @@
     },
     "por.1": {
       "espn_league_slug": "por.1",
-      "fitted_matches": 1408,
-      "home_adv": 0.196386,
-      "last_match_date": "2025-05-17T00:00:00+00:00",
-      "rho": 0.027355,
+      "fitted_matches": 1150,
+      "home_adv": 0.179675,
+      "last_match_date": "2026-09-20T19:30:00+00:00",
+      "rho": -0.003584,
       "teams": {
+        "Académico de Viseu": {
+          "attack": 0.547086,
+          "defence": 3.0,
+          "espn_team_id": "21607",
+          "match": "exact",
+          "params_name": "Académico de Viseu",
+          "prior_ppg": 2.5289
+        },
+        "Alverca": {
+          "attack": -0.31521,
+          "defence": 3.0,
+          "espn_team_id": "21613",
+          "match": "exact",
+          "params_name": "Alverca",
+          "prior_ppg": 1.9448
+        },
         "Arouca": {
-          "attack": 0.055417,
-          "defence": -0.080331,
+          "attack": 0.093688,
+          "defence": -0.068288,
           "espn_team_id": "15784",
           "match": "exact",
           "params_name": "Arouca",
-          "prior_ppg": 1.196
+          "prior_ppg": 1.14
         },
         "Benfica": {
-          "attack": 0.723458,
-          "defence": 0.429257,
+          "attack": 0.717383,
+          "defence": 0.336519,
           "espn_team_id": "1929",
           "match": "exact",
           "params_name": "Benfica",
-          "prior_ppg": 2.243
+          "prior_ppg": 1.9962
         },
         "Braga": {
-          "attack": 0.440537,
-          "defence": 0.194945,
+          "attack": 0.408436,
+          "defence": 0.22111,
           "espn_team_id": "2994",
           "match": "exact",
           "params_name": "Braga",
-          "prior_ppg": 1.7937
+          "prior_ppg": 1.6332
         },
         "C.D. Nacional": {
-          "attack": -0.147583,
-          "defence": -0.153107,
+          "attack": -0.225024,
+          "defence": -0.280663,
           "espn_team_id": "3472",
           "match": "exact",
           "params_name": "C.D. Nacional",
-          "prior_ppg": 0.9728
+          "prior_ppg": 0.753
         },
         "Casa Pia": {
-          "attack": -0.007407,
-          "defence": -0.042659,
+          "attack": 0.018312,
+          "defence": -0.037703,
           "espn_team_id": "21581",
           "match": "exact",
           "params_name": "Casa Pia",
-          "prior_ppg": 1.1748
+          "prior_ppg": 1.106
         },
         "Estoril": {
-          "attack": 0.185745,
-          "defence": -0.195027,
+          "attack": 0.165365,
+          "defence": -0.22542,
           "espn_team_id": "12216",
           "match": "exact",
           "params_name": "Estoril",
-          "prior_ppg": 1.2102
+          "prior_ppg": 1.0676
         },
         "Estrela": {
-          "attack": -0.370194,
-          "defence": -0.138273,
+          "attack": -0.383144,
+          "defence": -0.147814,
           "espn_team_id": "21610",
           "match": "exact",
           "params_name": "Estrela",
-          "prior_ppg": 0.8353
+          "prior_ppg": 0.7627
         },
         "FC Famalicao": {
-          "attack": 0.091496,
-          "defence": 0.046587,
+          "attack": 0.173978,
+          "defence": 0.066228,
           "espn_team_id": "12698",
           "match": "exact",
           "params_name": "FC Famalicao",
-          "prior_ppg": 1.3345
+          "prior_ppg": 1.3111
         },
         "FC Porto": {
-          "attack": 0.518636,
-          "defence": 0.397611,
+          "attack": 0.543848,
+          "defence": 0.403981,
           "espn_team_id": "437",
           "match": "normalized",
           "params_name": "Porto",
-          "prior_ppg": 2.017
+          "prior_ppg": 1.8781
         },
         "Gil Vicente": {
-          "attack": -0.072684,
-          "defence": -0.060239,
+          "attack": -0.09044,
+          "defence": -0.069871,
           "espn_team_id": "3699",
           "match": "exact",
           "params_name": "Gil Vicente",
-          "prior_ppg": 1.1071
+          "prior_ppg": 1.0019
         },
         "Maritimo": {
-          "attack": -0.151282,
-          "defence": -0.1693,
+          "attack": -0.098723,
+          "defence": -0.160102,
           "espn_team_id": "552",
           "match": "exact",
           "params_name": "Maritimo",
-          "prior_ppg": 0.9566
+          "prior_ppg": 0.926
         },
         "Moreirense": {
-          "attack": 0.020089,
-          "defence": -0.018523,
+          "attack": 0.014158,
+          "defence": -0.012804,
           "espn_team_id": "3696",
           "match": "exact",
           "params_name": "Moreirense",
-          "prior_ppg": 1.2181
+          "prior_ppg": 1.1222
         },
         "Rio Ave": {
-          "attack": -0.00383,
-          "defence": -0.118737,
+          "attack": 0.002504,
+          "defence": -0.139161,
           "espn_team_id": "3822",
           "match": "exact",
           "params_name": "Rio Ave",
-          "prior_ppg": 1.1133
+          "prior_ppg": 1.0139
         },
         "Santa Clara": {
-          "attack": -0.125069,
-          "defence": 0.135237,
+          "attack": -0.210407,
+          "defence": 0.195293,
           "espn_team_id": "12215",
           "match": "exact",
           "params_name": "Santa Clara",
-          "prior_ppg": 1.2219
+          "prior_ppg": 1.1138
         },
         "Sporting CP": {
-          "attack": 0.77047,
-          "defence": 0.406715,
+          "attack": 0.764126,
+          "defence": 0.323603,
           "espn_team_id": "2250",
           "match": "exact",
           "params_name": "Sporting CP",
-          "prior_ppg": 2.2764
+          "prior_ppg": 2.0313
         },
         "Vitória de Guimaraes": {
-          "attack": 0.177056,
-          "defence": 0.125529,
+          "attack": 0.164322,
+          "defence": 0.120736,
           "espn_team_id": "5309",
           "match": "exact",
           "params_name": "Vitória de Guimaraes",
-          "prior_ppg": 1.4774
+          "prior_ppg": 1.3444
         }
       },
-      "unmatched_frontend_teams": [
-        "Académico de Viseu",
-        "Alverca"
-      ],
+      "unmatched_frontend_teams": [],
       "unmatched_params_teams": [
         "AVS",
         "Belenenses",
@@ -1228,249 +1303,249 @@
     "usa.1": {
       "espn_league_slug": "usa.1",
       "fitted_matches": 1024,
-      "home_adv": 0.243286,
+      "home_adv": 0.243281,
       "last_match_date": "2026-09-14T01:00:00+00:00",
-      "rho": -0.046156,
+      "rho": -0.046157,
       "teams": {
         "Atlanta United FC": {
-          "attack": -0.227675,
-          "defence": -0.353496,
+          "attack": -0.227629,
+          "defence": -0.353433,
           "espn_team_id": "18418",
           "match": "normalized",
           "params_name": "Atlanta United",
           "prior_ppg": 1.0171
         },
         "Austin FC": {
-          "attack": -0.156884,
-          "defence": -0.286161,
+          "attack": -0.156875,
+          "defence": -0.286164,
           "espn_team_id": "20906",
           "match": "exact",
           "params_name": "Austin FC",
-          "prior_ppg": 1.1401
+          "prior_ppg": 1.14
         },
         "CF Montréal": {
-          "attack": -0.250616,
-          "defence": -0.411579,
+          "attack": -0.25055,
+          "defence": -0.411511,
           "espn_team_id": "9720",
           "match": "exact",
           "params_name": "CF Montréal",
-          "prior_ppg": 0.9448
+          "prior_ppg": 0.9449
         },
         "Charlotte FC": {
-          "attack": 0.136668,
-          "defence": -0.15923,
+          "attack": 0.136754,
+          "defence": -0.159178,
           "espn_team_id": "21300",
           "match": "exact",
           "params_name": "Charlotte FC",
-          "prior_ppg": 1.5473
+          "prior_ppg": 1.5474
         },
         "Chicago Fire FC": {
-          "attack": 0.262548,
-          "defence": -0.27766,
+          "attack": 0.262582,
+          "defence": -0.277616,
           "espn_team_id": "182",
           "match": "exact",
           "params_name": "Chicago Fire FC",
           "prior_ppg": 1.5743
         },
         "Colorado Rapids": {
-          "attack": -0.148204,
-          "defence": -0.199431,
+          "attack": -0.14821,
+          "defence": -0.199424,
           "espn_team_id": "184",
           "match": "exact",
           "params_name": "Colorado Rapids",
-          "prior_ppg": 1.2274
+          "prior_ppg": 1.2273
         },
         "Columbus Crew": {
-          "attack": 0.029109,
-          "defence": -0.26035,
+          "attack": 0.029191,
+          "defence": -0.260307,
           "espn_team_id": "183",
           "match": "exact",
           "params_name": "Columbus Crew",
           "prior_ppg": 1.3408
         },
         "D.C. United": {
-          "attack": -0.296518,
-          "defence": -0.350348,
+          "attack": -0.296416,
+          "defence": -0.350299,
           "espn_team_id": "193",
           "match": "exact",
           "params_name": "D.C. United",
-          "prior_ppg": 0.9647
+          "prior_ppg": 0.9648
         },
         "FC Cincinnati": {
-          "attack": 0.220376,
-          "defence": -0.423708,
+          "attack": 0.220458,
+          "defence": -0.423603,
           "espn_team_id": "18267",
           "match": "exact",
           "params_name": "FC Cincinnati",
-          "prior_ppg": 1.3798
+          "prior_ppg": 1.3799
         },
         "FC Dallas": {
-          "attack": 0.20591,
-          "defence": -0.325243,
+          "attack": 0.205897,
+          "defence": -0.325256,
           "espn_team_id": "185",
           "match": "exact",
           "params_name": "FC Dallas",
-          "prior_ppg": 1.4641
+          "prior_ppg": 1.464
         },
         "Houston Dynamo FC": {
-          "attack": -0.122904,
-          "defence": -0.076401,
+          "attack": -0.122869,
+          "defence": -0.076433,
           "espn_team_id": "6077",
           "match": "exact",
           "params_name": "Houston Dynamo FC",
-          "prior_ppg": 1.3597
+          "prior_ppg": 1.3596
         },
         "Inter Miami CF": {
-          "attack": 0.561718,
-          "defence": -0.328318,
+          "attack": 0.561802,
+          "defence": -0.328247,
           "espn_team_id": "20232",
           "match": "normalized",
           "params_name": "Inter Miami",
-          "prior_ppg": 1.8814
+          "prior_ppg": 1.8815
         },
         "LA Galaxy": {
-          "attack": -0.12882,
-          "defence": -0.356239,
+          "attack": -0.128823,
+          "defence": -0.356245,
           "espn_team_id": "187",
           "match": "exact",
           "params_name": "LA Galaxy",
           "prior_ppg": 1.0991
         },
         "LAFC": {
-          "attack": 0.158713,
-          "defence": 0.074859,
+          "attack": 0.158727,
+          "defence": 0.074848,
           "espn_team_id": "18966",
           "match": "exact",
           "params_name": "LAFC",
           "prior_ppg": 1.7704
         },
         "Minnesota United FC": {
-          "attack": 0.07657,
-          "defence": -0.251989,
+          "attack": 0.076587,
+          "defence": -0.251988,
           "espn_team_id": "17362",
           "match": "exact",
           "params_name": "Minnesota United FC",
           "prior_ppg": 1.3972
         },
         "Nashville SC": {
-          "attack": 0.196314,
-          "defence": 0.121847,
+          "attack": 0.196396,
+          "defence": 0.121959,
           "espn_team_id": "18986",
           "match": "exact",
           "params_name": "Nashville SC",
-          "prior_ppg": 1.8468
+          "prior_ppg": 1.8469
         },
         "New England Revolution": {
-          "attack": 0.027661,
-          "defence": -0.134061,
+          "attack": 0.027752,
+          "defence": -0.134006,
           "espn_team_id": "189",
           "match": "exact",
           "params_name": "New England Revolution",
           "prior_ppg": 1.4563
         },
         "New York City FC": {
-          "attack": 0.032238,
-          "defence": -0.03175,
+          "attack": 0.032305,
+          "defence": -0.031686,
           "espn_team_id": "17606",
           "match": "exact",
           "params_name": "New York City FC",
-          "prior_ppg": 1.5505
+          "prior_ppg": 1.5506
         },
         "Orlando City SC": {
-          "attack": 0.211315,
-          "defence": -0.425607,
+          "attack": 0.211401,
+          "defence": -0.425564,
           "espn_team_id": "12011",
           "match": "exact",
           "params_name": "Orlando City SC",
-          "prior_ppg": 1.3678
+          "prior_ppg": 1.3679
         },
         "Philadelphia Union": {
-          "attack": 0.204711,
-          "defence": -0.057849,
+          "attack": 0.20483,
+          "defence": -0.057781,
           "espn_team_id": "10739",
           "match": "exact",
           "params_name": "Philadelphia Union",
-          "prior_ppg": 1.7109
+          "prior_ppg": 1.711
         },
         "Portland Timbers": {
-          "attack": 0.087445,
-          "defence": -0.33189,
+          "attack": 0.087442,
+          "defence": -0.331862,
           "espn_team_id": "9723",
           "match": "exact",
           "params_name": "Portland Timbers",
-          "prior_ppg": 1.3309
+          "prior_ppg": 1.3308
         },
         "Real Salt Lake": {
-          "attack": -0.084984,
-          "defence": -0.277397,
+          "attack": -0.084944,
+          "defence": -0.277425,
           "espn_team_id": "4771",
           "match": "exact",
           "params_name": "Real Salt Lake",
-          "prior_ppg": 1.2138
+          "prior_ppg": 1.2137
         },
         "Red Bull New York": {
-          "attack": -0.094783,
-          "defence": -0.287593,
+          "attack": -0.094694,
+          "defence": -0.287528,
           "espn_team_id": "190",
           "match": "exact",
           "params_name": "Red Bull New York",
           "prior_ppg": 1.1951
         },
         "San Diego FC": {
-          "attack": 0.169276,
-          "defence": -0.208884,
+          "attack": 0.169269,
+          "defence": -0.208887,
           "espn_team_id": "22529",
           "match": "exact",
           "params_name": "San Diego FC",
           "prior_ppg": 1.5365
         },
         "San Jose Earthquakes": {
-          "attack": 0.151246,
-          "defence": -0.330248,
+          "attack": 0.151242,
+          "defence": -0.330268,
           "espn_team_id": "191",
           "match": "exact",
           "params_name": "San Jose Earthquakes",
-          "prior_ppg": 1.3997
+          "prior_ppg": 1.3996
         },
         "Seattle Sounders FC": {
-          "attack": -0.052975,
-          "defence": -0.132978,
+          "attack": -0.052998,
+          "defence": -0.132964,
           "espn_team_id": "9726",
           "match": "normalized",
           "params_name": "Seattle Sounders",
           "prior_ppg": 1.3769
         },
         "Sporting Kansas City": {
-          "attack": -0.161384,
-          "defence": -0.638376,
+          "attack": -0.161374,
+          "defence": -0.638359,
           "espn_team_id": "186",
           "match": "exact",
           "params_name": "Sporting Kansas City",
           "prior_ppg": 0.7998
         },
         "St. Louis CITY SC": {
-          "attack": 0.074279,
-          "defence": -0.270892,
+          "attack": 0.074277,
+          "defence": -0.27088,
           "espn_team_id": "21812",
           "match": "exact",
           "params_name": "St. Louis CITY SC",
           "prior_ppg": 1.3767
         },
         "Toronto FC": {
-          "attack": -0.085451,
-          "defence": -0.230306,
+          "attack": -0.08538,
+          "defence": -0.230236,
           "espn_team_id": "7318",
           "match": "exact",
           "params_name": "Toronto FC",
-          "prior_ppg": 1.2572
+          "prior_ppg": 1.2573
         },
         "Vancouver Whitecaps": {
-          "attack": 0.319434,
-          "defence": 0.077376,
+          "attack": 0.319399,
+          "defence": 0.077346,
           "espn_team_id": "9727",
           "match": "exact",
           "params_name": "Vancouver Whitecaps",
-          "prior_ppg": 1.9464
+          "prior_ppg": 1.9462
         }
       },
       "unmatched_frontend_teams": [],
@@ -1622,7 +1697,7 @@
       ]
     }
   },
-  "generated_at": "2026-09-21T15:25:02+00:00",
-  "params_generated_at": "2026-09-21T15:24:49+00:00",
+  "generated_at": "2026-09-22T13:46:42+00:00",
+  "params_generated_at": "2026-09-22T13:46:23+00:00",
   "schema": 1
 }
