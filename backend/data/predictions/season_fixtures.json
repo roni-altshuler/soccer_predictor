@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23T12:59:41.073886+00:00",
+  "generated_at": "2026-09-24T12:53:14.940474+00:00",
   "method": {
     "model_version": "2026.08.1+4277ba19",
     "release": "2026.08.1",
@@ -34,46 +34,6 @@
     ]
   },
   "fixtures": [
-    {
-      "fixture_uid": "213ab83e8d3132a8",
-      "competition_id": "usa.1",
-      "season": 2026,
-      "date": "2026-09-23",
-      "kickoff": "18:30",
-      "round": null,
-      "home": "Seattle Sounders",
-      "away": "Real Salt Lake",
-      "p_home": 0.4856,
-      "p_draw": 0.2749,
-      "p_away": 0.2396,
-      "xg_home": 1.481,
-      "xg_away": 0.963,
-      "scorelines": [
-        {
-          "score": "1-1",
-          "p": 0.13
-        },
-        {
-          "score": "1-0",
-          "p": 0.1223
-        },
-        {
-          "score": "2-0",
-          "p": 0.0952
-        },
-        {
-          "score": "0-0",
-          "p": 0.093
-        },
-        {
-          "score": "2-1",
-          "p": 0.0917
-        }
-      ],
-      "elo_home": 1522.9,
-      "elo_away": 1467.6,
-      "coherence_gap": 0.0
-    },
     {
       "fixture_uid": "b73ec18063a2d5c5",
       "competition_id": "usa.1",
