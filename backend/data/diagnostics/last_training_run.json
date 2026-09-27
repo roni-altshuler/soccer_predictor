@@ -1,8 +1,8 @@
 {
-  "ran_at": "2026-09-20T09:08:11.948138Z",
+  "ran_at": "2026-09-27T09:54:35.745766Z",
   "status": "gate_enforced",
   "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
-  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-09-20.json",
+  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-09-27.json",
   "retrained_leagues": [
     "eng.1",
     "esp.1",
