@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-27T13:17:30.864492+00:00",
+  "generated_at": "2026-09-28T15:50:31.091371+00:00",
   "method": {
     "model_version": "2026.08.1+4277ba19",
     "release": "2026.08.1",
@@ -34,46 +34,6 @@
     ]
   },
   "fixtures": [
-    {
-      "fixture_uid": "da90a559d9a17312",
-      "competition_id": "usa.1",
-      "season": 2026,
-      "date": "2026-09-27",
-      "kickoff": "19:00",
-      "round": null,
-      "home": "Columbus Crew",
-      "away": "Inter Miami",
-      "p_home": 0.2612,
-      "p_draw": 0.2369,
-      "p_away": 0.5019,
-      "xg_home": 1.292,
-      "xg_away": 1.858,
-      "scorelines": [
-        {
-          "score": "1-1",
-          "p": 0.108
-        },
-        {
-          "score": "1-2",
-          "p": 0.0956
-        },
-        {
-          "score": "0-1",
-          "p": 0.0745
-        },
-        {
-          "score": "0-2",
-          "p": 0.074
-        },
-        {
-          "score": "2-1",
-          "p": 0.0665
-        }
-      ],
-      "elo_home": 1472.5,
-      "elo_away": 1634.2,
-      "coherence_gap": 0.0
-    },
     {
       "fixture_uid": "9729a5d39998d56c",
       "competition_id": "usa.1",
