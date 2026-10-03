@@ -69,6 +69,7 @@ interface Bucket {
 interface Sample {
   basis?: string
   n: number
+  last_kickoff?: string
   brier?: number
   log_loss?: number
   accuracy?: number
@@ -253,6 +254,28 @@ export default function EvaluationPage() {
         ]}
       />
 
+      {!loading && evaluation?.available && (
+        <section aria-label="Evidence dates" className="mt-4 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-[var(--text-secondary)]">Report updated</dt>
+              <dd className="mt-1 text-sm font-semibold tabular-nums">
+                <EvidenceDate value={evaluation.generated_at} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--text-secondary)]">Results through latest scored kickoff</dt>
+              <dd className="mt-1 text-sm font-semibold tabular-nums">
+                <EvidenceDate value={live?.last_kickoff} />
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-xs text-[var(--text-secondary)]">
+            These dates cover the pooled live record. A newer report can still contain older results.
+          </p>
+        </section>
+      )}
+
       {loading ? (
         <div
           className="mt-8 h-64 animate-pulse rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]"
@@ -330,6 +353,14 @@ export default function EvaluationPage() {
  * whole block is absent rather than a map of zeroes, and this returns null so
  * the panel says "nothing scored yet" instead of "Brier 0.00000".
  */
+function EvidenceDate({ value }: { value?: string }) {
+  const date = value ? new Date(value) : null
+  if (!date || !Number.isFinite(date.getTime())) return <>Not available</>
+  return <time dateTime={value}>{new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  }).format(date)} (UTC)</time>
+}
+
 function liveForLeague(live: Sample | undefined, id: string) {
   const row = live?.by_league?.[id]
   if (!row || !row.n) return null
