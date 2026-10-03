@@ -92,7 +92,6 @@ jobs:
       - name: Generate new predictions
         run: python -m backend.scripts.predict_upcoming --days 7
         working-directory: ${{ github.workspace }}
-        continue-on-error: true
 
       - name: Run training feedback
         run: python -m backend.scripts.train_feedback

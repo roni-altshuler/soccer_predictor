@@ -1139,7 +1139,14 @@ def compute_h2h_features(
 async def fetch_upcoming_matches(
     client: httpx.AsyncClient, espn_id: str, days_ahead: int = 14
 ) -> List[dict]:
-    """Fetch scheduled/upcoming matches from ESPN."""
+    """Fetch fixtures, distinguishing an empty schedule from provider failure.
+
+    ESPN can reject date ranges with HTTP 400 while accepting the same dates
+    individually. Retry that contract failure as daily requests; other failures
+    must stop publication instead of masquerading as an empty schedule.
+    """
+    if days_ahead < 0:
+        raise ValueError("days_ahead must be non-negative")
     matches = []
     today = datetime.now()
     fmt = lambda d: f"{d.year}{d.month:02d}{d.day:02d}"
@@ -1152,11 +1159,30 @@ async def fetch_upcoming_matches(
     url = f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{espn_id}/scoreboard?dates={date_range}&limit=100"
     try:
         resp = await client.get(url, timeout=15)
-        if resp.status_code != 200:
-            return []
-        data = resp.json()
+        responses = [resp]
+        if resp.status_code == 400:
+            responses = []
+            for offset in range(days_ahead + 1):
+                day = fmt(start + timedelta(days=offset))
+                daily = await client.get(
+                    f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{espn_id}/scoreboard",
+                    params={"dates": day, "limit": 100}, timeout=15,
+                )
+                daily.raise_for_status()
+                responses.append(daily)
 
-        for event in data.get("events", []):
+        events = {}
+        for response in responses:
+            response.raise_for_status()
+            data = response.json()
+            if not isinstance(data, dict) or not isinstance(data.get("events"), list):
+                raise ValueError("ESPN scoreboard response must contain an events list")
+            for event in data["events"]:
+                if not isinstance(event, dict) or not event.get("id"):
+                    raise ValueError("ESPN scoreboard event is missing its id")
+                events[str(event["id"])] = event
+
+        for event in events.values():
             comp = event.get("competitions", [{}])[0]
             status = comp.get("status", {}).get("type", {}).get("name", "")
 
@@ -1183,7 +1209,7 @@ async def fetch_upcoming_matches(
                 "city": venue.get("address", {}).get("city", ""),
             })
     except Exception as e:
-        logger.error(f"Error fetching upcoming {espn_id}: {e}")
+        raise RuntimeError(f"Could not fetch upcoming fixtures for {espn_id}") from e
 
     return matches
 
