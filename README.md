@@ -217,12 +217,23 @@ says now — and it is what the live evaluation scores.
 | | matches | what it is |
 |---|---|---|
 | Historical walk-forward | 43,433 | Brier .59303, ECE .0099. Retrospective — nobody saw these before those kickoffs. |
-| Live published | grows from 0 | The final pre-kickoff forecast, scored once the result lands. |
+| Live published (artifact generated 2026-10-02) | 780 | The final pre-kickoff forecast, scored once the result lands; includes earlier serving scopes and versions. |
 
-The live sample is currently zero and the site says so, rather than showing a
-`0.00000` that would read as a perfect model. Below 200 scored matches
+The [committed live artifact](backend/data/evaluation/live.json) contains 349
+scored forecasts in the currently served scope (big five plus MLS). Its latest
+scored kickoff is **2026-09-20**: a fresh artifact timestamp does not establish
+fresh results. These counts are an as-of snapshot, not a new benchmark run.
+Below 200 scored matches
 `/evaluation` refuses to draw a reliability chart, because a chart implies a
 shape and a handful of points does not have one.
+
+The upcoming-fixture publisher retries an ESPN HTTP 400 date-range rejection
+as individual daily requests. HTTP, JSON, or schedule-schema failures stop the
+prediction workflow before feedback or artifact publication; a valid empty
+`events` list remains a successful no-fixtures response. This guard does not
+establish the freshness of the separate warehouse/result-refresh pipeline.
+Run its offline regression checks with
+`python -m pytest backend/tests/test_upcoming_fetch.py -q`.
 
 It also says *why* the sample is the size it is. A forecast names its clubs the
 way FBref does ("Gladbach"); a result names them the way the warehouse does
