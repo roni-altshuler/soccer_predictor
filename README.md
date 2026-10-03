@@ -38,6 +38,9 @@ measured model experiment are in [the implementation report](docs/FORECAST_LAB_A
 
 Four things.
 
+See the [October quality roadmap](docs/QUALITY_ROADMAP_2026-10.md) for the next
+measured model improvements and match-browsing acceptance criteria.
+
 **1. Predicts match outcomes.** 1X2 and scoreline for the five big European
 leagues, calibrated and scored against the bookmaker's price on identical
 fixtures.

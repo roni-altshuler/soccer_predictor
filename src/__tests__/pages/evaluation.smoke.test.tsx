@@ -129,7 +129,26 @@ const EMPTY_LIVE = {
 
 afterEach(() => jest.resetAllMocks())
 
-describe('EvaluationPage — one competition at a time', () => {
+describe('EvaluationPage - one competition at a time', () => {
+  it('distinguishes report publication from the latest scored match', async () => {
+    mockFetch({ evaluation: {
+      ...EMPTY_LIVE, generated_at: '2026-10-02T14:05:41Z',
+      live: { n: 349, last_kickoff: '2026-09-20T20:45:00Z' },
+    } })
+    render(<EvaluationPage />)
+    const dates = await screen.findByRole('region', { name: 'Evidence dates' })
+    expect(within(dates).getByText('2 Oct 2026 (UTC)')).toBeInTheDocument()
+    expect(within(dates).getByText('20 Sept 2026 (UTC)')).toBeInTheDocument()
+    expect(within(dates).getByText(/pooled live record/)).toBeInTheDocument()
+  })
+
+  it('shows missing evidence timestamps as unavailable', async () => {
+    mockFetch({ evaluation: { ...EMPTY_LIVE, generated_at: 'invalid' } })
+    render(<EvaluationPage />)
+    const dates = await screen.findByRole('region', { name: 'Evidence dates' })
+    expect(within(dates).getAllByText('Not available')).toHaveLength(2)
+  })
+
   it('opens on a league and shows that league alone, against its own baselines', async () => {
     mockFetch({ evaluation: EMPTY_LIVE })
     render(<EvaluationPage />)
