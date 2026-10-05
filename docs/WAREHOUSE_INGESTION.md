@@ -9,11 +9,59 @@ loader error statistics, including football-data competition refusals.
 `build_warehouse` now returns a nonzero exit code for a failed core source, an
 empty season selection, refused club rows, an empty candidate, or failed
 integrity/coverage checks. It copies the existing database through SQLite's
-backup API, builds a temporary candidate, closes its connections, validates it,
-and replaces the target only on success. Failed requests, later source failures,
-validation errors, interrupted runs and failed replacements leave the target
-file intact. An active WAL or a concurrent change blocks replacement. `--stats`
+backup API, builds a temporary candidate, closes its candidate connections and
+validates it. Publication to an existing database is one SQLite transaction;
+it keeps the existing file in place. Failed requests, later source failures and
+validation errors leave the last-good database intact. Publication SQL failures
+and interruptions roll back the schema and rows together. An active WAL at
+startup or a concurrent committed change blocks publication. `--stats`
 opens an existing database read-only; it cannot create a missing warehouse.
+
+## Writer coordination and publication
+
+The earlier fingerprint/WAL check followed by `os.replace` was unsafe: a writer
+could commit during candidate fsync, after the check, and have its rows replaced.
+File replacement can also strand already-open writers on the old inode. Existing
+databases are now published in place through SQLite rather than file replacement.
+
+One live connection captures `PRAGMA data_version` before the backup and stays
+open through publication. Providers and candidate construction run without a
+live writer lock. After candidate fsync, `BEGIN IMMEDIATE` acquires SQLite's writer
+lock, and the same connection checks the generation again **under that lock**.
+If another connection committed since the snapshot, the candidate is refused.
+Otherwise the candidate's schema, rows, indexes, views, triggers and
+autoincrement sequences are copied within that transaction, foreign keys are
+checked, and `COMMIT` publishes the complete change. No `executescript` is used:
+its implicit commit would break the lock boundary. SQL failures and interrupts
+roll back the entire transaction. Virtual tables are refused for a separate
+reviewed migration rather than attempting an incomplete copy of shadow tables.
+
+All writers must use SQLite connections/transactions. This includes the existing
+`Warehouse` wrapper and scripts using `sqlite3` directly; no advisory sidecar
+lock or special wrapper is required. SQLite serializes a writer arriving after
+the final check until commit/rollback. A writer that exceeds its busy timeout
+must retry its **whole transaction from a fresh snapshot**. Connections opened
+before publication continue to use the same database file. A read transaction
+can retain its old snapshot until it ends, as normal for SQLite.
+
+Direct filesystem replacement, truncation or unlink of an existing warehouse
+requires stopping all database users first; it does not participate in SQLite
+locking. Downloads/restores must occur before starting refreshes or writers.
+Artifact jobs run after the refresh connection closes. If exporting from a live
+database with other readers/writers, use SQLite backup rather than copying only
+the main file and omitting potentially committed WAL contents.
+
+A cold build fsyncs its closed candidate and uses `os.link` for atomic
+create-if-absent publication on the same filesystem. If a concurrent creator
+has already made the target, publication fails with `EEXIST` and preserves that
+file. There is no fallback to replacement if hard links are unavailable.
+
+Deterministic regressions replay a commit during candidate fsync, a write attempt
+after the locked final check followed by retry through the original connection,
+a concurrent creator at cold publication, and SQL/commit failure after copying
+rows. They also check legacy schema, trigger behavior and sequence preservation.
+
+## Provider and cache validation
 
 Core warehouse loaders read caches but do not publish them. This keeps all
 existing historical cache bytes, mtimes and `fetched_at` values unchanged if any

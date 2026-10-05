@@ -114,6 +114,75 @@ def _validate_candidate(wh, args) -> None:
         raise ProviderUnavailable("candidate integrity/coverage failed: " + "; ".join(failures))
 
 
+def _quoted_identifier(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _copy_candidate_contents(live: sqlite3.Connection) -> None:
+    """Restore schema and rows inside the caller's SQLite writer transaction.
+
+    Do not use executescript: it would implicitly commit the publication lock.
+    No file replacement means already-open writers still address this database.
+    """
+    schema = live.execute(
+        "SELECT type, name, sql FROM candidate.sqlite_schema "
+        "WHERE name NOT GLOB 'sqlite_*' AND sql IS NOT NULL"
+    ).fetchall()
+    if any("CREATE VIRTUAL TABLE" in sql.upper() for _, _, sql in schema):
+        raise ProviderUnavailable("virtual tables require a separate reviewed warehouse migration")
+    old = live.execute(
+        "SELECT type, name FROM main.sqlite_schema "
+        "WHERE name NOT GLOB 'sqlite_*' AND sql IS NOT NULL"
+    ).fetchall()
+    for kind in ("view", "trigger", "table"):
+        for object_type, name in old:
+            if object_type == kind:
+                live.execute(f"DROP {kind.upper()} main.{_quoted_identifier(name)}")
+    for kind, _, sql in schema:
+        if kind == "table":
+            live.execute(sql)
+    for kind, name, _ in schema:
+        if kind != "table":
+            continue
+        table = _quoted_identifier(name)
+        columns = ", ".join(
+            _quoted_identifier(row[1])
+            for row in live.execute(f"PRAGMA candidate.table_xinfo({table})")
+            if row[6] == 0  # Generated columns are recomputed by SQLite.
+        )
+        live.execute(f"INSERT INTO main.{table} ({columns}) SELECT {columns} FROM candidate.{table}")
+    if live.execute("SELECT 1 FROM candidate.sqlite_schema WHERE name = 'sqlite_sequence'").fetchone():
+        live.execute("DELETE FROM main.sqlite_sequence")
+        live.execute("INSERT INTO main.sqlite_sequence SELECT * FROM candidate.sqlite_sequence")
+    for kind in ("index", "view", "trigger"):
+        for object_type, _, sql in schema:
+            if object_type == kind:
+                live.execute(sql)
+    if live.execute("PRAGMA main.foreign_key_check").fetchone():
+        raise ProviderUnavailable("candidate foreign keys failed during publication")
+
+
+def _publish_existing(live: sqlite3.Connection, candidate: Path, version: int) -> None:
+    # The same connection tracks data_version from before backup until commit.
+    # BEGIN IMMEDIATE excludes *all* SQLite writers through the final check,
+    # data/schema copy and COMMIT, including callers that do not use Warehouse.
+    live.execute("ATTACH DATABASE ? AS candidate", (candidate.as_uri() + "?mode=ro",))
+    try:
+        live.execute("PRAGMA foreign_keys = OFF")
+        live.execute("BEGIN IMMEDIATE")
+        try:
+            if live.execute("PRAGMA data_version").fetchone()[0] != version:
+                raise ProviderUnavailable("warehouse changed during refresh; publication refused")
+            _copy_candidate_contents(live)
+            live.execute("COMMIT")
+        except BaseException:
+            if live.in_transaction:
+                live.execute("ROLLBACK")
+            raise
+    finally:
+        live.execute("DETACH DATABASE candidate")
+
+
 async def _build(args: argparse.Namespace) -> int:
     with open_warehouse(args.db) as wh:
         # Competitions must exist before any match can reference one.
@@ -282,38 +351,40 @@ async def _async_main(args: argparse.Namespace) -> int:
         return 0
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    def fingerprint():
-        if not target.exists():
-            return None
-        stat = target.stat()
-        return stat.st_ino, stat.st_size, stat.st_mtime_ns
-
-    original = fingerprint()
+    original = target.stat().st_ino if target.exists() else None
     fd, name = tempfile.mkstemp(prefix=".warehouse-", suffix=".sqlite", dir=target.parent)
     os.close(fd)
     candidate = Path(name)
+    live = None
     try:
-        if target.exists():
-            # Do not replace a database with outstanding WAL writes.
+        if original is not None:
+            # Preserve the existing conservative refusal of an active WAL.
             wal = Path(str(target) + "-wal")
             if wal.exists() and wal.stat().st_size:
                 raise ProviderUnavailable("warehouse has an active WAL; retry after its writer closes")
-            with closing(sqlite3.connect(target.as_uri() + "?mode=ro", uri=True)) as source:
-                with closing(sqlite3.connect(candidate)) as dest:
-                    source.backup(dest)
+            live = sqlite3.connect(target.as_uri() + "?mode=rw", uri=True, isolation_level=None)
+            version = live.execute("PRAGMA data_version").fetchone()[0]
+            with closing(sqlite3.connect(candidate)) as dest:
+                live.backup(dest)
         args.db = candidate
         result = await _build(args)
         if result:
             return result
-        wal = Path(str(target) + "-wal")
-        if fingerprint() != original or (wal.exists() and wal.stat().st_size):
-            raise ProviderUnavailable("warehouse changed during refresh; publication refused")
         with candidate.open("rb") as handle:
             os.fsync(handle.fileno())
-        os.replace(candidate, target)
+        if live is None:
+            # Atomic create-if-absent: a concurrent creator's file is never
+            # replaced, even if it appears between a check and publication.
+            os.link(candidate, target)
+        else:
+            if not target.exists() or target.stat().st_ino != original:
+                raise ProviderUnavailable("warehouse file identity changed during refresh")
+            _publish_existing(live, candidate, version)
         return 0
     finally:
         args.db = target
+        if live is not None:
+            live.close()
         for suffix in ("", "-wal", "-shm"):
             Path(str(candidate) + suffix).unlink(missing_ok=True)
 
