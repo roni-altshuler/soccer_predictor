@@ -22,7 +22,7 @@ function kickoff(time?: string) {
     ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time TBC'
 }
 
-export function MatchdaySpotlight({ matches }: { matches: DayMatch[] }) {
+export function MatchdaySpotlight({ matches, hrefFor = fixtureHref }: { matches: DayMatch[]; hrefFor?: (match: DayMatch) => string | undefined }) {
   const [selected, setSelected] = useState<string>()
   const match = matches.find((m) => m.id === selected) ?? matches[0]
   if (!match) return null
@@ -30,7 +30,7 @@ export function MatchdaySpotlight({ matches }: { matches: DayMatch[] }) {
   const valid = isValidProbabilityTriple(probabilities)
   const live = match.status === 'live'
   const finished = ['completed', 'finished'].includes(match.status)
-  const href = fixtureHref(match)
+  const href = hrefFor(match)
 
   return (
     <section aria-label="Match spotlight" className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]">

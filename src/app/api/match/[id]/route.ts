@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { computeLiveWinProbability, type LiveWinProbabilityResult } from '@/lib/liveWinProbability'
-import type { AttributionItem } from '@/lib/types/attribution'
+import { normalizeBackendMatchPrediction, normalizeUnifiedMatchPrediction, type MatchPredictionData as PredictionData } from '@/lib/server/matchPrediction'
 import { ESPN_SITE } from '@/lib/espnHost'
 import { recordedForecast, type RecordedForecast } from '@/lib/server/recordedForecast'
 import { matchCard, type MatchCard } from '@/lib/server/tieFixtures'
@@ -127,29 +127,6 @@ interface H2HData {
   /** Total goals scored by each reference team across the tracked meetings. */
   homeGoals?: number
   awayGoals?: number
-}
-
-export interface DerivedMarkets {
-  over_under?: Record<string, { over: number; under: number }>
-  btts?: { yes: number; no: number }
-  correct_score_top5?: Array<{ home: number; away: number; probability: number }>
-}
-
-interface PredictionData {
-  home_win: number
-  draw: number
-  away_win: number
-  predicted_score: { home: number; away: number }
-  confidence: number
-  total_goals?: number
-  over_2_5?: number
-  btts_yes?: number
-  most_likely_score?: string
-  model_version?: string
-  confidence_band?: 'Low' | 'Medium' | 'High'
-  derived_markets?: DerivedMarkets | null
-  /** "Why this prediction" per-feature attribution (unified engine only). */
-  attribution?: AttributionItem[] | null
 }
 
 interface ShotMapPoint {
@@ -1062,37 +1039,7 @@ async function fetchUnifiedV1Prediction(
       return null
     }
 
-    const overall = Number(data?.confidence?.overall)
-    const confidencePct = Number.isFinite(overall) ? Math.round(overall * 100) : Math.round(Number(outcome.confidence ?? 0) * 100)
-    const homeXg = Number(data?.goals?.home_expected_goals)
-    const awayXg = Number(data?.goals?.away_expected_goals)
-
-    return {
-      home_win: outcome.home_win,
-      draw: outcome.draw,
-      away_win: outcome.away_win,
-      predicted_score: {
-        home: Number(data?.most_likely_score?.home_goals ?? Math.round(homeXg)) || 0,
-        away: Number(data?.most_likely_score?.away_goals ?? Math.round(awayXg)) || 0,
-      },
-      confidence: confidencePct,
-      total_goals: Number.isFinite(Number(data?.goals?.total_expected_goals))
-        ? Number(data.goals.total_expected_goals)
-        : undefined,
-      over_2_5: Number.isFinite(Number(data?.goals?.over_2_5)) ? Number(data.goals.over_2_5) : undefined,
-      btts_yes: Number.isFinite(Number(data?.goals?.btts_yes)) ? Number(data.goals.btts_yes) : undefined,
-      most_likely_score: typeof data?.most_likely_score?.score === 'string' ? data.most_likely_score.score : undefined,
-      model_version: typeof data?.model_version === 'string' ? data.model_version : undefined,
-      confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
-      derived_markets:
-        data?.derived_markets && typeof data.derived_markets === 'object'
-          ? (data.derived_markets as DerivedMarkets)
-          : null,
-      attribution:
-        Array.isArray(data?.attribution) && data.attribution.length > 0
-          ? (data.attribution as AttributionItem[])
-          : null,
-    }
+    return normalizeUnifiedMatchPrediction(data)
   } catch (error) {
     console.error('Unified v1 prediction fetch failed:', error)
     return null
@@ -1120,36 +1067,7 @@ async function fetchBackendPrediction(homeTeam: string, awayTeam: string, league
     if (!res.ok) return null
 
     const data = await res.json()
-    const confidencePct = Math.round(data.confidence ?? 0)
-    const homeWin = Number(data.probabilities?.home_win)
-    const draw = Number(data.probabilities?.draw)
-    const awayWin = Number(data.probabilities?.away_win)
-
-    if (![homeWin, draw, awayWin].every(Number.isFinite)) {
-      return null
-    }
-
-    const derivedMarkets: DerivedMarkets | null =
-      data && typeof data === 'object' && data.derived_markets && typeof data.derived_markets === 'object'
-        ? (data.derived_markets as DerivedMarkets)
-        : null
-
-    return {
-      home_win: homeWin / 100,
-      draw: draw / 100,
-      away_win: awayWin / 100,
-      predicted_score: {
-        home: data.predicted_home_goals ?? 0,
-        away: data.predicted_away_goals ?? 0,
-      },
-      confidence: confidencePct,
-      total_goals: Number.isFinite(Number(data.predicted_home_goals)) && Number.isFinite(Number(data.predicted_away_goals))
-        ? Number(data.predicted_home_goals) + Number(data.predicted_away_goals)
-        : undefined,
-      model_version: data.model_used ?? undefined,
-      confidence_band: confidencePct >= 70 ? 'High' : confidencePct >= 55 ? 'Medium' : 'Low',
-      derived_markets: derivedMarkets,
-    }
+    return normalizeBackendMatchPrediction(data)
   } catch (error) {
     console.error('Backend prediction fetch failed:', error)
     return null

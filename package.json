@@ -11,6 +11,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "data:quality": "python -m backend.scripts.validate_data_quality",
     "test": "jest",
+    "test:product": "node scripts/product_quality_audit.mjs",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "a11y": "axe http://localhost:3000",

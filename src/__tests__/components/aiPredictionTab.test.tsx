@@ -56,6 +56,14 @@ describe('AIPredictionTab', () => {
     expect(screen.queryByRole('button', { name: /run/i })).not.toBeInTheDocument()
   })
 
+  it('does not turn a successful sparse response without probabilities into a prediction', async () => {
+    answer({ success: true, home_team: 'Arsenal', away_team: 'Fulham' })
+    render(<AIPredictionTab prediction={null} matchState="upcoming" retrospectiveContext={CTX} />)
+    await screen.findByText('Prediction unavailable for this match')
+    expect(screen.queryByTestId('viz')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+  })
+
   it('holds the space while it waits rather than offering a button', () => {
     global.fetch = jest.fn(() => new Promise(() => {})) as unknown as typeof fetch
     render(<AIPredictionTab prediction={null} matchState="upcoming" retrospectiveContext={CTX} />)

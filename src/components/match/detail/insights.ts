@@ -16,7 +16,7 @@ function getPredictionRank(match: MatchDetails) {
 }
 
 /**
- * "What the model sees" — a small pure rule engine that turns the fields the
+ * Prediction and match context — a small pure rule engine that turns the fields the
  * page already holds (win probabilities, table positions, head-to-head record,
  * goal expectancy) into 2–4 tone-tagged football insights for `NarrativeCard`.
  * Every rule checks its underlying field first; when nothing fires the card
@@ -56,7 +56,7 @@ export function buildModelInsights(match: MatchDetails): NarrativeInsight[] {
       const stronger = posGap > 0 ? match.home_team : match.away_team
       insights.push({
         tone: 'edge',
-        title: `${stronger} arrive as the form side`,
+        title: `${stronger} lead in the table`,
         detail: `#${match.homeStanding.position} vs #${match.awayStanding.position} in the table${
           Math.abs(ptsGap) > 0 ? `, a ${Math.abs(ptsGap)}-point gap` : ''
         }.`,
@@ -93,10 +93,10 @@ export function buildModelInsights(match: MatchDetails): NarrativeInsight[] {
   }
 
   // 4) Goal expectancy.
-  const totalGoals = p.total_goals ?? p.predicted_score.home + p.predicted_score.away
-  if (Number.isFinite(totalGoals)) {
+  const totalGoals = p.expected_goals?.total ?? p.total_goals
+  if (typeof totalGoals === 'number' && Number.isFinite(totalGoals)) {
     const overText =
-      p.over_2_5 !== undefined ? ` Over 2.5 goals is priced at ${formatProbability(p.over_2_5)}.` : ''
+      typeof p.over_2_5 === 'number' ? ` Over 2.5 goals is priced at ${formatProbability(p.over_2_5)}.` : ''
     if (totalGoals >= 3.0) {
       insights.push({
         tone: 'watch',
@@ -113,7 +113,7 @@ export function buildModelInsights(match: MatchDetails): NarrativeInsight[] {
   }
 
   // 5) Both ends threatened.
-  if (p.btts_yes !== undefined && p.btts_yes >= 0.62) {
+  if (typeof p.btts_yes === 'number' && p.btts_yes >= 0.62) {
     insights.push({
       tone: 'watch',
       title: 'Both ends threatened',
