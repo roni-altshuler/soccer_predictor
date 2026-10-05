@@ -43,13 +43,12 @@ jobs:
       - name: Scrape upcoming lineups
         run: python -m backend.services.data.lineup_scraper --all-leagues --days-ahead 1
         working-directory: ${{ github.workspace }}
-        continue-on-error: true
         timeout-minutes: 4
 
       - name: Refresh stale injury reports
+        if: ${{ !cancelled() }}
         run: python -m backend.services.data.injury_tracker --refresh-stale
         working-directory: ${{ github.workspace }}
-        continue-on-error: true
         timeout-minutes: 2
 
       - name: Commit updated scrape data
@@ -57,7 +56,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add backend/data/lineups/ backend/data/injuries/ || true
+          git add backend/data/lineups/ backend/data/injuries/
 
           if git diff --cached --quiet; then
             echo "No lineup/injury changes to commit"

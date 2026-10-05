@@ -6,8 +6,9 @@ Sources (free/public only):
   - FotMob team injuries (already exposed as FotMobClient.get_team_injuries)
 
 Cache: backend/data/injuries/<team_id>.json with a 6-hour TTL.
-Conservative behaviour: on missing/ambiguous data, return empty lists
-rather than fabricating injury flags.
+Provider failures raise ProviderUnavailable and leave last-good cache bytes
+and timestamps intact. An explicit, validated empty report is a successful [];
+availability is recorded separately in <team_id>.status.json.
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ from backend.services.fotmob.client import (
     get_fotmob_client,
     cleanup_fotmob_client,
 )
+from backend.services.data.provider_status import ProviderUnavailable, write_json_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -80,19 +82,24 @@ class InjuryTracker:
         if not path.exists():
             return None
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as e:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict) or not isinstance(payload.get("injuries"), list):
+                raise ValueError("Injury cache must contain an injuries list")
+            return payload
+        except (OSError, ValueError) as e:
             logger.warning(f"Injury cache read fail {path}: {e}")
             return None
 
     def _write_cache(self, team_id: str, payload: Dict) -> None:
-        try:
-            self._cache_path(team_id).write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-        except OSError as e:
-            logger.warning(f"Injury cache write fail {team_id}: {e}")
+        write_json_atomic(self._cache_path(team_id), payload)
+
+    def _write_status(self, team_id: str, source: str, availability: str,
+                      cached: Optional[Dict], error: Optional[str] = None) -> None:
+        write_json_atomic(self.data_dir / f"{team_id}.status.json", {
+            "team_id": team_id, "source": source, "availability": availability,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "last_good_fetched_at": (cached or {}).get("fetched_at"), "error": error,
+        })
 
     @staticmethod
     def _is_fresh(payload: Dict) -> bool:
@@ -101,7 +108,9 @@ class InjuryTracker:
             return False
         try:
             ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-        except ValueError:
+        except (ValueError, TypeError, AttributeError):
+            return False
+        if ts.tzinfo is None:
             return False
         return (datetime.now(timezone.utc) - ts).total_seconds() < INJURY_TTL_SECONDS
 
@@ -129,19 +138,23 @@ class InjuryTracker:
             except Exception as e:
                 logger.debug(f"ESPN injuries {lk}/{team_id} failed: {e}")
                 data = None
-            if not data:
+            if not isinstance(data, dict) or not isinstance(data.get("injuries"), list):
                 continue
-            parsed = self._parse_espn_injuries(data)
-            if parsed:
-                return parsed
-        return []
+            # An explicit empty injuries list is a valid report. Missing data
+            # and failed requests are never converted into a fresh empty one.
+            return self._parse_espn_injuries(data)
+        raise ProviderUnavailable(f"ESPN injury report unavailable for team {team_id}")
 
     @staticmethod
     def _parse_espn_injuries(data: Dict) -> List[Dict[str, Any]]:
         out: List[Dict[str, Any]] = []
         now = datetime.now(timezone.utc).isoformat()
         for item in data.get("injuries", []) or []:
+            if not isinstance(item, dict) or not isinstance(item.get("athlete"), dict):
+                raise ProviderUnavailable("Malformed ESPN injury entry")
             athlete = item.get("athlete") or {}
+            if not (athlete.get("id") or athlete.get("displayName") or athlete.get("fullName")):
+                raise ProviderUnavailable("ESPN injury entry has no athlete identity")
             raw_status = item.get("status") or item.get("type", {}).get("description") or ""
             reason = (item.get("details") or {}).get("type") or item.get("shortComment") or ""
             out.append({
@@ -158,15 +171,16 @@ class InjuryTracker:
         try:
             tid = int(team_id)
         except (TypeError, ValueError):
-            return []
+            raise ProviderUnavailable(f"Invalid FotMob team id: {team_id}")
         await self._pace()
         try:
             raw = await self._with_retry(lambda: self.fotmob.get_team_injuries(tid))
         except Exception as e:
-            logger.debug(f"FotMob injuries {team_id} failed: {e}")
-            return []
-        if not raw:
-            return []
+            raise ProviderUnavailable(f"FotMob injuries unavailable for team {team_id}") from e
+        if not isinstance(raw, list) or any(
+            not isinstance(r, dict) or not (r.get("player_id") or r.get("player_name")) for r in raw
+        ):
+            raise ProviderUnavailable(f"FotMob injury report unavailable for team {team_id}")
         now = datetime.now(timezone.utc).isoformat()
         return [
             {
@@ -197,27 +211,35 @@ class InjuryTracker:
         league_key: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         cached = self._read_cache(str(team_id))
-        if cached and self._is_fresh(cached):
+        if source not in {"espn", "fotmob"}:
+            raise ValueError(f"Unknown injury source: {source}")
+        if cached and cached.get("source") == source and self._is_fresh(cached):
             return cached.get("injuries", [])
 
         # No cross-source fallback: ESPN and FotMob team ids are different
         # namespaces, so retrying the other provider with the same id can
         # attach another club's injury list (data-provenance violation).
-        injuries: List[Dict[str, Any]] = []
-        if source == "fotmob":
-            injuries = await self._fetch_fotmob_injuries(str(team_id))
-        else:
-            if source != "espn":
-                logger.warning(f"Unknown injury source {source}; defaulting to espn")
-            injuries = await self._fetch_espn_injuries(str(team_id), league_key)
+        try:
+            if source == "fotmob":
+                injuries = await self._fetch_fotmob_injuries(str(team_id))
+            else:
+                injuries = await self._fetch_espn_injuries(str(team_id), league_key)
+        except Exception as exc:
+            try:
+                self._write_status(str(team_id), source, "unavailable", cached, str(exc))
+            except OSError:
+                logger.exception("Could not record injury provider availability")
+            raise ProviderUnavailable(f"{source} injuries unavailable for team {team_id}") from exc
 
         payload = {
             "team_id": str(team_id),
             "fetched_at": datetime.now(timezone.utc).isoformat(),
             "source": source,
+            "league_key": league_key,
             "injuries": injuries,
         }
         self._write_cache(str(team_id), payload)
+        self._write_status(str(team_id), source, "available", payload)
         return injuries
 
     # ----------------------------------------------- top-scorer cross-ref --
@@ -333,19 +355,30 @@ class InjuryTracker:
         if not self.data_dir.exists():
             return 0
         count = 0
+        failures = []
         for path in self.data_dir.glob("*.json"):
+            if path.name.endswith(".status.json"):
+                continue
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+                if not isinstance(payload, dict):
+                    raise ValueError("Injury cache must be an object")
+            except (OSError, ValueError) as exc:
+                failures.append(path.stem)
+                logger.warning("Invalid injury cache %s: %s", path, exc)
                 continue
             if self._is_fresh(payload):
                 continue
             team_id = payload.get("team_id") or path.stem
             try:
-                await self.fetch_team_injuries(str(team_id))
+                await self.fetch_team_injuries(str(team_id), source=payload.get("source", "espn"),
+                                               league_key=payload.get("league_key"))
                 count += 1
             except Exception as e:
                 logger.warning(f"refresh fail {team_id}: {e}")
+                failures.append(str(team_id))
+        if failures:
+            raise ProviderUnavailable(f"Failed to refresh {len(failures)} injury cache(s): {', '.join(failures)}")
         return count
 
     async def close(self) -> None:
@@ -367,21 +400,26 @@ def get_injury_tracker() -> InjuryTracker:
 # CLI -------------------------------------------------------------------------
 async def _run_cli(args: argparse.Namespace) -> int:
     tracker = get_injury_tracker()
-    if args.refresh_stale:
-        n = await tracker.refresh_stale()
-        logger.info(f"Refreshed {n} stale injury cache file(s)")
-    elif args.team_id:
-        injuries = await tracker.fetch_team_injuries(
-            args.team_id, source=args.source, league_key=args.league
-        )
-        logger.info(f"Team {args.team_id}: {len(injuries)} injury record(s)")
-    else:
-        logger.info("Nothing to do; pass --refresh-stale or --team-id <id>")
-    await tracker.close()
-    return 0
+    try:
+        if args.refresh_stale:
+            n = await tracker.refresh_stale()
+            logger.info(f"Refreshed {n} stale injury cache file(s)")
+        elif args.team_id:
+            injuries = await tracker.fetch_team_injuries(
+                args.team_id, source=args.source, league_key=args.league
+            )
+            logger.info(f"Team {args.team_id}: {len(injuries)} injury record(s)")
+        else:
+            logger.info("Nothing to do; pass --refresh-stale or --team-id <id>")
+        return 0
+    except Exception as exc:
+        logger.error("Injury refresh failed: %s", exc)
+        return 1
+    finally:
+        await tracker.close()
 
 
-def main() -> None:
+def main() -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -392,8 +430,8 @@ def main() -> None:
     parser.add_argument("--source", type=str, default="espn", choices=["espn", "fotmob"])
     parser.add_argument("--league", type=str, default=None)
     args = parser.parse_args()
-    asyncio.run(_run_cli(args))
+    return asyncio.run(_run_cli(args))
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

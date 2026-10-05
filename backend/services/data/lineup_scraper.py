@@ -7,12 +7,12 @@ SOURCE PRIORITY POLICY & TERMS-OF-SERVICE POSTURE
 This module ONLY consumes free, publicly-available endpoints.  It does NOT use
 any paid provider (Opta, StatsBomb, etc.).
 
-Source priority (in order of attempt):
-  1. ESPN public site API
+Source selection (provider IDs must stay in their own namespace):
+  1. ESPN public site API for ESPN schedules and event IDs
      - Endpoint: site.web.api.espn.com summary?event=<id>
      - Already used by backend.services.espn.client (ESPNClient.get_match_details)
      - Public JSON, no auth.  Reuse rate limiter and singleton.
-  2. FotMob public site API
+  2. FotMob public site API when explicitly passed source="fotmob"
      - Endpoint: www.fotmob.com/api/matchDetails?matchId=<id>
      - Already used by backend.services.fotmob.client (FotMobClient.get_match_details)
      - Public JSON consumed by the web app; no auth required.
@@ -21,13 +21,12 @@ ToS / robots.txt posture
 ------------------------
 - ESPN's site.web.api.espn.com is consumed at a polite rate (<=1 req/sec via the
   existing token-bucket limiter) and only for personal/non-commercial research.
-- FotMob's /api endpoints are likewise consumed at <=1 req/sec.  If either
-  source returns 403/429 or its robots.txt disallows the endpoint at request
-  time, the scraper logs a warning and gracefully skips.
+- FotMob's /api endpoints are likewise consumed at <=1 req/sec. Provider
+  failures are reported as unavailable and make the CLI exit nonzero.
 - We never bypass auth, never scrape behind logins, and never redistribute raw
   data beyond cached JSON used by this project's own model.
-- If a source disallows scraping (HTTP 403, 451, or repeated 429), the scraper
-  falls through to the next source or returns ``None``.
+- A valid summary without announced lineups returns ``None``. An unavailable
+  summary raises; an ESPN ID is never retried against FotMob.
 
 Wikipedia is intentionally NOT scraped here: lineup tables are inconsistent.
 ================================================================================
@@ -46,7 +45,6 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from backend.config import LEAGUE_IDS
 from backend.services.espn.client import (
     ESPN_LEAGUE_IDS,
     get_espn_client,
@@ -56,6 +54,7 @@ from backend.services.fotmob.client import (
     get_fotmob_client,
     cleanup_fotmob_client,
 )
+from backend.services.data.provider_status import ProviderUnavailable, write_json_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +66,7 @@ CACHE_REFRESH_SECONDS = 30 * 60  # 30 minutes
 
 
 class LineupScraper:
-    """Fetches pre-match lineups from free public sources (ESPN -> FotMob)."""
+    """Fetches pre-match lineups using the selected provider's own IDs."""
 
     # Polite floor on inter-request delay.  ESPN/FotMob clients already
     # enforce their own token-bucket limiters; this is a belt-and-braces
@@ -103,20 +102,17 @@ class LineupScraper:
         if not path.exists():
             return None
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as e:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("Lineup cache must be an object")
+            return payload
+        except (OSError, ValueError) as e:
             logger.warning(f"Cache read failed for {path}: {e}")
             return None
 
     def _write_cache(self, league: str, match_id: str, data: Dict) -> None:
         path = self._cache_path(league, match_id)
-        try:
-            path.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-        except OSError as e:
-            logger.warning(f"Cache write failed for {path}: {e}")
+        write_json_atomic(path, data)
 
     @staticmethod
     def _is_cache_fresh(cached: Dict) -> bool:
@@ -126,7 +122,9 @@ class LineupScraper:
             return False
         try:
             ts = datetime.fromisoformat(fetched_at.replace("Z", "+00:00"))
-        except ValueError:
+        except (ValueError, TypeError, AttributeError):
+            return False
+        if ts.tzinfo is None:
             return False
         now = datetime.now(timezone.utc)
         if (now - ts).total_seconds() >= CACHE_REFRESH_SECONDS:
@@ -147,17 +145,19 @@ class LineupScraper:
     ) -> Optional[Dict[str, Any]]:
         """Try ESPN match summary endpoint."""
         if league not in ESPN_LEAGUE_IDS:
-            return None
+            raise ProviderUnavailable(f"Unsupported ESPN league: {league}")
         await self._pace()
         try:
             data = await self._with_retry(
                 lambda: self.espn.get_match_details(league, match_id)
             )
         except Exception as e:
-            logger.warning(f"ESPN lineup fetch failed for {match_id}: {e}")
-            return None
-        if not data:
-            return None
+            raise ProviderUnavailable(f"ESPN lineup fetch failed for {match_id}") from e
+        if (not isinstance(data, dict) or not isinstance(data.get("header"), dict)
+                or str(data["header"].get("id")) != str(match_id)):
+            raise ProviderUnavailable(f"Invalid ESPN match summary for {match_id}")
+        if "rosters" in data and not isinstance(data["rosters"], list):
+            raise ProviderUnavailable(f"Invalid ESPN rosters for {match_id}")
         return self._parse_espn(data)
 
     @staticmethod
@@ -171,9 +171,15 @@ class LineupScraper:
         home_bench: List[Dict] = []
         away_bench: List[Dict] = []
         for side in rosters:
+            if not isinstance(side, dict) or side.get("homeAway") not in {"home", "away"}:
+                raise ProviderUnavailable("Invalid ESPN roster side")
             home_away = side.get("homeAway")  # "home" or "away"
             roster = side.get("roster") or []
+            if not isinstance(roster, list):
+                raise ProviderUnavailable("Invalid ESPN roster list")
             for entry in roster:
+                if not isinstance(entry, dict) or not isinstance(entry.get("athlete"), dict):
+                    raise ProviderUnavailable("Invalid ESPN roster entry")
                 athlete = entry.get("athlete") or {}
                 pos = (entry.get("position") or {}).get("abbreviation")
                 player = {
@@ -219,17 +225,16 @@ class LineupScraper:
         try:
             mid = int(match_id)
         except (TypeError, ValueError):
-            return None
+            raise ProviderUnavailable(f"Invalid FotMob match id: {match_id}")
         await self._pace()
         try:
             data = await self._with_retry(
                 lambda: self.fotmob.get_match_details(mid)
             )
         except Exception as e:
-            logger.warning(f"FotMob lineup fetch failed for {match_id}: {e}")
-            return None
-        if not data:
-            return None
+            raise ProviderUnavailable(f"FotMob lineup fetch failed for {match_id}") from e
+        if not isinstance(data, dict) or not isinstance(data.get("content"), dict):
+            raise ProviderUnavailable(f"Invalid FotMob match details for {match_id}")
         return self._parse_fotmob(data)
 
     @staticmethod
@@ -299,32 +304,23 @@ class LineupScraper:
 
     # --------------------------------------------------------------- public
     async def fetch_match_lineup(
-        self, match_id: str, league: str
+        self, match_id: str, league: str, source: str = "espn"
     ) -> Optional[Dict[str, Any]]:
         """Return cached or freshly-scraped lineup dict for a single match."""
         cached = self._read_cache(league, match_id)
-        if cached and self._is_cache_fresh(cached):
+        if source not in {"espn", "fotmob"}:
+            raise ValueError(f"Unknown lineup source: {source}")
+        if cached and cached.get("source") == source and self._is_cache_fresh(cached):
             logger.debug(f"Lineup cache fresh: {league}/{match_id}")
             return cached
 
-        parsed: Optional[Dict[str, Any]] = None
-        source: Optional[str] = None
-        sources = (
-            ("espn", lambda: self._fetch_espn_lineup(match_id, league)),
-            ("fotmob", lambda: self._fetch_fotmob_lineup(match_id)),
-        )
-        for src_name, factory in sources:
-            try:
-                parsed = await factory()
-            except Exception as e:
-                logger.warning(f"{src_name} lineup error for {match_id}: {e}")
-                parsed = None
-            if parsed:
-                source = src_name
-                break
+        # Match IDs are provider-specific. Never send an ESPN event ID to
+        # FotMob as a fallback; it can identify an unrelated fixture.
+        parsed = (await self._fetch_espn_lineup(match_id, league) if source == "espn"
+                  else await self._fetch_fotmob_lineup(match_id))
 
         if not parsed:
-            logger.info(f"No lineup found for {league}/{match_id} from any source")
+            logger.info(f"Lineup not yet published for {league}/{match_id} by {source}")
             return None
 
         result: Dict[str, Any] = {
@@ -350,6 +346,10 @@ class LineupScraper:
         self, league: str, days_ahead: int = 1
     ) -> List[Dict[str, Any]]:
         """Pull upcoming fixtures for ``league`` and fetch lineups for each."""
+        if days_ahead < 0:
+            raise ValueError("days_ahead must be non-negative")
+        if league not in ESPN_LEAGUE_IDS:
+            raise ProviderUnavailable(f"Unsupported ESPN league: {league}")
         now = datetime.now(timezone.utc)
         horizon = now + timedelta(days=days_ahead)
         results: List[Dict[str, Any]] = []
@@ -365,18 +365,21 @@ class LineupScraper:
                         lambda d=day: self.espn.get_scoreboard(league, d)
                     )
                 except Exception as e:
-                    logger.warning(f"ESPN scoreboard fail {league} {day}: {e}")
-                    sb = None
-                if not sb:
-                    continue
-                for event in sb.get("events", []):
+                    raise ProviderUnavailable(f"ESPN scoreboard failed for {league}/{day}") from e
+                if not isinstance(sb, dict) or not isinstance(sb.get("events"), list):
+                    raise ProviderUnavailable(f"Invalid ESPN scoreboard for {league}/{day}")
+                for event in sb["events"]:
+                    if not isinstance(event, dict) or not event.get("id"):
+                        raise ProviderUnavailable(f"Invalid ESPN event for {league}/{day}")
                     start = event.get("date")
                     if not start:
-                        continue
+                        raise ProviderUnavailable(f"ESPN event has no date for {league}/{day}")
                     try:
                         ko = datetime.fromisoformat(start.replace("Z", "+00:00"))
-                    except ValueError:
-                        continue
+                        if ko.tzinfo is None:
+                            raise ValueError("naive kickoff")
+                    except (ValueError, TypeError, AttributeError) as exc:
+                        raise ProviderUnavailable(f"Invalid kickoff for {league}/{day}") from exc
                     if now <= ko <= horizon:
                         eid = event.get("id")
                         if eid:
@@ -386,10 +389,17 @@ class LineupScraper:
         seen: set = set()
         match_ids = [m for m in match_ids if not (m in seen or seen.add(m))]
 
+        failures = []
         for mid in match_ids:
-            lineup = await self.fetch_match_lineup(mid, league)
-            if lineup:
-                results.append(lineup)
+            try:
+                lineup = await self.fetch_match_lineup(mid, league)
+                if lineup:
+                    results.append(lineup)
+            except Exception as exc:
+                logger.warning("Lineup fetch failed for %s/%s: %s", league, mid, exc)
+                failures.append(mid)
+        if failures:
+            raise ProviderUnavailable(f"{league}: failed to fetch {len(failures)} lineup(s)")
         return results
 
     async def close(self) -> None:
@@ -419,19 +429,23 @@ async def _run_cli(args: argparse.Namespace) -> int:
         leagues = ["premier_league"]
 
     total = 0
-    for lg in leagues:
-        try:
-            res = await scraper.fetch_upcoming_lineups(lg, days_ahead=args.days_ahead)
-            total += len(res)
-            logger.info(f"{lg}: cached {len(res)} lineup(s)")
-        except Exception as e:
-            logger.warning(f"{lg}: lineup scrape error: {e}")
-    logger.info(f"Done. Total lineups cached: {total}")
-    await scraper.close()
-    return 0
+    failed = False
+    try:
+        for lg in leagues:
+            try:
+                res = await scraper.fetch_upcoming_lineups(lg, days_ahead=args.days_ahead)
+                total += len(res)
+                logger.info(f"{lg}: cached {len(res)} lineup(s)")
+            except Exception as e:
+                failed = True
+                logger.error(f"{lg}: lineup scrape error: {e}")
+        logger.info(f"Done. Total lineups cached: {total}")
+        return 1 if failed else 0
+    finally:
+        await scraper.close()
 
 
-def main() -> None:
+def main() -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -441,8 +455,8 @@ def main() -> None:
     parser.add_argument("--league", type=str, help="Scrape a single league key (e.g. premier_league)")
     parser.add_argument("--days-ahead", type=int, default=1)
     args = parser.parse_args()
-    asyncio.run(_run_cli(args))
+    return asyncio.run(_run_cli(args))
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

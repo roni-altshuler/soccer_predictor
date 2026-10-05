@@ -445,9 +445,13 @@ class FotMobClient:
             injuries = []
             # Squad structure is nested: squad.squad contains list of position groups
             squad_data = data.get("squad", {})
+            if not isinstance(squad_data, dict) or not isinstance(squad_data.get("squad"), list):
+                return None
             if isinstance(squad_data, dict):
                 squad_list = squad_data.get("squad", [])
                 for position_group in squad_list:
+                    if not isinstance(position_group, list) or any(not isinstance(p, dict) for p in position_group):
+                        return None
                     if isinstance(position_group, list):
                         for player in position_group:
                             if isinstance(player, dict) and player.get("injuryInfo"):
