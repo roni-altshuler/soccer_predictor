@@ -94,10 +94,25 @@ jobs:
           python -m backend.scripts.import_snapshots \
             --input /tmp/previous_prediction_snapshots.csv.gz
 
+      - name: Restore validated ESPN date receipts
+        id: espn-receipts
+        uses: actions/cache/restore@v6
+        with:
+          path: backend/data/ingestion/
+          key: espn-receipts-v1-forecast-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: espn-receipts-v1-forecast-
+
       - name: Refresh current-season results
         # Required: new results are the reason this job runs; an unavailable
         # provider must stop publication rather than certify a stale refresh.
-        run: python -m backend.scripts.build_warehouse --espn --current-season
+        run: python -m backend.scripts.build_warehouse --espn --current-season --resume-current --competitions eng.1,esp.1,ger.1,ita.1,fra.1,usa.1
+
+      - name: Retain validated ESPN progress even when coverage is incomplete
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: backend/data/ingestion/
+          key: ${{ steps.espn-receipts.outputs.cache-primary-key }}
 
       - name: Refresh the current-season schedule
         # Results arrive from ESPN above; this is the other half — kickoff

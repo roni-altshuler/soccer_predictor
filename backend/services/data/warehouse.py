@@ -74,8 +74,9 @@ WAREHOUSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "wareh
 # exist in the data file but their DDL no longer lives here). v3: match_events
 # (minute-level goal + red-card timeline for the Rarity Engine). v4:
 # match_event_coverage (verified-empty marker; migrate() also backfills
-# coverage rows for matches whose events were stored under v3).
-SCHEMA_VERSION = 5
+# coverage rows for matches whose events were stored under v3). v5: closing
+# prices. v6: verified provider IDs for fixtures retained under another source.
+SCHEMA_VERSION = 6
 
 _DDL_STATEMENTS: Tuple[str, ...] = (
     """
@@ -159,6 +160,16 @@ _DDL_STATEMENTS: Tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_matches_competition ON matches(competition_id, season)",
     "CREATE INDEX IF NOT EXISTS idx_matches_home_team ON matches(home_team_id, date_utc)",
     "CREATE INDEX IF NOT EXISTS idx_matches_away_team ON matches(away_team_id, date_utc)",
+    """
+    CREATE TABLE IF NOT EXISTS provider_match_ids (
+        provider TEXT NOT NULL,
+        competition_id TEXT NOT NULL,
+        event_id TEXT NOT NULL,
+        match_id TEXT NOT NULL REFERENCES matches(match_id) ON DELETE CASCADE,
+        observed_at TEXT NOT NULL,
+        PRIMARY KEY(provider, competition_id, event_id)
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS clubelo_ratings (
         team_id INTEGER NOT NULL REFERENCES teams(team_id) ON DELETE CASCADE,
@@ -550,6 +561,19 @@ class Warehouse:
                 [r.as_tuple() for r in rows],
             )
             return len(rows)
+
+    def upsert_observed_matches(self, rows: Sequence[MatchRow]) -> int:
+        """Update verified identities in place, retaining enrichment and child rows."""
+        columns = [column.strip() for column in _MATCH_COLUMNS.split(",")]
+        updates = ", ".join(f"{c}=COALESCE(excluded.{c}, matches.{c})"
+                            for c in columns if c != "match_id")
+        with self._lock, self._conn:
+            self._conn.executemany(
+                f"INSERT INTO matches({_MATCH_COLUMNS}) VALUES({_MATCH_PLACEHOLDERS}) "
+                f"ON CONFLICT(match_id) DO UPDATE SET {updates}",
+                [row.as_tuple() for row in rows],
+            )
+        return len(rows)
 
     def count_matches(
         self,
