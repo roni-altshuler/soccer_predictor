@@ -110,6 +110,7 @@ def _requested_days(league: str, season: int, tmp_path) -> set:
 
     collector = H.HistoricalDataCollector()
     collector.data_dir = tmp_path
+    collector._today = lambda: datetime(2026, 10, 5)
     recorder = _Recorder()
 
     async def _client():
@@ -142,6 +143,7 @@ def _requested_days(league: str, season: int, tmp_path) -> set:
 
 def _window_days(league: str, season: int) -> set:
     collector = H.HistoricalDataCollector()
+    collector._today = lambda: datetime(2026, 10, 5)
     days = set()
     for start, end in collector._season_windows(league, season):
         day = start

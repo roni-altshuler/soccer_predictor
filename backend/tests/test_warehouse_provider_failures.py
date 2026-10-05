@@ -16,6 +16,17 @@ from backend.services.data.warehouse import MatchRow, open_warehouse
 from backend.services.prediction.historical_data import HistoricalDataCollector
 
 
+@pytest.fixture(autouse=True)
+def fixed_build_clock(monkeypatch):
+    # These fixtures describe an in-progress 2026 season. Keep that premise
+    # stable when CI eventually runs after the season has ended.
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 5, tzinfo=tz)
+    monkeypatch.setattr(build, "datetime", Clock)
+
+
 def event(mid="1", **changes):
     result = {"id": mid, "date": "2026-08-01T12:00:00Z", "competitions": [{
         "status": {"type": {"completed": True}}, "competitors": [
