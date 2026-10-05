@@ -14,7 +14,10 @@ Usage:
 
 import json
 import logging
-from datetime import datetime
+import os
+import tempfile
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
 
@@ -49,162 +52,166 @@ LEAGUE_TO_ESPN: Dict[str, str] = {
 }
 
 
+def _prediction_day(value: str) -> str:
+    timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if timestamp.tzinfo is not None:
+        timestamp = timestamp.astimezone(timezone.utc)
+    return timestamp.strftime("%Y%m%d")
+
+
+def _finished_results(client: httpx.Client, league: str, day: str) -> Dict[str, tuple]:
+    """Daily queries avoid the rejected range contract and event-count truncation."""
+    response = client.get(
+        f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard",
+        params={"dates": day, "limit": 200}, timeout=15.0,
+    )
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict) or not isinstance(data.get("events"), list):
+        raise ValueError(f"{league}/{day}: scoreboard must contain an events list")
+    results = {}
+    for event in data["events"]:
+        if not isinstance(event, dict) or not event.get("id") or isinstance(event["id"], bool):
+            raise ValueError(f"{league}/{day}: event has no valid id")
+        competitions = event.get("competitions")
+        if not isinstance(competitions, list) or not competitions or not isinstance(competitions[0], dict):
+            raise ValueError(f"{league}/{day}: event has no competition")
+        comp = competitions[0]
+        status = event.get("status") or comp.get("status")
+        if not isinstance(status, dict) or not isinstance(status.get("type"), dict):
+            raise ValueError(f"{league}/{day}: event has no status")
+        name = status["type"].get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{league}/{day}: event has invalid status")
+        if "STATUS_FULL_TIME" not in name and "STATUS_FINAL" not in name:
+            continue
+        competitors = comp.get("competitors")
+        if not isinstance(competitors, list) or any(not isinstance(c, dict) for c in competitors):
+            raise ValueError(f"{league}/{day}: finished event has no competitors")
+        home = [c for c in competitors if c.get("homeAway") == "home"]
+        away = [c for c in competitors if c.get("homeAway") == "away"]
+        if len(home) != 1 or len(away) != 1:
+            raise ValueError(f"{league}/{day}: finished event must have one home and away side")
+        scores = []
+        for side in (home[0], away[0]):
+            score = side.get("score")
+            if isinstance(score, bool) or not isinstance(score, (str, int)) or not str(score).isdigit():
+                raise ValueError(f"{league}/{day}: finished event has no valid score")
+            scores.append(int(score))
+        eid = str(event["id"])
+        observed = tuple(scores)
+        if eid in results and results[eid] != observed:
+            raise ValueError(f"{league}/{day}: conflicting scores for event {eid}")
+        results[eid] = observed
+    return results
+
+
+def _settle(pred: dict, home_goals: int, away_goals: int) -> None:
+    actual_winner = ("home" if home_goals > away_goals else "away" if home_goals < away_goals else "draw")
+    pred["actual_home_goals"] = home_goals
+    pred["actual_away_goals"] = away_goals
+    pred["actual_winner"] = actual_winner
+    predicted_winner = pred.get("predicted_winner")
+    if predicted_winner not in {"home", "away", "draw"}:
+        hw = float(pred.get("predicted_home_win") or 0.0)
+        dr = float(pred.get("predicted_draw") or 0.0)
+        aw = float(pred.get("predicted_away_win") or 0.0)
+        predicted_winner = "home" if hw >= dr and hw >= aw else "away" if aw >= dr and aw >= hw else "draw"
+        pred["predicted_winner"] = predicted_winner
+    scoreline = f"{home_goals}-{away_goals}"
+    pred["winner_correct"] = predicted_winner == actual_winner
+    pred["scoreline_correct"] = pred.get("predicted_scoreline") == scoreline
+    top_scorelines = pred.get("top_scorelines")
+    if top_scorelines:
+        pred["scoreline_in_top5"] = any(s.get("score") == scoreline for s in top_scorelines)
+    predicted_total = pred["predicted_home_goals"] + pred["predicted_away_goals"]
+    pred["goals_diff"] = round(abs((home_goals + away_goals) - predicted_total))
+    pred["outcome_timestamp"] = datetime.now(timezone.utc).isoformat()
+
+
+def _publish_updates(updates: Dict[Path, dict]) -> None:
+    """Stage every file, then replace atomically; restore originals on write errors."""
+    staged = {}
+    backups = {}
+    published = []
+    try:
+        for path, payload in updates.items():
+            with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as fh:
+                backups[path] = Path(fh.name)
+                fh.write(path.read_bytes())
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as fh:
+                staged[path] = Path(fh.name)
+                json.dump(payload, fh, indent=2, allow_nan=False)
+                fh.flush()
+                os.fsync(fh.fileno())
+        for path, temporary in staged.items():
+            os.replace(temporary, path)
+            published.append(path)
+    except Exception:
+        for path in reversed(published):
+            os.replace(backups[path], path)
+        raise
+    finally:
+        for path in [*staged.values(), *backups.values()]:
+            path.unlink(missing_ok=True)
+
+
 def fetch_outcomes() -> int:
-    """Fetch outcomes for all pending predictions. Returns count of updated predictions."""
+    """Settle exact ESPN event IDs only after every requested daily fetch succeeds."""
     if not DATA_DIR.exists():
-        logger.warning(f"Data directory not found: {DATA_DIR}")
-        return 0
-
-    files = sorted(DATA_DIR.glob("predictions_*.json"))
-    total_updated = 0
-
-    for file_path in files:
-        try:
-            with open(file_path) as f:
-                file_data = json.load(f)
-        except Exception:
-            continue
-
-        predictions: List[dict] = file_data.get("predictions", [])
-        pending = [p for p in predictions if p.get("actual_winner") is None]
-        if not pending:
-            continue
-
-        # Group pending by league
-        by_league: Dict[str, List[dict]] = {}
-        for p in pending:
-            league = p["league"]
-            if league not in by_league:
-                by_league[league] = []
-            by_league[league].append(p)
-
-        file_modified = False
-
-        for league, preds in by_league.items():
-            espn_id = LEAGUE_TO_ESPN.get(league)
-            if not espn_id:
-                logger.warning(f"No ESPN mapping for league: {league}")
+        raise FileNotFoundError(f"Prediction data directory not found: {DATA_DIR}")
+    files = {}
+    pending = []
+    today = datetime.now(timezone.utc).strftime("%Y%m%d")
+    for path in sorted(DATA_DIR.glob("predictions_*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict) or not isinstance(payload.get("predictions"), list):
+            raise ValueError(f"Invalid prediction file: {path}")
+        files[path] = payload
+        for pred in payload["predictions"]:
+            if not isinstance(pred, dict):
+                raise ValueError(f"Invalid prediction record: {path}")
+            if pred.get("actual_winner") is not None:
                 continue
-
-            # Get date range for this batch
-            dates = sorted(p["match_date"] for p in preds)
-            start_date = dates[0].replace("-", "")
-            end_date = dates[-1].replace("-", "")
-
-            url = (
-                f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/"
-                f"{espn_id}/scoreboard?dates={start_date}-{end_date}&limit=100"
-            )
-
-            try:
-                resp = httpx.get(url, timeout=15.0)
-                if resp.status_code != 200:
-                    logger.warning(f"ESPN returned {resp.status_code} for {league}")
-                    continue
-                data = resp.json()
-            except Exception as e:
-                logger.error(f"ESPN fetch error for {league}: {e}")
+            day = _prediction_day(pred["match_date"])
+            if day > today:
                 continue
-
-            for event in data.get("events", []):
-                status = event.get("status", {}).get("type", {}).get("name", "")
-                if "STATUS_FULL_TIME" not in status and "STATUS_FINAL" not in status:
-                    continue
-
-                match_id = event.get("id", "")
-                comps = (event.get("competitions") or [{}])[0]
-                competitors = comps.get("competitors", [])
-
-                home_comp = next((c for c in competitors if c.get("homeAway") == "home"), None)
-                away_comp = next((c for c in competitors if c.get("homeAway") == "away"), None)
-                if not home_comp or not away_comp:
-                    continue
-
-                home_goals = int(home_comp.get("score", "0"))
-                away_goals = int(away_comp.get("score", "0"))
-                actual_winner = (
-                    "home" if home_goals > away_goals
-                    else "away" if home_goals < away_goals
-                    else "draw"
-                )
-
-                home_name = home_comp.get("team", {}).get("displayName", "")
-                home_short = home_comp.get("team", {}).get("shortDisplayName", "")
-
-                # Match by match_id or fuzzy team name
-                pred = None
-                for p in preds:
-                    if p.get("actual_winner") is not None:
-                        continue
-                    if p["match_id"] == match_id:
-                        pred = p
-                        break
-                    # Fuzzy: check if last word of predicted home team appears in ESPN name or vice versa
-                    p_home_last = p["home_team"].split()[-1] if p["home_team"] else ""
-                    if (
-                        p_home_last
-                        and (p_home_last in home_name or p_home_last in home_short
-                             or home_short in p["home_team"])
-                    ):
-                        pred = p
-                        break
-
-                if pred and pred.get("actual_winner") is None:
-                    pred["actual_home_goals"] = home_goals
-                    pred["actual_away_goals"] = away_goals
-                    pred["actual_winner"] = actual_winner
-
-                    predicted_winner = pred.get("predicted_winner")
-                    if predicted_winner not in {"home", "away", "draw"}:
-                        # Backfill very old records if predicted_winner is missing.
-                        hw = float(pred.get("predicted_home_win") or 0.0)
-                        dr = float(pred.get("predicted_draw") or 0.0)
-                        aw = float(pred.get("predicted_away_win") or 0.0)
-                        if hw >= dr and hw >= aw:
-                            predicted_winner = "home"
-                        elif aw >= dr and aw >= hw:
-                            predicted_winner = "away"
-                        else:
-                            predicted_winner = "draw"
-                        pred["predicted_winner"] = predicted_winner
-
-                    actual_scoreline = f"{home_goals}-{away_goals}"
-                    pred["winner_correct"] = predicted_winner == actual_winner
-                    pred["scoreline_correct"] = (
-                        pred["predicted_scoreline"] == actual_scoreline
-                    )
-                    top_scorelines = pred.get("top_scorelines")
-                    if top_scorelines:
-                        pred["scoreline_in_top5"] = any(
-                            s.get("score") == actual_scoreline for s in top_scorelines
-                        )
-                    predicted_total = pred["predicted_home_goals"] + pred["predicted_away_goals"]
-                    pred["goals_diff"] = round(abs((home_goals + away_goals) - predicted_total))
-                    pred["outcome_timestamp"] = datetime.now().isoformat()
-                    total_updated += 1
-                    file_modified = True
-
-        if file_modified:
-            file_data["predictions"] = predictions
-            with open(file_path, "w") as f:
-                json.dump(file_data, f, indent=2)
-            logger.info(f"Updated {file_path.name}")
-
-    return total_updated
+            league = LEAGUE_TO_ESPN.get(pred["league"])
+            if league is None:
+                raise ValueError(f"No ESPN mapping for league: {pred['league']}")
+            eid = pred.get("match_id")
+            if isinstance(eid, bool) or not isinstance(eid, (str, int)) or not str(eid).strip():
+                raise ValueError(f"Prediction has no valid event id: {path}")
+            pending.append((path, pred, league, day, str(eid)))
+    results = {}
+    if pending:
+        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+            for league, day in sorted({(league, day) for _, _, league, day, _ in pending}):
+                results[(league, day)] = _finished_results(client, league, day)
+                time.sleep(0.4)
+    updates = {}
+    total = 0
+    for path, pred, league, day, eid in pending:
+        observed = results[(league, day)].get(eid)
+        if observed is None:
+            continue
+        _settle(pred, *observed)
+        updates[path] = files[path]
+        total += 1
+    _publish_updates(updates)
+    logger.info("Settled %d predictions from %d validated league/date queries", total, len(results))
+    return total
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("FETCHING MATCH OUTCOMES FROM ESPN")
-    logger.info("=" * 60)
-
-    updated = fetch_outcomes()
-
-    logger.info(f"\n{'=' * 60}")
-    logger.info("OUTCOME FETCH COMPLETE")
-    logger.info(f"  Updated predictions: {updated}")
-    logger.info(f"{'=' * 60}")
+def main() -> int:
+    try:
+        updated = fetch_outcomes()
+    except Exception as exc:
+        logger.error("Outcome fetch failed; batch not published: %s", exc)
+        return 1
+    logger.info("Outcome fetch complete: %d updated predictions", updated)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

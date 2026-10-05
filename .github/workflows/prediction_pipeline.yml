@@ -71,7 +71,6 @@ jobs:
       - name: Fetch match outcomes
         run: python -m backend.scripts.fetch_outcomes
         working-directory: ${{ github.workspace }}
-        continue-on-error: true
 
       - name: Fit per-league goal / home-advantage / draw parameters
         # Must run BEFORE predict_upcoming, which reads league_params.json.
