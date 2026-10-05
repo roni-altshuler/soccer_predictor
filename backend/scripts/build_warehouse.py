@@ -197,14 +197,19 @@ async def _build(args: argparse.Namespace) -> int:
         if args.full or args.espn:
             ran_anything = True
             logger.info("=== ESPN: men's competitions ===")
-            stats = await load_men_competitions(
-                wh,
-                min_season=args.min_season,
-                max_season=args.max_season,
-                competitions=_competitions(args),
-                force=args.force,
-                persist_cache=False,
-            )
+            if getattr(args, "resume_current", False):
+                from backend.services.data.espn_loader import load_current_competitions
+                stats = await load_current_competitions(
+                    wh, competitions=_competitions(args), receipts_path=args.receipts_db)
+            else:
+                stats = await load_men_competitions(
+                    wh,
+                    min_season=args.min_season,
+                    max_season=args.max_season,
+                    competitions=_competitions(args),
+                    force=args.force,
+                    persist_cache=False,
+                )
             _require_complete("ESPN/M", stats)
 
         if args.full or args.espn_women:
@@ -428,11 +433,31 @@ def main(argv: Optional[List[str]] = None) -> int:
                              "this to writing the year into a cron: a literal "
                              "stops being true every August.")
     parser.add_argument("--force", action="store_true", help="Bypass per-source caches.")
+    parser.add_argument("--resume-current", action="store_true",
+                        help="Bounded current-season refresh using ESPN's validated calendar "
+                             "and durable daily receipts; requires explicit --competitions.")
+    parser.add_argument("--receipts-db", type=Path, default=None,
+                        help="Separate resumable ESPN receipt store; never the live warehouse.")
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args(argv)
     args.db = args.db.resolve()
     _setup_logging(args.verbose)
+
+    if args.resume_current:
+        from backend.services.data.espn_refresh import ROUTINE_COMPETITIONS, RECEIPTS_PATH
+        scope = _competitions(args)
+        if (not args.espn or not args.current_season or not scope or args.force
+                or any(getattr(args, name) for name in ("full", "espn_women", "football_data",
+                           "openfootball", "clubelo", "fbref", "understat", "referees", "venues", "weather"))
+                or len(scope) != len(set(scope)) or not set(scope).issubset(ROUTINE_COMPETITIONS)):
+            parser.error("--resume-current requires --espn --current-season and an explicit "
+                         "supported scope; cannot combine with --force or other loaders")
+        args.receipts_db = (args.receipts_db or RECEIPTS_PATH).resolve()
+        if args.receipts_db == args.db or args.receipts_db.is_relative_to(args.db):
+            parser.error("receipt store must be separate from the warehouse")
+    elif args.receipts_db:
+        parser.error("--receipts-db requires --resume-current")
 
     if args.current_season:
         # Two answers, not one: a European season in February is last

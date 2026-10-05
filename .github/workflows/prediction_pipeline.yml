@@ -59,14 +59,29 @@ jobs:
           mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite
           ls -la backend/data/models/ || true
 
+      - name: Restore validated ESPN date receipts
+        id: espn-receipts
+        uses: actions/cache/restore@v6
+        with:
+          path: backend/data/ingestion/
+          key: espn-receipts-v1-prediction-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: espn-receipts-v1-prediction-
+
       - name: Refresh current-season results in warehouse
-        # Keeps rolling-form features fresh between weekly warehouse
-        # publishes (matters most for daily tournaments like the World Cup).
+        # Keeps rolling-form features fresh for the five served leagues
+        # between weekly warehouse publishes; date receipts survive capped runs.
         # A failed attempted refresh must stop prediction publication.
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
-            python -m backend.scripts.build_warehouse --espn --current-season
+            python -m backend.scripts.build_warehouse --espn --current-season --resume-current --competitions eng.1,esp.1,ger.1,ita.1,fra.1
           fi
+
+      - name: Retain validated ESPN progress even when coverage is incomplete
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: backend/data/ingestion/
+          key: ${{ steps.espn-receipts.outputs.cache-primary-key }}
 
       - name: Fetch match outcomes
         run: python -m backend.scripts.fetch_outcomes

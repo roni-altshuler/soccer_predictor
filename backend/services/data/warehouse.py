@@ -62,6 +62,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from backend.services.data.provider_status import ProviderUnavailable, observation_time
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +75,9 @@ WAREHOUSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "wareh
 # exist in the data file but their DDL no longer lives here). v3: match_events
 # (minute-level goal + red-card timeline for the Rarity Engine). v4:
 # match_event_coverage (verified-empty marker; migrate() also backfills
-# coverage rows for matches whose events were stored under v3).
-SCHEMA_VERSION = 5
+# coverage rows for matches whose events were stored under v3). v5: closing
+# prices. v6: verified provider IDs for fixtures retained under another source.
+SCHEMA_VERSION = 6
 
 _DDL_STATEMENTS: Tuple[str, ...] = (
     """
@@ -159,6 +161,16 @@ _DDL_STATEMENTS: Tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_matches_competition ON matches(competition_id, season)",
     "CREATE INDEX IF NOT EXISTS idx_matches_home_team ON matches(home_team_id, date_utc)",
     "CREATE INDEX IF NOT EXISTS idx_matches_away_team ON matches(away_team_id, date_utc)",
+    """
+    CREATE TABLE IF NOT EXISTS provider_match_ids (
+        provider TEXT NOT NULL,
+        competition_id TEXT NOT NULL,
+        event_id TEXT NOT NULL,
+        match_id TEXT NOT NULL REFERENCES matches(match_id) ON DELETE CASCADE,
+        observed_at TEXT NOT NULL,
+        PRIMARY KEY(provider, competition_id, event_id)
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS clubelo_ratings (
         team_id INTEGER NOT NULL REFERENCES teams(team_id) ON DELETE CASCADE,
@@ -416,12 +428,13 @@ class Warehouse:
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Group multiple writes into one transaction for ETL speed."""
         with self._lock:
+            self._conn.execute("BEGIN")
             try:
-                self._conn.execute("BEGIN")
                 yield self._conn
                 self._conn.execute("COMMIT")
-            except Exception:
-                self._conn.execute("ROLLBACK")
+            except BaseException:
+                if self._conn.in_transaction:
+                    self._conn.execute("ROLLBACK")
                 raise
 
     # ---- teams / aliases ----
@@ -550,6 +563,61 @@ class Warehouse:
                 [r.as_tuple() for r in rows],
             )
             return len(rows)
+
+    def upsert_observed_matches(self, rows: Sequence[MatchRow]) -> int:
+        """Only newer observations update a row; retain all stale/equal evidence.
+
+        Unknown times and equal-time contradictions refuse the transaction.
+        The transaction also protects this boundary from other SQLite writers.
+        """
+        columns = [column.strip() for column in _MATCH_COLUMNS.split(",")]
+        updates = ", ".join(f"{c}=COALESCE(excluded.{c}, matches.{c})"
+                            for c in columns if c != "match_id")
+        written = 0
+        with self.transaction():
+            for row in rows:
+                incoming = observation_time(row.fetched_at)
+                original = self._conn.execute("SELECT * FROM matches WHERE match_id=?",
+                                              (row.match_id,)).fetchone()
+                if original is not None:
+                    for column in ("source", "competition_id", "season", "home_team_id", "away_team_id"):
+                        if getattr(row, column) != original[column]:
+                            raise ProviderUnavailable("observed match identity changed")
+                    previous = observation_time(original["fetched_at"])
+                    for alias in self._conn.execute(
+                            "SELECT observed_at FROM provider_match_ids WHERE match_id=?", (row.match_id,)):
+                        previous = max(previous, observation_time(alias[0]))
+                    if incoming < previous:
+                        continue
+                    if incoming == previous:
+                        if self.observation_conflicts(row, original):
+                            raise ProviderUnavailable("equal-time observed match conflict")
+                        continue
+                self._conn.execute(
+                    f"INSERT INTO matches({_MATCH_COLUMNS}) VALUES({_MATCH_PLACEHOLDERS}) "
+                    f"ON CONFLICT(match_id) DO UPDATE SET {updates}", row.as_tuple())
+                written += 1
+        return written
+
+    @staticmethod
+    def observation_conflicts(row: MatchRow, original) -> bool:
+        """Contradicting facts at an indistinguishable observation time."""
+        for column in (c.strip() for c in _MATCH_COLUMNS.split(",")):
+            if column in ("match_id", "fetched_at"):
+                continue
+            value, old = getattr(row, column), original[column]
+            if column == "date_utc":
+                # Warehouse date-only/naive legacy values mean UTC.
+                def utc_date(text):
+                    date = datetime.fromisoformat(text.replace("Z", "+00:00"))
+                    return date.replace(tzinfo=date.tzinfo or timezone.utc).astimezone(timezone.utc)
+                value, old = utc_date(value), utc_date(old)
+            if column in ("date_utc", "home_score", "away_score"):
+                if value != old:
+                    return True
+            elif value is not None and old is not None and value != old:
+                return True
+        return False
 
     def count_matches(
         self,

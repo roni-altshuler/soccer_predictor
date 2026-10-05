@@ -122,3 +122,155 @@ python -m pytest backend/tests/test_warehouse_provider_failures.py \
   backend/tests/test_result_ingestion.py backend/tests/test_footballdata_loader.py -q
 python -m pytest backend/tests -q
 ```
+
+## Routine current-season recovery
+
+`--espn --current-season --resume-current --competitions ...` selects a separate
+routine path for the five served prediction leagues and MLS. Cold historical
+reconstruction retains the strict range/daily behavior above. The routine CLI
+requires an explicit supported scope and cannot be combined with `--force` or
+other loaders. Each competition computes its own season label, including the
+January difference between European leagues and MLS.
+
+Every invocation first reads each league's current ESPN scoreboard calendar.
+The league slug, integer season year, `calendarType: day`, explicit
+`calendarIsWhitelist: true`, unique ISO dates and calendar bounds must match the
+selected past season window. Only this provider-declared whitelist permits
+excluding dates; the latest stored result never stands in for date coverage.
+Each required past fixture date then needs a successfully validated daily
+response. A calendar revision during collection refuses the candidate. Future
+fixtures are excluded; valid empty or pending fixture days remain distinguishable
+from unavailable responses. MLS's local fixture-day labels can have next-day UTC
+kickoffs, so dated events allow a one-day offset but finals must still fall
+inside the selected past season window.
+
+The hard cap remains **93 actual HTTP attempts per invocation**, including
+calendar discovery and retries. Requests are sequential with 250 ms pacing.
+Transport errors, HTTP 429 and 5xx get at most three attempts with bounded
+backoff. A `Retry-After` longer than ten seconds refuses the run for a later
+retry rather than ignoring it. This is a local operational limit, not a claim
+about ESPN's unpublished quota.
+
+Validated daily bodies, SHA-256 digests and observation timestamps are committed
+one date at a time to a **separate** SQLite receipt store, by default
+`backend/data/ingestion/espn_receipts.sqlite`. Receipt transactions use FULL
+synchronous durability. They are evidence of individual source observations,
+not published season caches. Budget exhaustion, interruption, HTTP/schema
+failure or incomplete selected coverage returns nonzero, retains validated
+progress and preserves the live warehouse. Failed refreshes never replace the
+last-good receipt for that date. Digest/schema failures force a refetch.
+Conflicting event IDs refuse publication and mark the implicated receipts for
+revalidation without deleting their evidence. Recent fixture days (seven-day
+overlap), pending events and listed-but-empty days are rechecked after one hour.
+Reused results keep the receipt observation timestamp in warehouse rows and
+provider aliases rather than stamping them as freshly fetched. Older completed
+days are reused; a fresh calendar can still introduce a new
+historical date requiring an observation.
+
+All selected competitions must finish before reconciliation starts. Existing
+fixtures from every source must be accounted for, and prior ESPN event IDs,
+including verified aliases, cannot disappear. A cross-source match requires the
+same competition, season, canonical teams, UTC date and agreeing final scores.
+Ambiguity or conflicting scores fails closed. An ESPN event alias is recorded
+in schema-v6 `provider_match_ids` while retaining a football-data fixture's ID
+and source. In-place updates retain existing prices, xG and references, and leave absent
+enrichment intact;
+missing attendance is not stadium capacity, and absent card details are not
+zero-card observations. The candidate still passes the existing integrity guard
+and uses the native transaction publication boundary described above.
+
+### Observation ordering and unpublished progress
+
+Receipt, match and provider-alias observation times must be valid timezone-aware
+ISO timestamps. They are compared as UTC instants, including offset/Z variants.
+Missing, invalid or naive times refuse reconciliation; no missing receipt time
+is replaced with the current process time.
+
+For an already verified event identity, an older receipt counts toward known
+fixture coverage but cannot change any warehouse fact, enrichment or freshness.
+The entire newer row and its related records remain intact. The age boundary
+uses the latest of the match and its verified provider alias. An unaliased
+cross-source fixture still requires the same canonical teams/day and agreeing
+scores before an alias can be established. Provider IDs cannot be remapped from
+another season. Alias times only advance; an older/equal observation cannot
+rewrite a newer alias or relabel its stored time representation.
+
+Only a strictly newer observation can update an existing match. Equal-time
+score, kickoff or overlapping enrichment contradictions refuse the candidate;
+agreeing equal-time observations leave the complete row unchanged, including
+missing enrichments. Unknown existing match/alias times also refuse the run
+rather than guessing which source is newer. The warehouse helper enforces this
+boundary inside a transaction even when called directly. SQL failures,
+contradictory batches and interruptions roll back all its writes.
+
+Receipt refreshes acquire SQLite's writer lock before comparing the previous
+observation and replacing it. An earlier-started writer cannot overwrite a
+later receipt; equal-time conflicting responses are refused. Every previously
+validated final ID for the date must remain finalized with the same provider
+team identity. A fresh HTTP 200 empty/pending response that loses a known final
+is unavailable evidence, and its previous body/digest/timestamp remain intact.
+These checks protect durable progress before its first warehouse publication.
+A selected scope also checks final IDs from all its prior validated receipts,
+so removing a fixture date from a fresh calendar cannot silently hide an
+unpublished final. Duplicate observations of one event on adjacent MLS dates
+use their newest timestamp regardless of iteration order.
+
+Deterministic regressions cover the reviewer's October 4 warehouse correction
+versus September 1 receipt, plus the two-run budget-limited bootstrap whose
+first final disappears in a later empty response. They also replay changed
+calendars, final-to-pending loss, same-time contradictions, unknown times,
+newer aliases, stale cross-source evidence, two receipt writers and interrupted
+warehouse batches. Both refusals preserve last-good data; production workflows
+are not run to validate these failure paths.
+
+Both routine workflows restore and save receipts with Actions cache, including
+`if: always()` after a failed refresh. Cache keys include the run ID and attempt;
+restore prefixes are versioned and separate for prediction and forecast scopes.
+Prediction refreshes exactly `eng.1,esp.1,ger.1,ita.1,fra.1`; forecast adds `usa.1`.
+Neither required refresh has `continue-on-error`. Receipts are cached progress;
+they do not replace the released warehouse or export production data. Cache
+misses, eviction or concurrent cache snapshots can require another bootstrap;
+they cannot certify incomplete coverage. Cancellation before cache save can
+lose that runner's new progress, while its completed SQLite receipts remain
+valid locally. Cold reconstruction and broad weekly backfills are not made
+resumable by this change.
+
+### October 5 isolated rehearsal
+
+The `models-latest` warehouse asset downloaded read-only had SHA-256
+`208e185dac3fdf9df2f520c79ece1854b139d5d8774b3e3651d333f1a22d75b6`
+(compressed), 82,532 matches and no date receipt ledger. The five current
+European seasons held 250 known fixtures, with football-data supplementing
+ESPN rows; their latest result dates were September 20. The fresh ESPN calendars
+listed 94 past fixture dates: England 17, Spain 31, Germany 12, Italy 18, France
+16. Bootstrap requires 99 successful calls including discovery, so two capped
+runs are intentional:
+
+| Rehearsal | HTTP attempts | Result |
+| --- | ---: | --- |
+| Five leagues, cold receipts | 93 | Nonzero; 88 date receipts retained, live candidate refused |
+| Five leagues, resumed | 11 | Complete selected coverage; 250 known fixtures reconciled |
+| Forecast scope with those receipts | 62 | Six complete calendars; MLS 373 → 405 finals |
+
+The rehearsal used only an isolated SQLite backup and local receipt store.
+MLS contributed 32 verified finals, ending October 2 UTC; the five European
+leagues acquired no newer results because the provider's calendars still ended
+September 20. The final isolated warehouse had 82,564 rows, retained every
+original match ID and all existing prices, xG and referee values, and preserved
+104,352 events, 36,334 event-coverage markers, 688,791 lineups, 714,975 player-stat
+rows, 60,450 prediction snapshots and 784,779 Elo ratings exactly. All nine
+Wave A integrity checks passed both before and after recovery. No production
+workflow was dispatched, no release asset was replaced, and no predictions or
+training data were generated.
+
+Offline tests replay the five-league workload (93 then 11 calls), separate
+six-league cold bootstrap (93 then 69), subsequent calendar-only refreshes,
+January season labels, interruption/resume, retry exhaustion, malformed daily
+responses, changed calendars, corrupt receipts, stale pending/empty days,
+cross-source conflicts, reference preservation and final publication refusal.
+The calendar is provider evidence, not an independent fixture-count oracle.
+Older completed receipts can miss a later provider correction unless that date
+is revisited; disappeared known fixtures and conflicting identities refuse the
+candidate for review. Existing football-data alias/competition refusals,
+broad reconstruction budgets and legacy event loaders that only understand
+ESPN-prefixed primary IDs remain separate gaps.

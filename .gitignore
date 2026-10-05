@@ -125,3 +125,6 @@ backend/data/fbref.sqlite-shm
 # would version an artifact rather than its recipe. The recipe is the script.
 backend/data/canonical.duckdb
 data/processed/
+
+# Durable validated provider receipts (saved by Actions cache, never corpus rows).
+backend/data/ingestion/
