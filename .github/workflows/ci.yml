@@ -47,3 +47,17 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Install browser for product contracts
+        run: npx playwright install --with-deps chromium
+
+      - name: Responsive product contracts
+        run: npm run test:product
+
+      - name: Upload product evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-quality-evidence
+          path: /tmp/pitchverse-product-quality/
+          if-no-files-found: ignore

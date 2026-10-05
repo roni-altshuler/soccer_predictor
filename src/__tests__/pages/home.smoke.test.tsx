@@ -71,7 +71,10 @@ afterEach(() => {
   cleanup()
   jest.resetAllMocks()
   localStorage.clear()
+  window.history.replaceState(null, '', '/')
 })
+
+beforeEach(() => { window.scrollTo = jest.fn() })
 
 describe('HomePage — the list, and the record behind it', () => {
   it('opens on the scores list and carries the evidence below it', async () => {

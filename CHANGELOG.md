@@ -8,6 +8,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Prediction detail and matchup views keep missing inputs, confidence and markets
+  unavailable, distinguish published context from prediction inputs, and show
+  exact-score chances only from published scoreline distributions.
+- Matchday dates, status/competition filters and Following survive detail-page
+  returns, reloads and browser history; each history entry restores its scroll.
+  Responsive sparse-response and navigation contracts run in frontend CI.
+
 - Routine result refreshes now resume validated ESPN date receipts within a
   shared 93-request cap, use explicit prediction/forecast scopes, and reconcile
   provider IDs without duplicating existing fixtures or losing enrichment.

@@ -26,6 +26,7 @@ import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { cn } from '@/lib/utils'
 import { useSmartBack } from '@/lib/useSmartBack'
+import { matchdayReturnHref } from '@/lib/matchdayNavigation'
 import { WATCHLIST_STORAGE_KEY, normalizeTeamName, type WatchTeam } from '@/lib/watchlist'
 import { ESPN_V2 } from '@/lib/espnHost'
 
@@ -91,7 +92,8 @@ export default function MatchDetailPage() {
   // page, the bracket — and only falls back to the league page (or home) on a
   // deep link. Hard-coding the league here dumped a reader who arrived from
   // Today onto a page they had never been to.
-  const handleBack = useSmartBack(leagueId ? `/leagues/${leagueId}` : '/')
+  const returnHref = matchdayReturnHref(searchParams.get('returnTo'))
+  const handleBack = useSmartBack(returnHref ?? (leagueId ? `/leagues/${leagueId}` : '/'))
 
   const selectTab = useCallback(
     (tab: DetailTab) => {

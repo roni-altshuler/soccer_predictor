@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/EmptyState'
 import { EvidencePanel, type Historical, type Live } from '@/components/forecast/EvidencePanel'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { useMatchday, type DayMatch } from '@/hooks/useMatchday'
+import { useMatchdayNavigation } from '@/hooks/useMatchdayNavigation'
+import { localDateKey, withMatchdayReturn } from '@/lib/matchdayNavigation'
 import { useTeamWatchlist } from '@/hooks/useTeamWatchlist'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { ClubHouse, MatchdaySpotlight, fixtureHref } from '@/components/match/MatchdaySpotlight'
@@ -22,17 +24,13 @@ const EMPTY_MATCHES: DayMatch[] = []
 const FILTER_CHIP = 'flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)]'
 const ACTIVE_CHIP = 'border-[var(--accent-primary)] bg-[var(--card-hover)] text-[var(--text-primary)]'
 
-function formatLocalDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
 function getDateOptions(): DateOption[] {
   const out: DateOption[] = []
   const now = new Date()
   for (let i = -3; i <= 3; i++) {
     const d = new Date(now)
     d.setDate(d.getDate() + i)
-    const iso = formatLocalDateKey(d)
+    const iso = localDateKey(d)
     let label: string
     if (i === -1) label = 'Yesterday'
     else if (i === 0) label = 'Today'
@@ -107,19 +105,15 @@ const LEAGUE_ID_MAP: Record<string, string> = {
 export default function Home() {
   // Resolve the reader's date after hydration; server and browser timezones may differ.
   const [dateOptions, setDateOptions] = useState<DateOption[]>([])
-  const [selectedDate, setSelectedDate] = useState('')
-  useEffect(() => {
-    const options = getDateOptions()
-    setDateOptions(options)
-    setSelectedDate(options.find((d) => d.isToday)!.date)
-  }, [])
-  const [tab, setTab] = useState<'all' | 'live' | 'upcoming' | 'finished'>('all')
-  const [competition, setCompetition] = useState('all')
-  const [watchlistOnly, setWatchlistOnly] = useState(false)
+  useEffect(() => { setDateOptions(getDateOptions()) }, [])
+  const [viewReady, setViewReady] = useState(false)
+  const { view, update, saveScroll, returnHref } = useMatchdayNavigation(viewReady)
+  const { date: selectedDate, filter: tab, competition, following: watchlistOnly } = view
   const [historical, setHistorical] = useState<Historical | null>(null)
   const [liveRecord, setLiveRecord] = useState<Live | null>(null)
   const { asQueryParam } = useGenderQuery()
   const { data, loading, error, retry } = useMatchday(selectedDate, asQueryParam)
+  useEffect(() => { setViewReady(!loading && !!data) }, [loading, data])
   const { teams: trackedTeams } = useTeamWatchlist()
   const live = data?.live ?? EMPTY_MATCHES
   const upcoming = data?.upcoming ?? EMPTY_MATCHES
@@ -150,7 +144,7 @@ export default function Home() {
     }
     return [...counts.values()].sort((a, b) => leaguePriority(a.name) - leaguePriority(b.name) || a.name.localeCompare(b.name))
   }, [allMatches])
-  const activeCompetition = competitions.some((c) => c.name === competition) ? competition : 'all'
+  const activeCompetition = competition
   const onlyFollowing = watchlistOnly && trackedTeams.length > 0
   const scoped = allMatches.filter((m) => (activeCompetition === 'all' || m.league === activeCompetition) && (!onlyFollowing || followed(m)))
   const visible = scoped.filter((m) => tab === 'all' || (tab === 'finished' ? completed.includes(m) : tab === 'live' ? live.includes(m) : upcoming.includes(m)))
@@ -164,8 +158,10 @@ export default function Home() {
   const dateTitle = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Your matchday'
 
   return (
-    <div className="min-h-screen">
-      <DateStrip dateOptions={dateOptions} selectedDate={selectedDate} onSelectDate={(date) => { setSelectedDate(date); setCompetition('all') }} />
+    <div className="min-h-screen" onClickCapture={saveScroll}>
+      <DateStrip dateOptions={selectedDate && !dateOptions.some((d) => d.date === selectedDate)
+        ? [...dateOptions, { date: selectedDate, isToday: false, label: new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) }]
+        : dateOptions} selectedDate={selectedDate} onSelectDate={(date) => update({ date })} />
       <div className="mx-auto w-full max-w-6xl px-3 pb-8 pt-5 sm:px-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -184,25 +180,25 @@ export default function Home() {
         </div>}
 
         {spotlight.length > 0 && <div className="mb-6 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <MatchdaySpotlight key={`${selectedDate}-${asQueryParam}`} matches={spotlight} />
+          <MatchdaySpotlight key={`${selectedDate}-${asQueryParam}`} matches={spotlight} hrefFor={(m) => withMatchdayReturn(fixtureHref(m), returnHref)} />
           <ClubHouse matches={spotlight} />
         </div>}
 
-        {competitions.length > 0 && <div aria-label="Filter by competition" className="mb-4 flex gap-2 overflow-x-auto pb-1">
-          <button type="button" aria-pressed={activeCompetition === 'all'} onClick={() => setCompetition('all')} className={cn(FILTER_CHIP, activeCompetition === 'all' && ACTIVE_CHIP)}>All competitions <span className="text-[var(--text-tertiary)]">{competitions.length}</span></button>
-          {competitions.map((c) => <button key={c.name} type="button" aria-pressed={activeCompetition === c.name} onClick={() => setCompetition(c.name)} className={cn(FILTER_CHIP, activeCompetition === c.name && ACTIVE_CHIP)}>
+        {(competitions.length > 0 || competition !== 'all') && <div aria-label="Filter by competition" className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          <button type="button" aria-pressed={activeCompetition === 'all'} onClick={() => update({ competition: 'all' })} className={cn(FILTER_CHIP, activeCompetition === 'all' && ACTIVE_CHIP)}>All competitions <span className="text-[var(--text-tertiary)]">{competitions.length}</span></button>
+          {(competition !== 'all' && !competitions.some((c) => c.name === competition) ? [...competitions, { name: competition, count: 0, id: undefined }] : competitions).map((c) => <button key={c.name} type="button" aria-pressed={activeCompetition === c.name} onClick={() => update({ competition: c.name })} className={cn(FILTER_CHIP, activeCompetition === c.name && ACTIVE_CHIP)}>
             <LeagueMark league={c.id ?? c.name} size="xs" />{c.name}<span className="text-[var(--text-tertiary)]">{c.count}</span>
           </button>)}
         </div>}
 
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1" role="group" aria-label="Filter matches">
-            {(['all', 'live', 'upcoming', 'finished'] as const).map((value) => <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)} className={cn('flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs transition-colors', tab === value ? 'bg-[var(--card-hover)] font-semibold text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--card-bg)]')}>
+            {(['all', 'live', 'upcoming', 'finished'] as const).map((value) => <button key={value} type="button" aria-pressed={tab === value} onClick={() => update({ filter: value })} className={cn('flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs transition-colors', tab === value ? 'bg-[var(--card-hover)] font-semibold text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:bg-[var(--card-bg)]')}>
               {value === 'all' ? 'All matches' : value === 'live' ? 'Live' : value === 'upcoming' ? 'To play' : 'Finished'}
               <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">{counts[value]}</span>
             </button>)}
           </div>
-          <button type="button" disabled={trackedTeams.length === 0} onClick={() => setWatchlistOnly((v) => !v)} aria-pressed={onlyFollowing} className={cn(FILTER_CHIP, 'disabled:opacity-50', onlyFollowing && ACTIVE_CHIP)}>
+          <button type="button" disabled={trackedTeams.length === 0} onClick={() => update({ following: !watchlistOnly })} aria-pressed={onlyFollowing} className={cn(FILTER_CHIP, 'disabled:opacity-50', onlyFollowing && ACTIVE_CHIP)}>
             {onlyFollowing ? <BookmarkCheck className="h-3.5 w-3.5" aria-hidden /> : <Bookmark className="h-3.5 w-3.5" aria-hidden />}
             Following{trackedTeams.length > 0 ? ` · ${trackedTeams.length}` : ''}
           </button>
@@ -210,8 +206,8 @@ export default function Home() {
 
         {loading ? <Card className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches"><MatchCardSkeleton count={7} /></Card>
           : !data && error ? null
-          : leagueNames.length === 0 ? <EmptyState illustration="no-matches" title={onlyFollowing ? 'Your clubs have no matches in this view' : tab === 'live' ? 'No matches live right now' : 'No matches in this view'} description="Try another day or explore a different competition." action={<button type="button" onClick={() => { setTab('all'); setCompetition('all'); setWatchlistOnly(false) }} className="min-h-11 text-xs text-[var(--accent-info)]">Show all matches</button>} />
-          : <Card className="overflow-hidden p-0">{leagueNames.map((name) => <LeagueSection key={name} leagueName={name} leagueId={LEAGUE_ID_MAP[name] ?? grouped[name][0]?.leagueId} countryLabel={LEAGUE_COUNTRY[name]?.country} matches={grouped[name]} hrefFor={(m) => fixtureHref(m as DayMatch)} defaultOpen />)}</Card>}
+          : leagueNames.length === 0 ? <EmptyState illustration="no-matches" title={onlyFollowing ? 'Your clubs have no matches in this view' : tab === 'live' ? 'No matches live right now' : 'No matches in this view'} description="Try another day or explore a different competition." action={<button type="button" onClick={() => update({ filter: 'all', competition: 'all', following: false })} className="min-h-11 text-xs text-[var(--accent-info)]">Show all matches</button>} />
+          : <Card className="overflow-hidden p-0">{leagueNames.map((name) => <LeagueSection key={name} leagueName={name} leagueId={LEAGUE_ID_MAP[name] ?? grouped[name][0]?.leagueId} countryLabel={LEAGUE_COUNTRY[name]?.country} matches={grouped[name]} hrefFor={(m) => withMatchdayReturn(fixtureHref(m as DayMatch), returnHref)} defaultOpen />)}</Card>}
 
         <Link href="/lab" className="mt-6 flex min-h-24 items-center justify-between gap-4 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5 transition-colors hover:bg-[var(--card-hover)]">
           <span><span className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-info)]">Step inside the Forecast Lab</span><span className="mt-1 block text-lg font-bold text-[var(--text-primary)]">Your football curiosity. Meet the model.</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">Explore scorelines, test an outcome and discover the points at stake.</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-[var(--accent-info)]" aria-hidden />

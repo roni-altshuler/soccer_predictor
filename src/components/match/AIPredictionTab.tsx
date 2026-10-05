@@ -1,7 +1,6 @@
 'use client'
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Brain,
@@ -19,7 +18,7 @@ import {
 } from '@/components/prediction/PredictionResult'
 import { Badge } from '@/components/ui/badge'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
-import type { AttributionItem } from '@/lib/types/attribution'
+import { adaptLegacyPrediction } from '@/components/prediction/adaptLegacyPrediction'
 import { cn } from '@/lib/utils'
 
 type MatchState = 'live' | 'finished' | 'upcoming'
@@ -72,8 +71,6 @@ export function AIPredictionTab({
   const [retroLoading, setRetroLoading] = useState(false)
   const [retroError, setRetroError] = useState<string | null>(null)
   const { asQueryParam } = useGenderQuery()
-  const params = useParams()
-  const matchId = (params?.id as string) ?? ''
 
   const ctx = useRef(retrospectiveContext)
   ctx.current = retrospectiveContext
@@ -98,7 +95,9 @@ export function AIPredictionTab({
         throw new Error(body?.error || 'Retrospective prediction failed')
       }
       const data = await res.json()
-      setRetro(adaptLegacyPrediction(data, ctx.current))
+      const adapted = adaptLegacyPrediction(data, ctx.current)
+      if (!adapted) throw new Error('Prediction unavailable for this match')
+      setRetro(adapted)
     } catch (err) {
       setRetroError(err instanceof Error ? err.message : 'Retrospective prediction failed')
     } finally {
@@ -322,99 +321,4 @@ function ProvenanceNote({ matchState }: { matchState: MatchState }) {
       )}
     </div>
   )
-}
-
-/* ---------------- legacy → PredictionPayload adapter (kept local) ---------------- */
-
-interface LegacyPrediction {
-  success?: boolean
-  predictions?: { home_win?: number; draw?: number; away_win?: number }
-  home_team?: string
-  away_team?: string
-  home_league?: string
-  away_league?: string
-  predicted_home_goals?: number
-  predicted_away_goals?: number
-  confidence?: number
-  total_goals?: number
-  markets?: { over_2_5?: number; btts_yes?: number }
-  scoreline_probabilities?: Array<{ score: string; probability: number }>
-  form?: { home_form?: number; away_form?: number }
-  ratings?: { home_elo: number; away_elo: number; elo_difference: number }
-  attribution?: AttributionItem[] | null
-}
-
-function parseScore(s: string): { home_goals: number; away_goals: number } {
-  const m = s.match(/(\d+)\s*[-–]\s*(\d+)/)
-  return m ? { home_goals: Number(m[1]), away_goals: Number(m[2]) } : { home_goals: 0, away_goals: 0 }
-}
-
-function adaptLegacyPrediction(
-  r: LegacyPrediction,
-  ctx: AIPredictionTabProps['retrospectiveContext']
-): PredictionPayload {
-  const homeWin = r.predictions?.home_win ?? 0
-  const draw = r.predictions?.draw ?? 0
-  const awayWin = r.predictions?.away_win ?? 0
-  const total = homeWin + draw + awayWin || 1
-  const norm = { home: homeWin / total, draw: draw / total, away: awayWin / total }
-  const conf = (r.confidence ?? 0) / 100
-
-  const scorelines = (r.scoreline_probabilities ?? []).map((s) => ({
-    score: s.score,
-    probability: s.probability,
-    ...parseScore(s.score),
-  }))
-  const mostLikely =
-    scorelines[0] ?? {
-      score: `${Math.round(r.predicted_home_goals ?? 1)}-${Math.round(r.predicted_away_goals ?? 1)}`,
-      home_goals: Math.round(r.predicted_home_goals ?? 1),
-      away_goals: Math.round(r.predicted_away_goals ?? 1),
-      probability: norm.home > norm.away ? norm.home : norm.away,
-    }
-
-  const totalXg = r.total_goals ?? (r.predicted_home_goals ?? 0) + (r.predicted_away_goals ?? 0)
-  const over_2_5 = r.markets?.over_2_5 ?? Math.max(0, Math.min(1, (totalXg - 1.5) / 2))
-  const over_1_5 = Math.max(over_2_5, Math.min(1, (totalXg - 0.5) / 2))
-  const over_3_5 = Math.max(0, Math.min(over_2_5, (totalXg - 2.5) / 2))
-
-  return {
-    home_team: r.home_team ?? ctx.home_team,
-    away_team: r.away_team ?? ctx.away_team,
-    league: ctx.league ?? r.home_league ?? r.away_league ?? 'Match',
-    outcome: { home_win: norm.home, draw: norm.draw, away_win: norm.away, confidence: conf },
-    goals: {
-      home_expected_goals: r.predicted_home_goals ?? 0,
-      away_expected_goals: r.predicted_away_goals ?? 0,
-      total_expected_goals: totalXg,
-      over_1_5,
-      over_2_5,
-      over_3_5,
-      btts_yes: r.markets?.btts_yes ?? 0.5,
-    },
-    most_likely_score: mostLikely,
-    alternative_scores: scorelines.slice(1, 5),
-    factors: {
-      home_elo: r.ratings?.home_elo ?? 1500,
-      away_elo: r.ratings?.away_elo ?? 1500,
-      elo_difference: r.ratings?.elo_difference ?? 0,
-      home_form_score: r.form?.home_form ?? 0.5,
-      away_form_score: r.form?.away_form ?? 0.5,
-      home_advantage: 0.25,
-      h2h_advantage: 0,
-      injury_impact: 0,
-      rest_days_diff: 0,
-      importance_factor: 1.0,
-    },
-    confidence: {
-      data_quality: 0.8,
-      model_certainty: conf,
-      historical_accuracy: 0.5,
-      overall: conf,
-    },
-    // Only real backend attribution is forwarded — nothing is fabricated
-    // for legacy heuristic responses.
-    attribution: Array.isArray(r.attribution) && r.attribution.length > 0 ? r.attribution : null,
-    model_version: 'retrospective-legacy',
-  }
 }

@@ -14,7 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-import { PredictionResult as PredictionResultViz, type PredictionPayload } from '@/components/prediction/PredictionResult'
+import { PredictionResult as PredictionResultViz } from '@/components/prediction/PredictionResult'
 import {
   MatchupPicker,
   flagCountryFor,
@@ -27,6 +27,7 @@ import { AsyncSection, FlagBadge } from '@/components/primitives'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import type { AttributionItem } from '@/lib/types/attribution'
+import { adaptLegacyPrediction } from '@/components/prediction/adaptLegacyPrediction'
 
 interface PredictionResult {
   success?: boolean
@@ -283,111 +284,15 @@ function PredictPageContent() {
     homeTeam && awayTeam && homeTeam.league !== awayTeam.league
   )
 
-  /**
-   * Convert the legacy `/api/predict/any-teams` response into the
-   * `PredictionPayload` shape consumed by the new <PredictionResult /> viz.
-   * Falls back to sensible defaults when the legacy API omits a field
-   * (e.g. over_1_5 / over_3_5 — derive from Poisson-ish heuristics).
-   */
-  const adaptResult = useCallback((r: PredictionResult): PredictionPayload | null => {
-    if (!r.predictions || !r.home_team || !r.away_team) return null
-    const homeWin = r.predictions.home_win ?? 0
-    const draw = r.predictions.draw ?? 0
-    const awayWin = r.predictions.away_win ?? 0
-    const total = homeWin + draw + awayWin || 1
-    const norm = { home: homeWin / total, draw: draw / total, away: awayWin / total }
-    const confOverall = (r.confidence ?? 0) / 100
-
-    // Parse scorelines from legacy "h-a" string format.
-    const parseScore = (s: string): { home_goals: number; away_goals: number } => {
-      const m = s.match(/(\d+)\s*[-–]\s*(\d+)/)
-      return m
-        ? { home_goals: Number(m[1]), away_goals: Number(m[2]) }
-        : { home_goals: 0, away_goals: 0 }
-    }
-    const scorelines = (r.scoreline_probabilities ?? []).map((s) => ({
-      score: s.score,
-      probability: s.probability,
-      ...parseScore(s.score),
-    }))
-    const mostLikely =
-      scorelines[0] ?? {
-        score: `${Math.round(r.predicted_home_goals ?? 1)}-${Math.round(r.predicted_away_goals ?? 1)}`,
-        home_goals: Math.round(r.predicted_home_goals ?? 1),
-        away_goals: Math.round(r.predicted_away_goals ?? 1),
-        probability: norm.home > norm.away ? norm.home : norm.away,
-      }
-    const alternatives = scorelines.slice(1, 5)
-
-    const totalXg =
-      r.total_goals ??
-      (r.predicted_home_goals ?? 0) + (r.predicted_away_goals ?? 0)
-
-    // Legacy form is a ±15 net-points scale (W=+3, D=0, L=-3 over last 5);
-    // the viz expects 0..1 where score*15 reads as "pts of 15".
-    const normForm = (value: number | undefined): number =>
-      value === undefined ? 0.5 : Math.max(0, Math.min(1, (value + 15) / 30))
-
-    // Legacy API doesn't expose 1.5/3.5 overs — derive from total goals
-    // using simple Poisson tail heuristics. Close enough to keep the
-    // markets strip populated; the unified endpoint provides exact values.
-    const over_2_5 = r.markets?.over_2_5 ?? Math.max(0, Math.min(1, (totalXg - 1.5) / 2))
-    const over_1_5 = Math.max(over_2_5, Math.min(1, (totalXg - 0.5) / 2))
-    const over_3_5 = Math.max(0, Math.min(over_2_5, (totalXg - 2.5) / 2))
-
-    return {
-      home_team: r.home_team,
-      away_team: r.away_team,
-      league: r.is_cross_league
-        ? `${r.home_league ?? ''} vs ${r.away_league ?? ''}`
-        : r.home_league ?? r.away_league ?? 'Match',
-      outcome: {
-        home_win: norm.home,
-        draw: norm.draw,
-        away_win: norm.away,
-        confidence: confOverall,
-      },
-      goals: {
-        home_expected_goals: r.predicted_home_goals ?? 0,
-        away_expected_goals: r.predicted_away_goals ?? 0,
-        total_expected_goals: totalXg,
-        over_1_5,
-        over_2_5,
-        over_3_5,
-        btts_yes: r.markets?.btts_yes ?? 0.5,
-      },
-      most_likely_score: mostLikely,
-      alternative_scores: alternatives,
-      factors: {
-        home_elo: r.ratings?.home_elo ?? 1500,
-        away_elo: r.ratings?.away_elo ?? 1500,
-        elo_difference: r.ratings?.elo_difference ?? 0,
-        home_form_score: normForm(r.form?.home_form),
-        away_form_score: normForm(r.form?.away_form),
-        home_advantage: 0.25,
-        h2h_advantage: 0,
-        injury_impact: 0,
-        rest_days_diff: 0,
-        importance_factor: 1.0,
-      },
-      confidence: {
-        data_quality: 0.8,
-        model_certainty: confOverall,
-        historical_accuracy: 0.5,
-        overall: confOverall,
-      },
-      // Real per-feature attribution when the unified backend supplied it;
-      // never fabricated for legacy heuristic responses.
-      attribution:
-        Array.isArray(r.attribution) && r.attribution.length > 0 ? r.attribution : null,
-      model_version: 'legacy-elo-poisson',
-    }
-  }, [])
-
-  const adaptedPrediction = useMemo(
-    () => (result && !result.error ? adaptResult(result) : null),
-    [result, adaptResult]
-  )
+  const adaptedPrediction = useMemo(() => {
+    if (!result || result.error || !result.home_team || !result.away_team) return null
+    return adaptLegacyPrediction(result, {
+      home_team: result.home_team, away_team: result.away_team,
+      league: result.is_cross_league
+        ? `${result.home_league ?? ''} vs ${result.away_league ?? ''}`
+        : result.home_league ?? result.away_league,
+    })
+  }, [result])
 
   return (
     <div className="min-h-screen">
@@ -399,7 +304,7 @@ function PredictPageContent() {
               Any matchup
             </h1>
             <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
-              Any two clubs · 1X2 · scoreline · drivers
+              Any two clubs · 1X2 · scoreline
             </p>
           </div>
           {/* Gender toggle removed with the coverage waves — see TopBar. */}
