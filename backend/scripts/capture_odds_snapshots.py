@@ -43,12 +43,15 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
+import os
 import sqlite3
 import sys
+import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Optional
 
 import httpx
 
@@ -105,7 +108,7 @@ def american_to_decimal(v) -> Optional[float]:
         a = float(v)
     except (TypeError, ValueError):
         return None
-    if a == 0:
+    if a == 0 or not math.isfinite(a):
         return None
     return 1.0 + (a / 100.0 if a > 0 else 100.0 / abs(a))
 
@@ -128,13 +131,19 @@ def _side(ml: dict, side: str, phase: str):
 
 def parse_odds(comp: dict) -> List[dict]:
     out = []
-    for o in comp.get("odds") or []:
+    odds = comp.get("odds")
+    if odds is not None and not isinstance(odds, list):
+        raise ValueError("ESPN odds must be a list or null")
+    for o in odds or []:
         # ESPN's odds array can contain nulls for a fixture it has listed but
         # not yet priced.
-        if not isinstance(o, dict):
+        if o is None:
             continue
-        book = ((o.get("provider") or {}).get("name") or "unknown").strip()
+        if not isinstance(o, dict):
+            raise ValueError("ESPN odds entry must be an object or null")
         ml = o.get("moneyline") or {}
+        if not isinstance(ml, dict):
+            raise ValueError("ESPN moneyline must be an object")
 
         h = _side(ml, "home", "close") or (o.get("homeTeamOdds") or {}).get("moneyLine")
         a = _side(ml, "away", "close") or (o.get("awayTeamOdds") or {}).get("moneyLine")
@@ -145,6 +154,12 @@ def parse_odds(comp: dict) -> List[dict]:
         cur = [american_to_decimal(x) for x in (h, d, a)]
         if not all(v is not None and v > 1.0 for v in cur):
             continue
+        provider = o.get("provider")
+        if not isinstance(provider, dict) or not isinstance(provider.get("name"), str):
+            raise ValueError("ESPN priced odds are missing their bookmaker")
+        book = provider["name"].strip()
+        if not book:
+            raise ValueError("ESPN priced odds are missing their bookmaker")
         out.append({
             "book": book,
             "home": cur[0], "draw": cur[1], "away": cur[2],
@@ -164,6 +179,133 @@ def match_id_for(comp_id: str, event_id: str) -> str:
     warehouse at all) fail outright.
     """
     return f"espn_{comp_id}_{event_id}"
+
+
+def fetch_events(client: httpx.Client, league: str, start: datetime,
+                 days_ahead: int, delay: float) -> List[dict]:
+    """Validate a complete range; retry HTTP 400 using inclusive daily dates."""
+    url = f"{ESPN}/{league}/scoreboard"
+
+    def get(dates):
+        response = client.get(url, params={"dates": dates, "limit": 200})
+        time.sleep(delay)
+        return response
+
+    end = start + timedelta(days=days_ahead)
+    response = get(f"{start:%Y%m%d}-{end:%Y%m%d}")
+    dates = ([f"{start + timedelta(days=i):%Y%m%d}" for i in range(days_ahead + 1)]
+             if response.status_code == 400 else [])
+    events = {}
+    # Validate each response before requesting the next; never publish a
+    # partial daily fallback if a later day fails.
+    for day in dates or [None]:
+        current = get(day) if day is not None else response
+        current.raise_for_status()
+        payload = current.json()
+        if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
+            raise ValueError(f"{league}: scoreboard must contain an events list")
+        for event in payload["events"]:
+            if not isinstance(event, dict):
+                raise ValueError(f"{league}: event must be an object")
+            eid = event.get("id")
+            if isinstance(eid, bool) or not isinstance(eid, (str, int)) or not str(eid).strip():
+                raise ValueError(f"{league}: event is missing its id")
+            events[str(eid)] = event
+    return list(events.values())
+
+
+def snapshot_rows(events: List[dict], league: str, now: datetime) -> List[dict]:
+    """Scheduled, priced fixtures only; unpriced fixtures remain missing."""
+    rows = {}
+    for event in events:
+        competitions = event.get("competitions")
+        if not isinstance(competitions, list) or not competitions or not isinstance(competitions[0], dict):
+            raise ValueError(f"{league}: event {event['id']} has no competition")
+        competition = competitions[0]
+        status = competition.get("status") or event.get("status")
+        if not isinstance(status, dict) or not isinstance(status.get("type"), dict):
+            raise ValueError(f"{league}: event {event['id']} has no status")
+        kind = status["type"]
+        if kind.get("state") not in {"pre", "in", "post"} and not kind.get("name"):
+            raise ValueError(f"{league}: event {event['id']} has invalid status")
+        if kind.get("state") in {"in", "post"} or kind.get("completed") is True:
+            continue
+        if kind.get("state") != "pre" and kind.get("name") != "STATUS_SCHEDULED":
+            continue
+        kickoff = event.get("date")
+        if not isinstance(kickoff, str):
+            raise ValueError(f"{league}: event {event['id']} has no kickoff")
+        ko = datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
+        if ko.tzinfo is None:
+            raise ValueError(f"{league}: event {event['id']} has a naive kickoff")
+        if ko <= now:
+            continue
+        for price in parse_odds(competition):
+            mid = match_id_for(league, str(event["id"]))
+            h, d, a = price["home"], price["draw"], price["away"]
+            rows[(mid, price["book"])] = {
+                "match_id": mid, "competition_id": league, "bookmaker": price["book"],
+                "captured_at": now.isoformat(), "kickoff_utc": kickoff,
+                "minutes_to_kickoff": round((ko - now).total_seconds() / 60.0, 1),
+                "odds_home": h, "odds_draw": d, "odds_away": a,
+                "odds_home_open": price["home_open"], "odds_away_open": price["away_open"],
+                "overround": round(1 / h + 1 / d + 1 / a, 5), "source": "espn",
+            }
+    return list(rows.values())
+
+
+def persist_rows(conn: sqlite3.Connection, rows: List[dict], path: Optional[Path]) -> None:
+    """One SQLite transaction and atomic JSONL replacement after batch validation.
+
+    The caller/workflow serializes writers. A retained copy of the previous
+    file also lets a failed SQLite commit restore the durable record.
+    """
+    if not rows:
+        return
+    staged = backup = None
+    published = False
+    try:
+        if path is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            previous = path.read_bytes() if path.exists() else b""
+            with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as fh:
+                staged = Path(fh.name)
+                fh.write(previous)
+                if previous and not previous.endswith(b"\n"):
+                    fh.write(b"\n")
+                for row in rows:
+                    fh.write((json.dumps(row, separators=(",", ":"), allow_nan=False) + "\n").encode())
+                fh.flush()
+                os.fsync(fh.fileno())
+            if path.exists():
+                with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as fh:
+                    backup = Path(fh.name)
+                    fh.write(previous)
+        with conn:
+            for row in rows:
+                conn.execute(
+                    """INSERT OR IGNORE INTO odds_snapshots
+                       (match_id, bookmaker, captured_at, kickoff_utc,
+                        minutes_to_kickoff, odds_home, odds_draw, odds_away,
+                        odds_home_open, odds_away_open, overround, source)
+                       VALUES (:match_id, :bookmaker, :captured_at, :kickoff_utc,
+                               :minutes_to_kickoff, :odds_home, :odds_draw, :odds_away,
+                               :odds_home_open, :odds_away_open, :overround, :source)""", row,
+                )
+            if path is not None:
+                os.replace(staged, path)
+                published = True
+    except Exception:
+        if published:
+            if backup is not None:
+                os.replace(backup, path)
+            else:
+                path.unlink()
+        raise
+    finally:
+        for temporary in (staged, backup):
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -215,83 +357,29 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"  {r['match_id']:<34} {r['n']:>3} snapshots  home {r['lo']:.2f}..{r['hi']:.2f}")
         return 0
 
-    comps = [c.strip() for c in args.leagues.split(",") if c.strip()]
+    if args.days_ahead < 0 or args.days_ahead > 31 or args.delay < 0:
+        ap.error("days-ahead must be between 0 and 31 and delay must be non-negative")
+    comps = list(dict.fromkeys(c.strip() for c in args.leagues.split(",") if c.strip()))
+    if not comps:
+        ap.error("at least one league is required")
     now = datetime.now(timezone.utc)
-    start = now.strftime("%Y%m%d")
-    end = (now + timedelta(days=args.days_ahead)).strftime("%Y%m%d")
-    captured_at = now.isoformat()
-
-    # The warehouse is gitignored and lives on a release asset that three
-    # workflows overwrite; a snapshot written only there is one release upload
-    # away from being lost, and a lost price cannot be re-fetched — the market
-    # has moved on. So the durable record is a committed JSONL, and the
-    # warehouse copy is a convenience for local analysis.
-    jsonl_path = None
-    if not args.no_jsonl:
-        args.jsonl_dir.mkdir(parents=True, exist_ok=True)
-        jsonl_path = args.jsonl_dir / f"snapshots-{now.strftime('%Y-%m')}.jsonl"
-
-    cl = httpx.Client(timeout=30, headers=UA, follow_redirects=True)
-    stored = fixtures = 0
-    lines: List[str] = []
+    path = None if args.no_jsonl else args.jsonl_dir / f"snapshots-{now:%Y-%m}.jsonl"
+    rows = []
     try:
-        for comp in comps:
-            try:
-                sb = cl.get(f"{ESPN}/{comp}/scoreboard?dates={start}-{end}&limit=200").json()
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("%s scoreboard failed: %s", comp, exc)
-                continue
-            time.sleep(args.delay)
-            events = sb.get("events") or []
-            logger.info("%s: %d upcoming fixtures", comp, len(events))
-            for ev in events:
-                competition = (ev.get("competitions") or [{}])[0]
-                prices = parse_odds(competition)
-                if not prices:
-                    continue
-                kickoff = ev.get("date")
-                mtk = None
-                if kickoff:
-                    try:
-                        ko = datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
-                        mtk = round((ko - now).total_seconds() / 60.0, 1)
-                    except ValueError:
-                        mtk = None
-                mid = match_id_for(comp, str(ev.get("id")))
-                fixtures += 1
-                for pr in prices:
-                    h, d, a = pr["home"], pr["draw"], pr["away"]
-                    overround = round(1 / h + 1 / d + 1 / a, 5)
-                    conn.execute(
-                        """INSERT OR IGNORE INTO odds_snapshots
-                           (match_id, bookmaker, captured_at, kickoff_utc,
-                            minutes_to_kickoff, odds_home, odds_draw, odds_away,
-                            odds_home_open, odds_away_open, overround, source)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'espn')""",
-                        (mid, pr["book"], captured_at, kickoff, mtk, h, d, a,
-                         pr["home_open"], pr["away_open"], overround),
-                    )
-                    lines.append(json.dumps({
-                        "match_id": mid, "competition_id": comp, "bookmaker": pr["book"],
-                        "captured_at": captured_at, "kickoff_utc": kickoff,
-                        "minutes_to_kickoff": mtk,
-                        "odds_home": h, "odds_draw": d, "odds_away": a,
-                        "odds_home_open": pr["home_open"], "odds_away_open": pr["away_open"],
-                        "overround": overround, "source": "espn",
-                    }, separators=(",", ":")))
-                    stored += 1
-            conn.commit()
+        with httpx.Client(timeout=30, headers=UA, follow_redirects=True) as client:
+            for league in comps:
+                events = fetch_events(client, league, now, args.days_ahead, args.delay)
+                prices = snapshot_rows(events, league, now)
+                logger.info("%s: %d events, %d prices", league, len(events), len(prices))
+                rows.extend(prices)
+        persist_rows(conn, rows, path)
+    except Exception as exc:
+        logger.error("odds capture failed; batch not published: %s", exc)
+        return 1
     finally:
-        cl.close()
-        conn.commit()
-
-    if jsonl_path is not None and lines:
-        with jsonl_path.open("a", encoding="utf-8") as fh:
-            fh.write("\n".join(lines) + "\n")
-        logger.info("appended %d lines to %s", len(lines), jsonl_path)
-
-    logger.info("captured %d prices across %d fixtures at %s", stored, fixtures, captured_at)
-    conn.close()
+        conn.close()
+    fixtures = len({row["match_id"] for row in rows})
+    logger.info("captured %d prices across %d fixtures at %s", len(rows), fixtures, now.isoformat())
     return 0
 
 
