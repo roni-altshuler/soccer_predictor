@@ -3,10 +3,24 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from datetime import datetime, timezone
 
 
 class ProviderUnavailable(RuntimeError):
     """A provider failed or returned invalid data, rather than a valid empty list."""
+
+
+def observation_time(value) -> datetime:
+    """Comparable observation metadata; never guess a time for unknown evidence."""
+    try:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("missing timestamp")
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            raise ValueError("timezone missing")
+        return parsed.astimezone(timezone.utc)
+    except (ValueError, TypeError) as exc:
+        raise ProviderUnavailable("unknown or invalid observation timestamp") from exc
 
 
 def valid_player_identity(player: dict, id_key: str, *name_keys: str) -> bool:

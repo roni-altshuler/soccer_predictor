@@ -12,6 +12,8 @@ All notable changes to Pitchverse are documented here. The format is based on
   shared 93-request cap, use explicit prediction/forecast scopes, and reconcile
   provider IDs without duplicating existing fixtures or losing enrichment.
   Incomplete coverage still blocks warehouse and prediction publication.
+  Stale receipts cannot roll back newer warehouse/alias observations, and
+  resumed receipt refreshes cannot discard previously validated finals.
 - Core warehouse ingestion now fails visibly on provider, schema and coverage
   errors, bounds ESPN daily fallback, preserves last-good warehouses and caches,
   and blocks downstream publication after a failed refresh. See

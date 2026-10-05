@@ -179,6 +179,50 @@ missing attendance is not stadium capacity, and absent card details are not
 zero-card observations. The candidate still passes the existing integrity guard
 and uses the native transaction publication boundary described above.
 
+### Observation ordering and unpublished progress
+
+Receipt, match and provider-alias observation times must be valid timezone-aware
+ISO timestamps. They are compared as UTC instants, including offset/Z variants.
+Missing, invalid or naive times refuse reconciliation; no missing receipt time
+is replaced with the current process time.
+
+For an already verified event identity, an older receipt counts toward known
+fixture coverage but cannot change any warehouse fact, enrichment or freshness.
+The entire newer row and its related records remain intact. The age boundary
+uses the latest of the match and its verified provider alias. An unaliased
+cross-source fixture still requires the same canonical teams/day and agreeing
+scores before an alias can be established. Provider IDs cannot be remapped from
+another season. Alias times only advance; an older/equal observation cannot
+rewrite a newer alias or relabel its stored time representation.
+
+Only a strictly newer observation can update an existing match. Equal-time
+score, kickoff or overlapping enrichment contradictions refuse the candidate;
+agreeing equal-time observations leave the complete row unchanged, including
+missing enrichments. Unknown existing match/alias times also refuse the run
+rather than guessing which source is newer. The warehouse helper enforces this
+boundary inside a transaction even when called directly. SQL failures,
+contradictory batches and interruptions roll back all its writes.
+
+Receipt refreshes acquire SQLite's writer lock before comparing the previous
+observation and replacing it. An earlier-started writer cannot overwrite a
+later receipt; equal-time conflicting responses are refused. Every previously
+validated final ID for the date must remain finalized with the same provider
+team identity. A fresh HTTP 200 empty/pending response that loses a known final
+is unavailable evidence, and its previous body/digest/timestamp remain intact.
+These checks protect durable progress before its first warehouse publication.
+A selected scope also checks final IDs from all its prior validated receipts,
+so removing a fixture date from a fresh calendar cannot silently hide an
+unpublished final. Duplicate observations of one event on adjacent MLS dates
+use their newest timestamp regardless of iteration order.
+
+Deterministic regressions cover the reviewer's October 4 warehouse correction
+versus September 1 receipt, plus the two-run budget-limited bootstrap whose
+first final disappears in a later empty response. They also replay changed
+calendars, final-to-pending loss, same-time contradictions, unknown times,
+newer aliases, stale cross-source evidence, two receipt writers and interrupted
+warehouse batches. Both refusals preserve last-good data; production workflows
+are not run to validate these failure paths.
+
 Both routine workflows restore and save receipts with Actions cache, including
 `if: always()` after a failed refresh. Cache keys include the run ID and attempt;
 restore prefixes are versioned and separate for prediction and forecast scopes.

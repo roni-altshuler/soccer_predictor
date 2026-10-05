@@ -23,7 +23,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 from backend.services.data.team_resolver import TeamResolver
 from backend.services.data.warehouse import MatchEvent, MatchRow, Warehouse
-from backend.services.data.provider_status import ProviderUnavailable
+from backend.services.data.provider_status import ProviderUnavailable, observation_time
 from backend.services.prediction.historical_data import (
     AVAILABLE_SEASONS,
     ESPN_LEAGUES,
@@ -466,12 +466,13 @@ async def load_current_competitions(warehouse: Warehouse, *, competitions: List[
     for comp, (season, raw_matches) in selected.items():
         existing = {r["match_id"]: r for r in warehouse._conn.execute(
             "SELECT * FROM matches WHERE competition_id=? AND season=?", (comp, season))}
-        aliases = {r["event_id"]: r["match_id"] for r in warehouse._conn.execute(
-            "SELECT event_id, match_id FROM provider_match_ids "
+        aliases = {r["event_id"]: r for r in warehouse._conn.execute(
+            "SELECT event_id, match_id, observed_at FROM provider_match_ids "
             "WHERE provider='espn' AND competition_id=?", (comp,))}
         rows, identities, covered = [], [], set()
         for raw in raw_matches:
             event_id = raw["match_id"]
+            incoming = observation_time(raw.get("_observed_at"))
             row = _match_dict_to_row(
                 raw, competition_id=comp,
                 home_team_id=resolver.resolve(raw["home_team"], gender="M").team_id,
@@ -479,9 +480,12 @@ async def load_current_competitions(warehouse: Warehouse, *, competitions: List[
                 referee_id=None,
             )
             # Reusing a dated receipt is not a new observation of that event.
-            if raw.get("_observed_at"):
-                row.fetched_at = raw["_observed_at"]
-            original = existing.get(aliases.get(event_id, row.match_id))
+            row.fetched_at = raw["_observed_at"]
+            alias = aliases.get(event_id)
+            original = existing.get(alias["match_id"] if alias else row.match_id)
+            if alias and original is None:
+                raise ProviderUnavailable(f"{comp}: event ID belongs to another season or missing fixture")
+            alias_time = observation_time(alias["observed_at"]) if alias else None
             if original is None:
                 candidates = [r for r in existing.values()
                               if (r["home_team_id"], r["away_team_id"], r["date_utc"][:10])
@@ -493,16 +497,27 @@ async def load_current_competitions(warehouse: Warehouse, *, competitions: List[
                 if (original["home_team_id"], original["away_team_id"], original["season"]
                         ) != (row.home_team_id, row.away_team_id, row.season):
                     raise ProviderUnavailable(f"{comp}: event identity changed: {event_id}")
+                previous = observation_time(original["fetched_at"])
+                newest = max(previous, alias_time) if alias_time else previous
+                known_event = alias is not None or original["match_id"] == row.match_id
                 if original["source"] != "espn" and (
                         original["home_score"], original["away_score"]
-                        ) != (row.home_score, row.away_score):
+                        ) != (row.home_score, row.away_score) and not (known_event and incoming < newest):
                     raise ProviderUnavailable(f"{comp}: cross-source score conflict: {event_id}")
                 row.match_id, row.source = original["match_id"], original["source"]
+                if incoming == newest and warehouse.observation_conflicts(row, original):
+                    raise ProviderUnavailable(f"{comp}: equal-time observation conflict: {event_id}")
                 if row.match_id in covered:
                     raise ProviderUnavailable(f"{comp}: multiple events map to one fixture")
                 covered.add(row.match_id)
-            rows.append(row)
-            identities.append(("espn", comp, event_id, row.match_id, row.fetched_at))
+                # A newer alias is also evidence we must not roll back. Equal
+                # observations are passed to the warehouse's conflict guard.
+                if incoming >= newest:
+                    rows.append(row)
+            else:
+                rows.append(row)
+            if alias_time is None or incoming > alias_time:
+                identities.append(("espn", comp, event_id, row.match_id, row.fetched_at))
         if not set(existing).issubset(covered):
             raise ProviderUnavailable(f"{comp}/{season}: selected observations lost warehouse fixtures")
         # Protect previously verified provider identities, including aliases whose
@@ -512,13 +527,14 @@ async def load_current_competitions(warehouse: Warehouse, *, competitions: List[
                          if r["source"] == "espn"}
         if not previous_espn.issubset(observed):
             raise ProviderUnavailable(f"{comp}/{season}: selected observations lost ESPN event IDs")
-        if any(mid in existing and eid not in observed for eid, mid in aliases.items()):
+        if any(alias["match_id"] in existing and eid not in observed for eid, alias in aliases.items()):
             raise ProviderUnavailable(f"{comp}/{season}: selected observations lost provider event IDs")
         written = warehouse.upsert_observed_matches(rows)
         warehouse._conn.executemany(
             "INSERT INTO provider_match_ids VALUES(?,?,?,?,?) "
             "ON CONFLICT(provider, competition_id, event_id) DO UPDATE SET "
-            "match_id=excluded.match_id, observed_at=excluded.observed_at", identities)
+            "observed_at=excluded.observed_at "
+            "WHERE julianday(excluded.observed_at)>julianday(provider_match_ids.observed_at)", identities)
         stats.append(LoadStats(comp, season, len(raw_matches), written))
     return stats
 

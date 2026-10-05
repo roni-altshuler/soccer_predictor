@@ -223,16 +223,20 @@ def seed(path, *, source="fdcouk", score=1, mid="fd-original"):
         home = resolver.resolve("Arsenal", gender="M").team_id
         away = resolver.resolve("Chelsea", gender="M").team_id
         wh.upsert_matches([MatchRow(mid, source, "eng.1", 2026, "2026-08-21T00:00:00+00:00",
-                                   home, away, score, 0, odds_home=2.4, home_xg=1.8)])
+                                   home, away, score, 0, odds_home=2.4, home_xg=1.8,
+                                   fetched_at='2026-09-01T00:00:00+00:00')])
         wh._conn.execute("INSERT INTO weather(match_id,temp_c) VALUES(?,20)", (mid,))
         wh._conn.execute("INSERT INTO match_event_coverage VALUES(?,'original',1,'old')", (mid,))
 
 
-def mock_observations(monkeypatch, raw=None, error=None):
+def mock_observations(monkeypatch, raw=None, error=None, stamp=True):
     async def observed(self, scope):
         if error:
             raise error
-        return {"eng.1": (2026, raw if raw is not None else [self.parser._parse_espn_event(event(), "premier_league", 2026)])}
+        matches = raw if raw is not None else [self.parser._parse_espn_event(event(), "premier_league", 2026)]
+        if stamp:
+            matches = [dict(match, _observed_at=match.get('_observed_at', NOW.isoformat())) for match in matches]
+        return {"eng.1": (2026, matches)}
     monkeypatch.setattr(CurrentSeasonRefresh, "fetch", observed)
 
 
@@ -385,7 +389,7 @@ def test_conflicting_cross_day_event_receipts_are_refused_then_revalidated(tmp_p
         assert len(before) == 2
         assert db.execute('SELECT COUNT(*) FROM invalidated').fetchone()[0] == 2
     conflicting = False
-    refresh, calls = make_refresh(tmp_path, handler)
+    refresh, calls = make_refresh(tmp_path, handler, now=NOW + timedelta(seconds=1))
     assert len(fetch(refresh, ['usa.1'])['usa.1'][1]) == 1
     assert len(calls) == 3
     with sqlite3.connect(tmp_path / 'receipts.sqlite') as db:
@@ -470,4 +474,342 @@ def test_invalid_event_and_team_ids_cannot_certify_a_receipt(tmp_path, value, fi
             ev['competitions'][0]['competitors'][0]['team']['id'] = value
         with pytest.raises(ProviderUnavailable):
             refresh._events(payload('eng.1', ['20260821'], [ev]), 'eng.1', 2026, '20260821')
+    asyncio.run(refresh.close())
+
+
+def test_reviewer_stale_receipt_cannot_roll_back_newer_espn_correction(tmp_path, monkeypatch):
+    path = tmp_path / 'warehouse.sqlite'
+    seed(path, source='espn', score=2, mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        wh._conn.execute("UPDATE matches SET fetched_at='2026-10-04T12:00:00+00:00'")
+        original = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        refresh = CurrentSeasonRefresh(tmp_path / 'temp', now=NOW)
+        raw = refresh.parser._parse_espn_event(event(), 'premier_league', 2026)
+        asyncio.run(refresh.close())
+        raw['_observed_at'] = '2026-09-01T12:00:00+00:00'
+        mock_observations(monkeypatch, [raw])
+        stats = asyncio.run(espn_loader.load_current_competitions(
+            wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+        assert not stats[0].error
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == original
+        assert wh._conn.execute('SELECT COUNT(*) FROM weather').fetchone()[0] == 1
+        assert wh._conn.execute('SELECT source FROM match_event_coverage').fetchone()[0] == 'original'
+
+
+def test_resume_refuses_loss_of_unpublished_final_from_refreshed_receipt(tmp_path):
+    days = ['20261001', '20261002']
+    empty = False
+    def handler(request):
+        day = request.url.params['dates']
+        events = [] if day == '20261005' or (empty and day == '20261001') else [event(day, day)]
+        return httpx.Response(200, json=payload('eng.1', days, events))
+    refresh, calls = make_refresh(tmp_path, handler, budget=2)
+    with pytest.raises(ProviderUnavailable, match='budget'):
+        fetch(refresh, ['eng.1'])
+    with sqlite3.connect(tmp_path / 'receipts.sqlite') as db:
+        before = db.execute('SELECT * FROM receipts').fetchall()
+    assert len(before) == 1 and before[0][2] == '20261001'
+    empty = True
+    refresh, calls = make_refresh(tmp_path, handler, now=NOW + timedelta(hours=2))
+    with pytest.raises(ProviderUnavailable, match='lost previously validated finals'):
+        fetch(refresh, ['eng.1'])
+    assert len(calls) == 2
+    with sqlite3.connect(tmp_path / 'receipts.sqlite') as db:
+        assert db.execute('SELECT * FROM receipts').fetchall() == before
+    empty = False
+    refresh, calls = make_refresh(tmp_path, handler, now=NOW + timedelta(hours=3))
+    assert {m['match_id'] for m in fetch(refresh, ['eng.1'])['eng.1'][1]} == set(days)
+
+
+def observed_raw(tmp_path, *, score=1, at='2026-10-04T12:00:00+00:00'):
+    refresh = CurrentSeasonRefresh(tmp_path / 'parse-temp', now=NOW)
+    raw = refresh.parser._parse_espn_event(event(), 'premier_league', 2026)
+    asyncio.run(refresh.close())
+    raw['home_score'] = score
+    raw['_observed_at'] = at
+    return raw
+
+
+@pytest.mark.parametrize('source', ['espn', 'fdcouk'])
+@pytest.mark.parametrize('alias_newer', [False, True])
+def test_older_known_event_preserves_whole_match_and_newer_alias(tmp_path, monkeypatch, source, alias_newer):
+    path = tmp_path / 'warehouse.sqlite'
+    mid = 'espn_eng.1_1' if source == 'espn' else 'fd-original'
+    seed(path, source=source, score=2, mid=mid)
+    with open_warehouse(path) as wh:
+        wh._conn.execute("UPDATE matches SET fetched_at='2026-10-04T12:00:00+00:00',home_shots=9,venue='New stadium'")
+        wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)',
+                         ('espn', 'eng.1', '1', mid, '2026-10-04T14:00:00+00:00' if alias_newer else '2026-10-04T12:00:00+00:00'))
+        before = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        aliases = wh._conn.execute('SELECT * FROM provider_match_ids').fetchall()
+        raw = observed_raw(tmp_path, at='2026-10-04T13:00:00+00:00' if alias_newer else '2026-09-01T12:00:00+00:00')
+        raw['home_shots'] = 1
+        raw['venue'] = 'Old stadium'
+        mock_observations(monkeypatch, [raw])
+        result = asyncio.run(espn_loader.load_current_competitions(wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+        assert result[0].written == 0
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == before
+        assert wh._conn.execute('SELECT * FROM provider_match_ids').fetchall() == aliases
+
+
+@pytest.mark.parametrize('alias_at', [None, '2026-10-04T14:00:00+00:00'])
+@pytest.mark.parametrize('conflict', ['score', 'venue', 'kickoff'])
+def test_equal_time_contradictions_refuse_match_and_alias_changes(tmp_path, monkeypatch, alias_at, conflict):
+    path = tmp_path / 'warehouse.sqlite'
+    seed(path, source='espn', mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        wh._conn.execute("UPDATE matches SET date_utc='2026-08-21T12:00:00+00:00',venue='Original',fetched_at='2026-10-04T12:00:00+00:00'")
+        if alias_at:
+            wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)', ('espn','eng.1','1','espn_eng.1_1',alias_at))
+        before = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        raw = observed_raw(tmp_path, at=alias_at or '2026-10-04T12:00:00Z')
+        if conflict == 'score':
+            raw['home_score'] = 2
+        elif conflict == 'venue':
+            raw['venue'] = 'Contradiction'
+        else:
+            raw['date'] = '2026-08-21T13:00:00+00:00'
+        mock_observations(monkeypatch, [raw])
+        with pytest.raises(ProviderUnavailable, match='equal-time'):
+            asyncio.run(espn_loader.load_current_competitions(wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == before
+
+
+@pytest.mark.parametrize('value', [None, '', 'unknown', '2026-10-04', '2026-10-04T12:00:00'])
+@pytest.mark.parametrize('where', ['incoming', 'warehouse', 'alias'])
+def test_unknown_observation_times_fail_closed(tmp_path, monkeypatch, value, where):
+    path = tmp_path / 'warehouse.sqlite'
+    seed(path, source='espn', mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        raw = observed_raw(tmp_path)
+        if where == 'incoming':
+            raw['_observed_at'] = value
+        elif where == 'warehouse':
+            wh._conn.execute('UPDATE matches SET fetched_at=?', (value if value is not None else 'unknown',))
+        else:
+            wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)', ('espn','eng.1','1','espn_eng.1_1',value if value is not None else 'unknown'))
+        before = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        mock_observations(monkeypatch, [raw])
+        with pytest.raises(ProviderUnavailable, match='observation timestamp'):
+            asyncio.run(espn_loader.load_current_competitions(wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == before
+
+
+def test_missing_incoming_timestamp_does_not_get_current_time(tmp_path, monkeypatch):
+    path = tmp_path / 'warehouse.sqlite'
+    seed(path)
+    raw = observed_raw(tmp_path)
+    del raw['_observed_at']
+    mock_observations(monkeypatch, [raw], stamp=False)
+    with open_warehouse(path) as wh, pytest.raises(ProviderUnavailable, match='observation timestamp'):
+        asyncio.run(espn_loader.load_current_competitions(wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+
+
+def test_newer_correction_updates_scores_without_deleting_prices_or_children(tmp_path, monkeypatch):
+    path = tmp_path / 'warehouse.sqlite'
+    seed(path, source='espn', mid='espn_eng.1_1')
+    raw = observed_raw(tmp_path, score=2)
+    mock_observations(monkeypatch, [raw])
+    with open_warehouse(path) as wh:
+        result = asyncio.run(espn_loader.load_current_competitions(wh, competitions=['eng.1'], receipts_path=tmp_path / 'receipts'))
+        assert result[0].written == 1
+        row = wh._conn.execute('SELECT * FROM matches').fetchone()
+        assert (row['home_score'],row['fetched_at'],row['odds_home'],row['home_xg']) == (2,raw['_observed_at'],2.4,1.8)
+        assert wh._conn.execute('SELECT COUNT(*) FROM weather').fetchone()[0] == 1
+        assert wh._conn.execute('SELECT COUNT(*) FROM match_event_coverage').fetchone()[0] == 1
+
+
+def test_duplicate_date_event_uses_newest_receipt_time(tmp_path):
+    days = ['20260821', '20260822']
+    body = payload('usa.1', days, [event(day='20260822')])
+    def handler(request):
+        assert request.url.params['dates'] == '20261005'
+        return httpx.Response(200, json=payload('usa.1', days))
+    refresh, calls = make_refresh(tmp_path, handler)
+    refresh.now = NOW - timedelta(hours=1)
+    refresh._save('usa.1',2026,days[0],body)
+    newest = refresh.now.isoformat()
+    refresh.now = NOW - timedelta(days=20)
+    refresh._save('usa.1',2026,days[1],body)
+    refresh.now = NOW
+    result = fetch(refresh, ['usa.1'])
+    assert len(calls) == 1
+    assert result['usa.1'][1][0]['_observed_at'] == newest
+
+
+@pytest.mark.parametrize('kind', ['older', 'equal-conflict', 'lost-finals', 'pending-final', 'identity'])
+def test_receipt_overwrite_refusals_preserve_previous_progress(tmp_path, kind):
+    days = ['20260821']
+    body = payload('eng.1', days, [event()])
+    refresh, _ = make_refresh(tmp_path, lambda _: httpx.Response(200))
+    refresh._save('eng.1',2026,days[0],body)
+    before = refresh.db.execute('SELECT * FROM receipts').fetchall()
+    incoming = payload('eng.1',days,[event()])
+    if kind == 'older':
+        refresh.now -= timedelta(seconds=1)
+    elif kind == 'equal-conflict':
+        incoming['events'][0]['competitions'][0]['competitors'][0]['score'] = '2'
+    else:
+        refresh.now += timedelta(seconds=1)
+        if kind == 'lost-finals':
+            incoming['events'] = []
+        elif kind == 'pending-final':
+            incoming['events'][0]['competitions'][0]['status']['type']['completed'] = False
+        else:
+            incoming['events'][0]['competitions'][0]['competitors'][0]['team']['id'] = 'different'
+    with pytest.raises(ProviderUnavailable):
+        refresh._save('eng.1',2026,days[0],incoming)
+    assert refresh.db.execute('SELECT * FROM receipts').fetchall() == before
+    assert not refresh.db.in_transaction
+    asyncio.run(refresh.close())
+
+
+def test_calendar_cannot_hide_unpublished_final_progress_on_resume(tmp_path):
+    days = ['20261001','20261002']
+    def handler(request):
+        day = request.url.params['dates']
+        return httpx.Response(200, json=payload('eng.1',days,[] if day=='20261005' else [event(day,day)]))
+    refresh, _ = make_refresh(tmp_path,handler,budget=2)
+    with pytest.raises(ProviderUnavailable,match='budget'):
+        fetch(refresh,['eng.1'])
+    with sqlite3.connect(tmp_path/'receipts.sqlite') as db:
+        before = db.execute("SELECT * FROM receipts WHERE day='20261001'").fetchone()
+    days = ['20261002']
+    refresh, _ = make_refresh(tmp_path,handler,now=NOW+timedelta(hours=2))
+    with pytest.raises(ProviderUnavailable,match='calendar lost previously validated'):
+        fetch(refresh,['eng.1'])
+    with sqlite3.connect(tmp_path/'receipts.sqlite') as db:
+        assert db.execute("SELECT * FROM receipts WHERE day='20261001'").fetchone() == before
+
+
+def test_direct_warehouse_observation_boundary_and_batch_rollback(tmp_path):
+    path = tmp_path/'warehouse.sqlite'
+    seed(path,source='espn',score=2,mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        original = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        stale = MatchRow(**original)
+        stale.home_score,stale.odds_home,stale.fetched_at = 1,.1,'2026-08-31T12:00:00Z'
+        assert wh.upsert_observed_matches([stale]) == 0
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == original
+        newer = MatchRow(**original)
+        newer.home_score,newer.fetched_at = 3,'2026-10-04T12:00:00Z'
+        contradictory = MatchRow(**newer.__dict__)
+        contradictory.home_score = 4
+        with pytest.raises(ProviderUnavailable,match='equal-time'):
+            wh.upsert_observed_matches([newer,contradictory])
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == original
+        newer.fetched_at = 'unknown'
+        with pytest.raises(ProviderUnavailable,match='observation timestamp'):
+            wh.upsert_observed_matches([newer])
+        assert wh._conn.execute('SELECT COUNT(*) FROM weather').fetchone()[0] == 1
+
+
+def test_equal_timestamp_formats_are_idempotent_and_do_not_relabel_freshness(tmp_path,monkeypatch):
+    path = tmp_path/'warehouse.sqlite'
+    seed(path,source='espn',mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        wh._conn.execute("UPDATE matches SET date_utc='2026-08-21T12:00:00Z',fetched_at='2026-10-04T08:00:00-04:00'")
+        wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)',('espn','eng.1','1','espn_eng.1_1','2026-10-04T08:00:00-04:00'))
+        original = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        raw = observed_raw(tmp_path,at='2026-10-04T12:00:00Z')
+        mock_observations(monkeypatch,[raw])
+        result = asyncio.run(espn_loader.load_current_competitions(wh,competitions=['eng.1'],receipts_path=tmp_path/'receipts'))
+        assert result[0].written == 0
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == original
+        assert wh._conn.execute('SELECT observed_at FROM provider_match_ids').fetchone()[0] == original['fetched_at']
+
+
+def test_unaliased_older_cross_source_evidence_cannot_replace_newer_row(tmp_path,monkeypatch):
+    path = tmp_path/'warehouse.sqlite'
+    seed(path)
+    with open_warehouse(path) as wh:
+        wh._conn.execute("UPDATE matches SET fetched_at='2026-10-04T12:00:00Z'")
+        original = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        raw = observed_raw(tmp_path,at='2026-09-01T12:00:00Z')
+        mock_observations(monkeypatch,[raw])
+        result = asyncio.run(espn_loader.load_current_competitions(wh,competitions=['eng.1'],receipts_path=tmp_path/'receipts'))
+        assert result[0].written == 0
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone()) == original
+        assert wh._conn.execute('SELECT observed_at FROM provider_match_ids').fetchone()[0] == raw['_observed_at']
+
+
+def test_verified_provider_id_cannot_be_remapped_from_another_season(tmp_path,monkeypatch):
+    path = tmp_path/'warehouse.sqlite'
+    seed(path,source='espn',mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        wh._conn.execute('UPDATE matches SET season=2025')
+        wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)',('espn','eng.1','1','espn_eng.1_1','2026-09-01T12:00:00Z'))
+        raw = observed_raw(tmp_path)
+        mock_observations(monkeypatch,[raw])
+        with pytest.raises(ProviderUnavailable,match='another season'):
+            asyncio.run(espn_loader.load_current_competitions(wh,competitions=['eng.1'],receipts_path=tmp_path/'receipts'))
+        assert wh._conn.execute('SELECT match_id FROM provider_match_ids').fetchone()[0] == 'espn_eng.1_1'
+
+
+def test_receipt_writer_started_earlier_cannot_replace_later_writer(tmp_path):
+    body = payload('eng.1',['20260821'],[event()])
+    earlier,_ = make_refresh(tmp_path,lambda _:httpx.Response(200),now=NOW-timedelta(seconds=1))
+    later,_ = make_refresh(tmp_path,lambda _:httpx.Response(200),now=NOW)
+    later._save('eng.1',2026,'20260821',body)
+    original = later.db.execute('SELECT * FROM receipts').fetchall()
+    with pytest.raises(ProviderUnavailable,match='older receipt'):
+        earlier._save('eng.1',2026,'20260821',body)
+    assert later.db.execute('SELECT * FROM receipts').fetchall() == original
+    asyncio.run(earlier.close())
+    asyncio.run(later.close())
+
+
+def test_interrupted_observation_batch_rolls_back_and_leaves_no_open_transaction(tmp_path):
+    path = tmp_path/'warehouse.sqlite'
+    seed(path,source='espn',mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        original = dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        first = MatchRow(**original)
+        first.home_score,first.fetched_at = 2,'2026-10-04T12:00:00Z'
+        second = MatchRow(**original)
+        second.home_score,second.fetched_at = 3,'2026-10-05T00:00:00Z'
+        connection = wh._conn
+        class InterruptedConnection:
+            writes = 0
+            def __getattr__(self,name):
+                return getattr(connection,name)
+            def execute(self,sql,*args):
+                if sql.startswith('INSERT INTO matches'):
+                    self.writes += 1
+                    if self.writes == 2:
+                        raise KeyboardInterrupt()
+                return connection.execute(sql,*args)
+        wh._conn = InterruptedConnection()
+        try:
+            with pytest.raises(KeyboardInterrupt):
+                wh.upsert_observed_matches([first,second])
+        finally:
+            wh._conn = connection
+        assert not connection.in_transaction
+        assert dict(connection.execute('SELECT * FROM matches').fetchone()) == original
+        assert connection.execute('SELECT COUNT(*) FROM weather').fetchone()[0] == 1
+
+
+def test_direct_warehouse_boundary_also_honors_newer_alias_watermark(tmp_path):
+    path=tmp_path/'warehouse.sqlite'
+    seed(path,source='espn',mid='espn_eng.1_1')
+    with open_warehouse(path) as wh:
+        wh._conn.execute('INSERT INTO provider_match_ids VALUES(?,?,?,?,?)',('espn','eng.1','1','espn_eng.1_1','2026-10-04T12:00:00Z'))
+        original=dict(wh._conn.execute('SELECT * FROM matches').fetchone())
+        stale=MatchRow(**original)
+        stale.home_score,stale.fetched_at=2,'2026-10-03T12:00:00Z'
+        assert wh.upsert_observed_matches([stale])==0
+        assert dict(wh._conn.execute('SELECT * FROM matches').fetchone())==original
+        stale.fetched_at='2026-10-04T12:00:00+00:00'
+        with pytest.raises(ProviderUnavailable,match='equal-time'):
+            wh.upsert_observed_matches([stale])
+
+
+def test_old_refresh_clock_cannot_ignore_newer_unpublished_progress(tmp_path):
+    body=payload('eng.1',['20260821'],[event()])
+    refresh,_=make_refresh(tmp_path,lambda _:httpx.Response(200))
+    refresh._save('eng.1',2026,'20260821',body)
+    refresh.now-=timedelta(seconds=1)
+    with pytest.raises(ProviderUnavailable,match='newer observations'):
+        refresh._known_final_ids('eng.1',2026)
     asyncio.run(refresh.close())

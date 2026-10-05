@@ -17,7 +17,7 @@ from typing import Any
 
 import httpx
 
-from backend.services.data.provider_status import ProviderUnavailable
+from backend.services.data.provider_status import ProviderUnavailable, observation_time
 from backend.services.prediction.historical_data import HistoricalDataCollector, current_season
 
 logger = logging.getLogger(__name__)
@@ -223,12 +223,45 @@ class CurrentSeasonRefresh:
 
     def _save(self, competition: str, season: int, day: str, body: dict):
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":"))
-        with self.db:
+        new_matches, _ = self._events(body, competition, season, day)
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            previous = self.db.execute("SELECT fetched_at, body, digest FROM receipts "
+                                       "WHERE competition=? AND season=? AND day=?",
+                                       (competition, season, day)).fetchone()
+            if previous:
+                previous_time = observation_time(previous[0])
+                if self.now < previous_time:
+                    raise ProviderUnavailable("older receipt cannot replace newer observation")
+                # Corrupt bytes cannot be reused as evidence; a valid source
+                # response may repair them, but not regress their timestamp.
+                old_matches = None
+                if hashlib.sha256(previous[1].encode()).hexdigest() == previous[2]:
+                    try:
+                        old_matches, _ = self._events(json.loads(previous[1]), competition, season, day)
+                    except (ValueError, TypeError, AttributeError, ProviderUnavailable):
+                        pass
+                if old_matches is not None:
+                    old_ids = {match["match_id"] for match in old_matches}
+                    new_ids = {match["match_id"] for match in new_matches}
+                    if not old_ids.issubset(new_ids):
+                        raise ProviderUnavailable("refreshed receipt lost previously validated finals")
+                    newer = {match["match_id"]: match for match in new_matches}
+                    for match in old_matches:
+                        if any(str(match[field]) != str(newer[match["match_id"]][field])
+                               for field in ("home_team_id", "away_team_id", "season")):
+                            raise ProviderUnavailable("refreshed receipt changed final event identity")
+                    if self.now == previous_time and encoded != previous[1]:
+                        raise ProviderUnavailable("equal-time receipt conflict")
             self.db.execute("INSERT OR REPLACE INTO receipts VALUES(?,?,?,?,?,?)",
                             (competition, season, day, self.now.isoformat(), encoded,
                              hashlib.sha256(encoded.encode()).hexdigest()))
             self.db.execute("DELETE FROM invalidated WHERE competition=? AND season=? AND day=?",
                             (competition, season, day))
+            self.db.commit()
+        except BaseException:
+            self.db.rollback()
+            raise
 
     def _invalidate(self, competition: str, season: int, days: list[str]):
         # Retain response bytes/timestamps as evidence, but do not reuse known
@@ -236,6 +269,23 @@ class CurrentSeasonRefresh:
         with self.db:
             self.db.executemany("INSERT OR IGNORE INTO invalidated VALUES(?,?,?)",
                                 [(competition, season, day) for day in days])
+
+    def _known_final_ids(self, competition: str, season: int) -> set[str]:
+        """Also protect validated progress for days removed from a new calendar."""
+        ids = set()
+        for day, stamp, body, digest in self.db.execute(
+                "SELECT day,fetched_at,body,digest FROM receipts WHERE competition=? AND season=?",
+                (competition, season)):
+            if observation_time(stamp) > self.now:
+                raise ProviderUnavailable("receipt store has newer observations; retry with a fresh clock")
+            if hashlib.sha256(body.encode()).hexdigest() != digest:
+                continue  # Required dates will be revalidated, never reused.
+            try:
+                matches, _ = self._events(json.loads(body), competition, season, day)
+            except (ValueError, TypeError, AttributeError, ProviderUnavailable):
+                continue
+            ids.update(match["match_id"] for match in matches)
+        return ids
 
     async def fetch(self, competitions: list[str]) -> dict[str, tuple[int, list[dict]]]:
         if not competitions or len(competitions) != len(set(competitions)) or any(
@@ -251,6 +301,7 @@ class CurrentSeasonRefresh:
             calendars[comp] = (season, days)
         selected = {}
         for comp, (season, days) in calendars.items():
+            previous_ids = self._known_final_ids(comp, season)
             matches = {}
             origins = {}
             observations = {}
@@ -275,7 +326,11 @@ class CurrentSeasonRefresh:
                         raise ProviderUnavailable("ESPN conflicting event across date receipts")
                     matches[mid] = match
                     origins[mid] = day
-                    observations[mid] = observed_at
+                    if mid not in observations or observation_time(observed_at) > observation_time(observations[mid]):
+                        observations[mid] = observed_at
+            previous_ids.update(self._known_final_ids(comp, season))
+            if not previous_ids.issubset(matches):
+                raise ProviderUnavailable("selected calendar lost previously validated receipt finals")
             selected[comp] = (season, [dict(match, _observed_at=observations[mid])
                                      for mid, match in matches.items()])
             logger.info("Validated %s/%s: %s fixture dates, %s final events", comp, season,
