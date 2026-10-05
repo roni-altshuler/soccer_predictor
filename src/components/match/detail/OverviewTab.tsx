@@ -15,7 +15,7 @@ import { NarrativeCard } from '@/components/viz'
 import MatchWeather from '@/components/weather/MatchWeather'
 import { cn } from '@/lib/utils'
 
-import { getPredictionVerdict } from './adaptPrediction'
+import { adaptMatchPrediction, getPredictionVerdict } from './adaptPrediction'
 import { buildModelInsights } from './insights'
 import { MATCH_EVENTS_ANCHOR_ID, MatchStory } from './MatchStory'
 import { MomentumRiver } from './MomentumRiver'
@@ -45,11 +45,10 @@ function CompactAIPickCard({
   const p = match.prediction
   if (!p) return null
 
-  const topScoreline = p.derived_markets?.correct_score_top5?.[0]
-  const scoreline = topScoreline
-    ? `${topScoreline.home}-${topScoreline.away}`
-    : p.most_likely_score ??
-      `${Math.round(p.predicted_score.home)}-${Math.round(p.predicted_score.away)}`
+  const adapted = adaptMatchPrediction(match)
+  if (!adapted) return null
+  const scoreline = adapted.most_likely_score?.score
+  const confidence = adapted.confidence?.overall
 
   const verdict = isFinished ? getPredictionVerdict(match) : null
 
@@ -58,21 +57,21 @@ function CompactAIPickCard({
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-color)] px-4 py-3">
         <Sparkles className="h-4 w-4 text-[var(--accent-ai)]" aria-hidden />
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">AI pick</h3>
-        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
-          <span className="tabular-nums text-[var(--text-primary)]">{p.confidence}%</span>
+        {confidence != null && <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--muted-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+          <span className="tabular-nums text-[var(--text-primary)]">{Math.round(confidence * 100)}%</span>
           <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-            {p.confidence_band ?? 'Medium'} confidence
+            {p.confidence_band ? `${p.confidence_band} confidence` : 'confidence'}
           </span>
-        </span>
+        </span>}
       </div>
 
       <div className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Prob1X2 home={p.home_win} draw={p.draw} away={p.away_win} />
-            <span className="inline-flex shrink-0 items-center rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
+            {scoreline && <span className="inline-flex shrink-0 items-center rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-1.5 py-1 text-[10px] font-semibold tabular-nums text-[var(--accent-ai)]">
               AI {scoreline}
-            </span>
+            </span>}
           </div>
           <button
             type="button"
@@ -492,7 +491,7 @@ export function OverviewTab({ match, isFinished, isScheduled, onSelectTab }: Ove
   // The quieter bottom cluster shared by both layouts.
   const quietCluster = (
     <>
-      {insights.length > 0 && <NarrativeCard heading="What the model sees" insights={insights} />}
+      {insights.length > 0 && <NarrativeCard heading="Prediction & match context" insights={insights} />}
       {match.prediction?.derived_markets && (
         <DerivedMarkets
           data={match.prediction.derived_markets}

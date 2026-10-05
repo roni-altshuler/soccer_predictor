@@ -321,7 +321,7 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
         <div className="flex items-center gap-2">
           <Goal className="h-4 w-4 text-[var(--accent-primary)]" strokeWidth={2.5} />
           <h3 className="text-h4 font-bold text-[var(--text-primary)]">Goals & markets</h3>
-          {totalXg !== null && totalXg >= 0 && <Badge variant="outline" className="ml-auto">{totalXg.toFixed(2)} total xG</Badge>}
+          {totalXg !== null && totalXg >= 0 && <Badge variant="outline" className="ml-auto shrink-0 whitespace-nowrap text-[11px]">{totalXg.toFixed(2)} total xG</Badge>}
         </div>
         {homeXg !== null && awayXg !== null && homeXg >= 0 && awayXg >= 0 ? <XGCompare
           home={homeXg} away={awayXg} homeTeam={prediction.home_team} awayTeam={prediction.away_team}

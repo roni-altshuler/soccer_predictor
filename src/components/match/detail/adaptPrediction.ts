@@ -28,12 +28,12 @@ export function adaptMatchPrediction(match: MatchDetails): PredictionPayload | n
     outcome: { home_win: p.home_win, draw: p.draw, away_win: p.away_win, confidence },
     goals: {
       // predicted_score can be the mode, so it is not evidence of expected goals.
-      home_expected_goals: null,
-      away_expected_goals: null,
-      total_expected_goals: availableNumber(p.total_goals),
-      over_1_5: availableProbability(p.derived_markets?.over_under?.['1.5']?.over),
+      home_expected_goals: availableNumber(p.expected_goals?.home),
+      away_expected_goals: availableNumber(p.expected_goals?.away),
+      total_expected_goals: availableNumber(p.expected_goals?.total) ?? availableNumber(p.total_goals),
+      over_1_5: availableProbability(p.over_1_5) ?? availableProbability(p.derived_markets?.over_under?.['1.5']?.over),
       over_2_5: availableProbability(p.over_2_5) ?? availableProbability(p.derived_markets?.over_under?.['2.5']?.over),
-      over_3_5: availableProbability(p.derived_markets?.over_under?.['3.5']?.over),
+      over_3_5: availableProbability(p.over_3_5) ?? availableProbability(p.derived_markets?.over_under?.['3.5']?.over),
       btts_yes: availableProbability(p.btts_yes) ?? availableProbability(p.derived_markets?.btts?.yes),
     },
     most_likely_score: scorelines[0] ?? (headline ? {
@@ -52,7 +52,7 @@ export function adaptMatchPrediction(match: MatchDetails): PredictionPayload | n
 export function getPredictionVerdict(
   match: MatchDetails
 ): { type: 'exact' | 'close' | 'miss'; message: string } {
-  if (!match.prediction || match.home_score === null || match.away_score === null) {
+  if (!match.prediction?.predicted_score || match.home_score === null || match.away_score === null) {
     return { type: 'miss', message: '' }
   }
 

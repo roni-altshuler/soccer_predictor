@@ -1,3 +1,4 @@
+import type { MatchPredictionData } from '@/lib/server/matchPrediction'
 import type { RecordedForecast } from '@/lib/server/recordedForecast'
 import type { MatchCard } from '@/lib/server/tieFixtures'
 
@@ -147,26 +148,7 @@ export interface MatchDetails {
   awayStanding?: TeamStanding
   fullStandings?: TeamStanding[]
   nextResumeTime?: Date
-  prediction?: {
-    home_win: number
-    draw: number
-    away_win: number
-    predicted_score: { home: number; away: number }
-    confidence: number
-    total_goals?: number
-    over_2_5?: number
-    btts_yes?: number
-    most_likely_score?: string
-    model_version?: string
-    confidence_band?: 'Low' | 'Medium' | 'High'
-    derived_markets?: {
-      over_under?: Record<string, { over: number; under: number }>
-      btts?: { yes: number; no: number }
-      correct_score_top5?: Array<{ home: number; away: number; probability: number }>
-    } | null
-    /** "Why this prediction" attribution — present only when the engine explained the pick. */
-    attribution?: Array<{ feature: string; value: number; contribution: number }> | null
-  }
+  prediction?: MatchPredictionData
   liveWinProbability?: LiveWinProbabilityResult
   commentary?: { minute: number; text: string }[]
 }

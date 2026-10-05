@@ -25,10 +25,19 @@ scroll restoration. It checks horizontal overflow, control sizes, browser
 errors and WCAG 2 A/AA violations within the main content. Provider, analytics
 and PWA cache activity are isolated so responses stay deterministic.
 
+The browser contract also verifies fully null score/confidence/goal evidence
+and restores the same recorded forecast's actual confidence and xG. The real
+`GET /api/match/[id]` Jest contract mocks only upstream responses: missing,
+null and nonnumeric fields stay unknown through serialization and the adapter;
+published zeros, markets, scoreline distributions and attribution survive.
+v1's mode remains separate from expected goals; the fallback's contract-defined
+xG pair and its valid sum remain available. Provider selection and fetching,
+backend model logic, and committed data are unchanged.
+
 Run `npm run build && npm run test:product`. To use an existing local server:
 `QA_BASE=http://127.0.0.1:3000 npm run test:product`. An installed system browser
 can be selected with `QA_CHROMIUM=/usr/bin/chromium`.
 
-Each frontend CI run uploads all six responsive screenshots plus `report.json`
+Each frontend CI run uploads all twelve responsive screenshots plus `report.json`
 in the `product-quality-evidence` artifact, tied to that PR head. This evidence
 checks UI contracts; it makes no new claim about model quality or coverage.

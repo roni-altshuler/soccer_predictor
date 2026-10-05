@@ -10,7 +10,9 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 - Prediction detail and matchup views keep missing inputs, confidence and markets
   unavailable, distinguish published context from prediction inputs, and show
-  exact-score chances only from published scoreline distributions.
+  exact-score chances only from published scoreline distributions. Match API
+  normalization preserves null evidence and separates published scorelines
+  from xG, retaining genuine zeros and contract-defined fallback xG totals.
 - Matchday dates, status/competition filters and Following survive detail-page
   returns, reloads and browser history; each history entry restores its scroll.
   Responsive sparse-response and navigation contracts run in frontend CI.

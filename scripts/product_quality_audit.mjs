@@ -24,7 +24,7 @@ const prediction = (p) => ({ home_win: p.predicted_home_win, draw: p.predicted_d
   predicted_score: { home: p.predicted_home_goals, away: p.predicted_away_goals }, most_likely_score: p.predicted_scoreline,
   // Confidence, goals markets, inputs, and attribution deliberately absent.
 })
-const detail = (p) => ({ id: String(p.match_id), home_team: p.home_team, away_team: p.away_team, home_score: null, away_score: null,
+const detail = (p, evidence = 'sparse') => ({ id: String(p.match_id), home_team: p.home_team, away_team: p.away_team, home_score: null, away_score: null,
   league: p.league, leagueId: leagues[p.league], date: p.match_date, status: 'upcoming', prediction: prediction(p),
   // Empty provider content: no invented scores, timeline, lineups, or standings.
   card: { eventId: String(p.match_id), date: p.match_date, state: 'pre', statusDetail: 'Kickoff TBC', leg: null, neutralSite: false,
@@ -32,6 +32,11 @@ const detail = (p) => ({ id: String(p.match_id), home_team: p.home_team, away_te
     away: { id: 'away', name: p.away_team, abbreviation: '', score: null, winner: false, logo: null, homeAway: 'away' },
     venue: p.venue ? { name: p.venue, city: null, country: null } : null, attendance: null, officials: [], events: [], commentary: [], stats: [], lineups: [], headToHead: null, form: [],
   },
+  ...(evidence === 'null' ? { prediction: { ...prediction(p), predicted_score: null, most_likely_score: undefined,
+    confidence: null, total_goals: null, expected_goals: { home: null, away: null, total: null }, over_2_5: null, btts_yes: null } } : {}),
+  ...(evidence === 'published' ? { prediction: { ...prediction(p), confidence: p.confidence,
+    expected_goals: { home: p.predicted_home_goals, away: p.predicted_away_goals, total: p.predicted_home_goals + p.predicted_away_goals },
+    total_goals: p.predicted_home_goals + p.predicted_away_goals } } : {}),
 })
 await mkdir(out, { recursive: true })
 let server
@@ -79,6 +84,7 @@ try {
     const page = await context.newPage()
     const errors = []
     const requests = []
+    let detailEvidence = 'sparse'
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()) })
     await context.addInitScript(() => {
@@ -101,7 +107,7 @@ try {
       if (url.pathname.startsWith('/api/match/')) {
         const p = records.find((r) => String(r.match_id) === url.pathname.split('/').at(-1))
         assert(p, 'Details must correspond to a recorded fixture')
-        return route.fulfill({ json: detail(p) })
+        return route.fulfill({ json: detail(p, detailEvidence) })
       }
       if (url.hostname === '127.0.0.1' && url.pathname.includes('/api/')) return route.fulfill({ json: {} })
       return route.continue()
@@ -177,9 +183,30 @@ try {
     await fresh.getByRole('button', { name: 'Back', exact: true }).click()
     await assertView(fresh)
     await fresh.close()
+    // Also exercise canonical nulls emitted by the real normalization boundary,
+    // then restore actual confidence and xG from the same committed forecast.
+    detailEvidence = 'null'
+    await page.goto(new URL(direct, base).href, { waitUntil: 'networkidle' })
+    assert.equal(await page.getByText('AI 0-0', { exact: true }).count(), 0)
+    assert.equal(await page.getByText(/confidence/).count(), 0)
+    await page.getByRole('tab', { name: 'Prediction', exact: true }).click()
+    await page.getByText('Scoreline unavailable.').waitFor()
+    assert.equal(await page.getByText(/confidence|total xG|0-0/).count(), 0)
+    await audit(page, `Null detail ${width}`)
+    await page.screenshot({ path: `${out}/prediction-null-${width}.png`, fullPage: true })
+    detailEvidence = 'published'
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByRole('tab', { name: 'Prediction', exact: true }).click()
+    await page.getByText(`${(chosen.predicted_home_goals + chosen.predicted_away_goals).toFixed(2)} total xG`, { exact: true }).waitFor()
+    await page.getByLabel(new RegExp(`^Prediction confidence ${Math.round(chosen.confidence)} percent,`)).waitFor()
+    assert.equal(await page.getByText('Expected goals by team unavailable.', { exact: true }).count(), 0)
+    await page.getByText('Exact-score chance unavailable').waitFor()
+    assert.equal(await page.getByText(/near full strength|Key drivers|Why this prediction/).count(), 0)
+    await audit(page, `Published xG detail ${width}`)
+    await page.screenshot({ path: `${out}/prediction-published-${width}.png`, fullPage: true })
     assert.deepEqual(errors, [], `Browser errors at ${width}`)
     assert(requests.includes(date) && requests.includes(today))
-    report.push({ width, keyboard: true, repeatedDetailReturns: 3, browserBackForward: true, filterHistory: true, reload: true, following: true, deepLinkFallback: true, scrollRestored: true, overflow: false, accessibilityViolations: 0, errors })
+    report.push({ width, keyboard: true, repeatedDetailReturns: 3, browserBackForward: true, filterHistory: true, reload: true, following: true, deepLinkFallback: true, scrollRestored: true, nullEvidence: true, publishedXg: true, overflow: false, accessibilityViolations: 0, errors })
     await context.close()
   }
 } finally {

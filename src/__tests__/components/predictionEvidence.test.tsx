@@ -3,6 +3,7 @@ import { PredictionResult } from '@/components/prediction/PredictionResult'
 import { adaptLegacyPrediction } from '@/components/prediction/adaptLegacyPrediction'
 import { adaptMatchPrediction } from '@/components/match/detail/adaptPrediction'
 import type { MatchDetails } from '@/components/match/detail/types'
+import { buildModelInsights } from '@/components/match/detail/insights'
 
 // Deliberately sparse wire fixtures. No production model or provider is invoked.
 const match = (prediction: unknown = { home_win: 0.6, draw: 0.25, away_win: 0.15, predicted_score: { home: 2, away: 1 } }) => ({
@@ -45,6 +46,24 @@ describe('Sparse prediction evidence', () => {
     expect(payload.goals.over_2_5).toBe(0)
     expect(payload.goals.btts_yes).toBe(0)
     expect(payload.confidence?.overall).toBe(0)
+  })
+
+  it('renders canonical null evidence without a zero score, confidence or low-scoring claim', () => {
+    const details = match({ ...match().prediction, predicted_score: null, confidence: null, total_goals: null,
+      expected_goals: { home: null, away: null, total: null }, over_2_5: null, btts_yes: null })
+    render(<PredictionResult prediction={adaptMatchPrediction(details)!} />)
+    expect(screen.getByText('Scoreline unavailable.')).toBeInTheDocument()
+    expect(screen.queryByText(/0-0|confidence|total xG/)).not.toBeInTheDocument()
+    expect(buildModelInsights(details).some((i) => /scoring|Goals expected/.test(i.title))).toBe(false)
+  })
+
+  it('renders published xG separately from the score pick and preserves its goal insight', () => {
+    const details = match({ ...match().prediction, total_goals: 3.53, expected_goals: { home: 1.76, away: 1.77, total: 3.53 } })
+    render(<PredictionResult prediction={adaptMatchPrediction(details)!} />)
+    expect(screen.getByText('3.53 total xG')).toBeInTheDocument()
+    expect(screen.queryByText('Expected goals by team unavailable.')).not.toBeInTheDocument()
+    expect(screen.getByText('2-1')).toBeInTheDocument()
+    expect(buildModelInsights(details)).toContainEqual(expect.objectContaining({ title: 'Goals expected', detail: 'Expected total of 3.5 goals.' }))
   })
 
   it('reads only published derived markets and sorts the real mode without renormalising', () => {
