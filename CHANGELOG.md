@@ -6,6 +6,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+
+- Core warehouse ingestion now fails visibly on provider, schema and coverage
+  errors, bounds ESPN daily fallback, preserves last-good warehouses and caches,
+  and blocks downstream publication after a failed refresh. See
+  [the ingestion notes](docs/WAREHOUSE_INGESTION.md).
+
 ### Added
 
 - **Brand icon set** generated from the official Pitchverse mark via a reproducible script

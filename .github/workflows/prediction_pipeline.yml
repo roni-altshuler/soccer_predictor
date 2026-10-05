@@ -62,7 +62,7 @@ jobs:
       - name: Refresh current-season results in warehouse
         # Keeps rolling-form features fresh between weekly warehouse
         # publishes (matters most for daily tournaments like the World Cup).
-        continue-on-error: true
+        # A failed attempted refresh must stop prediction publication.
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
             python -m backend.scripts.build_warehouse --espn --current-season
