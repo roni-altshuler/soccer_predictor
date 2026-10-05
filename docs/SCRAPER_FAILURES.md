@@ -14,12 +14,25 @@ successful report and can replace the previous observation. Successful writes
 use a temporary file and atomic replacement. Stale refresh honors the cached
 provider and league and excludes availability sidecars from its inputs.
 
+Nested squad rows are validated before healthy players are filtered out. Every
+player requires a usable ID or name, and supplied identity fields must have the
+expected scalar type. Present non-null `injuryInfo` must contain usable injury
+details; a malformed block cannot establish that a player is healthy. Empty
+squad lists and identified healthy players with absent/null `injuryInfo` remain
+successful empty injury reports.
+
 Lineup fetches distinguish an unavailable or malformed scoreboard/summary from
 a valid summary whose lineup has not yet been announced. ESPN event IDs are
 never retried as FotMob match IDs; FotMob requires explicit source selection.
 Individual successful refreshes may update their own caches, but any requested
 refresh failure makes the CLI exit nonzero. Both CLIs close clients in `finally`
 and propagate the result to the process exit status.
+
+ESPN roster containers must be lists and every athlete must have a valid
+identity. FotMob starter rows and benches are validated instead of silently
+skipping malformed entries. Missing announcements and explicit empty lineup
+lists remain successful unpublished responses; malformed nested structures
+raise without replacing the last-good lineup cache.
 
 The workflow runs injury refresh even after a lineup failure, keeps both errors
 visible, and commits scrape changes only when all steps succeeded. It no longer

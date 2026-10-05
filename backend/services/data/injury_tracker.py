@@ -34,7 +34,7 @@ from backend.services.fotmob.client import (
     get_fotmob_client,
     cleanup_fotmob_client,
 )
-from backend.services.data.provider_status import ProviderUnavailable, write_json_atomic
+from backend.services.data.provider_status import ProviderUnavailable, valid_player_identity, write_json_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ class InjuryTracker:
             if not isinstance(item, dict) or not isinstance(item.get("athlete"), dict):
                 raise ProviderUnavailable("Malformed ESPN injury entry")
             athlete = item.get("athlete") or {}
-            if not (athlete.get("id") or athlete.get("displayName") or athlete.get("fullName")):
+            if not valid_player_identity(athlete, "id", "displayName", "fullName"):
                 raise ProviderUnavailable("ESPN injury entry has no athlete identity")
             raw_status = item.get("status") or item.get("type", {}).get("description") or ""
             reason = (item.get("details") or {}).get("type") or item.get("shortComment") or ""
@@ -178,7 +178,7 @@ class InjuryTracker:
         except Exception as e:
             raise ProviderUnavailable(f"FotMob injuries unavailable for team {team_id}") from e
         if not isinstance(raw, list) or any(
-            not isinstance(r, dict) or not (r.get("player_id") or r.get("player_name")) for r in raw
+            not isinstance(r, dict) or not valid_player_identity(r, "player_id", "player_name") for r in raw
         ):
             raise ProviderUnavailable(f"FotMob injury report unavailable for team {team_id}")
         now = datetime.now(timezone.utc).isoformat()

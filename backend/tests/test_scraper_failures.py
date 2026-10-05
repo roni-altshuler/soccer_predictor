@@ -242,3 +242,133 @@ def test_public_service_exports_remain_compatible():
     assert services.FotMobClient is FotMobClient
     with pytest.raises(AttributeError):
         getattr(services, "unknown_service")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("player", [
+    {}, {"id": None, "name": None}, {"id": {}, "name": []},
+    {"id": True, "name": "Player"}, {"id": 123, "name": {}},
+    {"id": 123, "name": "Player", "injuryInfo": {}},
+    {"id": 123, "name": "Player", "injuryInfo": []},
+    {"id": 123, "name": "Player", "injuryInfo": {"description": {}}},
+])
+async def test_nested_fotmob_failure_preserves_last_good_report_and_availability(tracker, monkeypatch, player):
+    path, before, stamp = save_last_good(tracker, "fotmob")
+    provider = FotMobClient()
+    monkeypatch.setattr(provider, "get_team", AsyncMock(return_value={"squad": {"squad": [[player]]}}))
+    tracker.fotmob = provider
+    with pytest.raises(ProviderUnavailable):
+        await tracker.fetch_team_injuries("123", source="fotmob")
+    assert path.read_bytes() == before and path.stat().st_mtime_ns == stamp
+    status = json.loads((path.parent / "123.status.json").read_text())
+    assert status["source"] == "fotmob"
+    assert status["availability"] == "unavailable"
+    assert status["last_good_fetched_at"] == "2026-01-01T00:00:00+00:00"
+    assert status["error"]
+    tracker.espn._request.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("players, expected_count", [
+    ([], 0), ([{"id": 123, "name": "Healthy"}], 0),
+    ([{"id": 123, "name": "Healthy", "injuryInfo": None}], 0),
+    ([{"id": 123, "name": "Injured", "injuryInfo": {"description": "Knee", "expectedReturn": "Next month"}}], 1),
+])
+async def test_valid_nested_fotmob_reports_remain_available(tracker, monkeypatch, players, expected_count):
+    path, _, _ = save_last_good(tracker, "fotmob")
+    provider = FotMobClient()
+    monkeypatch.setattr(provider, "get_team", AsyncMock(return_value={"squad": {"squad": [players]}}))
+    tracker.fotmob = provider
+    rows = await tracker.fetch_team_injuries("123", source="fotmob")
+    assert len(rows) == expected_count
+    assert json.loads(path.read_text())["injuries"] == rows
+    assert json.loads((path.parent / "123.status.json").read_text())["availability"] == "available"
+    if expected_count:
+        assert rows[0]["player_id"] == 123 and rows[0]["reason"] == "Knee"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("roster", [
+    {}, None, "", False,
+    [{"starter": True, "athlete": {}}],
+    [{"starter": False, "athlete": {}}],
+    [{"starter": True, "athlete": {"id": {}, "displayName": []}}],
+    [{"starter": True, "athlete": {"id": True, "displayName": "Player"}}],
+    [{"starter": True, "athlete": {"id": "123", "displayName": {}}}],
+])
+async def test_nested_espn_roster_failure_preserves_lineup_cache(scraper, roster):
+    path = scraper._cache_path("premier_league", "123")
+    path.write_bytes(b'{"fetched_at":"2026-01-01T00:00:00Z","source":"espn","home_xi":[{"name":"Known"}]}')
+    before, stamp = path.read_bytes(), path.stat().st_mtime_ns
+    scraper.espn.get_match_details.return_value = {
+        "header": {"id": "123"}, "rosters": [{"homeAway": "home", "roster": roster}],
+    }
+    with pytest.raises(ProviderUnavailable):
+        await scraper.fetch_match_lineup("123", "premier_league")
+    assert path.read_bytes() == before and path.stat().st_mtime_ns == stamp
+    scraper.fotmob.get_match_details.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_valid_empty_nested_espn_roster_is_unpublished(scraper):
+    scraper.espn.get_match_details.return_value = {
+        "header": {"id": "123"}, "rosters": [{"homeAway": "home", "roster": []}],
+    }
+    assert await scraper.fetch_match_lineup("123", "premier_league") is None
+
+
+@pytest.mark.asyncio
+async def test_valid_espn_starter_identity_is_cached(scraper):
+    scraper.espn.get_match_details.return_value = {
+        "header": {"id": "123"}, "rosters": [{"homeAway": "home", "roster": [
+            {"starter": True, "athlete": {"id": "456", "displayName": "Known player"}},
+        ]}],
+    }
+    result = await scraper.fetch_match_lineup("123", "premier_league")
+    assert result["home_xi"] == [{"player_id": "456", "name": "Known player", "position": None}]
+    assert json.loads(scraper._cache_path("premier_league", "123").read_text()) == result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sides", [
+    [{"players": [123]}, {"players": []}],
+    [{"players": [[123]]}, {"players": []}],
+    [{"players": [[{}]]}, {"players": []}],
+    [{"players": []}, {"players": [123]}],
+    [{"players": []}, {"players": [], "bench": [123]}],
+    [{"players": {}}, {"players": []}],
+    [{"players": []}, {"players": [], "bench": {}}],
+    [{}, {"players": []}],
+    [{"players": [[{"id": 456, "name": {}}]]}, {"players": []}],
+])
+async def test_explicit_fotmob_malformed_lineup_preserves_cache(scraper, sides):
+    path = scraper._cache_path("premier_league", "123")
+    path.write_bytes(b'{"fetched_at":"2026-01-01T00:00:00Z","source":"fotmob","home_xi":[{"name":"Known"}]}')
+    before, stamp = path.read_bytes(), path.stat().st_mtime_ns
+    scraper.fotmob.get_match_details.return_value = {"content": {"lineup": {"lineup": sides}}}
+    with pytest.raises(ProviderUnavailable):
+        await scraper.fetch_match_lineup("123", "premier_league", source="fotmob")
+    assert path.read_bytes() == before and path.stat().st_mtime_ns == stamp
+    scraper.espn.get_match_details.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("content", [{}, {"lineup": None}, {"lineup": {}},
+    {"lineup": {"lineup": []}}, {"lineup": {"lineup": [{"players": []}, {"players": [], "bench": []}]}}])
+async def test_explicit_fotmob_legitimate_unpublished_lineup_succeeds(scraper, content):
+    scraper.fotmob.get_match_details.return_value = {"content": content}
+    assert await scraper.fetch_match_lineup("123", "premier_league", source="fotmob") is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("players", [
+    [[{"id": 456, "name": {"fullName": "Known player"}}]],
+    [{"id": 456, "name": "Known player"}],
+])
+async def test_explicit_fotmob_valid_starters_are_cached(scraper, players):
+    scraper.fotmob.get_match_details.return_value = {"content": {"lineup": {"lineup": [
+        {"players": players}, {"players": []},
+    ]}}}
+    result = await scraper.fetch_match_lineup("123", "premier_league", source="fotmob")
+    assert result["home_xi"] == [{"player_id": 456, "name": "Known player", "position": None}]
+    assert json.loads(scraper._cache_path("premier_league", "123").read_text()) == result

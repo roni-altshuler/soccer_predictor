@@ -11,6 +11,7 @@ from functools import lru_cache
 import logging
 
 from backend.config import get_settings, LEAGUE_IDS
+from backend.services.data.provider_status import valid_player_identity
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +332,7 @@ class FotMobClient:
         """Get team's current squad."""
         data = await self.get_team(team_id)
         
-        if data and "squad" in data:
+        if isinstance(data, dict) and "squad" in data:
             return data["squad"]
         return None
     
@@ -447,20 +448,31 @@ class FotMobClient:
             squad_data = data.get("squad", {})
             if not isinstance(squad_data, dict) or not isinstance(squad_data.get("squad"), list):
                 return None
-            if isinstance(squad_data, dict):
-                squad_list = squad_data.get("squad", [])
-                for position_group in squad_list:
-                    if not isinstance(position_group, list) or any(not isinstance(p, dict) for p in position_group):
+            for position_group in squad_data["squad"]:
+                if not isinstance(position_group, list):
+                    return None
+                for player in position_group:
+                    # Validate healthy rows too: discarding malformed players
+                    # first would turn an unavailable squad into no injuries.
+                    if not isinstance(player, dict) or not valid_player_identity(player, "id", "name"):
                         return None
-                    if isinstance(position_group, list):
-                        for player in position_group:
-                            if isinstance(player, dict) and player.get("injuryInfo"):
-                                injuries.append({
-                                    "player_id": player.get("id"),
-                                    "player_name": player.get("name"),
-                                    "injury": player.get("injuryInfo", {}).get("description"),
-                                    "expected_return": player.get("injuryInfo", {}).get("expectedReturn"),
-                                })
+                    info = player.get("injuryInfo")
+                    if info is None:
+                        continue
+                    if not isinstance(info, dict):
+                        return None
+                    description, expected_return = info.get("description"), info.get("expectedReturn")
+                    if any(value is not None and (not isinstance(value, str) or not value.strip())
+                           for value in (description, expected_return)):
+                        return None
+                    if description is None and expected_return is None:
+                        return None
+                    injuries.append({
+                        "player_id": player.get("id"),
+                        "player_name": player.get("name"),
+                        "injury": description,
+                        "expected_return": expected_return,
+                    })
             return injuries
         return None
 

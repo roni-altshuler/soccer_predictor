@@ -54,7 +54,7 @@ from backend.services.fotmob.client import (
     get_fotmob_client,
     cleanup_fotmob_client,
 )
-from backend.services.data.provider_status import ProviderUnavailable, write_json_atomic
+from backend.services.data.provider_status import ProviderUnavailable, valid_player_identity, write_json_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +163,9 @@ class LineupScraper:
     @staticmethod
     def _parse_espn(data: Dict) -> Optional[Dict[str, Any]]:
         """Extract starters/bench from ESPN match summary 'rosters' block."""
-        rosters = data.get("rosters") or []
+        rosters = data.get("rosters", [])
+        if not isinstance(rosters, list):
+            raise ProviderUnavailable("Invalid ESPN rosters")
         if not rosters:
             return None
         home_xi: List[Dict] = []
@@ -174,13 +176,15 @@ class LineupScraper:
             if not isinstance(side, dict) or side.get("homeAway") not in {"home", "away"}:
                 raise ProviderUnavailable("Invalid ESPN roster side")
             home_away = side.get("homeAway")  # "home" or "away"
-            roster = side.get("roster") or []
+            roster = side.get("roster")
             if not isinstance(roster, list):
                 raise ProviderUnavailable("Invalid ESPN roster list")
             for entry in roster:
                 if not isinstance(entry, dict) or not isinstance(entry.get("athlete"), dict):
                     raise ProviderUnavailable("Invalid ESPN roster entry")
-                athlete = entry.get("athlete") or {}
+                athlete = entry["athlete"]
+                if not valid_player_identity(athlete, "id", "displayName", "fullName"):
+                    raise ProviderUnavailable("ESPN roster entry has no valid athlete identity")
                 pos = (entry.get("position") or {}).get("abbreviation")
                 player = {
                     "player_id": athlete.get("id"),
@@ -240,28 +244,54 @@ class LineupScraper:
     @staticmethod
     def _parse_fotmob(data: Dict) -> Optional[Dict[str, Any]]:
         """Extract lineups from FotMob matchDetails payload."""
-        content = data.get("content") or {}
-        lineup_block = content.get("lineup") or {}
-        sides = lineup_block.get("lineup") or []
-        if not sides or len(sides) < 2:
+        content = data.get("content")
+        if not isinstance(content, dict):
+            raise ProviderUnavailable("Invalid FotMob match content")
+        lineup_block = content.get("lineup")
+        if lineup_block is None:
             return None
+        if not isinstance(lineup_block, dict):
+            raise ProviderUnavailable("Invalid FotMob lineup block")
+        sides = lineup_block.get("lineup", [])
+        if not isinstance(sides, list):
+            raise ProviderUnavailable("Invalid FotMob lineup sides")
+        if not sides:
+            return None
+        if len(sides) != 2:
+            raise ProviderUnavailable("FotMob lineup must have two sides")
 
         def _extract(side: Dict) -> tuple[List[Dict], List[Dict]]:
+            if not isinstance(side, dict) or not isinstance(side.get("players"), list):
+                raise ProviderUnavailable("Invalid FotMob lineup player rows")
             starters: List[Dict] = []
-            for row in side.get("players") or []:
+            for row in side["players"]:
                 # FotMob nests starters as list-of-rows-of-players.
                 if isinstance(row, list):
                     for p in row:
                         starters.append(_player(p))
                 elif isinstance(row, dict):
                     starters.append(_player(row))
-            bench = [_player(p) for p in (side.get("bench") or []) if isinstance(p, dict)]
+                else:
+                    raise ProviderUnavailable("Invalid FotMob lineup player row")
+            bench_rows = side.get("bench", [])
+            if not isinstance(bench_rows, list):
+                raise ProviderUnavailable("Invalid FotMob lineup bench")
+            bench = [_player(p) for p in bench_rows]
             return starters, bench
 
         def _player(p: Dict) -> Dict:
+            if not isinstance(p, dict):
+                raise ProviderUnavailable("Invalid FotMob lineup player")
+            name = p.get("name")
+            if isinstance(name, dict):
+                name = name.get("fullName")
+                if not isinstance(name, str) or not name.strip():
+                    raise ProviderUnavailable("Invalid FotMob lineup player name")
+            if not valid_player_identity({"id": p.get("id"), "name": name}, "id", "name"):
+                raise ProviderUnavailable("FotMob lineup player has no valid identity")
             return {
                 "player_id": p.get("id"),
-                "name": p.get("name", {}).get("fullName") if isinstance(p.get("name"), dict) else p.get("name"),
+                "name": name,
                 "position": p.get("positionStringShort") or p.get("role"),
             }
 
