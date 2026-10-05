@@ -95,10 +95,8 @@ jobs:
             --input /tmp/previous_prediction_snapshots.csv.gz
 
       - name: Refresh current-season results
-        # New results are the entire reason this job runs. Failing here means
-        # forecasting from a stale corpus, which is stale but not WRONG — so
-        # this step, unlike the download, may fail without stopping the run.
-        continue-on-error: true
+        # Required: new results are the reason this job runs; an unavailable
+        # provider must stop publication rather than certify a stale refresh.
         run: python -m backend.scripts.build_warehouse --espn --current-season
 
       - name: Refresh the current-season schedule

@@ -332,6 +332,15 @@ async def _load_one(
         logger.warning("ESPN fetch failed for %s/%s: %s", competition_id, season, exc)
         return LoadStats(competition_id, season, 0, 0, error=str(exc))
 
+    previous_ids = {row[0] for row in warehouse._conn.execute(
+        "SELECT match_id FROM matches WHERE competition_id = ? AND season = ? AND source = 'espn'",
+        (competition_id, season),
+    )}
+    observed_ids = {f"espn_{competition_id}_{raw.get('match_id') or raw.get('id')}" for raw in raw_matches}
+    if not previous_ids.issubset(observed_ids):
+        return LoadStats(competition_id, season, len(raw_matches), 0,
+                         error="season response lost warehouse results")
+
     if not raw_matches:
         return LoadStats(competition_id, season, 0, 0)
 
@@ -376,44 +385,11 @@ async def _fetch_women_season(
     for European leagues and Mar-Nov for NWSL, but we widen the window to
     cover both — duplicate matches dedupe by ESPN match_id.
     """
-    from datetime import datetime, timedelta
-    from backend.services.prediction.historical_data import ESPN_BASE
-
-    client = await collector._get_client()  # noqa: SLF001 — same package use
-    matches: List[Dict] = []
-
-    start = datetime(season, 1, 1)
-    end = datetime(season + 1, 6, 30)
-    cursor = start
-    while cursor <= end:
-        chunk_end = min(end, cursor + timedelta(days=30))
-        date_str = f"{cursor.strftime('%Y%m%d')}-{chunk_end.strftime('%Y%m%d')}"
-        url = (
-            f"{ESPN_BASE}/site/v2/sports/soccer/{espn_league_id}/scoreboard"
-            f"?dates={date_str}&limit=1000"
-        )
-        try:
-            resp = await client.get(url, timeout=20)
-            if resp.status_code == 200:
-                events = resp.json().get("events", [])
-                for ev in events:
-                    parsed = collector._parse_espn_event(ev, espn_league_id, season)  # noqa: SLF001
-                    if parsed:
-                        matches.append(parsed)
-        except Exception as exc:
-            logger.debug("Women's ESPN fetch error %s: %s", url, exc)
-        await asyncio.sleep(0.1)
-        cursor = chunk_end + timedelta(days=1)
-
-    # dedupe by match_id
-    seen = set()
-    unique = []
-    for m in matches:
-        mid = m.get("match_id")
-        if mid and mid not in seen:
-            seen.add(mid)
-            unique.append(m)
-    return unique
+    windows = [(datetime(season, 1, 1), datetime(season + 1, 6, 30))]
+    matches = await collector._fetch_espn_windows(espn_league_id, espn_league_id, season, windows)
+    collector._check_refresh(collector._cache_path(espn_league_id, season), matches,
+                             ended=windows[0][1] < collector._today())
+    return matches
 
 
 async def load_men_competitions(
@@ -423,12 +399,14 @@ async def load_men_competitions(
     max_season: Optional[int] = None,
     competitions: Optional[Iterable[str]] = None,
     force: bool = False,
+    persist_cache: bool = False,
 ) -> List[LoadStats]:
     """Backfill every men's ESPN-covered league-season into the warehouse."""
     register_competitions(warehouse)
     resolver_m = TeamResolver(warehouse, gender_default="M")
     resolver_f = TeamResolver(warehouse, gender_default="F")
     collector = HistoricalDataCollector()
+    collector.persist_cache = persist_cache
     requested = set(competitions) if competitions else None
 
     stats: List[LoadStats] = []
@@ -454,6 +432,8 @@ async def load_men_competitions(
                     force=force,
                 )
                 stats.append(stat)
+                if stat.error:
+                    return stats
                 if stat.written:
                     logger.info(
                         "ESPN/M %s %s → %d matches written",
@@ -473,12 +453,14 @@ async def load_women_competitions(
     max_season: Optional[int] = None,
     competitions: Optional[Iterable[str]] = None,
     force: bool = False,
+    persist_cache: bool = False,
 ) -> List[LoadStats]:
     """Backfill every women's ESPN-covered league-season into the warehouse."""
     register_competitions(warehouse)
     resolver_m = TeamResolver(warehouse, gender_default="M")
     resolver_f = TeamResolver(warehouse, gender_default="F")
     collector = HistoricalDataCollector()
+    collector.persist_cache = persist_cache
     requested = set(competitions) if competitions else None
 
     stats: List[LoadStats] = []
@@ -504,6 +486,8 @@ async def load_women_competitions(
                     force=force,
                 )
                 stats.append(stat)
+                if stat.error:
+                    return stats
                 if stat.written:
                     logger.info(
                         "ESPN/F %s %s → %d matches written",

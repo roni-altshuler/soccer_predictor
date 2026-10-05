@@ -16,11 +16,14 @@ import csv
 import io
 import json
 import os
+import math
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import logging
 import httpx
+
+from backend.services.data.provider_status import ProviderUnavailable, write_json_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -229,10 +232,60 @@ class HistoricalDataCollector:
     Dual-source: ESPN API + football-data.co.uk (adds betting odds & stats).
     """
 
-    def __init__(self, data_dir: Optional[Path] = None):
+    def __init__(self, data_dir: Optional[Path] = None, *,
+                 daily_fallback_budget: int = 93, persist_cache: bool = True):
         self.data_dir = data_dir or HISTORICAL_DATA_DIR
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self._client: Optional[httpx.AsyncClient] = None
+        self.daily_fallback_budget = daily_fallback_budget
+        self.persist_cache = persist_cache
+
+    @staticmethod
+    def _today() -> datetime:
+        return datetime.now(timezone.utc).replace(tzinfo=None, hour=0, minute=0,
+                                                 second=0, microsecond=0)
+
+    def _read_cache(self, path: Path) -> Dict:
+        try:
+            data = json.loads(path.read_text())
+            return data if isinstance(data, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    @staticmethod
+    def _validate_matches(matches: Any) -> None:
+        if not isinstance(matches, list):
+            raise ProviderUnavailable("matches must be a list")
+        seen = set()
+        for row in matches:
+            if not isinstance(row, dict):
+                raise ProviderUnavailable("invalid match record")
+            for key in ("match_id", "date", "home_team", "away_team"):
+                if not isinstance(row.get(key), str) or not row[key].strip():
+                    raise ProviderUnavailable(f"missing match {key}")
+            try:
+                datetime.fromisoformat(row["date"].replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ProviderUnavailable("invalid match date") from exc
+            for key in ("home_score", "away_score"):
+                if type(row.get(key)) is not int or row[key] < 0:
+                    raise ProviderUnavailable(f"invalid final {key}")
+            if row["match_id"] in seen:
+                raise ProviderUnavailable("duplicate match ID")
+            seen.add(row["match_id"])
+
+    def _check_refresh(self, path: Path, matches: List[Dict], *, ended: bool) -> None:
+        self._validate_matches(matches)
+        if ended and not matches:
+            raise ProviderUnavailable("completed season returned no results")
+        previous = self._read_cache(path).get("matches", [])
+        try:
+            self._validate_matches(previous)
+        except ProviderUnavailable:
+            previous = []
+        old_ids = {row["match_id"] for row in previous}
+        if not old_ids.issubset({row["match_id"] for row in matches}):
+            raise ProviderUnavailable("season refresh lost previously observed results")
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -306,21 +359,18 @@ class HistoricalDataCollector:
 
     def _is_cached(self, league: str, season: int) -> bool:
         path = self._cache_path(league, season)
-        if not path.exists():
+        data = self._read_cache(path)
+        # Older caches were written even after failed or partial requests.
+        # A timestamp alone is not evidence that all requested windows worked.
+        if data.get("coverage_version") != 1 or not data.get("matches"):
             return False
-        current_year = datetime.now().year
-        if season >= current_year - 1:
-            mtime = datetime.fromtimestamp(path.stat().st_mtime)
-            if (datetime.now() - mtime).days > 1:
-                return False
-        # A season cached as empty is a failure that got written down, not a
-        # season in which nobody played: 25 of the 375 cached seasons were
-        # empty because the old weekly probe landed on a weekday that league
-        # does not play, and re-reading the cache made the hole permanent.
-        # Retrying costs a dozen requests and heals it.
-        if not self._load_cache(league, season):
+        try:
+            self._validate_matches(data["matches"])
+        except ProviderUnavailable:
             return False
-        return True
+        end = max(end for _, end in self._season_windows(league, season))
+        required = min(end, self._today()).strftime("%Y%m%d")
+        return data.get("through") == required
 
     # ── football-data.co.uk CSV fetcher ──
 
@@ -330,20 +380,19 @@ class HistoricalDataCollector:
         """Fetch match data with betting odds from football-data.co.uk."""
         fd_code = FOOTBALL_DATA_LEAGUES.get(league)
         if not fd_code:
-            return []
+            raise ProviderUnavailable(f"unknown football-data league: {league}")
 
         available = FOOTBALL_DATA_SEASONS.get(league, [])
         if season not in available:
-            return []
+            raise ProviderUnavailable(f"football-data season unavailable: {league}/{season}")
 
         cache_path = self.data_dir / f"fd_{league}_{season}_{season + 1}.json"
-        if not force and cache_path.exists():
-            try:
-                with open(cache_path) as f:
-                    data = json.load(f)
-                return data.get("matches", [])
-            except Exception:
-                pass
+        cached = self._read_cache(cache_path)
+        if not force and cached.get("coverage_version") == 1:
+            through = min(datetime(season + 1, 7, 31), self._today()).strftime("%Y%m%d")
+            if cached.get("through") == through and cached.get("matches"):
+                self._validate_matches(cached["matches"])
+                return cached["matches"]
 
         season_str = f"{str(season)[-2:]}{str(season + 1)[-2:]}"
         url = f"https://www.football-data.co.uk/mmz4281/{season_str}/{fd_code}.csv"
@@ -354,13 +403,18 @@ class HistoricalDataCollector:
         try:
             resp = await client.get(url, timeout=20)
             if resp.status_code != 200:
-                logger.debug(f"football-data.co.uk {url} returned {resp.status_code}")
-                return []
+                raise ProviderUnavailable(f"football-data {league}/{season}: HTTP {resp.status_code}")
 
             text = resp.text
-            reader = csv.DictReader(io.StringIO(text))
+            reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
+            fields = set(reader.fieldnames or [])
+            if (not {"Date", "HomeTeam", "AwayTeam"}.issubset(fields)
+                    or not ({"FTHG", "FTAG"}.issubset(fields) or {"HG", "AG"}.issubset(fields))):
+                raise ProviderUnavailable("football-data CSV missing required headers")
 
             for row in reader:
+                if not any(value for value in row.values()):
+                    continue  # Only genuinely blank CSV lines can be ignored.
                 try:
                     date_str = row.get("Date", "")
                     try:
@@ -368,21 +422,27 @@ class HistoricalDataCollector:
                     except ValueError:
                         try:
                             match_date = datetime.strptime(date_str, "%d/%m/%y")
-                        except ValueError:
-                            continue
+                        except ValueError as exc:
+                            raise ProviderUnavailable("football-data invalid match date") from exc
 
                     home = row.get("HomeTeam", "").strip()
                     away = row.get("AwayTeam", "").strip()
                     if not home or not away:
-                        continue
+                        raise ProviderUnavailable("football-data missing team")
 
                     fthg = row.get("FTHG", row.get("HG", ""))
                     ftag = row.get("FTAG", row.get("AG", ""))
-                    if not fthg or not ftag:
-                        continue
-
+                    if not fthg and not ftag:
+                        if row.get("FTR"):
+                            raise ProviderUnavailable("football-data final result missing scores")
+                        continue  # Explicit future/unplayed fixture, no result yet.
+                    if not str(fthg).isdigit() or not str(ftag).isdigit():
+                        raise ProviderUnavailable("football-data invalid final score")
                     home_score = int(fthg)
                     away_score = int(ftag)
+                    if not (datetime(season, 8, 1) <= match_date
+                            <= min(datetime(season + 1, 7, 31), self._today())):
+                        raise ProviderUnavailable("football-data final outside requested season")
 
                     ftr = row.get("FTR", "")
                     if not ftr:
@@ -393,9 +453,14 @@ class HistoricalDataCollector:
                         else:
                             ftr = "D"
 
+                    expected_result = "H" if home_score > away_score else "A" if away_score > home_score else "D"
+                    if ftr != expected_result:
+                        raise ProviderUnavailable("football-data result disagrees with score")
+
                     def _sf(val, default=None):
                         try:
-                            return float(val) if val else default
+                            number = float(val) if val else default
+                            return number if number is None or math.isfinite(number) else default
                         except (ValueError, TypeError):
                             return default
 
@@ -449,131 +514,162 @@ class HistoricalDataCollector:
                         "away_reds": _sf(row.get("AR")),
                     }
                     matches.append(match)
-                except Exception:
-                    continue
+                except ProviderUnavailable:
+                    raise
+                except (ValueError, TypeError, AttributeError) as exc:
+                    raise ProviderUnavailable("malformed football-data CSV row") from exc
 
-            if matches:
-                with open(cache_path, "w") as f:
-                    json.dump({
-                        "league": league,
-                        "season": f"{season}/{season + 1}",
-                        "source": "football-data.co.uk",
-                        "fetched_at": datetime.utcnow().isoformat(),
-                        "match_count": len(matches),
-                        "matches": matches,
-                    }, f, indent=2)
+            self._check_refresh(cache_path, matches,
+                                ended=datetime(season + 1, 7, 31) < self._today())
+            if self.persist_cache:
+                write_json_atomic(cache_path, {
+                    "league": league,
+                    "season": f"{season}/{season + 1}",
+                    "source": "football-data.co.uk",
+                    "fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "coverage_version": 1,
+                    "through": min(datetime(season + 1, 7, 31), self._today()).strftime("%Y%m%d"),
+                    "match_count": len(matches),
+                    "matches": matches,
+                })
                 logger.info(f"FD: {len(matches)} matches for {league} {season}/{season+1}")
 
-        except Exception as e:
-            logger.warning(f"Error fetching football-data {league} {season}: {e}")
+        except ProviderUnavailable:
+            raise
+        except (httpx.HTTPError, OSError, ValueError, TypeError) as exc:
+            raise ProviderUnavailable(f"football-data {league}/{season}: {exc}") from exc
 
         return matches
 
     # ── ESPN fetcher ──
 
+    async def _fetch_espn_windows(
+        self, espn_id: str, league: str, season: int,
+        windows: List[Tuple[datetime, datetime]],
+    ) -> List[Dict[str, Any]]:
+        """Fetch every past date; only HTTP 400 permits bounded daily fallback."""
+        client = await self._get_client()
+        today = self._today()
+        chunks = [chunk for start, end in windows if start <= today
+                  for chunk in self._date_chunks(start, min(end, today))]
+        daily = False
+        seen: Dict[str, Dict] = {}
+
+        async def request(start, end):
+            dates = start.strftime("%Y%m%d")
+            if start != end:
+                dates += "-" + end.strftime("%Y%m%d")
+            url = (f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
+                   f"?dates={dates}&limit=1000")
+            response = await client.get(url)
+            if response.status_code == 400 and start != end:
+                return None
+            if response.status_code != 200:
+                raise ProviderUnavailable(f"ESPN {league} {dates}: HTTP {response.status_code}")
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise ProviderUnavailable("ESPN returned invalid JSON") from exc
+            if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
+                raise ProviderUnavailable("ESPN response missing events list")
+            if len(payload["events"]) >= 1000:
+                raise ProviderUnavailable("ESPN event limit reached; coverage unverified")
+            for event in payload["events"]:
+                match = self._parse_espn_event(event, league, season)
+                if match is None:  # Valid unplayed event, not an absent score.
+                    continue
+                played = datetime.fromisoformat(match["date"].replace("Z", "+00:00"))
+                if played.tzinfo is not None:
+                    played = played.astimezone(timezone.utc).replace(tzinfo=None)
+                day = played.replace(hour=0, minute=0, second=0, microsecond=0)
+                if not any(start <= day <= min(end, today) for start, end in windows):
+                    raise ProviderUnavailable("ESPN final outside requested season")
+                if match["match_id"] in seen and seen[match["match_id"]] != match:
+                    raise ProviderUnavailable("conflicting ESPN event ID")
+                seen[match["match_id"]] = match
+            await asyncio.sleep(0.15)
+            return True
+
+        for index, (start, end) in enumerate(chunks):
+            if not daily and await request(start, end) is not None:
+                continue
+            if not daily:
+                # Reserve the entire remaining season before any daily probes.
+                # A cold multi-year build must not explode into thousands of calls.
+                required = sum((b - a).days + 1 for a, b in chunks[index:])
+                if required > self.daily_fallback_budget:
+                    raise ProviderUnavailable(
+                        f"ESPN range rejected for {league}/{season}; daily fallback "
+                        f"needs {required} requests, budget {self.daily_fallback_budget}. "
+                        "Use a narrower season selection; no partial season accepted."
+                    )
+                self.daily_fallback_budget -= required
+                daily = True
+            day = start
+            while day <= end:
+                await request(day, day)
+                day += timedelta(days=1)
+        return list(seen.values())
+
     async def fetch_season_matches(
         self, league: str, season: int, force: bool = False
     ) -> List[Dict[str, Any]]:
-        """Fetch all matches for a league season from ESPN."""
+        """Return a validated season or raise; failures never refresh cache metadata."""
+        if (league, season) in CURATED_STATIC_ARCHIVES:
+            # This explicitly registered offline archive has independent provenance.
+            matches = self._load_cache(league, season)
+            self._validate_matches(matches)
+            if not matches:
+                raise ProviderUnavailable("registered curated archive is unavailable")
+            return matches
         if not force and self._is_cached(league, season):
             return self._load_cache(league, season)
-
         espn_id = ESPN_LEAGUES.get(league)
         if not espn_id:
-            return []
-
-        client = await self._get_client()
-        all_matches = []
-
+            raise ProviderUnavailable(f"unknown ESPN league: {league}")
+        windows = self._season_windows(league, season)
         try:
-            windows = self._season_windows(league, season)
-
-            for window_start, window_end in windows:
-                # Every league fetches by date RANGE. This used to probe a
-                # single day every seven for domestic leagues, which sampled
-                # one weekday out of the week: measured against the range
-                # endpoint, that returned 26 of 56 played Premier League
-                # matches for December 2025, and 0 of 37 Bundesliga matches
-                # for September 2016 — a whole season came back empty
-                # whenever the probe landed on a weekday that league does not
-                # play. The gap went unnoticed because football-data.co.uk
-                # backfills the seven leagues that have a CSV; the ones that
-                # do not were losing most of their results.
-                date_ranges = [
-                    (
-                        start.strftime("%Y%m%d")
-                        if start == end
-                        else f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
-                    )
-                    for start, end in self._date_chunks(window_start, window_end)
-                ]
-
-                for date_str in date_ranges:
-                    url = (
-                        f"{ESPN_BASE}/site/v2/sports/soccer/{espn_id}/scoreboard"
-                        f"?dates={date_str}&limit=1000"
-                    )
-                    try:
-                        resp = await client.get(url)
-                        if resp.status_code == 200:
-                            data = resp.json()
-                            for event in data.get("events", []):
-                                match = self._parse_espn_event(event, league, season)
-                                if match:
-                                    all_matches.append(match)
-                    except Exception as e:
-                        logger.debug(f"Error fetching {league} {date_str}: {e}")
-
-                    # A month per request rather than a day per request means
-                    # roughly a tenth of the calls, so the courtesy delay can
-                    # stay at the more generous end without costing wall time.
-                    await asyncio.sleep(0.15)
-
-            seen = set()
-            unique_matches = []
-            for m in all_matches:
-                mid = m.get("match_id")
-                if mid and mid not in seen:
-                    seen.add(mid)
-                    unique_matches.append(m)
-
-            if not unique_matches and (league, season) in CURATED_STATIC_ARCHIVES:
-                curated_matches = self._load_cache(league, season)
-                if curated_matches:
-                    logger.info(
-                        "Using curated static archive for %s %s because live source returned no rows",
-                        league,
-                        season,
-                    )
-                    unique_matches = curated_matches
-
-            self._save_cache(league, season, unique_matches)
-            logger.info(f"Fetched {len(unique_matches)} matches for {league} {season}/{season+1}")
-            return unique_matches
-
-        except Exception as e:
-            logger.error(f"Error fetching {league} season {season}: {e}")
-            return self._load_cache(league, season)
+            matches = await self._fetch_espn_windows(espn_id, league, season, windows)
+            self._check_refresh(self._cache_path(league, season), matches,
+                                ended=max(end for _, end in windows) < self._today())
+            if self.persist_cache:
+                self._save_cache(league, season, matches)
+            logger.info("Fetched %d matches for %s/%s", len(matches), league, season)
+            return matches
+        except ProviderUnavailable:
+            raise
+        except (httpx.HTTPError, OSError, ValueError, TypeError) as exc:
+            raise ProviderUnavailable(f"ESPN {league}/{season}: {exc}") from exc
 
     def _parse_espn_event(self, event: Dict, league: str, season: int) -> Optional[Dict[str, Any]]:
         """Parse an ESPN event into a standardized match dict."""
         try:
-            competition = event.get("competitions", [{}])[0]
-            status = competition.get("status", {}).get("type", {})
-            if not status.get("completed", False):
+            if not isinstance(event, dict) or not str(event.get("id") or "").strip():
+                raise ProviderUnavailable("ESPN event missing ID")
+            competition = event["competitions"][0]
+            status = competition["status"]["type"]
+            if type(status.get("completed")) is not bool:
+                raise ProviderUnavailable("ESPN event missing completion status")
+            if not status["completed"]:
                 return None
 
             competitors = competition.get("competitors", [])
-            if len(competitors) < 2:
-                return None
+            if len(competitors) != 2:
+                raise ProviderUnavailable("ESPN final missing competitors")
 
             home = next((c for c in competitors if c.get("homeAway") == "home"), None)
             away = next((c for c in competitors if c.get("homeAway") == "away"), None)
             if not home or not away:
-                return None
-
-            home_score = int(home.get("score", "0"))
-            away_score = int(away.get("score", "0"))
+                raise ProviderUnavailable("ESPN final missing home/away")
+            for side in (home, away):
+                if not str(side.get("team", {}).get("id") or "").strip():
+                    raise ProviderUnavailable("ESPN final missing team ID")
+                if (not isinstance(side.get("score"), (str, int))
+                        or isinstance(side["score"], bool)
+                        or not str(side["score"]).isdigit()):
+                    raise ProviderUnavailable("ESPN final missing valid score")
+            home_score = int(home["score"])
+            away_score = int(away["score"])
 
             if home_score > away_score:
                 result = "H"
@@ -588,7 +684,7 @@ class HistoricalDataCollector:
             home_cards = self._count_cards(competition, home.get("team", {}).get("id", ""))
             away_cards = self._count_cards(competition, away.get("team", {}).get("id", ""))
 
-            return {
+            match = {
                 "match_id": str(event.get("id", "")),
                 "source": "espn",
                 "source_league_id": ESPN_LEAGUES.get(league),
@@ -620,8 +716,12 @@ class HistoricalDataCollector:
                 "home_reds": home_cards["reds"],
                 "away_reds": away_cards["reds"],
             }
-        except Exception:
-            return None
+            self._validate_matches([match])
+            return match
+        except ProviderUnavailable:
+            raise
+        except (KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
+            raise ProviderUnavailable("malformed ESPN event") from exc
 
     @staticmethod
     def _parse_stat_value(value: Any) -> Optional[float]:
@@ -662,18 +762,17 @@ class HistoricalDataCollector:
         return {"yellows": yellows, "reds": reds}
 
     def _save_cache(self, league: str, season: int, matches: List[Dict]):
-        path = self._cache_path(league, season)
-        try:
-            with open(path, "w") as f:
-                json.dump({
-                    "league": league,
-                    "season": f"{season}/{season + 1}",
-                    "fetched_at": datetime.utcnow().isoformat(),
-                    "match_count": len(matches),
-                    "matches": matches,
-                }, f, indent=2)
-        except Exception as e:
-            logger.error(f"Error saving cache: {e}")
+        self._validate_matches(matches)
+        end = max(end for _, end in self._season_windows(league, season))
+        write_json_atomic(self._cache_path(league, season), {
+            "league": league,
+            "season": f"{season}/{season + 1}",
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "coverage_version": 1,
+            "through": min(end, self._today()).strftime("%Y%m%d"),
+            "match_count": len(matches),
+            "matches": matches,
+        })
 
     def _load_cache(self, league: str, season: int) -> List[Dict]:
         path = self._cache_path(league, season)

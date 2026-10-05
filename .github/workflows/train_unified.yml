@@ -65,10 +65,9 @@ jobs:
         # at a polite ~8s spacing (hundreds of teams => hours) and burned
         # the entire first run's 180-minute budget. Elo ratings ride along
         # in the release warehouse and refresh via data_warehouse.yml.
-        # Refresh failure is non-fatal — training proceeds on the release
-        # warehouse as-is (at most a week stale).
+        # Required: provider/schema/coverage failure must stop training and
+        # release publication. The builder preserves the last-good warehouse.
         timeout-minutes: 40
-        continue-on-error: true
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
             # Incremental: recent seasons + xG enrichment.

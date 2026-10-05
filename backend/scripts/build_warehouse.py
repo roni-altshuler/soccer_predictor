@@ -40,9 +40,16 @@ import argparse
 import asyncio
 import logging
 import sys
+import os
+import sqlite3
+import tempfile
+from contextlib import closing
+from pathlib import Path
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from backend.services.data import open_warehouse
+from backend.services.data import WAREHOUSE_PATH, open_warehouse
+from backend.services.data.provider_status import ProviderUnavailable
 from backend.services.data.clubelo_loader import load_clubelo
 from backend.services.data.espn_loader import (
     load_men_competitions,
@@ -68,8 +75,47 @@ def _setup_logging(verbose: bool) -> None:
     )
 
 
-async def _async_main(args: argparse.Namespace) -> int:
-    with open_warehouse() as wh:
+def _require_complete(source: str, stats) -> None:
+    if not stats:
+        raise ProviderUnavailable(f"{source}: no league-seasons selected")
+    for stat in stats:
+        if stat.error or getattr(stat, "phantom_rows_skipped", 0):
+            raise ProviderUnavailable(
+                f"{source} {stat.competition_id}/{stat.season}: "
+                f"{stat.error or 'unresolved club rows refused'}"
+            )
+
+
+def _validate_candidate(wh, args) -> None:
+    from backend.scripts.validate_warehouse_integrity import (
+        IntegrityValidator, LEAGUE_SIZE, TRUNCATED_SEASONS, WAVE_A,
+    )
+    if not wh._conn.execute("SELECT 1 FROM matches LIMIT 1").fetchone():
+        raise ProviderUnavailable("warehouse has no results; publication refused")
+    validator = IntegrityValidator(wh, min_season=args.min_season, leagues=WAVE_A)
+    failures = [result.detail for result in validator.run_all() if not result.passed]
+    # The existing integrity guard judges an old snapshot by its own latest
+    # date. A cold partial refresh must also be judged against today's clock.
+    today = datetime.now(timezone.utc).date()
+    for row in wh._conn.execute(
+        "SELECT competition_id, season, COUNT(*) AS n FROM matches "
+        "WHERE season >= ? GROUP BY competition_id, season", (args.min_season,)
+    ):
+        competition, season, count = row
+        if (competition not in WAVE_A or (competition, season) in TRUNCATED_SEASONS
+                or today <= datetime(season + 1, 7, 31).date()):
+            continue
+        sizes = LEAGUE_SIZE[competition]
+        size = sizes.get(str(season), sizes["default"])
+        expected = size * (size - 1)
+        if abs(count - expected) > max(2, expected * .02):
+            failures.append(f"{competition}/{season}: {count} results, expected ~{expected}")
+    if failures:
+        raise ProviderUnavailable("candidate integrity/coverage failed: " + "; ".join(failures))
+
+
+async def _build(args: argparse.Namespace) -> int:
+    with open_warehouse(args.db) as wh:
         # Competitions must exist before any match can reference one.
         # Alias overrides are NOT seeded here any more: each loader builds
         # its own TeamResolver, which reads team_aliases.yml into memory and
@@ -82,33 +128,41 @@ async def _async_main(args: argparse.Namespace) -> int:
         if args.full or args.espn:
             ran_anything = True
             logger.info("=== ESPN: men's competitions ===")
-            await load_men_competitions(
+            stats = await load_men_competitions(
                 wh,
                 min_season=args.min_season,
                 max_season=args.max_season,
                 competitions=_competitions(args),
                 force=args.force,
+                persist_cache=False,
             )
+            _require_complete("ESPN/M", stats)
 
         if args.full or args.espn_women:
             ran_anything = True
             logger.info("=== ESPN: women's competitions ===")
-            await load_women_competitions(
+            stats = await load_women_competitions(
                 wh,
                 min_season=max(args.min_season, 2003),
                 max_season=args.max_season,
                 force=args.force,
+                competitions=_competitions(args),
+                persist_cache=False,
             )
+            _require_complete("ESPN/F", stats)
 
         if args.full or args.football_data:
             ran_anything = True
             logger.info("=== football-data.co.uk ===")
-            await load_football_data(
+            stats = await load_football_data(
                 wh,
                 min_season=max(args.min_season, 2005),
                 max_season=args.max_season,
                 force=args.force,
+                leagues=_competitions(args),
+                persist_cache=False,
             )
+            _require_complete("football-data", stats)
 
         if args.full or args.openfootball:
             ran_anything = True
@@ -197,7 +251,71 @@ async def _async_main(args: argparse.Namespace) -> int:
             logger.warning("No loader selected; pass --full or one of --espn/--football-data/etc.")
             return 2
 
+        if args.full or args.espn or args.espn_women or args.football_data:
+            _validate_candidate(wh, args)
+
     return 0
+
+
+async def _async_main(args: argparse.Namespace) -> int:
+    selected = any(getattr(args, name, False) for name in (
+        "full", "espn", "espn_women", "football_data", "openfootball",
+        "clubelo", "fbref", "understat", "referees", "venues", "weather",
+    ))
+    target = args.db
+    if not selected:
+        if not args.stats or not target.exists():
+            logger.error("No loader selected or warehouse missing: %s", target)
+            return 2
+        # A stats query must not create or migrate a missing/old database.
+        with closing(sqlite3.connect(target.as_uri() + "?mode=ro", uri=True)) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT m.competition_id, c.name, c.gender, COUNT(*) AS matches, "
+                "MIN(m.date_utc) AS first_match, MAX(m.date_utc) AS last_match "
+                "FROM matches m LEFT JOIN competitions c "
+                "ON c.competition_id = m.competition_id "
+                "GROUP BY m.competition_id, c.name, c.gender ORDER BY matches DESC"
+            )
+            for row in rows:
+                print(dict(row))
+        return 0
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    def fingerprint():
+        if not target.exists():
+            return None
+        stat = target.stat()
+        return stat.st_ino, stat.st_size, stat.st_mtime_ns
+
+    original = fingerprint()
+    fd, name = tempfile.mkstemp(prefix=".warehouse-", suffix=".sqlite", dir=target.parent)
+    os.close(fd)
+    candidate = Path(name)
+    try:
+        if target.exists():
+            # Do not replace a database with outstanding WAL writes.
+            wal = Path(str(target) + "-wal")
+            if wal.exists() and wal.stat().st_size:
+                raise ProviderUnavailable("warehouse has an active WAL; retry after its writer closes")
+            with closing(sqlite3.connect(target.as_uri() + "?mode=ro", uri=True)) as source:
+                with closing(sqlite3.connect(candidate)) as dest:
+                    source.backup(dest)
+        args.db = candidate
+        result = await _build(args)
+        if result:
+            return result
+        wal = Path(str(target) + "-wal")
+        if fingerprint() != original or (wal.exists() and wal.stat().st_size):
+            raise ProviderUnavailable("warehouse changed during refresh; publication refused")
+        with candidate.open("rb") as handle:
+            os.fsync(handle.fileno())
+        os.replace(candidate, target)
+        return 0
+    finally:
+        args.db = target
+        for suffix in ("", "-wal", "-shm"):
+            Path(str(candidate) + suffix).unlink(missing_ok=True)
 
 
 def _competitions(args) -> Optional[List[str]]:
@@ -211,6 +329,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--full", action="store_true", help="Run every loader.")
     parser.add_argument("--stats", action="store_true", help="Print per-competition counts.")
+    parser.add_argument("--db", type=Path, default=WAREHOUSE_PATH,
+                        help="Warehouse to refresh atomically (or inspect with --stats).")
 
     parser.add_argument("--espn", action="store_true", help="Run ESPN men's loader.")
     parser.add_argument("--espn-women", action="store_true", help="Run ESPN women's loader.")
@@ -227,7 +347,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     parser.add_argument("--competitions",
                         help="comma-separated competition ids to restrict the "
-                             "ESPN loaders to, e.g. 'eng.2,esp.2'. Lets a "
+                             "core loaders to, e.g. 'eng.2,esp.2'. Lets a "
                              "targeted backfill run without re-touching every "
                              "league in the warehouse.")
     parser.add_argument("--min-season", type=int, default=1998)
@@ -240,6 +360,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args(argv)
+    args.db = args.db.resolve()
     _setup_logging(args.verbose)
 
     if args.current_season:
@@ -260,8 +381,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         return asyncio.run(_async_main(args))
     except KeyboardInterrupt:
-        logger.warning("Interrupted by user; partial warehouse retained.")
+        logger.warning("Interrupted; last-good warehouse retained.")
         return 130
+    except Exception:
+        logger.exception("Warehouse refresh failed; last-good warehouse and core caches retained.")
+        return 1
 
 
 if __name__ == "__main__":

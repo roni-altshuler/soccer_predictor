@@ -626,6 +626,7 @@ async def load_football_data(
     leagues: Optional[Iterable[str]] = None,
     force: bool = False,
     with_kickoff_times: bool = True,
+    persist_cache: bool = False,
 ) -> List[LoadStats]:
     """Backfill football-data.co.uk odds+stats into the warehouse.
 
@@ -635,6 +636,7 @@ async def load_football_data(
     """
     resolver = TeamResolver(warehouse, gender_default="M")
     collector = HistoricalDataCollector()
+    collector.persist_cache = persist_cache
     requested = set(leagues) if leagues else None
 
     stats: List[LoadStats] = []
@@ -666,6 +668,8 @@ async def load_football_data(
                     kickoffs=kickoffs,
                 )
                 stats.append(stat)
+                if stat.error or stat.phantom_rows_skipped:
+                    return stats
                 if stat.enriched or stat.inserted:
                     logger.info(
                         "FD %s %s → %d enriched, %d inserted, %d kickoffs, "

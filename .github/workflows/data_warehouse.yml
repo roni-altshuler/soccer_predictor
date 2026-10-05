@@ -107,6 +107,9 @@ jobs:
             --min-season "$MIN_SEASON" \
             --verbose
 
+      - name: Validate warehouse before publication
+        run: python -m backend.scripts.validate_warehouse_integrity --wave-a-only --min-season "$MIN_SEASON"
+
       - name: Show warehouse stats
         run: python -m backend.scripts.build_warehouse --stats
 
@@ -127,8 +130,8 @@ jobs:
     name: Slow scrapers (ClubElo + FBref + Understat)
     needs: core
     if: >-
-      github.event.schedule == '0 3 1 * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_enrichment == 'true')
+      success() && (github.event.schedule == '0 3 1 * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_enrichment == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 150
 
@@ -162,6 +165,9 @@ jobs:
             ${{ github.event.inputs.enrich_sources || '--clubelo --fbref --understat' }} \
             --min-season "$MIN_SEASON" \
             --verbose
+
+      - name: Validate warehouse before publication
+        run: python -m backend.scripts.validate_warehouse_integrity --wave-a-only --min-season "$MIN_SEASON"
 
       - name: Show warehouse stats
         run: python -m backend.scripts.build_warehouse --stats

@@ -146,7 +146,8 @@ def _window_days(league: str, season: int) -> set:
     for start, end in collector._season_windows(league, season):
         day = start
         while day <= end:
-            days.add(day.date())
+            if day <= collector._today():
+                days.add(day.date())
             day += H.timedelta(days=1)
     return days
 
@@ -167,9 +168,8 @@ def test_a_calendar_year_season_is_fetched_from_january():
     """The Brasileirão starts in April and was being fetched on the European
     August-to-June window, which missed the first four months outright and
     labelled the rest as the previous season."""
-    days = _window_days("brasileirao", 2026)
-    assert min(days).isoformat() == "2026-01-01"
-    assert max(days).isoformat() == "2026-12-31"
+    windows = H.HistoricalDataCollector()._season_windows("brasileirao", 2026)
+    assert windows == [(datetime(2026, 1, 1), datetime(2026, 12, 31))]
 
 
 def test_a_european_season_covers_a_july_finish():
@@ -198,7 +198,9 @@ def test_a_season_cached_as_empty_is_refetched(tmp_path):
     collector._save_cache("bundesliga", 2016, [])
     assert not collector._is_cached("bundesliga", 2016)
 
-    collector._save_cache("bundesliga", 2016, [{"match_id": "1"}])
+    collector._save_cache("bundesliga", 2016, [{"match_id": "1", "date": "2016-08-20T12:00:00Z",
+                                                       "home_team": "A", "away_team": "B",
+                                                       "home_score": 1, "away_score": 0}])
     assert collector._is_cached("bundesliga", 2016)
 
 
