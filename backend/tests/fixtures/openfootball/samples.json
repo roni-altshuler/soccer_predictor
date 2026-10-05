@@ -1,0 +1,416 @@
+{
+  "source_commit": "e6744429ee395bc86f247348c6184bb08d4eb361",
+  "observed_at": "2026-10-05T16:41:40.560256+00:00",
+  "license": "CC0-1.0",
+  "note": "Exact small excerpts; source_indices refer to original full file. Expected coverage is only for excerpts. Missing-data/postponement adversarial cases are synthetic mutations in tests.",
+  "samples": [
+    {
+      "competition": "en.1",
+      "year": 2026,
+      "source_path": "2026-27/en.1.json",
+      "source_indices": [
+        0,
+        1,
+        50
+      ],
+      "original_file_sha256": "bb91f0ab3e8359df163bb9ec98549bfed85e200dd4c32f3bd606b5890d932dd2",
+      "expected_results": 2,
+      "payload": {
+        "name": "English Premier League 2026/27",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2026-08-21",
+            "time": "20:00",
+            "team1": "Arsenal FC",
+            "team2": "Coventry City FC",
+            "score": {
+              "ht": [
+                2,
+                0
+              ],
+              "ft": [
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2026-08-22",
+            "time": "12:30",
+            "team1": "Hull City AFC",
+            "team2": "Manchester United FC",
+            "score": {
+              "ht": [
+                2,
+                0
+              ],
+              "ft": [
+                2,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 6",
+            "date": "2026-10-10",
+            "time": "12:30",
+            "team1": "Arsenal FC",
+            "team2": "Leeds United FC"
+          }
+        ]
+      }
+    },
+    {
+      "competition": "en.1",
+      "year": 2025,
+      "source_path": "2025-26/en.1.json",
+      "source_indices": [
+        0,
+        1
+      ],
+      "original_file_sha256": "d6070bdf731546ccf97767f062e8af4bd26dd309dee69f6092025bf9c78f43c1",
+      "expected_results": 2,
+      "payload": {
+        "name": "English Premier League 2025/26",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-15",
+            "time": "20:00",
+            "team1": "Liverpool FC",
+            "team2": "AFC Bournemouth",
+            "score": {
+              "ft": [
+                4,
+                2
+              ],
+              "ht": [
+                1,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-16",
+            "time": "12:30",
+            "team1": "Aston Villa FC",
+            "team2": "Newcastle United FC",
+            "score": [
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "competition": "es.1",
+      "year": 2025,
+      "source_path": "2025-26/es.1.json",
+      "source_indices": [
+        0,
+        1
+      ],
+      "original_file_sha256": "b40397d8e62c640138548d57a1a9f76150549213d2a07fcbbb90ed0eabc6ccea",
+      "expected_results": 2,
+      "payload": {
+        "name": "Spain Primera División 2025/26",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-15",
+            "time": "19:00",
+            "team1": "Girona FC",
+            "team2": "Rayo Vallecano de Madrid",
+            "score": {
+              "ft": [
+                1,
+                3
+              ],
+              "ht": [
+                0,
+                3
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-15",
+            "time": "21:30",
+            "team1": "Villarreal CF",
+            "team2": "Real Oviedo",
+            "score": {
+              "ft": [
+                2,
+                0
+              ],
+              "ht": [
+                2,
+                0
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "competition": "de.1",
+      "year": 2025,
+      "source_path": "2025-26/de.1.json",
+      "source_indices": [
+        0,
+        1
+      ],
+      "original_file_sha256": "17d0999db6281e6365823acdbce41a4f01dd469eac63e1f897e4e47c02906672",
+      "expected_results": 2,
+      "payload": {
+        "name": "Deutsche Bundesliga 2025/26",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-22",
+            "time": "20:30",
+            "team1": "FC Bayern München",
+            "team2": "RB Leipzig",
+            "score": {
+              "ft": [
+                6,
+                0
+              ],
+              "ht": [
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-23",
+            "time": "15:30",
+            "team1": "Eintracht Frankfurt",
+            "team2": "SV Werder Bremen",
+            "score": {
+              "ft": [
+                4,
+                1
+              ],
+              "ht": [
+                2,
+                0
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "competition": "it.1",
+      "year": 2025,
+      "source_path": "2025-26/it.1.json",
+      "source_indices": [
+        0,
+        1
+      ],
+      "original_file_sha256": "28f7773dea86345aeb0cbb4aff2f90231033f7ed855219e70fdd1cf45d4d7e7f",
+      "expected_results": 2,
+      "payload": {
+        "name": "Italian Serie A 2025/26",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-23",
+            "time": "18:30",
+            "team1": "Genoa CFC",
+            "team2": "US Lecce",
+            "score": [
+              0,
+              0
+            ]
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-23",
+            "time": "18:30",
+            "team1": "US Sassuolo Calcio",
+            "team2": "SSC Napoli",
+            "score": {
+              "ft": [
+                0,
+                2
+              ],
+              "ht": [
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "competition": "fr.1",
+      "year": 2025,
+      "source_path": "2025-26/fr.1.json",
+      "source_indices": [
+        0,
+        1,
+        298
+      ],
+      "original_file_sha256": "3e9403445dd96f4bb7f740de22d4ea7e3ea7d640777a12eab621ae4d4dbf3bc7",
+      "expected_results": 2,
+      "payload": {
+        "name": "French Ligue 1 2025/26",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-15",
+            "time": "20:45",
+            "team1": "Stade Rennais FC 1901",
+            "team2": "Olympique de Marseille",
+            "score": {
+              "ft": [
+                1,
+                0
+              ],
+              "ht": [
+                0,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2025-08-16",
+            "time": "17:00",
+            "team1": "Racing Club de Lens",
+            "team2": "Olympique Lyonnais",
+            "score": {
+              "ft": [
+                0,
+                1
+              ],
+              "ht": [
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "round": "Matchday 34",
+            "date": "2026-05-17",
+            "time": "21:00",
+            "team1": "FC Nantes",
+            "team2": "Toulouse FC",
+            "status": "canceled"
+          }
+        ]
+      }
+    },
+    {
+      "competition": "es.1",
+      "year": 2026,
+      "source_path": "2026-27/es.1.json",
+      "source_indices": [
+        0,
+        1,
+        100
+      ],
+      "original_file_sha256": "4b1a9906e3f2b279a1f25497a38f2f58e21ec19ea726b882fa646da7c07bc0e0",
+      "expected_results": 2,
+      "payload": {
+        "name": "Spain Primera División 2026/27",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2026-08-15",
+            "time": "19:30",
+            "team1": "Deportivo Alavés",
+            "team2": "Getafe CF",
+            "score": {
+              "ht": [
+                0,
+                0
+              ],
+              "ft": [
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2026-08-15",
+            "time": "21:30",
+            "team1": "Sevilla FC",
+            "team2": "Rayo Vallecano de Madrid",
+            "score": {
+              "ht": [
+                0,
+                1
+              ],
+              "ft": [
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "round": "Matchday 11",
+            "date": "2026-11-01",
+            "team1": "Real Betis Balompié",
+            "team2": "Málaga CF"
+          }
+        ]
+      }
+    },
+    {
+      "competition": "en.1",
+      "year": 2010,
+      "source_path": "2010-11/en.1.json",
+      "source_indices": [
+        0,
+        1
+      ],
+      "original_file_sha256": "a94631cc82fd4034d4da5f5594d32cb191942f0b594e3a9cd9dcf29fe7dfa707",
+      "expected_results": 2,
+      "payload": {
+        "name": "English Premier League 2010/11",
+        "matches": [
+          {
+            "round": "Matchday 1",
+            "date": "2010-08-14",
+            "time": "12:45",
+            "team1": "Tottenham Hotspur",
+            "team2": "Manchester City",
+            "score": {
+              "ft": [
+                0,
+                0
+              ]
+            }
+          },
+          {
+            "round": "Matchday 1",
+            "date": "2010-08-14",
+            "time": "15:00",
+            "team1": "Wigan Athletic",
+            "team2": "Blackpool FC",
+            "score": {
+              "ht": [
+                0,
+                3
+              ],
+              "ft": [
+                0,
+                4
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

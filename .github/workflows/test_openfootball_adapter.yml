@@ -1,0 +1,41 @@
+name: OpenFootball Adapter Contracts
+
+on:
+  pull_request:
+    paths:
+      - 'backend/services/data/fixture_contract.py'
+      - 'backend/services/data/openfootball_adapter.py'
+      - 'backend/services/data/provider_status.py'
+      - 'backend/scripts/audit_openfootball.py'
+      - 'backend/tests/test_openfootball_adapter.py'
+      - 'backend/tests/fixtures/openfootball/**'
+      - '.github/workflows/test_openfootball_adapter.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/services/data/fixture_contract.py'
+      - 'backend/services/data/openfootball_adapter.py'
+      - 'backend/services/data/provider_status.py'
+      - 'backend/scripts/audit_openfootball.py'
+      - 'backend/tests/test_openfootball_adapter.py'
+      - 'backend/tests/fixtures/openfootball/**'
+      - '.github/workflows/test_openfootball_adapter.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install adapter test dependencies
+        run: python -m pip install 'httpx>=0.26,<1' 'pytest>=7.4,<10'
+      - name: Offline fixture and error contracts
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m pytest backend/tests/test_openfootball_adapter.py -q
