@@ -17,6 +17,11 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Unpublished ESPN roster sides can omit the roster key within a validated
+  scheduled two-team event. Supplied malformed rosters and anonymous athletes
+  still fail visibly; unpublished or partially announced sides preserve the
+  last-good lineup cache and its observation time.
+
 - Same-path Matchday/home links now clear visible filters as well as the URL,
   including views selected through native history controls. Next's search
   subscription retains the framework's history metadata. Filled controls use
