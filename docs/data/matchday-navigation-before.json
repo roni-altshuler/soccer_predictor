@@ -1,0 +1,618 @@
+[
+  {
+    "width": 390,
+    "samePath": [
+      {
+        "selection": "cold",
+        "link": "brand",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "cold",
+        "link": "matchday",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "controls",
+        "link": "brand",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "controls",
+        "link": "matchday",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      }
+    ],
+    "focusPixels": [
+      {
+        "name": "active-filter-390",
+        "computed": {
+          "outline": "rgb(49, 85, 71)",
+          "fill": "rgb(48, 60, 52)",
+          "focused": true
+        },
+        "pixels": {
+          "edge": [
+            [
+              48,
+              60,
+              52
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              48,
+              60,
+              52
+            ],
+            [
+              48,
+              60,
+              52
+            ]
+          ],
+          "adjacentFill": [
+            48,
+            60,
+            52
+          ]
+        },
+        "sampledRing": [
+          49,
+          85,
+          71
+        ],
+        "contrast": 1.3839327109728157
+      },
+      {
+        "name": "hovered-match-centre-390",
+        "computed": {
+          "outline": "rgb(49, 85, 71)",
+          "fill": "rgb(49, 85, 71)",
+          "focused": true
+        },
+        "pixels": {
+          "edge": [
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ]
+          ],
+          "adjacentFill": [
+            49,
+            85,
+            71
+          ]
+        },
+        "sampledRing": [
+          49,
+          85,
+          71
+        ],
+        "contrast": 1
+      }
+    ],
+    "delayedOldResponses": [
+      {
+        "navigation": "through-matchday",
+        "oldId": "401879269",
+        "newId": "401879274",
+        "oldResponseFinished": true,
+        "headingAfterOldResponse": [
+          "Brighton & Hove Albion vs Arsenal"
+        ]
+      },
+      {
+        "navigation": "direct-client-route",
+        "oldId": "401879269",
+        "newId": "401879274",
+        "oldResponseFinished": true,
+        "headingAfterOldResponse": [
+          "Brighton & Hove Albion vs Arsenal"
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "label": "active-filter-390: actual ring/fill contrast",
+        "actual": false,
+        "expected": true
+      },
+      {
+        "label": "hovered-match-centre-390: actual ring/fill contrast",
+        "actual": false,
+        "expected": true
+      },
+      {
+        "label": "390 cold brand: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "390 cold matchday: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "390 controls brand: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "390 controls matchday: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "samePath": [
+      {
+        "selection": "cold",
+        "link": "brand",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "cold",
+        "link": "matchday",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "controls",
+        "link": "brand",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "selection": "controls",
+        "link": "matchday",
+        "before": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "home": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "back": {
+          "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "forward": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      }
+    ],
+    "focusPixels": [
+      {
+        "name": "active-filter-1440",
+        "computed": {
+          "outline": "rgb(49, 85, 71)",
+          "fill": "rgb(48, 60, 52)",
+          "focused": true
+        },
+        "pixels": {
+          "edge": [
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              48,
+              60,
+              52
+            ],
+            [
+              48,
+              60,
+              52
+            ],
+            [
+              48,
+              60,
+              52
+            ]
+          ],
+          "adjacentFill": [
+            48,
+            60,
+            52
+          ]
+        },
+        "sampledRing": [
+          49,
+          85,
+          71
+        ],
+        "contrast": 1.3839327109728157
+      },
+      {
+        "name": "hovered-match-centre-1440",
+        "computed": {
+          "outline": "rgb(49, 85, 71)",
+          "fill": "rgb(49, 85, 71)",
+          "focused": true
+        },
+        "pixels": {
+          "edge": [
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ],
+            [
+              49,
+              85,
+              71
+            ]
+          ],
+          "adjacentFill": [
+            49,
+            85,
+            71
+          ]
+        },
+        "sampledRing": [
+          49,
+          85,
+          71
+        ],
+        "contrast": 1
+      }
+    ],
+    "delayedOldResponses": [
+      {
+        "navigation": "through-matchday",
+        "oldId": "401879269",
+        "newId": "401879274",
+        "oldResponseFinished": true,
+        "headingAfterOldResponse": [
+          "Brighton & Hove Albion vs Arsenal"
+        ]
+      },
+      {
+        "navigation": "direct-client-route",
+        "oldId": "401879269",
+        "newId": "401879274",
+        "oldResponseFinished": true,
+        "headingAfterOldResponse": [
+          "Brighton & Hove Albion vs Arsenal"
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "label": "active-filter-1440: actual ring/fill contrast",
+        "actual": false,
+        "expected": true
+      },
+      {
+        "label": "hovered-match-centre-1440: actual ring/fill contrast",
+        "actual": false,
+        "expected": true
+      },
+      {
+        "label": "1440 cold brand: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "1440 cold matchday: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "1440 controls brand: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      },
+      {
+        "label": "1440 controls matchday: cleared home",
+        "actual": {
+          "url": "/",
+          "date": "Yesterday",
+          "status": "To play",
+          "competition": "Premier League"
+        },
+        "expected": {
+          "url": "/",
+          "date": "Today",
+          "status": "All matches",
+          "competition": "All competitions"
+        }
+      }
+    ],
+    "errors": []
+  }
+]

@@ -1,0 +1,579 @@
+{
+  "replay": "Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.",
+  "screenshots": "/tmp/matchday-review-final",
+  "serverRenderedHeading": true,
+  "navigationReport": [
+    {
+      "width": 390,
+      "samePath": [
+        {
+          "selection": "cold",
+          "link": "brand",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "cold",
+          "link": "matchday",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "controls",
+          "link": "brand",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "controls",
+          "link": "matchday",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        }
+      ],
+      "focusPixels": [
+        {
+          "name": "active-filter-390",
+          "computed": {
+            "outline": "rgb(252, 250, 246)",
+            "fill": "rgb(48, 60, 52)",
+            "focused": true
+          },
+          "pixels": {
+            "edge": [
+              [
+                48,
+                60,
+                52
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                48,
+                60,
+                52
+              ],
+              [
+                48,
+                60,
+                52
+              ]
+            ],
+            "adjacentFill": [
+              48,
+              60,
+              52
+            ]
+          },
+          "sampledRing": [
+            252,
+            250,
+            246
+          ],
+          "contrast": 11.058427858036076
+        },
+        {
+          "name": "hovered-match-centre-390",
+          "computed": {
+            "outline": "rgb(252, 250, 246)",
+            "fill": "rgb(49, 85, 71)",
+            "focused": true
+          },
+          "pixels": {
+            "edge": [
+              [
+                49,
+                85,
+                71
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                49,
+                85,
+                71
+              ],
+              [
+                49,
+                85,
+                71
+              ]
+            ],
+            "adjacentFill": [
+              49,
+              85,
+              71
+            ]
+          },
+          "sampledRing": [
+            252,
+            250,
+            246
+          ],
+          "contrast": 7.990582035063477
+        }
+      ],
+      "delayedOldResponses": [
+        {
+          "navigation": "through-matchday",
+          "oldId": "401879269",
+          "newId": "401879274",
+          "oldResponseFinished": true,
+          "headingAfterOldResponse": [
+            "Brighton & Hove Albion vs Arsenal"
+          ]
+        },
+        {
+          "navigation": "direct-client-route",
+          "oldId": "401879269",
+          "newId": "401879274",
+          "oldResponseFinished": true,
+          "headingAfterOldResponse": [
+            "Brighton & Hove Albion vs Arsenal"
+          ]
+        }
+      ],
+      "failures": [],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "samePath": [
+        {
+          "selection": "cold",
+          "link": "brand",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "cold",
+          "link": "matchday",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "controls",
+          "link": "brand",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        },
+        {
+          "selection": "controls",
+          "link": "matchday",
+          "before": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "home": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          },
+          "back": {
+            "url": "/?date=2026-09-19&competition=Premier+League&filter=upcoming",
+            "date": "Yesterday",
+            "status": "To play",
+            "competition": "Premier League"
+          },
+          "forward": {
+            "url": "/",
+            "date": "Today",
+            "status": "All matches",
+            "competition": "All competitions"
+          }
+        }
+      ],
+      "focusPixels": [
+        {
+          "name": "active-filter-1440",
+          "computed": {
+            "outline": "rgb(252, 250, 246)",
+            "fill": "rgb(48, 60, 52)",
+            "focused": true
+          },
+          "pixels": {
+            "edge": [
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                48,
+                60,
+                52
+              ],
+              [
+                48,
+                60,
+                52
+              ],
+              [
+                48,
+                60,
+                52
+              ]
+            ],
+            "adjacentFill": [
+              48,
+              60,
+              52
+            ]
+          },
+          "sampledRing": [
+            252,
+            250,
+            246
+          ],
+          "contrast": 11.058427858036076
+        },
+        {
+          "name": "hovered-match-centre-1440",
+          "computed": {
+            "outline": "rgb(252, 250, 246)",
+            "fill": "rgb(49, 85, 71)",
+            "focused": true
+          },
+          "pixels": {
+            "edge": [
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                252,
+                250,
+                246
+              ],
+              [
+                49,
+                85,
+                71
+              ],
+              [
+                49,
+                85,
+                71
+              ],
+              [
+                49,
+                85,
+                71
+              ]
+            ],
+            "adjacentFill": [
+              49,
+              85,
+              71
+            ]
+          },
+          "sampledRing": [
+            252,
+            250,
+            246
+          ],
+          "contrast": 7.990582035063477
+        }
+      ],
+      "delayedOldResponses": [
+        {
+          "navigation": "through-matchday",
+          "oldId": "401879269",
+          "newId": "401879274",
+          "oldResponseFinished": true,
+          "headingAfterOldResponse": [
+            "Brighton & Hove Albion vs Arsenal"
+          ]
+        },
+        {
+          "navigation": "direct-client-route",
+          "oldId": "401879269",
+          "newId": "401879274",
+          "oldResponseFinished": true,
+          "headingAfterOldResponse": [
+            "Brighton & Hove Albion vs Arsenal"
+          ]
+        }
+      ],
+      "failures": [],
+      "errors": []
+    }
+  ],
+  "report": [
+    {
+      "width": 390,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    },
+    {
+      "width": 768,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    }
+  ]
+}

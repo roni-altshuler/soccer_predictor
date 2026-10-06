@@ -33,7 +33,7 @@ export function MatchdaySpotlight({ matches, hrefFor = fixtureHref }: { matches:
   const href = hrefFor(match)
 
   return (
-    <section aria-label="Match spotlight" className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]">
+    <section aria-label="Match spotlight" className="matchday-spotlight min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)]">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2.5">
           <LeagueMark league={match.leagueId ?? match.league} size="sm" />
@@ -84,7 +84,7 @@ export function MatchdaySpotlight({ matches, hrefFor = fixtureHref }: { matches:
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
           {match.venue ? <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]"><MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />{match.venue}</span> : <span className="text-[11px] text-[var(--text-tertiary)]">{valid ? 'Every outcome is still possible.' : 'Follow the match as it unfolds.'}</span>}
-          {href && <Link href={href} className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[var(--accent-info)] hover:underline">Match centre <ArrowUpRight className="h-4 w-4" aria-hidden /></Link>}
+          {href && <Link href={href} className="match-centre-action inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[var(--accent-info)] hover:underline">Match centre <ArrowUpRight className="h-4 w-4" aria-hidden /></Link>}
         </div>
       </div>
 

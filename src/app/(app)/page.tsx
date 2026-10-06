@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useMemo } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { ArrowUpRight, Bookmark, BookmarkCheck, CalendarRange, RefreshCw, Trophy } from 'lucide-react'
 
 import { normalizeTeamName, teamMatchesWatchlist } from '@/lib/watchlist'
@@ -15,6 +15,7 @@ import { useTeamWatchlist } from '@/hooks/useTeamWatchlist'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { ClubHouse, MatchdaySpotlight, fixtureHref } from '@/components/match/MatchdaySpotlight'
 import { LeagueSection } from '@/components/match/LeagueSection'
+import { MatchdayUrlSync } from '@/components/match/MatchdayUrlSync'
 import { LeagueMark } from '@/components/primitives/LeagueMark'
 import { MatchCardSkeleton } from '@/components/skeletons'
 import { Card } from '@/components/ui/card'
@@ -107,7 +108,7 @@ export default function Home() {
   const [dateOptions, setDateOptions] = useState<DateOption[]>([])
   useEffect(() => { setDateOptions(getDateOptions()) }, [])
   const [viewReady, setViewReady] = useState(false)
-  const { view, update, saveScroll, returnHref } = useMatchdayNavigation(viewReady)
+  const { view, update, saveScroll, syncLocation, returnHref } = useMatchdayNavigation(viewReady)
   const { date: selectedDate, filter: tab, competition, following: watchlistOnly } = view
   const [historical, setHistorical] = useState<Historical | null>(null)
   const [liveRecord, setLiveRecord] = useState<Live | null>(null)
@@ -158,15 +159,17 @@ export default function Home() {
   const dateTitle = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Your matchday'
 
   return (
-    <div className="min-h-screen" onClickCapture={saveScroll}>
+    <div className="matchday-page min-h-screen" onClickCapture={saveScroll}>
+      <Suspense fallback={null}><MatchdayUrlSync onChange={syncLocation} /></Suspense>
       <DateStrip dateOptions={selectedDate && !dateOptions.some((d) => d.date === selectedDate)
         ? [...dateOptions, { date: selectedDate, isToday: false, label: new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) }]
         : dateOptions} selectedDate={selectedDate} onSelectDate={(date) => update({ date })} />
-      <div className="mx-auto w-full max-w-6xl px-3 pb-8 pt-5 sm:px-6">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-12 pt-7 sm:px-8 sm:pt-10">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{dateTitle}</p>
             <h1 className="text-2xl font-extrabold text-[var(--text-primary)] sm:text-3xl">Matchday</h1>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">Find your fixture. Explore the forecast.</p>
           </div>
           {data && <p className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
             {live.length > 0 && <><span className="h-2 w-2 rounded-full bg-[var(--accent-loss)]" aria-hidden /><span className="text-[var(--live-text)]">{live.length} live</span><span aria-hidden> / </span></>}
@@ -184,6 +187,7 @@ export default function Home() {
           <ClubHouse matches={spotlight} />
         </div>}
 
+        <h2 className="mb-3 mt-8 text-lg font-semibold text-[var(--text-primary)]">Matches &amp; competitions</h2>
         {(competitions.length > 0 || competition !== 'all') && <div aria-label="Filter by competition" className="mb-4 flex gap-2 overflow-x-auto pb-1">
           <button type="button" aria-pressed={activeCompetition === 'all'} onClick={() => update({ competition: 'all' })} className={cn(FILTER_CHIP, activeCompetition === 'all' && ACTIVE_CHIP)}>All competitions <span className="text-[var(--text-tertiary)]">{competitions.length}</span></button>
           {(competition !== 'all' && !competitions.some((c) => c.name === competition) ? [...competitions, { name: competition, count: 0, id: undefined }] : competitions).map((c) => <button key={c.name} type="button" aria-pressed={activeCompetition === c.name} onClick={() => update({ competition: c.name })} className={cn(FILTER_CHIP, activeCompetition === c.name && ACTIVE_CHIP)}>
@@ -204,22 +208,22 @@ export default function Home() {
           </button>
         </div>
 
-        {loading ? <Card className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches"><MatchCardSkeleton count={7} /></Card>
+        {loading ? <Card role="status" className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches"><MatchCardSkeleton count={7} /></Card>
           : !data && error ? null
           : leagueNames.length === 0 ? <EmptyState illustration="no-matches" title={onlyFollowing ? 'Your clubs have no matches in this view' : tab === 'live' ? 'No matches live right now' : 'No matches in this view'} description="Try another day or explore a different competition." action={<button type="button" onClick={() => update({ filter: 'all', competition: 'all', following: false })} className="min-h-11 text-xs text-[var(--accent-info)]">Show all matches</button>} />
           : <Card className="overflow-hidden p-0">{leagueNames.map((name) => <LeagueSection key={name} leagueName={name} leagueId={LEAGUE_ID_MAP[name] ?? grouped[name][0]?.leagueId} countryLabel={LEAGUE_COUNTRY[name]?.country} matches={grouped[name]} hrefFor={(m) => withMatchdayReturn(fixtureHref(m as DayMatch), returnHref)} defaultOpen />)}</Card>}
 
         <Link href="/lab" className="mt-6 flex min-h-24 items-center justify-between gap-4 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5 transition-colors hover:bg-[var(--card-hover)]">
-          <span><span className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-info)]">Step inside the Forecast Lab</span><span className="mt-1 block text-lg font-bold text-[var(--text-primary)]">Your football curiosity. Meet the model.</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">Explore scorelines, test an outcome and discover the points at stake.</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-[var(--accent-info)]" aria-hidden />
+          <span><span className="text-xs text-[var(--text-secondary)]">Keep exploring</span><span className="mt-1 block text-lg font-bold text-[var(--text-primary)]">Open the Forecast Lab</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">Explore scorelines, test an outcome and discover the points at stake.</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-[var(--accent-info)]" aria-hidden />
         </Link>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Link href="/leagues" className="group flex min-h-24 items-center gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 transition-colors hover:bg-[var(--card-hover)]">
             <CalendarRange className="h-6 w-6 shrink-0 text-[var(--accent-info)]" aria-hidden />
-            <span className="flex-1"><span className="block text-sm font-semibold text-[var(--text-primary)]">The race goes on</span><span className="mt-1 block text-xs text-[var(--text-tertiary)]">Title hopes, the table and the run-in.</span></span><ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="flex-1"><span className="block text-sm font-semibold text-[var(--text-primary)]">Explore league forecasts</span><span className="mt-1 block text-xs text-[var(--text-tertiary)]">Title hopes, the table and the run-in.</span></span><ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
           </Link>
           <Link href="/tournaments" className="group flex min-h-24 items-center gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 transition-colors hover:bg-[var(--card-hover)]">
             <Trophy className="h-6 w-6 shrink-0 text-[var(--accent-info)]" aria-hidden />
-            <span className="flex-1"><span className="block text-sm font-semibold text-[var(--text-primary)]">The road to the final</span><span className="mt-1 block text-xs text-[var(--text-tertiary)]">Explore the ties. Follow the contenders.</span></span><ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="flex-1"><span className="block text-sm font-semibold text-[var(--text-primary)]">Explore tournament ties</span><span className="mt-1 block text-xs text-[var(--text-tertiary)]">Explore the ties. Follow the contenders.</span></span><ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
           </Link>
         </div>
         <EvidencePanel historical={historical} live={liveRecord} matchday className="mt-6" />

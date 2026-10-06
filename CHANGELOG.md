@@ -6,7 +6,22 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Matchday and match detail share cream surfaces, restrained neutral navigation,
+  sentence-case headings and clearer match/exploration actions. Keyboard tab
+  controls have linked panels and arrow/Home/End navigation; fixture rows respect
+  reduced motion. Date-only records no longer imply a midnight kickoff, and
+  detail failures retain the filtered Matchday return link. Responsive browser
+  contracts now cover focus, contrast, loading, empty and error recovery states.
+
 ### Fixed
+
+- Same-path Matchday/home links now clear visible filters as well as the URL,
+  including views selected through native history controls. Next's search
+  subscription retains the framework's history metadata. Filled controls use
+  a light inset focus ring; pixel checks cover active filters and hovered
+  Match centre actions against their actual adjacent fill.
 
 - Prediction detail and matchup views keep missing inputs, confidence and markets
   unavailable, distinguish published context from prediction inputs, and show

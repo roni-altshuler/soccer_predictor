@@ -82,7 +82,8 @@ export function StickyScoreBar({
           initial={reduce ? false : { y: -8, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={reduce ? { opacity: 0 } : { y: -8, opacity: 0 }}
-          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: reduce ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+          data-sticky-score-bar
           className={cn(
             // NOTE: no 'relative' here — twMerge would let it override 'sticky'
             // (both are position utilities) and the bar would never stick.

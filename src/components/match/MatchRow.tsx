@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Star } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ChevronRight, Star } from 'lucide-react'
 
 import { type FormEntry } from '@/components/match/TeamFormPill'
 import { FlagBadge, Prob1X2 } from '@/components/primitives'
@@ -247,6 +247,7 @@ export function MatchRow({
           )}
         </div>
       )}
+      {href && <span className="match-row-action"><span>View match</span><ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}
     </div>
   )
 
@@ -260,7 +261,7 @@ export function MatchRow({
     return <div className={className}>{inner}</div>
   }
   return (
-    <Link href={href} className={className} prefetch={false}>
+    <Link href={href} className={cn(className, 'match-row-link')} prefetch={false}>
       {inner}
     </Link>
   )
@@ -274,6 +275,10 @@ export function MatchRowList({
   children: React.ReactNode
   className?: string
 }) {
+  const reduceMotion = useReducedMotion()
+  if (reduceMotion) {
+    return <div className={cn('divide-y divide-[color-mix(in_srgb,var(--border-color)_40%,transparent)]', className)}>{children}</div>
+  }
   return (
     <motion.div
       initial="hidden"

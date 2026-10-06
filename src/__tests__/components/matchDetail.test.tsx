@@ -94,6 +94,36 @@ describe('scorerLines', () => {
   })
 })
 
+describe('match detail keyboard navigation', () => {
+  it('shows a published date without inventing a midnight kickoff', () => {
+    render(<MatchDetail card={card({ date: '2026-04-08', statusDetail: 'Kickoff TBC' })} />)
+    expect(screen.getByText('Wed, 8 Apr 2026')).toBeInTheDocument()
+    expect(screen.queryByText(/00:00/)).not.toBeInTheDocument()
+    expect(screen.getByText('Kickoff TBC')).toBeInTheDocument()
+  })
+  it('moves focus and selection with arrows, Home and End, and labels the panel', async () => {
+    const user = userEvent.setup()
+    render(<MatchDetail card={card({ lineups: [], commentary: [] })} />)
+    const timeline = screen.getByRole('tab', { name: 'Timeline' })
+    const stats = screen.getByRole('tab', { name: 'Stats' })
+    const h2h = screen.getByRole('tab', { name: 'H2H' })
+    timeline.focus()
+    expect(stats).toHaveAttribute('tabindex', '-1')
+    await user.keyboard('{ArrowRight}')
+    expect(stats).toHaveFocus()
+    expect(screen.getByRole('tabpanel', { name: 'Stats' })).toHaveAttribute('id', stats.getAttribute('aria-controls'))
+    await user.keyboard('{End}')
+    expect(h2h).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(timeline).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(h2h).toHaveFocus()
+    await user.keyboard('{Home}')
+    expect(timeline).toHaveFocus()
+    expect(timeline).toHaveAttribute('aria-selected', 'true')
+  })
+})
+
 describe('barSplit', () => {
   it('splits in proportion to the two values', () => {
     expect(barSplit({ name: 'p', label: 'P', home: '60%', away: '40%', homeValue: 60, awayValue: 40 })).toBe(60)

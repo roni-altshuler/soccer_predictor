@@ -2,6 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Matchday and match detail share a quiet, warm surface. These overrides are
+   intentionally route-scoped: other product areas retain their current theme. */
+.match-flow-shell {
+  color-scheme: light;
+  --background: #f5f3ee;
+  --background-secondary: #efede7;
+  --background-tertiary: #e8e5de;
+  --card-bg: #fcfaf6;
+  --card-hover: #eeebe4;
+  --input-bg: #eeebe4;
+  --muted-bg: #e5e2da;
+  --nav-bg: #f5f3ee;
+  --nav-border: #d7d4cb;
+  --text-primary: #242824;
+  --text-secondary: #4b514b;
+  --text-tertiary: #575e55;
+  --border-color: #d7d4cb;
+  --border-hover: #888d83;
+  --accent-primary: #303c34;
+  --accent-primary-soft: #43624f;
+  --accent-on-primary: #fcfaf6;
+  --accent-info: #315547;
+  --accent-info-soft: #43624f;
+  --accent-warn: #806018;
+  --accent-warn-soft: #806018;
+  --accent-loss: #a03832;
+  --accent-loss-soft: #a03832;
+  --accent-ai: var(--accent-info);
+  --accent-ai-soft: var(--accent-info-soft);
+  --accent-ai-light: var(--accent-info-soft);
+  --accent-market: var(--accent-info);
+  --accent-market-soft: var(--accent-info-soft);
+  --accent-secondary: var(--accent-primary-soft);
+  --surface-muted: var(--muted-bg);
+  --match-card-bg: var(--card-bg);
+  --tab-active-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --surface-highlight: color-mix(in srgb, var(--accent-info) 10%, transparent);
+  --success: var(--accent-primary);
+  --warning: var(--accent-warn);
+  --danger: var(--accent-loss);
+  --info: var(--accent-info);
+  --live-text: #a03832;
+  --logo-plate: #fcfaf6;
+  --overlay-bg: rgba(28, 32, 28, 0.6);
+  --ticker-bg: #efede7;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.match-flow-shell :is(h1, h2, h3) {
+  text-transform: none;
+  letter-spacing: -0.025em;
+}
+
+.match-flow-shell :is(nav, button, [role='tab'], .font-mono) {
+  font-family: var(--font-sans), Arial, sans-serif;
+  letter-spacing: normal;
+}
+
+.match-flow-shell :is(.uppercase, .tracking-widest, .tracking-wider) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.match-flow-shell :is(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-info) !important;
+  outline-offset: -3px;
+}
+
+/* An inset ring touches the control's fill. Light ink remains visible on both
+   the forest fill and the link hover; the inset keeps it unclipped. */
+.match-flow-shell .match-centre-action:focus-visible,
+.match-flow-shell [aria-label='Filter matches'] button[aria-pressed='true']:focus-visible,
+.match-flow-shell [class*='bg-[var(--accent-primary)]']:focus-visible {
+  outline-color: var(--accent-on-primary) !important;
+}
+
+.match-flow-shell .matchday-page h1 {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.match-flow-shell [aria-label='Select date'] button {
+  min-height: 52px;
+  font-size: 13px;
+}
+
+.match-flow-shell [aria-label='Filter matches'] {
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.match-flow-shell [aria-label='Filter matches'] button[aria-pressed='true'] {
+  background: var(--accent-primary);
+  color: var(--accent-on-primary);
+}
+
+.match-flow-shell [aria-label='Filter matches'] button[aria-pressed='true'] span {
+  color: inherit;
+}
+
+.match-flow-shell .match-centre-action {
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--accent-primary);
+  color: var(--accent-on-primary);
+}
+
+.match-flow-shell .match-centre-action:hover {
+  background: var(--accent-info);
+  text-decoration: none;
+}
+
+.match-row-action { display: none; }
+.match-flow-shell .match-row-link { padding-block: 8px; }
+.match-flow-shell .match-row-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.match-flow-shell [role='tablist'] { gap: 24px; }
+.match-flow-shell [role='tab'] { min-height: 48px; font-size: 13px; }
+.match-flow-shell .match-detail-page > div:last-child { padding-top: 32px; }
+.match-flow-shell .match-detail-card > header { padding-block: 24px; }
+.match-flow-shell .match-detail-card [data-side] > span {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+@media (max-width: 639px) {
+  .match-flow-shell .match-row-action { margin-left: 8px; }
+  .match-flow-shell .match-row-action span { display: none; }
+  .match-flow-shell .matchday-spotlight { border-radius: 16px; }
+  .match-flow-shell .match-detail-card [data-side] {
+    flex-direction: column;
+    text-align: center;
+  }
+  .match-flow-shell .match-detail-card [data-side] > span { text-align: center; }
+}
+
 /* ────────────────────────────────────────────────────────────
    Design tokens — Bugatti, dark only.
    shadcn/ui primitives read these via tailwind.config.js. There is

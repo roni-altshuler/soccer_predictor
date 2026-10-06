@@ -2,7 +2,7 @@
 
 import { ArrowRight, CalendarDays, MapPin, UserRound } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 import { Formation } from '@/components/fixture/Formation'
 import { TeamCrest } from '@/components/primitives/TeamCrest'
@@ -119,8 +119,8 @@ function ScoreHeader({
             day: 'numeric',
             month: 'short',
             year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            // A date-only publication does not promise a midnight kickoff.
+            ...(!/^\d{4}-\d{2}-\d{2}$/.test(card.date) ? { hour: '2-digit' as const, minute: '2-digit' as const } : {}),
             timeZone: 'UTC',
           }),
         }
@@ -568,6 +568,7 @@ export function MatchDetail({
   const available = tabs.filter(([, n]) => n > 0).map(([t]) => t)
   const [tab, setTab] = useState<string>(initialTab || 'Timeline')
   const active = available.includes(tab) ? tab : available[0]
+  const tabId = useId()
 
   return (
     <section
@@ -598,8 +599,21 @@ export function MatchDetail({
                 key={t}
                 role="tab"
                 type="button"
+                id={`${tabId}-${t}`}
+                aria-controls={`${tabId}-panel`}
                 aria-selected={t === active}
+                tabIndex={t === active ? 0 : -1}
                 onClick={() => setTab(t)}
+                onKeyDown={(event) => {
+                  const index = available.indexOf(t)
+                  const nextIndex = event.key === 'ArrowRight' ? (index + 1) % available.length
+                    : event.key === 'ArrowLeft' ? (index + available.length - 1) % available.length
+                    : event.key === 'Home' ? 0 : event.key === 'End' ? available.length - 1 : null
+                  if (nextIndex === null) return
+                  event.preventDefault()
+                  setTab(available[nextIndex])
+                  document.getElementById(`${tabId}-${available[nextIndex]}`)?.focus()
+                }}
                 className={cn(
                   'min-h-[38px] shrink-0 border-b-2 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors',
                   t === active
@@ -612,7 +626,7 @@ export function MatchDetail({
             ))}
           </div>
 
-          <div className="px-4 py-4 md:px-5 md:py-5">
+          <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${active}`} tabIndex={0} className="px-4 py-4 md:px-5 md:py-5">
             {active === 'Timeline' ? (
               <Timeline card={card} />
             ) : active === 'Stats' ? (
