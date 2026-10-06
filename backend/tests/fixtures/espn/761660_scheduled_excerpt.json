@@ -1,0 +1,52 @@
+{
+  "header": {
+    "id": "761660",
+    "competitions": [
+      {
+        "id": "761660",
+        "date": "2026-10-07T00:30Z",
+        "status": {
+          "type": {
+            "state": "pre",
+            "name": "STATUS_SCHEDULED",
+            "completed": false
+          }
+        },
+        "competitors": [
+          {
+            "homeAway": "home",
+            "team": {
+              "id": "182",
+              "displayName": "Chicago Fire FC"
+            }
+          },
+          {
+            "homeAway": "away",
+            "team": {
+              "id": "9727",
+              "displayName": "Vancouver Whitecaps"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "rosters": [
+    {
+      "homeAway": "home",
+      "winner": false,
+      "team": {
+        "id": "182",
+        "displayName": "Chicago Fire FC"
+      }
+    },
+    {
+      "homeAway": "away",
+      "winner": false,
+      "team": {
+        "id": "9727",
+        "displayName": "Vancouver Whitecaps"
+      }
+    }
+  ]
+}

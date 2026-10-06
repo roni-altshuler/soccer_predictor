@@ -58,11 +58,25 @@ The tests also block all numerical and prediction imports in subprocesses.
 An actual fresh virtual environment with only the workflow dependencies was
 used to run both modules' `--help` startup paths.
 
-The missing-roster regressions currently use explicitly synthetic contexts.
-The independently reported MLS event `761660` capture was not available in
-the saved environment: its committed prediction is not a summary/roster
-fixture. Replaying that captured summary remains required to verify this
-specific provider case; no new provider request was made to fill the gap.
+The missing-roster regressions include a [real-derived MLS event `761660`
+excerpt](../backend/tests/fixtures/espn/761660_scheduled_excerpt.json) supplied
+by the independent reviewer, alongside synthetic structural variations. The
+excerpt preserves all fields used by this parser path; it is not the full
+ESPN response. The reviewer reports an HTTP 200 JSON capture at
+2026-10-06 05:47:01 UTC, originally 194,751 bytes, with full-response SHA-256
+`4f6f27e50c003addfb40baf2f3329b415a627124305616e294404f69a4101d8b`.
+That hash belongs to the original full capture, not the excerpt, and was not
+recomputed here. See [fixture provenance](../backend/tests/fixtures/espn/README.md).
+
+The original main parser at `99e6f67ee20b36e639fd9901f15262f24d8aaf37`
+rejects this excerpt with `ProviderUnavailable: Invalid ESPN roster list`.
+The offline runtime replay now returns unpublished from the excerpt through both
+the parser and fetch/cache path, preserves last-good bytes, modification time
+and `fetched_at`, and creates no empty cache on a cache miss. Deliberate
+malformed-value and anonymous-athlete mutations remain unavailable on either
+side and preserve the cache. No new provider request was needed. These checks
+verify this missing-roster case; they do not validate the omitted response
+fields, current provider availability, or broader MLS/provider coverage.
 
 This contract does not establish provider coverage. Existing team API callers
 still catch unavailable injuries and use their existing empty-list response;
