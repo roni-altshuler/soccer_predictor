@@ -97,9 +97,27 @@ collection, workflow dispatch, access-denial workaround or model work was used.
 The separate team API's unavailable-to-empty serving behavior remains outside
 this patch.
 
+Local validation of implementation commit
+`b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1` passed:
+
+| Check | Result |
+| --- | --- |
+| Focused diagnostic, scraper-failure and ESPN-client tests | 120 passed; 3 existing warnings |
+| Full backend suite | 1,541 passed; 25 skipped; 24 existing warnings |
+| Workflow YAML and all four shell steps (`bash -n`) | Passed |
+| Workflow artifact/failure/publication contract tests | Passed within the focused suite |
+
+The [sanitized synthetic replay summary](fixtures/injury-diagnostics/legacy_42_mock_summary.json)
+records 21 retained attempts per team, 42 `missing_injury_content` records and
+zero dropped records. Cache preservation and zero FotMob calls are assertions
+of the named passing test. Diagnostic HTTP status remains unknown even though
+the mock returned 200: decoded schema validation does not retain transport
+status. The summary is evidence from this offline test, not live provider data.
+
 ```sh
 python -m pytest backend/tests/test_injury_diagnostics.py \
   backend/tests/test_scraper_failures.py backend/tests/test_espn_client.py -q
+python -m pytest backend/tests/ -q
 ```
 
 Saved executor usability was reverified by a command and read/write probe at

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "basis": "offline synthetic httpx.MockTransport test; not a production response capture",
+  "implementation_commit": "b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1",
+  "test": "backend/tests/test_injury_diagnostics.py::test_failed_cli_retains_all_42_legacy_attempts_without_publishing",
+  "mock_response": {
+    "http_status": 200,
+    "injuries_field": "absent"
+  },
+  "retained_records": 42,
+  "dropped_records": 0,
+  "records_by_team": {
+    "360": 21,
+    "364": 21
+  },
+  "reason_counts": {
+    "missing_injury_content": 42
+  },
+  "unknown_diagnostic_http_status_count": 42,
+  "passed_test_assertions": [
+    "42 mocked ESPN requests",
+    "CLI exit code 1",
+    "both cache bytes, mtime and fetched_at preserved",
+    "zero FotMob injury calls",
+    "current-run artifact exists and excludes private payload sentinel"
+  ],
+  "validation": {
+    "focused_passed": 120,
+    "focused_existing_warnings": 3,
+    "backend_passed": 1541,
+    "backend_skipped": 25,
+    "backend_existing_warnings": 24,
+    "workflow_yaml_and_all_four_shell_steps": "passed",
+    "workflow_failure_and_publication_contract_tests": "passed"
+  },
+  "original_run_schema_known": false,
+  "provider_recovery_verified": false,
+  "live_artifact_delivery_verified": false
+}
