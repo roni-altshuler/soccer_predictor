@@ -38,6 +38,7 @@ from backend.services.data.provider_status import ProviderUnavailable, observati
 from backend.services.data.injury_diagnostics import (
     InjuryDiagnostics, InjuryReportFailure, failure_metadata,
 )
+from backend.services.data.injury_routing import DEFAULT_ROUTES_PATH, resolve_injury_league
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class InjuryTracker:
 
     MIN_INTERVAL_SECONDS = 1.0
 
-    def __init__(self, data_dir: Optional[Path] = None):
+    def __init__(self, data_dir: Optional[Path] = None, routes_path: Optional[Path] = None):
         self.data_dir = data_dir or INJURIES_DATA_DIR
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.espn = get_espn_client()
@@ -68,6 +69,7 @@ class InjuryTracker:
         self._last_request_ts: float = 0.0
         self._pace_lock = asyncio.Lock()
         self.diagnostics = InjuryDiagnostics()
+        self.routes_path = routes_path if routes_path is not None else DEFAULT_ROUTES_PATH
 
     async def _pace(self) -> None:
         async with self._pace_lock:
@@ -134,42 +136,33 @@ class InjuryTracker:
         self, team_id: str, league_key: Optional[str] = None, diagnostics=None,
     ) -> List[Dict[str, Any]]:
         """Hit ESPN's public team-injuries endpoint via the shared client."""
-        # ESPN exposes /<league>/teams/<id>/injuries on the same site API base.
-        # We try every plausible league_key if none is supplied.
-        if league_key is not None and not isinstance(league_key, str):
-            self._record("espn", team_id, None, "invalid_context", "unknown_league", records=diagnostics)
+        # The caller supplies validated explicit or repository-backed context.
+        # Missing context must never expand into an all-league search.
+        if not isinstance(league_key, str) or league_key not in ESPN_LEAGUE_IDS:
+            self._record("espn", team_id, league_key, "invalid_context", "unknown_league", records=diagnostics)
             raise InjuryReportFailure("invalid_context", "unknown_league")
-        league_keys = [league_key] if league_key else list(ESPN_LEAGUE_IDS.keys())
-        for lk in league_keys:
-            espn_id = ESPN_LEAGUE_IDS.get(lk) if lk else None
-            if not espn_id:
-                self._record("espn", team_id, lk, "invalid_context", "unknown_league", records=diagnostics)
-                continue
-            endpoint = f"{espn_id}/teams/{team_id}/injuries"
-            cache_key = f"espn_injuries_{team_id}_{lk}"
-            await self._pace()
-            try:
-                data = await self._with_retry(
-                    lambda: self.espn._request(  # noqa: SLF001 (intentional reuse)
-                        endpoint, cache_key=cache_key, cache_ttl=INJURY_TTL_SECONDS, raise_errors=True,
-                    )
+        endpoint = f"{ESPN_LEAGUE_IDS[league_key]}/teams/{team_id}/injuries"
+        cache_key = f"espn_injuries_{team_id}_{league_key}"
+        await self._pace()
+        try:
+            data = await self._with_retry(
+                lambda: self.espn._request(  # noqa: SLF001 (intentional reuse)
+                    endpoint, cache_key=cache_key, cache_ttl=INJURY_TTL_SECONDS, raise_errors=True,
                 )
-            except Exception as exc:
-                reason, detail, status = failure_metadata(exc)
-                self._record("espn", team_id, lk, reason, detail, status, diagnostics)
-                continue
-            # An explicit empty injuries list is a valid report. Missing data
-            # and failed requests are never converted into a fresh empty one.
-            try:
-                injuries = self._parse_espn_injuries(data)
-            except InjuryReportFailure as exc:
-                self._record("espn", team_id, lk, exc.reason, exc.detail, records=diagnostics)
-                if exc.reason == "malformed_entries":
-                    raise
-                continue
-            self._record("espn", team_id, lk, "available", records=diagnostics)
-            return injuries
-        raise InjuryReportFailure("unavailable")
+            )
+        except Exception as exc:
+            reason, detail, status = failure_metadata(exc)
+            self._record("espn", team_id, league_key, reason, detail, status, diagnostics)
+            raise
+        # Preserve the report contract: absent content is unavailable, never
+        # a fresh empty observation. Parsing and endpoints are unchanged.
+        try:
+            injuries = self._parse_espn_injuries(data)
+        except InjuryReportFailure as exc:
+            self._record("espn", team_id, league_key, exc.reason, exc.detail, records=diagnostics)
+            raise
+        self._record("espn", team_id, league_key, "available", records=diagnostics)
+        return injuries
 
     @staticmethod
     def _parse_espn_injuries(data: Dict) -> List[Dict[str, Any]]:
@@ -266,7 +259,7 @@ class InjuryTracker:
     ) -> List[Dict[str, Any]]:
         cached = self._read_cache(str(team_id))
         if not isinstance(source, str) or source not in {"espn", "fotmob"}:
-            self._record(source, team_id, league_key, "invalid_context")
+            self._record(source, team_id, league_key, "invalid_context", "unknown_provider")
             raise ValueError("Unknown injury source")
         if cached and cached.get("source") == source and self._is_fresh(cached):
             return cached.get("injuries", [])
@@ -279,6 +272,9 @@ class InjuryTracker:
             if source == "fotmob":
                 injuries = await self._fetch_fotmob_injuries(str(team_id), diagnostics)
             else:
+                if league_key is None and cached and cached.get("source") == source:
+                    league_key = cached.get("league_key")
+                league_key = resolve_injury_league(source, str(team_id), league_key, self.routes_path)
                 injuries = await self._fetch_espn_injuries(str(team_id), league_key, diagnostics)
         except Exception as exc:
             reason, detail, status = failure_metadata(exc)
@@ -438,9 +434,13 @@ class InjuryTracker:
                 continue
             if self._is_fresh(payload):
                 continue
-            team_id = payload.get("team_id") or path.stem
+            team_id = payload.get("team_id", path.stem)
+            if not isinstance(team_id, str) or team_id != path.stem:
+                self._record(payload.get("source"), path.stem, None, "invalid_context", "invalid_team_identity")
+                failures.append(path.stem)
+                continue
             try:
-                await self.fetch_team_injuries(str(team_id), source=payload.get("source", "espn"),
+                await self.fetch_team_injuries(team_id, source=payload.get("source"),
                                                league_key=payload.get("league_key"))
                 count += 1
             except Exception as exc:

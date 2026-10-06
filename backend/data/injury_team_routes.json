@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "repository": "roni-altshuler/soccer_predictor",
+    "commit": "e63649f2271fd7d184b1d019bc75b1d4fe34aa7d",
+    "path": "backend/data/sim_priors.json",
+    "sha256": "f0db5a90013400f57e1f244acea7148d41c96a1fad4679f1c346f8a8eaaa1659",
+    "generated_at": "2026-10-04T14:23:23+00:00",
+    "builder": "backend/scripts/build_sim_priors.py",
+    "identity_origin": "ESPN standings team.id/displayName; builder exports espn_team_id and espn_league_slug"
+  },
+  "routes": [
+    {
+      "provider": "espn",
+      "team_id": "364",
+      "team_name": "Liverpool",
+      "league_key": "premier_league",
+      "league_slug": "eng.1"
+    },
+    {
+      "provider": "espn",
+      "team_id": "360",
+      "team_name": "Manchester United",
+      "league_key": "premier_league",
+      "league_slug": "eng.1"
+    }
+  ]
+}

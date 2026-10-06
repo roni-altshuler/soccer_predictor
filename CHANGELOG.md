@@ -17,6 +17,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Legacy ESPN injury caches use reviewed provider/team/league bindings instead
+  of probing all configured leagues. Missing, conflicting or unsupported
+  routing stays unavailable; explicit context, last-good observations and
+  publication gates remain intact. Offline request scope for teams 364/360
+  falls from 42 to two; provider recovery remains unverified. See
+  [routing evidence and limits](docs/INJURY_LEAGUE_ROUTING.md).
+
 - Injury refresh preserves sanitized HTTP, transport, JSON and report-schema
   failure reasons in a bounded current-run artifact, including failed batches.
   Completed attempts are checkpointed outside the data cache; old injury

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "basis": "offline synthetic httpx.MockTransport CLI replays; not live provider recovery",
+  "repository_source_commit": "e63649f2271fd7d184b1d019bc75b1d4fe34aa7d",
+  "routing_manifest": "backend/data/injury_team_routes.json",
+  "routing_manifest_sha256": "39f55c9033074811f2551436475cffd4cfd38ca68b07246c5b77cafa9d748a47",
+  "test_source_sha256": {
+    "backend/tests/test_injury_routing.py": "1f505c1146561b4bc0b838ec06da5f0987692e71a34692074ac4b2523fc45d6a",
+    "backend/tests/test_injury_diagnostics.py": "8fcbb92473b6e00dde11600ec323d7019eba5bcca653d09b2bf2b7a6aa6c7eff"
+  },
+  "replay_test": "backend/tests/test_injury_diagnostics.py::test_failed_cli_routes_two_legacy_teams_without_publishing",
+  "replay_modes": [
+    "checkpoints",
+    "final-export-only (checkpoints disabled)"
+  ],
+  "mock_response": {
+    "http_status": 200,
+    "injuries_field": "absent"
+  },
+  "historical_scope": {
+    "teams": 2,
+    "configured_paths_per_team": 21,
+    "requests": 42,
+    "evidence": "legacy_42_mock_summary.json at PR37 reviewed head ee3ee32b8e210f20ff17fb4fd3dbede9b8d5616f"
+  },
+  "requests_per_routed_replay": 2,
+  "retained_records_per_replay": 2,
+  "reason_counts_per_replay": {
+    "missing_injury_content": 2
+  },
+  "dropped_records": 0,
+  "passed_test_assertions": [
+    "exact existing eng.1 paths for teams 364/360",
+    "CLI output inspected without test-side export",
+    "CLI exit code 1",
+    "last-good bytes, mtime and fetched_at preserved",
+    "zero FotMob calls",
+    "safe allowlisted diagnostic fields"
+  ],
+  "validation": {
+    "focused_passed": 158,
+    "focused_existing_warnings": 3,
+    "backend_passed": 1579,
+    "backend_skipped": 25,
+    "backend_existing_warnings": 24,
+    "unchanged_workflow_yaml_and_four_shell_steps": "passed",
+    "publication_gate_contracts": "passed"
+  },
+  "export_regression_checks": {
+    "basis": "isolated in-memory mutations; tracked runtime files unchanged",
+    "removed_final_export_expected_test_failures": 2,
+    "empty_export_expected_test_failures": 2
+  },
+  "live_routing_request_reduction_verified": false,
+  "provider_recovery_verified": false
+}

@@ -20,7 +20,9 @@ REASONS = {
 DETAILS = {
     "root_non_object", "injuries_null", "injuries_non_list", "entry_non_object",
     "athlete_missing", "athlete_identity", "invalid_status", "invalid_type",
-    "invalid_details", "invalid_reason", "unknown_league",
+    "invalid_details", "invalid_reason", "unknown_league", "unknown_provider", "invalid_team_identity",
+    "missing_league_mapping", "conflicting_league_mapping", "unsupported_league_mapping",
+    "invalid_routing_evidence",
 }
 
 
