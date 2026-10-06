@@ -6,8 +6,10 @@ import { chromium } from 'playwright'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import assert from 'node:assert/strict'
+import { checkNavigationRaces } from './lib/navigation_race_checks.mjs'
 
-const base = process.env.QA_BASE || 'http://127.0.0.1:3100'
+const port = process.env.QA_PORT || '3100'
+const base = process.env.QA_BASE || `http://127.0.0.1:${port}`
 const out = process.env.QA_OUT || '/tmp/pitchverse-product-quality'
 const date = '2026-09-19'
 const today = '2026-09-20'
@@ -42,9 +44,11 @@ await mkdir(out, { recursive: true })
 let server
 let browser
 const report = []
+let navigationReport
 async function untilServer() {
   const deadline = Date.now() + 60000
   while (Date.now() < deadline) {
+    if (server?.exitCode != null) throw new Error(`Local server exited with ${server.exitCode}`)
     try { if ((await fetch(base)).ok) return } catch { /* starting */ }
     await new Promise((resolve) => setTimeout(resolve, 200))
   }
@@ -103,11 +107,16 @@ function contrast(foreground, background) {
 }
 try {
   if (!process.env.QA_BASE) {
-    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', '3100'], { stdio: 'ignore' })
+    assert(/^\d+$/.test(port) && Number(port) > 0 && Number(port) < 65536, 'Invalid QA_PORT')
+    const occupied = await fetch(base).then(() => true, () => false)
+    assert.equal(occupied, false, `QA port ${port} is occupied; choose QA_PORT or explicitly use QA_BASE`)
+    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', port], { stdio: ['ignore', 'ignore', 'inherit'] })
     await untilServer()
   }
   browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || undefined })
-  for (const width of [390, 768, 1440]) {
+  assert.match(await (await fetch(base)).text(), /<h1\b[^>]*>Matchday<\/h1>/, 'Matchday heading remains in server-rendered HTML')
+  navigationReport = await checkNavigationRaces({ browser, base, out, date, today, fixtures, records, detail, evaluation, probe: process.env.QA_PROBE === '1' })
+  for (const width of process.env.QA_NAVIGATION_ONLY ? [] : [390, 768, 1440]) {
     console.log(`Checking ${width}px` )
     const context = await browser.newContext({ viewport: { width, height: 960 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
     const page = await context.newPage()
@@ -339,6 +348,6 @@ try {
   await browser?.close()
   if (server) server.kill('SIGTERM')
 }
-const result = { replay: 'Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, report }
+const result = { replay: 'Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, report }
 await writeFile(`${out}/report.json`, JSON.stringify(result, null, 2))
 console.log(JSON.stringify(result, null, 2))

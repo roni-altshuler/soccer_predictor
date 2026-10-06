@@ -48,6 +48,8 @@ development server, set `QA_BASE=http://127.0.0.1:3000`. The runner writes all
 screenshots and a JSON report to `/tmp/pitchverse-product-quality` by default;
 `QA_OUT` selects a different evidence directory. Existing frontend PR CI runs
 the same contract and uploads `product-quality-evidence` automatically.
+Set `QA_PORT` to select an unused port when starting a production server; the
+runner rejects an occupied port instead of silently testing another process.
 
 The replay reads committed September 19 predictions and the existing evaluation
 artifact. It freezes the date to September 20 and intercepts API and external
@@ -86,9 +88,57 @@ for focus against cards. Axe reported zero violations in the tested states,
 with zero horizontal overflow or unexpected browser errors at all three widths.
 See [the machine-readable report](data/matchday-design-qa.json).
 
-Local checks passed: lint (existing warnings), TypeScript, production build,
-**683 frontend tests in 54 suites**, and **1,405 backend tests** (25 skipped,
-24 existing warnings). Exact-head CI results are recorded with the draft PR.
+The follow-up passed lint (existing warnings), TypeScript, production build
+and **685 frontend tests in 55 suites**. The full backend run before this
+frontend follow-up passed **1,405 tests** (25 skipped, 24 existing warnings);
+backend source is unchanged. Exact-head CI results are recorded with the draft PR.
+
+## Independent review follow-up
+
+Controlled Chromium checks against original PR head
+`4975c4751370069d4f60e97595165119fb475666` reproduced stale visible filters in
+all eight same-path home cases: mobile/desktop, cold links/control selections,
+and brand/Matchday navigation. The URL cleared while Yesterday, Premier League
+and To play remained selected. Back/Forward worked through the existing
+popstate reader. See [the original-head evidence](data/matchday-navigation-before.json).
+
+A small `useSearchParams` observer now sits inside its own null-fallback
+Suspense boundary, so the existing page stays static. Native filter pushes let
+Next's history wrapper add its internal navigation markers; passing those
+markers manually made Next skip its search subscription. The observer reads
+the current URL on mount and query changes. Both unit and browser regressions
+cover cold/control selections, home, Back and Forward; existing scroll and
+Following contracts also remain in the production replay. The build lists `/`
+as static and the runner verifies its heading in server-rendered HTML.
+
+The prior inset outline touched the dark control fill, not the card surface:
+it measured **1.38:1** on the active filter and **1:1** on hovered Match centre.
+Filled controls now use cream ink for the inset outline, avoiding clipping.
+Element screenshots are decoded in the browser and sample the actual ring and
+adjacent fill: **11.06:1** on the active filter, **7.99:1** on the hovered action.
+These checks run at 390px and 1440px and fail below 3:1. The existing token
+measurement against cards remains separately labeled in the report.
+
+| Focused control | Before | After |
+|---|---|---|
+| Active filter, 390px | [ring](images/matchday-design/before-focus-active-filter-390.png) | [ring](images/matchday-design/after-focus-active-filter-390.png) |
+| Hovered Match centre, 390px | [ring](images/matchday-design/before-focus-hovered-match-centre-390.png) | [ring](images/matchday-design/after-focus-hovered-match-centre-390.png) |
+| Active filter, 1440px | [ring](images/matchday-design/before-focus-active-filter-1440.png) | [ring](images/matchday-design/after-focus-active-filter-1440.png) |
+| Hovered Match centre, 1440px | [ring](images/matchday-design/before-focus-hovered-match-centre-1440.png) | [ring](images/matchday-design/after-focus-hovered-match-centre-1440.png) |
+
+The delayed-detail race did **not** reproduce on the original head. At both
+widths, an older committed match response was held until a newer match's detail
+was visible, then delivered and observed to finish. The newer heading stayed
+intact with no browser errors, both through Matchday and through a direct Next
+client route transition between match IDs. The existing pathname-keyed page
+transition isolates those mounts; no detail-fetch change was made. These
+controlled races remain strict regressions in the normal product audit.
+
+To rerun just the targeted checks, set `QA_NAVIGATION_ONLY=1`. For comparison
+against an older checkout, `QA_PROBE=1` records expected failing assertions in
+`navigation-races.json`; normal CI always uses strict assertions. The fixtures
+and response factory are shared with the existing audit and no external data
+is changed.
 
 These are Chromium viewport checks, not physical-device or cross-browser tests.
 Authentication, populated lineups/timelines and unrelated routes are outside

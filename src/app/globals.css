@@ -72,6 +72,14 @@
   outline-offset: -3px;
 }
 
+/* An inset ring touches the control's fill. Light ink remains visible on both
+   the forest fill and the link hover; the inset keeps it unclipped. */
+.match-flow-shell .match-centre-action:focus-visible,
+.match-flow-shell [aria-label='Filter matches'] button[aria-pressed='true']:focus-visible,
+.match-flow-shell [class*='bg-[var(--accent-primary)]']:focus-visible {
+  outline-color: var(--accent-on-primary) !important;
+}
+
 .match-flow-shell .matchday-page h1 {
   font-size: clamp(2rem, 3.5vw, 2.75rem);
   line-height: 1.1;

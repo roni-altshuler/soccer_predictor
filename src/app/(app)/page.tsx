@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useMemo } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import { ArrowUpRight, Bookmark, BookmarkCheck, CalendarRange, RefreshCw, Trophy } from 'lucide-react'
 
 import { normalizeTeamName, teamMatchesWatchlist } from '@/lib/watchlist'
@@ -15,6 +15,7 @@ import { useTeamWatchlist } from '@/hooks/useTeamWatchlist'
 import { DateStrip, type DateOption } from '@/components/match/DateStrip'
 import { ClubHouse, MatchdaySpotlight, fixtureHref } from '@/components/match/MatchdaySpotlight'
 import { LeagueSection } from '@/components/match/LeagueSection'
+import { MatchdayUrlSync } from '@/components/match/MatchdayUrlSync'
 import { LeagueMark } from '@/components/primitives/LeagueMark'
 import { MatchCardSkeleton } from '@/components/skeletons'
 import { Card } from '@/components/ui/card'
@@ -107,7 +108,7 @@ export default function Home() {
   const [dateOptions, setDateOptions] = useState<DateOption[]>([])
   useEffect(() => { setDateOptions(getDateOptions()) }, [])
   const [viewReady, setViewReady] = useState(false)
-  const { view, update, saveScroll, returnHref } = useMatchdayNavigation(viewReady)
+  const { view, update, saveScroll, syncLocation, returnHref } = useMatchdayNavigation(viewReady)
   const { date: selectedDate, filter: tab, competition, following: watchlistOnly } = view
   const [historical, setHistorical] = useState<Historical | null>(null)
   const [liveRecord, setLiveRecord] = useState<Live | null>(null)
@@ -159,6 +160,7 @@ export default function Home() {
 
   return (
     <div className="matchday-page min-h-screen" onClickCapture={saveScroll}>
+      <Suspense fallback={null}><MatchdayUrlSync onChange={syncLocation} /></Suspense>
       <DateStrip dateOptions={selectedDate && !dateOptions.some((d) => d.date === selectedDate)
         ? [...dateOptions, { date: selectedDate, isToday: false, label: new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) }]
         : dateOptions} selectedDate={selectedDate} onSelectDate={(date) => update({ date })} />

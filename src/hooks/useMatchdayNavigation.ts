@@ -11,17 +11,17 @@ export function useMatchdayNavigation(ready: boolean) {
   const restoring = useRef(true)
   const restoreY = useRef(0)
   const [revision, setRevision] = useState(0)
-  useEffect(() => {
-    const read = () => {
-      restoring.current = true
-      restoreY.current = Number(window.history.state?.[SCROLL_KEY]) || 0
-      setView(readMatchdayView(new URLSearchParams(window.location.search), localDateKey(new Date())))
-      setRevision((n) => n + 1)
-    }
-    read()
-    window.addEventListener('popstate', read)
-    return () => window.removeEventListener('popstate', read)
+  const syncLocation = useCallback(() => {
+    restoring.current = true
+    restoreY.current = Number(window.history.state?.[SCROLL_KEY]) || 0
+    setView(readMatchdayView(new URLSearchParams(window.location.search), localDateKey(new Date())))
+    setRevision((n) => n + 1)
   }, [])
+  useEffect(() => {
+    syncLocation()
+    window.addEventListener('popstate', syncLocation)
+    return () => window.removeEventListener('popstate', syncLocation)
+  }, [syncLocation])
 
   const saveScroll = useCallback(() => {
     if (restoring.current) return
@@ -51,11 +51,15 @@ export function useMatchdayNavigation(ready: boolean) {
     const next = { ...view, ...change }
     const href = matchdayHref(next, new URLSearchParams(window.location.search))
     if (href !== `${window.location.pathname}${window.location.search}`) {
-      // Preserve Next's history metadata and give this selection its own entry.
-      window.history.pushState({ ...window.history.state, [SCROLL_KEY]: window.scrollY }, '', href)
+      // Let Next's native-history wrapper copy its internal markers. Passing
+      // them ourselves makes it skip the search-param subscription update.
+      const state = { ...window.history.state, [SCROLL_KEY]: window.scrollY }
+      delete state.__NA
+      delete state._N
+      window.history.pushState(state, '', href)
     }
     setView(next)
   }, [view, saveScroll])
 
-  return { view, update, saveScroll, returnHref: view.date ? matchdayHref(view, new URLSearchParams(window.location.search)) : '/' }
+  return { view, update, saveScroll, syncLocation, returnHref: view.date ? matchdayHref(view, new URLSearchParams(window.location.search)) : '/' }
 }
