@@ -1,17 +1,19 @@
 'use client'
 
-import { useMemo } from 'react'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useHeadshotManifest } from '@/hooks/useHeadshotManifest'
+import { usePlayerPortrait } from '@/hooks/usePlayerPortrait'
+import { approvedPlayerPortrait, type PlayerIdentity, type PlayerPortrait } from '@/lib/playerPortrait'
 import { cn } from '@/lib/utils'
 
 interface PlayerAvatarProps {
-  /** Stable player identifier — manifest key. */
+  /** Legacy numeric ID alone cannot establish a portrait's subject. */
   playerId?: number | string
+  identity?: PlayerIdentity
+  portrait?: PlayerPortrait
   /** Display name; used for initials fallback. */
   name?: string
-  /** Direct image URL — overrides manifest lookup. */
+  /** Retained for callers; a bare URL provides no identity/permission evidence. */
   imageUrl?: string
   /** Pixel diameter (default 40). */
   size?: number
@@ -28,31 +30,18 @@ function initialsFor(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-// ESPN's public headshot CDN — 404s for less-prominent players, which the
-// Radix Avatar handles by never rendering the image (initials show instead).
-function espnHeadshotUrl(playerId: number | string): string {
-  return `https://a.espncdn.com/i/headshots/soccer/players/full/${playerId}.png`
-}
-
-/**
- * Player headshot with graceful initials fallback. Resolution order:
- * explicit imageUrl → headshot-manifest override → ESPN headshot CDN →
- * team-tinted initials avatar.
- */
+/** An approved local portrait, otherwise an accessible initials fallback. */
 export function PlayerAvatar({
-  playerId,
+  identity,
+  portrait,
   name,
-  imageUrl,
   size = 40,
   teamColor,
   className,
 }: PlayerAvatarProps) {
-  const { resolve } = useHeadshotManifest()
-  const resolvedUrl = useMemo(() => {
-    if (imageUrl) return imageUrl
-    if (playerId == null) return undefined
-    return resolve(String(playerId)) ?? espnHeadshotUrl(playerId)
-  }, [imageUrl, playerId, resolve])
+  const { resolve, path } = useHeadshotManifest()
+  const approved = portrait !== undefined ? approvedPlayerPortrait(identity, portrait) : resolve(identity)
+  const resolvedUrl = usePlayerPortrait(approved, path)
 
   const ringStyle = teamColor
     ? { boxShadow: `0 0 0 2px ${teamColor}, 0 0 0 4px var(--background)` }
@@ -64,13 +53,17 @@ export function PlayerAvatar({
 
   return (
     <Avatar
+      key={resolvedUrl ?? 'unavailable'}
+      role="img"
+      aria-label={name?.trim() || 'Player'}
       className={cn('shrink-0 rounded-full', className)}
       style={{ width: size, height: size, ...ringStyle }}
     >
       {resolvedUrl ? (
-        <AvatarImage src={resolvedUrl} alt={name ?? 'Player'} />
+        <AvatarImage src={resolvedUrl} alt="" />
       ) : null}
       <AvatarFallback
+        aria-hidden="true"
         className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--text-primary)]"
         style={fallbackStyle}
       >

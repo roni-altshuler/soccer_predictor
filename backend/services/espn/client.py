@@ -425,12 +425,12 @@ class ESPNClient:
     async def get_athlete(self, athlete_id: str, league_slug: str = "eng.1") -> Optional[Dict]:
         """Get an athlete's profile (name, position, jersey, headshot, team ref)."""
         url = self.CORE_ATHLETE_URL.format(slug=league_slug, athlete_id=athlete_id)
-        return await self._request(url, cache_key=f"espn_athlete_{athlete_id}")
+        return await self._request(url, cache_key=f"espn_athlete_{league_slug}_{athlete_id}")
 
     async def get_athlete_overview(self, athlete_id: str, league_slug: str = "eng.1") -> Optional[Dict]:
         """Get an athlete's season stat splits and recent game log."""
         url = self.ATHLETE_OVERVIEW_URL.format(slug=league_slug, athlete_id=athlete_id)
-        return await self._request(url, cache_key=f"espn_athlete_overview_{athlete_id}")
+        return await self._request(url, cache_key=f"espn_athlete_overview_{league_slug}_{athlete_id}")
 
     async def resolve_ref(self, ref_url: str, cache_key: Optional[str] = None) -> Optional[Dict]:
         """Follow an ESPN `$ref` URL (e.g. an athlete's defaultTeam)."""

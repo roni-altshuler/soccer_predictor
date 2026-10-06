@@ -1,6 +1,7 @@
 'use client'
 
 import useSWRImmutable from 'swr/immutable'
+import { approvedPlayerPortrait, playerIdentityKey, type PlayerIdentity, type PlayerPortrait } from '@/lib/playerPortrait'
 
 type Manifest = Record<string, string>
 
@@ -17,7 +18,7 @@ async function fetchManifest(url: string): Promise<Manifest> {
     return {}
   }
   const data = (await res.json()) as unknown
-  if (!data || typeof data !== 'object') return {}
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return {}
   return data as Manifest
 }
 
@@ -42,12 +43,19 @@ function useManifestAt(path: string): ManifestHookResult {
 }
 
 /**
- * Player headshot manifest. Populated by `backend/scripts/fetch_player_headshots.py`
- * which writes `/public/headshots/manifest.json` of shape `{ playerId: '/headshots/12345.webp' }`.
- * SWR caches it forever (immutable, no revalidate) — the manifest is static per build.
+ * Qualified identity + explicit subject/rights evidence are required. Legacy
+ * numeric entries remain on disk but cannot establish a player's portrait.
  */
-export function useHeadshotManifest(): ManifestHookResult {
-  return useManifestAt('/headshots/manifest.json')
+export function useHeadshotManifest() {
+  const { data, isLoading } = useSWRImmutable<Record<string, unknown>>(withBase('/headshots/manifest.json'), fetchManifest)
+  return {
+    isLoading,
+    resolve: (identity: PlayerIdentity | undefined): PlayerPortrait | undefined => {
+      const key = playerIdentityKey(identity)
+      return key ? approvedPlayerPortrait(identity, data?.[key]) : undefined
+    },
+    path: withBase,
+  }
 }
 
 /**

@@ -6,7 +6,9 @@ import asyncio
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
+from urllib.parse import urlencode, urlparse
+import re
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -14,6 +16,7 @@ from backend.services.fotmob import get_fotmob_client
 from backend.services.ratings import get_elo_system
 from backend.services.espn.client import ESPN_LEAGUE_IDS, get_espn_client
 from backend.services.data.injury_tracker import get_injury_tracker
+from backend.services.data.player_portraits import player_portrait
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +73,30 @@ def _player_slug(gender: Optional[str]) -> str:
 
 
 def _extract_ref_id(ref: Any) -> Optional[int]:
-    """Pull the trailing numeric id out of an ESPN `$ref` URL."""
+    """An ESPN team ref cannot be replaced by another provider's numeric tail."""
     if isinstance(ref, dict):
         ref = ref.get("$ref")
     if not isinstance(ref, str):
         return None
-    tail = ref.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
-    return int(tail) if tail.isdigit() else None
+    try:
+        parsed = urlparse(ref)
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"} or parsed.hostname != "sports.core.api.espn.com":
+        return None
+    match = re.fullmatch(r"/v2/sports/soccer/(?:leagues/[a-z0-9.]+/)?teams/([1-9][0-9]*)/?", parsed.path)
+    return int(match[1]) if match else None
+
+
+def _profile_slug(league: Optional[str], gender: Optional[str]) -> str:
+    if not league:
+        return _player_slug(gender)
+    slug = ESPN_LEAGUE_IDS.get(league)
+    if slug:
+        return slug
+    if league in ESPN_LEAGUE_IDS.values():
+        return league
+    raise HTTPException(status_code=422, detail="Unknown player league context")
 
 
 def _stat_value(names: List[str], stats: List[Any], name: str) -> Optional[int]:
@@ -96,6 +116,7 @@ async def get_player_profile(
     player_id: int,
     gender: Optional[str] = Query(default=None),
     league: Optional[str] = Query(default=None),
+    provider: Literal["espn"] = Query(default="espn"),
 ):
     """Player profile normalized to the frontend `PlayerProfile` shape.
 
@@ -103,16 +124,23 @@ async def get_player_profile(
     optional — absent provider data stays absent (no placeholders).
     """
     espn = get_espn_client()
-    slug = ESPN_LEAGUE_IDS.get(league or "", None) or _player_slug(gender)
+    if player_id <= 0:
+        raise HTTPException(status_code=422, detail="Invalid ESPN player ID")
+    slug = _profile_slug(league, gender)
     athlete = await espn.get_athlete(str(player_id), league_slug=slug)
-    if not athlete or not (athlete.get("displayName") or athlete.get("fullName")):
+    if (not isinstance(athlete, dict) or str(athlete.get("id")) != str(player_id)
+            or not isinstance(athlete.get("displayName") or athlete.get("fullName"), str)
+            or not (athlete.get("displayName") or athlete.get("fullName")).strip()):
         raise HTTPException(status_code=404, detail=f"Player {player_id} not found")
 
     position = athlete.get("position") or {}
-    headshot = athlete.get("headshot") or {}
+    identity = {"provider": provider, "id": str(player_id)}
+    context = urlencode({"provider": provider, "league": slug, "gender": (gender or "M").upper()})
     profile: Dict[str, Any] = {
         "id": player_id,
         "name": athlete.get("displayName") or athlete.get("fullName"),
+        "identity": identity,
+        "links": {"self": f"/api/v1/teams/players/{player_id}?{context}"},
     }
     if isinstance(position, dict) and (position.get("displayName") or position.get("name")):
         profile["position"] = position.get("displayName") or position.get("name")
@@ -124,17 +152,20 @@ async def get_player_profile(
         profile["age"] = athlete["age"]
     if isinstance(athlete.get("height"), (int, float)) and athlete["height"]:
         profile["height"] = round(athlete["height"] * 2.54)  # ESPN sends inches
-    if isinstance(headshot, dict) and headshot.get("href"):
-        profile["imageUrl"] = headshot["href"]
+    portrait = player_portrait(identity)
+    if portrait:
+        profile["portrait"] = portrait
+        profile["imageUrl"] = portrait["path"]
 
     team_id = _extract_ref_id(athlete.get("defaultTeam") or athlete.get("team"))
     if team_id is not None:
         profile["teamId"] = team_id
+        profile["links"]["team"] = f"/teams/{team_id}?{context}"
         team = await espn.resolve_ref(
             f"https://sports.core.api.espn.com/v2/sports/soccer/teams/{team_id}",
             cache_key=f"espn_team_ref_{team_id}",
         )
-        if team:
+        if isinstance(team, dict) and str(team.get("id")) == str(team_id):
             if team.get("displayName"):
                 profile["teamName"] = team["displayName"]
             if team.get("color"):
@@ -148,6 +179,7 @@ async def get_player_stats(
     player_id: int,
     gender: Optional[str] = Query(default=None),
     league: Optional[str] = Query(default=None),
+    provider: Literal["espn"] = Query(default="espn"),
 ):
     """Season stats + recent match log, normalized to `PlayerStats`.
 
@@ -157,12 +189,14 @@ async def get_player_stats(
     fabricated.
     """
     espn = get_espn_client()
-    slug = ESPN_LEAGUE_IDS.get(league or "", None) or _player_slug(gender)
+    if player_id <= 0:
+        raise HTTPException(status_code=422, detail="Invalid ESPN player ID")
+    slug = _profile_slug(league, gender)
     overview = await espn.get_athlete_overview(str(player_id), league_slug=slug)
     if overview is None:
         raise HTTPException(status_code=404, detail=f"Player {player_id} not found")
 
-    result: Dict[str, Any] = {"player_id": player_id, "season": ""}
+    result: Dict[str, Any] = {"player_id": player_id, "identity": {"provider": provider, "id": str(player_id)}, "season": ""}
 
     # --- Season splits: pick the primary competition (most starts). ---
     statistics = overview.get("statistics") or {}

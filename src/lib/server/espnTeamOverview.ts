@@ -137,7 +137,7 @@ function transformRosterPlayer(rawPlayer: unknown): Json | null {
 export async function fetchTeamOverview(teamId: string): Promise<Json | null> {
   const metaPayload = await fetchJson(TEAM_META_URL(teamId))
   const team = asRecord(metaPayload?.team)
-  if (!team || !team.displayName) return null
+  if (!team || !team.displayName || String(team.id ?? '') !== teamId) return null
 
   const league = asRecord(team.defaultLeague)
   const slug = typeof league?.slug === 'string' ? league.slug : null

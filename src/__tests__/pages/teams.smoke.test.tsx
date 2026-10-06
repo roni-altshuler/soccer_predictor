@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
-import TeamPage from '@/app/(app)/teams/[id]/page'
+import TeamPage, { generateMetadata } from '@/app/(app)/teams/[id]/page'
 import { fetchTeamOverview } from '@/lib/server/espnTeamOverview'
 
 /**
@@ -22,12 +22,13 @@ jest.mock('@/lib/server/espnTeamOverview', () => ({
   fetchTeamOverview: jest.fn(),
 }))
 
+const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn() }
 jest.mock('next/navigation', () => ({
   notFound: jest.fn(() => {
     throw new Error('NEXT_NOT_FOUND')
   }),
   // SmartBackLink (via useSmartBack) reads the router; give it inert stubs.
-  useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => mockRouter,
   usePathname: () => '/teams/359',
 }))
 
@@ -112,6 +113,7 @@ const PAYLOAD = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  window.history.replaceState({}, '')
   mockFetchTeamOverview.mockResolvedValue(
     PAYLOAD as unknown as Awaited<ReturnType<typeof fetchTeamOverview>>,
   )
@@ -174,5 +176,25 @@ describe('TeamPage', () => {
     await expect(
       TeamPage({ params: Promise.resolve({ id: '999999' }) }),
     ).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  it('rejects another provider namespace before fetching a team with colliding digits', async () => {
+    await expect(TeamPage({ params: Promise.resolve({ id: '359' }), searchParams: Promise.resolve({ provider: 'fotmob' }) })).rejects.toThrow('NEXT_NOT_FOUND')
+    expect(mockFetchTeamOverview).not.toHaveBeenCalled()
+  })
+
+  it('rejects another provider namespace in metadata without fetching', async () => {
+    expect(await generateMetadata({ params: Promise.resolve({ id: '359' }), searchParams: Promise.resolve({ provider: 'fotmob' }) })).toEqual({ title: 'Team · Pitchverse' })
+    expect(mockFetchTeamOverview).not.toHaveBeenCalled()
+  })
+
+  it('uses the filtered local parent on a cold link and retains browser back for in-app history', async () => {
+    const parent = '/?date=2026-09-19&league=eng.1&gender=F'
+    render(await TeamPage({ params: Promise.resolve({ id: '359' }), searchParams: Promise.resolve({ returnTo: parent, provider: 'espn' }) }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(mockRouter.push).toHaveBeenCalledWith(parent)
+    window.history.replaceState({ pitchverseNavigation: { pathname: '/teams/359', depth: 1 } }, '')
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(mockRouter.back).toHaveBeenCalledTimes(1)
   })
 })
