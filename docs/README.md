@@ -39,6 +39,7 @@ Everything below is internal: architecture, operations and project history.
 
 ### Development Guides
 
+- **[SEASON_ADAPTATION_EVALUATION.md](./SEASON_ADAPTATION_EVALUATION.md)** - Chronological serving comparison, synthetic contract results and prerequisites for real evidence
 - **[RETRAINING_GUIDE.md](./RETRAINING_GUIDE.md)** - Machine learning model retraining procedures
 - **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
 

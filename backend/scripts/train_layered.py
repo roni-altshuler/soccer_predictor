@@ -208,6 +208,16 @@ def _sub(x, y):
 def featurise(matches: Sequence[dict]) -> Tuple[np.ndarray, List[str],
                                                 np.ndarray, np.ndarray]:
     """Pass 1. Day-blocked: featurise the whole date, then observe the whole date."""
+    return replay_features(matches)[:4]
+
+
+def replay_features(matches: Sequence[dict]) -> Tuple[
+        np.ndarray, List[str], np.ndarray, np.ndarray, FeatureState]:
+    """Return the training arrays AND their final state for season serving.
+
+    Callers supply chronologically ordered, unique results. Sharing this walk
+    keeps evaluation and serving on the same predict-before-observe path.
+    """
     state = FeatureState()
     rows: List[Dict[str, float]] = []
     # The Elo formula's own three-way call, recorded here rather than in a
@@ -234,7 +244,7 @@ def featurise(matches: Sequence[dict]) -> Tuple[np.ndarray, List[str],
     names = list(rows[0].keys())
     X = np.array([[r[k] for k in names] for r in rows], dtype=np.float64)
     y = np.array([IDX[m["result"]] for m in matches])
-    return X, names, y, np.vstack(elo_p)
+    return X, names, y, np.vstack(elo_p), state
 
 
 def expanding_fit(X: np.ndarray, y: np.ndarray, seasons: np.ndarray,
