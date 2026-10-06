@@ -97,22 +97,33 @@ collection, workflow dispatch, access-denial workaround or model work was used.
 The separate team API's unavailable-to-empty serving behavior remains outside
 this patch.
 
-Local validation of implementation commit
-`b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1` passed:
+Local validation after correcting the CLI artifact assertions passed. Runtime
+code is unchanged from implementation commit
+`b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1`; the replay summary identifies the
+corrected test source by its SHA-256:
 
 | Check | Result |
 | --- | --- |
-| Focused diagnostic, scraper-failure and ESPN-client tests | 120 passed; 3 existing warnings |
-| Full backend suite | 1,541 passed; 25 skipped; 24 existing warnings |
+| Focused diagnostic, scraper-failure and ESPN-client tests | 121 passed; 3 existing warnings |
+| Full backend suite | 1,542 passed; 25 skipped; 24 existing warnings |
 | Workflow YAML and all four shell steps (`bash -n`) | Passed |
 | Workflow artifact/failure/publication contract tests | Passed within the focused suite |
 
 The [sanitized synthetic replay summary](fixtures/injury-diagnostics/legacy_42_mock_summary.json)
 records 21 retained attempts per team, 42 `missing_injury_content` records and
-zero dropped records. Cache preservation and zero FotMob calls are assertions
-of the named passing test. Diagnostic HTTP status remains unknown even though
-the mock returned 200: decoded schema validation does not retain transport
-status. The summary is evidence from this offline test, not live provider data.
+zero dropped records per replay. Both replay cases inspect the actual CLI
+output without exporting or repairing it in a test helper. One uses normal
+checkpoints; the other disables checkpoints to isolate the CLI's final export.
+The write-failure test patches the newly constructed ledger's class method,
+uses a spy to verify that it ran, and checks the final-export failure warning.
+Isolated in-memory mutations removing the final export or writing an empty
+ledger caused both targeted tests to fail in each case. Tracked runtime files
+were not modified for these checks.
+
+Cache preservation and zero FotMob calls are assertions of the named passing
+replays. Diagnostic HTTP status remains unknown even though the mock returned
+200: decoded schema validation does not retain transport status. The summary
+is evidence from these offline tests, not live provider data.
 
 ```sh
 python -m pytest backend/tests/test_injury_diagnostics.py \

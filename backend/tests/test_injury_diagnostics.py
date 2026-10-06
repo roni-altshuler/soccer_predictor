@@ -59,9 +59,8 @@ def assert_preserved(saved):
     assert json.loads(path.read_text())['fetched_at'] == '2026-01-01T00:00:00+00:00'
 
 
-def artifact(tracker, tmp_path):
-    path = tmp_path / 'artifact' / 'injury-diagnostics.json'
-    tracker.diagnostics.write(path)
+def read_artifact(path):
+    """Inspect an existing artifact without creating or repairing it."""
     text = path.read_text()
     assert PRIVATE not in text
     assert all(word not in text for word in ('Authorization', 'headers', 'response_body', 'shortComment'))
@@ -70,6 +69,13 @@ def artifact(tracker, tmp_path):
     assert all(set(row) == {'provider', 'team_id', 'league_key', 'league_slug',
                            'reason', 'detail', 'http_status', 'checked_at'} for row in data['records'])
     return data
+
+
+def export_artifact(tracker, tmp_path):
+    """Export the ledger for non-CLI serialization checks only."""
+    path = tmp_path / 'artifact' / 'injury-diagnostics.json'
+    tracker.diagnostics.write(path)
+    return read_artifact(path)
 
 
 @pytest.mark.asyncio
@@ -89,7 +95,7 @@ async def test_200_is_not_evidence_of_a_report_and_keeps_cache(harness, payload,
     with pytest.raises(ProviderUnavailable):
         await tracker.fetch_team_injuries('364', league_key='premier_league')
     assert_preserved(saved)
-    row = artifact(tracker, tmp_path)['records'][0]
+    row = export_artifact(tracker, tmp_path)['records'][0]
     assert (row['reason'], row['detail']) == (reason, detail)
     assert row['provider'] == 'espn' and row['team_id'] == '364'
     assert row['league_key'] == 'premier_league' and row['league_slug'] == 'eng.1'
@@ -119,7 +125,7 @@ async def test_real_shared_http_layer_retains_sanitized_failure_kind(harness, re
     with pytest.raises(ProviderUnavailable):
         await tracker.fetch_team_injuries('364', league_key='premier_league')
     assert_preserved(saved)
-    row = artifact(tracker, tmp_path)['records'][0]
+    row = export_artifact(tracker, tmp_path)['records'][0]
     assert (row['reason'], row['http_status']) == (reason, status)
     # Opt-in errors do not activate additional retry requests in the tracker.
     assert len(requests) == 1
@@ -138,7 +144,7 @@ async def test_malformed_entries_never_publish_a_partial_report(harness, bad):
     with pytest.raises(ProviderUnavailable):
         await tracker.fetch_team_injuries('364', league_key='premier_league')
     assert_preserved(saved)
-    assert artifact(tracker, tmp_path)['records'][0]['reason'] == 'malformed_entries'
+    assert export_artifact(tracker, tmp_path)['records'][0]['reason'] == 'malformed_entries'
     assert len(requests) == 1
     tracker.fotmob.get_team_injuries.assert_not_awaited()
 
@@ -154,7 +160,7 @@ async def test_only_explicit_valid_reports_can_replace_observations(harness, row
     data = json.loads(saved[0].read_text())
     assert data['injuries'] == result
     assert data['fetched_at'] != '2026-01-01T00:00:00+00:00'
-    assert artifact(tracker, tmp_path)['records'][0]['reason'] == 'available'
+    assert export_artifact(tracker, tmp_path)['records'][0]['reason'] == 'available'
     assert len(requests) == 1
 
 
@@ -163,7 +169,8 @@ def cli_args(path):
 
 
 @pytest.mark.asyncio
-async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harness, monkeypatch):
+@pytest.mark.parametrize('checkpoint_enabled', [True, False], ids=['checkpoints', 'final-export-only'])
+async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harness, monkeypatch, checkpoint_enabled):
     tracker, replies, requests, tmp_path = harness
     saved = [last_good(tracker, team) for team in ('364', '360')]
     for path, _, _ in saved:
@@ -173,12 +180,16 @@ async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harn
     saved = [(path, path.read_bytes(), path.stat().st_mtime_ns) for path, _, _ in saved]
     replies.append(httpx.Response(200, json={'unrecognized': PRIVATE}))
     monkeypatch.setattr(injury, 'get_injury_tracker', lambda: tracker)
+    if not checkpoint_enabled:
+        # Isolate CLI final export; incremental checkpoints must not conceal
+        # a missing final write. Checkpoint retention is exercised separately.
+        monkeypatch.setattr(InjuryDiagnostics, '_checkpoint', Mock())
     output = tmp_path / 'artifact' / 'injury-diagnostics.json'
     assert await injury._run_cli(cli_args(output)) == 1
     tracker.close.assert_awaited_once()
     for cache in saved:
         assert_preserved(cache)
-    data = artifact(tracker, tmp_path)
+    data = read_artifact(output)
     assert len(requests) == len(data['records']) == 2 * len(ESPN_LEAGUE_IDS) == 42
     assert {row['reason'] for row in data['records']} == {'missing_injury_content'}
     for team in ('364', '360'):
@@ -188,7 +199,7 @@ async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harn
 
 
 @pytest.mark.asyncio
-async def test_sidecar_and_artifact_write_failures_do_not_mask_provider_failure(harness, monkeypatch):
+async def test_sidecar_and_artifact_write_failures_do_not_mask_provider_failure(harness, monkeypatch, caplog):
     tracker, replies, _, tmp_path = harness
     saved = last_good(tracker)
     replies.append(httpx.Response(403, text=PRIVATE))
@@ -196,11 +207,21 @@ async def test_sidecar_and_artifact_write_failures_do_not_mask_provider_failure(
     monkeypatch.setattr(injury, 'get_injury_tracker', lambda: tracker)
     output = tmp_path / 'artifact' / 'injury-diagnostics.json'
     assert await injury._run_cli(cli_args(output)) == 1
-    reasons = {row['reason'] for row in artifact(tracker, tmp_path)['records']}
+    reasons = {row['reason'] for row in read_artifact(output)['records']}
     assert {'http_error', 'status_write_error'} <= reasons
     assert_preserved(saved)
-    monkeypatch.setattr(tracker.diagnostics, 'write', Mock(side_effect=OSError(PRIVATE)))
-    assert await injury._run_cli(cli_args(output)) == 1
+    previous_ledger = tracker.diagnostics
+    failed_output = tmp_path / 'artifact' / 'failed-injury-diagnostics.json'
+    write_failure = Mock(side_effect=OSError(PRIVATE))
+    # _run_cli constructs a fresh ledger, so inject on its class rather than
+    # the previous invocation's instance. The spy proves the error was raised.
+    monkeypatch.setattr(InjuryDiagnostics, 'write', write_failure)
+    caplog.clear()
+    assert await injury._run_cli(cli_args(failed_output)) == 1
+    assert tracker.diagnostics is not previous_ledger
+    write_failure.assert_called_with(failed_output)
+    assert any(record.message == 'Could not retain injury diagnostics' for record in caplog.records)
+    assert not failed_output.exists()
     assert_preserved(saved)
 
 
@@ -224,7 +245,7 @@ async def test_cache_write_failure_preserves_previous_observation_and_fails_cli(
     output = tmp_path / 'artifact' / 'injury-diagnostics.json'
     assert await injury._run_cli(cli_args(output)) == 1
     assert_preserved(saved)
-    assert {row['reason'] for row in artifact(tracker, tmp_path)['records']} == {'available', 'cache_write_error'}
+    assert {row['reason'] for row in read_artifact(output)['records']} == {'available', 'cache_write_error'}
 
 
 @pytest.mark.asyncio
@@ -242,7 +263,7 @@ async def test_invalid_cached_timestamp_cannot_leak_into_status_metadata(harness
     status = (tracker.data_dir / '364.status.json').read_text()
     assert PRIVATE not in status
     assert json.loads(status)['last_good_fetched_at'] is None
-    artifact(tracker, tmp_path)
+    export_artifact(tracker, tmp_path)
 
 
 @pytest.mark.asyncio
@@ -253,7 +274,7 @@ async def test_cleanup_failure_does_not_make_run_successful_and_retains_metadata
     monkeypatch.setattr(injury, 'get_injury_tracker', lambda: tracker)
     output = tmp_path / 'artifact' / 'injury-diagnostics.json'
     assert await injury._run_cli(cli_args(output)) == 1
-    records = artifact(tracker, tmp_path)['records']
+    records = read_artifact(output)['records']
     assert [row['reason'] for row in records] == ['cleanup_error']
     assert requests == []
 

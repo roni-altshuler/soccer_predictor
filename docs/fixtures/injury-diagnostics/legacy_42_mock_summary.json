@@ -22,12 +22,12 @@
     "CLI exit code 1",
     "both cache bytes, mtime and fetched_at preserved",
     "zero FotMob injury calls",
-    "current-run artifact exists and excludes private payload sentinel"
+    "actual CLI output exists and excludes private payload sentinel; inspected without a test-side export"
   ],
   "validation": {
-    "focused_passed": 120,
+    "focused_passed": 121,
     "focused_existing_warnings": 3,
-    "backend_passed": 1541,
+    "backend_passed": 1542,
     "backend_skipped": 25,
     "backend_existing_warnings": 24,
     "workflow_yaml_and_all_four_shell_steps": "passed",
@@ -35,5 +35,30 @@
   },
   "original_run_schema_known": false,
   "provider_recovery_verified": false,
-  "live_artifact_delivery_verified": false
+  "live_artifact_delivery_verified": false,
+  "test_source_sha256": "ff2a2141cd7b4a63afcc25952d7734eefcb1543ba991a50a17b834f3cf9ef10e",
+  "replay_modes": [
+    "checkpoints",
+    "final-export-only (incremental checkpoints disabled)"
+  ],
+  "records_per_replay": 42,
+  "cli_output_inspected_without_test_export": true,
+  "artifact_write_failure_injected_on_new_ledger_and_spy_verified": true,
+  "regression_checks": {
+    "basis": "isolated in-memory mutations; tracked runtime files unchanged",
+    "missing_final_export": {
+      "expected_test_failures": 2,
+      "cases": [
+        "42-attempt final-export-only replay",
+        "artifact-write failure test"
+      ]
+    },
+    "empty_export": {
+      "expected_test_failures": 2,
+      "cases": [
+        "42-attempt checkpoint replay",
+        "42-attempt final-export-only replay"
+      ]
+    }
+  }
 }
