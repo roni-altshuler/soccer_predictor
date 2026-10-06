@@ -58,6 +58,12 @@ The tests also block all numerical and prediction imports in subprocesses.
 An actual fresh virtual environment with only the workflow dependencies was
 used to run both modules' `--help` startup paths.
 
+The missing-roster regressions currently use explicitly synthetic contexts.
+The independently reported MLS event `761660` capture was not available in
+the saved environment: its committed prediction is not a summary/roster
+fixture. Replaying that captured summary remains required to verify this
+specific provider case; no new provider request was made to fill the gap.
+
 This contract does not establish provider coverage. Existing team API callers
 still catch unavailable injuries and use their existing empty-list response;
 UI availability display is outside this CLI/cache fix. Cache paths remain
