@@ -420,6 +420,11 @@ gitignored — build and train them locally. Committed prediction JSON under
 
 ## Documentation
 
+**[Injury failure diagnostics](docs/INJURY_FAILURE_DIAGNOSTICS.md)** records
+sanitized request/schema reasons in a bounded failed-run artifact while
+preserving last-good observations and the publication gate. The known failed
+run's response schema and provider recovery remain unverified.
+
 **[Player portrait identity and profile boundary](docs/PLAYER_PORTRAIT_IDENTITY.md)**
 explains provider-qualified IDs, reviewed subject/permission evidence, verified
 local portrait bytes and accessible initials when verification is missing.

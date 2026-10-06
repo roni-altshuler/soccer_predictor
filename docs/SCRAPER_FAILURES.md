@@ -45,8 +45,14 @@ lists remain successful unpublished responses; malformed nested structures
 raise without replacing the last-good lineup cache.
 
 The workflow runs injury refresh even after a lineup failure, keeps both errors
-visible, and commits scrape changes only when all steps succeeded. It no longer
-uses `continue-on-error` or swallows staging failures.
+visible, and commits scrape changes only when all provider steps succeeded.
+Provider steps do not use `continue-on-error`; staging failures are not swallowed.
+
+Injury request/schema failures now have sanitized reason codes and bounded
+current-run metadata. An always-run, best-effort artifact step retains only
+that metadata outside the data cache, including failed refreshes; the provider
+steps and successful-run publication gate remain strict. See
+[injury diagnostic fields, retention and limits](INJURY_FAILURE_DIAGNOSTICS.md).
 
 Offline checks:
 

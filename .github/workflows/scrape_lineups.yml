@@ -47,7 +47,7 @@ jobs:
 
       - name: Refresh stale injury reports
         if: ${{ !cancelled() }}
-        run: python -m backend.services.data.injury_tracker --refresh-stale
+        run: python -m backend.services.data.injury_tracker --refresh-stale --diagnostics-path "$RUNNER_TEMP/injury-diagnostics.json"
         working-directory: ${{ github.workspace }}
         timeout-minutes: 2
 
@@ -68,3 +68,13 @@ jobs:
             git commit -m "$MSG"
             git push
           fi
+
+      - name: Retain injury provider diagnostics
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: injury-provider-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/injury-diagnostics.json
+          if-no-files-found: warn
+          retention-days: 7

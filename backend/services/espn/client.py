@@ -20,6 +20,15 @@ from backend.config import get_settings, LEAGUE_IDS
 logger = logging.getLogger(__name__)
 
 
+class ESPNRequestFailure(RuntimeError):
+    """Opt-in request failure metadata; never includes URLs, bodies or headers."""
+
+    def __init__(self, reason: str, http_status: int | None = None):
+        self.reason = reason
+        self.http_status = http_status
+        super().__init__(reason)
+
+
 # ESPN League ID mappings (different from FotMob)
 ESPN_LEAGUE_IDS = {
     "premier_league": "eng.1",
@@ -160,9 +169,14 @@ class ESPNClient:
         endpoint: str,
         params: Optional[Dict] = None,
         cache_key: Optional[str] = None,
-        cache_ttl: Optional[int] = None
+        cache_ttl: Optional[int] = None,
+        raise_errors: bool = False,
     ) -> Optional[Dict]:
-        """Make a rate-limited, cached API request."""
+        """Make a rate-limited, cached API request.
+
+        Injury diagnostics opt into sanitized exceptions. Existing consumers
+        retain None-on-failure behavior; this flag adds no requests or retries.
+        """
         if cache_key:
             cached = self.cache.get(cache_key)
             if cached is not None:
@@ -179,7 +193,12 @@ class ESPNClient:
             url = endpoint if endpoint.startswith("http") else f"{self.BASE_URL}/{endpoint}"
             response = await client.get(url, params=params)
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError:
+                if raise_errors:
+                    raise ESPNRequestFailure("invalid_json", response.status_code) from None
+                raise
             
             if cache_key:
                 ttl = cache_ttl or self.default_ttl
@@ -187,13 +206,26 @@ class ESPNClient:
             
             return data
             
+        except ESPNRequestFailure:
+            raise
         except httpx.HTTPStatusError as e:
+            if raise_errors:
+                raise ESPNRequestFailure("http_error", e.response.status_code) from None
             logger.error(f"ESPN HTTP error {e.response.status_code} for {endpoint}: {e}")
             return None
+        except httpx.TimeoutException as e:
+            if raise_errors:
+                raise ESPNRequestFailure("timeout") from None
+            logger.error(f"ESPN request error for {endpoint}: {e}")
+            return None
         except httpx.RequestError as e:
+            if raise_errors:
+                raise ESPNRequestFailure("transport_error") from None
             logger.error(f"ESPN request error for {endpoint}: {e}")
             return None
         except Exception as e:
+            if raise_errors:
+                raise ESPNRequestFailure("unexpected_error") from None
             logger.error(f"ESPN unexpected error for {endpoint}: {e}")
             return None
     
