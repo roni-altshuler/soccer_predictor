@@ -8,8 +8,8 @@
 
 Match outcomes and season projections for the five big European leagues, plus
 knockout forecasts for fourteen tournaments — who advances a tie, and who lifts
-the trophy. Every model is trained on the seasons before the one it predicts,
-and every claim here is a measured number with its sample printed next to it.
+the trophy. Historical tests use chronological training cutoffs; season serving
+refits through known results. Evidence carries its sample and evaluation basis.
 
 [![CI](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/ci.yml)
 [![Backend tests](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml/badge.svg)](https://github.com/roni-altshuler/soccer_predictor/actions/workflows/test_backend.yml)
@@ -104,6 +104,11 @@ The simulator beats a carry-forward-the-table baseline at every matchday:
 The log-loss gap is the real story — the naive baseline puts p=1 on today's
 leader and is destroyed when it is wrong.
 
+These figures come from the older season backtest's simulator. They do not
+measure the current serving engine's gain from Elo/form adaptation; that
+[paired comparison](docs/SEASON_ADAPTATION_EVALUATION.md) remains unverified on
+real results.
+
 ### Tournaments — see below
 
 The binary layer, and where the sharpest numbers live.
@@ -168,14 +173,20 @@ won it from 11.6%, third on its list.
 
 ## The season ahead — what the site serves now
 
-**Fourteen leagues, 4,800 remaining fixtures, refreshed daily as results land.**
+**The season engine already adapts as verified results arrive.** Its current
+configured scope is the big five plus MLS. The daily pipeline replays Elo and
+rolling form, refits the logistic head, seeds the simulation with points already
+banked, and removes played fixtures. This depends on successful result refreshes;
+the verified European results available here still end **September 20, 2026**.
+A later artifact generation date does not establish newer results.
 
-Not a preseason snapshot. Every day the pipeline pulls the previous night's
-results, retrains through them, and re-simulates: ratings and form advance,
-points already banked seed the season simulation, and played fixtures leave the
-remaining set. The Brasileirão is the visible proof — 215 played, 160 to go,
-and a mid-season table rather than an August one. Everything else starts moving
-from 14 August.
+[The chronological serving evaluator](docs/SEASON_ADAPTATION_EVALUATION.md)
+compares those adaptive strength inputs with frozen preseason Elo/form while
+both arms receive identical known standings, fixtures, head and horizons. Its
+first run uses a deterministic fictional fixture: **60 unique evaluated matches,
+six horizons, two seasons**. It checks the comparison and leakage guards; it
+does not establish real-world improvement. A verified historical observation
+journal remains required. The earlier recency challenger remains held back.
 
 A league appears here only if it beats three baselines on its own history — a
 one-in-three guess, its own base rate, and picking the home side every time.
@@ -343,6 +354,11 @@ python3 -m backend.scripts.ablate_features
 
 # Season projections, matchday by matchday, vs a naive baseline
 python3 -m backend.scripts.backtest_season_projections
+
+# Serving adaptation contract demo (fictional results; no accuracy claim)
+python3 backend/tests/fixtures/make_season_adaptation_journal.py /tmp/season-journal.json
+python3 -m backend.scripts.evaluate_season_adaptation \
+  --input /tmp/season-journal.json --output /tmp/season-adaptation.json --sims 1000
 
 # Knockout ties: who advances, against a coin flip and the better-rated side
 python3 -m backend.scripts.benchmark_knockout

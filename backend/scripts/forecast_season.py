@@ -56,8 +56,8 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backend.scripts.baseline_walkforward import IDX, load_matches  # noqa: E402
-from backend.scripts.train_layered import FeatureState  # noqa: E402
+from backend.scripts.baseline_walkforward import load_matches  # noqa: E402
+from backend.scripts.train_layered import replay_features  # noqa: E402
 from backend.services.forecast import version as mv  # noqa: E402
 from backend.services.forecast.snapshots import (  # noqa: E402
     SnapshotStore,
@@ -567,24 +567,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                 played[0]["local_date"], played[-1]["local_date"])
 
     # -- pass 1: advance state over history, then FREEZE ------------------
-    state = FeatureState()
-    rows, i, n = [], 0, len(played)
-    while i < n:
-        j = i
-        day = played[i]["local_date"]
-        while j < n and played[j]["local_date"] == day:
-            j += 1
-        for m in played[i:j]:
-            rows.append(state.emit(m))
-        for m in played[i:j]:
-            state.observe(m)
-        i = j
-
-    names = list(rows[0].keys())
+    X, names, y, _, state = replay_features(played)
     cols = [k for k, nm in enumerate(names)
             if any(nm.startswith(p) for p in KEPT_PREFIXES)]
-    X = np.array([[r[k] for k in names] for r in rows], dtype=np.float64)
-    y = np.array([IDX[m["result"]] for m in played])
     logger.info("feature matrix %d x %d (serving %d columns)", *X.shape, len(cols))
 
     head = fit_head(X, y, cols)

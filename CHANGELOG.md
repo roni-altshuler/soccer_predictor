@@ -30,6 +30,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Added
 
+- Bounded offline chronological evaluation of season-serving Elo/form against
+  frozen preseason strength, with common known standings, fixtures and head.
+  Reuses the serving replay/head/simulator and includes correction, duplication,
+  chronology and season-boundary contracts. The documented synthetic run is
+  contract evidence only; real-world improvement remains unverified. See
+  [the evaluation protocol](docs/SEASON_ADAPTATION_EVALUATION.md).
+
 - **Brand icon set** generated from the official Pitchverse mark via a reproducible script
   (`scripts/generate-icons.mjs`, `npm run icons`): browser favicons (16/32), `apple-touch-icon`,
   the full maskable PWA icon set, and the 1200×630 OpenGraph / social-preview card.

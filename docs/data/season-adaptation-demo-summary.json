@@ -1,0 +1,465 @@
+{
+  "schema_version": "season-adaptation-evaluation/v1",
+  "basis": "synthetic_fixture",
+  "source_notes": "Deterministic six-club contract fixture; fictional teams/results. Not provider data or forecasting evidence.",
+  "score_as_of": "2025-11-01T00:00:00+00:00",
+  "input_sha256": "79e1ee2a3a0a0cf248ece535df970dc6f6c7afa0c61310caf93595a85a10b344",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit_learn": "1.9.1"
+  },
+  "config": {
+    "sims": 1000,
+    "seed": 17,
+    "title_log_loss_eps": 1e-06
+  },
+  "protocol": "Common as-of head and goal scale; frozen arm holds preseason Elo/form; identical standings, fixtures and simulation RNG seed",
+  "production_eligible": false,
+  "limitations": [
+    "Synthetic scores only exercise the contract; they establish no real-world improvement.",
+    "Repeated horizons share fixtures and season outcomes; pooled rows are not independent samples. No significance or promotion claim.",
+    "Frozen strength shares the adaptive as-of head/refit and goal scale: this isolates feature updates, not all retraining effects.",
+    "Requires an unchanged, preseason-known full schedule and complete final truth; reschedules, cancellations and missing observations fail closed.",
+    "Uses serving points/GD/GF/stable-key tiebreak and finite Monte Carlo; official head-to-head/playoff rules and live publication are unverified."
+  ],
+  "audit": {
+    "input_fixture_rows": 360,
+    "unique_fixtures": 360,
+    "input_result_observations": 360,
+    "unique_result_observations": 360
+  },
+  "n_unique_scored_fixtures": 60,
+  "summary": {
+    "adaptive": {
+      "match_1x2": {
+        "n": 138,
+        "brier": 0.7054688083481551,
+        "log_loss": 1.161671658615667,
+        "calibration": {
+          "n": 414,
+          "ece": 0.08595183678135199,
+          "bins": [
+            {
+              "bin_low": 0.0,
+              "bin_high": 0.1,
+              "n": 6,
+              "stated": 0.0816,
+              "observed": 0.1667
+            },
+            {
+              "bin_low": 0.1,
+              "bin_high": 0.2,
+              "n": 48,
+              "stated": 0.1541,
+              "observed": 0.3333
+            },
+            {
+              "bin_low": 0.2,
+              "bin_high": 0.3,
+              "n": 120,
+              "stated": 0.2527,
+              "observed": 0.325
+            },
+            {
+              "bin_low": 0.3,
+              "bin_high": 0.4,
+              "n": 121,
+              "stated": 0.3468,
+              "observed": 0.3223
+            },
+            {
+              "bin_low": 0.4,
+              "bin_high": 0.5,
+              "n": 83,
+              "stated": 0.4454,
+              "observed": 0.3855
+            },
+            {
+              "bin_low": 0.5,
+              "bin_high": 0.6,
+              "n": 27,
+              "stated": 0.5544,
+              "observed": 0.2222
+            },
+            {
+              "bin_low": 0.6,
+              "bin_high": 0.7,
+              "n": 8,
+              "stated": 0.6443,
+              "observed": 0.625
+            },
+            {
+              "bin_low": 0.7,
+              "bin_high": 0.8,
+              "n": 1,
+              "stated": 0.7311,
+              "observed": 0.0
+            }
+          ]
+        }
+      },
+      "title": {
+        "n_forecasts": 6,
+        "n_seasons": 2,
+        "brier": 0.11486927777777778,
+        "log_loss": 1.2388293494299283,
+        "calibration": {
+          "n": 36,
+          "ece": 0.090444,
+          "bins": [
+            {
+              "bin": 0,
+              "range": [
+                0.0,
+                0.1
+              ],
+              "n": 18,
+              "mean_predicted": 0.046889,
+              "observed_frequency": 0.0,
+              "gap": -0.046889
+            },
+            {
+              "bin": 1,
+              "range": [
+                0.1,
+                0.2
+              ],
+              "n": 9,
+              "mean_predicted": 0.133,
+              "observed_frequency": 0.222222,
+              "gap": 0.089222
+            },
+            {
+              "bin": 2,
+              "range": [
+                0.2,
+                0.3
+              ],
+              "n": 2,
+              "mean_predicted": 0.254,
+              "observed_frequency": 0.5,
+              "gap": 0.246
+            },
+            {
+              "bin": 3,
+              "range": [
+                0.3,
+                0.4
+              ],
+              "n": 2,
+              "mean_predicted": 0.3535,
+              "observed_frequency": 0.5,
+              "gap": 0.1465
+            },
+            {
+              "bin": 4,
+              "range": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "mean_predicted": 0.48,
+              "observed_frequency": 0.5,
+              "gap": 0.02
+            },
+            {
+              "bin": 5,
+              "range": [
+                0.5,
+                0.6
+              ],
+              "n": 3,
+              "mean_predicted": 0.594667,
+              "observed_frequency": 0.333333,
+              "gap": -0.261333
+            },
+            {
+              "bin": 6,
+              "range": [
+                0.6,
+                0.7
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            },
+            {
+              "bin": 7,
+              "range": [
+                0.7,
+                0.8
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            },
+            {
+              "bin": 8,
+              "range": [
+                0.8,
+                0.9
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            },
+            {
+              "bin": 9,
+              "range": [
+                0.9,
+                1.0
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            }
+          ]
+        }
+      }
+    },
+    "frozen_preseason_strength": {
+      "match_1x2": {
+        "n": 138,
+        "brier": 0.6992146762365141,
+        "log_loss": 1.1545353056266687,
+        "calibration": {
+          "n": 414,
+          "ece": 0.07997806738631526,
+          "bins": [
+            {
+              "bin_low": 0.1,
+              "bin_high": 0.2,
+              "n": 61,
+              "stated": 0.1479,
+              "observed": 0.3115
+            },
+            {
+              "bin_low": 0.2,
+              "bin_high": 0.3,
+              "n": 102,
+              "stated": 0.2522,
+              "observed": 0.3039
+            },
+            {
+              "bin_low": 0.3,
+              "bin_high": 0.4,
+              "n": 142,
+              "stated": 0.3459,
+              "observed": 0.3521
+            },
+            {
+              "bin_low": 0.4,
+              "bin_high": 0.5,
+              "n": 68,
+              "stated": 0.4428,
+              "observed": 0.3676
+            },
+            {
+              "bin_low": 0.5,
+              "bin_high": 0.6,
+              "n": 27,
+              "stated": 0.5368,
+              "observed": 0.1852
+            },
+            {
+              "bin_low": 0.6,
+              "bin_high": 0.7,
+              "n": 10,
+              "stated": 0.6585,
+              "observed": 0.7
+            },
+            {
+              "bin_low": 0.7,
+              "bin_high": 0.8,
+              "n": 4,
+              "stated": 0.7372,
+              "observed": 0.25
+            }
+          ]
+        }
+      },
+      "title": {
+        "n_forecasts": 6,
+        "n_seasons": 2,
+        "brier": 0.11323744444444445,
+        "log_loss": 1.1941926485262504,
+        "calibration": {
+          "n": 36,
+          "ece": 0.173889,
+          "bins": [
+            {
+              "bin": 0,
+              "range": [
+                0.0,
+                0.1
+              ],
+              "n": 20,
+              "mean_predicted": 0.03555,
+              "observed_frequency": 0.0,
+              "gap": -0.03555
+            },
+            {
+              "bin": 1,
+              "range": [
+                0.1,
+                0.2
+              ],
+              "n": 7,
+              "mean_predicted": 0.139714,
+              "observed_frequency": 0.285714,
+              "gap": 0.146
+            },
+            {
+              "bin": 2,
+              "range": [
+                0.2,
+                0.3
+              ],
+              "n": 1,
+              "mean_predicted": 0.259,
+              "observed_frequency": 1.0,
+              "gap": 0.741
+            },
+            {
+              "bin": 3,
+              "range": [
+                0.3,
+                0.4
+              ],
+              "n": 2,
+              "mean_predicted": 0.346,
+              "observed_frequency": 0.0,
+              "gap": -0.346
+            },
+            {
+              "bin": 4,
+              "range": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "mean_predicted": 0.446,
+              "observed_frequency": 1.0,
+              "gap": 0.554
+            },
+            {
+              "bin": 5,
+              "range": [
+                0.5,
+                0.6
+              ],
+              "n": 3,
+              "mean_predicted": 0.575667,
+              "observed_frequency": 0.0,
+              "gap": -0.575667
+            },
+            {
+              "bin": 6,
+              "range": [
+                0.6,
+                0.7
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            },
+            {
+              "bin": 7,
+              "range": [
+                0.7,
+                0.8
+              ],
+              "n": 1,
+              "mean_predicted": 0.741,
+              "observed_frequency": 1.0,
+              "gap": 0.259
+            },
+            {
+              "bin": 8,
+              "range": [
+                0.8,
+                0.9
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            },
+            {
+              "bin": 9,
+              "range": [
+                0.9,
+                1.0
+              ],
+              "n": 0,
+              "mean_predicted": null,
+              "observed_frequency": null,
+              "gap": null
+            }
+          ]
+        }
+      }
+    }
+  },
+  "delta_adaptive_minus_frozen": {
+    "match_1x2": {
+      "brier": 0.006254132111640942,
+      "log_loss": 0.007136352988998285
+    },
+    "title": {
+      "brier": 0.0016318333333333324,
+      "log_loss": 0.044636700903677884
+    }
+  },
+  "horizons": [
+    {
+      "season": 2024,
+      "as_of": "2024-08-01T00:00:00+00:00",
+      "train_n": 300,
+      "played_n": 0,
+      "remaining_n": 30
+    },
+    {
+      "season": 2024,
+      "as_of": "2024-08-16T00:00:00+00:00",
+      "train_n": 306,
+      "played_n": 6,
+      "remaining_n": 24
+    },
+    {
+      "season": 2024,
+      "as_of": "2024-09-06T00:00:00+00:00",
+      "train_n": 315,
+      "played_n": 15,
+      "remaining_n": 15
+    },
+    {
+      "season": 2025,
+      "as_of": "2025-08-01T00:00:00+00:00",
+      "train_n": 330,
+      "played_n": 0,
+      "remaining_n": 30
+    },
+    {
+      "season": 2025,
+      "as_of": "2025-08-16T00:00:00+00:00",
+      "train_n": 336,
+      "played_n": 6,
+      "remaining_n": 24
+    },
+    {
+      "season": 2025,
+      "as_of": "2025-09-06T00:00:00+00:00",
+      "train_n": 345,
+      "played_n": 15,
+      "remaining_n": 15
+    }
+  ]
+}
