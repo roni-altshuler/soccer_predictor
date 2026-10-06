@@ -54,7 +54,9 @@ from backend.services.fotmob.client import (
     get_fotmob_client,
     cleanup_fotmob_client,
 )
-from backend.services.data.provider_status import ProviderUnavailable, valid_player_identity, write_json_atomic
+from backend.services.data.provider_status import (
+    ProviderUnavailable, observation_time, valid_player_identity, write_json_atomic,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +163,57 @@ class LineupScraper:
         return self._parse_espn(data)
 
     @staticmethod
+    def _scheduled_espn_roster_context(data: Dict, rosters: List) -> bool:
+        """Absent roster keys require a scheduled, identified two-team event."""
+        header = data.get("header")
+        if not isinstance(header, dict):
+            return False
+        competitions = header.get("competitions")
+        if not isinstance(competitions, list) or len(competitions) != 1:
+            return False
+        competition = competitions[0]
+        if not isinstance(competition, dict):
+            return False
+        event_id = header.get("id")
+        if (isinstance(event_id, bool) or not isinstance(event_id, (str, int))
+                or not str(event_id).isdecimal() or int(event_id) <= 0
+                or str(competition.get("id")) != str(event_id)):
+            return False
+        status = competition.get("status")
+        kind = status.get("type") if isinstance(status, dict) else None
+        if (not isinstance(kind, dict) or kind.get("state") != "pre"
+                or kind.get("name") != "STATUS_SCHEDULED"
+                or kind.get("completed") is not False):
+            return False
+        try:
+            observation_time(competition.get("date"))
+        except ProviderUnavailable:
+            return False
+
+        def team_sides(rows):
+            if not isinstance(rows, list) or len(rows) != 2:
+                return None
+            sides = {}
+            for side in rows:
+                if not isinstance(side, dict):
+                    return None
+                home_away = side.get("homeAway")
+                team = side.get("team")
+                if (not isinstance(home_away, str) or home_away not in {"home", "away"}
+                        or home_away in sides
+                        or not isinstance(team, dict)):
+                    return None
+                team_id = team.get("id")
+                if (isinstance(team_id, bool) or not isinstance(team_id, (str, int))
+                        or not str(team_id).isdecimal() or int(team_id) <= 0):
+                    return None
+                sides[home_away] = str(team_id)
+            return sides if sides["home"] != sides["away"] else None
+
+        competitors = team_sides(competition.get("competitors"))
+        return competitors is not None and team_sides(rosters) == competitors
+
+    @staticmethod
     def _parse_espn(data: Dict) -> Optional[Dict[str, Any]]:
         """Extract starters/bench from ESPN match summary 'rosters' block."""
         rosters = data.get("rosters", [])
@@ -168,6 +221,9 @@ class LineupScraper:
             raise ProviderUnavailable("Invalid ESPN rosters")
         if not rosters:
             return None
+        missing_roster = any(isinstance(side, dict) and "roster" not in side for side in rosters)
+        if missing_roster and not LineupScraper._scheduled_espn_roster_context(data, rosters):
+            raise ProviderUnavailable("Missing ESPN roster outside a valid scheduled event")
         home_xi: List[Dict] = []
         away_xi: List[Dict] = []
         home_bench: List[Dict] = []
@@ -176,7 +232,7 @@ class LineupScraper:
             if not isinstance(side, dict) or side.get("homeAway") not in {"home", "away"}:
                 raise ProviderUnavailable("Invalid ESPN roster side")
             home_away = side.get("homeAway")  # "home" or "away"
-            roster = side.get("roster")
+            roster = side.get("roster", [])
             if not isinstance(roster, list):
                 raise ProviderUnavailable("Invalid ESPN roster list")
             for entry in roster:
@@ -196,7 +252,9 @@ class LineupScraper:
                     (home_xi if is_starter else home_bench).append(player)
                 elif home_away == "away":
                     (away_xi if is_starter else away_bench).append(player)
-        if not (home_xi or away_xi):
+        # Validate every supplied row before treating an absent announcement as
+        # unpublished. Never replace a complete cache with one announced side.
+        if missing_roster or not (home_xi or away_xi):
             return None
         # Kickoff & teams (for cache freshness logic).
         header = data.get("header") or {}
