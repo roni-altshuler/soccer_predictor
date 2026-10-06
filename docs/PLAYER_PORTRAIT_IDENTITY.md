@@ -109,3 +109,27 @@ Positive real portrait delivery, real rights/crosswalks and a deep frontend
 team-to-player profile experience remain unverified. Those need approved data
 and a separate product change. No forecasting, training or serving-model code
 changes here.
+
+## Local validation record, October 6, 2026
+
+Implementation commit: `2d0714e3239c1cf269f33589858e8225611bb5e1`, based on
+`885127462bf610c9fefa0897f6690dd1e39e2a9e`. The evidence follow-up changes only
+this documentation and its retained images/report.
+
+| Check | Measured result |
+| --- | --- |
+| `npm test -- --runInBand` | 728 passed in 60 suites |
+| `.venv/bin/python -m pytest backend/tests -q` | 1,499 passed, 25 skipped, 24 existing warnings |
+| `npm run lint` | Passed; no new warnings |
+| `npm run typecheck` | Passed |
+| `NEXT_TELEMETRY_DISABLED=1 npm run build` | Passed |
+| `QA_CHROMIUM=/usr/bin/chromium npm run test:product` | Passed against a local production build |
+
+The four portrait cases each recorded zero portrait requests, zero images,
+zero avatar accessibility violations, zero overflow and zero browser errors.
+The existing 390/768/1440px Matchday/detail/navigation checks also passed.
+See the [retained measurements](images/profile-portrait-2026-10-06/report.json),
+[390px initials crop](images/profile-portrait-2026-10-06/initials-390.png) and
+[1440px initials crop](images/profile-portrait-2026-10-06/initials-1440.png).
+The player name/rating/status in the portrait case are synthetic test inputs;
+the crop is fallback evidence, not a real player profile or permitted headshot.
