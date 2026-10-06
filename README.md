@@ -422,8 +422,11 @@ gitignored — build and train them locally. Committed prediction JSON under
 
 **[Injury failure diagnostics](docs/INJURY_FAILURE_DIAGNOSTICS.md)** records
 sanitized request/schema reasons in a bounded failed-run artifact while
-preserving last-good observations and the publication gate. The known failed
-run's response schema and provider recovery remain unverified.
+preserving last-good observations and the publication gate. A later normal run
+verified metadata retention; provider recovery remains unverified.
+**[Legacy injury routing](docs/INJURY_LEAGUE_ROUTING.md)** uses two reviewed
+standings-derived identity bindings instead of probing every league. Missing
+or conflicting bindings stay unavailable; existing observations remain intact.
 
 **[Player portrait identity and profile boundary](docs/PLAYER_PORTRAIT_IDENTITY.md)**
 explains provider-qualified IDs, reviewed subject/permission evidence, verified

@@ -22,7 +22,10 @@ The injury caller opts into `ESPNClient._request(..., raise_errors=True)`.
 Other callers retain their existing `None` behavior. Opt-in failures contain
 fixed reason codes and optional HTTP status only; no exception text, response
 body, headers or URL enters the diagnostic record. Opt-in errors add no retries.
-Existing configured league iteration and explicit provider selection remain.
+PR37 retained configured league iteration and explicit provider selection.
+The subsequent [legacy routing change](INJURY_LEAGUE_ROUTING.md) removes
+all-league probing using reviewed qualified bindings; provider selection and
+the unavailable/valid-report boundary remain intact.
 
 | Reason | Meaning |
 | --- | --- |
@@ -89,7 +92,7 @@ explicit empty/nonempty lists, request count, namespaces, privacy, cache bytes,
 mtime/observation time, bounded checkpoints, initialization/cleanup and write
 failures, and workflow retention/publication conditions.
 
-The two-team 42-attempt replay supplies **synthetic HTTP 200 objects without an
+The historical PR37 two-team 42-attempt replay supplies **synthetic HTTP 200 objects without an
 injuries field**. It verifies category retention and unchanged caches; it is
 not a capture or diagnosis of the original run's unknown response schema.
 Provider recovery and live injury coverage remain unverified. No live
@@ -97,10 +100,10 @@ collection, workflow dispatch, access-denial workaround or model work was used.
 The separate team API's unavailable-to-empty serving behavior remains outside
 this patch.
 
-Local validation after correcting the CLI artifact assertions passed. Runtime
-code is unchanged from implementation commit
-`b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1`; the replay summary identifies the
-corrected test source by its SHA-256:
+The following historical validation is pinned to PR37 reviewed head
+`ee3ee32b8e210f20ff17fb4fd3dbede9b8d5616f`; its replay summary identifies
+that test source by SHA-256. The current routed replay and results are in
+[the routing contract](INJURY_LEAGUE_ROUTING.md).
 
 | Check | Result |
 | --- | --- |

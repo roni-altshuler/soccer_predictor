@@ -170,7 +170,7 @@ def cli_args(path):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('checkpoint_enabled', [True, False], ids=['checkpoints', 'final-export-only'])
-async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harness, monkeypatch, checkpoint_enabled):
+async def test_failed_cli_routes_two_legacy_teams_without_publishing(harness, monkeypatch, checkpoint_enabled):
     tracker, replies, requests, tmp_path = harness
     saved = [last_good(tracker, team) for team in ('364', '360')]
     for path, _, _ in saved:
@@ -190,10 +190,14 @@ async def test_failed_cli_retains_all_42_legacy_attempts_without_publishing(harn
     for cache in saved:
         assert_preserved(cache)
     data = read_artifact(output)
-    assert len(requests) == len(data['records']) == 2 * len(ESPN_LEAGUE_IDS) == 42
+    assert len(requests) == len(data['records']) == 2
+    assert {request.url.path for request in requests} == {
+        '/apis/site/v2/sports/soccer/eng.1/teams/364/injuries',
+        '/apis/site/v2/sports/soccer/eng.1/teams/360/injuries',
+    }
     assert {row['reason'] for row in data['records']} == {'missing_injury_content'}
     for team in ('364', '360'):
-        assert {row['league_key'] for row in data['records'] if row['team_id'] == team} == set(ESPN_LEAGUE_IDS)
+        assert {row['league_key'] for row in data['records'] if row['team_id'] == team} == {'premier_league'}
     tracker.fotmob.get_team_injuries.assert_not_awaited()
     assert output.is_file()
 

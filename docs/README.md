@@ -43,6 +43,7 @@ interface update, before/after screenshots and responsive browser checks.
 ### Development Guides
 
 - **[INJURY_FAILURE_DIAGNOSTICS.md](./INJURY_FAILURE_DIAGNOSTICS.md)** - Sanitized injury failure reasons, cache preservation and failure-tolerant artifact retention
+- **[INJURY_LEAGUE_ROUTING.md](./INJURY_LEAGUE_ROUTING.md)** - Reviewed legacy provider/team/league bindings, bounded request scope and unverified provider recovery
 - **[PLAYER_PORTRAIT_IDENTITY.md](./PLAYER_PORTRAIT_IDENTITY.md)** - Provider identity, portrait permissions/cache contract and existing profile limits
 - **[SEASON_ADAPTATION_EVALUATION.md](./SEASON_ADAPTATION_EVALUATION.md)** - Chronological serving comparison, synthetic contract results and prerequisites for real evidence
 - **[RETRAINING_GUIDE.md](./RETRAINING_GUIDE.md)** - Machine learning model retraining procedures
