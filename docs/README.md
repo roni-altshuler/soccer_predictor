@@ -21,6 +21,9 @@ reference for the API, the artifacts and the commands.
 
 Everything below is internal: architecture, operations and project history.
 
+[Matchday design review](./MATCHDAY_DESIGN_REVIEW.md) records the bounded cream
+interface update, before/after screenshots and responsive browser checks.
+
 ## 📖 Contents
 
 ### Project Organization

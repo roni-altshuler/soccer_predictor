@@ -42,7 +42,7 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href)
 }
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ matchFlow = false }: { matchFlow?: boolean }) {
   const pathname = usePathname() || '/'
   const reduceMotion = useReducedMotion()
 
@@ -52,7 +52,7 @@ export function MobileBottomNav() {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 flex justify-around border-t border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-md pt-1 pb-[calc(env(safe-area-inset-bottom,0px)+0.25rem)]"
     >
       {ITEMS.map((item) => {
-        const active = isActive(pathname, item.href)
+        const active = isActive(pathname, item.href) || (matchFlow && item.href === '/')
         const Icon = item.icon
         const accentColor = item.accent === 'ai' ? 'var(--accent-ai)' : 'var(--accent-primary)'
         const inner = (
@@ -75,7 +75,7 @@ export function MobileBottomNav() {
               />
             )}
             <Icon className="relative h-[19px] w-[19px]" strokeWidth={2.1} aria-hidden="true" />
-            <span className="relative text-[10px] font-semibold">{item.label}</span>
+            <span className="relative text-[10px] font-semibold">{matchFlow && item.href === '/' ? 'Matchday' : item.label}</span>
           </span>
         )
 

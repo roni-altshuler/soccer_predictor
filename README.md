@@ -173,6 +173,12 @@ won it from 11.6%, third on its list.
 
 ## The season ahead — what the site serves now
 
+Matchday and match detail share a cream, neutral interface with explicit match
+actions, keyboard navigation and preserved date/filter/scroll history.
+[Design scope and reproducible browser QA](docs/MATCHDAY_DESIGN_REVIEW.md)
+document the responsive flow and loading, empty and failure states. This is a
+frontend change; prediction evidence and forecasting behavior are unchanged.
+
 **The season engine already adapts as verified results arrive.** Its current
 configured scope is the big five plus MLS. The daily pipeline replays Elo and
 rolling form, refits the logistic head, seeds the simulation with points already

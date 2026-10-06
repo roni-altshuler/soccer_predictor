@@ -356,7 +356,7 @@ export default function MatchDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
+      <div role="status" className="min-h-screen" style={{ backgroundColor: 'var(--background)' }} aria-busy="true" aria-label="Loading match details">
         <MatchDetailSkeleton />
       </div>
     )
@@ -368,15 +368,15 @@ export default function MatchDetailPage() {
         <div className="text-center max-w-md mx-auto px-4">
           <CircleHelp className="mx-auto mb-4 h-12 w-12 text-[var(--text-tertiary)]" aria-hidden />
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Match not available</h2>
-          <p className="mb-6 text-[13px]" style={{ color: 'var(--text-tertiary)' }}>
-            No detail was published for this match yet.
+          <p role="status" className="mb-6 text-[13px]" style={{ color: 'var(--text-tertiary)' }}>
+            We couldn&apos;t load this match. Try again or return to your matchday.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/"
+              href={returnHref ?? '/'}
               className="px-6 py-3 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-on-primary)] font-semibold hover:opacity-90 transition-opacity"
             >
-              Today&apos;s matches
+              Back to Matchday
             </Link>
             <button
               onClick={() => {
@@ -422,12 +422,11 @@ export default function MatchDetailPage() {
 
   return (
     <div
-      className="min-h-screen"
+      className="match-detail-page min-h-screen"
       style={{
-        // Team tint tokens consumed by H2H bars, lineups and standings
-        // highlights further down the page (green home / league-brand away).
+        // Outcome labels carry identity; muted tones keep this flow neutral.
         ['--team-tint-home' as string]: 'var(--accent-primary)',
-        ['--team-tint-away' as string]: leagueAccent?.accent || 'var(--accent-info)',
+        ['--team-tint-away' as string]: 'var(--text-tertiary)',
       }}
     >
       <StickyScoreBar
@@ -446,16 +445,18 @@ export default function MatchDetailPage() {
       />
       {/* Scoreboard header — flat card, ESPN grammar: league line, teams +
           score (or kickoff), status, venue. No gradients, no glows. */}
-      <section ref={heroRef} className="border-b border-[var(--border-color)] bg-[var(--card-bg)]">
+      <section ref={heroRef} className="match-detail-toolbar border-b border-[var(--border-color)] bg-[var(--card-bg)]">
         <div className="mx-auto w-full max-w-5xl px-4 pb-5 pt-2 md:px-8">
           {/* Back link */}
           <button
             onClick={handleBack}
-            className="group mb-2 -ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-xs font-medium text-[var(--text-tertiary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
+            className="group mb-2 -ml-2 inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--card-hover)] hover:text-[var(--text-primary)]"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Back</span>
           </button>
+          <span className="ml-3 text-xs text-[var(--text-tertiary)]">Match details</span>
+          <h1 className="sr-only">{match.home_team} vs {match.away_team}</h1>
 
           {/* Follow buttons — one quiet row */}
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
@@ -467,7 +468,7 @@ export default function MatchDetailPage() {
                   onClick={() => trackTeam(teamName)}
                   disabled={tracked}
                   className={cn(
-                    'inline-flex min-h-[36px] max-w-[220px] items-center gap-1.5 truncate rounded-full px-3 text-xs font-semibold transition-colors',
+                    'inline-flex min-h-11 max-w-[220px] items-center gap-1.5 truncate rounded-full px-3 text-xs font-semibold transition-colors',
                     tracked
                       ? 'cursor-default text-[var(--accent-primary)]'
                       : 'text-[var(--text-tertiary)] hover:bg-[var(--card-hover)] hover:text-[var(--text-secondary)]'
@@ -503,6 +504,7 @@ export default function MatchDetailPage() {
       <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
         {match.card ? (
           <MatchDetail
+            className="match-detail-card"
             card={match.card}
             competitionId={match.leagueId}
             initialTab={CARD_TAB[activeTab]}

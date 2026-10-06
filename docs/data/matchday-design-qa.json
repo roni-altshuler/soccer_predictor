@@ -1,0 +1,102 @@
+{
+  "replay": "Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.",
+  "screenshots": "/tmp/matchday-design-production",
+  "report": [
+    {
+      "width": 390,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    },
+    {
+      "width": 768,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "keyboard": true,
+      "visibleFocus": true,
+      "reducedMotion": true,
+      "palette": {
+        "canvas": "rgb(245, 243, 238)",
+        "card": "#fcfaf6",
+        "text": "rgb(36, 40, 36)"
+      },
+      "minimumTextContrast": 5.170522543875691,
+      "actionContrast": 11.058427858036076,
+      "focusContrast": 7.990582035063477,
+      "spotlightExploration": true,
+      "loadingEmptyErrorRecovery": true,
+      "expectedFailureLogs": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+        "Match not found: 503"
+      ],
+      "repeatedDetailReturns": 3,
+      "browserBackForward": true,
+      "filterHistory": true,
+      "reload": true,
+      "following": true,
+      "deepLinkFallback": true,
+      "scrollRestored": true,
+      "nullEvidence": true,
+      "publishedXg": true,
+      "overflow": false,
+      "accessibilityViolations": 0,
+      "errors": []
+    }
+  ]
+}

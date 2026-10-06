@@ -86,7 +86,7 @@ function isActive(pathname: string, href: string) {
  * FotMob/ESPN style. Flat surface, hairline right edge; the active item gets
  * a soft accent wash. No hover-expansion, no animated chrome.
  */
-export function SidebarNav() {
+export function SidebarNav({ matchFlow = false }: { matchFlow?: boolean }) {
   const pathname = usePathname() || '/'
 
   return (
@@ -117,8 +117,8 @@ export function SidebarNav() {
               {group.items.map((item) => (
                 <SidebarLink
                   key={item.href}
-                  item={item}
-                  active={isActive(pathname, item.href)}
+                  item={matchFlow && item.href === '/' ? { ...item, label: 'Matchday' } : item}
+                  active={isActive(pathname, item.href) || (matchFlow && item.href === '/')}
                 />
               ))}
             </ul>
@@ -130,7 +130,7 @@ export function SidebarNav() {
           grammar as the sibling apps, which ship no <footer> at all. */}
       <div className="border-t border-[var(--nav-border)] px-4 py-3">
         {/* The reader's dial on the one ambient layer — soft by default. */}
-        <AmbientToggle label="Pitch" className="mb-2.5 justify-between" />
+        {!matchFlow && <AmbientToggle label="Pitch" className="mb-2.5 justify-between" />}
         <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
           Probability estimates, not advice. Every pick is{' '}
           <Link

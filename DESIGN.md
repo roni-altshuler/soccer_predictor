@@ -1,5 +1,12 @@
 # Pitchverse design language — Floodlight (Bugatti grammar, night-pitch material)
 
+**Matchday design update (2026-10-06):** `/` and `/matches/[id]` now use a
+route-scoped cream palette and sentence-case typography, following the user's
+new product direction. Their shared navigation uses the same surface and marks
+Matchday active on detail pages. The Floodlight rules below describe the other
+routes; they do not override this newer, bounded direction. See
+[the design review and browser evidence](docs/MATCHDAY_DESIGN_REVIEW.md).
+
 **This file is authored FROM [`src/app/globals.css`](src/app/globals.css).** That file is
 the single source of truth; this one explains it. If the two disagree, the CSS is right and
 this document is the bug.

@@ -6,6 +6,15 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Matchday and match detail share cream surfaces, restrained neutral navigation,
+  sentence-case headings and clearer match/exploration actions. Keyboard tab
+  controls have linked panels and arrow/Home/End navigation; fixture rows respect
+  reduced motion. Date-only records no longer imply a midnight kickoff, and
+  detail failures retain the filtered Matchday return link. Responsive browser
+  contracts now cover focus, contrast, loading, empty and error recovery states.
+
 ### Fixed
 
 - Prediction detail and matchup views keep missing inputs, confidence and markets

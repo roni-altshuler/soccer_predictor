@@ -62,7 +62,7 @@ async function assertView(page) {
 async function audit(page, label) {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${label}: horizontal overflow`)
   await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' })
-  const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('#main'), {
+  const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('.match-flow-shell'), {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
   })).violations.map(({ id, impact, nodes }) => ({ id, impact, targets: nodes.map((n) => n.target) })))
   assert.deepEqual(violations, [], `${label}: accessibility violations`)
@@ -71,6 +71,35 @@ async function audit(page, label) {
     return r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24)
   }).map((n) => n.textContent))
   assert.deepEqual(small, [], `${label}: small controls`)
+}
+async function assertFocus(locator) {
+  await locator.page().keyboard.press('Tab')
+  await locator.focus()
+  const focus = await locator.evaluate((node) => {
+    const style = getComputedStyle(node)
+    return { focused: node === document.activeElement, width: parseFloat(style.outlineWidth), style: style.outlineStyle }
+  })
+  assert(focus.focused && focus.width >= 2 && focus.style === 'solid', 'Keyboard focus must have a visible outline')
+}
+async function capture(page, name) {
+  // Capture at the top so fixed chrome is comparable across before/after views.
+  await page.evaluate(() => {
+    document.activeElement?.blur()
+    window.scrollTo(0, 0)
+    return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  })
+  await page.locator('[data-sticky-score-bar]').waitFor({ state: 'detached' })
+  await page.screenshot({ path: `${out}/${name}.png`, fullPage: true })
+  await page.screenshot({ path: `${out}/${name}-viewport.png` })
+}
+function contrast(foreground, background) {
+  const luminance = (hex) => {
+    const values = hex.match(/[a-f\d]{2}/gi).map((part) => parseInt(part, 16) / 255)
+      .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+    return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722
+  }
+  const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a)
+  return (light + 0.05) / (dark + 0.05)
 }
 try {
   if (!process.env.QA_BASE) {
@@ -85,6 +114,10 @@ try {
     const errors = []
     const requests = []
     let detailEvidence = 'sparse'
+    let matchdayState = 'ready'
+    let detailState = 'ready'
+    let releaseRequest
+    let responseGate
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()) })
     await context.addInitScript(() => {
@@ -101,12 +134,18 @@ try {
       if (url.origin !== new URL(base).origin) return route.fulfill({ status: 200, body: '' })
       if (url.pathname === '/api/todays_matches') {
         requests.push(url.searchParams.get('date'))
+        if (matchdayState === 'loading') await responseGate
+        // This is the proxy's explicit failure contract, not an empty fixture list.
+        if (matchdayState === 'error') return route.fulfill({ json: { source: 'error' } })
+        if (matchdayState === 'empty') return route.fulfill({ json: { source: 'contract-replay', live: [], upcoming: [], completed: [] } })
         return route.fulfill({ json: { source: 'contract-replay', live: [], upcoming: url.searchParams.get('date') === date ? fixtures : [], completed: [] } })
       }
       if (url.pathname === '/api/v1/evaluation') return route.fulfill({ json: evaluation })
       if (url.pathname.startsWith('/api/match/')) {
         const p = records.find((r) => String(r.match_id) === url.pathname.split('/').at(-1))
         assert(p, 'Details must correspond to a recorded fixture')
+        if (detailState === 'loading') await responseGate
+        if (detailState === 'error') return route.fulfill({ status: 503, json: { error: 'Unavailable in UI replay' } })
         return route.fulfill({ json: detail(p, detailEvidence) })
       }
       if (url.hostname === '127.0.0.1' && url.pathname.includes('/api/')) return route.fulfill({ json: {} })
@@ -121,14 +160,37 @@ try {
     await page.getByRole('button', { name: /^To play / }).focus()
     await page.keyboard.press('Space')
     await assertView(page)
+    const palette = await page.locator('.match-flow-shell').evaluate((node) => ({
+      canvas: getComputedStyle(node).backgroundColor,
+      card: getComputedStyle(node).getPropertyValue('--card-bg').trim(),
+      text: getComputedStyle(node).color,
+    }))
+    assert.deepEqual(palette, { canvas: 'rgb(245, 243, 238)', card: '#fcfaf6', text: 'rgb(36, 40, 36)' })
+    const tokens = await page.locator('.match-flow-shell').evaluate((node) => {
+      const style = getComputedStyle(node)
+      return Object.fromEntries(['text-primary', 'text-secondary', 'text-tertiary', 'background', 'card-bg', 'muted-bg', 'accent-info', 'accent-primary', 'accent-on-primary'].map((name) => [name, style.getPropertyValue(`--${name}`).trim()]))
+    })
+    const minimumTextContrast = Math.min(...['text-primary', 'text-secondary', 'text-tertiary'].flatMap((text) => ['background', 'card-bg', 'muted-bg'].map((surface) => contrast(tokens[text], tokens[surface]))))
+    const actionContrast = contrast(tokens['accent-primary'], tokens['accent-on-primary'])
+    const focusContrast = contrast(tokens['accent-info'], tokens['card-bg'])
+    assert(minimumTextContrast >= 4.5 && actionContrast >= 4.5 && focusContrast >= 3)
+    await assertFocus(page.getByRole('button', { name: /^To play / }))
+    assert.equal(await page.locator('#main').evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === 'running')), false, 'Reduced motion leaves no running content animations')
     await audit(page, `Matchday ${width}`)
-    await page.screenshot({ path: `${out}/matchday-${width}.png`, fullPage: true })
+    await capture(page, `matchday-${width}`)
+    const choices = page.locator('[aria-label="Choose spotlight match"]').getByRole('button')
+    const originalFixture = await page.getByRole('link', { name: 'Match centre', exact: true }).getAttribute('href')
+    await assertFocus(choices.nth(1))
+    await page.keyboard.press('Enter')
+    assert.notEqual(await page.getByRole('link', { name: 'Match centre', exact: true }).getAttribute('href'), originalFixture)
+    await choices.first().click()
     const row = page.getByRole('link', { name: new RegExp(`${chosen.home_team}.*${chosen.away_team}`) })
     // Repeat actual route traversal and both browser/button return paths.
     for (let cycle = 0; cycle < 3; cycle++) {
       console.log(`Detail return ${width}px, cycle ${cycle + 1}`)
       await row.scrollIntoViewIfNeeded()
       await row.focus()
+      await assertFocus(row)
       const beforeY = await page.evaluate(() => window.scrollY)
       await page.keyboard.press('Enter')
       await page.getByRole('tab', { name: 'Prediction', exact: true }).waitFor()
@@ -137,9 +199,13 @@ try {
       assert.equal(await page.getByText(/near full strength|equally rested|Last 5:|Key drivers|Why this prediction/).count(), 0)
       assert.equal(await page.getByText('Unavailable', { exact: true }).count(), 4)
       await page.getByText('Exact-score chance unavailable').waitFor()
+      await assertFocus(page.getByRole('tab', { name: 'Prediction', exact: true }))
+      await page.keyboard.press('Home')
+      await page.keyboard.press('Tab')
+      assert.equal(await page.getByRole('tabpanel', { name: 'Prediction', exact: true }).evaluate((node) => node === document.activeElement), true)
       if (cycle === 0) {
         await audit(page, `Sparse detail ${width}`)
-        await page.screenshot({ path: `${out}/prediction-${width}.png`, fullPage: true })
+        await capture(page, `prediction-${width}`)
       }
       if (cycle === 1) await page.goBack()
       else await page.getByRole('button', { name: 'Back', exact: true }).click()
@@ -193,7 +259,7 @@ try {
     await page.getByText('Scoreline unavailable.').waitFor()
     assert.equal(await page.getByText(/confidence|total xG|0-0/).count(), 0)
     await audit(page, `Null detail ${width}`)
-    await page.screenshot({ path: `${out}/prediction-null-${width}.png`, fullPage: true })
+    await capture(page, `prediction-null-${width}`)
     detailEvidence = 'published'
     await page.reload({ waitUntil: 'networkidle' })
     await page.getByRole('tab', { name: 'Prediction', exact: true }).click()
@@ -203,10 +269,70 @@ try {
     await page.getByText('Exact-score chance unavailable').waitFor()
     assert.equal(await page.getByText(/near full strength|Key drivers|Why this prediction/).count(), 0)
     await audit(page, `Published xG detail ${width}`)
-    await page.screenshot({ path: `${out}/prediction-published-${width}.png`, fullPage: true })
+    await capture(page, `prediction-published-${width}`)
     assert.deepEqual(errors, [], `Browser errors at ${width}`)
+
+    // Loading gates stay pending only until the skeleton has been inspected.
+    const holdResponse = () => { responseGate = new Promise((resolve) => { releaseRequest = resolve }) }
+    matchdayState = 'loading'
+    holdResponse()
+    await page.goto(savedUrl, { waitUntil: 'domcontentloaded' })
+    await page.getByLabel('Loading matches', { exact: true }).waitFor()
+    await audit(page, `Matchday loading ${width}`)
+    await capture(page, `matchday-loading-${width}`)
+    matchdayState = 'ready'
+    releaseRequest()
+    await assertView(page)
+    matchdayState = 'empty'
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByRole('heading', { name: 'No matches in this view' }).waitFor()
+    await audit(page, `Matchday empty ${width}`)
+    await capture(page, `matchday-empty-${width}`)
+    await assertFocus(page.getByRole('button', { name: 'Show all matches' }))
+    await page.keyboard.press('Enter')
+    assert.equal(new URL(page.url()).searchParams.get('filter'), null)
+    matchdayState = 'error'
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByRole('status').filter({ hasText: 'We couldn’t update the scores.' }).waitFor()
+    assert.equal(await page.getByRole('heading', { name: 'No matches in this view' }).count(), 0)
+    await audit(page, `Matchday error ${width}`)
+    await capture(page, `matchday-error-${width}`)
+    matchdayState = 'ready'
+    await assertFocus(page.getByRole('button', { name: 'Try again', exact: true }))
+    await page.keyboard.press('Enter')
+    await page.getByRole('region', { name: 'Match spotlight' }).waitFor()
+    assert.deepEqual(errors, [], `Matchday state browser errors at ${width}`)
+
+    detailState = 'loading'
+    holdResponse()
+    await page.goto(new URL(direct, base).href, { waitUntil: 'domcontentloaded' })
+    await page.getByLabel('Loading match details', { exact: true }).waitFor()
+    await audit(page, `Detail loading ${width}`)
+    await capture(page, `detail-loading-${width}`)
+    detailState = 'ready'
+    releaseRequest()
+    await page.getByRole('tab', { name: 'Prediction', exact: true }).waitFor()
+    detailState = 'error'
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByRole('heading', { name: 'Match not available' }).waitFor()
+    await audit(page, `Detail error ${width}`)
+    await capture(page, `detail-error-${width}`)
+    const errorReturn = new URL(await page.getByRole('link', { name: 'Back to Matchday' }).getAttribute('href'), base)
+    assert.equal(errorReturn.pathname, new URL(savedUrl).pathname)
+    assert.deepEqual([...errorReturn.searchParams].sort(), [...new URL(savedUrl).searchParams].sort())
+    const expectedFailureLogs = [...errors]
+    assert(expectedFailureLogs.some((error) => error === 'Match not found: 503'))
+    assert(expectedFailureLogs.every((error) => error === 'Match not found: 503' || error.includes('503 (Service Unavailable)')), 'Only deliberately injected 503 logs are allowed')
+    errors.length = 0
+    detailState = 'ready'
+    await assertFocus(page.getByRole('button', { name: 'Try again', exact: true }))
+    await page.keyboard.press('Enter')
+    await page.getByRole('tab', { name: 'Prediction', exact: true }).waitFor()
+    await page.getByRole('button', { name: 'Back', exact: true }).click()
+    await assertView(page)
+    assert.deepEqual(errors, [], `Recovery browser errors at ${width}`)
     assert(requests.includes(date) && requests.includes(today))
-    report.push({ width, keyboard: true, repeatedDetailReturns: 3, browserBackForward: true, filterHistory: true, reload: true, following: true, deepLinkFallback: true, scrollRestored: true, nullEvidence: true, publishedXg: true, overflow: false, accessibilityViolations: 0, errors })
+    report.push({ width, keyboard: true, visibleFocus: true, reducedMotion: true, palette, minimumTextContrast, actionContrast, focusContrast, spotlightExploration: true, loadingEmptyErrorRecovery: true, expectedFailureLogs, repeatedDetailReturns: 3, browserBackForward: true, filterHistory: true, reload: true, following: true, deepLinkFallback: true, scrollRestored: true, nullEvidence: true, publishedXg: true, overflow: false, accessibilityViolations: 0, errors })
     await context.close()
   }
 } finally {
