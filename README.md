@@ -420,6 +420,12 @@ gitignored — build and train them locally. Committed prediction JSON under
 
 ## Documentation
 
+**[Player portrait identity and profile boundary](docs/PLAYER_PORTRAIT_IDENTITY.md)**
+explains provider-qualified IDs, reviewed subject/permission evidence, verified
+local portrait bytes and accessible initials when verification is missing.
+The saved product has a team page and player API; a deep frontend player profile
+and real permitted portrait coverage remain follow-up work.
+
 **[September 2026 accuracy and matchday audit](docs/IMPROVEMENT_AUDIT_2026-09-18.md)**
 records the current serving/evaluation gaps, prioritized model experiments, and the
 new interactive matchday interface. Its dated artifact inventory supersedes the

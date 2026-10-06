@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { SmartBackLink } from '@/components/SmartBackLink'
 import { FollowTeamButton } from '@/components/team/FollowTeamButton'
 import { fetchTeamOverview } from '@/lib/server/espnTeamOverview'
+import { profileReturnHref } from '@/lib/profileReturn'
 
 /**
  * /teams/[id] — one club, the football facts only.
@@ -208,16 +209,27 @@ async function getOverview(id: string): Promise<TeamOverview | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({ params, searchParams }: {
+  params: Promise<{ id: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { id } = await params
+  const query = await searchParams ?? {}
+  if (query.provider !== undefined && query.provider !== 'espn') return { title: 'Team · Pitchverse' }
   const data = await getOverview(id)
   const name = data?.team?.name
   return { title: name ? `${name} · Pitchverse` : 'Team · Pitchverse' }
 }
 
-export default async function TeamPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TeamPage({ params, searchParams }: {
+  params: Promise<{ id: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { id } = await params
   if (!VALID_ID.test(id)) notFound()
+  const query = await searchParams ?? {}
+  if (query.provider !== undefined && query.provider !== 'espn') notFound()
+  const returnHref = profileReturnHref(query.returnTo)
 
   const data = await getOverview(id)
   if (!data || !data.team?.name) notFound()
@@ -243,7 +255,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 md:px-6 md:py-8">
       <header>
-        <SmartBackLink fallbackHref="/" label="Back" />
+        <SmartBackLink fallbackHref={returnHref} label="Back" />
         <div className="mt-3 flex items-center gap-4">
           {team.logo ? (
             // eslint-disable-next-line @next/next/no-img-element -- ESPN crest; the club name sits beside it

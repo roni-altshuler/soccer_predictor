@@ -1,184 +1,156 @@
 #!/usr/bin/env python3
-"""
-fetch_player_headshots.py
-=========================
-Pull player headshots from FotMob (primary) and ESPN (fallback), resize each
-to a 192x192 WebP, and write them to ``public/headshots/<player_id>.webp``.
-Also writes a manifest at ``public/headshots/manifest.json`` mapping
-``player_id`` -> ``"/headshots/<player_id>.webp"``.
+"""Fetch only explicitly approved, provider-qualified player portraits.
 
-Frontend reads the manifest via the ``useHeadshotManifest`` hook in
-``src/hooks/useHeadshotManifest.ts`` and renders headshots through the
-``<PlayerAvatar>`` primitive with an initials fallback when the manifest
-doesn't carry the player.
+No warehouse ID guessing or cross-provider fallback. An approval records the
+subject, asset identity, verified mapping, source URL and permission evidence.
+Unknown records are blocked before any request, including with --force.
+Existing assets are retained; new versions use content-addressed filenames.
 
-Usage:
-    /home/ronaltshuler/code/.venv/bin/python backend/scripts/fetch_player_headshots.py
-    /home/ronaltshuler/code/.venv/bin/python backend/scripts/fetch_player_headshots.py --force
-    /home/ronaltshuler/code/.venv/bin/python backend/scripts/fetch_player_headshots.py --ids 12994,11111
-
-Sources (in priority order):
-    1. FotMob: https://images.fotmob.com/image_resources/playerimages/<id>.png
-    2. ESPN:   https://a.espncdn.com/i/headshots/soccer/players/full/<id>.png
-
-The script is idempotent: skip-if-exists unless ``--force`` is set. 404s on
-lower-league players are logged and tolerated — ``PlayerAvatar`` falls back
-to initials without a broken-image flash.
+Example (requires separately verified approvals; none are supplied here):
+    python -m backend.scripts.fetch_player_headshots \
+        --ids espn:45843 --approvals /path/to/reviewed-approvals.json
 """
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
+import hashlib
 import io
-import json
 import os
-import sqlite3
-import sys
-import time
 from pathlib import Path
+import sys
+import tempfile
+import time
 from typing import Iterable
 
 import requests
 from PIL import Image
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-PUBLIC_HEADSHOT_DIR = REPO_ROOT / "public" / "headshots"
+from backend.services.data.player_portraits import (
+    HEADSHOT_DIR, approved_portrait, cached_portrait, identity_key, parse_identity, read_manifest,
+)
+from backend.services.data.provider_status import write_json_atomic
+
+PUBLIC_HEADSHOT_DIR = HEADSHOT_DIR
 MANIFEST_PATH = PUBLIC_HEADSHOT_DIR / "manifest.json"
-WAREHOUSE_PATH = REPO_ROOT / "backend" / "data" / "warehouse.sqlite"
-
-SOURCES = [
-    ("fotmob", "https://images.fotmob.com/image_resources/playerimages/{}.png"),
-    ("espn", "https://a.espncdn.com/i/headshots/soccer/players/full/{}.png"),
-]
-
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Linux) FotPredict-AI/2.3 (+https://github.com/ronaltshuler/soccer_predictor)"
-    )
-}
-
-SLEEP_BETWEEN_REQUESTS = 0.15  # 150 ms — polite, well under any rate limit
+HEADERS = {"User-Agent": "Pitchverse/1.0 (+https://github.com/roni-altshuler/soccer_predictor)"}
+SLEEP_BETWEEN_REQUESTS = 0.15
 TIMEOUT_SECONDS = 8
 TARGET_SIZE = (192, 192)
 
 
 def _log(msg: str) -> None:
     sys.stderr.write(msg + "\n")
-    sys.stderr.flush()
-
-
-def _load_player_ids_from_warehouse() -> list[str]:
-    if not WAREHOUSE_PATH.exists():
-        _log(f"WARN: warehouse not found at {WAREHOUSE_PATH}; nothing to do.")
-        return []
-    con = sqlite3.connect(str(WAREHOUSE_PATH))
-    try:
-        # Best-effort: the schema may carry a `squads` or `players` table; we
-        # try a few common names and union whatever we find.
-        cur = con.cursor()
-        candidates = ("squads", "players", "player", "lineups")
-        ids: set[str] = set()
-        for table in candidates:
-            try:
-                cur.execute(f"SELECT DISTINCT player_id FROM {table} WHERE player_id IS NOT NULL")
-                for (pid,) in cur.fetchall():
-                    if pid is not None:
-                        ids.add(str(int(pid)) if isinstance(pid, (int, float)) else str(pid))
-            except sqlite3.Error:
-                continue
-        return sorted(ids, key=lambda s: int(s) if s.isdigit() else hash(s))
-    finally:
-        con.close()
-
-
-def _existing_manifest() -> dict[str, str]:
-    if not MANIFEST_PATH.exists():
-        return {}
-    try:
-        return json.loads(MANIFEST_PATH.read_text())
-    except json.JSONDecodeError:
-        return {}
-
-
-def _save_manifest(manifest: dict[str, str]) -> None:
-    PUBLIC_HEADSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
 
 def _resize_to_webp(content: bytes) -> bytes:
-    image = Image.open(io.BytesIO(content))
-    image = image.convert("RGBA")
-    image.thumbnail(TARGET_SIZE, Image.LANCZOS)
-    buf = io.BytesIO()
-    image.save(buf, format="WEBP", quality=88, method=6)
-    return buf.getvalue()
+    with Image.open(io.BytesIO(content)) as original:
+        image = original.convert("RGBA")
+        image.thumbnail(TARGET_SIZE, Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        image.save(buf, format="WEBP", quality=88, method=6)
+        return buf.getvalue()
 
 
-def _fetch_one(player_id: str) -> bytes | None:
-    for source, url_template in SOURCES:
-        url = url_template.format(player_id)
+def _fetch_one(identity: dict, approval: dict | None) -> bytes | None:
+    entry = approved_portrait(identity, approval, published=False)
+    if not entry:
+        return None
+    # Exactly the approved asset's own provider/ID. A failed request does not
+    # try the subject's digits against another provider.
+    try:
+        response = requests.get(entry["source_url"], headers=HEADERS,
+                                timeout=TIMEOUT_SECONDS, allow_redirects=False)
         try:
-            response = requests.get(url, headers=HEADERS, timeout=TIMEOUT_SECONDS, stream=True)
-        except requests.RequestException as exc:
-            _log(f"  {source}: request failed for {player_id}: {exc}")
-            continue
-        if response.status_code == 200 and response.content:
-            _log(f"  ok {source} {player_id}")
-            return response.content
-        if response.status_code != 404:
-            _log(f"  {source} HTTP {response.status_code} for {player_id}")
+            content_type = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
+            if response.status_code == 200 and content_type.startswith("image/") and response.content:
+                return response.content
+            _log(f'Unavailable approved portrait {identity_key(identity)}: HTTP {response.status_code}')
+        finally:
+            response.close()
+    except requests.RequestException as exc:
+        _log(f"Portrait request failed: {exc}")
     return None
 
 
-def fetch_all(ids: Iterable[str], force: bool = False) -> dict[str, str]:
-    PUBLIC_HEADSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    manifest = _existing_manifest()
-    ok = 0
-    skipped = 0
-    failed = 0
-    for player_id in ids:
-        target = PUBLIC_HEADSHOT_DIR / f"{player_id}.webp"
-        if target.exists() and not force:
-            manifest[player_id] = f"/headshots/{player_id}.webp"
-            skipped += 1
+def _write_new_asset(target: Path, content: bytes) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.parent.resolve().is_relative_to(PUBLIC_HEADSHOT_DIR.resolve()):
+        raise ValueError("Portrait asset escaped its directory")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            # Unlike replace(), link() cannot overwrite an existing asset.
+            os.link(temporary, target)
+        except FileExistsError:
+            if target.read_bytes() != content:
+                raise ValueError("Existing portrait digest path has different bytes")
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def fetch_all(ids: Iterable[str], force: bool = False, approvals: dict | None = None) -> dict:
+    identities = [parse_identity(key) for key in dict.fromkeys(ids)]
+    if approvals is not None and not isinstance(approvals, dict):
+        raise ValueError("Portrait approvals must be an object")
+    manifest = read_manifest(MANIFEST_PATH)
+    approvals = approvals or {}
+    changed = False
+    fields = ("subject", "asset", "subject_verified", "subject_evidence", "rights", "crosswalk", "source_url")
+    for identity in identities:
+        key = identity_key(identity)
+        approval = approved_portrait(identity, approvals.get(key), published=False)
+        if not approval:
+            _log(f"Blocked portrait {key}: verified subject and permission evidence required")
             continue
-        content = _fetch_one(player_id)
-        if not content:
-            failed += 1
+        cached = cached_portrait(identity, manifest, PUBLIC_HEADSHOT_DIR)
+        if cached and not force and all(cached.get(field) == approval.get(field) for field in fields):
+            continue
+        content = _fetch_one(identity, approval)
+        if content is None:
             continue
         try:
-            target.write_bytes(_resize_to_webp(content))
-        except Exception as exc:
-            _log(f"  resize failed for {player_id}: {exc}")
-            failed += 1
+            webp = _resize_to_webp(content)
+            digest = hashlib.sha256(webp).hexdigest()
+            asset = approval["asset"]
+            relative = f'{asset["provider"]}/{asset["id"]}-{digest}.webp'
+            _write_new_asset(PUBLIC_HEADSHOT_DIR / relative, webp)
+        except (OSError, ValueError) as exc:
+            _log(f"Portrait conversion/cache failed for {key}: {exc}")
             continue
-        manifest[player_id] = f"/headshots/{player_id}.webp"
-        ok += 1
+        manifest[key] = {**deepcopy(approval), "sha256": digest, "path": f"/headshots/{relative}"}
+        changed = True
         time.sleep(SLEEP_BETWEEN_REQUESTS)
-    _save_manifest(manifest)
-    _log(f"\nDone. fetched={ok} skipped={skipped} failed={failed} manifest={MANIFEST_PATH}")
+    if changed:
+        # Retain every legacy entry and asset; the renderer ignores unverified
+        # rows. A failed manifest write leaves old content-addressed files intact.
+        write_json_atomic(MANIFEST_PATH, manifest)
     return manifest
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--force", action="store_true", help="Re-download even if file already exists")
-    parser.add_argument(
-        "--ids",
-        type=str,
-        default=None,
-        help="Comma-separated player IDs to fetch (instead of reading from warehouse)",
-    )
+    parser.add_argument("--force", action="store_true", help="Refresh approved assets; never bypass verification")
+    parser.add_argument("--ids", required=True, help="Comma-separated qualified IDs, e.g. espn:45843")
+    parser.add_argument("--approvals", type=Path, required=True, help="Reviewed subject/rights records keyed by provider:id")
     args = parser.parse_args()
-
-    if args.ids:
-        ids = [s.strip() for s in args.ids.split(",") if s.strip()]
-    else:
-        ids = _load_player_ids_from_warehouse()
-    if not ids:
-        _log("No player IDs to process. Pass --ids or populate the warehouse first.")
-        return 0
-    _log(f"Processing {len(ids)} player ids (force={args.force})...")
-    fetch_all(ids, force=args.force)
+    try:
+        if not args.approvals.is_file():
+            raise ValueError("Approval file is missing")
+        approvals = read_manifest(args.approvals)
+        ids = [key.strip() for key in args.ids.split(",") if key.strip()]
+        if not ids:
+            raise ValueError("At least one qualified ID is required")
+        fetch_all(ids, force=args.force, approvals=approvals)
+    except (OSError, ValueError) as exc:
+        _log(str(exc))
+        return 1
     return 0
 
 

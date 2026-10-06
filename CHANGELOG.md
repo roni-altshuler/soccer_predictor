@@ -17,6 +17,15 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Player portraits require provider-qualified subject and asset identities,
+  explicit mapping/permission evidence and matching local bytes. Numeric IDs,
+  direct CDN URLs and old unqualified cache entries fall back to accessible
+  initials. Approved refreshes preserve old assets. Existing ESPN player APIs
+  retain league/gender in canonical links and cache keys; team cold links can
+  retain a validated local return path. Women's default `eng.w.1` remains
+  accepted on canonical profile/stats round trips. See
+  [the profile boundary and evidence](docs/PLAYER_PORTRAIT_IDENTITY.md).
+
 - Unpublished ESPN roster sides can omit the roster key within a validated
   scheduled two-team event. Supplied malformed rosters and anonymous athletes
   still fail visibly; unpublished or partially announced sides preserve the

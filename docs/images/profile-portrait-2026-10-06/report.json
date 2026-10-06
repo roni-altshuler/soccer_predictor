@@ -1,0 +1,71 @@
+{
+  "captured_utc": "2026-10-06T15:38:38.225160+00:00",
+  "implementation_commit": "2d0714e3239c1cf269f33589858e8225611bb5e1",
+  "frontend_tests": 728,
+  "frontend_suites": 60,
+  "backend_passed": 1499,
+  "backend_skipped": 25,
+  "backend_warnings": 24,
+  "lint_new_warnings": 0,
+  "typecheck": "passed",
+  "build": "passed",
+  "portraitReport": {
+    "basis": "Synthetic subject, rating, status and manifest records on the existing sparse match-detail path. No provider fetch or real permission evidence; positive delivery is covered by unit/cache contracts.",
+    "report": [
+      {
+        "width": 390,
+        "variant": "legacy-id",
+        "accessibleName": true,
+        "initials": "SS",
+        "imageCount": 0,
+        "portraitRequests": 0,
+        "accessibilityViolations": 0,
+        "overflow": false,
+        "errors": []
+      },
+      {
+        "width": 390,
+        "variant": "colliding-provider",
+        "accessibleName": true,
+        "initials": "SS",
+        "imageCount": 0,
+        "portraitRequests": 0,
+        "accessibilityViolations": 0,
+        "overflow": false,
+        "errors": []
+      },
+      {
+        "width": 1440,
+        "variant": "legacy-id",
+        "accessibleName": true,
+        "initials": "SS",
+        "imageCount": 0,
+        "portraitRequests": 0,
+        "accessibilityViolations": 0,
+        "overflow": false,
+        "errors": []
+      },
+      {
+        "width": 1440,
+        "variant": "colliding-provider",
+        "accessibleName": true,
+        "initials": "SS",
+        "imageCount": 0,
+        "portraitRequests": 0,
+        "accessibilityViolations": 0,
+        "overflow": false,
+        "errors": []
+      }
+    ]
+  },
+  "existing_responsive_widths": [
+    390,
+    768,
+    1440
+  ],
+  "existing_responsive_errors": [
+    [],
+    [],
+    []
+  ]
+}

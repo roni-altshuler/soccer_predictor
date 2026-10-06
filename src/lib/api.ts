@@ -13,6 +13,7 @@ export type {
   RecentPredictionSummary,
 } from './types/accuracy';
 import type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
+import type { PlayerIdentity, PlayerPortrait } from './playerPortrait';
 export type { Standing, WhatIfOutcome } from './simulation/leagueMonteCarlo';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -238,6 +239,9 @@ export const leaguesApi = {
 export interface PlayerProfile {
   id: number
   name: string
+  identity?: PlayerIdentity
+  portrait?: PlayerPortrait
+  links?: { self: string; team?: string }
   position?: string
   shirtNumber?: number
   teamId?: number
@@ -262,6 +266,7 @@ export interface PlayerMatchLogEntry {
 
 export interface PlayerStats {
   player_id: number
+  identity?: PlayerIdentity
   season: string
   competition?: string
   appearances?: number
@@ -281,8 +286,19 @@ export interface PlayerStats {
 }
 
 export const playersApi = {
-  get: (playerId: number) => apiRequest<PlayerProfile>(`/teams/players/${playerId}`),
-  getStats: (playerId: number) => apiRequest<PlayerStats>(`/teams/players/${playerId}/stats`),
+  get: (playerId: number, context: PlayerApiContext = {}) => apiRequest<PlayerProfile>(playerApiPath(playerId, context)),
+  getStats: (playerId: number, context: PlayerApiContext = {}) => apiRequest<PlayerStats>(playerApiPath(playerId, context, true)),
+}
+
+export interface PlayerApiContext { provider?: 'espn'; league?: string; gender?: 'M' | 'F' }
+export function playerApiPath(playerId: number, context: PlayerApiContext = {}, stats = false): string {
+  if (!Number.isSafeInteger(playerId) || playerId <= 0 || (context.provider && context.provider !== 'espn')) {
+    throw new Error('A valid ESPN player identity is required')
+  }
+  const query = new URLSearchParams({ provider: 'espn' })
+  if (context.league) query.set('league', context.league)
+  if (context.gender) query.set('gender', context.gender)
+  return `/teams/players/${playerId}${stats ? '/stats' : ''}?${query}`
 }
 
 // ==================== TOURNAMENTS API ====================

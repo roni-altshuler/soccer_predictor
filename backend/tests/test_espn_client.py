@@ -15,6 +15,17 @@ import pytest_asyncio
 from backend.services.espn.client import ESPNClient, ESPN_LEAGUE_IDS
 
 
+@pytest.mark.asyncio
+async def test_athlete_cache_preserves_provider_league_and_subject_context(espn_client):
+    with patch.object(espn_client, '_request', new_callable=AsyncMock) as request:
+        await espn_client.get_athlete('123', 'eng.1')
+        await espn_client.get_athlete('123', 'eng.w.1')
+        await espn_client.get_athlete_overview('123', 'usa.1')
+    assert [call.kwargs['cache_key'] for call in request.call_args_list] == [
+        'espn_athlete_eng.1_123', 'espn_athlete_eng.w.1_123', 'espn_athlete_overview_usa.1_123',
+    ]
+
+
 @pytest_asyncio.fixture
 async def espn_client():
     """Create an ESPN client instance for testing."""

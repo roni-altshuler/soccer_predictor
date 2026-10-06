@@ -1,0 +1,507 @@
+{
+  "note": "All identities, permissions and digests are synthetic contract fixtures; no real assets are approved.",
+  "cases": [
+    {
+      "name": "qualified espn",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": true
+    },
+    {
+      "name": "colliding fotmob id is a separate subject",
+      "identity": {
+        "provider": "fotmob",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "fotmob",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "fotmob",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://images.fotmob.com/image_resources/playerimages/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/fotmob/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": true
+    },
+    {
+      "name": "collision cannot cross provider",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "fotmob",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "fotmob",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://images.fotmob.com/image_resources/playerimages/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/fotmob/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "bare numeric legacy entry",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": "/headshots/123.webp",
+      "valid": false
+    },
+    {
+      "name": "missing provider",
+      "identity": {
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "malformed provider",
+      "identity": {
+        "provider": [
+          "espn"
+        ],
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "missing rights",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": null,
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "unknown rights",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "unknown",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "missing rights evidence",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": ""
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "unverified subject",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": false,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "missing subject evidence",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "mismatched subject",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "999"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong source numeric ID",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/999.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "legacy unqualified path",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/123.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "missing asset digest",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://a.espncdn.com/i/headshots/soccer/players/full/123.png",
+        "sha256": null,
+        "path": "/headshots/espn/123-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp"
+      },
+      "valid": false
+    },
+    {
+      "name": "missing crosswalk",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "fotmob",
+          "id": "456"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://images.fotmob.com/image_resources/playerimages/456.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/fotmob/456-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
+        "crosswalk": {
+          "subject": {
+            "provider": "espn",
+            "id": "123"
+          },
+          "asset": {
+            "provider": "fotmob",
+            "id": "123"
+          },
+          "verified": true,
+          "evidence": "SYNTHETIC crosswalk evidence"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "explicit verified crosswalk",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "fotmob",
+          "id": "456"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://images.fotmob.com/image_resources/playerimages/456.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/fotmob/456-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
+        "crosswalk": {
+          "subject": {
+            "provider": "espn",
+            "id": "123"
+          },
+          "asset": {
+            "provider": "fotmob",
+            "id": "456"
+          },
+          "verified": true,
+          "evidence": "SYNTHETIC crosswalk evidence"
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "crosswalk names a different asset",
+      "identity": {
+        "provider": "espn",
+        "id": "123"
+      },
+      "entry": {
+        "subject": {
+          "provider": "espn",
+          "id": "123"
+        },
+        "asset": {
+          "provider": "fotmob",
+          "id": "456"
+        },
+        "subject_verified": true,
+        "subject_evidence": "SYNTHETIC identity evidence, not a real player approval",
+        "rights": {
+          "status": "permitted",
+          "evidence": "SYNTHETIC permission evidence, not a real license"
+        },
+        "source_url": "https://images.fotmob.com/image_resources/playerimages/456.png",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "path": "/headshots/fotmob/456-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
+        "crosswalk": {
+          "subject": {
+            "provider": "espn",
+            "id": "123"
+          },
+          "asset": {
+            "provider": "fotmob",
+            "id": "123"
+          },
+          "verified": true,
+          "evidence": "SYNTHETIC crosswalk evidence"
+        }
+      },
+      "valid": false
+    }
+  ]
+}
