@@ -7,12 +7,13 @@ with canned core-API / overview fixtures, mirroring the mocking style of
 test_espn_client.py.
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 from copy import deepcopy
 from functools import partial
 import hashlib
 import json
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit, urlunsplit
 
 import pytest
 from fastapi import FastAPI
@@ -190,6 +191,45 @@ def test_profile_context_and_canonical_team_link_are_retained(client):
     espn.get_athlete.assert_awaited_once_with('45843', league_slug='usa.1')
     assert body['links']['self'] == '/api/v1/teams/players/45843?provider=espn&league=usa.1&gender=F'
     assert body['links']['team'] == '/teams/20232?provider=espn&league=usa.1&gender=F'
+
+
+@pytest.mark.parametrize('query,gender,slug', [
+    ('', 'M', 'eng.1'),
+    ('?gender=M', 'M', 'eng.1'),
+    ('?gender=F', 'F', 'eng.w.1'),
+    ('?gender=f', 'F', 'eng.w.1'),
+    ('?gender=F&league=eng.w.1', 'F', 'eng.w.1'),
+    ('?gender=M&league=premier_league', 'M', 'eng.1'),
+])
+def test_canonical_profile_and_stats_round_trip(client, query, gender, slug):
+    espn = _mock_espn(athlete={'id': '123', 'displayName': 'Synthetic player'}, overview={})
+    with patch('backend.api.v1.teams.get_espn_client', return_value=espn):
+        response = client.get(f'/api/v1/teams/players/123{query}')
+        assert response.status_code == 200
+        profile = response.json()
+        canonical = urlsplit(profile['links']['self'])
+        assert parse_qs(canonical.query) == {
+            'provider': ['espn'], 'league': [slug], 'gender': [gender],
+        }
+        repeated = client.get(profile['links']['self'])
+        assert repeated.status_code == 200
+        assert repeated.json() == profile
+        stats_url = urlunsplit(canonical._replace(path=f'{canonical.path}/stats'))
+        stats = client.get(stats_url)
+        assert stats.status_code == 200
+        assert stats.json()['identity'] == profile['identity'] == {'provider': 'espn', 'id': '123'}
+    espn.get_athlete.assert_has_awaits([call('123', league_slug=slug), call('123', league_slug=slug)])
+    espn.get_athlete_overview.assert_awaited_once_with('123', league_slug=slug)
+
+
+@pytest.mark.parametrize('endpoint', ['', '/stats'])
+def test_unknown_womens_slug_stays_rejected_before_provider_lookup(client, endpoint):
+    espn = _mock_espn(athlete={'id': '123', 'displayName': 'Synthetic player'}, overview={})
+    with patch('backend.api.v1.teams.get_espn_client', return_value=espn):
+        response = client.get(f'/api/v1/teams/players/123{endpoint}?provider=espn&gender=F&league=eng.w.999')
+    assert response.status_code == 422
+    espn.get_athlete.assert_not_awaited()
+    espn.get_athlete_overview.assert_not_awaited()
 
 
 def test_profile_omits_other_provider_team_reference(client):

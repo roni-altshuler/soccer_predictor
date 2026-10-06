@@ -94,7 +94,9 @@ def _profile_slug(league: Optional[str], gender: Optional[str]) -> str:
     slug = ESPN_LEAGUE_IDS.get(league)
     if slug:
         return slug
-    if league in ESPN_LEAGUE_IDS.values():
+    # Every default we emit in a canonical link must also be accepted when
+    # explicit, including the existing women's default eng.w.1.
+    if league in ESPN_LEAGUE_IDS.values() or league in _GENDER_DEFAULT_SLUGS.values():
         return league
     raise HTTPException(status_code=422, detail="Unknown player league context")
 

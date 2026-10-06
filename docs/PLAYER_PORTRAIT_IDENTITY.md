@@ -83,6 +83,10 @@ Profile responses validate the athlete ID, include an explicit `identity` and
 canonical links, retain league/gender context, and omit unapproved headshot
 URLs. Profile/overview cache keys include provider and league context. A
 foreign team reference cannot substitute a numeric tail for an ESPN team ID.
+Canonical profile and stats URLs accept the same existing default slugs used
+for the initial lookup, including `eng.w.1` for `gender=F`. This fixes the
+women's default round trip; unrecognized league slugs remain rejected and no
+additional women's league coverage is introduced.
 
 The team page rejects another provider namespace in both page and metadata
 loading and verifies returned team identity. Its Back control preserves normal
@@ -133,3 +137,20 @@ See the [retained measurements](images/profile-portrait-2026-10-06/report.json),
 [1440px initials crop](images/profile-portrait-2026-10-06/initials-1440.png).
 The player name/rating/status in the portrait case are synthetic test inputs;
 the crop is fallback evidence, not a real player profile or permitted headshot.
+
+## Canonical URL regression follow-up
+
+The initial explicit-slug allowlist omitted the already supported women's
+default. A profile loaded with `gender=F` emitted a self URL with
+`league=eng.w.1`, which then returned 422. The allowlist now recognizes the
+existing gender defaults as well as the existing league mapping values.
+Canonical self and stats requests use the same provider, league and normalized
+gender as the initial lookup. Unknown slugs and non-ESPN namespaces stay rejected.
+
+The regressions reproduce three failures before the fix and cover six round-trip
+contexts plus unknown-slug rejection on both endpoints. After the fix, the
+focused player/portrait/client suite passes **63 tests**, and the full backend
+suite passes **1,507 tests, with 25 skips and 24 existing warnings**. These tests
+mock provider responses and establish URL consistency, not additional women's
+data coverage. Frontend code and the retained browser evidence are unchanged
+from reviewed head `445346d1bdf3d9a2e939aa0aeefd6f378331974a`.
