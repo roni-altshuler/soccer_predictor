@@ -17,6 +17,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Injury refresh preserves sanitized HTTP, transport, JSON and report-schema
+  failure reasons in a bounded current-run artifact, including failed batches.
+  Completed attempts are checkpointed outside the data cache; old injury
+  observations and the successful-run data publication gate remain intact.
+  Provider recovery remains unverified. See
+  [the diagnostic contract](docs/INJURY_FAILURE_DIAGNOSTICS.md).
+
 - Player portraits require provider-qualified subject and asset identities,
   explicit mapping/permission evidence and matching local bytes. Numeric IDs,
   direct CDN URLs and old unqualified cache entries fall back to accessible

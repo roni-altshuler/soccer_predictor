@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "basis": "offline synthetic httpx.MockTransport test; not a production response capture",
+  "implementation_commit": "b9c103e7d6fc7fe35174d407fb28469c1a3ff3b1",
+  "test": "backend/tests/test_injury_diagnostics.py::test_failed_cli_retains_all_42_legacy_attempts_without_publishing",
+  "mock_response": {
+    "http_status": 200,
+    "injuries_field": "absent"
+  },
+  "retained_records": 42,
+  "dropped_records": 0,
+  "records_by_team": {
+    "360": 21,
+    "364": 21
+  },
+  "reason_counts": {
+    "missing_injury_content": 42
+  },
+  "unknown_diagnostic_http_status_count": 42,
+  "passed_test_assertions": [
+    "42 mocked ESPN requests",
+    "CLI exit code 1",
+    "both cache bytes, mtime and fetched_at preserved",
+    "zero FotMob injury calls",
+    "actual CLI output exists and excludes private payload sentinel; inspected without a test-side export"
+  ],
+  "validation": {
+    "focused_passed": 121,
+    "focused_existing_warnings": 3,
+    "backend_passed": 1542,
+    "backend_skipped": 25,
+    "backend_existing_warnings": 24,
+    "workflow_yaml_and_all_four_shell_steps": "passed",
+    "workflow_failure_and_publication_contract_tests": "passed"
+  },
+  "original_run_schema_known": false,
+  "provider_recovery_verified": false,
+  "live_artifact_delivery_verified": false,
+  "test_source_sha256": "ff2a2141cd7b4a63afcc25952d7734eefcb1543ba991a50a17b834f3cf9ef10e",
+  "replay_modes": [
+    "checkpoints",
+    "final-export-only (incremental checkpoints disabled)"
+  ],
+  "records_per_replay": 42,
+  "cli_output_inspected_without_test_export": true,
+  "artifact_write_failure_injected_on_new_ledger_and_spy_verified": true,
+  "regression_checks": {
+    "basis": "isolated in-memory mutations; tracked runtime files unchanged",
+    "missing_final_export": {
+      "expected_test_failures": 2,
+      "cases": [
+        "42-attempt final-export-only replay",
+        "artifact-write failure test"
+      ]
+    },
+    "empty_export": {
+      "expected_test_failures": 2,
+      "cases": [
+        "42-attempt checkpoint replay",
+        "42-attempt final-export-only replay"
+      ]
+    }
+  }
+}
