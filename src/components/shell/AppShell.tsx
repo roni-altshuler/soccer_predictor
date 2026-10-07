@@ -29,22 +29,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   useNavDepthTracker()
   const pathname = usePathname() || '/'
   const matchFlow = pathname === '/' || pathname.startsWith('/matches/')
+  const neutralFlow = matchFlow || (pathname.startsWith('/leagues/') && pathname.endsWith('/compare'))
 
   return (
     // Single app-wide TooltipProvider so any <Tooltip> downstream works
     // without ceremony. Nested providers (CalibrationPlot, ConfidenceIndicator,
     // FactorsPanel) are harmless per Radix docs.
     <TooltipProvider delayDuration={200} skipDelayDuration={400}>
-      <div className={matchFlow ? 'match-flow-shell' : undefined}>
-        {!matchFlow && <PitchBackdrop />}
-        <SidebarNav matchFlow={matchFlow} />
+      <div className={neutralFlow ? 'match-flow-shell' : undefined}>
+        {!neutralFlow && <PitchBackdrop />}
+        <SidebarNav matchFlow={neutralFlow} />
         <div className="flex min-h-screen flex-col md:pl-[var(--shell-sidebar-w)]">
-          <TopBar matchFlow={matchFlow} />
+          <TopBar matchFlow={neutralFlow} />
           <main id="main" className="flex-1 pb-20 md:pb-0">
             <PageTransition>{children}</PageTransition>
           </main>
         </div>
-        <MobileBottomNav matchFlow={matchFlow} />
+        <MobileBottomNav matchFlow={neutralFlow} />
       </div>
     </TooltipProvider>
   )

@@ -1,0 +1,276 @@
+{
+  "basis": "Actual local serving API and committed season artifact; only faults injected. Other APIs and external hosts intercepted. No live provider ingestion, model execution or public deployment QA.",
+  "artifactGeneratedAt": "2026-10-06T14:27:31.131740+00:00",
+  "resultCutoff": "Not supplied per league",
+  "report": [
+    {
+      "width": 390,
+      "sourceApiMatchesArtifact": true,
+      "clubSamples": [
+        {
+          "team": "Arsenal",
+          "points": 12,
+          "games": 5,
+          "pointsPerGame": 2.4,
+          "projectedPoints": 76.9
+        },
+        {
+          "team": "Manchester City",
+          "points": 15,
+          "games": 5,
+          "pointsPerGame": 3,
+          "projectedPoints": 83.7
+        }
+      ],
+      "keyboardSelectorAndSwap": true,
+      "repeatSelections": 3,
+      "repeatRoundTrips": 2,
+      "states": [
+        "ready",
+        "loading",
+        "error-retry",
+        "empty-retry",
+        "missing-metrics",
+        "unsupported-gender",
+        "calendar-season"
+      ],
+      "reducedMotion": true,
+      "oneActiveNavItem": true,
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "externalRequestsFulfilledLocally": 17,
+      "expectedInjectedTransportErrors": 1,
+      "snapshotRequests": [
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "loading"
+        },
+        {
+          "gender": "M",
+          "state": "error"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "empty"
+        },
+        {
+          "gender": "M",
+          "state": "sparse"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        }
+      ],
+      "unexpectedErrors": []
+    },
+    {
+      "width": 768,
+      "sourceApiMatchesArtifact": true,
+      "clubSamples": [
+        {
+          "team": "Arsenal",
+          "points": 12,
+          "games": 5,
+          "pointsPerGame": 2.4,
+          "projectedPoints": 76.9
+        },
+        {
+          "team": "Manchester City",
+          "points": 15,
+          "games": 5,
+          "pointsPerGame": 3,
+          "projectedPoints": 83.7
+        }
+      ],
+      "keyboardSelectorAndSwap": true,
+      "repeatSelections": 3,
+      "repeatRoundTrips": 2,
+      "states": [
+        "ready",
+        "loading",
+        "error-retry",
+        "empty-retry",
+        "missing-metrics",
+        "unsupported-gender",
+        "calendar-season"
+      ],
+      "reducedMotion": true,
+      "oneActiveNavItem": true,
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "externalRequestsFulfilledLocally": 17,
+      "expectedInjectedTransportErrors": 1,
+      "snapshotRequests": [
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "loading"
+        },
+        {
+          "gender": "M",
+          "state": "error"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "empty"
+        },
+        {
+          "gender": "M",
+          "state": "sparse"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        }
+      ],
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "sourceApiMatchesArtifact": true,
+      "clubSamples": [
+        {
+          "team": "Arsenal",
+          "points": 12,
+          "games": 5,
+          "pointsPerGame": 2.4,
+          "projectedPoints": 76.9
+        },
+        {
+          "team": "Manchester City",
+          "points": 15,
+          "games": 5,
+          "pointsPerGame": 3,
+          "projectedPoints": 83.7
+        }
+      ],
+      "keyboardSelectorAndSwap": true,
+      "repeatSelections": 3,
+      "repeatRoundTrips": 2,
+      "states": [
+        "ready",
+        "loading",
+        "error-retry",
+        "empty-retry",
+        "missing-metrics",
+        "unsupported-gender",
+        "calendar-season"
+      ],
+      "reducedMotion": true,
+      "oneActiveNavItem": true,
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "externalRequestsFulfilledLocally": 17,
+      "expectedInjectedTransportErrors": 1,
+      "snapshotRequests": [
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "loading"
+        },
+        {
+          "gender": "M",
+          "state": "error"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        },
+        {
+          "gender": "M",
+          "state": "empty"
+        },
+        {
+          "gender": "M",
+          "state": "sparse"
+        },
+        {
+          "gender": "M",
+          "state": "ready"
+        }
+      ],
+      "unexpectedErrors": []
+    }
+  ],
+  "baseHead": "91a6c6256e33e58cf2dc2d4ca300bfbadce5a879",
+  "artifactSHA256": "18cbd512284e9443f33f21912692564d387e770754c1a901d5eeca50514181d9",
+  "reviewedScreenshots": [
+    "after-1440.png",
+    "after-390.png",
+    "before-league-1440.png",
+    "before-league-390.png",
+    "empty-mobile.png",
+    "error-mobile.png",
+    "focus-1440.png",
+    "focus-390.png",
+    "loading-desktop.png",
+    "source-mobile.png"
+  ]
+}

@@ -118,7 +118,7 @@ export function SidebarNav({ matchFlow = false }: { matchFlow?: boolean }) {
                 <SidebarLink
                   key={item.href}
                   item={matchFlow && item.href === '/' ? { ...item, label: 'Matchday' } : item}
-                  active={isActive(pathname, item.href) || (matchFlow && item.href === '/')}
+                  active={isActive(pathname, item.href) || (pathname.startsWith('/matches/') && item.href === '/')}
                 />
               ))}
             </ul>

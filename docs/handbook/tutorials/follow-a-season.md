@@ -46,8 +46,9 @@ ordering. Those are two different questions.
 
 ## 3. It tightens as the season runs
 
-A projection is not a preseason snapshot. Every day the pipeline pulls new
-results, retrains through yesterday and re-simulates. Points already banked seed
+A projection is not a preseason snapshot. The pipeline replays available
+verified results, refits and re-simulates. Successful result refreshes determine
+its cutoff; a new build does not imply results through yesterday. Points already banked seed
 the simulation and played fixtures leave the remaining set, so the same page in
 March is a much narrower claim than in August.
 
@@ -66,7 +67,7 @@ and rejected — it made things significantly worse at every shrinkage level
 tried. So an ordering that looks wrong is the measured model's output, not a
 bug to be tuned away.
 
-**A league that is not there.** Nine leagues are projected. Others are held out
+**A league that is not there.** The current snapshot covers the big five and MLS. Others are held out
 for stated reasons — Liga MX and Argentina because they are not a single round
 robin, several second tiers because a Championship table next to the Premier
 League made the page harder to read. Neither is a claim that the model cannot
@@ -79,7 +80,37 @@ force a result and re-run; the delta against the unmodified run is what the tab
 is for. It is a what-if lab, not a second forecast — the published projection is
 always the unmodified run.
 
-## Next
+## Compare two clubs
+
+From a league page, open **Compare clubs · Season snapshot**. Both selectors
+use the same competition and season in the committed `season_projections.json`
+artifact. Selecting a club already on the other side swaps the pair.
+
+**Recorded points / games played** describes the snapshot's results sample.
+Points per game divides those two values, including any recorded deduction.
+Different opponents, schedules and small samples limit this comparison. Zero
+games gives an unavailable rate; missing fields stay unavailable, not zero.
+The adjacent **projected final points** is the existing model's mean across
+season simulations, explicitly a forecast. It is not a prediction of a match
+between the selected clubs or evidence that one model is better.
+
+The source link opens the exact existing serving artifact. Its build time is
+shown separately from the latest result date, which this artifact does not
+supply per league. A later build does not establish fresh results: the verified
+European results in the October 7 audit still end September 20, 2026.
+This view uses the published men's snapshot and withholds it for a women's
+preference. It adds no ingestion, training or injury refresh.
+
+Goals, shot-level xG, injuries and player values are absent here. **Shot-level
+xG** estimates the chance an individual shot becomes a goal, using shot
+characteristics; goals scored and a match forecast's expected-goal totals are
+different measures. Missing shot data cannot be reconstructed from points.
+The MIT-licensed [educational xG project](https://github.com/grandngom/xG-model-football)
+illustrates logistic regression with distance/angle and contextual features on
+only 50 matches (1,390 shots). It is a learning reference; none of its data,
+assets or model is imported into Pitchverse.
+
+## Next steps
 
 - [Read a bracket](read-a-bracket.md) — the other shape a season comes in
 - [Models § season projection](../concepts/models.md#2-season-projection--monte-carlo)

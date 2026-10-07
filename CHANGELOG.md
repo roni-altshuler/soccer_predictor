@@ -6,6 +6,14 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- League pages link to a two-club season snapshot comparison. Recorded points
+  per game carries games played; projected final points stays labelled as the
+  existing forecast. Source build time and missing result cutoff are distinct.
+  Missing metrics, ambiguous clubs and unsupported women's snapshots remain
+  unavailable. No provider ingestion, player values or new model is added.
+
 ### Changed
 
 - Matchday and match detail share cream surfaces, restrained neutral navigation,

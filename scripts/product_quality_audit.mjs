@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process'
 import assert from 'node:assert/strict'
 import { checkNavigationRaces } from './lib/navigation_race_checks.mjs'
 import { checkProfilePortraits } from './lib/profile_portrait_checks.mjs'
+import { checkTeamComparison } from './lib/team_comparison_checks.mjs'
 
 const port = process.env.QA_PORT || '3100'
 const base = process.env.QA_BASE || `http://127.0.0.1:${port}`
@@ -47,6 +48,7 @@ let browser
 const report = []
 let navigationReport
 let portraitReport
+let comparisonReport
 async function untilServer() {
   const deadline = Date.now() + 60000
   while (Date.now() < deadline) {
@@ -119,6 +121,7 @@ try {
   assert.match(await (await fetch(base)).text(), /<h1\b[^>]*>Matchday<\/h1>/, 'Matchday heading remains in server-rendered HTML')
   navigationReport = await checkNavigationRaces({ browser, base, out, date, today, fixtures, records, detail, evaluation, probe: process.env.QA_PROBE === '1' })
   if (!process.env.QA_NAVIGATION_ONLY) portraitReport = await checkProfilePortraits({ browser, base, out, chosen, detail, today })
+  if (!process.env.QA_NAVIGATION_ONLY) comparisonReport = await checkTeamComparison({ browser, base, out })
   for (const width of process.env.QA_NAVIGATION_ONLY ? [] : [390, 768, 1440]) {
     console.log(`Checking ${width}px` )
     const context = await browser.newContext({ viewport: { width, height: 960 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
@@ -351,6 +354,6 @@ try {
   await browser?.close()
   if (server) server.kill('SIGTERM')
 }
-const result = { replay: 'Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, portraitReport, report }
+const result = { replay: 'Committed 2026-09-19 forecasts, selected as Yesterday; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, portraitReport, comparisonReport, report }
 await writeFile(`${out}/report.json`, JSON.stringify(result, null, 2))
 console.log(JSON.stringify(result, null, 2))
