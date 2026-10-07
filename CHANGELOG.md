@@ -6,6 +6,14 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- League pages link to a two-club season snapshot comparison. Recorded points
+  per game carries games played; projected final points stays labelled as the
+  existing forecast. Source build time and missing result cutoff are distinct.
+  Missing metrics, ambiguous clubs and unsupported women's snapshots remain
+  unavailable. No provider ingestion, player values or new model is added.
+
 ### Changed
 
 - Matchday and match detail share cream surfaces, restrained neutral navigation,
@@ -16,6 +24,11 @@ All notable changes to Pitchverse are documented here. The format is based on
   contracts now cover focus, contrast, loading, empty and error recovery states.
 
 ### Fixed
+
+- Comparison controls leave room for the sticky header during native keyboard
+  focus scrolling. Actual Tab/Shift+Tab and delayed gender/league response
+  contracts now cover visible focus, both traversal directions, retry and
+  transient stale-card suppression on desktop and mobile.
 
 - Legacy ESPN injury caches use reviewed provider/team/league bindings instead
   of probing all configured leagues. Missing, conflicting or unsupported

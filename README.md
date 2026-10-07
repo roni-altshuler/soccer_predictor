@@ -186,6 +186,15 @@ banked, and removes played fixtures. This depends on successful result refreshes
 the verified European results available here still end **September 20, 2026**.
 A later artifact generation date does not establish newer results.
 
+League pages also link to **Compare clubs · Season snapshot**: two clubs from
+one published competition/season, recorded points per game with game counts,
+and the existing projected final points. The view exposes the source artifact
+and missing per-league result date; it adds no model, ingestion, player values
+or shot-level xG. [How to read the comparison](docs/handbook/tutorials/follow-a-season.md#compare-two-clubs)
+explains its coverage and small-sample limits.
+[Scope, source audit and actual browser evidence](docs/TEAM_COMPARISON_REVIEW.md)
+record the reuse decisions and desktop/mobile shipping checks.
+
 [The chronological serving evaluator](docs/SEASON_ADAPTATION_EVALUATION.md)
 compares those adaptive strength inputs with frozen preseason Elo/form while
 both arms receive identical known standings, fixtures, head and horizons. Its
@@ -210,6 +219,7 @@ the bottom.
 | `/season/fixture/[uid]` | one match: 1X2, expected goals, scoreline distribution, team strength |
 | [`/evaluation`](src/app/(app)/evaluation/page.tsx) | how accurate it has actually been |
 | `/tournaments` | knockout ties and trophy odds |
+| `/leagues/[leagueId]/compare` | two clubs in the same committed season snapshot, samples and source gaps |
 
 ### Three things worth knowing about the numbers
 

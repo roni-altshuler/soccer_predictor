@@ -1,4 +1,5 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
+import Link from 'next/link'
 import { LeagueTrackRecord } from '@/components/accuracy/LeagueTrackRecord'
 import { SERVED_COMPETITION_IDS, getLeagueAccent } from '@/lib/leagueAccents'
 
@@ -51,6 +52,9 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
           something solid. The track record is a committed static artifact and
           depends on no live provider, so it renders regardless. */}
       <div className="mx-auto max-w-6xl px-4 pt-2">
+        <Link href={`/leagues/${leagueId}/compare`} prefetch={false} className="mb-3 inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]">
+          Compare clubs · Season snapshot
+        </Link>
         <LeagueTrackRecord leagueId={leagueId} />
       </div>
       <LeagueHomePage
