@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFile, writeFile } from 'node:fs/promises'
+import { checkComparisonReview } from './team_comparison_review_checks.mjs'
 
 /** Real browser / existing local serving API / committed artifact. Only faults
  * remove data or fail transport. Other APIs/hosts are intercepted: no provider
@@ -176,6 +177,7 @@ export async function checkTeamComparison({ browser, base, out }) {
       throw error
     } finally { release?.(); await context.close() }
   }
-  return { basis: 'Actual local serving API and committed season artifact; only faults injected. Other APIs and external hosts intercepted. No live provider ingestion, model execution or public deployment QA.',
+  const targetedReview = await checkComparisonReview({ browser, base, out, artifact })
+  return { basis: 'Actual local serving API and committed season artifact; only faults injected. Other APIs and external hosts intercepted. No live provider ingestion, model execution or public deployment QA.', targetedReview,
     artifactGeneratedAt: artifact.generated_at, resultCutoff: 'Not supplied per league', report }
 }

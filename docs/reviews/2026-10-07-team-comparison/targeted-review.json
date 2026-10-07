@@ -1,0 +1,405 @@
+{
+  "basis": "Actual browser and running frontend. Authorized committed snapshot only; held responses exercise cancellation/stale-data guards. Gender uses the existing canonical preference event because its public switch is hidden. League changes use actual app links. Keyboard traversal uses only Tab/Shift+Tab/Enter/End, without force-focus.",
+  "report": [
+    {
+      "width": 390,
+      "scenario": "keyboard",
+      "naturalTabSteps": 9,
+      "order": [
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 80,
+          "bottom": 124
+        },
+        {
+          "within": true,
+          "label": "First club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 383.75,
+          "bottom": 427.75
+        },
+        {
+          "within": true,
+          "label": "Second club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 461.75,
+          "bottom": 505.75
+        },
+        {
+          "within": true,
+          "label": "Swap",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 517.75,
+          "bottom": 561.75
+        },
+        {
+          "within": true,
+          "label": "View source snapshot",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 738.75,
+          "bottom": 782.75
+        },
+        {
+          "within": true,
+          "label": "How to read this comparison",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 794.75,
+          "bottom": 838.75
+        }
+      ],
+      "reverse": [
+        {
+          "within": true,
+          "label": "How to read this comparison",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 794.75,
+          "bottom": 838.75
+        },
+        {
+          "within": true,
+          "label": "View source snapshot",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 738.75,
+          "bottom": 782.75
+        },
+        {
+          "within": true,
+          "label": "Swap",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 491.75,
+          "bottom": 535.75
+        },
+        {
+          "within": true,
+          "label": "Second club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 435.75,
+          "bottom": 479.75
+        },
+        {
+          "within": true,
+          "label": "First club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 357.75,
+          "bottom": 401.75
+        },
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 68,
+          "bottom": 112
+        }
+      ],
+      "exitsBothDirections": true,
+      "keyboardSelectorAndSwap": true,
+      "keyboardRetry": false,
+      "forcedFocusCalls": 0,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 390,
+      "scenario": "keyboard-empty",
+      "naturalTabSteps": 5,
+      "order": [
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 80,
+          "bottom": 124
+        },
+        {
+          "within": true,
+          "label": "Try again",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 425.75,
+          "bottom": 469.75
+        }
+      ],
+      "reverse": [
+        {
+          "within": true,
+          "label": "Try again",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 425.75,
+          "bottom": 469.75
+        },
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 80,
+          "bottom": 124
+        }
+      ],
+      "exitsBothDirections": true,
+      "keyboardSelectorAndSwap": false,
+      "keyboardRetry": true,
+      "forcedFocusCalls": 0,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 390,
+      "scenario": "gender",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": false,
+      "observedDomAndPaintSamples": 16,
+      "transientStaleCards": [],
+      "requests": 1,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": false,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 390,
+      "scenario": "gender-return",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": true,
+      "observedDomAndPaintSamples": 26,
+      "transientStaleCards": [],
+      "requests": 2,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": true,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 390,
+      "scenario": "league",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": true,
+      "observedDomAndPaintSamples": 49,
+      "transientStaleCards": [],
+      "requests": 2,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": true,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "scenario": "keyboard",
+      "naturalTabSteps": 18,
+      "order": [
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 88,
+          "bottom": 132
+        },
+        {
+          "within": true,
+          "label": "First club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 373,
+          "bottom": 417
+        },
+        {
+          "within": true,
+          "label": "Second club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 373,
+          "bottom": 417
+        },
+        {
+          "within": true,
+          "label": "Swap",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 373,
+          "bottom": 417
+        },
+        {
+          "within": true,
+          "label": "View source snapshot",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 863.25,
+          "bottom": 907.25
+        },
+        {
+          "within": true,
+          "label": "How to read this comparison",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 863.25,
+          "bottom": 907.25
+        }
+      ],
+      "reverse": [
+        {
+          "within": true,
+          "label": "How to read this comparison",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 863.25,
+          "bottom": 907.25
+        },
+        {
+          "within": true,
+          "label": "View source snapshot",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 863.25,
+          "bottom": 907.25
+        },
+        {
+          "within": true,
+          "label": "Swap",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 72,
+          "bottom": 116
+        },
+        {
+          "within": true,
+          "label": "Second club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 72,
+          "bottom": 116
+        },
+        {
+          "within": true,
+          "label": "First club",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 72,
+          "bottom": 116
+        },
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 88,
+          "bottom": 132
+        }
+      ],
+      "exitsBothDirections": true,
+      "keyboardSelectorAndSwap": true,
+      "keyboardRetry": false,
+      "forcedFocusCalls": 0,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "scenario": "keyboard-empty",
+      "naturalTabSteps": 14,
+      "order": [
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 88,
+          "bottom": 132
+        },
+        {
+          "within": true,
+          "label": "Try again",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 375,
+          "bottom": 419
+        }
+      ],
+      "reverse": [
+        {
+          "within": true,
+          "label": "Try again",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 375,
+          "bottom": 419
+        },
+        {
+          "within": true,
+          "label": "Back to league",
+          "visibleFocus": true,
+          "unobscured": true,
+          "top": 88,
+          "bottom": 132
+        }
+      ],
+      "exitsBothDirections": true,
+      "keyboardSelectorAndSwap": false,
+      "keyboardRetry": true,
+      "forcedFocusCalls": 0,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "scenario": "gender",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": false,
+      "observedDomAndPaintSamples": 31,
+      "transientStaleCards": [],
+      "requests": 1,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": false,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "scenario": "gender-return",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": true,
+      "observedDomAndPaintSamples": 33,
+      "transientStaleCards": [],
+      "requests": 2,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": true,
+      "unexpectedErrors": []
+    },
+    {
+      "width": 1440,
+      "scenario": "league",
+      "staleResponseReleased": true,
+      "currentResponseHeldUntilAfterStaleCheck": true,
+      "observedDomAndPaintSamples": 62,
+      "transientStaleCards": [],
+      "requests": 2,
+      "abortedRequests": [
+        "net::ERR_ABORTED"
+      ],
+      "freshContextRendered": true,
+      "unexpectedErrors": []
+    }
+  ],
+  "initialProductHead": "9c9689ef7bbc4e8b28ceff526e4f44e330f8bc95",
+  "productChange": "Comparison-control scroll margin only; source/date/serving logic unchanged.",
+  "executorRecoveryVerifiedAt": "2026-10-07T12:13:51Z",
+  "runtime": "Local Next production build with saved-cloud Chromium 151"
+}

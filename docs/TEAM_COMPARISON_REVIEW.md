@@ -102,3 +102,40 @@ Local checks passed: **744 frontend tests** (including 16 focused comparison
 tests), **1,579 backend tests / 25 skipped**, lint, typecheck, build, and the full
 responsive product contract suite. Existing lint and backend deprecation
 warnings remain. Automatic PR checks are reported separately on the exact head.
+
+## Follow-up: delayed context changes and sequential keyboard traversal
+
+Independent review requested actual delayed-response and sequential Tab QA.
+At 390 and 1440 px, the browser holds the original men's response, then changes
+gender through the existing canonical preference event (the public switch is
+intentionally hidden) or navigates through the real Leagues → MLS → Compare
+links. The old response is released while the current context is still waiting.
+DOM mutation and painted-frame observers find **zero transient stale cards**.
+The former request is aborted. A women’s view remains unavailable; switching
+back to men and navigating to MLS wait for the independently held new response
+before showing only that context's clubs. These are controlled UI races using
+the authorized artifact, not provider-freshness measurements.
+
+Tab and Shift+Tab traverse the shell and all comparison controls without any
+force-focus calls: **Back → First club → Second club → Swap → Source →
+Handbook**, with the reverse order on return. Selectors precede Swap in the
+logical order at both widths. The shared retry control is also reached by
+sequential Tab and activated with Enter in the empty state. Every inspected
+control has a visible focus ring, is unobscured by fixed chrome and allows
+leaving the comparison in both directions.
+
+This found one real issue on the original `9c9689ef` head: mobile reverse
+traversal placed the focused Back link at y=20–64 behind the 56 px sticky
+header. The only product fix adds a comparison-control scroll margin of the
+header height plus 12 px. Production browser replay now places that focused
+link at y=68–112 on mobile (y=88–132 on desktop), fully visible. Serving,
+selection, gender, date/cutoff and model logic are unchanged.
+
+The checks run in the existing product suite and save
+`comparison-targeted-review.json`, all sequential focus screenshots and delayed
+context screenshots in the usual CI artifact. The
+[follow-up record](reviews/2026-10-07-team-comparison/targeted-review.md) contains
+the before/fixed evidence and outcomes. The same saved executor was verified
+usable after the lifecycle notice: filesystem read/write/fsync at
+**2026-10-07 12:13:51 UTC**, a local HTTP 200 and Chromium 151 rendering the
+comparison; no environment switch was made.

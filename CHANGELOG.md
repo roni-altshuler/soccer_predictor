@@ -25,6 +25,11 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Comparison controls leave room for the sticky header during native keyboard
+  focus scrolling. Actual Tab/Shift+Tab and delayed gender/league response
+  contracts now cover visible focus, both traversal directions, retry and
+  transient stale-card suppression on desktop and mobile.
+
 - Legacy ESPN injury caches use reviewed provider/team/league bindings instead
   of probing all configured leagues. Missing, conflicting or unsupported
   routing stays unavailable; explicit context, last-good observations and

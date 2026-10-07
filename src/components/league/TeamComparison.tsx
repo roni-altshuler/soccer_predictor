@@ -11,7 +11,7 @@ import { getLeagueAccent } from '@/lib/leagueAccents'
 import { isCalendarYearLeague, seasonLabel } from '@/lib/seasons'
 import { changeComparison, comparisonFromArtifact, pointsPerGame, type ComparisonSnapshot } from '@/lib/teamComparison'
 
-const control = 'min-h-[44px] rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]'
+const control = 'min-h-[44px] scroll-mt-[calc(var(--shell-topbar-h)_+_12px)] rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]'
 const display = (value: number | null, decimals = 0) => value === null ? 'Unavailable' : value.toFixed(decimals)
 
 /** Compare the same competition/season/source; don't merge a live provider table. */

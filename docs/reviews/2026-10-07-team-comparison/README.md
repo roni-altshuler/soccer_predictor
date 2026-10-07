@@ -36,3 +36,8 @@ contracts. CI uploads the remaining images and complete suite report as
 
 See the [scope and source review](../../TEAM_COMPARISON_REVIEW.md) for commands,
 limits and the distinction between built-at and results-through dates.
+
+The [targeted follow-up review](targeted-review.md) records delayed gender/league
+responses and sequential Tab/Shift+Tab. It found and fixed a mobile reverse-focus
+control hidden behind the sticky header; new production replay covers all
+comparison controls and the shared retry control without force-focus.
