@@ -1,0 +1,997 @@
+{
+  "basis": "Existing committed monthly forecasts through the actual local API; fault variants remove fields/fail transport only. No provider calls or imported data.",
+  "asOf": "2026-10-08",
+  "from": "2026-07-10",
+  "sourceAudit": {
+    "matches": 50,
+    "knownResults": 47,
+    "earlierCutoff": "2026-09-20",
+    "earlierKnownResults": 38
+  },
+  "report": [
+    {
+      "width": 390,
+      "actualServingApi": true,
+      "clubSelection": true,
+      "repeatedNavigations": 3,
+      "browserBackForward": true,
+      "keyboard": {
+        "forward": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 80,
+            "bottom": 124
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 347.25,
+            "bottom": 391.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 347.25,
+            "bottom": 391.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 347.25,
+            "bottom": 391.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 347.25,
+            "bottom": 391.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 425.25,
+            "bottom": 469.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 425.25,
+            "bottom": 469.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 425.25,
+            "bottom": 469.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 425.25,
+            "bottom": 469.25
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 481.25,
+            "bottom": 525.25
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 588.25,
+            "bottom": 632.25
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 443.625,
+            "bottom": 487.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 798.375,
+            "bottom": 842.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 798.375,
+            "bottom": 842.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 812.875,
+            "bottom": 856.875
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 819.875,
+            "bottom": 863.875
+          }
+        ],
+        "reverse": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 819.875,
+            "bottom": 863.875
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 763.875,
+            "bottom": 807.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 394.875,
+            "bottom": 438.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 68.375,
+            "bottom": 112.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 89.375,
+            "bottom": 133.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 443.625,
+            "bottom": 487.625
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 444.25,
+            "bottom": 488.25
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 337.25,
+            "bottom": 381.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 281.25,
+            "bottom": 325.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 281.25,
+            "bottom": 325.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 281.25,
+            "bottom": 325.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 281.25,
+            "bottom": 325.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 203.25,
+            "bottom": 247.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 203.25,
+            "bottom": 247.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 203.25,
+            "bottom": 247.25
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 203.25,
+            "bottom": 247.25
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 80,
+            "bottom": 124
+          }
+        ],
+        "forcedFocusCalls": 0
+      },
+      "loadingEmptySparseErrorRetry": true,
+      "delayedDateResponse": true,
+      "delayedGenderResponse": true,
+      "transientStaleCards": [],
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "expectedFaults": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "errors": []
+    },
+    {
+      "width": 768,
+      "actualServingApi": true,
+      "clubSelection": true,
+      "repeatedNavigations": 3,
+      "browserBackForward": true,
+      "keyboard": {
+        "forward": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 88,
+            "bottom": 132
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 348.5,
+            "bottom": 392.5
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 455.5,
+            "bottom": 499.5
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 819.875,
+            "bottom": 863.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.375,
+            "bottom": 488.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 786.875,
+            "bottom": 830.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.375,
+            "bottom": 488.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 786.875,
+            "bottom": 830.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 544.375,
+            "bottom": 588.375
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 862.875,
+            "bottom": 906.875
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 862.875,
+            "bottom": 906.875
+          }
+        ],
+        "reverse": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 862.875,
+            "bottom": 906.875
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 862.875,
+            "bottom": 906.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 544.375,
+            "bottom": 588.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 201.875,
+            "bottom": 245.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.375,
+            "bottom": 488.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 101.875,
+            "bottom": 145.875
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.375,
+            "bottom": 488.375
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 443.875,
+            "bottom": 487.875
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 443.5,
+            "bottom": 487.5
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 336.5,
+            "bottom": 380.5
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 76,
+            "bottom": 120
+          }
+        ],
+        "forcedFocusCalls": 0
+      },
+      "loadingEmptySparseErrorRetry": true,
+      "delayedDateResponse": true,
+      "delayedGenderResponse": true,
+      "transientStaleCards": [],
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "expectedFaults": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "actualServingApi": true,
+      "clubSelection": true,
+      "repeatedNavigations": 3,
+      "browserBackForward": true,
+      "keyboard": {
+        "forward": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 88,
+            "bottom": 132
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 439.5,
+            "bottom": 483.5
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 781.125,
+            "bottom": 825.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.125,
+            "bottom": 488.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 766.625,
+            "bottom": 810.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 444.125,
+            "bottom": 488.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 766.625,
+            "bottom": 810.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 622.125,
+            "bottom": 666.125
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 862.625,
+            "bottom": 906.625
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 862.625,
+            "bottom": 906.625
+          }
+        ],
+        "reverse": [
+          {
+            "within": true,
+            "tag": "A",
+            "text": "How to read this evidence",
+            "visible": true,
+            "top": 862.625,
+            "bottom": 906.625
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "View source audit",
+            "visible": true,
+            "top": 862.625,
+            "bottom": 906.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 622.125,
+            "bottom": 666.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 299.625,
+            "bottom": 343.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 68.125,
+            "bottom": 112.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 443.625,
+            "bottom": 487.625
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Timing and model context",
+            "visible": true,
+            "top": 121.125,
+            "bottom": 165.125
+          },
+          {
+            "within": true,
+            "tag": "SUMMARY",
+            "text": "Calibration · 5 matches",
+            "visible": true,
+            "top": 444.125,
+            "bottom": 488.125
+          },
+          {
+            "within": true,
+            "tag": "SELECT",
+            "text": "ClubAll clubs in this leagueAFC BournemouthArsenalAston VillaBrentfordBrighton & Hove Albi",
+            "visible": true,
+            "top": 102.5,
+            "bottom": 146.5
+          },
+          {
+            "within": true,
+            "tag": "BUTTON",
+            "text": "Apply dates",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Results known through (UTC)",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "INPUT",
+            "text": "Matches from",
+            "visible": true,
+            "top": 332.5,
+            "bottom": 376.5
+          },
+          {
+            "within": true,
+            "tag": "A",
+            "text": "Back to club comparison",
+            "visible": true,
+            "top": 88,
+            "bottom": 132
+          }
+        ],
+        "forcedFocusCalls": 0
+      },
+      "loadingEmptySparseErrorRetry": true,
+      "delayedDateResponse": true,
+      "delayedGenderResponse": true,
+      "transientStaleCards": [],
+      "accessibilityViolations": 0,
+      "overflow": false,
+      "expectedFaults": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "errors": []
+    }
+  ]
+}

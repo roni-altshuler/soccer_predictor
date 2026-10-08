@@ -1,0 +1,18 @@
+[
+  {
+    "width": 2,
+    "tag": "INPUT",
+    "label": "Matches from",
+    "focusVisible": false,
+    "focusWithin": true,
+    "outline": "solid"
+  },
+  {
+    "width": 2,
+    "tag": "INPUT",
+    "label": "Matches from",
+    "focusVisible": false,
+    "focusWithin": true,
+    "outline": "solid"
+  }
+]
