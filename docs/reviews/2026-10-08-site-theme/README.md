@@ -6,10 +6,10 @@ Captured in the saved cloud environment with local production builds, Chromium
 theme consistency change. See [scope, protocol and limitations](../../SITE_THEME_REVIEW.md).
 
 [Before report](before-report.json) contains 78 captured states.
-[After report](after-report.json) contains 99 states with no recorded errors or
+[After report](after-report.json) contains 100 states with no recorded errors or
 horizontal overflow. [SHA-256 manifest](sha256.json) identifies the reports and
 24 selected screenshots. Full local screenshot sets remain under
-`/tmp/soccer-theme-before-evidence-final` and `/tmp/soccer-theme-final-evidence`.
+`/tmp/soccer-theme-before-evidence-final` and `/tmp/soccer-theme-pitch-final-evidence`.
 
 | View | Before saved light | After light | After dark |
 |---|---|---|---|

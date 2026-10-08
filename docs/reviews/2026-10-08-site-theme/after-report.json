@@ -1567,6 +1567,27 @@
       "overflow": false
     },
     {
+      "label": "after-reduced-motion-pitch-toggle-320",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "pitchBackingDimensions": {
+        "width": 320,
+        "height": 680
+      }
+    },
+    {
       "label": "after-fresh-system-dark-320-home",
       "theme": "dark",
       "preference": "system",

@@ -35,7 +35,7 @@ forecast policy or publication workflow is changed.
 
 [Before/after reports and 24 selected screenshots](reviews/2026-10-08-site-theme/README.md)
 include SHA-256 hashes. The before replay captured **78 states**; the fixed
-replay captured **99 states** using production Next.js and Chromium
+replay captured **100 states** using production Next.js and Chromium
 151.0.7922.173 in this saved environment.
 
 | Check | Evidence |
@@ -48,10 +48,11 @@ replay captured **99 states** using production Next.js and Chromium
 | First paint/hydration | Animation-frame canvas sampling on initial and profile/toggle reloads; delayed bundles for fresh System/legacy/storage-failure cases |
 | Loading, empty and request failure | Both palettes and three widths; explicit local transport/availability faults |
 | Narrow headers/native controls | 320px fresh System light/dark, legacy dark and storage-blocked/session cases |
+| Reduced-motion pitch | Switching from a hidden light-mode canvas to dark refits its backing dimensions and draws a still |
 | Accessibility | Zero header WCAG A/AA violations in the theme audit; existing broader product audit passes |
 
 Theme replay recorded no browser exceptions or unexpected console errors in
-the full journeys. All 99 recorded browser-chrome colors match the resolved
+the full journeys. All 100 recorded browser-chrome colors match the resolved
 palette. Frame sampling detects wrong canvas paint during tested loads; it is
 not an exhaustive pixel-level flicker measurement on every browser/device.
 

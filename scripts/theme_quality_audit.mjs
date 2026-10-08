@@ -233,6 +233,15 @@ try {
         await page.getByRole('combobox', { name: 'Color theme' }).selectOption('light')
         await capture(page, 'after-storage-blocked-session-320', 'light')
       }
+      if (scenario.label === 'fresh-system-light') {
+        // Reduced motion draws a still, including when a hidden light-mode
+        // canvas is first revealed. Theme changes must refit its backing size.
+        await page.getByRole('combobox', { name: 'Color theme' }).selectOption('dark')
+        const canvas = await page.locator('canvas.pitch-backdrop__match').evaluate((node) => ({ width: node.width, height: node.height }))
+        assert(canvas.width > 0 && canvas.height > 0, 'Reduced-motion dark pitch must refit after being revealed')
+        await capture(page, 'after-reduced-motion-pitch-toggle-320', 'dark')
+        rows.at(-1).pitchBackingDimensions = canvas
+      }
       assert.deepEqual(failures, [])
     } finally { await context.close() }
   }
