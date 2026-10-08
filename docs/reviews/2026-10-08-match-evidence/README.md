@@ -43,7 +43,7 @@ not nine newly played matches. Latest European match date remains September 20.
 The score panel is a descriptive selected archive, not proof of training cutoff,
 immutable publication, causal drivers or accuracy improvement.
 
-Validation: **816 frontend tests / 65 suites**, **1,579 backend tests / 25
+Validation: **846 frontend tests / 65 suites**, **1,579 backend tests / 25
 skipped**, lint and typecheck pass; existing warnings remain. Production build
 passes and the new API bundle trace includes all nine monthly prediction files.
 The only Matchday harness adjustment waits for asynchronous URL navigation
@@ -56,6 +56,17 @@ with rejected forecasts, permutation invariance, unrelated fixtures and future
 knowledge cutoffs. The reviewer’s corrected result changes the deterministic
 fixture's Brier from .245 to 1.145; an inconsistent latest winner withholds its
 score. Both committed data audits remain exactly unchanged, including hashes.
+
+Thirty further regressions cover correction IDs that name multiple fixtures,
+including rejected forecasts/results, all six three-row permutations, aliases,
+duplicate corrections and healthy unrelated fixtures. Identity observations use
+conservative forecast time or valid result knowledge time before probability
+filtering, and include known fixtures outside the display window. Future-only
+and undated records cannot poison earlier cutoffs; known forecast identities
+are not hidden by future results. Numeric string aliases, large IDs, structured
+fixture keys, Unicode/whitespace equivalents and cutoff boundaries are checked.
+The reviewer’s ambiguous-ID fixture now quarantines both affected forecasts
+with two conflicts and no scored results. Archive metrics and hashes are unchanged.
 
 Read the [scope and source review](../../MATCH_EVIDENCE_REVIEW.md) for the software
 versus data license boundary and why player valuation, shot-level xG, scouting

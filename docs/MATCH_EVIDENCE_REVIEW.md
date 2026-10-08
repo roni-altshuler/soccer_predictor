@@ -37,11 +37,22 @@ No new dependency, model, provider ingestion, training or promotion is involved.
   latest possible UTC instant for civil UTC−12); both instants must precede
   match day and the cutoff. Explicit offsets use the recorded instant. The UI
   labels absent offsets; this guard does not recover their original timezone.
-- One fixture per competition/gender/date/home/away, with whitespace and case
-  normalised for identity. Different event IDs for that fixture cannot double
+- One fixture per competition/gender/date/home/away, with whitespace, canonical
+  Unicode and case normalised for identity; structured tuple keys avoid name
+  separator collisions. Numeric ID aliases are compared as strings without
+  unsafe integer conversion. Different event IDs for that fixture cannot double
   the sample. First eligible forecast is selected with deterministic ties;
   conflicting same-time forecasts or reused IDs with different fixtures are
-  quarantined. Result corrections pass fixture identity and serving scope checks
+  quarantined. Identity checks precede forecast rejection and retain correction
+  IDs. An identity is observed when its conservatively timed forecast stamp or
+  a result stamp after match-day start is known by cutoff, regardless of bad
+  probabilities/scores. All fixtures linked to a reused ID are quarantined,
+  including aliases carried only by rejected forecasts or corrections. Known
+  identities outside the displayed date window still count (including known
+  upcoming fixtures); future-only and undated observations do not. The source
+  list includes identity evidence outside the displayed window. These fields
+  cannot recover overwritten identity history. Result corrections pass fixture
+  identity and serving scope checks
   independently of forecast probabilities or prediction timing. A same-day,
   post-day or invalid-probability forecast can still carry a known correction;
   it cannot create or replace the eligible forecast. The latest known result

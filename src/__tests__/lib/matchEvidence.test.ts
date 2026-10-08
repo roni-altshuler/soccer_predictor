@@ -87,7 +87,7 @@ it('withholds same-time result conflicts independently of forecast eligibility',
   expect(after.records[0].result).toBeNull(); expect(after.counts.resultsWithheld).toBe(1)
 })
 it.each([{ gender: 'F' }, { league: 'La Liga' }, { model_used: 'unified-multitask' }, { match_id: 'bad' },
-  { home_team: 'Fulham' }, { match_date: '2026-02-30' }, { away_team: 'Chelsea' }])('keeps unrelated or unidentified corrections out of a fixture: %p', (over) => {
+  { home_team: 'Fulham' }, { match_date: '2026-02-30' }, { away_team: 'Chelsea', match_id: '456' }])('keeps unrelated or unidentified corrections out of a fixture: %p', (over) => {
   const correction = entry(row({ ...over, predicted_home_win: null, actual_home_goals: 0, actual_away_goals: 1,
     actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00' }))
   expect(audit([entry(), correction]).records[0].result?.goals).toEqual([2, 0])
@@ -116,6 +116,118 @@ it('withholds the reviewer’s invalid-winner correction only once its UTC times
 it('quarantines conflicting same-time forecasts and reused event IDs', () => {
   expect(audit([entry(), entry(row({ predicted_home_goals: 7 }))]).counts.conflicts).toBe(2)
   expect(audit([entry(), entry(row({ match_date: '2026-09-02' }))]).records).toEqual([])
+})
+
+const identityRows = (over: Record<string, unknown> = {}) => {
+  const base = row({ prediction_timestamp: '2026-08-30T12:00:00Z', outcome_timestamp: '2026-09-01T23:00:00Z' })
+  return [entry(base, 'base.json'), entry({ ...base, home_team: 'Chelsea', match_id: '999' }, 'other.json'),
+    entry({ ...base, match_id: '999', predicted_home_win: null, outcome_timestamp: '2026-09-02T10:00:00Z',
+      actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away', ...over }, 'correction.json')]
+}
+const threeOrders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+it.each(unusableForecasts)('quarantines the reviewer’s ambiguous correction ID before forecast rejection: %p', (over) => {
+  const entries = identityRows(over), d = audit(entries, '2026-09-03')
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]), '2026-09-03')).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(2); expect(scoreEvidence(d.records).n).toBe(0)
+})
+it('retains identity evidence even when both rows for an ID have invalid forecasts and scores', () => {
+  const entries = identityRows({ prediction_timestamp: '', actual_home_goals: null })
+  entries[1] = entry(row({ home_team: 'Chelsea', match_id: '999', predicted_home_win: null,
+    prediction_timestamp: '', actual_home_goals: null, outcome_timestamp: '2026-09-01T23:00:00Z' }))
+  const d = audit(entries)
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]))).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(1)
+})
+it.each([{ match_date: '2026-05-01', conflicts: 1 }, { match_date: '2026-07-31', conflicts: 1 },
+  { match_date: '2026-08-01', conflicts: 2 }, { match_date: '2026-09-04', conflicts: 1 }])('checks known identities across match window boundaries: %p', ({ match_date, conflicts }) => {
+  const entries = identityRows()
+  entries[1] = entry(row({ home_team: 'Chelsea', match_id: '999', match_date,
+    prediction_timestamp: '2026-04-01T12:00:00Z', outcome_timestamp: `${match_date}T23:00:00Z` }))
+  const d = audit(entries, '2026-09-03')
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]), '2026-09-03')).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(conflicts)
+})
+it('does not let a future-only identity correction quarantine earlier known fixtures', () => {
+  const entries = identityRows({ prediction_timestamp: '2026-09-03T12:00:00Z', outcome_timestamp: '2026-09-02T23:30:00-02:00' })
+  const before = audit(entries), after = audit(entries, '2026-09-03')
+  for (const order of threeOrders) {
+    expect(audit(order.map((i) => entries[i]))).toEqual(before)
+    expect(audit(order.map((i) => entries[i]), '2026-09-03')).toEqual(after)
+  }
+  expect(before.records).toHaveLength(2); expect(before.counts.conflicts).toBe(0)
+  expect(before.records.every((r) => r.result?.goals.join() === '2,0')).toBe(true)
+  expect(after.records).toEqual([]); expect(after.counts.conflicts).toBe(2)
+})
+it('does not hide a known forecast identity behind a future result timestamp', () => {
+  const entries = identityRows(), d = audit(entries, '2026-09-01')
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]), '2026-09-01')).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(2)
+})
+it('observes an identity from a known result even when its forecast timestamp is future', () => {
+  const entries = identityRows({ prediction_timestamp: '2026-09-03T12:00:00Z', outcome_timestamp: '2026-09-01T23:00:00Z' })
+  const d = audit(entries, '2026-09-01')
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]), '2026-09-01')).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(2)
+})
+it('observes a known identity even when its rejected forecast has no usable result', () => {
+  const d = audit(identityRows({ prediction_timestamp: '2026-09-02T12:00:00Z', outcome_timestamp: '' }))
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(2)
+})
+it('does not assign a knowledge time to an undated identity-only row', () => {
+  const d = audit(identityRows({ prediction_timestamp: '', outcome_timestamp: '' }))
+  expect(d.records).toHaveLength(2); expect(d.counts.conflicts).toBe(0)
+})
+it('preserves unrelated healthy fixtures when another identity is ambiguous', () => {
+  const entries = [...identityRows(), entry(row({ match_id: '555', home_team: 'Liverpool' }))]
+  const d = audit(entries)
+  expect(d.records.map((r) => r.id)).toEqual(['555']); expect(d.counts.conflicts).toBe(2)
+  expect(scoreEvidence(d.records).n).toBe(1)
+})
+it('canonicalizes numeric ID aliases without unsafe number conversion', () => {
+  const entries = identityRows({ match_id: '000999' }), d = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(d)
+  expect(d.records).toEqual([]); expect(d.counts.conflicts).toBe(2)
+})
+it('keeps distinct numeric identities beyond JavaScript safe-integer precision', () => {
+  const entries = [entry(row({ match_id: '9007199254740992' })), entry(row({ match_id: '9007199254740993', home_team: 'Chelsea' }))]
+  const d = audit(entries)
+  expect(d.records).toHaveLength(2); expect(d.counts.conflicts).toBe(0)
+})
+it.each([{ gender: 'F' }, { league: 'La Liga' }, { model_used: 'unified-multitask' }, { match_id: 'bad' },
+  { match_date: '2026-02-30' }])('does not let an out-of-scope or invalid identity poison known fixtures: %p', (over) => {
+  const entries = identityRows(over), d = audit(entries)
+  for (const order of threeOrders) expect(audit(order.map((i) => entries[i]))).toEqual(d)
+  expect(d.records).toHaveLength(2); expect(d.counts.conflicts).toBe(0)
+})
+it('does not treat an impossible pre-match result stamp as a known identity observation', () => {
+  const d = audit(identityRows({ prediction_timestamp: '2026-09-03T12:00:00Z', outcome_timestamp: '2026-08-31T23:00:00Z' }))
+  expect(d.records).toHaveLength(2); expect(d.counts.conflicts).toBe(0)
+})
+it('uses unambiguous structured fixture keys even when club names contain separators', () => {
+  const entries = [entry(row({ home_team: 'North:City', away_team: 'Town' })),
+    entry(row({ match_id: '999', home_team: 'North', away_team: 'City:Town' }))]
+  const d = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(d); expect(d.records).toHaveLength(2)
+  expect(scoreEvidence(d.records).n).toBe(2); expect(d.counts.conflicts).toBe(0)
+})
+it('normalizes equivalent club whitespace and Unicode without double-counting results', () => {
+  const entries = [entry(row({ home_team: ' Atlético  Club ' })), entry(row({ match_id: '456', home_team: 'Atle\u0301tico Club',
+    predicted_home_win: null, actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00Z' }))]
+  const d = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(d); expect(d.records).toHaveLength(1)
+  expect(d.records[0].result?.goals).toEqual([0, 1]); expect(scoreEvidence(d.records).n).toBe(1)
+})
+it('does not make an identity ambiguous just because its correction is duplicated', () => {
+  const entries = identityRows({ match_id: '456' }).filter((_, i) => i !== 1)
+  const d = audit([...entries, entries[1], entries[1]])
+  expect(d.records).toHaveLength(1); expect(d.counts.conflicts).toBe(0)
+  expect(d.records[0].result?.goals).toEqual([0, 1]); expect(scoreEvidence(d.records).n).toBe(1)
+})
+it('guards the knowledge time of offset-free identity observations at the cutoff boundary', () => {
+  const entries = [entry(row({ match_date: '2026-08-20', prediction_timestamp: '2026-08-19T10:00:00Z', outcome_timestamp: '2026-08-20T23:00:00Z' })),
+    entry(row({ home_team: 'Chelsea', predicted_home_win: null, prediction_timestamp: '2026-08-31T12:00:00', outcome_timestamp: '' }))]
+  expect(audit(entries, '2026-08-31').records).toHaveLength(1)
+  expect(audit(entries, '2026-09-01').records).toEqual([])
 })
 it('withholds conflicting same-time results', () => {
   const d = audit([entry(), entry(row({ actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away' }))])

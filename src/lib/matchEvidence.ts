@@ -4,6 +4,7 @@ import { isServingModel } from '@/lib/predictionScope'
 import type { PredictionArchiveEntry } from '@/lib/server/recordedForecast'
 
 type Triple = [number, number, number]
+type Correction = { id: string; goals: [number, number] | null; knownAt: string; outcome: number }
 export type EvidenceMatch = {
   id: string; date: string; home: string; away: string; model: string; source: string
   recordedAt: string; forecastOffsetSupplied: boolean; p: Triple; expectedGoals: [number | null, number | null]
@@ -18,6 +19,7 @@ const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFi
 const positive = (v: unknown) => finite(v) && v >= 0 ? v : null
 const count = (v: unknown): v is number => Number.isSafeInteger(v) && Number(v) >= 0
 const text = (v: unknown): v is string => typeof v === 'string' && Boolean(v.trim())
+const clubName = (v: string) => v.trim().replace(/\s+/g, ' ').normalize('NFC')
 export function validEvidenceDate(v: unknown): v is string {
   return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) &&
     !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v
@@ -43,7 +45,7 @@ export function matchEvidence(entries: PredictionArchiveEntry[], leagueId: strin
   if (!validEvidenceDate(asOf) || !validEvidenceDate(from) || from > asOf) return { ...data, available: false }
   const cutoff = Date.parse(`${asOf}T00:00:00Z`) + 86400000 - 1
   const groups = new Map<string, EvidenceMatch[]>()
-  const corrections = new Map<string, { goals: [number, number] | null; knownAt: string; outcome: number }[]>()
+  const corrections = new Map<string, Correction[]>()
   const ids = new Map<string, Set<string>>()
   const files = new Set<string>()
   for (const entry of entries) {
@@ -51,50 +53,57 @@ export function matchEvidence(entries: PredictionArchiveEntry[], leagueId: strin
     const r = entry.row as Record<string, unknown>
     if (typeof r.league !== 'string' || getLeagueAccent(r.league).competitionId !== leagueId || r.gender !== gender || !isServingModel(typeof r.model_used === 'string' ? r.model_used : null)) continue
     data.counts.scopedRows++
-    if (!text(r.match_id) || !/^\d+$/.test(r.match_id) || !text(r.home_team) || !text(r.away_team) ||
-      r.home_team.trim().toLowerCase() === r.away_team.trim().toLowerCase() || !validEvidenceDate(r.match_date)) { data.counts.invalid++; continue }
-    const home = r.home_team.trim(), away = r.away_team.trim()
-    const key = `${r.match_date}:${home.toLowerCase()}:${away.toLowerCase()}`
+    if (!text(r.match_id) || !/^\d+$/.test(r.match_id) || !text(r.home_team) || !text(r.away_team) || !validEvidenceDate(r.match_date)) { data.counts.invalid++; continue }
+    const home = clubName(r.home_team), away = clubName(r.away_team)
+    if (home.toLowerCase() === away.toLowerCase()) { data.counts.invalid++; continue }
+    const key = JSON.stringify([r.match_date, home.toLowerCase(), away.toLowerCase()])
+    const made = stamp(r.prediction_timestamp)
+    const forecastOffsetSupplied = typeof r.prediction_timestamp === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(r.prediction_timestamp)
+    // A civil timestamp in UTC-12 can be twelve hours later than nominal UTC.
+    // Guard knowledge time as well as pre-day forecast eligibility.
+    const latestMade = made ? Date.parse(made) + (forecastOffsetSupplied ? 0 : 12 * 3600000) : NaN
+    const knownAt = stamp(r.outcome_timestamp)
+    const knownResult = knownAt !== null && Date.parse(knownAt) <= cutoff && Date.parse(knownAt) >= Date.parse(`${r.match_date}T00:00:00Z`)
+    // Identity is shared by forecasts and corrections, independent of their
+    // probabilities/scores or the displayed match window. Future-only and
+    // undated rows cannot quarantine identities at an earlier cutoff.
+    if ((made && latestMade <= cutoff) || knownResult) {
+      const id = r.match_id.replace(/^0+(?=\d)/, '')
+      ids.set(id, new Set([...(ids.get(id) ?? []), key]))
+      files.add(entry.source)
+    }
     // Result eligibility is independent of forecast probabilities and timing.
     // A later invalid forecast must not hide a known correction (or revive an
     // older result when that correction has an invalid score/winner).
-    const knownAt = stamp(r.outcome_timestamp)
-    if (r.match_date >= from && r.match_date <= asOf && knownAt && Date.parse(knownAt) <= cutoff && Date.parse(knownAt) >= Date.parse(`${r.match_date}T00:00:00Z`)) {
+    if (r.match_date >= from && r.match_date <= asOf && knownAt && knownResult) {
       let goals: [number, number] | null = null, outcome = -1
       if (count(r.actual_home_goals) && count(r.actual_away_goals)) {
         outcome = r.actual_home_goals > r.actual_away_goals ? 0 : r.actual_home_goals === r.actual_away_goals ? 1 : 2
         if (r.actual_winner === ['home', 'draw', 'away'][outcome]) goals = [r.actual_home_goals, r.actual_away_goals]
       }
-      corrections.set(key, [...(corrections.get(key) ?? []), { goals, knownAt, outcome }])
-      files.add(entry.source)
+      corrections.set(key, [...(corrections.get(key) ?? []), { id: r.match_id, goals, knownAt, outcome }])
     }
     const p = [r.predicted_home_win, r.predicted_draw, r.predicted_away_win]
     const sum = p.every(finite) ? (p as number[]).reduce((a, b) => a + b, 0) : NaN
     if (!p.every((v) => finite(v) && v >= 0 && v <= 1) || Math.abs(sum - 1) > 0.001) { data.counts.invalid++; continue }
-    const made = stamp(r.prediction_timestamp)
-    const forecastOffsetSupplied = typeof r.prediction_timestamp === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(r.prediction_timestamp)
-    // A civil timestamp in UTC-12 can be twelve hours later than nominal UTC.
-    // Without an explicit offset require even that instant to precede match day.
-    const latestMade = made ? Date.parse(made) + (forecastOffsetSupplied ? 0 : 12 * 3600000) : NaN
     if (!made || latestMade >= Date.parse(`${r.match_date}T00:00:00Z`) || latestMade > cutoff || r.match_date > asOf || r.match_date < from) { data.counts.timingExcluded++; continue }
     const forecast: EvidenceMatch = { id: r.match_id, date: r.match_date, home, away, model: String(r.model_used), source: entry.source, recordedAt: made, forecastOffsetSupplied,
       // Only rounding drift within .001 is normalised; never repair bad inputs.
       p: (p as number[]).map((v) => v / sum) as Triple, expectedGoals: [positive(r.predicted_home_goals), positive(r.predicted_away_goals)],
       elo: [positive(r.home_elo), positive(r.away_elo)], result: null }
     groups.set(key, [...(groups.get(key) ?? []), forecast])
-    ids.set(r.match_id, new Set([...(ids.get(r.match_id) ?? []), key]))
-    files.add(entry.source)
   }
+  const ambiguousFixtures = new Set([...ids.values()].filter((keys) => keys.size > 1).flatMap((keys) => [...keys]))
   for (const [key, candidates] of groups) {
     candidates.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.source.localeCompare(b.source) || a.id.localeCompare(b.id) || a.home.localeCompare(b.home) || a.away.localeCompare(b.away))
     const first = candidates[0]
     const sameTime = candidates.filter((c) => c.recordedAt === first.recordedAt)
     const signature = (f: EvidenceMatch) => JSON.stringify([f.model, f.p, f.expectedGoals, f.elo])
-    if (candidates.some((c) => (ids.get(c.id)?.size ?? 0) > 1) || new Set(sameTime.map(signature)).size > 1) { data.counts.conflicts += candidates.length; continue }
+    if (ambiguousFixtures.has(key) || new Set(sameTime.map(signature)).size > 1) { data.counts.conflicts += candidates.length; continue }
     data.counts.duplicates += candidates.length - 1
     // Outcomes are a separate temporal join; never take the last file order.
     const results = (corrections.get(key) ?? []).sort((a, b) => b.knownAt.localeCompare(a.knownAt))
-    if (results.length && results[0].goals && new Set(results.filter((r) => r.knownAt === results[0].knownAt).map((r) => JSON.stringify(r.goals))).size === 1) first.result = { ...results[0], goals: results[0].goals }
+    if (results.length && results[0].goals && new Set(results.filter((r) => r.knownAt === results[0].knownAt).map((r) => JSON.stringify(r.goals))).size === 1) first.result = { goals: results[0].goals, knownAt: results[0].knownAt, outcome: results[0].outcome }
     else data.counts.resultsWithheld++
     data.records.push(first)
   }
