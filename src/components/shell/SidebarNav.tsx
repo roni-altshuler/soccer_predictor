@@ -51,7 +51,7 @@ type NavGroup = {
 const GROUPS: NavGroup[] = [
   {
     title: 'Watch',
-    items: [{ href: '/', label: 'Today', icon: Activity }],
+    items: [{ href: '/', label: 'Matchday', icon: Activity }],
   },
   {
     title: 'Forecast',
@@ -86,7 +86,7 @@ function isActive(pathname: string, href: string) {
  * FotMob/ESPN style. Flat surface, hairline right edge; the active item gets
  * a soft accent wash. No hover-expansion, no animated chrome.
  */
-export function SidebarNav({ matchFlow = false }: { matchFlow?: boolean }) {
+export function SidebarNav() {
   const pathname = usePathname() || '/'
 
   return (
@@ -117,7 +117,7 @@ export function SidebarNav({ matchFlow = false }: { matchFlow?: boolean }) {
               {group.items.map((item) => (
                 <SidebarLink
                   key={item.href}
-                  item={matchFlow && item.href === '/' ? { ...item, label: 'Matchday' } : item}
+                  item={item}
                   active={isActive(pathname, item.href) || (pathname.startsWith('/matches/') && item.href === '/')}
                 />
               ))}
@@ -130,7 +130,7 @@ export function SidebarNav({ matchFlow = false }: { matchFlow?: boolean }) {
           grammar as the sibling apps, which ship no <footer> at all. */}
       <div className="border-t border-[var(--nav-border)] px-4 py-3">
         {/* The reader's dial on the one ambient layer — soft by default. */}
-        {!matchFlow && <AmbientToggle label="Pitch" className="mb-2.5 justify-between" />}
+        <AmbientToggle label="Pitch" className="mb-2.5 hidden justify-between dark:flex" />
         <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
           Probability estimates, not advice. Every pick is{' '}
           <Link

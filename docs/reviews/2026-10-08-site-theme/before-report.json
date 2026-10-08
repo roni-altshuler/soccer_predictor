@@ -1,0 +1,1177 @@
+{
+  "basis": "Local production browser with committed artifacts and sparse ESPN excerpt; provider access blocked in browser and server. No model or data generation.",
+  "probe": true,
+  "rows": [
+    {
+      "label": "before-light-390-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-390-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-390-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-768-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-768-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-light-1440-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-home",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-leagues",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-league",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-comparison",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-evidence",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-history",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-match",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-team",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-reload",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-profile-history",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "uppercase",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-loading",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-empty",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "before-dark-1440-error",
+      "rootCanvas": "#071009",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

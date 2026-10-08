@@ -149,7 +149,7 @@ function ResultChip({ letter }: { letter: 'W' | 'D' | 'L' }) {
   return (
     <span
       className="flex h-5 w-5 shrink-0 items-center justify-center rounded font-mono text-[10px] font-bold leading-none"
-      style={{ backgroundColor: LETTER_COLOR[letter], color: 'var(--accent-on-primary)' }}
+      style={{ backgroundColor: LETTER_COLOR[letter], color: letter === 'L' ? 'var(--accent-on-loss)' : 'var(--accent-on-primary)' }}
     >
       {letter}
     </span>

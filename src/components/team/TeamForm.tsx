@@ -25,11 +25,11 @@ export default function TeamForm({ form, showLabels = false, size = 'md', matchD
   const getResultColor = (result: string) => {
     switch (result.toUpperCase()) {
       case 'W':
-        return 'bg-[var(--accent-primary)] text-white';
+        return 'bg-[var(--accent-primary)] text-[var(--accent-on-primary)]';
       case 'D':
         return 'bg-[var(--accent-warn)] text-[var(--accent-on-primary)]';
       case 'L':
-        return 'bg-[var(--accent-loss)] text-white';
+        return 'bg-[var(--accent-loss)] text-[var(--accent-on-loss)]';
       default:
         return 'bg-[var(--muted-bg)] text-[var(--text-secondary)]';
     }

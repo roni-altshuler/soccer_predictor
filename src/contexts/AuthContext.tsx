@@ -42,7 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('access_token');
+      let token: string | null;
+      try {
+        token = localStorage.getItem('access_token');
+      } catch {
+        // Browsers that block storage still render the signed-out shell and
+        // its session-only theme controls.
+        setIsLoading(false);
+        return;
+      }
       if (token) {
         try {
           const response = await fetch(`${API_BASE}/api/v1/auth/me`, {

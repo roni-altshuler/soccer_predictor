@@ -173,11 +173,14 @@ won it from 11.6%, third on its list.
 
 ## The season ahead — what the site serves now
 
-Matchday and match detail share a cream, neutral interface with explicit match
-actions, keyboard navigation and preserved date/filter/scroll history.
-[Design scope and reproducible browser QA](docs/MATCHDAY_DESIGN_REVIEW.md)
-document the responsive flow and loading, empty and failure states. This is a
-frontend change; prediction evidence and forecasting behavior are unchanged.
+All product routes share cream/off-white light surfaces, forest accents and
+sentence-case typography. The header's **Color theme** selector offers Light,
+Dark and System; dark retains the floodlit soccer greens and optional pitch
+backdrop. Saved preferences (including the earlier `theme` key) apply before
+first paint and persist across navigation, reloads and browser history.
+[Theme scope and browser QA](docs/SITE_THEME_REVIEW.md) covers homepage, league,
+match, team, comparison and evidence journeys plus loading, empty and failure
+states. This is a frontend change; forecasting and data are unchanged.
 
 **The season engine already adapts as verified results arrive.** Its current
 configured scope is the big five plus MLS. The daily pipeline replays Elo and

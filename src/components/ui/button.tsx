@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ai:
           'bg-[var(--accent-ai)] text-[var(--accent-on-primary)] hover:opacity-90',
         destructive:
-          'bg-[var(--accent-loss)] text-white hover:opacity-90 active:translate-y-px',
+          'bg-[var(--accent-loss)] text-[var(--accent-on-loss)] hover:opacity-90 active:translate-y-px',
         outline:
           'border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--card-hover)]',
         secondary:

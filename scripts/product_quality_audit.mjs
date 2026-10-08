@@ -179,7 +179,7 @@ try {
     await page.keyboard.press('Space')
     await assertView(page)
     const palette = await page.locator('.match-flow-shell').evaluate((node) => ({
-      canvas: getComputedStyle(node).backgroundColor,
+      canvas: getComputedStyle(document.body).backgroundColor,
       card: getComputedStyle(node).getPropertyValue('--card-bg').trim(),
       text: getComputedStyle(node).color,
     }))

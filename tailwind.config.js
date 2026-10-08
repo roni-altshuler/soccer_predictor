@@ -24,7 +24,7 @@ module.exports = {
         foreground: 'var(--text-primary)',
         primary: {
           DEFAULT: 'var(--accent-primary)',
-          foreground: '#04120a',
+          foreground: 'var(--accent-on-primary)',
         },
         secondary: {
           DEFAULT: 'var(--card-bg)',
@@ -40,7 +40,7 @@ module.exports = {
         },
         accent: {
           DEFAULT: 'var(--accent-ai)',
-          foreground: '#041320',
+          foreground: 'var(--accent-on-primary)',
         },
         popover: {
           DEFAULT: 'var(--card-bg)',

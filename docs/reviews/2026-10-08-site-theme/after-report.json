@@ -1,0 +1,1690 @@
+{
+  "basis": "Local production browser with committed artifacts and sparse ESPN excerpt; provider access blocked in browser and server. No model or data generation.",
+  "probe": false,
+  "rows": [
+    {
+      "label": "after-light-390-home",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-league",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-comparison",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-match",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-team",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-reload",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-profile-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-toggle",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-system",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-loading",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-empty",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-error",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-home",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-league",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-comparison",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-match",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-team",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-reload",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-profile-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-toggle",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-system",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-loading",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-empty",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-error",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-home",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-league",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-comparison",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-match",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-team",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-reload",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-profile-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-toggle",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-system",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-loading",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-empty",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-error",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-home",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-league",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-comparison",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-match",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-team",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-reload",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-profile-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-toggle",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-system",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-loading",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-empty",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-error",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-home",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-league",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-comparison",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-match",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-team",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-reload",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-profile-history",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-toggle",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-system",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-loading",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-empty",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-error",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-home",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-league",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-comparison",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-match",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-team",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-reload",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-profile-history",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-toggle",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-system",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-loading",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-empty",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-error",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-light-320-home",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-light-320-leagues",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-dark-320-home",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-dark-320-leagues",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-legacy-dark-320-home",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-legacy-dark-320-leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-320-home",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-320-leagues",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-session-320",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

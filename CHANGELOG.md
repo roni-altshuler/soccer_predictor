@@ -28,6 +28,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- All product routes now share document-level theme tokens, sentence-case
+  typography and consistent navigation/header controls. Cream light surfaces
+  and floodlit dark greens follow the saved Light/Dark/System choice before
+  first paint, including legacy preferences, OS changes and cross-tab updates.
+  Dialogs, form/result chips, loading/empty/error states and browser chrome use
+  the resolved palette. Dark mode keeps its optional pitch backdrop.
+
 - Matchday and match detail share cream surfaces, restrained neutral navigation,
   sentence-case headings and clearer match/exploration actions. Keyboard tab
   controls have linked panels and arrow/Home/End navigation; fixture rows respect

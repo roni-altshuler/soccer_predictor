@@ -107,7 +107,7 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
               assert.equal(await page.getByRole('combobox', { name: 'First club' }).inputValue(), last)
             }
             if (item.label === 'Swap') {
-              const selectors = page.getByRole('combobox')
+              const selectors = page.locator('.team-comparison').getByRole('combobox')
               const before = [await selectors.nth(0).inputValue(), await selectors.nth(1).inputValue()]
               await page.keyboard.press('Enter')
               assert.deepEqual([await selectors.nth(0).inputValue(), await selectors.nth(1).inputValue()], before.reverse())

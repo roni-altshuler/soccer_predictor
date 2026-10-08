@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { THEME_BOOT } from '@/lib/theme'
 import './globals.css'
 
 // Native font stacks keep builds and first paint independent of font CDNs.
@@ -63,8 +65,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  // Matches --background (Floodlight night-pitch green).
-  themeColor: '#071009',
+  // The pre-paint script updates browser chrome to the resolved preference.
+  themeColor: '#f5f3ee',
 }
 
 export default function RootLayout({
@@ -76,10 +78,10 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className="dark"
       data-ambient="soft"
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <script dangerouslySetInnerHTML={{ __html: AMBIENT_BOOT }} />
         {/* Alias the legacy --font-body/--font-heading vars so any
             older inline styles or third-party CSS keeps working. */}
@@ -92,7 +94,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider><AuthProvider>{children}</AuthProvider></ThemeProvider>
       </body>
     </html>
   )
