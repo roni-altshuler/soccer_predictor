@@ -33,9 +33,9 @@ forecast policy or publication workflow is changed.
 
 ## Browser evidence
 
-[Before/after reports and 24 selected screenshots](reviews/2026-10-08-site-theme/README.md)
+[Before/after reports and 28 selected screenshots](reviews/2026-10-08-site-theme/README.md)
 include SHA-256 hashes. The before replay captured **78 states**; the fixed
-replay captured **100 states** using production Next.js and Chromium
+replay captured **124 states** using production Next.js and Chromium
 151.0.7922.173 in this saved environment.
 
 | Check | Evidence |
@@ -43,6 +43,8 @@ replay captured **100 states** using production Next.js and Chromium
 | Homepage → league directory → Premier League → comparison → evidence → match | Real links, both palettes, 390/768/1440px |
 | Team profile | Real SSR team adapter, exact committed provider subject, deep link, reload and back/forward |
 | Shared canvas/header/button tokens and heading case | Every captured route uses its resolved document palette; sentence case; no horizontal overflow |
+| Destination URLs | All 124 captures assert the expected complete URL, including match/club identity and the encoded Matchday return destination |
+| Auth modal actions | Real header Sign In opens login/register; default and hover submit colors measured in both palettes at three widths, without submitting credentials |
 | Saved Light/Dark with opposite OS preference | Correct initial paint, navigation, reload and toggle persistence |
 | System and cross-tab changes | Real media emulation and storage events repaint the open pages |
 | First paint/hydration | Animation-frame canvas sampling on initial and profile/toggle reloads; delayed bundles for fresh System/legacy/storage-failure cases |
@@ -52,7 +54,7 @@ replay captured **100 states** using production Next.js and Chromium
 | Accessibility | Zero header WCAG A/AA violations in the theme audit; existing broader product audit passes |
 
 Theme replay recorded no browser exceptions or unexpected console errors in
-the full journeys. All 100 recorded browser-chrome colors match the resolved
+the full journeys. All 124 recorded browser-chrome colors match the resolved
 palette. Frame sampling detects wrong canvas paint during tested loads; it is
 not an exhaustive pixel-level flicker measurement on every browser/device.
 
@@ -64,6 +66,21 @@ server. The shared sparse match card has no club link, so the exact team subject
 is tested through its existing profile deep link. This proves theme and rendering
 behavior, not live provider completeness, rich-profile content or new results.
 Public hosted runtime behavior and Safari/Firefox are not verified here.
+
+The auth submit button now pairs `--accent-primary` with
+`--accent-on-primary`. Its former white foreground against the unchanged dark
+green fill gives a calculated contrast of **2.97**. The live modal measurements
+below include hover opacity composited against the actual modal card:
+
+| Palette | Default contrast (6 measurements) | Hover contrast (6 measurements) |
+|---|---:|---:|
+| Light | 11.06 | 8.19 |
+| Dark | 6.42 | 5.42 |
+
+All 24 active submit measurements exceed 4.5. This covers login and register
+actions in the actual modal; it does not assert whole-modal WCAG compliance or
+exercise authentication. AuthModal's only implementation change is its
+foreground class; submission, OAuth and mode behavior remain unchanged.
 
 ## Validation and reproduction
 

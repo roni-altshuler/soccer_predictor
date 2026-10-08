@@ -34,6 +34,8 @@ All notable changes to Pitchverse are documented here. The format is based on
   first paint, including legacy preferences, OS changes and cross-tab updates.
   Dialogs, form/result chips, loading/empty/error states and browser chrome use
   the resolved palette. Dark mode keeps its optional pitch backdrop.
+  Auth submits use the shared action foreground/fill tokens; browser journeys
+  assert destination URLs and measure actual modal submit contrast in both themes.
 
 - Matchday and match detail share cream surfaces, restrained neutral navigation,
   sentence-case headings and clearer match/exploration actions. Keyboard tab

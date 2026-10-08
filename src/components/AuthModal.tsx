@@ -246,7 +246,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-[var(--accent-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-3 bg-[var(--accent-primary)] text-[var(--accent-on-primary)] rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isLoading ? 'Loading...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
           </button>

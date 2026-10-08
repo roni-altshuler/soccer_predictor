@@ -6,10 +6,12 @@ Captured in the saved cloud environment with local production builds, Chromium
 theme consistency change. See [scope, protocol and limitations](../../SITE_THEME_REVIEW.md).
 
 [Before report](before-report.json) contains 78 captured states.
-[After report](after-report.json) contains 100 states with no recorded errors or
+[After report](after-report.json) contains 124 states with no recorded errors or
 horizontal overflow. [SHA-256 manifest](sha256.json) identifies the reports and
-24 selected screenshots. Full local screenshot sets remain under
-`/tmp/soccer-theme-before-evidence-final` and `/tmp/soccer-theme-pitch-final-evidence`.
+28 selected screenshots. Every after capture records and asserts its expected
+destination URL. The 24 modal action measurements include default/hover login
+and register submits in both themes. Full local screenshot sets remain under
+`/tmp/soccer-theme-before-evidence-final` and `/tmp/soccer-theme-auth-complete-evidence`.
 
 | View | Before saved light | After light | After dark |
 |---|---|---|---|
@@ -19,6 +21,8 @@ horizontal overflow. [SHA-256 manifest](sha256.json) identifies the reports and
 | Desktop homepage | [Before](before-light-1440-home.png) | [Light](after-light-1440-home.png) | [Dark](after-dark-1440-home.png) |
 | Desktop league | [Before](before-light-1440-league.png) | [Light](after-light-1440-league.png) | [Dark](after-dark-1440-league.png) |
 | Desktop profile | [Before](before-light-1440-team.png) | [Light](after-light-1440-team.png) | [Dark](after-dark-1440-team.png) |
+| Phone auth modal | — | [Light](after-light-390-auth-login.png) | [Dark](after-dark-390-auth-login.png) |
+| Desktop auth modal | — | [Light](after-light-1440-auth-login.png) | [Dark](after-dark-1440-auth-login.png) |
 
 Other selected after views cover match, comparison and evidence at phone and
 desktop widths. They use the same sparse inputs as their before replay. Blank
