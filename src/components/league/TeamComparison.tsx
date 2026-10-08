@@ -10,8 +10,9 @@ import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { isCalendarYearLeague, seasonLabel } from '@/lib/seasons'
 import { changeComparison, comparisonFromArtifact, pointsPerGame, type ComparisonSnapshot } from '@/lib/teamComparison'
+import { keepShellFocusVisible } from '@/lib/shellFocus'
 
-const control = 'min-h-[44px] scroll-mt-[calc(var(--shell-topbar-h)_+_12px)] rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]'
+const control = 'min-h-[44px] scroll-mt-[calc(var(--shell-topbar-h)_+_12px)] scroll-mb-24 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-3 text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]'
 const display = (value: number | null, decimals = 0) => value === null ? 'Unavailable' : value.toFixed(decimals)
 
 /** Compare the same competition/season/source; don't merge a live provider table. */
@@ -53,7 +54,7 @@ export function TeamComparison({ leagueId }: { leagueId: string }) {
   const retry = <button className={control} onClick={() => setAttempt((n) => n + 1)}>Try again</button>
 
   return (
-    <div className="team-comparison mx-auto max-w-5xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+    <div onFocus={keepShellFocusVisible} className="team-comparison mx-auto max-w-5xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <Link className={`inline-flex items-center gap-2 ${control}`} href={withParam(`/leagues/${leagueId}`)}>
         <ArrowLeft size={16} aria-hidden /> Back to league
       </Link>
@@ -113,6 +114,7 @@ export function TeamComparison({ leagueId }: { leagueId: string }) {
                   <div className="mt-5 border-t border-[var(--border-color)] pt-4">
                     <StatTile label="Projected final points" value={display(club.projectedPoints, 1)} sub="Model forecast · mean across season simulations" />
                   </div>
+                  <Link className={`mt-4 inline-flex items-center underline ${control}`} href={withParam(`/leagues/${leagueId}/evidence?team=${encodeURIComponent(club.team)}`)}>Explore {club.team} match evidence</Link>
                 </article>
               ))}
             </div>

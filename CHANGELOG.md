@@ -8,6 +8,18 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Added
 
+- Match evidence explorer from league and club comparisons: club/date filters,
+  archived probabilities, model goal expectations versus recorded scores,
+  timing/Elo context and count-bearing calibration. Pre-day timing, result
+  cutoff, deterministic duplicate/correction guards and unreadable-source
+  handling support a reproducible archive audit without provider access or
+  changes to the serving model. Player value and shot xG remain unavailable.
+  Result corrections remain eligible when their associated forecast fails
+  probability or timing checks; invalid latest results withhold the score.
+  Known event identities are checked before forecast rejection, so ambiguous
+  correction IDs quarantine every linked fixture without affecting earlier
+  cutoffs with future-only observations.
+
 - League pages link to a two-club season snapshot comparison. Recorded points
   per game carries games played; projected final points stays labelled as the
   existing forecast. Source build time and missing result cutoff are distinct.

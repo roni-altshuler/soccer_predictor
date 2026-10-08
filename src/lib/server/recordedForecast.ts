@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
+import { brierScore } from '@/lib/forecastScoring'
+export { brierScore } from '@/lib/forecastScoring'
 
 /**
  * What this site said about a fixture BEFORE it was played, and how that scored.
@@ -68,7 +70,14 @@ interface Row {
 }
 
 /** Read once per process, re-read when any file's mtime moves. */
-let cache: { stamp: string; rows: Map<string, Row> } | null = null
+export interface PredictionArchiveEntry { source: string; row: unknown }
+let cache: { stamp: string; rows: Map<string, Row>; entries: PredictionArchiveEntry[]; failedFiles: string[] } | null = null
+
+/** Same durable files as match detail, retaining duplicates for an explicit audit. */
+export async function readPredictionArchive() {
+  await index()
+  return { entries: cache?.entries ?? [], failedFiles: cache?.failedFiles ?? [] }
+}
 
 async function index(): Promise<Map<string, Row>> {
   let names: string[]
@@ -77,6 +86,7 @@ async function index(): Promise<Map<string, Row>> {
       (f) => f.startsWith('predictions_') && f.endsWith('.json'),
     )
   } catch {
+    cache = { stamp: '', rows: new Map(), entries: [], failedFiles: ['prediction directory unavailable'] }
     return new Map()
   }
   names.sort()
@@ -88,27 +98,28 @@ async function index(): Promise<Map<string, Row>> {
   if (cache?.stamp === stamp) return cache.rows
 
   const rows = new Map<string, Row>()
+  const entries: PredictionArchiveEntry[] = []
+  const failedFiles: string[] = []
   for (const name of names) {
     try {
       const blob = JSON.parse(await fs.readFile(path.join(DIR, name), 'utf8'))
+      if (!Array.isArray(blob.predictions)) throw new Error('Missing prediction rows')
       for (const row of (blob.predictions ?? []) as Row[]) {
+        entries.push({ source: name, row })
         // Later files win: the same fixture re-forecast in a later month is the
         // one that was served.
-        if (row.match_id) rows.set(String(row.match_id), row)
+        if (row && row.match_id) rows.set(String(row.match_id), row)
       }
     } catch {
+      failedFiles.push(name)
       // A corrupt month costs that month, never the rest.
     }
   }
-  cache = { stamp, rows }
+  cache = { stamp, rows, entries, failedFiles }
   return rows
 }
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
-
-export function brierScore(p: readonly number[], idx: number): number {
-  return p.reduce((sum, v, i) => sum + (v - (i === idx ? 1 : 0)) ** 2, 0)
-}
 
 /**
  * The forecast on file for this ESPN event, or null.

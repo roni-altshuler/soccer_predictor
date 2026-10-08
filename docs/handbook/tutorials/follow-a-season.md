@@ -110,6 +110,35 @@ illustrates logistic regression with distance/angle and contextual features on
 only 50 matches (1,390 shots). It is a learning reference; none of its data,
 assets or model is imported into Pitchverse.
 
+## Explore match evidence
+
+Open **Explore [club] match evidence** below a comparison card, or **Explore
+match evidence** on the league page. Choose a club, a start date and **Results
+known through (UTC)**, then apply the dates. The view counts distinct matches
+and results known by the end of that day. A date-only fixture requires a forecast
+recorded before match day; same-day forecasts cannot establish ordering here.
+Batch forecast timestamps omit their local offset, so they also require a
+conservative 12-hour ordering guard. The timing panel labels this uncertainty.
+
+Each card shows three outcome probabilities and the model's goal expectation
+beside the score on file. Goal expectations are estimates of match goals, not
+shot-level xG or player skill. **Timing and model context** opens the record's
+timestamps, identifier and Elo; Elo is context, not a causal attribution.
+
+The sample panel reports summed three-class Brier (0–2), natural-log loss and
+goal mean absolute error, with eligible counts. **Calibration** compares top
+outcome confidence with observed frequency in five fixed bands; empty bands
+are omitted. A small sample, a good single pick or a lower score is not evidence
+of improvement. This archive has no paired closing-market comparison and does
+not establish a training cutoff or immutable pre-match publication history.
+
+The cutoff filters current files. It cannot recover overwritten old corrections.
+Missing results can mean an old feed, an unverifiable timestamp or a score/winner
+conflict; no score is invented. European verified dates in the October 8 audit
+end September 20; later result timestamps do not mean new football was played.
+Women’s evidence, player minutes, player xG, commercial prices and fantasy
+projections are unavailable in this source. Those missing inputs stay missing.
+
 ## Next steps
 
 - [Read a bracket](read-a-bracket.md) — the other shape a season comes in

@@ -55,6 +55,7 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
         <Link href={`/leagues/${leagueId}/compare`} prefetch={false} className="mb-3 inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]">
           Compare clubs · Season snapshot
         </Link>
+        <Link href={`/leagues/${leagueId}/evidence`} prefetch={false} className="mb-3 ml-2 inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]">Explore match evidence</Link>
         <LeagueTrackRecord leagueId={leagueId} />
       </div>
       <LeagueHomePage

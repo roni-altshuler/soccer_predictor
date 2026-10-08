@@ -195,6 +195,16 @@ explains its coverage and small-sample limits.
 [Scope, source audit and actual browser evidence](docs/TEAM_COMPARISON_REVIEW.md)
 record the reuse decisions and desktop/mobile shipping checks.
 
+**Match evidence explorer** links from those comparisons to a club-filtered
+archive of probabilities, model goal expectations and recorded scores. A UTC
+cutoff withholds later outcomes; unprovable pre-match timing and duplicate
+fixtures cannot inflate the sample. Brier/log loss, calibration bands and goal
+error carry explicit counts. Match-model goal expectations are different from
+shot-level xG. Training cutoffs and overwritten publication history remain
+unverified, so these archive scores establish no improvement or market edge.
+[Scope, source licensing and reproducible audit](docs/MATCH_EVIDENCE_REVIEW.md)
+explain why player scouting, valuations and fantasy projections need more data.
+
 [The chronological serving evaluator](docs/SEASON_ADAPTATION_EVALUATION.md)
 compares those adaptive strength inputs with frozen preseason Elo/form while
 both arms receive identical known standings, fixtures, head and horizons. Its

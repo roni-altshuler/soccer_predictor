@@ -76,7 +76,8 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
         if (!hold) {
           if (emptySnapshot) await page.getByRole('status').filter({ hasText: 'Two identifiable clubs' }).waitFor()
           else await region.waitFor()
-          const order = emptySnapshot ? ['Back to league', 'Try again'] : ['Back to league', 'First club', 'Second club', 'Swap', 'View source snapshot', 'How to read this comparison']
+          const clubNames = artifact.leagues.find((l) => l.competition_id === 'eng.1').table.map((row) => row.team).sort((a, b) => a.localeCompare(b))
+          const order = emptySnapshot ? ['Back to league', 'Try again'] : ['Back to league', 'First club', 'Second club', 'Swap', `Explore ${clubNames[1]} match evidence`, `Explore ${clubNames.at(-1)} match evidence`, 'View source snapshot', 'How to read this comparison']
           const inspected = []
           const active = () => page.evaluate(() => {
             const node = document.activeElement
@@ -95,7 +96,7 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
             const item = await active()
             if (!item.within) continue
             assert.equal(item.label, order[inspected.length], 'Sequential comparison order')
-            assert(item.visibleFocus && item.unobscured && item.top >= 0 && item.bottom <= 960, 'Focus must be visible above fixed chrome')
+            assert(item.visibleFocus && item.unobscured && item.top >= 0 && item.bottom <= 960, `Focus must be visible above fixed chrome: ${JSON.stringify(item)}`)
             inspected.push(item)
             await page.screenshot({ path: `${out}/comparison-tab-${scenario}-${width}-${inspected.length}.png` })
             if (item.label === 'First club') {

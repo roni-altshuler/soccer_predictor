@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useNavDepthTracker()
   const pathname = usePathname() || '/'
   const matchFlow = pathname === '/' || pathname.startsWith('/matches/')
-  const neutralFlow = matchFlow || (pathname.startsWith('/leagues/') && pathname.endsWith('/compare'))
+  const neutralFlow = matchFlow || (pathname.startsWith('/leagues/') && (pathname.endsWith('/compare') || pathname.endsWith('/evidence')))
 
   return (
     // Single app-wide TooltipProvider so any <Tooltip> downstream works

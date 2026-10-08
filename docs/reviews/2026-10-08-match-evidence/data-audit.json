@@ -1,0 +1,349 @@
+{
+  "basis": "Descriptive current-file archive audit; no training-cutoff verification, immutable historical reconstruction, paired market comparison or improvement claim.",
+  "asOf": "2026-10-08",
+  "from": "2026-07-10",
+  "gender": "M",
+  "sourceFiles": [
+    {
+      "file": "predictions_2025-12.json",
+      "sha256": "a3ebe79bc3f1130416cc992382cfde38c8fffa045588ecc2a595ebb66b2f4b15"
+    },
+    {
+      "file": "predictions_2026-01.json",
+      "sha256": "ae3cf6c542869db000bfa37e7566b9dfd69f3b6b026b8655d10b349452397c87"
+    },
+    {
+      "file": "predictions_2026-02.json",
+      "sha256": "f486dcd5e08af9ca2fd689e27a9bee0bd54b7795bfa1f2e5ec1117e30565627f"
+    },
+    {
+      "file": "predictions_2026-03.json",
+      "sha256": "25a6e55c8fefbc1d434e7d6e7fddb3447b9e4eb18f00b51d9a8acb53dced502f"
+    },
+    {
+      "file": "predictions_2026-04.json",
+      "sha256": "0e3e89f146590ccc2dfb25e85a5ccd24a494833ed1226f3c7ec0e5de1bce4432"
+    },
+    {
+      "file": "predictions_2026-07.json",
+      "sha256": "05a51397802954c6360e163a796ea7db011b3320f05bf3cbb911230d6a72d279"
+    },
+    {
+      "file": "predictions_2026-08.json",
+      "sha256": "74ffc93a17743881943ae83e97efe838c8d15077d0625bcb108a911c4dc85c9e"
+    },
+    {
+      "file": "predictions_2026-09.json",
+      "sha256": "e7a9791515cf7833565c8cbbbb87314bd8c0de36c02645f89bf2acdabca15e24"
+    },
+    {
+      "file": "predictions_2026-10.json",
+      "sha256": "c45e819cbaa08e8c057b9788a79ff9d4007a1c1d7e0e17525ba2577564d6f371"
+    }
+  ],
+  "failedFiles": [],
+  "leagues": [
+    {
+      "leagueId": "eng.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 60,
+        "invalid": 0,
+        "timingExcluded": 10,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 3
+      },
+      "matches": 50,
+      "latestMatchDate": "2026-09-20",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 47,
+        "brier": 0.6622256288747125,
+        "logLoss": 1.0922040611597361,
+        "ece": 0.10151105459430206,
+        "goalN": 47,
+        "goalMae": 0.9643617021276598,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 13,
+            "stated": 0.3792521865267527,
+            "observed": 0.46153846153846156
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 25,
+            "stated": 0.49354245297786453,
+            "observed": 0.48
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 8,
+            "stated": 0.6459920832916709,
+            "observed": 0.25
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "n": 1,
+            "stated": 0.8052,
+            "observed": 1
+          }
+        ]
+      }
+    },
+    {
+      "leagueId": "esp.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 80,
+        "invalid": 0,
+        "timingExcluded": 10,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 13
+      },
+      "matches": 70,
+      "latestMatchDate": "2026-09-20",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 57,
+        "brier": 0.5859822002257438,
+        "logLoss": 0.9845572900858545,
+        "ece": 0.14049683917523162,
+        "goalN": 57,
+        "goalMae": 0.9607017543859647,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 12,
+            "stated": 0.38469473661236403,
+            "observed": 0.5
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 34,
+            "stated": 0.48237596881499506,
+            "observed": 0.38235294117647056
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 11,
+            "stated": 0.7069205697612057,
+            "observed": 1
+          }
+        ]
+      }
+    },
+    {
+      "leagueId": "fra.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 54,
+        "invalid": 0,
+        "timingExcluded": 9,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 1
+      },
+      "matches": 45,
+      "latestMatchDate": "2026-09-20",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 44,
+        "brier": 0.6560831500573971,
+        "logLoss": 1.084170020687387,
+        "ece": 0.04479416222725986,
+        "goalN": 44,
+        "goalMae": 0.9368181818181818,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 11,
+            "stated": 0.37450336579112453,
+            "observed": 0.36363636363636365
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 28,
+            "stated": 0.4834916768932024,
+            "observed": 0.5
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 5,
+            "stated": 0.6778346134613462,
+            "observed": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "leagueId": "ger.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 45,
+        "invalid": 0,
+        "timingExcluded": 9,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 1
+      },
+      "matches": 36,
+      "latestMatchDate": "2026-09-20",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 35,
+        "brier": 0.589800098466227,
+        "logLoss": 0.9888027198401708,
+        "ece": 0.09107313235264555,
+        "goalN": 35,
+        "goalMae": 1.263714285714286,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 7,
+            "stated": 0.38063737911923096,
+            "observed": 0.2857142857142857
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 22,
+            "stated": 0.49586374489836477,
+            "observed": 0.5454545454545454
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 5,
+            "stated": 0.6808399267455993,
+            "observed": 0.8
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "n": 1,
+            "stated": 0.8363,
+            "observed": 0
+          }
+        ]
+      }
+    },
+    {
+      "leagueId": "ita.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 60,
+        "invalid": 0,
+        "timingExcluded": 10,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 0
+      },
+      "matches": 50,
+      "latestMatchDate": "2026-09-20",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 50,
+        "brier": 0.6027682320368544,
+        "logLoss": 1.0141921209030218,
+        "ece": 0.051392443973784604,
+        "goalN": 50,
+        "goalMae": 0.8620000000000003,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 15,
+            "stated": 0.36947164499684976,
+            "observed": 0.4
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 27,
+            "stated": 0.48553256884202917,
+            "observed": 0.5555555555555556
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 8,
+            "stated": 0.6526345290470954,
+            "observed": 0.625
+          }
+        ]
+      }
+    },
+    {
+      "leagueId": "usa.1",
+      "available": true,
+      "counts": {
+        "scopedRows": 15,
+        "invalid": 0,
+        "timingExcluded": 0,
+        "duplicates": 0,
+        "conflicts": 0,
+        "resultsWithheld": 0
+      },
+      "matches": 15,
+      "latestMatchDate": "2026-08-17",
+      "models": [
+        "dixon_coles_v1"
+      ],
+      "scores": {
+        "n": 15,
+        "brier": 0.6295534831985798,
+        "logLoss": 1.0393636420107386,
+        "ece": 0.15024693404933595,
+        "goalN": 15,
+        "goalMae": 0.8066666666666668,
+        "reliability": [
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "n": 3,
+            "stated": 0.38733288926132886,
+            "observed": 0.6666666666666666
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "n": 11,
+            "stated": 0.4606820616840024,
+            "observed": 0.36363636363636365
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "n": 1,
+            "stated": 0.6518,
+            "observed": 1
+          }
+        ]
+      }
+    }
+  ]
+}

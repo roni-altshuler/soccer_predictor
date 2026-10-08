@@ -44,6 +44,7 @@ const nextConfig = {
     '/lab': ['./backend/data/predictions/season_fixtures.json'],
     '/api/v1/forecast-lab': ['./backend/data/predictions/season_fixtures.json'],
     '/api/v1/tracking/*': ['./backend/data/predictions/**'],
+    '/api/v1/match-evidence': ['./backend/data/predictions/predictions_*.json'],
     '/api/v1/ai/*': ['./backend/data/diagnostics/**'],
     '/api/world-cup/*': ['./backend/data/worldcup/**'],
     '/world-cup': ['./backend/data/worldcup/**'],
