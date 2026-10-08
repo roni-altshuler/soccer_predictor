@@ -41,8 +41,12 @@ No new dependency, model, provider ingestion, training or promotion is involved.
   normalised for identity. Different event IDs for that fixture cannot double
   the sample. First eligible forecast is selected with deterministic ties;
   conflicting same-time forecasts or reused IDs with different fixtures are
-  quarantined. Latest known result correction is joined independently. Conflicting
-  or invalid latest corrections are withheld rather than reviving old scores.
+  quarantined. Result corrections pass fixture identity and serving scope checks
+  independently of forecast probabilities or prediction timing. A same-day,
+  post-day or invalid-probability forecast can still carry a known correction;
+  it cannot create or replace the eligible forecast. The latest known result
+  correction is joined to the first eligible forecast. Conflicting or invalid
+  latest corrections are withheld rather than reviving old scores.
 - This is a **current-file observational audit**, not a historical replay of
   publication or training. Overwritten corrections cannot be reconstructed.
   Neither a timestamp nor a later build date proves a training cutoff, result
@@ -114,7 +118,8 @@ No other repository or unpublished laptop work is modified by this soccer PR.
 
 ## Review evidence
 
-Focused tests cover ordering, duplicate IDs, corrections, inconsistent scores,
+Focused tests cover ordering, duplicate IDs, corrections (including rejected
+forecasts carrying valid/invalid corrections), inconsistent scores,
 date/season boundaries, missing metrics, gender and stale responses. Cloud
 Chromium checks actual production UI/API at 390, 768 and 1440px: native keyboard
 traversal both directions, calibration, club selection, loading/error/empty/sparse

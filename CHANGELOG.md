@@ -14,6 +14,8 @@ All notable changes to Pitchverse are documented here. The format is based on
   cutoff, deterministic duplicate/correction guards and unreadable-source
   handling support a reproducible archive audit without provider access or
   changes to the serving model. Player value and shot xG remain unavailable.
+  Result corrections remain eligible when their associated forecast fails
+  probability or timing checks; invalid latest results withhold the score.
 
 - League pages link to a two-club season snapshot comparison. Recorded points
   per game carries games played; projected final points stays labelled as the

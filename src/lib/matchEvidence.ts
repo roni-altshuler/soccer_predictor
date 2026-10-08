@@ -42,7 +42,8 @@ export function matchEvidence(entries: PredictionArchiveEntry[], leagueId: strin
   if (gender !== 'M' || !(SERVED_COMPETITION_IDS as readonly string[]).includes(leagueId)) return { ...data, available: false }
   if (!validEvidenceDate(asOf) || !validEvidenceDate(from) || from > asOf) return { ...data, available: false }
   const cutoff = Date.parse(`${asOf}T00:00:00Z`) + 86400000 - 1
-  const groups = new Map<string, { forecast: EvidenceMatch; raw: Record<string, unknown> }[]>()
+  const groups = new Map<string, EvidenceMatch[]>()
+  const corrections = new Map<string, { goals: [number, number] | null; knownAt: string; outcome: number }[]>()
   const ids = new Map<string, Set<string>>()
   const files = new Set<string>()
   for (const entry of entries) {
@@ -50,43 +51,49 @@ export function matchEvidence(entries: PredictionArchiveEntry[], leagueId: strin
     const r = entry.row as Record<string, unknown>
     if (typeof r.league !== 'string' || getLeagueAccent(r.league).competitionId !== leagueId || r.gender !== gender || !isServingModel(typeof r.model_used === 'string' ? r.model_used : null)) continue
     data.counts.scopedRows++
+    if (!text(r.match_id) || !/^\d+$/.test(r.match_id) || !text(r.home_team) || !text(r.away_team) ||
+      r.home_team.trim().toLowerCase() === r.away_team.trim().toLowerCase() || !validEvidenceDate(r.match_date)) { data.counts.invalid++; continue }
+    const home = r.home_team.trim(), away = r.away_team.trim()
+    const key = `${r.match_date}:${home.toLowerCase()}:${away.toLowerCase()}`
+    // Result eligibility is independent of forecast probabilities and timing.
+    // A later invalid forecast must not hide a known correction (or revive an
+    // older result when that correction has an invalid score/winner).
+    const knownAt = stamp(r.outcome_timestamp)
+    if (r.match_date >= from && r.match_date <= asOf && knownAt && Date.parse(knownAt) <= cutoff && Date.parse(knownAt) >= Date.parse(`${r.match_date}T00:00:00Z`)) {
+      let goals: [number, number] | null = null, outcome = -1
+      if (count(r.actual_home_goals) && count(r.actual_away_goals)) {
+        outcome = r.actual_home_goals > r.actual_away_goals ? 0 : r.actual_home_goals === r.actual_away_goals ? 1 : 2
+        if (r.actual_winner === ['home', 'draw', 'away'][outcome]) goals = [r.actual_home_goals, r.actual_away_goals]
+      }
+      corrections.set(key, [...(corrections.get(key) ?? []), { goals, knownAt, outcome }])
+      files.add(entry.source)
+    }
     const p = [r.predicted_home_win, r.predicted_draw, r.predicted_away_win]
     const sum = p.every(finite) ? (p as number[]).reduce((a, b) => a + b, 0) : NaN
-    if (!text(r.match_id) || !/^\d+$/.test(r.match_id) || !text(r.home_team) || !text(r.away_team) ||
-      r.home_team.trim().toLowerCase() === r.away_team.trim().toLowerCase() || !validEvidenceDate(r.match_date) ||
-      !p.every((v) => finite(v) && v >= 0 && v <= 1) || Math.abs(sum - 1) > 0.001) { data.counts.invalid++; continue }
+    if (!p.every((v) => finite(v) && v >= 0 && v <= 1) || Math.abs(sum - 1) > 0.001) { data.counts.invalid++; continue }
     const made = stamp(r.prediction_timestamp)
     const forecastOffsetSupplied = typeof r.prediction_timestamp === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(r.prediction_timestamp)
     // A civil timestamp in UTC-12 can be twelve hours later than nominal UTC.
     // Without an explicit offset require even that instant to precede match day.
     const latestMade = made ? Date.parse(made) + (forecastOffsetSupplied ? 0 : 12 * 3600000) : NaN
     if (!made || latestMade >= Date.parse(`${r.match_date}T00:00:00Z`) || latestMade > cutoff || r.match_date > asOf || r.match_date < from) { data.counts.timingExcluded++; continue }
-    const home = r.home_team.trim(), away = r.away_team.trim()
-    const key = `${r.match_date}:${home.toLowerCase()}:${away.toLowerCase()}`
     const forecast: EvidenceMatch = { id: r.match_id, date: r.match_date, home, away, model: String(r.model_used), source: entry.source, recordedAt: made, forecastOffsetSupplied,
       // Only rounding drift within .001 is normalised; never repair bad inputs.
       p: (p as number[]).map((v) => v / sum) as Triple, expectedGoals: [positive(r.predicted_home_goals), positive(r.predicted_away_goals)],
       elo: [positive(r.home_elo), positive(r.away_elo)], result: null }
-    groups.set(key, [...(groups.get(key) ?? []), { forecast, raw: r }])
+    groups.set(key, [...(groups.get(key) ?? []), forecast])
     ids.set(r.match_id, new Set([...(ids.get(r.match_id) ?? []), key]))
     files.add(entry.source)
   }
-  for (const candidates of groups.values()) {
-    candidates.sort((a, b) => a.forecast.recordedAt.localeCompare(b.forecast.recordedAt) || a.forecast.source.localeCompare(b.forecast.source) || a.forecast.id.localeCompare(b.forecast.id) || a.forecast.home.localeCompare(b.forecast.home) || a.forecast.away.localeCompare(b.forecast.away))
-    const first = candidates[0].forecast
-    const sameTime = candidates.filter((c) => c.forecast.recordedAt === first.recordedAt)
+  for (const [key, candidates] of groups) {
+    candidates.sort((a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.source.localeCompare(b.source) || a.id.localeCompare(b.id) || a.home.localeCompare(b.home) || a.away.localeCompare(b.away))
+    const first = candidates[0]
+    const sameTime = candidates.filter((c) => c.recordedAt === first.recordedAt)
     const signature = (f: EvidenceMatch) => JSON.stringify([f.model, f.p, f.expectedGoals, f.elo])
-    if (candidates.some((c) => (ids.get(c.forecast.id)?.size ?? 0) > 1) || new Set(sameTime.map((c) => signature(c.forecast))).size > 1) { data.counts.conflicts += candidates.length; continue }
+    if (candidates.some((c) => (ids.get(c.id)?.size ?? 0) > 1) || new Set(sameTime.map(signature)).size > 1) { data.counts.conflicts += candidates.length; continue }
     data.counts.duplicates += candidates.length - 1
     // Outcomes are a separate temporal join; never take the last file order.
-    const results = candidates.flatMap(({ raw: r }) => {
-      const knownAt = stamp(r.outcome_timestamp)
-      if (!knownAt || Date.parse(knownAt) > cutoff || Date.parse(knownAt) < Date.parse(`${first.date}T00:00:00Z`)) return []
-      if (!count(r.actual_home_goals) || !count(r.actual_away_goals)) return [{ goals: null, knownAt, outcome: -1 }]
-      const outcome = r.actual_home_goals > r.actual_away_goals ? 0 : r.actual_home_goals === r.actual_away_goals ? 1 : 2
-      if (r.actual_winner !== ['home', 'draw', 'away'][outcome]) return [{ goals: null, knownAt, outcome: -1 }]
-      return [{ goals: [r.actual_home_goals, r.actual_away_goals] as [number, number], knownAt, outcome }]
-    }).sort((a, b) => b.knownAt.localeCompare(a.knownAt))
+    const results = (corrections.get(key) ?? []).sort((a, b) => b.knownAt.localeCompare(a.knownAt))
     if (results.length && results[0].goals && new Set(results.filter((r) => r.knownAt === results[0].knownAt).map((r) => JSON.stringify(r.goals))).size === 1) first.result = { ...results[0], goals: results[0].goals }
     else data.counts.resultsWithheld++
     data.records.push(first)

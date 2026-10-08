@@ -58,6 +58,61 @@ it('withholds an invalid latest correction rather than silently reviving an old 
   const d = audit([entry(), entry(row({ actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00' }))])
   expect(d.records[0].result).toBeNull(); expect(d.counts.resultsWithheld).toBe(1)
 })
+
+const unusableForecasts = [{ predicted_home_win: null }, { predicted_home_win: 3 }, { predicted_draw: .5 },
+  { prediction_timestamp: '2026-09-01T12:00:00' }, { prediction_timestamp: '2026-09-03T12:00:00' },
+  { prediction_timestamp: '' }, { predicted_home_win: null, prediction_timestamp: '2026-09-01T12:00:00' }]
+it.each(unusableForecasts)('joins a known correction even when its forecast is unusable: %p', (over) => {
+  const entries = [entry(), entry(row({ ...over, actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00' }), 'predictions_2026-10.json')]
+  const before = audit(entries, '2026-09-01'), after = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(after)
+  expect(before.records[0].result?.goals).toEqual([2, 0]); expect(scoreEvidence(before.records).brier).toBeCloseTo(.245)
+  expect(after.records).toHaveLength(1); expect(after.records[0].result?.goals).toEqual([0, 1])
+  expect(after.records[0].p).toEqual([.6, .25, .15]); expect(after.records[0].recordedAt).toBe(before.records[0].recordedAt)
+  expect(scoreEvidence(after.records).n).toBe(1); expect(scoreEvidence(after.records).brier).toBeCloseTo(1.145); expect(after.counts.resultsWithheld).toBe(0)
+})
+it.each(unusableForecasts)('withholds an invalid latest correction even when its forecast is unusable: %p', (over) => {
+  const entries = [entry(), entry(row({ ...over, actual_home_goals: null, outcome_timestamp: '2026-09-02T10:00:00' }))]
+  expect(audit(entries, '2026-09-01').records[0].result?.goals).toEqual([2, 0])
+  const after = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(after)
+  expect(after.records[0].result).toBeNull(); expect(after.counts.resultsWithheld).toBe(1)
+  expect(scoreEvidence(after.records)).toMatchObject({ n: 0, brier: null, logLoss: null })
+})
+it('withholds same-time result conflicts independently of forecast eligibility', () => {
+  const entries = [entry(), entry(row({ outcome_timestamp: '2026-09-02T10:00:00' })), entry(row({ predicted_home_win: null,
+    actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00' }))]
+  const after = audit(entries)
+  expect(audit([...entries].reverse())).toEqual(after)
+  expect(after.records[0].result).toBeNull(); expect(after.counts.resultsWithheld).toBe(1)
+})
+it.each([{ gender: 'F' }, { league: 'La Liga' }, { model_used: 'unified-multitask' }, { match_id: 'bad' },
+  { home_team: 'Fulham' }, { match_date: '2026-02-30' }, { away_team: 'Chelsea' }])('keeps unrelated or unidentified corrections out of a fixture: %p', (over) => {
+  const correction = entry(row({ ...over, predicted_home_win: null, actual_home_goals: 0, actual_away_goals: 1,
+    actual_winner: 'away', outcome_timestamp: '2026-09-02T10:00:00' }))
+  expect(audit([entry(), correction]).records[0].result?.goals).toEqual([2, 0])
+})
+it('never creates a scored forecast from a result-only row', () => {
+  expect(audit([entry(row({ predicted_home_win: null }))]).records).toEqual([])
+})
+it.each([{ predicted_home_win: null }, { prediction_timestamp: '2026-09-01T12:00:00Z' }])('scores the reviewer’s explicit-UTC correction while preserving the original forecast: %p', (over) => {
+  const base = row({ prediction_timestamp: '2026-08-30T12:00:00Z', outcome_timestamp: '2026-09-01T23:00:00Z' })
+  const entries = [entry(base, 'earlier.json'), entry({ ...base, ...over, outcome_timestamp: '2026-09-02T10:00:00Z',
+    actual_home_goals: 0, actual_away_goals: 1, actual_winner: 'away' }, 'later.json')]
+  const after = audit(entries, '2026-09-03')
+  expect(audit([...entries].reverse(), '2026-09-03')).toEqual(after)
+  expect(after.records[0].result).toEqual({ goals: [0, 1], knownAt: '2026-09-02T10:00:00.000Z', outcome: 2 })
+  expect(after.records[0].source).toBe('earlier.json'); expect(scoreEvidence(after.records).brier).toBeCloseTo(1.145)
+  expect(after.files).toEqual(['earlier.json', 'later.json'])
+})
+it('withholds the reviewer’s invalid-winner correction only once its UTC timestamp is known', () => {
+  const entries = [entry(), entry(row({ predicted_home_win: null, actual_winner: 'away', outcome_timestamp: '2026-09-03T10:00:00Z' }))]
+  expect(audit(entries, '2026-09-02').records[0].result?.goals).toEqual([2, 0])
+  const after = audit(entries, '2026-09-03')
+  expect(audit([...entries].reverse(), '2026-09-03')).toEqual(after)
+  expect(after.records[0].result).toBeNull(); expect(after.counts.resultsWithheld).toBe(1)
+  expect(scoreEvidence(after.records).n).toBe(0)
+})
 it('quarantines conflicting same-time forecasts and reused event IDs', () => {
   expect(audit([entry(), entry(row({ predicted_home_goals: 7 }))]).counts.conflicts).toBe(2)
   expect(audit([entry(), entry(row({ match_date: '2026-09-02' }))]).records).toEqual([])
