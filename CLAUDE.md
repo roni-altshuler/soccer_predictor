@@ -1016,24 +1016,24 @@ that only works under a named venv is a script CI cannot run.
 ### Frontend (`src/`)
 Next.js 15 App Router, **10 pages** (was 26), **32 API routes** (was 67).
 
-Design language is **Floodlight** (2026-08-25): Bugatti's grammar — ported from RaceIQ (`../f1_predictions`), shared with Hardwood (`../nba_predictor`) — on soccer's material. Night-pitch green canvas `#071009`, surfaces `#0c1a10`/`#122417`, chalk-green hairlines `#20402a`, white uppercase letterspaced display, monospace for nav/buttons/captions/tables. **No shadows, no glassmorphism, no chrome; the only gradients live in the one sanctioned ambient layer** (`PitchBackdrop`: mowing stripes, pitch markings, drifting floodlight pools — bounds in DESIGN.md). Colour carries meaning only — the canvas green is a cast on the neutrals, never a fifth accent.
+The product supports **Light, Dark and System** through shared document tokens (2026-10-08). Light uses cream `#f5f3ee`, off-white cards `#fcfaf6` and forest accents. Dark retains the Floodlight night-pitch canvas `#071009`, surfaces `#0c1a10`/`#122417` and chalk-green hairlines `#20402a`. Both use sentence-case headings and the same control typography. **No shadows, no glassmorphism, no chrome; the only gradients live in the sanctioned dark ambient layer** (`PitchBackdrop`: mowing stripes, pitch markings, drifting floodlight pools — bounds in DESIGN.md). Colour carries meaning only.
 
 **The spec is [DESIGN.md](DESIGN.md) at the repo root, and it is authored FROM `globals.css`.** It replaced `docs/design-tokens.md` and `docs/design-language.md` on 2026-08-15, which between them published six hexes that existed nowhere in the product, eight table rows of a deleted light mode, and a rule mandating cyan for AI data in a product with no cyan. **A design spec that lies is worse than none** — an agent trusting those docs would faithfully rebuild the theme they replaced. If DESIGN.md and `globals.css` ever disagree, the CSS is right.
 
 **`globals.css` went 1,011 → 340 lines the same day: 64 selectors had zero consumers**, and they carried the gradients, glows and hover-lift Bugatti exists to remove (`.btn-primary` had a `linear-gradient` *and* a hardcoded `box-shadow: 0 8px 16px` bypassing `--shadow-sm: none`; `.fm-select`'s chevron hardcoded `#16a34a`, an accent from two palettes ago). Dead CSS is what the next person writing a button copies. **Before deleting a selector, grep `src/` excluding `globals.css` itself** — its own definitions otherwise count as consumers, which is how "11 dead classes" was really 64.
 
-**`.dark` is always on, so any `.dark X` rule beats its unprefixed twin unconditionally.** `.dark .skeleton-shimmer` painted `#161b22` over the token-built default, so every loading state on the site rendered in retired navy-charcoal instead of on the black surface — visible in a screenshot, invisible to every test.
+**`.dark` follows the resolved reader preference.** Keep loading states, dialogs and native controls on shared tokens rather than route-specific palette overrides. A historical `.dark .skeleton-shimmer` rule painted retired navy-charcoal over the token-built loading surface; actual browser checks must cover both palettes.
 
 **Component catalogues were evaluated on 2026-08-15 and rejected.** 21st.dev is mechanically compatible (shadcn `new-york`, radix, cva, lucide all present) but its centre of gravity — 1,152 animated heroes, 501 CTAs, dedicated Gradients/Shaders/ASCII sections — is itemised in DESIGN.md's "why the previous theme failed". Its strongest structural candidate, a ⌘K palette, is a thing this repo already removed on purpose. getdesign.md sells DESIGN.md specs scraped from other products: right idea, wrong source. Take structure and interaction patterns; never visual treatments.
 
-**Dark-only.** `<html class="dark">` is hardcoded and there is no theme provider; `:root` in `globals.css` is the single source of truth and the `.dark` block is intentionally empty.
+**Theme ownership.** `:root` in `globals.css` supplies Light and shared tokens; `.dark` overrides the Dark palette. The head bootstrap in `src/lib/theme.ts` applies the resolved choice before paint. `ThemeProvider` synchronizes System and cross-tab changes, and `ThemeToggle` exposes the preference. Use paired action tokens `--accent-primary` / `--accent-on-primary` for filled controls, including auth submit buttons. See [theme protocol and evidence](docs/SITE_THEME_REVIEW.md).
 
 ### Conventions
 - **CSS variables, never Tailwind colours** — `text-[var(--text-primary)]`, `bg-[var(--card-bg)]`, `border-[var(--border-color)]`. Hardcoded `text-white`/`bg-black`/`text-gray-400` bypass the token layer.
 - **No bot attribution in commits** — no "Co-Authored-By: Claude" or "Generated with Claude Code" trailers in this repo.
 - **Feature branches** for long-lived work; small fixes straight to `main`.
 - Backend tests use absolute imports (`from backend.services...`); root `conftest.py` makes that work.
-- `localStorage` keys still use the `fotpredict.*` prefix, preserving preferences across two rebrands.
+- Preserve existing preference keys rather than renaming them. Theme uses `pitchverse-theme` with the verified legacy `theme` fallback; ambient pitch preference uses `pitchverse-ambient`.
 
 ## Deleted in the pivot — do not resurrect without a decision
 

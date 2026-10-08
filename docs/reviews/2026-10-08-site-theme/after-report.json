@@ -1,0 +1,2800 @@
+{
+  "basis": "Local production browser with committed artifacts and sparse ESPN excerpt; provider access blocked in browser and server. No model or data generation.",
+  "auditDate": "2026-10-08",
+  "probe": false,
+  "rows": [
+    {
+      "label": "after-light-390-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-390-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-390-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-390-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-390-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-390-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-390-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-390-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-390-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-390-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-390-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-768-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-768-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-768-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-768-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-768-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-768-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-768-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-768-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-768-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-768-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-1440-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-1440-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 1,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          48,
+          60,
+          52
+        ],
+        "contrast": 11.058427858036076
+      }
+    },
+    {
+      "label": "after-light-1440-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(252, 250, 246)",
+        "background": "rgb(48, 60, 52)",
+        "surface": "rgb(252, 250, 246)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          252,
+          250,
+          246
+        ],
+        "renderedBackground": [
+          68.4,
+          79,
+          71.4
+        ],
+        "contrast": 8.191703308593327
+      }
+    },
+    {
+      "label": "after-light-1440-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-light-1440-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-auth-login",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-1440-auth-login-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Sign In",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-1440-auth-register",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 1,
+        "renderedForeground": [
+          4,
+          19,
+          10
+        ],
+        "renderedBackground": [
+          95,
+          166,
+          87
+        ],
+        "contrast": 6.41944979184778
+      }
+    },
+    {
+      "label": "after-dark-1440-auth-register-hover",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "modalAction": {
+        "label": "Create Account",
+        "foreground": "rgb(4, 19, 10)",
+        "background": "rgb(95, 166, 87)",
+        "surface": "rgb(12, 26, 16)",
+        "opacity": 0.9,
+        "renderedForeground": [
+          4.8,
+          19.700000000000003,
+          10.6
+        ],
+        "renderedBackground": [
+          86.7,
+          152,
+          79.89999999999999
+        ],
+        "contrast": 5.419544698994311
+      }
+    },
+    {
+      "label": "after-dark-1440-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-league",
+      "destination": "/leagues/eng.1",
+      "url": "http://127.0.0.1:3218/leagues/eng.1",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-comparison",
+      "destination": "/leagues/eng.1/compare",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/compare",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-evidence",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-history",
+      "destination": "/leagues/eng.1/evidence",
+      "url": "http://127.0.0.1:3218/leagues/eng.1/evidence",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-match",
+      "destination": "/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "url": "http://127.0.0.1:3218/matches/761660?league=usa.1&returnTo=%2F%3Fdate%3D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-team",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-reload",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-profile-history",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-toggle",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-system",
+      "destination": "/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "url": "http://127.0.0.1:3218/teams/182?provider=espn&returnTo=%2Fmatches%2F761660%3Fleague%3Dusa.1%26returnTo%3D%252F%253Fdate%253D2026-10-08",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-loading",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-empty",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-dark-1440-error",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-light-320-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-light-320-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "light",
+      "preference": "system",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    },
+    {
+      "label": "after-reduced-motion-pitch-toggle-320",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false,
+      "pitchBackingDimensions": {
+        "width": 320,
+        "height": 680
+      }
+    },
+    {
+      "label": "after-fresh-system-dark-320-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-fresh-system-dark-320-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-legacy-dark-320-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-legacy-dark-320-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "dark",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-320-home",
+      "destination": "/",
+      "url": "http://127.0.0.1:3218/",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-320-leagues",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "dark",
+      "preference": "system",
+      "rootCanvas": "#071009",
+      "canvas": "#071009",
+      "card": "#0c1a10",
+      "color": "#ffffff",
+      "headingTransform": "none",
+      "header": "rgb(7, 16, 9)",
+      "action": [
+        "rgb(95, 166, 87)",
+        "rgb(4, 19, 10)"
+      ],
+      "browserChrome": "#071009",
+      "overflow": false
+    },
+    {
+      "label": "after-storage-blocked-session-320",
+      "destination": "/leagues",
+      "url": "http://127.0.0.1:3218/leagues",
+      "theme": "light",
+      "preference": "light",
+      "rootCanvas": "#f5f3ee",
+      "canvas": "#f5f3ee",
+      "card": "#fcfaf6",
+      "color": "#242824",
+      "headingTransform": "none",
+      "header": "rgb(245, 243, 238)",
+      "action": [
+        "rgb(48, 60, 52)",
+        "rgb(252, 250, 246)"
+      ],
+      "browserChrome": "#f5f3ee",
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

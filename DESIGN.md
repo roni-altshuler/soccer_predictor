@@ -1,11 +1,10 @@
-# Pitchverse design language — Floodlight (Bugatti grammar, night-pitch material)
+# Pitchverse design language — cream light, Floodlight dark
 
-**Matchday design update (2026-10-06):** `/` and `/matches/[id]` now use a
-route-scoped cream palette and sentence-case typography, following the user's
-new product direction. Their shared navigation uses the same surface and marks
-Matchday active on detail pages. The Floodlight rules below describe the other
-routes; they do not override this newer, bounded direction. See
-[the design review and browser evidence](docs/MATCHDAY_DESIGN_REVIEW.md).
+**Site theme update (2026-10-08):** Every product route now inherits the same
+root tokens. Light uses the Matchday cream palette; dark retains the night-pitch
+greens. Headers, navigation, control type and sentence-case headings stay
+consistent through homepage, leagues, matches, team profiles, comparisons and
+evidence. See [the theme review and browser evidence](docs/SITE_THEME_REVIEW.md).
 
 **This file is authored FROM [`src/app/globals.css`](src/app/globals.css).** That file is
 the single source of truth; this one explains it. If the two disagree, the CSS is right and
@@ -69,15 +68,32 @@ orthogonal: it stills the layer at whatever level the dial is on. The states liv
 `src/lib/ambient.ts` and the `html[data-ambient]` rules next to `.pitch-backdrop` in
 `globals.css`; those two files and this paragraph are the whole contract.
 
-**Dark only.** `<html class="dark">` is hardcoded in [layout.tsx](src/app/layout.tsx) and
-there is no theme provider. `:root` is the single source of truth and the `.dark` block is
-intentionally empty.
+**Light, Dark and System.** The header selector persists `pitchverse-theme`;
+the earlier `theme` storage key is honored when no current preference exists.
+The root layout applies a validated choice in a small blocking head script,
+before first paint. `ThemeProvider` follows OS changes only in System mode and
+synchronizes other tabs. Storage failures still permit a session choice.
+`:root` supplies light and shared tokens; `.dark` overrides palette values.
+No route can choose another palette. Portals and loading/error states inherit
+the same document tokens. The ambient pitch is dark-only and retains its own
+dial; its animation stops while light mode hides it.
 
-> Because the class is always on, **any `.dark X` rule beats its unprefixed twin
-> unconditionally.** `.dark .skeleton-shimmer` painted `#161b22` over the token-built
-> default, so every loading state on the site rendered in retired navy-charcoal rather than
-> on the black surface — visible in a screenshot, invisible to every test. If a rule seems
-> to need a `.dark` prefix, it is a rule that only ever runs. Write it once, unprefixed.
+The detailed tables below describe **dark** values. Light uses this shared
+material, with all aliases resolving from the same root:
+
+| Token | Light | Dark |
+|---|---|---|
+| `--background` / `--nav-bg` | `#f5f3ee` | `#071009` |
+| `--card-bg` | `#fcfaf6` | `#0c1a10` |
+| `--text-primary` | `#242824` | `#ffffff` |
+| `--text-secondary` | `#4b514b` | `#cccccc` |
+| `--text-tertiary` | `#575e55` | `#999999` |
+| `--border-color` | `#d7d4cb` | `#20402a` |
+| `--accent-primary` | `#303c34` | `#5fa657` |
+| `--accent-on-primary` | `#fcfaf6` | `#04130a` |
+| `--accent-warn` | `#806018` | `#d4a017` |
+| `--accent-loss` | `#a03832` | `#c1443c` |
+| `--accent-info` | `#315547` | `#c3d9f3` |
 
 ### Surfaces
 
@@ -104,7 +120,7 @@ is `none` for the same reason.
 | `--text-primary` | `#ffffff` | headlines, winner's score, key figures |
 | `--text-secondary` | `#cccccc` | body copy |
 | `--text-tertiary` | `#999999` | labels, captions, loser's score |
-| `--accent-on-primary` | `#000000` | text on a filled accent |
+| `--accent-on-primary` | `#04130a` | text on a filled accent |
 
 ### Accents — four signals, and what each one means
 
@@ -129,7 +145,7 @@ things" — that rule belonged to the retired v3 palette.
 | `--shadow-sm/md/lg` | `none` | **all three.** Depth is surface steps + hairlines, never bloom |
 | `--radius` | `0.75rem` | shadcn radius base |
 
-`--logo-plate` is `#ffffff` **in a dark-only product, deliberately.** Competition marks are
+`--logo-plate` stays light in both modes (`#fcfaf6` / `#ffffff`). Competition marks are
 authored for light backgrounds — Premier League purple `#37003c`, Ligue 1 navy and the MLS
 mark all vanish on black. FotMob and ESPN seat them on a light tile for exactly this reason;
 `--logo-plate-ring` is what separates the tile from the card.
@@ -142,12 +158,11 @@ The font variables resolve to native sans and monospace stacks. They do not
 depend on a build-time font download. Preserve the existing hierarchy and
 tabular numerals when extending the interface.
 
-- **Display (`h1`–`h3`)** — `--font-display`, white, uppercase, `letter-spacing: 0.08em`.
-  The tracking is **positive**; the retired theme used `-0.02em`, the opposite instinct.
+- **Display (`h1`–`h3`)** — `--font-display`, `--text-primary`, sentence case,
+  `letter-spacing: -0.025em`, in every route and both modes.
 - **Body** — `--font-sans`, `--text-secondary`.
-- **Monospace** — `nav`, `button`, `.caption`, `th`, `[role='tab']` all run
-  `--font-mono-numeric`. Tabular figures keep score columns and probability tables from
-  shifting as digits change. Use `.tabular` for numerics elsewhere.
+- **Controls** — navigation, buttons, captions and tabs use the shared sans stack.
+  Numeric utilities retain tabular figures so score/probability columns do not shift.
 
 ---
 

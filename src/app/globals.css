@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Matchday and match detail share a quiet, warm surface. These overrides are
-   intentionally route-scoped: other product areas retain their current theme. */
-.match-flow-shell {
+/* One document palette for every route, portal, loading and error state.
+   Light keeps the Matchday cream; dark keeps the floodlit soccer greens. */
+:root {
   color-scheme: light;
   --background: #f5f3ee;
   --background-secondary: #efede7;
@@ -18,37 +18,101 @@
   --text-primary: #242824;
   --text-secondary: #4b514b;
   --text-tertiary: #575e55;
-  --border-color: #d7d4cb;
-  --border-hover: #888d83;
   --accent-primary: #303c34;
   --accent-primary-soft: #43624f;
-  --accent-on-primary: #fcfaf6;
-  --accent-info: #315547;
-  --accent-info-soft: #43624f;
   --accent-warn: #806018;
   --accent-warn-soft: #806018;
   --accent-loss: #a03832;
   --accent-loss-soft: #a03832;
+  --accent-info: #315547;
+  --accent-info-soft: #43624f;
   --accent-ai: var(--accent-info);
   --accent-ai-soft: var(--accent-info-soft);
-  --accent-ai-light: var(--accent-info-soft);
   --accent-market: var(--accent-info);
   --accent-market-soft: var(--accent-info-soft);
-  --accent-secondary: var(--accent-primary-soft);
-  --surface-muted: var(--muted-bg);
-  --match-card-bg: var(--card-bg);
-  --tab-active-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-  --surface-highlight: color-mix(in srgb, var(--accent-info) 10%, transparent);
+  --accent-women: var(--accent-info);
+  --accent-women-soft: var(--accent-info-soft);
+  --border-color: #d7d4cb;
+  --border-hover: #888d83;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
   --success: var(--accent-primary);
   --warning: var(--accent-warn);
   --danger: var(--accent-loss);
   --info: var(--accent-info);
+  --live-bg: rgba(193, 68, 60, 0.12);
+  --live-border: rgba(193, 68, 60, 0.35);
   --live-text: #a03832;
-  --logo-plate: #fcfaf6;
+  --accent-secondary: var(--accent-primary-soft);
+  --accent-ai-light: var(--accent-info-soft);
+  --surface-muted: var(--muted-bg);
+  --match-card-bg: var(--card-bg);
+  --tab-active-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --surface-highlight: color-mix(in srgb, var(--accent-info) 10%, transparent);
+  --surface-glow: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  --accent-on-primary: #fcfaf6;
   --overlay-bg: rgba(28, 32, 28, 0.6);
+  --pitch-bg: #0d2113;
+  --pitch-text: #cccccc;
   --ticker-bg: #efede7;
+  --radius: 0.75rem;
+  --shell-sidebar-w: 220px;
+  --shell-sidebar-w-expanded: 220px;
+  --shell-topbar-h: 56px;
+  --shell-content-max: 1160px;
+  --shell-rail-w: 340px;
+  --logo-plate: #fcfaf6;
+  --logo-plate-ring: rgba(19, 19, 22, 0.12);
+  --accent-pitch-line: rgba(241, 245, 251, 0.18);
+  --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
+  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 22%, transparent);
+  --rating-bg-low: color-mix(in srgb, var(--muted-bg) 80%, var(--text-tertiary) 20%);
+  --team-tint-home: var(--accent-primary);
+  --team-tint-away: var(--accent-loss);
+  --headshot-ring: rgba(15, 26, 44, 0.18);
+  --score-numeric-shadow: none;
+  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
+  --accent-on-loss: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #071009;
+  --background-secondary: #0c1a10;
+  --background-tertiary: #122417;
+  --card-bg: #0c1a10;
+  --card-hover: #122417;
+  --input-bg: #122417;
+  --muted-bg: #1d3023;
+  --nav-bg: #071009;
+  --nav-border: #20402a;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
+  --accent-primary: #5fa657;
+  --accent-primary-soft: #7cbb74;
+  --accent-warn: #d4a017;
+  --accent-warn-soft: #e0b545;
+  --accent-loss: #c1443c;
+  --accent-loss-soft: #d4655e;
+  --accent-info: #c3d9f3;
+  --accent-info-soft: #d6e5f7;
+  --border-color: #20402a;
+  --border-hover: #305c3d;
+  --info: var(--accent-ai);
+  --live-text: #d4655e;
+  --accent-ai-light: var(--accent-ai-soft);
+  --surface-highlight: color-mix(in srgb, var(--accent-ai) 10%, transparent);
+  --accent-on-primary: #04130a;
+  --overlay-bg: rgba(4, 10, 6, 0.74);
+  --ticker-bg: #0c1a10;
+  --logo-plate: #ffffff;
+}
+
+.match-flow-shell {
   min-height: 100vh;
-  background: var(--background);
   color: var(--text-primary);
 }
 
@@ -156,165 +220,11 @@
 }
 
 /* ────────────────────────────────────────────────────────────
-   Design tokens — Bugatti, dark only.
-   shadcn/ui primitives read these via tailwind.config.js. There is
-   no light theme and no toggle: :root is the single source of truth.
-
-   The written spec is DESIGN.md at the repo root, and it is authored FROM
-   this file. If the two ever disagree, this file is right and DESIGN.md is
-   the bug — that is exactly how `docs/design-tokens.md` came to publish six
-   hexes that no longer existed anywhere in the product.
-   ──────────────────────────────────────────────────────────── */
-:root {
-  /* ────────────────────────────────────────────────────────────
-     Floodlight palette — dark only. Bugatti's structure, soccer's material.
-
-     The grammar is still Bugatti (ported from RaceIQ, shared with Hardwood):
-     hairline borders, no shadows, no chrome, colour carries MEANING only.
-     What changed (2026-08-25, product decision): the canvas is no longer a
-     void. Every neutral is pulled toward pitch green — the site reads as a
-     floodlit stadium at night. The greens are cast, not colour: they sit at
-     the same luminance steps the old greys did (#000→#071009, #0d0d0d→#0c1a10,
-     #262626→#20402a…), so every contrast relationship in the product is
-     preserved and the four accents still carry all the meaning.
-
-     Light mode is gone. `.dark` below is kept as an alias so
-     `<html class="dark">` is harmless.
-     ──────────────────────────────────────────────────────────── */
-  --background: #071009;
-  --background-secondary: #0c1a10;
-  --background-tertiary: #122417;
-  --card-bg: #0c1a10;
-  --card-hover: #122417;
-  --input-bg: #122417;
-  --muted-bg: #1d3023;
-  --nav-bg: #071009;
-  --nav-border: #20402a;
-
-  /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: #cccccc;
-  --text-tertiary: #999999;
-
-  /* Accents carry meaning, not decoration. The old palette ran nine hues at
-     full saturation; Bugatti keeps four muted signals and points the rest at
-     them so nothing in the codebase breaks while the surface goes quiet. */
-  --accent-primary: #5fa657;          /* positive / win / model-favoured */
-  --accent-primary-soft: #7cbb74;
-  --accent-warn: #d4a017;             /* draw / uncertainty */
-  --accent-warn-soft: #e0b545;
-  --accent-loss: #c1443c;             /* negative / loss / live */
-  --accent-loss-soft: #d4655e;
-  --accent-info: #c3d9f3;             /* links, informational — the ice-blue */
-  --accent-info-soft: #d6e5f7;
-  /* Retired hues, aliased so legacy consumers stay calm rather than neon.
-     There is no cyan in this product: `--accent-ai` IS the ice-blue. */
-  --accent-ai: var(--accent-info);
-  --accent-ai-soft: var(--accent-info-soft);
-  --accent-market: var(--accent-info);
-  --accent-market-soft: var(--accent-info-soft);
-  --accent-women: var(--accent-info);
-  --accent-women-soft: var(--accent-info-soft);
-
-  /* Borders & shadows — flat product: hairlines carry the structure.
-     Chalk-line greens: same luminance as the old #262626/#3a3a3a greys. */
-  --border-color: #20402a;
-  --border-hover: #305c3d;
-  /* Shadows are nuked. Depth comes from hairlines, never from bloom. */
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-
-  /* Status surfaces */
-  --success: var(--accent-primary);
-  --warning: var(--accent-warn);
-  --danger: var(--accent-loss);
-  --info: var(--accent-ai);
-  --live-bg: rgba(193, 68, 60, 0.12);
-  --live-border: rgba(193, 68, 60, 0.35);
-  --live-text: #d4655e;
-
-  /* Backwards-compat token aliases (existing components depend on these) */
-  --accent-secondary: var(--accent-primary-soft);
-  --accent-ai-light: var(--accent-ai-soft);
-  --surface-muted: var(--muted-bg);
-  --match-card-bg: var(--card-bg);
-  --tab-active-bg: color-mix(in srgb, var(--accent-primary) 14%, transparent);
-  --surface-highlight: color-mix(in srgb, var(--accent-ai) 10%, transparent);
-  --surface-glow: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-
-  /* Components should pick from these tokens instead of hard-coding Tailwind
-     grays / `text-white` / `bg-black`. */
-  --accent-on-primary: #04130a;       /* text on a filled accent — night-pitch dark */
-  --overlay-bg: rgba(4, 10, 6, 0.74); /* modal backdrops — green-cast, not pure black */
-  --pitch-bg: #0d2113;                 /* lineup pitch surface — actual grass-dark now */
-  --pitch-text: #cccccc;
-  --ticker-bg: #0c1a10;                /* was a two-stop gradient; the grammar has none */
-
-  /* shadcn radius tokens */
-  --radius: 0.75rem;
-
-  /* App shell layout tokens (sidebar + topbar) */
-  --shell-sidebar-w: 220px;
-  --shell-sidebar-w-expanded: 220px;
-  --shell-topbar-h: 56px;
-  --shell-content-max: 1160px;
-  --shell-rail-w: 340px;
-
-  /* Logo plate. Competition and club marks are authored for light backgrounds
-     — Premier League purple (#37003c), Ligue 1 navy and the MLS mark all go
-     invisible on the dark surface. Every sports product of this class (FotMob,
-     ESPN) seats them on a light tile for exactly this reason, so the plate is
-     light in BOTH themes and the ring is what separates it from the card. */
-  --logo-plate: #ffffff;
-  --logo-plate-ring: rgba(19, 19, 22, 0.12);
-
-  /* Pitch / rating surfaces */
-  --accent-pitch-line: rgba(241, 245, 251, 0.18);
-  --accent-pitch-line-strong: rgba(241, 245, 251, 0.32);
-  --rating-bg-high: color-mix(in srgb, var(--accent-primary) 22%, transparent);
-  --rating-bg-mid: color-mix(in srgb, var(--accent-warn) 22%, transparent);
-  --rating-bg-low: color-mix(in srgb, var(--muted-bg) 80%, var(--text-tertiary) 20%);
-  /* Per-match team tints — components override inline via
-     style={{ '--team-tint-home': brandColor }}. */
-  --team-tint-home: var(--accent-primary);
-  --team-tint-away: var(--accent-loss);
-  --headshot-ring: rgba(15, 26, 44, 0.18);
-  --score-numeric-shadow: none;
-  --meta-chip-bg: color-mix(in srgb, var(--muted-bg) 70%, transparent);
-}
-
-.dark {
-  /*
-   * Intentionally empty.
-   *
-   * The app hardcodes <html class="dark"> (src/app/layout.tsx) and there is no
-   * theme provider or toggle, so this block always won — it used to override
-   * every token in :root with the Matchday v3.1 charcoal palette. Bugatti is
-   * dark-only, so the single source of truth now lives in :root and this
-   * selector is kept purely so the hardcoded class stays harmless.
-   *
-   * BEWARE: because the class is always on, ANY `.dark X` rule beats its
-   * unprefixed twin unconditionally. `.dark .skeleton-shimmer` used to paint
-   * #161b22 over the token-built default, so every loading state on the site
-   * rendered in the retired navy-charcoal rather than on the black surface.
-   * If a rule needs a `.dark` prefix here, it is a rule that only ever runs —
-   * write it once, without the prefix.
-   *
-   * If a light mode ever returns, invert this: put the light values in :root
-   * and the dark ones here. Do not reintroduce a second full palette without
-   * a theme provider to switch it.
-   */
-}
-
-/* ────────────────────────────────────────────────────────────
    Base typography & body
    ──────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 body {
-  /* Flat black canvas. The one piece of atmosphere is the pitch backdrop
-     (see the .pitch-backdrop block at the end of this file) — a bounded,
-     documented exception that sits behind everything at z-index -1. */
+  /* The same document canvas also backs portalled dialogs and deep links. */
   background-color: var(--background);
   color: var(--text-secondary);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
@@ -324,14 +234,11 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-/* Display type is the loudest thing on the page: white, uppercase, widely
-   letterspaced. It is what makes the restraint elsewhere read as deliberate
-   rather than unfinished. Note the POSITIVE tracking — the old theme used
-   -0.02em, which is the opposite instinct. */
+/* Sentence-case headings keep the same reading rhythm across routes. */
 h1, h2, h3 {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  text-transform: none;
+  letter-spacing: -0.025em;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -342,11 +249,10 @@ h4, h5, h6 {
   color: var(--text-primary);
 }
 
-/* Nav, buttons, captions and every number run monospace — the tabular figures
-   keep score columns and probability tables from shifting as digits change. */
+/* Shared control typography; tables retain tabular numeric utilities. */
 nav, button, .caption, th, [role='tab'] {
-  font-family: var(--font-mono-numeric), ui-monospace, monospace;
-  letter-spacing: 0.04em;
+  font-family: var(--font-sans), ui-sans-serif, sans-serif;
+  letter-spacing: normal;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -512,12 +418,15 @@ nav, button, .caption, th, [role='tab'] {
    DESIGN.md documents the same exception — keep the two in sync.
    ──────────────────────────────────────────────────────────── */
 .pitch-backdrop {
+  display: none;
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
 }
+
+.dark .pitch-backdrop { display: block; }
 
 /* The reader's dial. `soft` is the default and is what a first visit sees:
    the match canvas dimmed and softened, the light pools at 60%. `vivid` is

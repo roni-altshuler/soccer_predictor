@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 import { AMBIENT_EVENT, readAmbient } from '@/lib/ambient'
+import { THEME_EVENT } from '@/lib/theme'
 
 /**
  * The tactics-board match — the animated half of the ambient layer.
@@ -715,7 +716,8 @@ export function PitchMatchAnimation() {
     // The reader's dial: no rAF at all while the layer is off. The CSS hides
     // it on the same attribute, so the two can never disagree.
     const applyAmbient = () => {
-      if (readAmbient() === 'off') stop()
+      if (readAmbient() === 'off' || !document.documentElement.classList.contains('dark')) stop()
+      else if (reduced.matches) fit()
       else start()
     }
 
@@ -723,14 +725,15 @@ export function PitchMatchAnimation() {
       // A single still of the kickoff shape — present, never moving.
       tick(sim, 0.001)
       draw(ctx, sim, view)
-    } else {
-      applyAmbient()
-      window.addEventListener(AMBIENT_EVENT, applyAmbient)
     }
+    applyAmbient()
+    window.addEventListener(AMBIENT_EVENT, applyAmbient)
+    window.addEventListener(THEME_EVENT, applyAmbient)
 
     return () => {
       stop()
       window.removeEventListener(AMBIENT_EVENT, applyAmbient)
+      window.removeEventListener(THEME_EVENT, applyAmbient)
       window.removeEventListener('resize', fit)
     }
   }, [])

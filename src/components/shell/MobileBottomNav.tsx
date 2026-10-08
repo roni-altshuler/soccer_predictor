@@ -30,7 +30,7 @@ type Item = {
 // palette over nine leagues and fourteen competitions that the other four tabs
 // already reach directly.
 const ITEMS: Item[] = [
-  { href: '/', label: 'Today', icon: Activity },
+  { href: '/', label: 'Matchday', icon: Activity },
   { href: '/leagues', label: 'Leagues', icon: CalendarRange },
   { href: '/tournaments', label: 'Cups', icon: Swords },
   { href: '/lab', label: 'Lab', icon: FlaskConical },
@@ -42,7 +42,7 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href)
 }
 
-export function MobileBottomNav({ matchFlow = false }: { matchFlow?: boolean }) {
+export function MobileBottomNav() {
   const pathname = usePathname() || '/'
   const reduceMotion = useReducedMotion()
 
@@ -75,7 +75,7 @@ export function MobileBottomNav({ matchFlow = false }: { matchFlow?: boolean }) 
               />
             )}
             <Icon className="relative h-[19px] w-[19px]" strokeWidth={2.1} aria-hidden="true" />
-            <span className="relative text-[10px] font-semibold">{matchFlow && item.href === '/' ? 'Matchday' : item.label}</span>
+            <span className="relative text-[10px] font-semibold">{item.label}</span>
           </span>
         )
 

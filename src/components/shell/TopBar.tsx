@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { AmbientToggle } from '@/components/AmbientToggle'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { AuthModal } from '@/components/AuthModal'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -17,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext'
  * bigger than it is. A directory of nine leagues and fourteen competitions
  * does not need a search index over it.
  */
-export function TopBar({ matchFlow = false }: { matchFlow?: boolean }) {
+export function TopBar() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
@@ -36,14 +37,18 @@ export function TopBar({ matchFlow = false }: { matchFlow?: boolean }) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-mark.svg" alt="" width={28} height={28} className="h-7 w-7" />
-          <span className={`${matchFlow ? '' : 'hidden min-[400px]:inline '}text-sm font-bold text-[var(--text-primary)]`}>Pitchverse</span>
+          <span className="hidden min-[400px]:inline text-sm font-bold text-[var(--text-primary)]">Pitchverse</span>
         </Link>
 
         {/* Right cluster */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {/* The pitch dial, where a phone can reach it — the sidebar that
               carries it on desktop is hidden below md. */}
-          {!matchFlow && <AmbientToggle label="Pitch" compact className="md:hidden" />}
+          <details className="relative hidden dark:block md:!hidden">
+            <summary className="flex min-h-11 cursor-pointer items-center rounded-lg border border-[var(--border-color)] px-2 text-xs text-[var(--text-primary)]">Pitch</summary>
+            <AmbientToggle label="Pitch" compact className="absolute right-0 top-full mt-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-2" />
+          </details>
+          <ThemeToggle />
           {/* The men's/women's switch is not rendered while women's
               competitions sit outside the coverage waves (docs/PIVOT_2026-08.md
               §5). The preference plumbing stays — every fetch still threads

@@ -54,10 +54,15 @@ jobs:
       - name: Responsive product contracts
         run: npm run test:product
 
+      - name: Theme navigation journeys
+        run: npm run test:theme
+
       - name: Upload product evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: product-quality-evidence
-          path: /tmp/pitchverse-product-quality/
+          path: |
+            /tmp/pitchverse-product-quality/
+            /tmp/pitchverse-theme-quality/
           if-no-files-found: ignore
