@@ -195,7 +195,8 @@ Its 93-attempt cap and incomplete-coverage publication gate remain enforced;
 older history and other competitions are retained without a freshness claim.
 [Reliability evidence and limits](docs/EVENT_BACKFILL_RELIABILITY.md) explains
 the observed failure, offline checks and remaining provider gaps. Evaluation also
-distinguishes an unavailable read from absent evidence and retains the last
+distinguishes an unavailable read from absent evidence, withholds dependent
+empty-record claims until that source is readable, and retains the last
 successful response during failed retries.
 
 League pages also link to **Compare clubs · Season snapshot**: two clubs from

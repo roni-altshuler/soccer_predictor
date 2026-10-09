@@ -130,6 +130,63 @@ const EMPTY_LIVE = {
 afterEach(() => jest.resetAllMocks())
 
 describe('EvaluationPage - one competition at a time', () => {
+  it.each(['evaluation', 'projections'] as const)('withholds empty claims for an initially unreadable %s source and retains evidence after recovery', async (source) => {
+    const recorded = {
+      ...EMPTY_LIVE,
+      generated_at: '2026-10-08T14:00:00Z',
+      live: { n: 311, brier: 0.60123, last_kickoff: '2026-09-20T20:45:00Z', by_league: { 'eng.1': { n: 50, brier: 0.61234 } } },
+    }
+    mockFetch({ evaluation: recorded })
+    const goodFetch = global.fetch
+    let sourceFailed = true
+    let knockoutFailed = false
+    global.fetch = jest.fn().mockImplementation((url: string) => (
+      sourceFailed && url.includes(source === 'evaluation' ? '/evaluation' : 'season/projections')
+    ) || (knockoutFailed && url.includes('knockout'))
+      ? Promise.resolve({ ok: false, status: 503 }) : goodFetch(url))
+    render(<EvaluationPage />)
+    await screen.findByRole('status', { name: 'Evidence read failure' })
+    if (source === 'evaluation') {
+      expect(screen.getAllByText('0.58266')).toHaveLength(2)
+      expect(screen.queryByRole('region', { name: 'The two records' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: 'Evidence dates' })).not.toBeInTheDocument()
+      expect(screen.queryByText(/No backtest has been generated here/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Nothing (has been )?scored/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/A fact about the calendar/)).not.toBeInTheDocument()
+      expect(screen.queryAllByText('0', { exact: true })).toHaveLength(0)
+    } else {
+      expect(screen.getAllByText('0.60123').length).toBeGreaterThan(0)
+      expect(screen.getByText('0.61234')).toBeInTheDocument()
+      expect(screen.getByText('8 Oct 2026 (UTC)')).toBeInTheDocument()
+      expect(screen.queryByText(/No measured block has been published/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/no measured block yet/)).not.toBeInTheDocument()
+    }
+
+    // The requested source recovers; an independent knockout failure keeps
+    // retry available so the next attempt can verify retention in this session.
+    sourceFailed = false
+    knockoutFailed = true
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByRole('region', { name: 'Evidence dates' })
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Evidence read failure' })).not.toHaveTextContent(source === 'evaluation' ? 'Published match record' : 'League record'))
+    expect(screen.getAllByText('0.58266')).toHaveLength(2)
+    expect(screen.getAllByText('0.60123').length).toBeGreaterThan(0)
+    expect(screen.getByText('8 Oct 2026 (UTC)')).toBeInTheDocument()
+
+    sourceFailed = true
+    knockoutFailed = false
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Evidence read failure' })).toHaveTextContent(source === 'evaluation' ? 'Published match record' : 'League record'))
+    expect(screen.getAllByText('0.58266')).toHaveLength(2)
+    expect(screen.getAllByText('0.60123').length).toBeGreaterThan(0)
+    expect(screen.getByText('8 Oct 2026 (UTC)')).toBeInTheDocument()
+    expect(screen.queryByText(/record couldn’t be read/)).not.toBeInTheDocument()
+
+    sourceFailed = false
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Evidence read failure' })).not.toBeInTheDocument())
+  })
+
   it('does not call a failed read an empty evaluation and can retry', async () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 })
     render(<EvaluationPage />)

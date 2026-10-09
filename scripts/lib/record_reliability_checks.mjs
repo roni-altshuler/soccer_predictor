@@ -25,17 +25,20 @@ export async function checkRecordReliability({ browser, base, out }) {
   assert.equal(knockout.available, true)
   responses.set('/api/v1/tournaments/knockout', knockout)
   const evaluation = responses.get('/api/v1/evaluation')
+  const measured = responses.get('/api/v1/season/projections').leagues.find((league) => league.competition_id === 'eng.1').measured
+  assert(measured.n_scored > 0 && evaluation.live.by_league['eng.1'].n > 0)
   const report = []
   for (const width of [390, 768, 1440]) for (const theme of ['light', 'dark']) {
     console.log(`Checking Record reliability ${width}px ${theme}`)
     const context = await browser.newContext({ viewport: { width, height: 960 }, timezoneId: 'UTC', colorScheme: theme === 'light' ? 'dark' : 'light', reducedMotion: 'reduce', serviceWorkers: 'block' })
     const page = await context.newPage(), errors = [], expectedFaults = [], states = []
     let state = 'ready', release, gate
+    let failedSources = new Set()
     try {
       page.on('pageerror', (error) => errors.push(error.message))
       page.on('console', (message) => {
         if (message.type() !== 'error') return
-        if (['error', 'partial', 'retained'].includes(state) && /Failed to load resource.*503/.test(message.text())) expectedFaults.push(message.text())
+        if ((failedSources.size || ['error', 'partial', 'retained'].includes(state)) && /Failed to load resource.*503/.test(message.text())) expectedFaults.push(message.text())
         else errors.push(message.text())
       })
       await context.addInitScript(({ theme }) => {
@@ -52,7 +55,7 @@ export async function checkRecordReliability({ browser, base, out }) {
         if (url.origin !== new URL(base).origin) return route.fulfill({ body: '' })
         if (responses.has(url.pathname)) {
           if (state === 'loading') await gate
-          if (state === 'error' || state === 'retained' || (state === 'partial' && url.pathname.includes('knockout'))) {
+          if (failedSources.has(url.pathname) || state === 'error' || state === 'retained' || (state === 'partial' && url.pathname.includes('knockout'))) {
             return route.fulfill({ status: 503, json: { available: false, reason: 'Deliberate read failure' } })
           }
           if (state === 'empty') return route.fulfill({ json: { available: false } })
@@ -69,6 +72,15 @@ export async function checkRecordReliability({ browser, base, out }) {
         assert.equal(await dates.locator('time').nth(1).getAttribute('datetime'), evaluation.live.last_kickoff)
         await page.getByText(evaluation.live.brier.toFixed(5), { exact: true }).first().waitFor()
       }
+      async function measuredReady() {
+        await page.getByText(measured.brier.toFixed(5), { exact: true }).first().waitFor()
+        await page.getByText(measured.n_scored.toLocaleString('en-US'), { exact: true }).first().waitFor()
+      }
+      async function liveReady() {
+        const row = evaluation.live.by_league['eng.1']
+        await page.getByText(row.brier.toFixed(5), { exact: true }).first().waitFor()
+        await page.getByText(row.n.toLocaleString('en-US'), { exact: true }).first().waitFor()
+      }
       async function capture(label) {
         assert.equal(new URL(page.url()).pathname, '/evaluation')
         // The SSR skeleton can precede hydration. Wait for the mounted theme
@@ -83,7 +95,8 @@ export async function checkRecordReliability({ browser, base, out }) {
         // Existing StatTile groups use div labels/values inside dl. Record that
         // debt explicitly; require every other rule and the new status to pass.
         assert(violations.every((violation) => violation.id === 'definition-list'), `${label}: unexpected accessibility rule`)
-        const existingGroups = ['ready', 'recovered', 'partial', 'retained', 'recovered-again'].includes(label) ? 5 : 0
+        const existingGroups = label === 'evaluation-initial' ? 1 : label === 'projections-initial' ? 4
+          : ['loading', 'empty', 'error'].includes(label) ? 0 : 5
         assert.equal(violations.flatMap((violation) => violation.targets).length, existingGroups, `${label}: existing definition groups changed`)
         const statusViolations = await page.evaluate(async () => {
           const status = document.querySelector('[aria-label="Evidence read failure"]')
@@ -124,6 +137,52 @@ export async function checkRecordReliability({ browser, base, out }) {
       assert.match(await notice.innerText(), /Published match record/); await capture('retained')
       state = 'ready'; await retry.click(); await ready()
       await notice.waitFor({ state: 'detached' }); await capture('recovered-again')
+
+      for (const [source, route, name] of [
+        ['evaluation', '/api/v1/evaluation', 'Published match record'],
+        ['projections', '/api/v1/season/projections', 'League record'],
+      ]) {
+        state = `${source}-initial`; failedSources = new Set([route])
+        await page.reload({ waitUntil: 'networkidle' }); await notice.waitFor()
+        assert.match(await notice.innerText(), new RegExp(name))
+        assert.doesNotMatch(await notice.innerText(), /Tournament record/)
+        if (source === 'evaluation') {
+          await measuredReady()
+          await page.getByRole('heading', { name: 'Pooled match record unavailable', exact: true }).waitFor()
+          assert.equal(await dates.count(), 0)
+          assert.equal(await page.getByRole('region', { name: 'The two records' }).count(), 0)
+          for (const claim of [/No evaluation has been generated/, /No backtest has been generated/, /Nothing (has been )?scored/i, /A fact about the calendar/]) {
+            assert.equal(await page.getByText(claim).count(), 0, `${source}: fabricated empty claim ${claim}`)
+          }
+          assert.equal(await page.getByText('0', { exact: true }).count(), 0, 'No fabricated zero sample')
+        } else {
+          await ready(); await liveReady()
+          await page.getByText('League record couldn’t be read. Try again to load its measured evidence.').waitFor()
+          assert.equal(await page.getByText(/No measured block has been published|no measured block yet/).count(), 0)
+          assert.equal(await page.getByText(measured.brier.toFixed(5), { exact: true }).count(), 0)
+        }
+        await capture(`${source}-initial`)
+
+        // Recover this source while a separate knockout failure keeps retry
+        // available, then fail this source again without remounting the page.
+        state = `${source}-recovered-partial`; failedSources = new Set(['/api/v1/tournaments/knockout'])
+        await retry.click()
+        await notice.getByText(/Couldn’t read: Tournament record\./).waitFor()
+        await ready(); await measuredReady(); await liveReady()
+        assert.equal(await page.getByText(/record couldn’t be read/).count(), 0)
+        await capture(`${source}-recovered-partial`)
+
+        state = `${source}-retained`; failedSources = new Set([route])
+        await retry.click()
+        await notice.getByText(new RegExp(`Couldn’t read: ${name}\\.`)).waitFor()
+        await ready(); await measuredReady(); await liveReady()
+        assert.equal(await page.getByText(/record couldn’t be read/).count(), 0)
+        await capture(`${source}-retained`)
+
+        state = 'ready'; failedSources.clear(); await retry.click()
+        await ready(); await notice.waitFor({ state: 'detached' })
+        await capture(`${source}-recovered`)
+      }
       assert.deepEqual(errors, [], `${width} ${theme}: unexpected browser errors`)
       report.push({ width, theme, states, expectedFaults, errors })
     } catch (error) {

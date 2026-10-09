@@ -35,7 +35,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(245, 243, 238)"
@@ -50,7 +58,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [
@@ -72,7 +88,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(7, 16, 9)"
@@ -87,7 +111,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [
@@ -109,7 +141,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(245, 243, 238)"
@@ -124,7 +164,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [
@@ -146,7 +194,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(7, 16, 9)"
@@ -161,7 +217,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [
@@ -183,7 +247,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(245, 243, 238)"
@@ -198,7 +270,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [
@@ -220,7 +300,15 @@
         "recovered",
         "partial",
         "retained",
-        "recovered-again"
+        "recovered-again",
+        "evaluation-initial",
+        "evaluation-recovered-partial",
+        "evaluation-retained",
+        "evaluation-recovered",
+        "projections-initial",
+        "projections-recovered-partial",
+        "projections-retained",
+        "projections-recovered"
       ],
       "canvas": [
         "rgb(7, 16, 9)"
@@ -235,7 +323,15 @@
         "recovered": 5,
         "partial": 5,
         "retained": 5,
-        "recovered-again": 5
+        "recovered-again": 5,
+        "evaluation-initial": 1,
+        "evaluation-recovered-partial": 5,
+        "evaluation-retained": 5,
+        "evaluation-recovered": 5,
+        "projections-initial": 4,
+        "projections-recovered-partial": 5,
+        "projections-retained": 5,
+        "projections-recovered": 5
       },
       "read_status_accessibility_violations": [],
       "expected_fault_messages": [

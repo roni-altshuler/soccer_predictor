@@ -141,6 +141,12 @@ interface KnockoutPayload {
 const MIN_FOR_CHART = 200
 
 type ArtifactRead<T> = { ok: true; value: T } | { ok: false }
+const READ_LABELS = {
+  evaluation: 'Published match record',
+  projections: 'League record',
+  knockout: 'Tournament record',
+} as const
+type ArtifactSource = keyof typeof READ_LABELS
 
 async function getJson<T>(url: string): Promise<ArtifactRead<T>> {
   try {
@@ -162,7 +168,7 @@ export default function EvaluationPage() {
   const [knockout, setKnockout] = useState<KnockoutPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [attempt, setAttempt] = useState(0)
-  const [failedReads, setFailedReads] = useState<string[]>([])
+  const [failedReads, setFailedReads] = useState<ArtifactSource[]>([])
 
   const [layer, setLayer] = useState<Layer>('leagues')
   const [leagueId, setLeagueId] = useState<string | null>(null)
@@ -183,9 +189,9 @@ export default function EvaluationPage() {
       if (pr.ok) setProjections(pr.value)
       if (kn.ok) setKnockout(kn.value)
       setFailedReads([
-        ...(!ev.ok ? ['Published match record'] : []),
-        ...(!pr.ok ? ['League record'] : []),
-        ...(!kn.ok ? ['Tournament record'] : []),
+        ...(!ev.ok ? ['evaluation' as const] : []),
+        ...(!pr.ok ? ['projections' as const] : []),
+        ...(!kn.ok ? ['knockout' as const] : []),
       ])
       setLoading(false)
     })
@@ -194,6 +200,11 @@ export default function EvaluationPage() {
     }
   }, [attempt])
 
+  // Null means this source has never been read successfully. A failed retry
+  // with a retained response continues to render that response and its dates.
+  const evaluationUnreadable = evaluation === null && failedReads.includes('evaluation')
+  const projectionsUnreadable = projections === null && failedReads.includes('projections')
+  const knockoutUnreadable = knockout === null && failedReads.includes('knockout')
   const live = evaluation?.live
   const ties = knockout?.ties ?? null
   const events = useMemo(() => knockout?.brackets?.events ?? [], [knockout])
@@ -230,7 +241,9 @@ export default function EvaluationPage() {
     return {
       id,
       name: accent.displayName,
-      subtitle: measured?.n_scored
+      subtitle: projectionsUnreadable
+        ? `${accent.country} · record unavailable`
+        : measured?.n_scored
         ? `${accent.country} · ${measured.n_scored.toLocaleString()} matches scored`
         : `${accent.country} · no measured block yet`,
     }
@@ -297,7 +310,7 @@ export default function EvaluationPage() {
         <section role="status" aria-label="Evidence read failure" className="mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
           <h2 className="font-semibold">Couldn’t load all recorded evidence</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Couldn’t read: {failedReads.join(', ')}. Any evidence shown below is from the last successful read; its dates still apply.
+            Couldn’t read: {failedReads.map((source) => READ_LABELS[source]).join(', ')}. Any evidence shown below is from the last successful read; its dates still apply.
           </p>
           <button type="button" onClick={() => setAttempt((value) => value + 1)} className="mt-4 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-[var(--accent-on-primary)]">
             Try again
@@ -344,6 +357,8 @@ export default function EvaluationPage() {
               id={leagueId}
               measured={leagues.find((l) => l.id === leagueId)?.measured ?? null}
               live={liveForLeague(live, leagueId)}
+              measuredUnreadable={projectionsUnreadable}
+              liveUnreadable={evaluationUnreadable}
             />
           ) : null}
 
@@ -365,13 +380,31 @@ export default function EvaluationPage() {
           />
 
           {layer === 'leagues' ? (
-            <PooledMatchRecord evaluation={evaluation} live={live} />
+            evaluationUnreadable ? (
+              <UnreadableRecord title="Pooled match record unavailable" />
+            ) : (
+              <PooledMatchRecord evaluation={evaluation} live={live} />
+            )
           ) : (
-            <PooledTieRecord ties={ties} brackets={knockout?.brackets ?? null} />
+            knockoutUnreadable ? (
+              <UnreadableRecord title="Tournament record unavailable" />
+            ) : (
+              <PooledTieRecord ties={ties} brackets={knockout?.brackets ?? null} />
+            )
           )}
         </div>
       )}
     </div>
+  )
+}
+
+function UnreadableRecord({ title }: { title: string }) {
+  return (
+    <Panel title={title}>
+      <p className="mt-3 text-sm text-[var(--text-secondary)]">
+        This record couldn’t be read. Try again to load its sample and dates.
+      </p>
+    </Panel>
   )
 }
 

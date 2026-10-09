@@ -51,6 +51,13 @@ failures from a valid empty response, names unreadable sections, and offers
 retry. Successful sections remain available; a failed retry retains previous
 responses with their existing dates. The page does not invent zero samples
 from a failed read. This is session retention, not a new persistent archive.
+Before a source has ever been read successfully, only its dependent panels
+show an unreadable placeholder. An evaluation-only failure withholds the pooled
+historical/live records and league live empty claims while retaining measured
+projection evidence. A projections-only failure retains the scored live record
+and its dates without claiming that no measured block was published. The league
+picker also marks that source unavailable. A successful retry restores those
+panels; a later failed retry keeps their actual values and dates.
 
 ## Existing artifact observations
 
@@ -94,7 +101,7 @@ The deterministic 150-date workload fails at 93 attempts, retains progress,
 then completes on a second 69-attempt run; this is a fixture rehearsal, not a
 provider completeness claim.
 
-Frontend checks pass 890 tests. Product browser checks reuse the production
+Frontend checks pass 892 tests. Product browser checks reuse the production
 server and committed artifacts: home → Evaluation (via Season forecast record
 on mobile), ready/loading/empty/failure,
 keyboard retry, partial failure, last-good retention and recovery at
@@ -108,15 +115,26 @@ waits for the mounted theme control, and evaluates axe without adding nodes to
 React's document head. Hydration and other unexpected browser errors remain
 blocking assertions.
 
-The [48-state local production report](reviews/2026-10-09-data-reliability/record-reliability-report.json)
+Evaluation-only and projections-only initial failures are separate unit and
+production-browser cases. They assert that failed sources produce no fabricated
+zero/no-backtest/no-scored/no-published claims, preserve successful sections,
+recover through retry, and retain recovered numbers/dates on a later failed
+retry. The browser cases use unchanged committed artifacts for every value.
+
+The [96-state local production report](reviews/2026-10-09-data-reliability/record-reliability-report.json)
 records zero unexpected browser errors, exact source dates and artifact hashes.
 Representative screenshots show the [mobile Light read failure](reviews/2026-10-09-data-reliability/evaluation-read-error-light-390.png)
 and [Dark last-good retention at 768px](reviews/2026-10-09-data-reliability/evaluation-retained-dark-768.png).
+The partial-read screenshots show [evaluation-only initial failure](reviews/2026-10-09-data-reliability/evaluation-only-initial-light-390.png)
+and [projections-only initial failure](reviews/2026-10-09-data-reliability/projections-only-initial-dark-390.png),
+plus recovered evidence retained after a later [evaluation failure](reviews/2026-10-09-data-reliability/evaluation-only-retained-dark-768.png)
+or [projection failure](reviews/2026-10-09-data-reliability/projections-only-retained-light-1440.png).
 The existing theme journeys also pass all 124 captured states.
 
 The full Evaluation page has existing definition-list markup violations in five
 metric groups (div labels/values inside `dl`). The browser report records them
-explicitly and asserts that count; all other checked rules and the new read
+explicitly and asserts that count (one/four groups when the evaluation/projection
+source is initially unreadable); all other checked rules and the new read
 failure status must pass. This patch does not claim a clean full-page
 accessibility audit or broaden into the shared metric components.
 

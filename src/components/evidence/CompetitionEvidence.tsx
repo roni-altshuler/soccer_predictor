@@ -50,10 +50,14 @@ export function LeagueEvidence({
   id,
   measured,
   live,
+  measuredUnreadable = false,
+  liveUnreadable = false,
 }: {
   id: string
   measured: LeagueMeasured | null
   live: { n: number; brier: number | null; note?: string } | null
+  measuredUnreadable?: boolean
+  liveUnreadable?: boolean
 }) {
   const accent = getLeagueAccent(id)
   const rows = measured ? baselineRows(measured) : []
@@ -66,7 +70,11 @@ export function LeagueEvidence({
         right={<CompetitionHeading id={id} />}
         description={`Walk-forward over ${accent.displayName} alone — never shown a match before predicting it.`}
       >
-        {!measured || !Number.isFinite(measured.brier ?? NaN) ? (
+        {measuredUnreadable ? (
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            League record couldn’t be read. Try again to load its measured evidence.
+          </p>
+        ) : !measured || !Number.isFinite(measured.brier ?? NaN) ? (
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
             No measured block has been published for this competition. Nothing is
             estimated in its place.
@@ -122,7 +130,11 @@ export function LeagueEvidence({
           ) : null
         }
       >
-        {live?.n && live.brier != null ? (
+        {liveUnreadable ? (
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            Published match record couldn’t be read. Try again to load its scored sample.
+          </p>
+        ) : live?.n && live.brier != null ? (
           <dl className="mt-4 grid grid-cols-2 gap-4">
             <StatTile label="Brier" value={live.brier.toFixed(5)} size="lead" />
             <StatTile label="Forecasts scored" value={live.n.toLocaleString()} />
