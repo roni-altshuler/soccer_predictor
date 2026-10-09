@@ -103,6 +103,10 @@ unchanged numbers, overflow and accessibility, and save screenshots plus
 `record-reliability-report.json` in the existing `product-quality-evidence` CI
 artifact. External hosts and unrelated APIs are intercepted. The existing
 theme/navigation suite runs separately.
+The replay seeds the saved theme once against the opposite OS color scheme,
+waits for the mounted theme control, and evaluates axe without adding nodes to
+React's document head. Hydration and other unexpected browser errors remain
+blocking assertions.
 
 The [48-state local production report](reviews/2026-10-09-data-reliability/record-reliability-report.json)
 records zero unexpected browser errors, exact source dates and artifact hashes.

@@ -6,6 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises'
  * Faults change availability only; other APIs and external hosts stay offline.
  */
 export async function checkRecordReliability({ browser, base, out }) {
+  const axeSource = await readFile('node_modules/axe-core/axe.min.js', 'utf8')
   const sources = [
     ['/api/v1/evaluation', 'backend/data/evaluation/live.json'],
     ['/api/v1/season/projections', 'backend/data/predictions/season_projections.json'],
@@ -27,7 +28,7 @@ export async function checkRecordReliability({ browser, base, out }) {
   const report = []
   for (const width of [390, 768, 1440]) for (const theme of ['light', 'dark']) {
     console.log(`Checking Record reliability ${width}px ${theme}`)
-    const context = await browser.newContext({ viewport: { width, height: 960 }, timezoneId: 'UTC', reducedMotion: 'reduce', serviceWorkers: 'block' })
+    const context = await browser.newContext({ viewport: { width, height: 960 }, timezoneId: 'UTC', colorScheme: theme === 'light' ? 'dark' : 'light', reducedMotion: 'reduce', serviceWorkers: 'block' })
     const page = await context.newPage(), errors = [], expectedFaults = [], states = []
     let state = 'ready', release, gate
     try {
@@ -38,7 +39,11 @@ export async function checkRecordReliability({ browser, base, out }) {
         else errors.push(message.text())
       })
       await context.addInitScript(({ theme }) => {
-        localStorage.setItem('pitchverse-theme', theme)
+        if (!sessionStorage.getItem('record-qa-seeded')) {
+          localStorage.setItem('pitchverse-theme', theme)
+          localStorage.setItem('theme', theme)
+          sessionStorage.setItem('record-qa-seeded', '1')
+        }
         localStorage.setItem('pitchverse-ambient', 'off')
         delete Object.getPrototypeOf(navigator).serviceWorker
       }, { theme })
@@ -66,9 +71,12 @@ export async function checkRecordReliability({ browser, base, out }) {
       }
       async function capture(label) {
         assert.equal(new URL(page.url()).pathname, '/evaluation')
+        // The SSR skeleton can precede hydration. Wait for the mounted theme
+        // control; evaluating axe avoids inserting nodes in React's head.
+        await page.waitForFunction((theme) => document.querySelector('select[aria-label="Color theme"]')?.value === theme, theme)
         const palette = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, canvas: getComputedStyle(document.body).backgroundColor, overflow: document.documentElement.scrollWidth > innerWidth }))
         assert.deepEqual(palette, { theme, canvas: theme === 'light' ? 'rgb(245, 243, 238)' : 'rgb(7, 16, 9)', overflow: false })
-        await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' })
+        await page.evaluate(axeSource)
         const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('#main'), {
           runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
         })).violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) })))
