@@ -140,12 +140,19 @@ interface KnockoutPayload {
 // the honest rendering is a sentence, not a diagram.
 const MIN_FOR_CHART = 200
 
-async function getJson<T>(url: string): Promise<T | null> {
+type ArtifactRead<T> = { ok: true; value: T } | { ok: false }
+
+async function getJson<T>(url: string): Promise<ArtifactRead<T>> {
   try {
     const res = await fetch(url, { cache: 'no-store' })
-    return res.ok ? ((await res.json()) as T) : null
+    if (!res.ok) return { ok: false }
+    const value = await res.json()
+    if (!value || typeof value !== 'object' || Array.isArray(value) || typeof value.available !== 'boolean') {
+      return { ok: false }
+    }
+    return { ok: true, value: value as T }
   } catch {
-    return null
+    return { ok: false }
   }
 }
 
@@ -154,6 +161,8 @@ export default function EvaluationPage() {
   const [projections, setProjections] = useState<ProjectionsPayload | null>(null)
   const [knockout, setKnockout] = useState<KnockoutPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [attempt, setAttempt] = useState(0)
+  const [failedReads, setFailedReads] = useState<string[]>([])
 
   const [layer, setLayer] = useState<Layer>('leagues')
   const [leagueId, setLeagueId] = useState<string | null>(null)
@@ -161,21 +170,29 @@ export default function EvaluationPage() {
 
   useEffect(() => {
     let alive = true
+    setLoading(true)
     Promise.all([
       getJson<EvalPayload>('/api/v1/evaluation'),
       getJson<ProjectionsPayload>('/api/v1/season/projections'),
       getJson<KnockoutPayload>('/api/v1/tournaments/knockout'),
     ]).then(([ev, pr, kn]) => {
       if (!alive) return
-      setEvaluation(ev)
-      setProjections(pr)
-      setKnockout(kn)
+      // A failed read cannot erase evidence already shown in this session.
+      // A successful response saying an artifact is absent can update it.
+      if (ev.ok) setEvaluation(ev.value)
+      if (pr.ok) setProjections(pr.value)
+      if (kn.ok) setKnockout(kn.value)
+      setFailedReads([
+        ...(!ev.ok ? ['Published match record'] : []),
+        ...(!pr.ok ? ['League record'] : []),
+        ...(!kn.ok ? ['Tournament record'] : []),
+      ])
       setLoading(false)
     })
     return () => {
       alive = false
     }
-  }, [])
+  }, [attempt])
 
   const live = evaluation?.live
   const ties = knockout?.ties ?? null
@@ -276,13 +293,25 @@ export default function EvaluationPage() {
         </section>
       )}
 
+      {!loading && failedReads.length > 0 && (
+        <section role="status" aria-label="Evidence read failure" className="mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+          <h2 className="font-semibold">Couldn’t load all recorded evidence</h2>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Couldn’t read: {failedReads.join(', ')}. Any evidence shown below is from the last successful read; its dates still apply.
+          </p>
+          <button type="button" onClick={() => setAttempt((value) => value + 1)} className="mt-4 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-[var(--accent-on-primary)]">
+            Try again
+          </button>
+        </section>
+      )}
+
       {loading ? (
         <div
           className="mt-8 h-64 animate-pulse rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)]"
           role="status"
           aria-label="Loading evaluation"
         />
-      ) : nothingMeasured && !evaluation?.available ? (
+      ) : nothingMeasured && !evaluation?.available && failedReads.length ? null : nothingMeasured && !evaluation?.available ? (
         <div className="mt-8">
           <EmptyState
             title="No evaluation has been generated here"

@@ -1,7 +1,7 @@
-import { promises as fs } from 'fs'
 import path from 'path'
 
 import { NextResponse } from 'next/server'
+import { readOptionalArtifact } from '@/lib/server/readOptionalArtifact'
 
 /**
  * Model evaluation — historical and live, never merged.
@@ -29,16 +29,16 @@ const ARTIFACT = path.join(
 
 export async function GET() {
   try {
-    const parsed = JSON.parse(await fs.readFile(ARTIFACT, 'utf8'))
-    return NextResponse.json({ available: true, ...parsed })
+    const parsed = await readOptionalArtifact(ARTIFACT)
+    if (parsed) return NextResponse.json({ ...parsed, available: true })
+    return NextResponse.json({ available: false, reason: 'live.json has not been generated' })
   } catch {
     return NextResponse.json(
       {
         available: false,
-        reason: 'live.json has not been generated',
-        live: { n: 0 },
+        reason: 'The published match record could not be read',
       },
-      { status: 200 },
+      { status: 503 },
     )
   }
 }

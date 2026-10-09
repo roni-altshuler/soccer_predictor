@@ -130,6 +130,50 @@ const EMPTY_LIVE = {
 afterEach(() => jest.resetAllMocks())
 
 describe('EvaluationPage - one competition at a time', () => {
+  it('does not call a failed read an empty evaluation and can retry', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 })
+    render(<EvaluationPage />)
+    await screen.findByRole('status', { name: 'Evidence read failure' })
+    expect(screen.queryByText('No evaluation has been generated here')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Evidence dates' })).not.toBeInTheDocument()
+    mockFetch({ evaluation: EMPTY_LIVE })
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByRole('region', { name: 'Evidence dates' })
+    expect(screen.queryByRole('status', { name: 'Evidence read failure' })).not.toBeInTheDocument()
+  })
+
+  it.each(['transport', 'json', 'shape'])('reports %s read failures without inventing an empty sample', async (failure) => {
+    global.fetch = jest.fn().mockImplementation(async () => {
+      if (failure === 'transport') throw new Error('offline')
+      return { ok: true, json: async () => {
+        if (failure === 'json') throw new Error('bad JSON')
+        return null
+      } }
+    })
+    render(<EvaluationPage />)
+    await screen.findByRole('status', { name: 'Evidence read failure' })
+    expect(screen.queryByText('No evaluation has been generated here')).not.toBeInTheDocument()
+  })
+
+  it('keeps successful sections and their dates when another read fails, including a failed retry', async () => {
+    const previous = { ...EMPTY_LIVE, generated_at: '2026-10-08T14:00:00Z' }
+    mockFetch({ evaluation: previous })
+    const goodFetch = global.fetch
+    global.fetch = jest.fn().mockImplementation((url: string) => url.includes('knockout')
+      ? Promise.resolve({ ok: false, status: 503 }) : goodFetch(url))
+    render(<EvaluationPage />)
+    const notice = await screen.findByRole('status', { name: 'Evidence read failure' })
+    expect(notice).toHaveTextContent('Tournament record')
+    expect(notice).not.toHaveTextContent('Published match record')
+    expect(screen.getByText('8 Oct 2026 (UTC)')).toBeInTheDocument()
+    expect(screen.getAllByText('0.58266')).toHaveLength(2)
+    global.fetch = jest.fn().mockRejectedValue(new Error('offline'))
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByRole('status', { name: 'Evidence read failure' })
+    expect(screen.getByText('8 Oct 2026 (UTC)')).toBeInTheDocument()
+    expect(screen.getAllByText('0.58266')).toHaveLength(2)
+  })
+
   it('distinguishes report publication from the latest scored match', async () => {
     mockFetch({ evaluation: {
       ...EMPTY_LIVE, generated_at: '2026-10-02T14:05:41Z',

@@ -1,0 +1,247 @@
+{
+  "basis": "Existing committed artifacts served through local production routes; injected availability faults only. No provider reads or metric regeneration.",
+  "artifacts": [
+    {
+      "file": "backend/data/evaluation/live.json",
+      "sha256": "b2a29db4960ff22a17277b22c62f2e109e8f8f7896b2b3cd50c3f96f9e78d5ab",
+      "generated_at": "2026-10-08T14:51:02.620404+00:00"
+    },
+    {
+      "file": "backend/data/predictions/season_projections.json",
+      "sha256": "a150c470d5c4d4d09199dc5eb6cb3333975254005447259857cc0d2ee88ca6aa",
+      "generated_at": "2026-10-08T14:51:01.188413+00:00"
+    }
+  ],
+  "live": {
+    "n": 812,
+    "brier": 0.62681,
+    "log_loss": 1.04331,
+    "ece": 0.03875,
+    "last_kickoff": "2026-10-06T19:30:00+00:00"
+  },
+  "full_report": "CI product-quality-evidence/record-reliability-report.json",
+  "report": [
+    {
+      "width": 390,
+      "theme": "light",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(245, 243, 238)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(7, 16, 9)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(245, 243, 238)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(7, 16, 9)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(245, 243, 238)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "actual_urls": [
+        "http://127.0.0.1:3240/evaluation"
+      ],
+      "states": [
+        "ready",
+        "loading",
+        "empty",
+        "error",
+        "recovered",
+        "partial",
+        "retained",
+        "recovered-again"
+      ],
+      "canvas": [
+        "rgb(7, 16, 9)"
+      ],
+      "overflow": false,
+      "existing_accessibility_rule": "definition-list",
+      "existing_definition_group_counts": {
+        "ready": 5,
+        "loading": 0,
+        "empty": 0,
+        "error": 0,
+        "recovered": 5,
+        "partial": 5,
+        "retained": 5,
+        "recovered-again": 5
+      },
+      "read_status_accessibility_violations": [],
+      "expected_fault_messages": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "errors": []
+    }
+  ]
+}

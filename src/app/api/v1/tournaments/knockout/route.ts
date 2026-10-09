@@ -1,7 +1,7 @@
-import { promises as fs } from 'fs'
 import path from 'path'
 
 import { NextResponse } from 'next/server'
+import { readOptionalArtifact } from '@/lib/server/readOptionalArtifact'
 
 /**
  * The tournament layer's measured record.
@@ -20,31 +20,28 @@ import { NextResponse } from 'next/server'
  * `available: false`; one present is served on its own, because the tie model
  * and the bracket simulation are separate claims and neither needs the other
  * to be readable.
+ * Read/parse failures return 503, distinct from genuinely absent files.
  */
 export const dynamic = 'force-dynamic'
 
 const DIAGNOSTICS = path.join(process.cwd(), 'backend', 'data', 'diagnostics')
 
-async function readArtifact(file: string): Promise<unknown | null> {
-  try {
-    return JSON.parse(await fs.readFile(path.join(DIAGNOSTICS, file), 'utf8'))
-  } catch {
-    return null
-  }
-}
-
 export async function GET() {
-  const [ties, brackets] = await Promise.all([
-    readArtifact('knockout_model.json'),
-    readArtifact('bracket_backtest.json'),
-  ])
+  try {
+    const [ties, brackets] = await Promise.all([
+      readOptionalArtifact(path.join(DIAGNOSTICS, 'knockout_model.json')),
+      readOptionalArtifact(path.join(DIAGNOSTICS, 'bracket_backtest.json')),
+    ])
 
-  if (!ties && !brackets) {
+    if (!ties && !brackets) {
+      return NextResponse.json({ available: false, reason: 'the tournament benchmarks have not been run here' })
+    }
+
+    return NextResponse.json({ available: true, ties, brackets })
+  } catch {
     return NextResponse.json(
-      { available: false, reason: 'the tournament benchmarks have not been run here' },
-      { status: 200 },
+      { available: false, reason: 'The tournament record could not be read' },
+      { status: 503 },
     )
   }
-
-  return NextResponse.json({ available: true, ties, brackets })
 }

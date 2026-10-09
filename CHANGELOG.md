@@ -28,6 +28,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- Daily Event Backfill reuses the validated six-league current-season refresh
+  instead of requesting two full seasons. Cached date receipts survive failed
+  runs; the 93-attempt cap, atomic completeness gate and publication failures
+  remain blocking. Evaluation separates read/parse failures from absent evidence,
+  offers retry and preserves the last successful response with its original
+  dates. Production browser contracts cover both themes and availability states.
+
 - All product routes now share document-level theme tokens, sentence-case
   typography and consistent navigation/header controls. Cream light surfaces
   and floodlit dark greens follow the saved Light/Dark/System choice before

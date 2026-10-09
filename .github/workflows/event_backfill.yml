@@ -101,19 +101,35 @@ jobs:
           python -m backend.scripts.sync_events import \
             --input /tmp/match_events.csv.gz --allow-missing
 
+      - name: Restore validated ESPN date receipts
+        id: espn-receipts
+        uses: actions/cache/restore@v6
+        with:
+          path: backend/data/ingestion/
+          key: espn-receipts-v1-events-${{ github.run_id }}-${{ github.run_attempt }}
+          # Forecast refresh already validates the same six competitions.
+          # Every reused receipt is revalidated and retains its observation time.
+          restore-keys: |
+            espn-receipts-v1-events-
+            espn-receipts-v1-forecast-
+
       - name: Ingest newly finished matches
-        # The release copy is up to a week old (train_unified republishes
-        # Sundays). Both ESPN universes plus football-data.co.uk, last two
-        # season labels — the split-year window straddles the August
-        # European season rollover.
-        run: |
-          YEAR=$(date -u +%Y)
-          python -m backend.scripts.build_warehouse \
-            --espn --espn-women --football-data \
-            --min-season $((YEAR - 1)) --max-season "$YEAR"
+        # Daily maintenance needs the current season, not two complete seasons
+        # across every men's/women's league. Reuse the existing validated-calendar
+        # path: at most 93 HTTP attempts, per-competition season labels, atomic
+        # publication only after the selected scope is complete. Older history
+        # and competitions outside this explicit routine scope remain untouched.
+        run: python -m backend.scripts.build_warehouse --espn --current-season --resume-current --competitions eng.1,esp.1,ger.1,ita.1,fra.1,usa.1
+
+      - name: Retain validated ESPN progress even when coverage is incomplete
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: backend/data/ingestion/
+          key: ${{ steps.espn-receipts.outputs.cache-primary-key }}
 
       - name: Fold split club identities the ingest just recreated
-        # The ingest above reads two sources for the same competition and they
+        # The released warehouse can hold two sources for a competition and they
         # do not always resolve to the same club, so the same match can enter
         # twice. On 2026-08-13 that had put 748 rows in a 380-match eng.1
         # season, invisible to every check because the duplicate detector keyed

@@ -189,6 +189,15 @@ banked, and removes played fixtures. This depends on successful result refreshes
 the verified European results available here still end **September 20, 2026**.
 A later artifact generation date does not establish newer results.
 
+Daily Event Backfill now uses the same bounded current-season result refresh
+for those six leagues, retaining validated date receipts across failed runs.
+Its 93-attempt cap and incomplete-coverage publication gate remain enforced;
+older history and other competitions are retained without a freshness claim.
+[Reliability evidence and limits](docs/EVENT_BACKFILL_RELIABILITY.md) explains
+the observed failure, offline checks and remaining provider gaps. Evaluation also
+distinguishes an unavailable read from absent evidence and retains the last
+successful response during failed retries.
+
 League pages also link to **Compare clubs · Season snapshot**: two clubs from
 one published competition/season, recorded points per game with game counts,
 and the existing projected final points. The view exposes the source artifact
@@ -260,12 +269,13 @@ says now — and it is what the live evaluation scores.
 | | matches | what it is |
 |---|---|---|
 | Historical walk-forward | 43,433 | Brier .59303, ECE .0099. Retrospective — nobody saw these before those kickoffs. |
-| Live published (artifact generated 2026-10-02) | 780 | The final pre-kickoff forecast, scored once the result lands; includes earlier serving scopes and versions. |
+| Live published (artifact generated 2026-10-08) | 812 | The final pre-kickoff forecast, scored once the result lands; includes earlier serving scopes and versions. |
 
-The [committed live artifact](backend/data/evaluation/live.json) contains 349
+The [committed live artifact](backend/data/evaluation/live.json) contains 381
 scored forecasts in the currently served scope (big five plus MLS). Its latest
-scored kickoff is **2026-09-20**: a fresh artifact timestamp does not establish
-fresh results. These counts are an as-of snapshot, not a new benchmark run.
+scored kickoff is **2026-10-06** (MLS); its European cohort still ends
+**2026-09-20**: a fresh artifact timestamp does not establish fresh results in
+every league. These counts are an as-of snapshot, not a new benchmark run.
 Below 200 scored matches
 `/evaluation` refuses to draw a reliability chart, because a chart implies a
 shape and a handful of points does not have one.

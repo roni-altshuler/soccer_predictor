@@ -1,0 +1,140 @@
+{
+  "basis": "Read-only observations of already committed artifacts; no metric regeneration, model improvement or provider completeness claim.",
+  "source_commit": "07b5f694a342192ab0fe44ab07f1d59da63182c1",
+  "files": [
+    {
+      "path": "backend/data/evaluation/live.json",
+      "sha256": "b2a29db4960ff22a17277b22c62f2e109e8f8f7896b2b3cd50c3f96f9e78d5ab",
+      "generated_at": "2026-10-08T14:51:02.620404+00:00"
+    },
+    {
+      "path": "backend/data/predictions/season_projections.json",
+      "sha256": "a150c470d5c4d4d09199dc5eb6cb3333975254005447259857cc0d2ee88ca6aa",
+      "generated_at": "2026-10-08T14:51:01.188413+00:00"
+    },
+    {
+      "path": "backend/data/events/coverage.json",
+      "sha256": "05e830d2322b8cb0e716def8f49f6659028d4089175cfd043c36887bc9ff9521",
+      "generated_at": "2026-10-04T14:23:10+00:00"
+    }
+  ],
+  "evaluation": {
+    "live": {
+      "basis": "live_published",
+      "n": 812,
+      "brier": 0.62681,
+      "log_loss": 1.04331,
+      "ece": 0.03875,
+      "first_kickoff": "2026-08-14T18:30:00+00:00",
+      "last_kickoff": "2026-10-06T19:30:00+00:00"
+    },
+    "cohorts": {
+      "historical_leagues": {
+        "available": true,
+        "basis": "live_published",
+        "n": 246,
+        "brier": 0.58018,
+        "log_loss": 0.97659,
+        "ece": 0.02673,
+        "first_kickoff": "2026-08-15T19:30:00+00:00",
+        "last_kickoff": "2026-09-20T20:45:00+00:00",
+        "competitions": [
+          "eng.1",
+          "esp.1",
+          "fra.1",
+          "ger.1",
+          "ita.1"
+        ],
+        "model_version": null
+      },
+      "currently_served": {
+        "available": true,
+        "basis": "live_published",
+        "n": 381,
+        "brier": 0.61519,
+        "log_loss": 1.02942,
+        "ece": 0.03473,
+        "first_kickoff": "2026-08-15T19:30:00+00:00",
+        "last_kickoff": "2026-10-06T19:30:00+00:00",
+        "competitions": [
+          "eng.1",
+          "esp.1",
+          "fra.1",
+          "ger.1",
+          "ita.1",
+          "usa.1"
+        ],
+        "model_version": null
+      },
+      "current_version": {
+        "available": true,
+        "basis": "live_published",
+        "n": 381,
+        "brier": 0.61519,
+        "log_loss": 1.02942,
+        "ece": 0.03473,
+        "first_kickoff": "2026-08-15T19:30:00+00:00",
+        "last_kickoff": "2026-10-06T19:30:00+00:00",
+        "competitions": [
+          "eng.1",
+          "esp.1",
+          "fra.1",
+          "ger.1",
+          "ita.1",
+          "usa.1"
+        ],
+        "model_version": "2026.08.1+4277ba19"
+      }
+    },
+    "snapshot_store": {
+      "rows": 184415,
+      "fixtures": 5041,
+      "versions": 4,
+      "first_generated": "2026-08-11T12:24:24.501318+00:00",
+      "last_generated": "2026-10-08T14:51:01.188413+00:00",
+      "by_version": {
+        "2026.08.1+4277ba19": 97180,
+        "2026.08.1+4e57ca7c": 57600,
+        "2026.08.1+c919f68a": 20251,
+        "2026.08.1+27734fb2": 9384
+      }
+    },
+    "join": {
+      "snapshots": 5041,
+      "scored": 812,
+      "awaiting_result": 4083,
+      "unresolved_clubs": {
+        "esp.2:Celta de Vigo B": 42,
+        "ita.2:Vicenza Virtus": 38,
+        "tur.1:Amedspor": 34,
+        "tur.1:Yeni \u00c7orumspor": 34
+      },
+      "unresolved_count": 148
+    }
+  },
+  "season": {
+    "trained_through": "2026-10-07",
+    "model_version": "2026.08.1+4277ba19",
+    "competitions": [
+      "eng.1",
+      "esp.1",
+      "fra.1",
+      "ger.1",
+      "ita.1",
+      "usa.1"
+    ]
+  },
+  "events": {
+    "coverage": 0.4402,
+    "covered": 36334,
+    "matches": 82532,
+    "uncovered": 46198,
+    "verified_empty": 2305,
+    "with_events": 34029
+  },
+  "limits": [
+    "The pooled latest kickoff and global trained-through date do not establish each league result frontier.",
+    "Europe live cohort ends September 20; provider freshness after this patch needs a successful authorized scheduled run.",
+    "Metrics describe different existing samples, not a paired before/after comparison."
+  ]
+}
