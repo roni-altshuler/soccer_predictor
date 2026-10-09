@@ -223,11 +223,19 @@ newer aliases, stale cross-source evidence, two receipt writers and interrupted
 warehouse batches. Both refusals preserve last-good data; production workflows
 are not run to validate these failure paths.
 
-Both routine workflows restore and save receipts with Actions cache, including
+Prediction, forecast and daily Event Backfill restore and save receipts with Actions cache, including
 `if: always()` after a failed refresh. Cache keys include the run ID and attempt;
-restore prefixes are versioned and separate for prediction and forecast scopes.
-Prediction refreshes exactly `eng.1,esp.1,ger.1,ita.1,fra.1`; forecast adds `usa.1`.
-Neither required refresh has `continue-on-error`. Receipts are cached progress;
+restore prefixes are versioned and separate for each workflow.
+Prediction refreshes exactly `eng.1,esp.1,ger.1,ita.1,fra.1`; forecast and Event
+Backfill add `usa.1`. Event Backfill can restore the forecast receipt cache as a
+fallback because it validates the same six competitions. It previously asked
+for two complete men's/women's seasons plus football-data; its October 8 run
+failed when the daily fallback needed 365 requests against the 93-attempt cap.
+The daily ingest now uses the existing bounded current-season path. Older
+history and competitions outside that scope remain in the released warehouse;
+this routine does not certify their freshness. See the
+[failure evidence and offline checks](EVENT_BACKFILL_RELIABILITY.md).
+No required refresh has `continue-on-error`. Receipts are cached progress;
 they do not replace the released warehouse or export production data. Cache
 misses, eviction or concurrent cache snapshots can require another bootstrap;
 they cannot certify incomplete coverage. Cancellation before cache save can

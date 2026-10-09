@@ -109,7 +109,7 @@ scheduled — they are run deliberately, and their output is committed.
 |---|---|---|
 | `season_forecast.yml` | daily 07:30 UTC | pulls results, rebuilds canonical, retrains, re-simulates, publishes |
 | `prediction_pipeline.yml` | 3×/day | match picks and odds snapshots; commits to `main` |
-| `event_backfill.yml` | daily | ingests, folds split identities, dedupes, then backfills timelines |
+| `event_backfill.yml` | daily | bounded six-league current-season ingest with cached receipts; folds identities, dedupes, then backfills timelines |
 | `train_unified.yml` | weekly | full warehouse rebuild and retrain |
 
 The measurement commands above are **not** in any workflow. The evidence
@@ -119,3 +119,6 @@ a benchmark that silently reruns is a benchmark nobody reads.
 `event_backfill.yml` folds identities **before** deduping — a duplicate is only
 visible once both rows point at the same club — and both run before the artifact
 builders, so nothing is derived from a corpus that counts matches twice.
+Incomplete result coverage fails before those steps and before publication.
+Validated date receipts are retained for a later run within the same 93-attempt
+cap. This daily scope does not refresh older seasons or every competition.

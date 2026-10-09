@@ -317,11 +317,15 @@ def test_build_validation_failure_after_complete_fetch_preserves_live_database(t
 
 def test_workflow_scopes_follow_served_leagues_and_retain_failure_gate():
     root = Path(__file__).resolve().parents[2]
-    for filename, script in [("prediction_pipeline.yml", "predict_upcoming.py"), ("season_forecast.yml", "forecast_season.py")]:
-        tree = ast.parse((root / "backend/scripts" / script).read_text())
-        leagues = next(ast.literal_eval(node.value) for node in tree.body
-                       if (isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "LEAGUES" for t in node.targets))
-                       or (isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "LEAGUES"))
+    for filename, script in [("prediction_pipeline.yml", "predict_upcoming.py"),
+                             ("season_forecast.yml", "forecast_season.py"),
+                             ("event_backfill.yml", None)]:
+        leagues = ROUTINE_COMPETITIONS
+        if script:
+            tree = ast.parse((root / "backend/scripts" / script).read_text())
+            leagues = next(ast.literal_eval(node.value) for node in tree.body
+                           if (isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "LEAGUES" for t in node.targets))
+                           or (isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "LEAGUES"))
         workflow = yaml.safe_load((root / ".github/workflows" / filename).read_text())
         steps = next(iter(workflow["jobs"].values()))["steps"]
         refresh = next(s for s in steps if "--resume-current" in s.get("run", ""))
@@ -332,6 +336,19 @@ def test_workflow_scopes_follow_served_leagues_and_retain_failure_gate():
         assert save["if"] == "always()"
         assert steps.index(save) > steps.index(refresh)
         assert "cache-primary-key" in save["with"]["key"]
+        restore = next(s for s in steps if s.get("uses", "").startswith("actions/cache/restore@"))
+        assert steps.index(restore) < steps.index(refresh)
+        assert restore["with"]["path"] == save["with"]["path"] == "backend/data/ingestion/"
+        if filename == "event_backfill.yml":
+            assert "espn-receipts-v1-events-" in restore["with"]["key"]
+            assert "espn-receipts-v1-forecast-" in restore["with"]["restore-keys"]
+            for name in ("Backfill events — primary source (incremental)",
+                         "Regenerate committed artifacts", "Coverage regression guard",
+                         "Publish updated warehouse to models-latest", "Commit regenerated artifacts"):
+                step = next(s for s in steps if s.get("name") == name)
+                assert steps.index(step) > steps.index(save)
+                assert not step.get("continue-on-error", False)
+                assert "always()" not in step.get("if", "")
 
 
 @pytest.mark.parametrize("args", [[], ["--espn"], ["--espn", "--current-season"],

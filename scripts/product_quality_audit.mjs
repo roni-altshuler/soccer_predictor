@@ -10,6 +10,7 @@ import { checkNavigationRaces } from './lib/navigation_race_checks.mjs'
 import { checkProfilePortraits } from './lib/profile_portrait_checks.mjs'
 import { checkTeamComparison } from './lib/team_comparison_checks.mjs'
 import { checkMatchEvidence } from './lib/match_evidence_checks.mjs'
+import { checkRecordReliability } from './lib/record_reliability_checks.mjs'
 
 const port = process.env.QA_PORT || '3100'
 const base = process.env.QA_BASE || `http://127.0.0.1:${port}`
@@ -51,6 +52,7 @@ let navigationReport
 let portraitReport
 let comparisonReport
 let evidenceReport
+let recordReport
 async function untilServer() {
   const deadline = Date.now() + 60000
   while (Date.now() < deadline) {
@@ -125,6 +127,7 @@ try {
   if (!process.env.QA_NAVIGATION_ONLY) portraitReport = await checkProfilePortraits({ browser, base, out, chosen, detail, today })
   if (!process.env.QA_NAVIGATION_ONLY) comparisonReport = await checkTeamComparison({ browser, base, out })
   if (!process.env.QA_NAVIGATION_ONLY) evidenceReport = await checkMatchEvidence({ browser, base, out })
+  if (!process.env.QA_NAVIGATION_ONLY) recordReport = await checkRecordReliability({ browser, base, out })
   for (const width of process.env.QA_NAVIGATION_ONLY ? [] : [390, 768, 1440]) {
     console.log(`Checking ${width}px` )
     const context = await browser.newContext({ viewport: { width, height: 960 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
@@ -357,6 +360,6 @@ try {
   await browser?.close()
   if (server) server.kill('SIGTERM')
 }
-const result = { replay: 'Committed forecasts; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, portraitReport, comparisonReport, evidenceReport, report }
+const result = { replay: 'Committed forecasts; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, portraitReport, comparisonReport, evidenceReport, recordReport, report }
 await writeFile(`${out}/report.json`, JSON.stringify(result, null, 2))
 console.log(JSON.stringify(result, null, 2))

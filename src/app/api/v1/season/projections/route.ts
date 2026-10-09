@@ -1,7 +1,7 @@
-import { promises as fs } from 'fs'
 import path from 'path'
 
 import { NextResponse } from 'next/server'
+import { readOptionalArtifact } from '@/lib/server/readOptionalArtifact'
 
 /**
  * Season projections — title, top four and relegation, per league.
@@ -24,12 +24,13 @@ const ARTIFACT = path.join(
 
 export async function GET() {
   try {
-    const parsed = JSON.parse(await fs.readFile(ARTIFACT, 'utf8'))
-    return NextResponse.json({ available: true, ...parsed })
+    const parsed = await readOptionalArtifact(ARTIFACT)
+    if (parsed) return NextResponse.json({ ...parsed, available: true })
+    return NextResponse.json({ available: false, reason: 'season_projections.json has not been generated' })
   } catch {
     return NextResponse.json(
-      { available: false, reason: 'season_projections.json has not been generated' },
-      { status: 200 },
+      { available: false, reason: 'The league record could not be read' },
+      { status: 503 },
     )
   }
 }
