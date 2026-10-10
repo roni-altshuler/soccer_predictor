@@ -60,6 +60,11 @@ jobs:
 
       # Preserve the failed production gate. This is one diagnostic replay,
       # using development React to retain its component diff and stack.
+      - name: Match evidence hydration failure diagnosis
+        if: failure() && steps.product.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm run test:hydration:evidence
+
       - name: Evaluation hydration failure diagnosis
         if: failure() && steps.product.outcome == 'failure'
         timeout-minutes: 5
@@ -74,4 +79,5 @@ jobs:
             /tmp/pitchverse-product-quality/
             /tmp/pitchverse-theme-quality/
             /tmp/pitchverse-evaluation-hydration/
+            /tmp/pitchverse-match-evidence-hydration/
           if-no-files-found: ignore

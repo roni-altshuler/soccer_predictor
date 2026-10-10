@@ -63,3 +63,26 @@ test('preserves error-time state and document identity when a later assertion ru
   assert.equal(event.snapshot.documentTimeOrigin, 123)
   assert(!Number.isNaN(Date.parse(event.observedAt)))
 })
+
+test('distinguishes two held hard navigations to the same evidence URL', async () => {
+  const page = new EventEmitter(), frame = {}
+  page.mainFrame = () => frame
+  page.url = () => 'http://localhost/leagues/eng.1/evidence?gender=M'
+  let phase = 'held-date', timeOrigin = 100
+  page.evaluate = async () => ({ documentTimeOrigin: timeOrigin })
+  const observer = observeBrowserFailures(page, () => ({ state: 'ready', hold: true, phase }))
+  const navigate = () => page.emit('request', { isNavigationRequest: () => true, frame: () => frame, url: page.url })
+  navigate()
+  page.emit('pageerror', new Error('First navigation mismatch'))
+  phase = 'held-gender'; timeOrigin = 200
+  navigate()
+  page.emit('pageerror', new Error('Second navigation mismatch'))
+  const [first, second] = await observer.flush()
+  assert.equal(first.url, second.url)
+  assert.equal(first.phase, 'held-date')
+  assert.equal(second.phase, 'held-gender')
+  assert.equal(first.documentRequest.phase, 'held-date')
+  assert.equal(second.documentRequest.phase, 'held-gender')
+  assert.deepEqual([first.documentRequest.id, second.documentRequest.id], [1, 2])
+  assert.deepEqual([first.snapshot.documentTimeOrigin, second.snapshot.documentTimeOrigin], [100, 200])
+})

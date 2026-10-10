@@ -1,4 +1,25 @@
-# Evaluation hydration failure remains open
+# Production hydration failure remains open
+
+The exact PR #44 merge, main `0e17d75486fa343ed765efa32ca9c2d6f0e2d9ad`,
+[failed its production product gate](https://github.com/roni-altshuler/soccer_predictor/actions/runs/38065134074)
+with React #418 on
+`/leagues/eng.1/evidence?team=Arsenal&from=2026-07-12&asOf=2026-10-10&gender=M`,
+before Evaluation ran. Its later development Evaluation diagnostic passed;
+the production result remains failed. The Match evidence error reported
+`state=ready, hold=true`. Both the held-date and held-gender hard navigations
+share that state and URL, so the old log cannot identify which document failed.
+The original helper wrote screenshots during the replay, but no failure JSON.
+Artifact `11675217233` has SHA-256
+`f7984beac49fe8c1da42b1e095bb20f15c334ec27a025c86d20aa8e529e0b54a`;
+its ZIP contents could not be inspected in the saved environment because the
+download endpoint returned HTTP 403. The decoded job log was inspected.
+
+Match evidence now uses the same browser observer as Evaluation, with explicit
+replay phases and distinct held-navigation labels. Fatal assertions and both
+original `domcontentloaded` waits are unchanged. A failure writes
+`evidence-failed-<width>.json` with the assertion stack and original browser
+events, plus a recovery-time screenshot. Each viewport also writes its browser
+events on teardown. The final screenshot is not proof of the original mismatch.
 
 The production browser gate on main `e44641f08b2f98fe5efeacd95eda1e5a929c2223`
 failed with React #418 on `/evaluation`, 768px, stored Dark with a Light OS
@@ -30,15 +51,26 @@ asserts the existing loading state hides the prior notice, releases them and wai
 updated notice before asserting retained metrics. It uses one retry click and
 preserves every existing assertion; this does not establish a #418 fix.
 
-On a production product-gate failure, CI makes one additional development-mode
-Evaluation replay so unminified React can report a component stack and markup
-diff. It reuses all 96 existing states, artifacts, faults and assertions. This
-diagnostic runs after the failed production gate and cannot change its result;
-it has a five-minute limit. Uploaded evidence includes both runs. There is no
+On a production product-gate failure, CI makes one development-mode Match
+evidence replay and one Evaluation replay so unminified React can report a
+component stack and markup diff. These reuse the existing three evidence
+viewports and all 96 Evaluation states, artifacts, faults and assertions. Each
+diagnostic has a five-minute limit and cannot change the failed production
+result. Uploaded evidence includes the production and diagnostic runs. There is no
 automatic retry that can turn the production failure green.
 
 ## Current findings and limits
 
+- The unchanged Match evidence replay passed at 390, 768 and 1440px locally in
+  development, including both held hard navigations at their original timing.
+- A separate temporary diagnostic copy of the bundled development renderer
+  observed the real Match evidence replay at the same three widths. It logged
+  mismatch candidates, DOM parents and suspension/replay chronology. There were
+  zero hydration mismatches and no `head` fiber replays; the observed hydration
+  replays were at `ServerRoot`. It did not reproduce the specific upstream
+  head-cursor signature. The renderer copy and webpack override are outside
+  this change and were neither committed nor deployed. Instrumentation and the
+  local browser can alter timing, so passing probes do not resolve #418.
 - The unchanged standalone replay passed all 96 states in local development
   and production. Its passing results are evidence of those runs only.
 - Dark mode leaves two theme-color tags after hydration: the boot script changes
@@ -68,9 +100,12 @@ diagnostic, using free ports:
 npm run build
 QA_CHROMIUM=/usr/bin/chromium npm run test:product
 QA_CHROMIUM=/usr/bin/chromium npm run test:hydration
+QA_CHROMIUM=/usr/bin/chromium npm run test:hydration:evidence
 ```
 
 `QA_BASE` can point to an already-running development or production server.
 `QA_OUT` selects the evidence directory. The default development evidence path
 is `/tmp/pitchverse-evaluation-hydration`; production retains its existing path.
+Match evidence defaults to port 3134 and
+`/tmp/pitchverse-match-evidence-hydration`.
 No provider workflow is dispatched and no test filters hydration errors.
