@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
+import { observeBrowserFailures } from './browser_failure_evidence.mjs'
 
 /** Actual local API + committed archive. Only fault cases alter/remove fields.
  * All other APIs and external hosts are intercepted, preventing provider reads.
@@ -24,6 +25,8 @@ export async function checkMatchEvidence({ browser, base, out }) {
     const context = await browser.newContext({ viewport: { width, height: 960 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
     const page = await context.newPage(), errors = [], expectedFaults = [], pending = []
     let state = 'ready', hold = false
+    let phase = 'initial', navigation = 'initial'
+    const diagnostics = observeBrowserFailures(page, () => ({ state, hold, phase, navigation, width }))
     try {
       page.on('pageerror', (error) => errors.push({ message: error.message, url: page.url(), state, hold, stack: error.stack }))
       page.on('console', (message) => { if (message.type() === 'error') {
@@ -93,11 +96,13 @@ export async function checkMatchEvidence({ browser, base, out }) {
       await card.getByText(example.expectedGoals.map((v) => v.toFixed(2)).join(' / '), { exact: true }).waitFor()
       if (example.result) await card.getByText(example.result.goals.join(' / '), { exact: true }).waitFor()
       await audit('ready'); await capture('ready')
+      phase = 'context'
       await card.getByText('Timing and model context', { exact: true }).click()
       await card.getByText(new RegExp(`recorded fixture ${example.id}`)).waitFor()
       await audit('context'); await capture('context')
 
       // Genuine sequential keyboard traversal, including date fields and summaries.
+      phase = 'keyboard'; navigation = 'keyboard-reload'
       await page.reload({ waitUntil: 'networkidle' }); await ready()
       const forward = [], reverse = []
       const readFocus = () => page.evaluate(() => {
@@ -124,6 +129,7 @@ export async function checkMatchEvidence({ browser, base, out }) {
       await club.selectOption('Fulham'); assert((await region.getByRole('article').count()) > 0)
       await club.selectOption('Arsenal')
       for (let cycle = 0; cycle < 3; cycle++) {
+        phase = `comparison-cycle-${cycle}`
         await page.getByRole('link', { name: 'Back to club comparison' }).click()
         await page.getByRole('region', { name: 'Club comparison' }).waitFor()
         await page.getByRole('link', { name: 'Explore Arsenal match evidence', exact: true }).click(); await ready()
@@ -132,15 +138,18 @@ export async function checkMatchEvidence({ browser, base, out }) {
       }
 
       for (const variant of ['empty', 'sparse', 'error']) {
+        phase = variant; navigation = variant
         state = variant; await page.goto(url, { waitUntil: 'networkidle' })
         if (variant === 'empty') await page.getByRole('heading', { name: 'No eligible matches' }).waitFor()
         if (variant === 'sparse') { await ready(); if (example.result) assert.equal(await page.getByText(example.result.goals.join(' / '), { exact: true }).count(), 0); await page.getByText(/0 results known/).waitFor() }
         if (variant === 'error') await page.getByRole('heading', { name: 'Couldn’t read the archive' }).waitFor()
         await audit(variant); await capture(variant)
       }
-      state = 'ready'; await page.getByRole('button', { name: 'Try again' }).click(); await ready()
+      phase = 'retry'; state = 'ready'
+      await page.getByRole('button', { name: 'Try again' }).click(); await ready()
 
       // Independently held old/new date responses; releasing old cannot paint cards.
+      phase = 'held-date'; navigation = 'held-date'
       hold = true; await page.goto(url, { waitUntil: 'domcontentloaded' })
       await page.getByText('Loading recorded match evidence…', { exact: true }).waitFor()
       const waitRequests = async (n) => { for (let i = 0; pending.length < n && i < 100; i++) await page.waitForTimeout(20); assert.equal(pending.length, n) }
@@ -157,6 +166,7 @@ export async function checkMatchEvidence({ browser, base, out }) {
       await page.getByText(new RegExp(`${known} results known by 2026-09-20`)).waitFor()
       await capture('cutoff')
       // Held men response after canonical women preference cannot paint men data.
+      phase = 'held-gender'; navigation = 'held-gender'
       await page.goto(url, { waitUntil: 'domcontentloaded' }); await waitRequests(3)
       await page.evaluate(() => { window.__evidenceWatch.blocked = true; localStorage.setItem('fotpredict.gender', 'women'); window.dispatchEvent(new CustomEvent('pitchwise:gender-change', { detail: 'women' })) })
       await page.getByText(/Women’s match evidence is unavailable/).waitFor()
@@ -168,7 +178,20 @@ export async function checkMatchEvidence({ browser, base, out }) {
       assert.deepEqual(errors, [])
       report.push({ width, actualServingApi: true, clubSelection: true, repeatedNavigations: 3, browserBackForward: true, keyboard: { forward, reverse, forcedFocusCalls: 0 },
         loadingEmptySparseErrorRetry: true, delayedDateResponse: true, delayedGenderResponse: true, transientStaleCards: watch.violations, accessibilityViolations: 0, overflow: false, expectedFaults, errors })
-    } finally { for (const p of pending) p.release(); await context.close() }
+    } catch (error) {
+      const observedAt = new Date().toISOString()
+      await page.screenshot({ path: `${out}/evidence-failed-${width}.png`, fullPage: true }).catch(() => {})
+      await writeFile(`${out}/evidence-failed-${width}.json`, JSON.stringify({
+        width, state, hold, phase, navigation, url: page.url(), errors, expectedFaults,
+        failure: { observedAt, message: error.message, stack: error.stack },
+        browserEvents: await diagnostics.flush(),
+      }, null, 2))
+      throw error
+    } finally {
+      for (const p of pending) p.release()
+      await writeFile(`${out}/evidence-browser-${width}.json`, JSON.stringify(await diagnostics.flush(), null, 2))
+      await context.close()
+    }
   }
   const result = { basis: 'Existing committed monthly forecasts through the actual local API; fault variants remove fields/fail transport only. No provider calls or imported data.',
     asOf, from, sourceAudit: { matches: served.records.length, knownResults: served.records.filter((r) => r.result).length, earlierCutoff: cutoff.asOf, earlierKnownResults: cutoff.records.filter((r) => r.result).length }, report }

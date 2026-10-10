@@ -465,7 +465,7 @@ gitignored — build and train them locally. Committed prediction JSON under
 
 ## Documentation
 
-The Evaluation Dark-mode hydration failure remains under investigation.
+Production hydration failures on Evaluation and Match evidence remain under investigation.
 [Diagnosis and reproduction](docs/EVALUATION_HYDRATION_DIAGNOSIS.md) distinguish
 passing local runs from the unresolved production browser failure.
 
