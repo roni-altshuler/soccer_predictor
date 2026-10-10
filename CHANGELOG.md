@@ -12,6 +12,8 @@ All notable changes to Pitchverse are documented here. The format is based on
   head/root theme state and both preference keys. A bounded development replay
   runs after a failed production CI gate to collect unminified diagnostics;
   the production failure remains blocking. The hydration cause remains open.
+  The retained-read check holds retry responses and waits for the new warning,
+  preventing its previous visible warning from satisfying the retry check.
 
 - Match evidence explorer from league and club comparisons: club/date filters,
   archived probabilities, model goal expectations versus recorded scores,

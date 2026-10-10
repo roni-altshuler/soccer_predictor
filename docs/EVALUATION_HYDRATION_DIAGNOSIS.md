@@ -20,6 +20,16 @@ already have recovered the root when Playwright delivers the event. Expected inj
 also recorded. Snapshot failure during document teardown retains the original
 error and uses a null snapshot. No auth storage or body content is collected.
 
+The [first diagnostic PR run](https://github.com/roni-altshuler/soccer_predictor/actions/runs/38062591640)
+failed on an independent harness race at 390px Light: the retained-state check
+read the prior Tournament-only notice before the retry responses completed.
+Its browser error list was empty; the later capture already showed the updated
+three-source notice. Its focused development replay passed all 96 states.
+The retained transition now deliberately holds all three retry responses,
+asserts the prior notice remains visible, releases them and waits for the exact
+updated notice before asserting retained metrics. It uses one retry click and
+preserves every existing assertion; this does not establish a #418 fix.
+
 On a production product-gate failure, CI makes one additional development-mode
 Evaluation replay so unminified React can report a component stack and markup
 diff. It reuses all 96 existing states, artifacts, faults and assertions. This
@@ -40,8 +50,16 @@ automatic retry that can turn the production failure green.
 - Local Chromium is 151.0.7922.173; the installed Playwright package requests
   Chromium 148.0.7778.96 for CI. Both official download endpoints were blocked
   by the saved environment's network proxy. Local browser parity is incomplete.
-- The app and harness root cause is unresolved. No application, theme,
+- The original #418 cause, including app-versus-harness attribution, is
+  unresolved. No application, theme,
   provider, data, forecast or model code is changed by this diagnostic.
+- Next 15.5.7 aliases the App Router renderer to bundled React
+  `19.2.0-canary-0bdb9206-20250818`, despite top-level React 18.3.1. A controlled
+  thenable probe against that bundled renderer confirms a concurrent hydration
+  suspension hazard. [React #37551](https://github.com/react/react/issues/37551)
+  and its [proposed fix #37630](https://github.com/react/react/pull/37630) are
+  diagnostic leads. The sampled custom root-head children are inline values,
+  so that issue's specific client-reference trigger is not shown in the app.
 
 Run the existing production gate after building, then the focused development
 diagnostic, using free ports:

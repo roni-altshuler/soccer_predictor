@@ -57,7 +57,7 @@ export async function checkRecordReliability({ browser, base, out }) {
         const url = new URL(route.request().url())
         if (url.origin !== new URL(base).origin) return route.fulfill({ body: '' })
         if (responses.has(url.pathname)) {
-          if (state === 'loading') await gate
+          if (state === 'loading' || state === 'retained') await gate
           if (failedSources.has(url.pathname) || state === 'error' || state === 'retained' || (state === 'partial' && url.pathname.includes('knockout'))) {
             return route.fulfill({ status: 503, json: { available: false, reason: 'Deliberate read failure' } })
           }
@@ -137,7 +137,17 @@ export async function checkRecordReliability({ browser, base, out }) {
       state = 'partial'; await page.reload({ waitUntil: 'networkidle' }); await notice.waitFor(); await ready()
       assert.match(await notice.innerText(), /Tournament record/)
       assert.doesNotMatch(await notice.innerText(), /Published match record/); await capture('partial')
-      state = 'retained'; await retry.click(); await notice.waitFor(); await ready()
+      state = 'retained'; gate = new Promise((resolve) => { release = resolve })
+      const retainedRequests = Promise.all([...responses.keys()].map((path) =>
+        page.waitForRequest((request) => new URL(request.url()).pathname === path)))
+      await retry.click(); await retainedRequests
+      // A visible notice and unchanged retained metrics can both belong to
+      // the previous read. Keep that read visible while the retry is held.
+      assert.match(await notice.innerText(), /Tournament record/)
+      assert.doesNotMatch(await notice.innerText(), /Published match record/)
+      release()
+      await notice.getByText(/Couldn’t read: Published match record, League record, Tournament record\./).waitFor()
+      await ready()
       assert.match(await notice.innerText(), /Published match record/); await capture('retained')
       state = 'ready'; await retry.click(); await ready()
       await notice.waitFor({ state: 'detached' }); await capture('recovered-again')
