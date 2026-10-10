@@ -1043,9 +1043,9 @@
   {
    "competition_id": "eng.1",
    "coverage": 0.5675,
-   "covered": 4608,
+   "covered": 4609,
    "gender": "M",
-   "matches": 8120,
+   "matches": 8121,
    "name": "Premier League",
    "seasons": [
     {
@@ -1257,17 +1257,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 50,
-     "matches": 50,
+     "covered": 51,
+     "matches": 51,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 5,
-     "with_events": 45
+     "with_events": 46
     }
    ],
    "uncovered": 3512,
    "verified_empty": 300,
-   "with_events": 4308
+   "with_events": 4309
   },
   {
    "competition_id": "eng.1.w",
@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4867,
-   "covered": 4040,
+   "coverage": 0.4868,
+   "covered": 4041,
    "gender": "M",
-   "matches": 8301,
+   "matches": 8302,
    "name": "La Liga",
    "seasons": [
     {
@@ -1629,17 +1629,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 69,
-     "matches": 69,
+     "covered": 70,
+     "matches": 70,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 5,
-     "with_events": 64
+     "with_events": 65
     }
    ],
    "uncovered": 4261,
    "verified_empty": 278,
-   "with_events": 3762
+   "with_events": 3763
   },
   {
    "competition_id": "esp.2",
@@ -2028,10 +2028,10 @@
   },
   {
    "competition_id": "fra.1",
-   "coverage": 0.5239,
-   "covered": 4035,
+   "coverage": 0.524,
+   "covered": 4036,
    "gender": "M",
-   "matches": 7702,
+   "matches": 7703,
    "name": "Ligue 1",
    "seasons": [
     {
@@ -2225,17 +2225,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 45,
-     "matches": 45,
+     "covered": 46,
+     "matches": 46,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 4,
-     "with_events": 41
+     "with_events": 42
     }
    ],
    "uncovered": 3667,
    "verified_empty": 294,
-   "with_events": 3741
+   "with_events": 3742
   },
   {
    "competition_id": "fra.2",
@@ -2297,10 +2297,10 @@
   },
   {
    "competition_id": "ger.1",
-   "coverage": 0.3422,
-   "covered": 2233,
+   "coverage": 0.3423,
+   "covered": 2234,
    "gender": "M",
-   "matches": 6526,
+   "matches": 6527,
    "name": "Bundesliga",
    "seasons": [
     {
@@ -2512,17 +2512,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 36,
-     "matches": 36,
+     "covered": 37,
+     "matches": 37,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 3,
-     "with_events": 33
+     "with_events": 34
     }
    ],
    "uncovered": 4293,
    "verified_empty": 117,
-   "with_events": 2116
+   "with_events": 2117
   },
   {
    "competition_id": "ger.2",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-10-09T15:38:49+00:00",
+ "generated_at": "2026-10-10T14:45:51+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4405,
-  "covered": 36367,
-  "matches": 82565,
+  "covered": 36371,
+  "matches": 82569,
   "uncovered": 46198,
   "verified_empty": 2306,
-  "with_events": 34061
+  "with_events": 34065
  }
 }
