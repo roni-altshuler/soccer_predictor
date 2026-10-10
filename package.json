@@ -14,6 +14,7 @@
     "test:product": "node scripts/product_quality_audit.mjs",
     "test:theme": "node scripts/theme_quality_audit.mjs",
     "test:schedule": "node scripts/schedule_refresh_audit.mjs",
+    "test:hydration": "node --test scripts/lib/browser_failure_evidence.test.mjs && node scripts/evaluation_hydration_audit.mjs",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "a11y": "axe http://localhost:3000",

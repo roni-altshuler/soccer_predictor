@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
+import { observeBrowserFailures } from './browser_failure_evidence.mjs'
 
 /** Use the existing product browser/server and real committed artifact routes.
  * Faults change availability only; other APIs and external hosts stay offline.
@@ -34,6 +35,8 @@ export async function checkRecordReliability({ browser, base, out }) {
     const page = await context.newPage(), errors = [], expectedFaults = [], states = []
     let state = 'ready', release, gate
     let failedSources = new Set()
+    let lastAccessibility = null
+    const diagnostics = observeBrowserFailures(page, () => ({ state, width, theme }))
     try {
       page.on('pageerror', (error) => errors.push(error.message))
       page.on('console', (message) => {
@@ -54,7 +57,7 @@ export async function checkRecordReliability({ browser, base, out }) {
         const url = new URL(route.request().url())
         if (url.origin !== new URL(base).origin) return route.fulfill({ body: '' })
         if (responses.has(url.pathname)) {
-          if (state === 'loading') await gate
+          if (state === 'loading' || state === 'retained') await gate
           if (failedSources.has(url.pathname) || state === 'error' || state === 'retained' || (state === 'partial' && url.pathname.includes('knockout'))) {
             return route.fulfill({ status: 503, json: { available: false, reason: 'Deliberate read failure' } })
           }
@@ -92,9 +95,10 @@ export async function checkRecordReliability({ browser, base, out }) {
         const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('#main'), {
           runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
         })).violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) })))
+        lastAccessibility = { label, violations }
         // Existing StatTile groups use div labels/values inside dl. Record that
         // debt explicitly; require every other rule and the new status to pass.
-        assert(violations.every((violation) => violation.id === 'definition-list'), `${label}: unexpected accessibility rule`)
+        assert(violations.every((violation) => violation.id === 'definition-list'), `${label}: unexpected accessibility rule ${JSON.stringify(violations)}`)
         const existingGroups = label === 'evaluation-initial' ? 1 : label === 'projections-initial' ? 4
           : ['loading', 'empty', 'error'].includes(label) ? 0 : 5
         assert.equal(violations.flatMap((violation) => violation.targets).length, existingGroups, `${label}: existing definition groups changed`)
@@ -133,7 +137,17 @@ export async function checkRecordReliability({ browser, base, out }) {
       state = 'partial'; await page.reload({ waitUntil: 'networkidle' }); await notice.waitFor(); await ready()
       assert.match(await notice.innerText(), /Tournament record/)
       assert.doesNotMatch(await notice.innerText(), /Published match record/); await capture('partial')
-      state = 'retained'; await retry.click(); await notice.waitFor(); await ready()
+      state = 'retained'; gate = new Promise((resolve) => { release = resolve })
+      const retainedRequests = Promise.all([...responses.keys()].map((path) =>
+        page.waitForRequest((request) => new URL(request.url()).pathname === path)))
+      await retry.click(); await retainedRequests
+      // A visible notice immediately after click can belong to the previous
+      // read. The pending retry shows the existing loading state instead.
+      await page.getByRole('status', { name: 'Loading evaluation' }).waitFor()
+      assert.equal(await notice.count(), 0)
+      release()
+      await notice.getByText(/Couldn’t read: Published match record, League record, Tournament record\./).waitFor()
+      await ready()
       assert.match(await notice.innerText(), /Published match record/); await capture('retained')
       state = 'ready'; await retry.click(); await ready()
       await notice.waitFor({ state: 'detached' }); await capture('recovered-again')
@@ -186,11 +200,18 @@ export async function checkRecordReliability({ browser, base, out }) {
       assert.deepEqual(errors, [], `${width} ${theme}: unexpected browser errors`)
       report.push({ width, theme, states, expectedFaults, errors })
     } catch (error) {
+      const observedAt = new Date().toISOString()
       await page.screenshot({ path: `${out}/record-failed-${theme}-${width}.png`, fullPage: true }).catch(() => {})
+      await writeFile(`${out}/record-failed-${theme}-${width}.json`, JSON.stringify({
+        width, theme, state, url: page.url(), errors, expectedFaults,
+        failure: { message: error.message, stack: error.stack, observedAt, state }, lastAccessibility,
+        browserEvents: await diagnostics.flush(),
+      }, null, 2))
       console.error({ width, theme, state, url: page.url(), content: await page.locator('#main').innerText().catch(() => ''), errors })
       throw error
     } finally {
       release?.()
+      await writeFile(`${out}/record-browser-${theme}-${width}.json`, JSON.stringify(await diagnostics.flush(), null, 2))
       await context.close()
     }
   }
