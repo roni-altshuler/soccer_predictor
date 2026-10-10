@@ -41,6 +41,7 @@ const nextConfig = {
   },
   // Include prediction data files in serverless function bundles
   outputFileTracingIncludes: {
+    '/api/v1/season/refresh-status': ['./backend/data/predictions/season_refresh_status.json'],
     '/lab': ['./backend/data/predictions/season_fixtures.json'],
     '/api/v1/forecast-lab': ['./backend/data/predictions/season_fixtures.json'],
     '/api/v1/tracking/*': ['./backend/data/predictions/**'],

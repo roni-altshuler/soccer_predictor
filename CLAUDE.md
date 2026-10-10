@@ -495,10 +495,19 @@ por.1 season still sits at its structural size. `verify_corpus` cannot tell a
 de-duplication from a truncation, so a drop is explained before it is recorded,
 never after.
 
-The current-season FBref schedule refresh IS `continue-on-error`: FBref sits
-behind Cloudflare and a GitHub runner is the client it exists to turn away.
-When it fails the forecast is still correct — a stale schedule costs a wrong
-kickoff time on a moved match, not a forecast for a match already played.
+The current-season FBref schedule refresh uses `ingest_fbref_schedules --routine`:
+six stored current-season URLs, ordinary HTTP, no optional ScraperFC/browser
+imports. It stops on rejection without retries and preserves the complete
+downloaded DB on any failed check. The historical browser scraper is unchanged.
+The step stays `continue-on-error` so the forecast can publish with retained
+schedules, but `record_schedule_refresh` is required before generation or
+publication. It exits zero after writing either checked or degraded status;
+a write/output error blocks publication, preserving the last-good forecast and
+snapshot release. The final step fails on a degraded state or either step's
+failure, including a malformed success report. A stale schedule can cost wrong
+kickoff times or missed postponements; never call the whole refresh healthy
+because the forecast built. Missing status is unknown, and even a successful
+fixture check proves nothing about the latest verified result date.
 
 Artifacts are published via temp-file + `os.replace`, so a crash mid-write
 leaves the previous valid forecast serving rather than a truncated file.

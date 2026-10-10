@@ -115,20 +115,25 @@ jobs:
           key: ${{ steps.espn-receipts.outputs.cache-primary-key }}
 
       - name: Refresh the current-season schedule
-        # Results arrive from ESPN above; this is the other half — kickoff
-        # times, rounds and postponements, which only FBref carries.
-        #
-        # `continue-on-error` because FBref sits behind Cloudflare and a
-        # GitHub runner is exactly the client it is built to turn away. When
-        # it fails the forecast is still correct: `load_upcoming` drops any
-        # fixture that already has a result, so a stale schedule costs a wrong
-        # kickoff time on a moved match, not a forecast for a match that has
-        # already been played.
+        id: schedule
+        # Six stored current-season URLs, ordinary HTTP, no ScraperFC/browser.
+        # No redirects or rejection retries; the six-second minimum remains.
+        # An incomplete check retains the downloaded DB byte-for-byte. Continue
+        # only so the forecast can publish with explicit degraded status; the
+        # final step still marks the workflow failed.
         continue-on-error: true
         timeout-minutes: 12
         run: |
           python -m backend.scripts.ingest_fbref_schedules \
-            --current-season --stale-days 0.5
+            --routine --report /tmp/schedule-refresh.json
+
+      - name: Record schedule refresh status
+        id: schedule_status
+        # Required generation gate: checked OR degraded is publishable, but a
+        # write failure must not let an older tracked status certify this run.
+        run: |
+          python -m backend.scripts.record_schedule_refresh \
+            --report /tmp/schedule-refresh.json --outcome '${{ steps.schedule.outcome }}'
 
       - name: Refresh MLS conference membership
         # `conferences.json` decides which conference every MLS club sits in
@@ -204,6 +209,8 @@ jobs:
                   backend/data/predictions/projection_history.jsonl \
                   backend/data/conferences.json \
                   backend/data/evaluation/ || true
+          # The new refresh record is required for truthful publication.
+          git add backend/data/predictions/season_refresh_status.json
           # conferences.json stamps generated_at on every build, so ignore that
           # line — otherwise this job commits a one-line timestamp change daily.
           if git diff --cached --quiet -I'"generated_at":'; then
@@ -213,3 +220,9 @@ jobs:
             git pull --rebase --autostash origin main
             git push
           fi
+
+      - name: Report degraded schedule refresh
+        if: always() && (steps.schedule.outcome == 'failure' || steps.schedule_status.outcome == 'failure' || steps.schedule_status.outputs.state == 'degraded')
+        run: |
+          echo '::error::Schedule refresh degraded or status recording failed. Publication requires a current status; see the refresh status and step summary.'
+          exit 1

@@ -1,0 +1,63 @@
+{
+  "basis": "Synthetic schedule-check outcomes. Actual production writer/API/browser; unchanged committed forecasts. No provider access or training.",
+  "forecastHashes": [
+    {
+      "file": "backend/data/predictions/season_projections.json",
+      "sha256": "489c2d40f2ec6075b144a1631924e45a4d48a364b44d57bd8b7e7a37192da008"
+    },
+    {
+      "file": "backend/data/predictions/season_fixtures.json",
+      "sha256": "62cd9ebc4eb46291e09fe0023f8edd755ec467a6344deb370861ca45fd1c692a"
+    }
+  ],
+  "states": [
+    {"width": 390, "theme": "light", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 390, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 768, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "light", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unknown", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "degraded", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "checked", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0},
+    {"width": 1440, "theme": "dark", "route": "/leagues/eng.1/compare", "state": "unreadable", "overflow": false, "noticeAccessibilityViolations": 0}
+  ]
+}

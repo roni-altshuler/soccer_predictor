@@ -48,7 +48,10 @@ ordering. Those are two different questions.
 
 A projection is not a preseason snapshot. The pipeline replays available
 verified results, refits and re-simulates. Successful result refreshes determine
-its cutoff; a new build does not imply results through yesterday. Points already banked seed
+its cutoff; a new build does not imply results through yesterday. The schedule
+notice separately reports a checked, degraded or unknown fixture refresh.
+Retained schedules may have outdated kickoff times or postponements; even a
+successful schedule check does not verify the latest results. Points already banked seed
 the simulation and played fixtures leave the remaining set, so the same page in
 March is a much narrower claim than in August.
 

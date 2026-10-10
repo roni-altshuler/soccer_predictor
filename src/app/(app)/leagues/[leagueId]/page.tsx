@@ -1,4 +1,5 @@
 import LeagueHomePage from '@/components/league/LeagueHomePage'
+import { ScheduleRefreshNotice } from '@/components/forecast/ScheduleRefreshNotice'
 import Link from 'next/link'
 import { LeagueTrackRecord } from '@/components/accuracy/LeagueTrackRecord'
 import { SERVED_COMPETITION_IDS, getLeagueAccent } from '@/lib/leagueAccents'
@@ -57,6 +58,7 @@ export default async function LeaguePage({ params }: LeaguePageParams) {
         </Link>
         <Link href={`/leagues/${leagueId}/evidence`} prefetch={false} className="mb-3 ml-2 inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] px-4 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-info)]">Explore match evidence</Link>
         <LeagueTrackRecord leagueId={leagueId} />
+        <ScheduleRefreshNotice competitionId={leagueId} />
       </div>
       <LeagueHomePage
         leagueId={leagueId}
