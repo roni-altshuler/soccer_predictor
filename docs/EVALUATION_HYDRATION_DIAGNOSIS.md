@@ -26,7 +26,7 @@ read the prior Tournament-only notice before the retry responses completed.
 Its browser error list was empty; the later capture already showed the updated
 three-source notice. Its focused development replay passed all 96 states.
 The retained transition now deliberately holds all three retry responses,
-asserts the prior notice remains visible, releases them and waits for the exact
+asserts the existing loading state hides the prior notice, releases them and waits for the exact
 updated notice before asserting retained metrics. It uses one retry click and
 preserves every existing assertion; this does not establish a #418 fix.
 

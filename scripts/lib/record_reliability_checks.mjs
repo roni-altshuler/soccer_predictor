@@ -141,10 +141,10 @@ export async function checkRecordReliability({ browser, base, out }) {
       const retainedRequests = Promise.all([...responses.keys()].map((path) =>
         page.waitForRequest((request) => new URL(request.url()).pathname === path)))
       await retry.click(); await retainedRequests
-      // A visible notice and unchanged retained metrics can both belong to
-      // the previous read. Keep that read visible while the retry is held.
-      assert.match(await notice.innerText(), /Tournament record/)
-      assert.doesNotMatch(await notice.innerText(), /Published match record/)
+      // A visible notice immediately after click can belong to the previous
+      // read. The pending retry shows the existing loading state instead.
+      await page.getByRole('status', { name: 'Loading evaluation' }).waitFor()
+      assert.equal(await notice.count(), 0)
       release()
       await notice.getByText(/Couldn’t read: Published match record, League record, Tournament record\./).waitFor()
       await ready()
