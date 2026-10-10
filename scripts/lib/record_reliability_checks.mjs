@@ -35,6 +35,7 @@ export async function checkRecordReliability({ browser, base, out }) {
     const page = await context.newPage(), errors = [], expectedFaults = [], states = []
     let state = 'ready', release, gate
     let failedSources = new Set()
+    let lastAccessibility = null
     const diagnostics = observeBrowserFailures(page, () => ({ state, width, theme }))
     try {
       page.on('pageerror', (error) => errors.push(error.message))
@@ -94,9 +95,10 @@ export async function checkRecordReliability({ browser, base, out }) {
         const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('#main'), {
           runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] },
         })).violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) })))
+        lastAccessibility = { label, violations }
         // Existing StatTile groups use div labels/values inside dl. Record that
         // debt explicitly; require every other rule and the new status to pass.
-        assert(violations.every((violation) => violation.id === 'definition-list'), `${label}: unexpected accessibility rule`)
+        assert(violations.every((violation) => violation.id === 'definition-list'), `${label}: unexpected accessibility rule ${JSON.stringify(violations)}`)
         const existingGroups = label === 'evaluation-initial' ? 1 : label === 'projections-initial' ? 4
           : ['loading', 'empty', 'error'].includes(label) ? 0 : 5
         assert.equal(violations.flatMap((violation) => violation.targets).length, existingGroups, `${label}: existing definition groups changed`)
@@ -188,10 +190,11 @@ export async function checkRecordReliability({ browser, base, out }) {
       assert.deepEqual(errors, [], `${width} ${theme}: unexpected browser errors`)
       report.push({ width, theme, states, expectedFaults, errors })
     } catch (error) {
+      const observedAt = new Date().toISOString()
       await page.screenshot({ path: `${out}/record-failed-${theme}-${width}.png`, fullPage: true }).catch(() => {})
       await writeFile(`${out}/record-failed-${theme}-${width}.json`, JSON.stringify({
         width, theme, state, url: page.url(), errors, expectedFaults,
-        failure: { message: error.message, stack: error.stack, observedAt: new Date().toISOString(), state },
+        failure: { message: error.message, stack: error.stack, observedAt, state }, lastAccessibility,
         browserEvents: await diagnostics.flush(),
       }, null, 2))
       console.error({ width, theme, state, url: page.url(), content: await page.locator('#main').innerText().catch(() => ''), errors })
