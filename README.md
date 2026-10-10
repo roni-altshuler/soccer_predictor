@@ -203,7 +203,9 @@ The optional season schedule check now uses six stored FBref URLs and the
 existing parser, with ordinary HTTP and no ScraperFC/browser dependency. A
 rejected or incomplete check retains the entire last-good schedule database,
 publishes degraded status beside the forecasts, and marks the workflow failed
-after preserving the forecast. Missing status stays unknown; a successful
+after preserving the forecast. Generating the current status is required:
+a write failure stops publication and retains the previously published forecast.
+Missing status stays unknown; a successful
 fixture check does not establish newer results. No browser bypass or expanded
 backfill is added. [Schedule refresh scope and evidence](docs/SEASON_REFRESH_RELIABILITY.md)
 records the checks and remaining access limitations.

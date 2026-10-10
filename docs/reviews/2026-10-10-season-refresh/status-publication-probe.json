@@ -1,0 +1,68 @@
+{
+  "basis": "Synthetic tracked prior status and publication files; actual recorder CLI with injected atomic replace denial, actual local git staging. Eligibility derives from GitHub default success() step semantics, not an executed GitHub workflow. No provider requests, release uploads, pushes or production dispatch.",
+  "before": {
+    "basis": "Synthetic tracked prior checked status, actual recorder CLI with injected atomic replace denial; local git staging only. No provider requests, release uploads or pushes.",
+    "reviewed_head": "623bf59e63803317ae41a39f1421de618291d0a7",
+    "recorder_exit": 1,
+    "failure": "PermissionError: synthetic status write denied",
+    "prior_status_sha256": "f757098e19fa4d88ce760ead0b1c852d8375788ea5592c964ac9e6d3e17a811d",
+    "retained_status_sha256": "f757098e19fa4d88ce760ead0b1c852d8375788ea5592c964ac9e6d3e17a811d",
+    "retained_state": "checked",
+    "retained_workflow_run": "previous-run",
+    "git_add_old_status_exit": 0,
+    "status_step_continue_on_error": true,
+    "default_success_publication_steps": [
+      "Publish snapshot table",
+      "Commit refreshed forecast"
+    ],
+    "publication_eligible_after_failed_recording": true
+  },
+  "after": {
+    "workflow_sha256": "1b449d973f29694ed605ada9a0680a873c4a32ca9fa9836eadf9187373b1be36",
+    "recorder_exit": 1,
+    "failure": "PermissionError: synthetic status write denied",
+    "prior_status_sha256": "f757098e19fa4d88ce760ead0b1c852d8375788ea5592c964ac9e6d3e17a811d",
+    "retained_status_sha256": "f757098e19fa4d88ce760ead0b1c852d8375788ea5592c964ac9e6d3e17a811d",
+    "retained_state": "checked",
+    "retained_workflow_run": "previous-run",
+    "git_add_old_status_exit": 0,
+    "status_step_continue_on_error": false,
+    "current_state_output_emitted": false,
+    "default_success_publication_steps": [
+      "Publish snapshot table",
+      "Commit refreshed forecast"
+    ],
+    "publication_eligible_after_failed_recording": false,
+    "retained_publication_bytes_unchanged": true
+  },
+  "successful_generation_cases": [
+    {
+      "case": "checked",
+      "recorder_exit": 0,
+      "recorded_state": "checked",
+      "current_workflow_run": "current-probe-run",
+      "step_output": "state=checked",
+      "generation_gate_passes": true,
+      "final_failure_gate_matches": false
+    },
+    {
+      "case": "degraded",
+      "recorder_exit": 0,
+      "recorded_state": "degraded",
+      "current_workflow_run": "current-probe-run",
+      "step_output": "state=degraded",
+      "generation_gate_passes": true,
+      "final_failure_gate_matches": true
+    },
+    {
+      "case": "inconsistent_success",
+      "recorder_exit": 0,
+      "recorded_state": "degraded",
+      "current_workflow_run": "current-probe-run",
+      "step_output": "state=degraded",
+      "generation_gate_passes": true,
+      "final_failure_gate_matches": true
+    }
+  ],
+  "final_failure_condition": "always() && (steps.schedule.outcome == 'failure' || steps.schedule_status.outcome == 'failure' || steps.schedule_status.outputs.state == 'degraded')"
+}

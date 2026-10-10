@@ -43,13 +43,29 @@ states are `checked` or `degraded`, with attempt time, request count/cap, scope,
 season and last verified schedule dates. A missing/inconsistent report is degraded,
 with unknown request count; prior valid verification dates survive. The status
 is committed with the forecast when the required publication steps succeed.
-Required failures still stop publication and preserve the previous forecast.
+Status generation is itself required before forecast generation, snapshot export
+or publication. The recorder exits zero after writing either checked or degraded
+status and emits the recorded state as a step output. A write or output failure
+stops all subsequent publication, retaining the previous forecast and release.
+Staging an existing status filename alone cannot prove this run wrote it.
 
 The optional check can continue so that last-good schedules support the forecast.
 Its outcome is recorded in the step summary, and a final `always()` step fails
-the workflow if either the check or status recording failed. A green forecast
+the workflow if either the check or status recording failed, or the recorded state
+is degraded (including an inconsistent success report). A green forecast
 build therefore cannot hide this failure. Other optional refresh steps are outside
 this fix.
+
+Independent review reproduced a publication blocker at `623bf59e`: injecting a
+recorder replacement failure retained the old checked status, while `git add`
+still succeeded and `continue-on-error` left publication eligible. The
+[before/after probe](reviews/2026-10-10-season-refresh/status-publication-probe.json)
+uses a temporary local repository, the actual recorder CLI and an injected write
+denial. The required recorder now blocks GitHub's default `success()` publication
+steps on that failure, even though staging the old filename would still work.
+Successful checked and degraded records both pass generation; degradation still
+makes the final workflow red. The probe does not execute GitHub jobs, release
+uploads, provider calls or production publication.
 
 The directory, league page and club comparison show schedule status independently
 of live standings. A missing or unreadable status stays **unknown**, not fresh.
@@ -82,9 +98,11 @@ this PR does not dispatch production jobs or claim either result.
 
 ## Review evidence (October 10)
 
-Local checks: **1,608 backend tests passed / 25 skipped**, **907 frontend tests
+Local checks after the publication guard fix: **1,613 backend tests passed / 25 skipped**, **907 frontend tests
 passed**, lint/typecheck/production build passed with existing warnings. The final
-workflow regression suite passed **29 cases**. The full product replay passed,
+workflow regression suite passed **34 cases**, including checked/degraded recorder
+write failures with a tracked prior checked status, both successful generation
+states and an inconsistent success report. The full product replay passed,
 including **48 schedule states** and **96 existing Evaluation states**; the serial
 theme replay passed **124 states**. A stricter focused replay also passed all 48
 schedule states with exactly the two deliberately failed status reads per context.

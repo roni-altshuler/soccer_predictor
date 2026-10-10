@@ -64,7 +64,7 @@ export async function checkScheduleRefresh({ browser, base, out, before = false 
           await writeFile(input, JSON.stringify(payload))
           const result = spawnSync('python3', ['-m', 'backend.scripts.record_schedule_refresh', '--report', input,
             '--outcome', state === 'checked' ? 'success' : 'failure'], { encoding: 'utf8' })
-          assert.equal(result.status, state === 'checked' ? 0 : 1, result.stderr)
+          assert.equal(result.status, 0, result.stderr)
           const served = await (await fetch(`${base}/api/v1/season/refresh-status`)).json()
           assert.equal(served.state, state)
           assert.equal(served.attempted_at, stamp)

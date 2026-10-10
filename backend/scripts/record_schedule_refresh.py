@@ -2,6 +2,8 @@
 
 This record describes fixture verification only. It never certifies result
 freshness or changes a forecast, its inputs, or a provider request budget.
+Successful recording exits zero for either state; the workflow separately fails
+degraded checks. A recording/output error must block publication.
 """
 from __future__ import annotations
 
@@ -97,7 +99,10 @@ def main() -> int:
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as file:
             file.write(summary + "\n\nThis checks fixtures, not the latest verified results.\n")
-    return 0 if report["state"] == "checked" else 1
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+            file.write(f"state={report['state']}\n")
+    return 0
 
 
 if __name__ == "__main__":

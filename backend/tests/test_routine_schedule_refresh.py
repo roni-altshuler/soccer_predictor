@@ -2,8 +2,10 @@
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import sqlite3
+import subprocess
 import sys
 
 import httpx
@@ -195,6 +197,87 @@ def test_inconsistent_success_is_degraded_instead_of_certifying_zero_checks(tmp_
     assert record(path, 'success', output)['state'] == 'degraded'
 
 
+def recorder_cli(tmp_path, report, outcome, *, fail_write=False):
+    source = tmp_path / 'report.json'
+    source.write_text(json.dumps(report))
+    output = tmp_path / 'status.json'
+    env = {**os.environ, 'GITHUB_RUN_ID': 'current-run',
+           'GITHUB_OUTPUT': str(tmp_path / 'step-output'),
+           'GITHUB_STEP_SUMMARY': str(tmp_path / 'step-summary')}
+    command = [sys.executable, '-m', 'backend.scripts.record_schedule_refresh']
+    if fail_write:
+        # Run the real entry point with only the atomic replacement failing.
+        wrapper = ("from unittest.mock import patch; import runpy\n"
+                   "with patch('backend.scripts.record_schedule_refresh.os.replace', "
+                   "side_effect=PermissionError('synthetic status write denied')):\n"
+                   "    runpy.run_module('backend.scripts.record_schedule_refresh', run_name='__main__')")
+        command = [sys.executable, '-c', wrapper]
+    return subprocess.run([*command, '--report', str(source), '--outcome', outcome,
+                           '--output', str(output)], cwd=ROOT, env=env,
+                          capture_output=True, text=True)
+
+
+@pytest.mark.parametrize('state', ['checked', 'degraded'])
+def test_successful_current_status_generation_is_independent_of_check_state(tmp_path, state):
+    db = tmp_path / 'fbref.sqlite'
+    database(db)
+    report, _, _ = run(db, lambda *_: httpx.Response(200, text=page()))
+    report.update(state=state, requests=6 if state == 'checked' else 1)
+    result = recorder_cli(tmp_path, report, 'success' if state == 'checked' else 'failure')
+    assert result.returncode == 0, result.stderr
+    written = json.loads((tmp_path / 'status.json').read_text())
+    assert written['state'] == state and written['workflow_run'] == 'current-run'
+    assert (tmp_path / 'step-output').read_text() == f'state={state}\n'
+    assert ('::warning::' in result.stdout) == (state == 'degraded')
+
+
+def test_inconsistent_success_cli_records_degradation_for_final_failure_gate(tmp_path):
+    result = recorder_cli(tmp_path, {}, 'success')
+    assert result.returncode == 0, result.stderr
+    assert json.loads((tmp_path / 'status.json').read_text())['state'] == 'degraded'
+    assert (tmp_path / 'step-output').read_text() == 'state=degraded\n'
+
+
+@pytest.mark.parametrize('state', ['checked', 'degraded'])
+def test_recorder_write_failure_preserves_prior_checked_status_and_blocks_publication(tmp_path, state):
+    db = tmp_path / 'fbref.sqlite'
+    database(db)
+    previous, _, _ = run(db, lambda *_: httpx.Response(200, text=page()))
+    previous['workflow_run'] = 'previous-run'
+    output = tmp_path / 'status.json'
+    output.write_text(json.dumps(previous))
+    forecast, snapshots = tmp_path / 'forecast.json', tmp_path / 'snapshots.csv'
+    forecast.write_text('{"generated_at":"previous-run"}')
+    snapshots.write_text('previous snapshot\n')
+    for args in [['init', '-q'], ['add', output.name, forecast.name, snapshots.name],
+                 ['-c', 'user.name=Offline probe', '-c', 'user.email=probe@example.invalid',
+                  'commit', '-qm', 'synthetic prior publication']]:
+        subprocess.run(['git', *args], cwd=tmp_path, capture_output=True, check=True)
+    before = {p: p.read_bytes() for p in [output, forecast, snapshots]}
+    report = {**previous, 'state': state, 'attempted_at': (NOW + timedelta(days=1)).isoformat()}
+    if state == 'checked':
+        report['leagues'] = [{**row, 'last_verified_at': report['attempted_at']} for row in report['leagues']]
+    else:
+        report['requests'] = 1
+    result = recorder_cli(tmp_path, report, 'success' if state == 'checked' else 'failure', fail_write=True)
+    assert result.returncode != 0 and 'synthetic status write denied' in result.stderr
+    assert all(p.read_bytes() == data for p, data in before.items())
+    assert not (tmp_path / 'step-output').exists()
+    # Reproduce why staging a required filename alone was insufficient.
+    staged = subprocess.run(['git', 'add', output.name], cwd=tmp_path, capture_output=True)
+    assert staged.returncode == 0
+    steps = yaml.safe_load((ROOT / '.github/workflows/season_forecast.yml').read_text())['jobs']['forecast']['steps']
+    status = next(s for s in steps if s.get('id') == 'schedule_status')
+    assert not status.get('continue-on-error') and 'if' not in status
+    # These steps use GitHub's default success() prerequisite, so a failed
+    # recorder cannot replace the last-good forecast or release history.
+    for name in ['Generate season forecast', 'Record what this forecast said',
+                 'Publish snapshot table', 'Commit refreshed forecast']:
+        step = next(s for s in steps if s.get('name') == name)
+        assert steps.index(status) < steps.index(step)
+        assert 'if' not in step and not step.get('continue-on-error')
+
+
 def test_workflow_bounds_refresh_and_exposes_failure_after_publication():
     workflow = yaml.safe_load((ROOT / '.github/workflows/season_forecast.yml').read_text())
     steps = workflow['jobs']['forecast']['steps']
@@ -206,10 +289,12 @@ def test_workflow_bounds_refresh_and_exposes_failure_after_publication():
     assert '--current-season --stale-days' not in schedule['run']
     assert schedule['continue-on-error'] and schedule['timeout-minutes'] == 12
     assert 'steps.schedule.outcome' in status['run']
+    assert not status.get('continue-on-error')
     assert 'season_refresh_status.json' in commit['run']
     assert 'git add backend/data/predictions/season_refresh_status.json\n' in commit['run']
     assert steps.index(schedule) < steps.index(status) < steps.index(commit) < steps.index(final)
     assert 'always()' in final['if'] and 'steps.schedule.outcome' in final['if'] and 'steps.schedule_status.outcome' in final['if']
+    assert "steps.schedule_status.outputs.state == 'degraded'" in final['if']
     assert not final.get('continue-on-error') and 'exit 1' in final['run']
     import ast
     tree = ast.parse((ROOT / 'backend/scripts/forecast_season.py').read_text())

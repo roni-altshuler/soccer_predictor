@@ -500,8 +500,11 @@ six stored current-season URLs, ordinary HTTP, no optional ScraperFC/browser
 imports. It stops on rejection without retries and preserves the complete
 downloaded DB on any failed check. The historical browser scraper is unchanged.
 The step stays `continue-on-error` so the forecast can publish with retained
-schedules, but `record_schedule_refresh` publishes explicit status and the final
-step marks degradation as a failed workflow. A stale schedule can cost wrong
+schedules, but `record_schedule_refresh` is required before generation or
+publication. It exits zero after writing either checked or degraded status;
+a write/output error blocks publication, preserving the last-good forecast and
+snapshot release. The final step fails on a degraded state or either step's
+failure, including a malformed success report. A stale schedule can cost wrong
 kickoff times or missed postponements; never call the whole refresh healthy
 because the forecast built. Missing status is unknown, and even a successful
 fixture check proves nothing about the latest verified result date.

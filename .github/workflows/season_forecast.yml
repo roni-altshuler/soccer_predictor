@@ -129,7 +129,8 @@ jobs:
 
       - name: Record schedule refresh status
         id: schedule_status
-        continue-on-error: true
+        # Required generation gate: checked OR degraded is publishable, but a
+        # write failure must not let an older tracked status certify this run.
         run: |
           python -m backend.scripts.record_schedule_refresh \
             --report /tmp/schedule-refresh.json --outcome '${{ steps.schedule.outcome }}'
@@ -221,7 +222,7 @@ jobs:
           fi
 
       - name: Report degraded schedule refresh
-        if: always() && (steps.schedule.outcome == 'failure' || steps.schedule_status.outcome == 'failure')
+        if: always() && (steps.schedule.outcome == 'failure' || steps.schedule_status.outcome == 'failure' || steps.schedule_status.outputs.state == 'degraded')
         run: |
-          echo '::error::Schedule refresh degraded. Last-good schedules retained; see the refresh status and step summary.'
+          echo '::error::Schedule refresh degraded or status recording failed. Publication requires a current status; see the refresh status and step summary.'
           exit 1
