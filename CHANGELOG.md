@@ -56,6 +56,14 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Routine season schedule refresh no longer requires the optional ScraperFC
+  browser stack. It checks only six stored current-season URLs, stops on provider
+  rejection without retries, and atomically replaces the schedule database only
+  when every parsed page passes its preservation checks. Explicit published
+  schedule status and a final workflow failure expose degraded optional refreshes
+  while retaining forecasts. Fixture verification stays separate from result
+  freshness; no forecasting changes or live collection are claimed.
+
 - Comparison controls leave room for the sticky header during native keyboard
   focus scrolling. Actual Tab/Shift+Tab and delayed gender/league response
   contracts now cover visible focus, both traversal directions, retry and

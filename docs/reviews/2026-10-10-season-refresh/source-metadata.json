@@ -1,0 +1,56 @@
+{
+  "asset_id": 510130709,
+  "gzip_sha256": "3b96d6fbaa976777f3a0a1c4e9350922288cfc8bbac3f282c0d2aff9c5570028",
+  "source_updated_at": "2026-08-11T12:50:19Z",
+  "basis": "Read-only existing GitHub release asset; no FBref requests",
+  "current_metadata": [
+    {
+      "league": "England Premier League",
+      "season": "2026-2027",
+      "schedule_url": "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T08:17:36.784704+00:00",
+      "fixtures": 380,
+      "error": null
+    },
+    {
+      "league": "France Ligue 1",
+      "season": "2026-2027",
+      "schedule_url": "https://fbref.com/en/comps/13/schedule/Ligue-1-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T11:16:31.687640+00:00",
+      "fixtures": 306,
+      "error": null
+    },
+    {
+      "league": "Germany Bundesliga",
+      "season": "2026-2027",
+      "schedule_url": "https://fbref.com/en/comps/20/2026-2027/schedule/2026-2027-Bundesliga-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T09:06:24.968439+00:00",
+      "fixtures": 306,
+      "error": null
+    },
+    {
+      "league": "Italy Serie A",
+      "season": "2026-2027",
+      "schedule_url": "https://fbref.com/en/comps/11/schedule/Serie-A-M-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T09:11:34.650827+00:00",
+      "fixtures": 380,
+      "error": null
+    },
+    {
+      "league": "Spain La Liga",
+      "season": "2026-2027",
+      "schedule_url": "https://fbref.com/en/comps/12/schedule/La-Liga-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T09:29:21.551550+00:00",
+      "fixtures": 380,
+      "error": null
+    },
+    {
+      "league": "USA MLS",
+      "season": "2026",
+      "schedule_url": "https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures",
+      "scraped_at": "2026-08-11T09:49:52.961458+00:00",
+      "fixtures": 510,
+      "error": null
+    }
+  ]
+}

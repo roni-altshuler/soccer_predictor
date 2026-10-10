@@ -1,0 +1,48 @@
+{
+  "basis": "Existing release asset, synthetic first-page HTTP403; no provider request",
+  "report": {
+    "schema_version": 1,
+    "state": "degraded",
+    "attempted_at": "2026-10-10T13:03:39.239856+00:00",
+    "requests": 1,
+    "request_limit": 6,
+    "leagues": [
+      {
+        "competition_id": "eng.1",
+        "season": "2026-2027",
+        "last_verified_at": "2026-08-11T08:17:36.784704+00:00"
+      },
+      {
+        "competition_id": "esp.1",
+        "season": "2026-2027",
+        "last_verified_at": "2026-08-11T09:29:21.551550+00:00"
+      },
+      {
+        "competition_id": "ger.1",
+        "season": "2026-2027",
+        "last_verified_at": "2026-08-11T09:06:24.968439+00:00"
+      },
+      {
+        "competition_id": "ita.1",
+        "season": "2026-2027",
+        "last_verified_at": "2026-08-11T09:11:34.650827+00:00"
+      },
+      {
+        "competition_id": "fra.1",
+        "season": "2026-2027",
+        "last_verified_at": "2026-08-11T11:16:31.687640+00:00"
+      },
+      {
+        "competition_id": "usa.1",
+        "season": "2026",
+        "last_verified_at": "2026-08-11T09:49:52.961458+00:00"
+      }
+    ],
+    "reason": "http_403"
+  },
+  "calls": [
+    "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures"
+  ],
+  "database_sha256_before": "627cccfff0d408591852440f878a8a9bdd688e40abea35abfc9be2cbdb1e4374",
+  "database_sha256_after": "627cccfff0d408591852440f878a8a9bdd688e40abea35abfc9be2cbdb1e4374"
+}

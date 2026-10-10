@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Swords } from 'lucide-react'
 
 import { DocsRow } from '@/components/evidence/DocsLink'
+import { ScheduleRefreshNotice } from '@/components/forecast/ScheduleRefreshNotice'
 import { LeagueMark } from '@/components/primitives'
 import {
   SERVED_COMPETITION_IDS,
@@ -155,6 +156,7 @@ export default async function LeaguesPage() {
         />
       </header>
 
+      <ScheduleRefreshNotice />
       <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {leagues.map((league) => (
           <li key={league.competitionId}>

@@ -199,6 +199,15 @@ distinguishes an unavailable read from absent evidence, withholds dependent
 empty-record claims until that source is readable, and retains the last
 successful response during failed retries.
 
+The optional season schedule check now uses six stored FBref URLs and the
+existing parser, with ordinary HTTP and no ScraperFC/browser dependency. A
+rejected or incomplete check retains the entire last-good schedule database,
+publishes degraded status beside the forecasts, and marks the workflow failed
+after preserving the forecast. Missing status stays unknown; a successful
+fixture check does not establish newer results. No browser bypass or expanded
+backfill is added. [Schedule refresh scope and evidence](docs/SEASON_REFRESH_RELIABILITY.md)
+records the checks and remaining access limitations.
+
 League pages also link to **Compare clubs · Season snapshot**: two clubs from
 one published competition/season, recorded points per game with game counts,
 and the existing projected final points. The view exposes the source artifact

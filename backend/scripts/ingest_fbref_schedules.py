@@ -209,7 +209,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                     help="rebuild fixtures from CACHED html only, fetching "
                          "nothing — what the raw-HTML layer exists for")
     ap.add_argument("--stats", action="store_true")
+    ap.add_argument("--routine", action="store_true",
+                    help="atomically check only the six served current-season schedules "
+                         "using stored URLs and ordinary HTTP; no browser dependencies")
+    ap.add_argument("--report", type=Path, help="routine check report (required with --routine)")
     args = ap.parse_args(argv)
+    if args.routine:
+        if not args.report or any((args.leagues, args.since, args.current_season,
+                                   args.limit, args.refresh, args.reparse, args.stats)):
+            ap.error("--routine requires --report and cannot be combined with scrape modes")
+        from backend.services.fbref.routine_schedule import refresh
+        from backend.scripts.record_schedule_refresh import write_json
+        report = refresh(DB)
+        write_json(args.report, report)
+        return 0 if report["state"] == "checked" else 1
     if args.current_season and not args.since:
         from backend.services.prediction.historical_data import current_season
 
