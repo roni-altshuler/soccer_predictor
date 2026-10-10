@@ -8,6 +8,11 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Added
 
+- Failed Evaluation browser replays retain raw React errors, component diffs,
+  head/root theme state and both preference keys. A bounded development replay
+  runs after a failed production CI gate to collect unminified diagnostics;
+  the production failure remains blocking. The hydration cause remains open.
+
 - Match evidence explorer from league and club comparisons: club/date filters,
   archived probabilities, model goal expectations versus recorded scores,
   timing/Elo context and count-bearing calibration. Pre-day timing, result

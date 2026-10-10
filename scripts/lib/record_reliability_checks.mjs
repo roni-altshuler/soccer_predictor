@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
+import { observeBrowserFailures } from './browser_failure_evidence.mjs'
 
 /** Use the existing product browser/server and real committed artifact routes.
  * Faults change availability only; other APIs and external hosts stay offline.
@@ -34,6 +35,7 @@ export async function checkRecordReliability({ browser, base, out }) {
     const page = await context.newPage(), errors = [], expectedFaults = [], states = []
     let state = 'ready', release, gate
     let failedSources = new Set()
+    const diagnostics = observeBrowserFailures(page, () => ({ state, width, theme }))
     try {
       page.on('pageerror', (error) => errors.push(error.message))
       page.on('console', (message) => {
@@ -187,10 +189,16 @@ export async function checkRecordReliability({ browser, base, out }) {
       report.push({ width, theme, states, expectedFaults, errors })
     } catch (error) {
       await page.screenshot({ path: `${out}/record-failed-${theme}-${width}.png`, fullPage: true }).catch(() => {})
+      await writeFile(`${out}/record-failed-${theme}-${width}.json`, JSON.stringify({
+        width, theme, state, url: page.url(), errors, expectedFaults,
+        failure: { message: error.message, stack: error.stack, observedAt: new Date().toISOString(), state },
+        browserEvents: await diagnostics.flush(),
+      }, null, 2))
       console.error({ width, theme, state, url: page.url(), content: await page.locator('#main').innerText().catch(() => ''), errors })
       throw error
     } finally {
       release?.()
+      await writeFile(`${out}/record-browser-${theme}-${width}.json`, JSON.stringify(await diagnostics.flush(), null, 2))
       await context.close()
     }
   }
