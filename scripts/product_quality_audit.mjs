@@ -12,6 +12,7 @@ import { checkTeamComparison } from './lib/team_comparison_checks.mjs'
 import { checkMatchEvidence } from './lib/match_evidence_checks.mjs'
 import { checkRecordReliability } from './lib/record_reliability_checks.mjs'
 import { checkScheduleRefresh } from './lib/schedule_refresh_checks.mjs'
+import { installHydrationDiagnostics } from './lib/hydration_ci_diagnostics.mjs'
 
 const port = process.env.QA_PORT || '3100'
 const base = process.env.QA_BASE || `http://127.0.0.1:${port}`
@@ -48,6 +49,7 @@ const detail = (p, evidence = 'sparse') => ({ id: String(p.match_id), home_team:
 await mkdir(out, { recursive: true })
 let server
 let browser
+let hydrationDiagnostics
 const report = []
 let navigationReport
 let portraitReport
@@ -124,6 +126,7 @@ try {
     await untilServer()
   }
   browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || undefined })
+  if (process.env.QA_HYDRATION_DIAGNOSTICS === '1') hydrationDiagnostics = await installHydrationDiagnostics(browser, { out, base })
   assert.match(await (await fetch(base)).text(), /<h1\b[^>]*>Matchday<\/h1>/, 'Matchday heading remains in server-rendered HTML')
   navigationReport = await checkNavigationRaces({ browser, base, out, date, today, fixtures, records, detail, evaluation, probe: process.env.QA_PROBE === '1' })
   if (!process.env.QA_NAVIGATION_ONLY) portraitReport = await checkProfilePortraits({ browser, base, out, chosen, detail, today })
@@ -362,6 +365,7 @@ try {
 } finally {
   await browser?.close()
   if (server) server.kill('SIGTERM')
+  await hydrationDiagnostics?.flush().catch(() => console.error('HYDRATION_DIAGNOSTIC {"capture":"unavailable"}'))
 }
 const result = { replay: 'Committed forecasts; sparse detail removes optional evidence. No model/data regeneration or provider access.', screenshots: out, serverRenderedHeading: true, navigationReport, portraitReport, comparisonReport, evidenceReport, recordReport, scheduleReport, report }
 await writeFile(`${out}/report.json`, JSON.stringify(result, null, 2))

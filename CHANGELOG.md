@@ -8,6 +8,12 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Added
 
+- Failed product CI exposes allowlisted hydration evidence and diagnostic JSON/
+  archive SHA-256 in accessible text job logs. One production mismatch logpoint
+  per page captures node types and a bounded head/root mutation sequence, with
+  an intentional SSR positive control. Original browser gates remain fatal;
+  no app, renderer or dependency behavior is patched.
+
 - Failed Evaluation browser replays retain raw React errors, component diffs,
   head/root theme state and both preference keys. A bounded development replay
   runs after a failed production CI gate to collect unminified diagnostics;

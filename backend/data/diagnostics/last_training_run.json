@@ -1,46 +1,5 @@
 {
-  "ran_at": "2026-10-04T10:30:55.971590Z",
-  "status": "gate_enforced",
-  "summary_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/walkforward_summary.json",
-  "drift_report_path": "/home/runner/work/soccer_predictor/soccer_predictor/backend/data/diagnostics/training_drift_2026-10-04.json",
-  "retrained_leagues": [
-    "eng.1",
-    "esp.1",
-    "ger.1",
-    "ita.1",
-    "fra.1"
-  ],
-  "n_wins": 0,
-  "n_regressions": 0,
-  "n_held_back": 5,
-  "n_promoted": 0,
-  "promotion_enforcement": {
-    "rolled_back": [],
-    "no_prior_artifact": [
-      "ger.1",
-      "esp.1",
-      "fra.1",
-      "eng.1",
-      "ita.1"
-    ],
-    "rollback_failed": []
-  },
-  "baseline_rotation": {
-    "advanced": [],
-    "frozen": [
-      "bundesliga",
-      "champions_league",
-      "copa_america",
-      "eredivisie",
-      "euro",
-      "europa_league",
-      "la_liga",
-      "ligue_1",
-      "mls",
-      "premier_league",
-      "primeira_liga",
-      "serie_a",
-      "world_cup"
-    ]
-  }
+  "ran_at": "2026-10-11T10:32:49.009699Z",
+  "status": "error",
+  "error": "ESPN range rejected for premier_league/2010; daily fallback needs 365 requests, budget 93. Use a narrower season selection; no partial season accepted."
 }
