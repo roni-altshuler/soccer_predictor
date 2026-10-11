@@ -23,7 +23,11 @@ directories: for (const directory of directories) {
     if (!stat.isFile() || stat.size > 1048576) continue
     const bytes = await readFile(path)
     let diagnostic
-    try { diagnostic = JSON.parse(bytes) } catch { if (!emit('HYDRATION_DIAGNOSTIC {"capture":"invalid-json"}')) break directories; continue }
+    try { diagnostic = JSON.parse(bytes) } catch {
+      if (!emit('HYDRATION_DIAGNOSTIC {"capture":"invalid-json"}')) break directories
+      logged++
+      continue
+    }
     const summary = failureSummary({ bytes, diagnostic, file })
     if (file !== 'ci-hydration-browser.json' && !summary.failure && !summary.errors.length) continue
     const line = `HYDRATION_DIAGNOSTIC ${JSON.stringify(summary)}`

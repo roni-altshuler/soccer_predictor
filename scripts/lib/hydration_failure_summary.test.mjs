@@ -108,3 +108,22 @@ test('the complete CLI output including header and newlines stays within 32 KiB'
     for (const line of result.stdout.trim().split('\n')) assert.doesNotThrow(() => JSON.parse(line.slice('HYDRATION_DIAGNOSTIC '.length)))
   } finally { await rm(directory, { recursive: true, force: true }) }
 })
+
+test('malformed JSON also counts toward the twelve-file logging limit', async () => {
+  const directory = await mkdtemp(`${tmpdir()}/hydration-log-file-limit-`)
+  try {
+    for (const prefix of ['record', 'evidence']) for (const kind of ['browser', 'failed']) {
+      for (const theme of ['light-', 'dark-', '']) for (const width of [390, 768, 1440]) {
+        await writeFile(`${directory}/${prefix}-${kind}-${theme}${width}.json`, 'private-invalid-payload')
+      }
+    }
+    const result = spawnSync(process.execPath, ['scripts/log_hydration_failure.mjs'], {
+      env: { ...process.env, QA_OUT: directory }, encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert(!result.stdout.includes('private-invalid-payload'))
+    const lines = result.stdout.trim().split('\n').map((line) => JSON.parse(line.slice('HYDRATION_DIAGNOSTIC '.length)))
+    assert.equal(lines.length, 13)
+    assert.equal(lines.filter((line) => line.capture === 'invalid-json').length, 12)
+  } finally { await rm(directory, { recursive: true, force: true }) }
+})
