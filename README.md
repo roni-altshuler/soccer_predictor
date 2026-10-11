@@ -468,6 +468,10 @@ gitignored — build and train them locally. Committed prediction JSON under
 Production hydration failures on Evaluation and Match evidence remain under investigation.
 [Diagnosis and reproduction](docs/EVALUATION_HYDRATION_DIAGNOSIS.md) distinguish
 passing local runs from the unresolved production browser failure.
+Failed product CI also prints a bounded sanitized diagnostic summary in the text
+job log, with node types, runtime versions and evidence hashes. The original
+browser assertions still block; the observer is verified with an intentional
+SSR mismatch, not an app fix. See the diagnosis for its privacy and timing limits.
 
 **[Injury failure diagnostics](docs/INJURY_FAILURE_DIAGNOSTICS.md)** records
 sanitized request/schema reasons in a bounded failed-run artifact while

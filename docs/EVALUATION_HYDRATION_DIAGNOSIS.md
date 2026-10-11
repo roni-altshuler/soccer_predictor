@@ -109,3 +109,59 @@ is `/tmp/pitchverse-evaluation-hydration`; production retains its existing path.
 Match evidence defaults to port 3134 and
 `/tmp/pitchverse-match-evidence-hydration`.
 No provider workflow is dispatched and no test filters hydration errors.
+
+## Accessible CI evidence without the artifact ZIP
+
+The PR46 production failure's artifact `11700275158` remains unreadable in the
+saved environment: supported archive/materialization transfers returned HTTP
+403. Text job logs are readable, but an existing GitHub log endpoint cannot
+retroactively expose fields that were written only to the ZIP. This change
+closes that gap for future failed product runs; it does not recover or explain
+the old failure.
+
+After the existing evidence upload, CI prints `HYDRATION_DIAGNOSTIC` JSON lines.
+They include each selected diagnostic JSON's SHA-256 and the uploaded archive's
+`artifact-digest`, supplied by [upload-artifact v4](https://github.com/actions/upload-artifact/blob/v4/action.yml).
+Upload failure yields a null archive hash; JSON hashes remain useful.
+The summary selects only known fixture routes (without query strings or fixture
+IDs), viewport, error class, error-time phase/document and elapsed timing,
+known component/HTML node names from development diffs, and runtime versions.
+It never logs arbitrary messages, raw stacks/console arguments, page/head
+markup, text, attribute values, storage, tokens or personal data.
+
+During the original production product gate, `QA_HYDRATION_DIAGNOSTICS=1`
+installs one Chromium CDP conditional logpoint at the locked renderer's mismatch
+function per page. Served JavaScript and renderer behavior are unchanged. At a
+mismatch it records expected/actual node types, the cursor parent, host ancestry
+and the latest 16 selected head/root mutations. The first four mismatches also
+print immediately as sanitized `HYDRATION_CAPTURE` lines, so a later job timeout
+cannot hide already captured node evidence. Mutation entries contain only
+timing, element type and attribute name. Observation starts after head/root
+exist; older entries are counted as dropped. This is not a complete DOM history.
+There are at most 64 observed pages and eight recorded mismatches. Unsupported
+renderer layouts or capture failures report absent coverage explicitly; the
+normal gate keeps its existing assertions. CDP/debugger and observers can alter
+timing, so a diagnostic pass cannot clear a failed production result.
+
+Before that gate, CI runs one intentional SSR-anchor positive control against
+its own installed browser and production build. It must capture expected `<a>`
+versus injected `<span>` under `<body>` and observe React #418. This proves
+capture coverage, not reproduction or resolution of the app defect. No gate
+retry or suppression is added. Existing production timeouts, fatal browser
+assertions and the bounded development diagnostics remain unchanged.
+
+The post-upload log is capped at 12 selected files and 32 KiB, with at most four errors
+and four mismatches per summary. Symlinks, files over 1 MiB and unknown filenames
+are excluded. The original richer JSON and screenshots remain in the artifact.
+For a local check after building:
+
+```bash
+QA_CHROMIUM=/usr/bin/chromium npm run test:hydration:diagnostics
+QA_HYDRATION_DIAGNOSTICS=1 QA_CHROMIUM=/usr/bin/chromium npm run test:product
+node scripts/log_hydration_failure.mjs
+```
+
+`QA_OUT` can select one local diagnostic directory for summary validation.
+No application, provider, forecast, training feature, dependency, serving or
+promotion behavior changes. Keep the diagnostic PR unmerged for independent
+exact-head review, and keep PR46's separate ingestion change unchanged.
