@@ -21,6 +21,10 @@ reference for the API, the artifacts and the commands.
 
 Everything below is internal: architecture, operations and project history.
 
+[Weekly training ingestion recovery](./TRAINING_INGESTION_RESUME.md) covers
+bounded historical receipts, separate progress checkpoints and unchanged
+completeness/promotion gates.
+
 [Matchday design review](./MATCHDAY_DESIGN_REVIEW.md) records the bounded cream
 interface update, before/after screenshots and responsive browser checks.
 

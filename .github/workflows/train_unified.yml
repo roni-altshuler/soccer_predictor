@@ -60,6 +60,31 @@ jobs:
             mv /tmp/warehouse.sqlite backend/data/warehouse.sqlite && \
             echo "warehouse restored from release"
 
+      - name: Ensure separate ingestion progress release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view warehouse-ingestion-progress >/dev/null 2>&1 || \
+            gh release create warehouse-ingestion-progress --latest=false \
+              --title "Warehouse ingestion progress (not a warehouse)" \
+              --notes "Validated dated ESPN receipts only. Partial progress is not complete coverage and cannot train or serve. No model or warehouse assets are published here."
+
+      - name: Restore validated training ESPN progress
+        id: training-progress
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHECKPOINT=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/warehouse-ingestion-progress" \
+            --jq '.assets | map(select(.name | test("^espn_training_receipts-[0-9]+-[0-9]+\\.sqlite\\.gz$"))) | max_by(.id) | .name // empty')
+          if [ -n "$CHECKPOINT" ]; then
+            mkdir -p backend/data/ingestion
+            gh release download warehouse-ingestion-progress --pattern "$CHECKPOINT" --dir /tmp --clobber
+            gunzip -c "/tmp/$CHECKPOINT" > backend/data/ingestion/espn_training_receipts.sqlite
+            python -m backend.scripts.validate_espn_training_progress --db backend/data/ingestion/espn_training_receipts.sqlite
+          else
+            echo "No previous receipt checkpoint; bounded bootstrap."
+          fi
+
       - name: Refresh warehouse sources
         # NO --clubelo here: the ClubElo loader downloads one CSV per team
         # at a polite ~8s spacing (hundreds of teams => hours) and burned
@@ -71,13 +96,27 @@ jobs:
         run: |
           if [ -f backend/data/warehouse.sqlite ]; then
             # Incremental: recent seasons + xG enrichment.
-            python -m backend.scripts.build_warehouse --espn --football-data --min-season 2025
+            python -m backend.scripts.build_warehouse --espn --resume-espn --football-data --min-season 2025
             python -m backend.scripts.build_warehouse --understat --min-season 2024
           else
             echo "No warehouse from release — full build (slow first run)."
             python -m backend.scripts.build_warehouse --full
           fi
           python -m backend.scripts.build_warehouse --stats
+
+      - name: Retain validated training ESPN progress after capped or failed refresh
+        # Independent checkpoint survives failed refreshes and weekly cache
+        # expiry. Never overwrite it after a failed restore or validation.
+        if: always() && steps.training-progress.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f backend/data/ingestion/espn_training_receipts.sqlite ]; then
+            python -m backend.scripts.validate_espn_training_progress --db backend/data/ingestion/espn_training_receipts.sqlite
+            CHECKPOINT="/tmp/espn_training_receipts-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.sqlite.gz"
+            gzip -c backend/data/ingestion/espn_training_receipts.sqlite > "$CHECKPOINT"
+            gh release upload warehouse-ingestion-progress "$CHECKPOINT"
+          fi
 
       # Every ingest can re-split a club identity: a provider spelling that
       # scores below team_resolver's 0.92 threshold creates a second `teams`

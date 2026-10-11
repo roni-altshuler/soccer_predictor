@@ -463,6 +463,14 @@ gitignored — build and train them locally. Committed prediction JSON under
 `backend/data/predictions/` is what the Vercel deployment reads, which is why
 `/accuracy` works without the Python backend.
 
+Weekly training retains its broad recent-season ingestion scope. Its restored
+warehouse path uses `--resume-espn` to keep validated historical/date progress
+across capped attempts, separately from released warehouse and model assets.
+Incomplete coverage still blocks training and publication. See
+[training ingestion recovery](docs/TRAINING_INGESTION_RESUME.md) for the October
+11 failure, the unchanged 93-attempt cap, checkpoint validation and freshness
+limits. Full live recovery has not been verified by the offline fixtures.
+
 ## Documentation
 
 Production hydration failures on Evaluation and Match evidence remain under investigation.

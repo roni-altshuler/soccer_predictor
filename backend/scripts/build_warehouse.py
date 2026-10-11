@@ -201,6 +201,11 @@ async def _build(args: argparse.Namespace) -> int:
                 from backend.services.data.espn_loader import load_current_competitions
                 stats = await load_current_competitions(
                     wh, competitions=_competitions(args), receipts_path=args.receipts_db)
+            elif getattr(args, "resume_espn", False):
+                from backend.services.data.espn_loader import load_training_competitions
+                stats = await load_training_competitions(
+                    wh, min_season=args.min_season, max_season=args.max_season,
+                    competitions=_competitions(args), receipts_path=args.receipts_db)
             else:
                 stats = await load_men_competitions(
                     wh,
@@ -436,6 +441,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--resume-current", action="store_true",
                         help="Bounded current-season refresh using ESPN's validated calendar "
                              "and durable daily receipts; requires explicit --competitions.")
+    parser.add_argument("--resume-espn", action="store_true",
+                        help="Bounded historical/current men's ESPN observations with durable "
+                             "receipts; retains the existing season/competition selection.")
     parser.add_argument("--receipts-db", type=Path, default=None,
                         help="Separate resumable ESPN receipt store; never the live warehouse.")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -447,7 +455,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.resume_current:
         from backend.services.data.espn_refresh import ROUTINE_COMPETITIONS, RECEIPTS_PATH
         scope = _competitions(args)
-        if (not args.espn or not args.current_season or not scope or args.force
+        if (not args.espn or not args.current_season or not scope or args.force or args.resume_espn
                 or any(getattr(args, name) for name in ("full", "espn_women", "football_data",
                            "openfootball", "clubelo", "fbref", "understat", "referees", "venues", "weather"))
                 or len(scope) != len(set(scope)) or not set(scope).issubset(ROUTINE_COMPETITIONS)):
@@ -456,8 +464,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         args.receipts_db = (args.receipts_db or RECEIPTS_PATH).resolve()
         if args.receipts_db == args.db or args.receipts_db.is_relative_to(args.db):
             parser.error("receipt store must be separate from the warehouse")
+    elif args.resume_espn:
+        from backend.services.data.espn_training_refresh import TRAINING_RECEIPTS_PATH
+        scope = _competitions(args)
+        from backend.services.data.espn_loader import MEN_COMPETITIONS
+        supported = {comp["competition_id"] for comp in MEN_COMPETITIONS}
+        if (not args.espn or args.current_season or args.full or args.espn_women or args.force
+                or (scope and (len(scope) != len(set(scope)) or not set(scope).issubset(supported)))):
+            parser.error("--resume-espn requires --espn with a valid men's scope; "
+                         "cannot combine with --full, --espn-women, --current-season or --force")
+        args.receipts_db = (args.receipts_db or TRAINING_RECEIPTS_PATH).resolve()
+        if args.receipts_db == args.db or args.receipts_db.is_relative_to(args.db):
+            parser.error("receipt store must be separate from the warehouse")
     elif args.receipts_db:
-        parser.error("--receipts-db requires --resume-current")
+        parser.error("--receipts-db requires --resume-current or --resume-espn")
 
     if args.current_season:
         # Two answers, not one: a European season in February is last

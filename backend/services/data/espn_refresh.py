@@ -30,6 +30,12 @@ REQUEST_BUDGET = 93
 
 
 class CurrentSeasonRefresh:
+    competition_keys = ROUTINE_COMPETITIONS
+    scoreboard_url = (
+        "https://site.api.espn.com/apis/site/v2/sports/soccer/{competition}/scoreboard"
+    )
+    local_day_competitions = {"usa.1"}
+
     def __init__(self, path: Path = RECEIPTS_PATH, *, budget: int = REQUEST_BUDGET,
                  now: datetime | None = None, client: httpx.AsyncClient | None = None):
         if not 0 <= budget <= REQUEST_BUDGET:
@@ -58,7 +64,7 @@ class CurrentSeasonRefresh:
         await self.parser.close()
 
     async def _request(self, competition: str, day: str) -> dict:
-        url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/{competition}/scoreboard"
+        url = self.scoreboard_url.format(competition=competition)
         for attempt in range(3):
             if self.remaining <= 0:
                 raise ProviderUnavailable(
@@ -128,7 +134,7 @@ class CurrentSeasonRefresh:
                     or league["season"]["year"] != season
                     or league["calendarType"] != "day" or league["calendarIsWhitelist"] is not True):
                 raise ValueError("calendar identity/whitelist mismatch")
-            key = ROUTINE_COMPETITIONS[competition]
+            key = self.competition_keys[competition]
             start, end = self.parser._season_windows(key, season)[0]
             through = min(end.date(), self.now.date())
             if (self._date(league["calendarStartDate"]).date() > start.date()
@@ -150,7 +156,7 @@ class CurrentSeasonRefresh:
         events = body.get("events")
         if not isinstance(events, list) or len(events) >= 1000:
             raise ProviderUnavailable("ESPN invalid/saturated event list")
-        key = ROUTINE_COMPETITIONS[competition]
+        key = self.competition_keys[competition]
         start, end = self.parser._season_windows(key, season)[0]
         matches = {}
         pending = not events  # A listed but empty day may later acquire a result.
@@ -173,8 +179,9 @@ class CurrentSeasonRefresh:
             match = self.parser._parse_espn_event(event, key, season)
             date = self._date(event.get("date"))
             query_date = datetime.strptime(day, "%Y%m%d").date()
-            # ESPN labels MLS fixture days locally; UTC kickoffs can be next day.
-            if abs((date.date() - query_date).days) > (1 if competition == "usa.1" else 0):
+            # Some American fixture days are local; UTC kickoffs can be next day.
+            tolerance = 1 if competition in self.local_day_competitions else 0
+            if abs((date.date() - query_date).days) > tolerance:
                 raise ProviderUnavailable("ESPN event outside queried fixture day")
             if match is None:
                 pending = True
@@ -216,10 +223,14 @@ class CurrentSeasonRefresh:
         except (ValueError, TypeError, AttributeError, ProviderUnavailable):
             # Corrupt receipts can only cause a refetch, never false coverage.
             return None
-        recent = datetime.strptime(day, "%Y%m%d").date() >= self.now.date() - timedelta(days=7)
-        if (pending or recent) and self.now - fetched >= timedelta(hours=1):
+        if self._expired(competition, season, day, body, pending, fetched):
             return None
         return matches, row[0]
+
+    def _expired(self, competition, season, day, body, pending, fetched):
+        recent = (datetime.strptime(day, "%Y%m%d").date()
+                  >= self.now.date() - timedelta(days=7))
+        return (pending or recent) and self.now - fetched >= timedelta(hours=1)
 
     def _save(self, competition: str, season: int, day: str, body: dict):
         encoded = json.dumps(body, sort_keys=True, separators=(",", ":"))
@@ -298,9 +309,16 @@ class CurrentSeasonRefresh:
             body = await self._request(comp, self.now.strftime("%Y%m%d"))
             days = self._calendar(body, comp, season)
             self._events(body, comp, season, self.now.strftime("%Y%m%d"))
-            calendars[comp] = (season, days)
+            calendars[comp, season] = days
+        selected = await self._fetch_selected(calendars)
+        logger.info("Selected coverage complete: %s competitions, %s HTTP attempts (cap %s)",
+                    len(selected), self.requests, REQUEST_BUDGET)
+        return {comp: (season, rows) for (comp, season), rows in selected.items()}
+
+    async def _fetch_selected(self, calendars):
+        """Validate receipts and assemble complete scopes; never partial results."""
         selected = {}
-        for comp, (season, days) in calendars.items():
+        for (comp, season), days in calendars.items():
             previous_ids = self._known_final_ids(comp, season)
             matches = {}
             origins = {}
@@ -331,10 +349,8 @@ class CurrentSeasonRefresh:
             previous_ids.update(self._known_final_ids(comp, season))
             if not previous_ids.issubset(matches):
                 raise ProviderUnavailable("selected calendar lost previously validated receipt finals")
-            selected[comp] = (season, [dict(match, _observed_at=observations[mid])
-                                     for mid, match in matches.items()])
+            selected[comp, season] = [dict(match, _observed_at=observations[mid])
+                                     for mid, match in matches.items()]
             logger.info("Validated %s/%s: %s fixture dates, %s final events", comp, season,
                         len(days), len(matches))
-        logger.info("Selected coverage complete: %s competitions, %s HTTP attempts (cap %s)",
-                    len(selected), self.requests, REQUEST_BUDGET)
         return selected

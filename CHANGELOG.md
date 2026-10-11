@@ -63,6 +63,14 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Fixed
 
+- Weekly training's restored-warehouse ESPN refresh can resume historical and
+  current season/date receipts without changing its competition selection or
+  93-attempt cap. A separate validated progress release survives incomplete
+  attempts; immutable uploads retain previous checkpoints. Complete coverage,
+  warehouse integrity and promotion gates remain blocking. Offline fixtures
+  reproduce the historical HTTP 400 and four-invocation recovery; live provider
+  recovery and training remain unverified. See `docs/TRAINING_INGESTION_RESUME.md`.
+
 - Routine season schedule refresh no longer requires the optional ScraperFC
   browser stack. It checks only six stored current-season URLs, stops on provider
   rejection without retries, and atomically replaces the schedule database only
