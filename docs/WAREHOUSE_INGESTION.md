@@ -240,8 +240,11 @@ they do not replace the released warehouse or export production data. Cache
 misses, eviction or concurrent cache snapshots can require another bootstrap;
 they cannot certify incomplete coverage. Cancellation before cache save can
 lose that runner's new progress, while its completed SQLite receipts remain
-valid locally. Cold reconstruction and broad weekly backfills are not made
-resumable by this change.
+valid locally. That current-only path does not make cold reconstruction or
+broad weekly backfills resumable. The later
+[weekly training repair](TRAINING_INGESTION_RESUME.md) adds historical progress
+for the restored-warehouse training branch with its existing broad selection;
+cold `--full` reconstruction remains separate.
 
 ### October 5 isolated rehearsal
 

@@ -461,9 +461,47 @@ async def load_current_competitions(warehouse: Warehouse, *, competitions: List[
         selected = await refresh.fetch(competitions)
     finally:
         await refresh.close()
+    return _reconcile_observations(warehouse, [(comp, season, rows)
+                                             for comp, (season, rows) in selected.items()])
+
+
+async def load_training_competitions(
+    warehouse: Warehouse,
+    *,
+    min_season: int,
+    max_season: Optional[int] = None,
+    competitions: Optional[Iterable[str]] = None,
+    receipts_path=None,
+) -> List[LoadStats]:
+    """Retain men's season selection; only complete scopes reach the candidate."""
+    from backend.services.data.espn_training_refresh import (
+        TrainingSeasonRefresh,
+        TRAINING_RECEIPTS_PATH,
+    )
+
+    requested = set(competitions) if competitions else None
+    scope = [
+        (comp["competition_id"], season)
+        for comp in MEN_COMPETITIONS
+        if requested is None or comp["competition_id"] in requested
+        for season in AVAILABLE_SEASONS.get(comp["key"], [])
+        if season >= min_season and (max_season is None or season <= max_season)
+    ]
+    refresh = TrainingSeasonRefresh(receipts_path or TRAINING_RECEIPTS_PATH)
+    try:
+        selected = await refresh.fetch_seasons(scope)
+    finally:
+        await refresh.close()
+    return _reconcile_observations(
+        warehouse, [(comp, season, rows) for (comp, season), rows in selected.items()]
+    )
+
+
+def _reconcile_observations(warehouse, selected):
+    """Reconcile complete scopes with identity, no-loss and timestamp guards."""
     resolver = TeamResolver(warehouse, gender_default="M")
     stats = []
-    for comp, (season, raw_matches) in selected.items():
+    for comp, season, raw_matches in selected:
         existing = {r["match_id"]: r for r in warehouse._conn.execute(
             "SELECT * FROM matches WHERE competition_id=? AND season=?", (comp, season))}
         aliases = {r["event_id"]: r for r in warehouse._conn.execute(
