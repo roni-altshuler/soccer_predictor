@@ -64,6 +64,19 @@ test('keeps only known fixture routes and runtime versions', () => {
   assert.deepEqual(runtimeSummary(null), { node: null, browser: null, next: null, bundledReact: null })
 })
 
+test('failed-page coverage retains bounded identities and only allowlisted stages', () => {
+  const diagnostic = { capture: 'unavailable', failedPageCount: 64,
+    failedPages: [{ page: 1, document: 0, stage: 'cdp-session', message: 'private-token', url: 'https://private.example' },
+      ...Array.from({ length: 64 }, () => ({ page: 99999, document: -1, stage: 'private-token' }))] }
+  const summary = failureSummary({ bytes: Buffer.from('coverage'), diagnostic, file: 'ci-hydration-browser.json' })
+  assert.equal(summary.capture, 'unavailable')
+  assert.equal(summary.failedPageCount, 64)
+  assert.equal(summary.failedPages.length, 8)
+  assert.deepEqual(summary.failedPages[0], { page: 1, document: 0, stage: 'cdp-session' })
+  assert.deepEqual(summary.failedPages[1], { page: null, document: null, stage: null })
+  assert(!JSON.stringify(summary).includes('private'))
+})
+
 test('CLI emits sanitized evidence and digests while refusing symlinks and oversized files', async () => {
   const directory = await mkdtemp(`${tmpdir()}/hydration-log-contract-`)
   try {

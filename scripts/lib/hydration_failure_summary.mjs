@@ -84,6 +84,11 @@ export function failureSummary({ bytes, diagnostic, file }) {
     sha256: createHash('sha256').update(bytes).digest('hex'),
     runtime: runtimeSummary(input.runtime),
     capture: ['supported', 'unsupported-renderer', 'unavailable', 'page-limit'].includes(input.capture) ? input.capture : null,
+    failedPageCount: finite(input.failedPageCount, 64),
+    failedPages: (Array.isArray(input.failedPages) ? input.failedPages : []).slice(0, 8).map((e) => ({
+      page: finite(e?.page, 64), document: finite(e?.document, 1000),
+      stage: ['init-script', 'cdp-session', 'cdp-setup', 'persist'].includes(e?.stage) ? e.stage : null,
+    })),
     failure, errors, mismatches: mismatch,
   }
 }

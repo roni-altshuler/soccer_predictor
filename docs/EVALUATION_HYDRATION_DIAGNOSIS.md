@@ -138,9 +138,14 @@ print immediately as sanitized `HYDRATION_CAPTURE` lines, so a later job timeout
 cannot hide already captured node evidence. Mutation entries contain only
 timing, element type and attribute name. Observation starts after head/root
 exist; older entries are counted as dropped. This is not a complete DOM history.
-There are at most 64 observed pages and eight recorded mismatches. Unsupported
-renderer layouts or capture failures report absent coverage explicitly; the
-normal gate keeps its existing assertions. CDP/debugger and observers can alter
+There are at most 64 observed pages and eight recorded mismatches. The ancestry
+walk stops after 64 fiber steps or six host nodes, including through non-host
+fibers or cycles. Unsupported renderer layouts or capture failures report absent
+coverage explicitly. A failed page keeps coverage unavailable even if a later
+page succeeds; summaries retain the failed-page count and at most eight numeric
+page/document identities with allowlisted install/persistence stage names. No
+exception message or stack is recorded for those failures. The normal gate keeps
+its existing assertions. CDP/debugger and observers can alter
 timing, so a diagnostic pass cannot clear a failed production result.
 
 Before that gate, CI runs one intentional SSR-anchor positive control against

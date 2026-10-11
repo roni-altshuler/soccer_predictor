@@ -13,7 +13,7 @@ export function productionMismatchTarget(source, file) {
   const start = match.index + match[0].indexOf(`function ${match[3]}`)
   const offset = source.indexOf('{', start) + 1
   const [, cursor, , fiber] = match.slice(1)
-  const expression = `(${binding}(JSON.stringify({route:location.href,width:innerWidth,height:innerHeight,elapsedMs:Math.round(performance.now()),expected:typeof ${fiber}.type==='string'?${fiber}.type:null,actual:${cursor}?.nodeName?.toLowerCase(),cursorParent:${cursor}?.parentNode?.nodeName?.toLowerCase(),fiber:${fiber}.tag,ancestry:(()=>{let a=[],f=${fiber}.return;while(f&&a.length<6){if(typeof f.type==='string')a.push(f.type);f=f.return}return a})(),mutations:window.__pitchverseHydrationMutations?.entries??[],mutationsDropped:window.__pitchverseHydrationMutations?.dropped??0})),false)`
+  const expression = `(${binding}(JSON.stringify({route:location.href,width:innerWidth,height:innerHeight,elapsedMs:Math.round(performance.now()),expected:typeof ${fiber}.type==='string'?${fiber}.type:null,actual:${cursor}?.nodeName?.toLowerCase(),cursorParent:${cursor}?.parentNode?.nodeName?.toLowerCase(),fiber:${fiber}.tag,ancestry:(()=>{let a=[],f=${fiber}.return;for(let steps=0;f&&a.length<6&&steps<64;steps++){if(typeof f.type==='string')a.push(f.type);f=f.return}return a})(),mutations:window.__pitchverseHydrationMutations?.entries??[],mutationsDropped:window.__pitchverseHydrationMutations?.dropped??0})),false)`
   return { file, lineNumber: source.slice(0, offset).split('\n').length - 1,
     columnNumber: offset - source.lastIndexOf('\n', offset - 1) - 1,
     condition: expression, rendererSha256: createHash('sha256').update(source).digest('hex') }
@@ -47,7 +47,7 @@ function watchMutations() {
 export async function installHydrationDiagnostics(browser, { out, base }) {
   const data = { capture: 'unsupported-renderer', runtime: runtimeSummary({ node: process.version,
     browser: browser.version(), next: require('next/package.json').version,
-    bundledReact: require('next/dist/compiled/react').version }), mismatches: [], pages: 0 }
+    bundledReact: require('next/dist/compiled/react').version }), mismatches: [], pages: 0, failedPageCount: 0, failedPages: [] }
   let target
   for (const file of (await readdir('.next/static/chunks')).filter((f) => /^[\w-]+\.js$/.test(f)).sort()) {
     target = productionMismatchTarget(await readFile(`.next/static/chunks/${file}`, 'utf8'), file)
@@ -62,16 +62,26 @@ export async function installHydrationDiagnostics(browser, { out, base }) {
     context.newPage = async (...args) => {
       const page = await newPage(...args)
       if (!target) return page
-      if (data.pages >= 64) { data.capture = 'page-limit'; await persist(); return page }
+      if (data.pages >= 64) { if (data.capture !== 'unavailable') data.capture = 'page-limit'; await persist(); return page }
       data.pages++
       const pageId = data.pages
       let document = 0
+      let failed = false, stage = 'init-script'
+      const recordFailure = (failureStage) => {
+        data.capture = 'unavailable'
+        if (failed) return
+        failed = true
+        data.failedPageCount++
+        if (data.failedPages.length < 8) data.failedPages.push({ page: pageId, document, stage: failureStage })
+      }
       page.on('request', (request) => {
         if (request.isNavigationRequest() && request.frame() === page.mainFrame()) document++
       })
       try {
         await page.addInitScript(watchMutations)
+        stage = 'cdp-session'
         const client = await context.newCDPSession(page)
+        stage = 'cdp-setup'
         client.on('Runtime.bindingCalled', (event) => {
           if (event.name !== binding || data.mismatches.length >= 8 || event.payload.length > 8192) return
           try {
@@ -83,7 +93,7 @@ export async function installHydrationDiagnostics(browser, { out, base }) {
             // Retain node evidence if a later CI timeout skips the final log.
             // The raw binding payload never enters stdout.
             if (data.mismatches.length <= 4) console.log(`HYDRATION_CAPTURE ${JSON.stringify({ runtime: data.runtime, mismatch: data.mismatches.at(-1) })}`)
-            void persist().catch(() => { data.capture = 'unavailable' })
+            void persist().catch(() => { recordFailure('persist') })
           } catch { /* Never substitute capture failure for the browser verdict. */ }
         })
         await client.send('Runtime.enable')
@@ -91,11 +101,14 @@ export async function installHydrationDiagnostics(browser, { out, base }) {
         await client.send('Debugger.enable')
         await client.send('Debugger.setBreakpointByUrl', { lineNumber: target.lineNumber, columnNumber: target.columnNumber,
           urlRegex: `/_next/static/chunks/${target.file.replaceAll('.', '\\.')}($|\\?)`, condition: target.condition })
-        data.capture = 'supported'
+        // Coverage only improves from its initial state. Later successes must
+        // not erase an earlier failure or a concurrently reached page limit.
+        if (data.capture === 'unsupported-renderer') data.capture = 'supported'
         data.rendererSha256 = target.rendererSha256
+        stage = 'persist'
         await persist()
       } catch {
-        data.capture = 'unavailable'
+        recordFailure(stage)
         await persist()
       }
       return page
