@@ -215,7 +215,7 @@
   "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
   "statistical_selection": {
     "policy_version": "2026-07-30",
-    "generated_at": "2026-10-10T14:46:09+00:00",
+    "generated_at": "2026-10-11T15:08:20+00:00",
     "gates": {
       "min_backtest_matches": 60,
       "floor_tolerance": 0.01,
@@ -241,7 +241,6 @@
       "fra.1",
       "ger.1",
       "ita.1",
-      "ned.1",
       "por.1",
       "usa.1",
       "usa.1.w"
@@ -314,15 +313,15 @@
         "reason": "dixon_coles_retained_clears_floor"
       },
       "ned.1": {
-        "season": 2024,
-        "n": 304,
-        "dc_accuracy": 0.5362,
-        "dc_brier": 0.5839,
-        "dc_log_loss": 0.988,
-        "always_home_accuracy": 0.4572,
+        "season": 2026,
+        "n": 10,
+        "dc_accuracy": 0.4,
+        "dc_brier": 0.6991,
+        "dc_log_loss": 1.1273,
+        "always_home_accuracy": 0.5,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
-        "reason": "dixon_coles_retained_clears_floor"
+        "reason": "dixon_coles_dropped_below_floor"
       },
       "por.1": {
         "season": 2024,
