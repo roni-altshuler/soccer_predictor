@@ -16,6 +16,7 @@
     "test:schedule": "node scripts/schedule_refresh_audit.mjs",
     "test:hydration": "node --test scripts/lib/browser_failure_evidence.test.mjs && node scripts/evaluation_hydration_audit.mjs",
     "test:hydration:evidence": "node --test scripts/lib/browser_failure_evidence.test.mjs && node scripts/match_evidence_hydration_audit.mjs",
+    "test:hydration:diagnostics": "node --test scripts/lib/hydration_ci_diagnostics.test.mjs scripts/lib/hydration_failure_summary.test.mjs && node scripts/hydration_diagnostic_control.mjs",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "a11y": "axe http://localhost:3000",

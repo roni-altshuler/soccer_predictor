@@ -51,9 +51,15 @@ jobs:
       - name: Install browser for product contracts
         run: npx playwright install --with-deps chromium
 
+      - name: Verify hydration diagnostic positive control
+        timeout-minutes: 2
+        run: npm run test:hydration:diagnostics
+
       - name: Responsive product contracts
         id: product
         run: npm run test:product
+        env:
+          QA_HYDRATION_DIAGNOSTICS: '1'
 
       - name: Theme navigation journeys
         run: npm run test:theme
@@ -71,6 +77,7 @@ jobs:
         run: npm run test:hydration
 
       - name: Upload product evidence
+        id: product-evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -80,4 +87,11 @@ jobs:
             /tmp/pitchverse-theme-quality/
             /tmp/pitchverse-evaluation-hydration/
             /tmp/pitchverse-match-evidence-hydration/
+            /tmp/pitchverse-hydration-control/
           if-no-files-found: ignore
+
+      - name: Log sanitized hydration failure evidence
+        if: always() && steps.product.outcome == 'failure'
+        run: node scripts/log_hydration_failure.mjs
+        env:
+          QA_ARTIFACT_SHA: ${{ steps.product-evidence.outputs.artifact-digest }}
