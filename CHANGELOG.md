@@ -70,6 +70,10 @@ All notable changes to Pitchverse are documented here. The format is based on
   warehouse integrity and promotion gates remain blocking. Offline fixtures
   reproduce the historical HTTP 400 and four-invocation recovery; live provider
   recovery and training remain unverified. See `docs/TRAINING_INGESTION_RESUME.md`.
+  Review hardening rejects pre-kickoff final observations and active checkpoint
+  schema objects, ignores incomplete release uploads, and rediscovers changed
+  incomplete calendars while retaining valid dated observations. Archival
+  ingestion is not point-in-time evaluation evidence.
 
 - Routine season schedule refresh no longer requires the optional ScraperFC
   browser stack. It checks only six stored current-season URLs, stops on provider

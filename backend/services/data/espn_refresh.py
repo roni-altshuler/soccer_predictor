@@ -152,7 +152,8 @@ class CurrentSeasonRefresh:
         except (KeyError, TypeError, ValueError, IndexError) as exc:
             raise ProviderUnavailable(f"ESPN {competition}: invalid complete calendar") from exc
 
-    def _events(self, body: dict, competition: str, season: int, day: str):
+    def _events(self, body: dict, competition: str, season: int, day: str,
+                *, observed_at: datetime | None = None):
         events = body.get("events")
         if not isinstance(events, list) or len(events) >= 1000:
             raise ProviderUnavailable("ESPN invalid/saturated event list")
@@ -188,6 +189,8 @@ class CurrentSeasonRefresh:
                 continue
             if not start.date() <= date.date() <= min(end.date(), self.now.date()):
                 raise ProviderUnavailable("ESPN final outside requested past season")
+            if date > min(observed_at or self.now, self.now):
+                raise ProviderUnavailable("ESPN final kickoff after observation time")
             mid = match["match_id"]
             competition_body = event["competitions"][0]
             # The legacy collector substitutes stadium capacity for absent
@@ -219,7 +222,8 @@ class CurrentSeasonRefresh:
                 raise ValueError("receipt digest/clock mismatch")
             body = json.loads(row[1])
             self._calendar(body, competition, season)
-            matches, pending = self._events(body, competition, season, day)
+            matches, pending = self._events(body, competition, season, day,
+                                            observed_at=fetched)
         except (ValueError, TypeError, AttributeError, ProviderUnavailable):
             # Corrupt receipts can only cause a refetch, never false coverage.
             return None
@@ -331,6 +335,7 @@ class CurrentSeasonRefresh:
                                      comp, season, len(days) - index)
                     body = await self._request(comp, day)
                     if self._calendar(body, comp, season) != days:
+                        self._calendar_changed(comp, season)
                         raise ProviderUnavailable("ESPN calendar changed during refresh; retry from fresh scope")
                     daily, _ = self._events(body, comp, season, day)
                     self._save(comp, season, day, body)
@@ -354,3 +359,6 @@ class CurrentSeasonRefresh:
             logger.info("Validated %s/%s: %s fixture dates, %s final events", comp, season,
                         len(days), len(matches))
         return selected
+
+    def _calendar_changed(self, competition: str, season: int):
+        """Current-only callers discover their calendar anew on every run."""

@@ -20,6 +20,16 @@ async def validate(path, *, now=None):
     # Check before the refresh object can create missing tables. A warehouse or
     # wrong-schema database must never be uploaded under the checkpoint name.
     with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        for kind, name, table, sql in db.execute(
+            "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE type!='table'"
+        ):
+            if (
+                kind != "index"
+                or table not in {"receipts", "invalidated", "calendars"}
+                or name != f"sqlite_autoindex_{table}_1"
+                or sql is not None
+            ):
+                raise ProviderUnavailable("unexpected receipt schema object")
         if db.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
             raise ProviderUnavailable("receipt SQLite integrity failed")
         tables = {
@@ -67,7 +77,7 @@ async def validate(path, *, now=None):
                 raise ProviderUnavailable("receipt digest/date/clock mismatch")
             body = json.loads(encoded)
             refresh._calendar(body, comp, season)
-            refresh._events(body, comp, season, day)
+            refresh._events(body, comp, season, day, observed_at=fetched)
             count += 1
         for comp, season, stamp, encoded, digest in refresh.db.execute(
             "SELECT * FROM calendars"
@@ -82,7 +92,13 @@ async def validate(path, *, now=None):
             body = json.loads(encoded)
             refresh._calendar(body, comp, season)
             start = min(start for start, _ in refresh._windows(comp, season))
-            refresh._events(body, comp, season, start.strftime("%Y%m%d"))
+            refresh._events(
+                body,
+                comp,
+                season,
+                start.strftime("%Y%m%d"),
+                observed_at=observation_time(stamp),
+            )
         missing = refresh.db.execute(
             "SELECT competition,season,day FROM invalidated "
             "EXCEPT SELECT competition,season,day FROM receipts"

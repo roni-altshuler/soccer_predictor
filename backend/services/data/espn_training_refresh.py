@@ -98,7 +98,13 @@ class TrainingSeasonRefresh(CurrentSeasonRefresh):
             body = json.loads(row[1])
             days = self._calendar(body, competition, season)
             start = min(start for start, _ in self._windows(competition, season))
-            self._events(body, competition, season, start.strftime("%Y%m%d"))
+            self._events(
+                body,
+                competition,
+                season,
+                start.strftime("%Y%m%d"),
+                observed_at=observation_time(row[0]),
+            )
             return days
         except (ValueError, TypeError, AttributeError, ProviderUnavailable):
             return None
@@ -132,6 +138,15 @@ class TrainingSeasonRefresh(CurrentSeasonRefresh):
         except BaseException:
             self.db.rollback()
             raise
+
+    def _calendar_changed(self, competition: str, season: int):
+        # Incomplete historical progress must rediscover changed coverage.
+        # Dated observations and their no-loss guards remain untouched.
+        with self.db:
+            self.db.execute(
+                "DELETE FROM calendars WHERE competition=? AND season=?",
+                (competition, season),
+            )
 
     async def fetch_seasons(self, scope):
         if (

@@ -75,7 +75,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CHECKPOINT=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/warehouse-ingestion-progress" \
-            --jq '.assets | map(select(.name | test("^espn_training_receipts-[0-9]+-[0-9]+\\.sqlite\\.gz$"))) | max_by(.id) | .name // empty')
+            --jq '.assets | map(select(.state == "uploaded" and (.name | test("^espn_training_receipts-[0-9]+-[0-9]+\\.sqlite\\.gz$")))) | max_by(.id) | .name // empty')
           if [ -n "$CHECKPOINT" ]; then
             mkdir -p backend/data/ingestion
             gh release download warehouse-ingestion-progress --pattern "$CHECKPOINT" --dir /tmp --clobber

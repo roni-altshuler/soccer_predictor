@@ -54,6 +54,11 @@ from `site.web.api.espn.com`; it does not retry rejected monthly ranges.
   They remain reusable across weekly invocations, preventing repeated work on
   the same empty prefix. Their original observation timestamps are retained.
   This does **not** certify detection of later historical corrections.
+- If a dated fetch detects that an incomplete scope's calendar changed, the
+  cached calendar is removed and the attempt still fails. The next capped
+  invocation rediscovers coverage while retaining independently validated dated
+  observations. Already complete archival scopes are not automatically revisited;
+  later calendar additions and result corrections remain unverified there.
 - Current-season calendars are discovered afresh each invocation. Recent finals,
   pending and empty current dates retain the existing one-hour expiry. Cached
   older observations cannot roll back a newer released correction, remove a
@@ -74,9 +79,15 @@ They contain receipts, calendar observations and invalidation markers only;
 they are never a warehouse or model asset. This avoids relying on a weekly
 Actions cache, which GitHub [removes after seven days without access](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy).
 
-The latest uploaded matching asset is restored and validated offline. SQLite
-integrity, schema, scope, digests, event/date identities and observation clocks
-must pass. Invalid or inaccessible existing checkpoints block the job; they
+The latest matching asset in `uploaded` state is restored and validated offline.
+GitHub [documents that a failed upload can leave an empty `starter` asset](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset);
+those incomplete assets cannot displace older uploaded progress. Corrupt bytes
+in an uploaded asset still block restore, without silently falling back.
+SQLite integrity, schema, scope, digests, event/date identities and observation
+clocks must pass. Only the three data tables and their implicit primary-key
+indexes are permitted; triggers, views and extra indexes are rejected before a
+writer opens. Final kickoffs cannot be later than their recorded observation
+time or invocation clock. Invalid or inaccessible existing checkpoints block the job; they
 are not silently treated as a cache miss. After a successful restore/bootstrap,
 an `always()` step validates and uploads accumulated progress even when refresh
 failed. Each upload has a new name, so failed/interrupted uploads retain the
@@ -118,3 +129,9 @@ upload was dispatched to verify this repair. Live provider compatibility, full
 35-season completion and resumed training remain unverified until a subsequent
 authorized run supplies that evidence. The held-back recency challenger and
 legacy `train_feedback` loop are outside this ingestion repair.
+
+Receipt progress is archival ingestion evidence, not proof of leakage-free
+point-in-time evaluation. Checking kickoff against the recorded clock is a
+necessary consistency constraint; it does not authenticate supplied timestamps
+or establish when a final first became available. No training-feature logic was
+changed or validated by this repair.

@@ -2,6 +2,7 @@
 
 import asyncio
 import gzip
+import json
 import os
 import sqlite3
 import subprocess
@@ -182,10 +183,11 @@ def test_proven_historical_whitelist_is_archival_but_current_calendar_is_fresh(
         )
 
     scope = [("eng.1", 2025), ("eng.1", 2026)]
-    instance, _ = refresh(tmp_path, provider)
+    # The later current fixture kicks off at midday; observations follow kickoff.
+    instance, _ = refresh(tmp_path, provider, now=NOW + timedelta(hours=18))
     first = fetch(instance, scope)
     current_days.append("20261011")
-    instance, calls = refresh(tmp_path, provider, now=NOW + timedelta(hours=2))
+    instance, calls = refresh(tmp_path, provider, now=NOW + timedelta(hours=20))
     second = fetch(instance, scope)
     assert [r.url.params["dates"] for r in calls] == ["20260801", "20261011"]
     assert second["eng.1", 2025] == first["eng.1", 2025]
@@ -425,6 +427,173 @@ def test_checkpoint_requires_unique_date_keys_not_just_expected_table_names(tmp_
     assert checkpoint.main(["--db", str(path)]) == 1
 
 
+@pytest.mark.parametrize("table", ["receipts", "calendars"])
+def test_pre_kickoff_timestamp_cannot_validate_or_reach_loader_reconciliation(
+    tmp_path, monkeypatch, table
+):
+    path = tmp_path / "receipts.sqlite"
+    body = calendar("eng.1", 2025, ["20250801"], [event("20250801")])
+    instance, calls = refresh(tmp_path, lambda _: httpx.Response(503), budget=0)
+    instance._save_calendar("eng.1", 2025, body)
+    instance._save("eng.1", 2025, "20250801", body)
+    asyncio.run(instance.close())
+    asyncio.run(checkpoint.validate(path, now=NOW))
+    with sqlite3.connect(path) as db:
+        previous = db.execute(f"SELECT body,digest FROM {table}").fetchone()
+        db.execute(f"UPDATE {table} SET fetched_at='2025-08-01T11:59:59+00:00'")
+        assert db.execute(f"SELECT body,digest FROM {table}").fetchone() == previous
+    before = path.read_bytes()
+    with pytest.raises(ProviderUnavailable, match="kickoff after observation"):
+        asyncio.run(checkpoint.validate(path, now=NOW))
+    assert path.read_bytes() == before
+
+    original = TrainingSeasonRefresh.__init__
+
+    def offline_init(self, target):
+        original(
+            self,
+            target,
+            now=NOW,
+            budget=0,
+            client=httpx.AsyncClient(
+                transport=httpx.MockTransport(
+                    lambda _: pytest.fail("no provider calls allowed")
+                )
+            ),
+        )
+
+    monkeypatch.setattr(TrainingSeasonRefresh, "__init__", offline_init)
+    monkeypatch.setattr(
+        espn_loader,
+        "_reconcile_observations",
+        lambda *_: pytest.fail("invalid receipt reached reconciliation"),
+    )
+    with pytest.raises(ProviderUnavailable, match="budget exhausted"):
+        asyncio.run(
+            espn_loader.load_training_competitions(
+                None,
+                min_season=2025,
+                max_season=2025,
+                competitions=["eng.1"],
+                receipts_path=path,
+            )
+        )
+    assert not calls
+
+
+@pytest.mark.parametrize("stamp", ["2025-08-01T12:00:00Z", "2025-08-01T12:00:01Z"])
+def test_kickoff_clock_boundary_is_a_necessary_consistency_check(tmp_path, stamp):
+    body = calendar("eng.1", 2025, ["20250801"], [event("20250801")])
+    instance, _ = refresh(tmp_path, lambda _: httpx.Response(503), budget=0)
+    instance._save_calendar("eng.1", 2025, body)
+    instance._save("eng.1", 2025, "20250801", body)
+    asyncio.run(instance.close())
+    path = tmp_path / "receipts.sqlite"
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE receipts SET fetched_at=?", (stamp,))
+    # Kickoff <= observation does not prove the time a final became available.
+    asyncio.run(checkpoint.validate(path, now=NOW))
+    instance, _ = refresh(
+        tmp_path, lambda _: pytest.fail("unexpected provider"), budget=0
+    )
+    assert fetch(instance, [("eng.1", 2025)])["eng.1", 2025][0]["_observed_at"] == stamp
+
+
+@pytest.mark.parametrize("final", [True, False])
+def test_future_same_day_kickoff_cannot_be_saved_as_a_final(tmp_path, final):
+    instance, calls = refresh(
+        tmp_path, lambda _: pytest.fail("unexpected provider"), budget=0
+    )
+    body = calendar("eng.1", 2026, ["20261011"], [event("20261011", final=final)])
+    try:
+        if final:
+            with pytest.raises(ProviderUnavailable, match="kickoff after observation"):
+                instance._save("eng.1", 2026, "20261011", body)
+            assert (
+                instance.db.execute("SELECT COUNT(*) FROM receipts").fetchone()[0] == 0
+            )
+        else:
+            instance._save("eng.1", 2026, "20261011", body)
+            assert instance._receipt("eng.1", 2026, "20261011")[0] == []
+        assert not calls
+    finally:
+        asyncio.run(instance.close())
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "CREATE VIEW extra_view AS SELECT * FROM receipts",
+        "CREATE TRIGGER extra_trigger AFTER INSERT ON receipts BEGIN SELECT 1; END",
+        "CREATE INDEX extra_index ON receipts(day)",
+    ],
+)
+def test_checkpoint_forbids_extra_schema_objects_before_opening_a_writer(
+    tmp_path, monkeypatch, sql
+):
+    instance, _ = refresh(
+        tmp_path, lambda _: pytest.fail("unexpected provider"), budget=0
+    )
+    asyncio.run(instance.close())
+    path = tmp_path / "receipts.sqlite"
+    asyncio.run(checkpoint.validate(path, now=NOW))
+    with sqlite3.connect(path) as db:
+        db.execute(sql)
+    before = path.read_bytes(), path.stat().st_mtime_ns
+    monkeypatch.setattr(
+        TrainingSeasonRefresh,
+        "__init__",
+        lambda *_a, **_kw: pytest.fail("invalid schema opened a writer"),
+    )
+    with pytest.raises(ProviderUnavailable, match="unexpected receipt schema object"):
+        asyncio.run(checkpoint.validate(path, now=NOW))
+    assert (path.read_bytes(), path.stat().st_mtime_ns) == before
+
+
+def test_changed_incomplete_calendar_rediscovers_while_retaining_progress(
+    tmp_path,
+):
+    days = ["20250821", "20250822"]
+
+    def provider(request):
+        day = request.url.params["dates"]
+        return httpx.Response(
+            200,
+            json=calendar(
+                "eng.1", 2025, days, [event(day, mid=day)] if day in days else []
+            ),
+        )
+
+    instance, _ = refresh(tmp_path, provider, budget=2)
+    with pytest.raises(ProviderUnavailable, match="budget exhausted"):
+        fetch(instance, [("eng.1", 2025)])
+    path = tmp_path / "receipts.sqlite"
+    with sqlite3.connect(path) as db:
+        previous = db.execute("SELECT * FROM receipts").fetchall()
+    days.append("20250823")
+    instance, calls = refresh(
+        tmp_path, provider, budget=3, now=NOW + timedelta(weeks=1)
+    )
+    with pytest.raises(ProviderUnavailable, match="calendar changed"):
+        fetch(instance, [("eng.1", 2025)])
+    assert len(calls) == 1
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT * FROM receipts").fetchall() == previous
+        assert db.execute("SELECT COUNT(*) FROM calendars").fetchone()[0] == 0
+    asyncio.run(checkpoint.validate(path, now=NOW + timedelta(weeks=1)))
+    instance, calls = refresh(
+        tmp_path, provider, budget=3, now=NOW + timedelta(weeks=2)
+    )
+    result = fetch(instance, [("eng.1", 2025)])["eng.1", 2025]
+    assert [r.url.params["dates"] for r in calls] == [
+        "20250801",
+        "20250822",
+        "20250823",
+    ]
+    assert len(result) == 3 and len({r["match_id"] for r in result}) == 3
+    assert result[0]["_observed_at"] == NOW.isoformat()
+
+
 def test_training_selection_keeps_every_legacy_competition_season(
     tmp_path, monkeypatch
 ):
@@ -631,10 +800,13 @@ if args[0] == "api":
         sys.exit(1)
     name = os.environ["MOCK_CHECKPOINT"]
     payload = {"assets": [
-        {"name": "warehouse.sqlite.gz", "id": 9999},
-        {"name": name, "id": 200},
-        {"name": "espn_training_receipts-1-1.sqlite.gz", "id": 100}
+        {"name": "warehouse.sqlite.gz", "id": 9999, "state": "uploaded"},
+        {"name": name, "id": 200, "state": "uploaded"},
+        {"name": "espn_training_receipts-1-1.sqlite.gz", "id": 100, "state": "uploaded"}
     ]}
+    if os.environ.get("MOCK_STARTER"):
+        payload["assets"].append({"name": os.environ["MOCK_STARTER"], "id": 300,
+                                  "state": "starter", "size": 0})
     # Exercise the exact gh --jq expression with real jq, including irrelevant
     # assets and an older receipt upload. No network or GitHub mutation occurs.
     query = args[args.index("--jq") + 1]
@@ -649,6 +821,9 @@ elif args[:2] == ["release", "upload"]:
     if "--clobber" in args or args[2] != "warehouse-ingestion-progress":
         sys.exit(9)
     if os.environ.get("MOCK_UPLOAD_FAILURE"):
+        # GitHub can retain a zero-byte starter asset after an upstream 502.
+        target = pathlib.Path(args[-1])
+        (release / target.name).write_bytes(b"")
         sys.exit(1)
     target = pathlib.Path(args[-1])
     shutil.copyfile(target, release / target.name)
@@ -715,6 +890,35 @@ def test_workflow_checkpoint_preserves_previous_asset_and_requires_valid_progres
                 gzip.decompress((release / new_name).read_bytes())
                 == target.read_bytes()
             )
+        elif failure == "upload":
+            assert (release / new_name).read_bytes() == b""
+            env["MOCK_CHECKPOINT"] = previous.name
+            env["MOCK_STARTER"] = new_name
+            restored = subprocess.run(
+                [
+                    "bash",
+                    "-e",
+                    "-o",
+                    "pipefail",
+                    "-c",
+                    workflow_step("Restore validated training ESPN progress"),
+                ],
+                cwd=tmp_path,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            assert restored.returncode == 0, restored.stdout + restored.stderr
+            assert target.read_bytes() == gzip.decompress(retained)
+            commands = [
+                json.loads(line)
+                for line in (release / "calls.jsonl").read_text().splitlines()
+            ]
+            assert any(
+                command[:2] == ["release", "download"]
+                and command[command.index("--pattern") + 1] == previous.name
+                for command in commands
+            )
         else:
             assert not (release / new_name).exists()
         if failure == "corrupt":
@@ -723,9 +927,10 @@ def test_workflow_checkpoint_preserves_previous_asset_and_requires_valid_progres
             ).exists()  # Refused before any GitHub operation.
     finally:
         (Path("/tmp") / new_name).unlink(missing_ok=True)
+        (Path("/tmp") / previous.name).unlink(missing_ok=True)
 
 
-@pytest.mark.parametrize("failure", [None, "corrupt", "api"])
+@pytest.mark.parametrize("failure", [None, "corrupt", "api", "starter"])
 def test_workflow_restore_fails_closed_on_invalid_checkpoint_or_transport(
     tmp_path, failure
 ):
@@ -745,6 +950,10 @@ def test_workflow_restore_fails_closed_on_invalid_checkpoint_or_transport(
     )
     if failure == "api":
         env["MOCK_API_FAILURE"] = "1"
+    starter = "espn_training_receipts-999999999-1.sqlite.gz"
+    if failure == "starter":
+        env["MOCK_STARTER"] = starter
+        (release / starter).write_bytes(b"")
     try:
         result = subprocess.run(
             [
@@ -760,12 +969,15 @@ def test_workflow_restore_fails_closed_on_invalid_checkpoint_or_transport(
             capture_output=True,
             text=True,
         )
-        assert (result.returncode == 0) == (failure is None), (
+        assert (result.returncode == 0) == (failure in (None, "starter")), (
             result.stdout + result.stderr
         )
-        if failure is None:
+        if failure in (None, "starter"):
             assert (
                 tmp_path / "backend/data/ingestion/espn_training_receipts.sqlite"
             ).read_bytes() == data
+        if failure == "starter":
+            assert (release / starter).read_bytes() == b""
+            assert not (Path("/tmp") / starter).exists()
     finally:
         (Path("/tmp") / name).unlink(missing_ok=True)
