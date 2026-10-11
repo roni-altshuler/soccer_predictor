@@ -88,3 +88,23 @@ test('CLI emits sanitized evidence and digests while refusing symlinks and overs
     assert.equal(lines[1].failure, 'timeout'); assert.equal(lines[1].errors[0].route, '/evaluation')
   } finally { await rm(directory, { recursive: true, force: true }) }
 })
+
+test('the complete CLI output including header and newlines stays within 32 KiB', async () => {
+  const directory = await mkdtemp(`${tmpdir()}/hydration-log-budget-`)
+  try {
+    const diagnostic = { failure: { message: 'Timeout 30000ms exceeded.' },
+      browserEvents: Array.from({ length: 4 }, () => ({ message: 'Minified React error #418', url: 'http://localhost/evaluation', width: 1440 })),
+      mismatches: Array.from({ length: 4 }, () => ({ route: '/evaluation', expected: 'a', actual: 'span', cursorParent: 'body',
+        mutations: Array.from({ length: 16 }, (_, elapsedMs) => ({ elapsedMs, kind: 'attribute', target: 'html', attribute: 'data-theme-preference' })) })) }
+    for (const kind of ['browser', 'failed']) for (const theme of ['light', 'dark']) for (const width of [390, 768, 1440]) {
+      await writeFile(`${directory}/record-${kind}-${theme}-${width}.json`, JSON.stringify(diagnostic))
+    }
+    const result = spawnSync(process.execPath, ['scripts/log_hydration_failure.mjs'], {
+      env: { ...process.env, QA_OUT: directory, QA_ARTIFACT_SHA: 'a'.repeat(64) }, encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert(Buffer.byteLength(result.stdout) <= 32768)
+    assert(result.stdout.includes('"limit":"32KiB"'))
+    for (const line of result.stdout.trim().split('\n')) assert.doesNotThrow(() => JSON.parse(line.slice('HYDRATION_DIAGNOSTIC '.length)))
+  } finally { await rm(directory, { recursive: true, force: true }) }
+})
