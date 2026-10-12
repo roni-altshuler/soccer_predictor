@@ -65,6 +65,8 @@ removal success claim.
 CI runs the normal-motion background audit with a five-minute bound and uploads
 its report/pixels with the existing product evidence. The diagnostic positive
 control and existing product/theme gates stay intact.
+The bounded `STATIC_BACKGROUND_AUDIT` log line prints counts, runtime and the
+retained report's exact-byte SHA-256 so review does not depend on ZIP access.
 
 ## Measured local result
 

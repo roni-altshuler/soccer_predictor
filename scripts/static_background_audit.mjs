@@ -1,6 +1,7 @@
 // Production-browser proof that decorative motion is removed, not hidden.
 // Uses the same committed sparse excerpt/server replay as theme journeys.
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -179,3 +180,15 @@ try {
     runtime: { node: process.version, browser: browserVersion }, rows, interactions, errors }, null, 2))
 }
 console.log(`Static background audit passed: ${rows.length} route/viewport/theme views (${before ? 'before' : 'after'})`)
+// Accessible even when a reviewer cannot materialize the screenshot archive.
+console.log(`STATIC_BACKGROUND_AUDIT ${JSON.stringify({ before, views: rows.length,
+  interactions: interactions.length, errors: errors.length, normalMotion: true,
+  widths: [...new Set(rows.map((row) => row.width))], themes: [...new Set(rows.map((row) => row.theme))],
+  maxBackgroundNodes: Math.max(...rows.map((row) => row.backgroundNodes)),
+  maxDecorativeAnimations: Math.max(...rows.map((row) => row.decorativeAnimations.length)),
+  maxUnknownInfiniteAnimations: Math.max(...rows.map((row) => row.unapprovedInfiniteAnimations.length)),
+  maxIdleFrameCallbacks: Math.max(...rows.map((row) => row.frameCallbacks)),
+  maxCanvasDraws: Math.max(...rows.map((row) => row.canvasDraws)),
+  reportSha256: createHash('sha256').update(await readFile(`${out}/report.json`)).digest('hex'),
+  runtime: { node: process.version, browser: browserVersion },
+})}`)
