@@ -57,12 +57,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "blend",
       "dc_backtest": {
-        "season": 2024,
-        "n": 366,
-        "dc_accuracy": 0.5301,
-        "dc_brier": 0.5906,
-        "dc_log_loss": 0.9879,
-        "always_home_accuracy": 0.3989
+        "season": 2026,
+        "n": 10,
+        "dc_accuracy": 0.5,
+        "dc_brier": 0.5667,
+        "dc_log_loss": 0.9583,
+        "always_home_accuracy": 0.5
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -73,12 +73,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "global",
       "dc_backtest": {
-        "season": 2024,
-        "n": 363,
-        "dc_accuracy": 0.5344,
-        "dc_brier": 0.5774,
-        "dc_log_loss": 0.9741,
-        "always_home_accuracy": 0.449
+        "season": 2026,
+        "n": 18,
+        "dc_accuracy": 0.6111,
+        "dc_brier": 0.5215,
+        "dc_log_loss": 0.8894,
+        "always_home_accuracy": 0.4444
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -89,12 +89,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "blend",
       "dc_backtest": {
-        "season": 2025,
-        "n": 1,
-        "dc_accuracy": 0.0,
-        "dc_brier": 0.7424,
-        "dc_log_loss": 1.2062,
-        "always_home_accuracy": 0.0
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 1.0,
+        "dc_brier": 0.4531,
+        "dc_log_loss": 0.7974,
+        "always_home_accuracy": 0.8889
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -105,12 +105,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "global",
       "dc_backtest": {
-        "season": 2024,
-        "n": 306,
-        "dc_accuracy": 0.4804,
-        "dc_brier": 0.6149,
-        "dc_log_loss": 1.0312,
-        "always_home_accuracy": 0.3856
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 0.6667,
+        "dc_brier": 0.488,
+        "dc_log_loss": 0.8349,
+        "always_home_accuracy": 0.5556
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -153,12 +153,12 @@
       "global_blend_weight": 0.0,
       "prior_decision": "blend",
       "dc_backtest": {
-        "season": 2024,
-        "n": 306,
-        "dc_accuracy": 0.5261,
-        "dc_brier": 0.5631,
-        "dc_log_loss": 0.9513,
-        "always_home_accuracy": 0.4314
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 0.3333,
+        "dc_brier": 0.7484,
+        "dc_log_loss": 1.1967,
+        "always_home_accuracy": 0.2222
       },
       "incumbent_accuracy": null,
       "incumbent_brier": null
@@ -215,7 +215,7 @@
   "notes": "Fail-closed: runtime can use league, global, or a calibrated hybrid blend only when same-fixture benchmark gates pass.",
   "statistical_selection": {
     "policy_version": "2026-07-30",
-    "generated_at": "2026-10-11T15:08:20+00:00",
+    "generated_at": "2026-10-12T18:17:13+00:00",
     "gates": {
       "min_backtest_matches": 60,
       "floor_tolerance": 0.01,
@@ -240,19 +240,18 @@
       "esp.1",
       "fra.1",
       "ger.1",
-      "ita.1",
       "por.1",
       "usa.1",
       "usa.1.w"
     ],
     "evidence": {
       "eng.1": {
-        "season": 2024,
-        "n": 366,
-        "dc_accuracy": 0.5301,
-        "dc_brier": 0.5906,
-        "dc_log_loss": 0.9879,
-        "always_home_accuracy": 0.3989,
+        "season": 2026,
+        "n": 10,
+        "dc_accuracy": 0.5,
+        "dc_brier": 0.5667,
+        "dc_log_loss": 0.9583,
+        "always_home_accuracy": 0.5,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
@@ -269,48 +268,48 @@
         "reason": "dixon_coles_retained_clears_floor"
       },
       "esp.1": {
-        "season": 2024,
-        "n": 363,
-        "dc_accuracy": 0.5344,
-        "dc_brier": 0.5774,
-        "dc_log_loss": 0.9741,
-        "always_home_accuracy": 0.449,
+        "season": 2026,
+        "n": 18,
+        "dc_accuracy": 0.6111,
+        "dc_brier": 0.5215,
+        "dc_log_loss": 0.8894,
+        "always_home_accuracy": 0.4444,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
       },
       "fra.1": {
-        "season": 2025,
-        "n": 1,
-        "dc_accuracy": 0.0,
-        "dc_brier": 0.7424,
-        "dc_log_loss": 1.2062,
-        "always_home_accuracy": 0.0,
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 1.0,
+        "dc_brier": 0.4531,
+        "dc_log_loss": 0.7974,
+        "always_home_accuracy": 0.8889,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
       },
       "ger.1": {
-        "season": 2024,
-        "n": 306,
-        "dc_accuracy": 0.4804,
-        "dc_brier": 0.6149,
-        "dc_log_loss": 1.0312,
-        "always_home_accuracy": 0.3856,
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 0.6667,
+        "dc_brier": 0.488,
+        "dc_log_loss": 0.8349,
+        "always_home_accuracy": 0.5556,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
       },
       "ita.1": {
-        "season": 2024,
-        "n": 374,
-        "dc_accuracy": 0.5374,
-        "dc_brier": 0.5833,
-        "dc_log_loss": 0.974,
-        "always_home_accuracy": 0.3957,
+        "season": 2026,
+        "n": 10,
+        "dc_accuracy": 0.4,
+        "dc_brier": 0.6334,
+        "dc_log_loss": 1.0462,
+        "always_home_accuracy": 0.5,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
-        "reason": "dixon_coles_retained_clears_floor"
+        "reason": "dixon_coles_dropped_below_floor"
       },
       "ned.1": {
         "season": 2026,
@@ -324,12 +323,12 @@
         "reason": "dixon_coles_dropped_below_floor"
       },
       "por.1": {
-        "season": 2024,
-        "n": 306,
-        "dc_accuracy": 0.5261,
-        "dc_brier": 0.5631,
-        "dc_log_loss": 0.9513,
-        "always_home_accuracy": 0.4314,
+        "season": 2026,
+        "n": 9,
+        "dc_accuracy": 0.3333,
+        "dc_brier": 0.7484,
+        "dc_log_loss": 1.1967,
+        "always_home_accuracy": 0.2222,
         "incumbent_accuracy": null,
         "incumbent_brier": null,
         "reason": "dixon_coles_retained_clears_floor"
