@@ -6,6 +6,13 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Remove the app-wide animated pitch, drifting light pools and Pitch intensity
+  controls. Every route uses the shared solid cream/dark background. The canvas
+  simulation, ambient preference startup code and decorative CSS are deleted;
+  interactive charts, hover/focus feedback and useful loading indicators remain.
+
 ### Added
 
 - Failed product CI exposes allowlisted hydration evidence and diagnostic JSON/

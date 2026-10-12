@@ -4,7 +4,6 @@ import { type ReactNode } from 'react'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { PageTransition } from '@/components/motion'
-import { PitchBackdrop } from '@/components/PitchBackdrop'
 import { useNavDepthTracker } from '@/lib/useSmartBack'
 
 import { MobileBottomNav } from './MobileBottomNav'
@@ -33,7 +32,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     // FactorsPanel) are harmless per Radix docs.
     <TooltipProvider delayDuration={200} skipDelayDuration={400}>
       <div className="match-flow-shell">
-        <PitchBackdrop />
         <SidebarNav />
         <div className="flex min-h-screen flex-col md:pl-[var(--shell-sidebar-w)]">
           <TopBar />

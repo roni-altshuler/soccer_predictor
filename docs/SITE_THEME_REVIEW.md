@@ -24,9 +24,10 @@ palette. With storage blocked, a choice works until reload; system preference
 supplies the next load's fallback. Signed-out auth initialization tolerates
 blocked storage so it cannot interrupt that fallback.
 
-Dark mode retains the optional pitch backdrop and its saved ambient setting.
-The canvas animation stops while light mode hides it. The mobile pitch dial is
-inside a compact disclosure to keep the same header usable at 320px.
+The October 12 follow-up removes the former optional pitch backdrop and its
+saved-setting controls entirely. Both palettes now use solid root backgrounds;
+the canvas and light-pool loops are deleted. Theme behavior above remains.
+See [the static background review](STATIC_BACKGROUND_REVIEW.md).
 
 No model, evaluator, ingestion, provider mapping, prediction/outcome archive,
 forecast policy or publication workflow is changed.

@@ -44,6 +44,7 @@ const measure = async (page) => page.evaluate(() => {
     header: header ? getComputedStyle(header).backgroundColor : null,
     action: signIn ? [getComputedStyle(signIn).backgroundColor, getComputedStyle(signIn).color] : null,
     browserChrome: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
+    decorativeBackgrounds: document.querySelectorAll('.pitch-backdrop, canvas.pitch-backdrop__match').length,
     overflow: document.documentElement.scrollWidth > innerWidth }
 })
 async function capture(page, label, expected, expectedDestination) {
@@ -57,6 +58,7 @@ async function capture(page, label, expected, expectedDestination) {
     assert.equal(values.canvas, expected === 'light' ? '#f5f3ee' : '#071009', label)
     assert.equal(values.canvas, values.rootCanvas, `${label}: root and shell differ`)
     assert.equal(values.overflow, false, `${label}: overflow`)
+    assert.equal(values.decorativeBackgrounds, 0, `${label}: decorative background still mounted`)
     if (values.headingTransform) assert.equal(values.headingTransform, 'none')
     await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' })
     const violations = await page.evaluate(async () => (await window.axe.run(document.querySelector('header[role="banner"]'), {
@@ -282,13 +284,12 @@ try {
         await capture(page, 'after-storage-blocked-session-320', 'light', '/leagues')
       }
       if (scenario.label === 'fresh-system-light') {
-        // Reduced motion draws a still, including when a hidden light-mode
-        // canvas is first revealed. Theme changes must refit its backing size.
+        // Switching palettes must not recreate the removed pitch, even in
+        // reduced-motion mode. Normal-motion loops have their own audit.
         await page.getByRole('combobox', { name: 'Color theme' }).selectOption('dark')
-        const canvas = await page.locator('canvas.pitch-backdrop__match').evaluate((node) => ({ width: node.width, height: node.height }))
-        assert(canvas.width > 0 && canvas.height > 0, 'Reduced-motion dark pitch must refit after being revealed')
-        await capture(page, 'after-reduced-motion-pitch-toggle-320', 'dark', '/leagues')
-        rows.at(-1).pitchBackingDimensions = canvas
+        assert.equal(await page.locator('.pitch-backdrop, canvas.pitch-backdrop__match').count(), 0)
+        assert.equal(await page.getByRole('group', { name: 'Pitch backdrop' }).count(), 0)
+        await capture(page, 'after-reduced-motion-theme-toggle-320', 'dark', '/leagues')
       }
       assert.deepEqual(failures, [])
     } finally { await context.close() }
