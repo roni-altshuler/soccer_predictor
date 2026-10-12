@@ -36,6 +36,7 @@ export interface LeagueSectionProps {
   hrefFor?: (match: MatchRowMatch) => string | undefined
   /** Optional caption shown next to the league name (e.g. "Manchester City lead"). */
   tableLeader?: string | null
+  compactAI?: boolean
 }
 
 /** Competitions contested by national teams — fixture identities resolve to country flags. */
@@ -63,6 +64,7 @@ export function LeagueSection({
   defaultOpen = true,
   hrefFor,
   tableLeader,
+  compactAI = false,
 }: LeagueSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
   const reducedMotion = useReducedMotion()
@@ -160,6 +162,7 @@ export function LeagueSection({
                   key={match.id ?? `${leagueName}-${idx}`}
                   match={match}
                   href={hrefFor?.(match)}
+                  compactAI={compactAI}
                 />
               ))}
             </div>

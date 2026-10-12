@@ -27,3 +27,24 @@ it('does not turn missing live scores into a goalless match', () => {
   expect(screen.getByText('– : –')).toBeInTheDocument()
   expect(screen.queryByText('0 : 0')).not.toBeInTheDocument()
 })
+
+it('labels a supplied compact forecast separately from the actual live score', () => {
+  render(<MatchRow compactAI match={{ ...match, status: 'live', home_score: 2, away_score: 3, predicted_scoreline: '1-1' }} />)
+  expect(screen.getByText('Pre-match AI')).toBeInTheDocument()
+  expect(screen.getByLabelText('Pre-match predicted score 1-1')).toBeInTheDocument()
+  expect(screen.getByText('2')).toBeInTheDocument()
+  expect(screen.getByText('3')).toBeInTheDocument()
+})
+
+it('does not show a compact AI pick without valid model probabilities', () => {
+  render(<MatchRow compactAI match={{ ...match, ai_home_prob: null, predicted_scoreline: '2-0' }} />)
+  expect(screen.queryByText('Pre-match AI')).not.toBeInTheDocument()
+  expect(screen.queryByText('2-0')).not.toBeInTheDocument()
+})
+
+it('uses the existing outcome probability cell when no scoreline was supplied', () => {
+  render(<MatchRow compactAI match={match} />)
+  expect(screen.getByLabelText('Model outcome probabilities')).toBeInTheDocument()
+  expect(screen.getByText('60')).toBeInTheDocument()
+  expect(screen.queryByLabelText(/Pre-match predicted score/)).not.toBeInTheDocument()
+})

@@ -158,6 +158,8 @@ export interface MatchRowProps {
   onToggleFavorite?: (match: MatchRowMatch) => void
   isFavorite?: boolean
   showAILean?: boolean
+  /** Matchday feed: supplied scoreline, or one outcome-probability cell. */
+  compactAI?: boolean
 }
 
 export function MatchRow({
@@ -167,6 +169,7 @@ export function MatchRow({
   onToggleFavorite,
   isFavorite = false,
   showAILean = true,
+  compactAI = false,
 }: MatchRowProps) {
   const hasAILean =
     showAILean &&
@@ -237,7 +240,12 @@ export function MatchRow({
       </div>
 
       {hasAILean && (
-        <div className="ml-3 flex shrink-0 items-center gap-2 pr-1">
+        <div className={cn('ml-3 flex shrink-0 pr-1', compactAI ? 'flex-col items-center gap-1' : 'items-center gap-2')}>
+          {compactAI ? <>
+            <span className="text-[9px] font-semibold text-[var(--text-tertiary)]">Pre-match AI</span>
+            {predictedScoreline ? <span className="rounded-md bg-[color-mix(in_srgb,var(--accent-ai)_10%,transparent)] px-2 py-1 text-xs font-semibold tabular-nums text-[var(--accent-ai)]" aria-label={`Pre-match predicted score ${predictedScoreline}`}>{predictedScoreline}</span>
+              : <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} compact />}
+          </> : <>
           <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} className="hidden sm:flex" />
           <Prob1X2 home={aiHome} draw={aiDraw} away={aiAway} compact className="sm:hidden" />
           {predictedScoreline && (
@@ -245,6 +253,7 @@ export function MatchRow({
               AI {predictedScoreline}
             </span>
           )}
+          </>}
         </div>
       )}
       {href && <span className="match-row-action"><span>View match</span><ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}

@@ -182,11 +182,6 @@ export default function Home() {
           <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-2 text-[var(--accent-info)]"><RefreshCw className="h-3.5 w-3.5" aria-hidden />Try again</button>
         </div>}
 
-        {spotlight.length > 0 && <div className="mb-6 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <MatchdaySpotlight key={`${selectedDate}-${asQueryParam}`} matches={spotlight} hrefFor={(m) => withMatchdayReturn(fixtureHref(m), returnHref)} />
-          <ClubHouse matches={spotlight} />
-        </div>}
-
         <h2 className="mb-3 mt-8 text-lg font-semibold text-[var(--text-primary)]">Matches &amp; competitions</h2>
         {(competitions.length > 0 || competition !== 'all') && <div aria-label="Filter by competition" className="mb-4 flex gap-2 overflow-x-auto pb-1">
           <button type="button" aria-pressed={activeCompetition === 'all'} onClick={() => update({ competition: 'all' })} className={cn(FILTER_CHIP, activeCompetition === 'all' && ACTIVE_CHIP)}>All competitions <span className="text-[var(--text-tertiary)]">{competitions.length}</span></button>
@@ -202,16 +197,24 @@ export default function Home() {
               <span className="text-[10px] tabular-nums text-[var(--text-tertiary)]">{counts[value]}</span>
             </button>)}
           </div>
-          <button type="button" disabled={trackedTeams.length === 0} onClick={() => update({ following: !watchlistOnly })} aria-pressed={onlyFollowing} className={cn(FILTER_CHIP, 'disabled:opacity-50', onlyFollowing && ACTIVE_CHIP)}>
-            {onlyFollowing ? <BookmarkCheck className="h-3.5 w-3.5" aria-hidden /> : <Bookmark className="h-3.5 w-3.5" aria-hidden />}
-            Following{trackedTeams.length > 0 ? ` · ${trackedTeams.length}` : ''}
-          </button>
+          <div className="flex items-center gap-2">
+            {spotlight.length > 0 && <a href="#matchday-follow-tools" className="inline-flex min-h-11 items-center text-xs text-[var(--accent-info)] hover:underline">Follow clubs</a>}
+            <button type="button" disabled={trackedTeams.length === 0} onClick={() => update({ following: !watchlistOnly })} aria-pressed={onlyFollowing} className={cn(FILTER_CHIP, 'disabled:opacity-50', onlyFollowing && ACTIVE_CHIP)}>
+              {onlyFollowing ? <BookmarkCheck className="h-3.5 w-3.5" aria-hidden /> : <Bookmark className="h-3.5 w-3.5" aria-hidden />}
+              Following{trackedTeams.length > 0 ? ` · ${trackedTeams.length}` : ''}
+            </button>
+          </div>
         </div>
 
         {loading ? <Card role="status" className="overflow-hidden p-0" aria-busy="true" aria-label="Loading matches"><MatchCardSkeleton count={7} /></Card>
           : !data && error ? null
           : leagueNames.length === 0 ? <EmptyState illustration="no-matches" title={onlyFollowing ? 'Your clubs have no matches in this view' : tab === 'live' ? 'No matches live right now' : 'No matches in this view'} description="Try another day or explore a different competition." action={<button type="button" onClick={() => update({ filter: 'all', competition: 'all', following: false })} className="min-h-11 text-xs text-[var(--accent-info)]">Show all matches</button>} />
-          : <Card className="overflow-hidden p-0">{leagueNames.map((name) => <LeagueSection key={name} leagueName={name} leagueId={LEAGUE_ID_MAP[name] ?? grouped[name][0]?.leagueId} countryLabel={LEAGUE_COUNTRY[name]?.country} matches={grouped[name]} hrefFor={(m) => withMatchdayReturn(fixtureHref(m as DayMatch), returnHref)} defaultOpen />)}</Card>}
+          : <Card className="overflow-hidden p-0">{leagueNames.map((name) => <LeagueSection key={name} leagueName={name} leagueId={LEAGUE_ID_MAP[name] ?? grouped[name][0]?.leagueId} countryLabel={LEAGUE_COUNTRY[name]?.country} matches={grouped[name]} hrefFor={(m) => withMatchdayReturn(fixtureHref(m as DayMatch), returnHref)} compactAI defaultOpen />)}</Card>}
+
+        {spotlight.length > 0 && <div className="mt-6 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <MatchdaySpotlight key={`${selectedDate}-${asQueryParam}`} matches={spotlight} hrefFor={(m) => withMatchdayReturn(fixtureHref(m), returnHref)} />
+          <ClubHouse matches={spotlight} />
+        </div>}
 
         <Link href="/lab" className="mt-6 flex min-h-24 items-center justify-between gap-4 rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5 transition-colors hover:bg-[var(--card-hover)]">
           <span><span className="text-xs text-[var(--text-secondary)]">Keep exploring</span><span className="mt-1 block text-lg font-bold text-[var(--text-primary)]">Open the Forecast Lab</span><span className="mt-1 block text-xs text-[var(--text-secondary)]">Explore scorelines, test an outcome and discover the points at stake.</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-[var(--accent-info)]" aria-hidden />

@@ -138,4 +138,14 @@ describe('HomePage — the list, and the record behind it', () => {
     await user.click(screen.getByRole('button', { name: /All competitions/ }))
     expect(screen.getByRole('link', { name: /Arsenal.*Fulham/ })).toBeInTheDocument()
   })
+
+  it('puts canonical fixtures before supplemental forecast context and keeps club access', async () => {
+    mockFetch({})
+    render(<HomePage />)
+    const fixture = await screen.findByRole('link', { name: /Arsenal.*Fulham/ })
+    const spotlight = screen.getByRole('region', { name: 'Match spotlight' })
+    expect(fixture.compareDocumentPosition(spotlight) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Follow clubs', exact: true })).toHaveAttribute('href', '#matchday-follow-tools')
+    expect(screen.getByText(/How accurate is this\?/i)).toBeInTheDocument()
+  })
 })

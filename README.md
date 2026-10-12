@@ -473,6 +473,13 @@ limits. Full live recovery has not been verified by the offline fixtures.
 
 ## Documentation
 
+Matchday opens with competition/status filters and the fixture list. Small
+Pre-match AI picks use existing forecasts; the supplemental spotlight's probability
+chart opens on demand. Club following, provider retry warnings and the separate
+season/match accuracy records remain accessible. See the
+[before/after Matchday review](docs/COMPACT_MATCHDAY_REVIEW.md) for measured
+viewport positions, browser checks and replay limits.
+
 Every route uses the same solid cream or dark background. Decorative pitch
 animation and its intensity controls are removed, including their render loop.
 See [static background scope and browser checks](docs/STATIC_BACKGROUND_REVIEW.md).

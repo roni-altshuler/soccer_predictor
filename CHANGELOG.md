@@ -8,6 +8,12 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- Matchday puts the grouped fixture list before the supplemental spotlight and
+  club panel. Feed rows show a small labelled pre-match AI pick when valid model
+  data exists; the spotlight probability chart opens through Forecast details.
+  A Follow clubs shortcut retains access to the existing local follow controls.
+  Provider errors, retry and separate season/match accuracy records remain.
+
 - Remove the app-wide animated pitch, drifting light pools and Pitch intensity
   controls. Every route uses the shared solid cream/dark background. The canvas
   simulation, ambient preference startup code and decorative CSS are deleted;
