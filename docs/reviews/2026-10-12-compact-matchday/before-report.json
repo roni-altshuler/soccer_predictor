@@ -1,0 +1,71 @@
+{
+  "before": true,
+  "basis": "Committed September19 pre-match records replayed as UI fixtures; kickoff times unavailable and not fabricated; transport-only availability faults; no models/providers generated.",
+  "rows": [
+    {
+      "width": 320,
+      "theme": "light",
+      "firstFixtureTop": 1200.4375,
+      "spotlightTop": 277.9375,
+      "overflow": false,
+      "background": "#f5f3ee"
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "firstFixtureTop": 1200.4375,
+      "spotlightTop": 277.9375,
+      "overflow": false,
+      "background": "#071009"
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "firstFixtureTop": 1099.9375,
+      "spotlightTop": 249.9375,
+      "overflow": false,
+      "background": "#f5f3ee"
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "firstFixtureTop": 1099.9375,
+      "spotlightTop": 249.9375,
+      "overflow": false,
+      "background": "#071009"
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "firstFixtureTop": 1091.9375,
+      "spotlightTop": 261.9375,
+      "overflow": false,
+      "background": "#f5f3ee"
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "firstFixtureTop": 1091.9375,
+      "spotlightTop": 261.9375,
+      "overflow": false,
+      "background": "#071009"
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "firstFixtureTop": 1003.140625,
+      "spotlightTop": 275.140625,
+      "overflow": false,
+      "background": "#f5f3ee"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "firstFixtureTop": 1003.140625,
+      "spotlightTop": 275.140625,
+      "overflow": false,
+      "background": "#071009"
+    }
+  ],
+  "errors": []
+}

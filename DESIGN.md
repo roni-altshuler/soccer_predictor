@@ -194,13 +194,17 @@ not take visual treatments.
 
 ## Anatomy
 
-### Matchday home (2026-09-18)
+### Matchday home (2026-10-12)
 
-The date strip opens a matchday workspace: a compact date/title line, an interactive
-fixture spotlight, competition filters, then the canonical grouped fixture list.
+The date strip opens a matchday workspace: a compact date/title line, competition
+and status filters, then the canonical grouped fixture list. Supplemental fixture
+spotlight and club-follow tools come below the list; a small Follow clubs link
+beside Following jumps to the tools without changing the date or filters.
 The spotlight uses real scores and explicit **pre-match forecast** labels even while
 a match is live; it never invents probabilities or a 0–0 score for missing data.
 Its fixture selector changes the scoreboard and match-centre destination together.
+The probability chart is behind the native keyboard-operable Forecast details
+disclosure, closed initially and when switching fixtures.
 
 On desktop a club-follow panel sits alongside the spotlight. Below `lg` it collapses
 to a 44px control so the list stays reachable. Following is local to the device and
@@ -223,9 +227,11 @@ existing pitch material; they add no marketing hero, new palette, or animated wa
 - Height 56–64px. The whole row is the link. Winner's score `--text-primary`, loser's
   `--text-tertiary`.
 - Live: red minute in the time column, scores in primary text.
-- The right zone renders **only when a forecast exists**: three fixed 1X2 boxes (bet365
-  grammar — the argmax box tinted, the others muted) plus an optional scoreline chip. Below
-  640px it collapses to the argmax box + chip.
+- The right zone renders **only when a valid forecast exists**. Matchday uses a
+  compact Pre-match AI label and supplied scoreline; if the scoreline is absent,
+  it uses the existing outcome probability cell. Actual scores stay beside the
+  teams. Other lists retain their three 1X2 boxes and optional scoreline chip,
+  collapsing to the existing outcome cell below 640px.
 
 ### League group
 

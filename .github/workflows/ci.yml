@@ -65,6 +65,10 @@ jobs:
         timeout-minutes: 5
         run: npm run test:backgrounds
 
+      - name: Compact Matchday browser contracts
+        timeout-minutes: 5
+        run: npm run test:matchday:compact
+
       - name: Theme navigation journeys
         run: npm run test:theme
 
@@ -93,6 +97,7 @@ jobs:
             /tmp/pitchverse-match-evidence-hydration/
             /tmp/pitchverse-hydration-control/
             /tmp/pitchverse-static-backgrounds/
+            /tmp/pitchverse-compact-matchday/
           if-no-files-found: ignore
 
       - name: Log sanitized hydration failure evidence

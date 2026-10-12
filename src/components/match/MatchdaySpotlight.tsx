@@ -65,7 +65,9 @@ export function MatchdaySpotlight({ matches, hrefFor = fixtureHref }: { matches:
         </div>
 
         {valid && (
-          <div className="mt-5 rounded-xl border border-[var(--border-color)] bg-[var(--background)] p-3 sm:p-4">
+          <details key={match.id} className="mt-5 rounded-xl border border-[var(--border-color)] bg-[var(--background)]">
+            <summary className="min-h-11 cursor-pointer px-3 py-3 text-xs font-semibold text-[var(--text-secondary)] sm:px-4">Forecast details</summary>
+            <div className="border-t border-[var(--border-color)] p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
               <span>Pre-match forecast</span>
               {match.predicted_scoreline && <span className="text-[var(--accent-info)]">Score pick {match.predicted_scoreline}</span>}
@@ -79,7 +81,8 @@ export function MatchdaySpotlight({ matches, hrefFor = fixtureHref }: { matches:
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          </details>
         )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -111,7 +114,7 @@ export function ClubHouse({ matches }: { matches: DayMatch[] }) {
   ] as const)).values()).slice(0, 4)
 
   return (
-    <aside aria-label="Your football" className="flex min-w-0 flex-col rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2 lg:p-5">
+    <aside id="matchday-follow-tools" aria-label="Your football" className="flex min-w-0 scroll-mt-32 flex-col rounded-2xl border border-[var(--border-color)] bg-[var(--card-bg)] px-4 py-2 lg:p-5">
       <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} aria-controls="matchday-clubs" className="flex min-h-11 items-center justify-between gap-2 text-xs font-semibold text-[var(--text-primary)] lg:hidden">Make it your matchday · follow clubs <ChevronDown className={cn('h-4 w-4', expanded && 'rotate-180')} aria-hidden /></button>
       <div id="matchday-clubs" className={cn('flex-1 flex-col lg:flex', expanded ? 'flex' : 'hidden')}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">Your football</p>
