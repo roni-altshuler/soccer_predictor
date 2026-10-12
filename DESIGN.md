@@ -19,7 +19,7 @@ is worse than having no spec at all.
 
 The grammar (Bugatti) is shared with two sibling repos: **RaceIQ** (`../f1_predictions`),
 where it originated, and **Hardwood** (`../nba_predictor`) — structure, typography, the
-four-accent meaning system, and the one-ambient-layer exception are family law. The
+four-accent meaning system are shared. The
 *material* is per sport: Pitchverse's neutrals are night-pitch greens (Floodlight,
 2026-08-25); the siblings keep their own casts. A grammar change here is a change to a
 family; a material change is this repo's own.
@@ -31,42 +31,22 @@ family; a material change is this repo's own.
 **Floodlight: a night-pitch canvas, Bugatti's grammar.** The canvas is a deep pitch-green
 (`#071009`), surfaces and hairlines carry the same green cast (`#0c1a10`, `#20402a`), and
 every neutral sits at the luminance step its old grey equivalent did — so all contrast
-relationships hold. Hairline borders, **no shadows, no glassmorphism, no chrome**; the only
-gradients on the site live inside the sanctioned ambient layer below. Colour still carries
+relationships hold. Hairline borders, **no shadows, no glassmorphism, no chrome**. Colour carries
 meaning only — live state, positive/negative, positional tier — never decoration: the green
 of the canvas is a *cast* on the neutrals, not a fifth accent, and `--accent-primary` green
 still means exactly one thing.
 
-**The one exception is the ambient layer.** The canvas reads as a floodlit pitch at night
-with a match being played on it: static mowing stripes (white, ≤2% alpha), two
-accent-green light pools (≤11%) drifting on 90s+ cycles, and one canvas
-(`PitchMatchAnimation`) that draws the pitch markings (white, ≤6%) together with the
-**tactics-board match** — chalk circles vs X-marks passing, pressing, shooting and scoring
-in a simulated game (~23 entities, 30fps cap, marks ≤11%, ball ≤20%, trail ≤9%, goal
-pulse ≤13% and gone in 1.8s, kickoff and hold pauses ~1.5× their first cut) — all
-rendered once by `PitchBackdrop` behind everything at `z-index: -1` (2026-08-25 product
-decisions; ceilings cut from 8 / 15 / 30 / 13 / 18% on 2026-09-12). Its bounds are
-load-bearing: **the pitch is seen whole** — a contain fit keeps the full field,
-both goals included, centred at every viewport, rotated upright on portrait screens, never
-a crop that hides a goal; **it never distracts from the content** — the alphas above are
-ceilings chosen so no text loses contrast and no reader their attention; reduced motion
-stills everything (pools via `animation: none`, the match by drawing one static frame);
-**the match never renders a score, clock, name or anything readable as data** — it is
-decoration in a product whose grammar is real numbers; and **nothing else on the site may
-pick up a gradient or glow because this exists** — one layer, defined once, consumed once.
-
-**The reader holds the dial (2026-09-12).** The owner found the layer "a little too sharp"
-to read over, so the ceilings above are now the *vivid* setting and the default is softer.
-`data-ambient` on `<html>` is `soft` (the default: the match canvas at 60% opacity under a
-0.6px blur, the light pools at 60%), `vivid` (the ceilings above), or `off` (`display:
-none`, and the canvas stops its rAF loop — off costs nothing). It is stored under
-`pitchverse-ambient`, applied by a ~170-byte blocking script in the root layout before
-first paint so a reader who turned it off never sees it flash on, and set by
-`AmbientToggle` — *Pitch · soft / vivid / off*, mono caption type, `aria-pressed` — in the
-sidebar's bottom block and, below `md`, in the topbar. Reduced motion is unchanged and
-orthogonal: it stills the layer at whatever level the dial is on. The states live in
-`src/lib/ambient.ts` and the `html[data-ambient]` rules next to `.pitch-backdrop` in
-`globals.css`; those two files and this paragraph are the whole contract.
+**Static backgrounds (2026-10-12).** The owner requested removal of animated
+backgrounds because they distract from scores, schedules and browsing. Every
+route uses the same solid `--background`: cream in light mode, pitch-green in
+dark mode. The decorative pitch simulation, canvas, mowing-stripe overlay,
+drifting light pools and Pitch intensity controls are removed, together with
+their startup preference script and animation code. Old `pitchverse-ambient`
+values remain unused; they cannot re-enable the layer. No decorative animated
+background is permitted, including for readers without reduced motion enabled.
+Useful loading indicators, live-state markers, focus/hover feedback and
+user-operated bracket/chart/simulator interactions keep their existing behavior.
+See [scope and browser checks](docs/STATIC_BACKGROUND_REVIEW.md).
 
 **Light, Dark and System.** The header selector persists `pitchverse-theme`;
 the earlier `theme` storage key is honored when no current preference exists.
@@ -75,8 +55,7 @@ before first paint. `ThemeProvider` follows OS changes only in System mode and
 synchronizes other tabs. Storage failures still permit a session choice.
 `:root` supplies light and shared tokens; `.dark` overrides palette values.
 No route can choose another palette. Portals and loading/error states inherit
-the same document tokens. The ambient pitch is dark-only and retains its own
-dial; its animation stops while light mode hides it.
+the same document tokens. Both palettes use solid backgrounds on every route.
 
 The detailed tables below describe **dark** values. Light uses this shared
 material, with all aliases resolving from the same root:
@@ -286,7 +265,7 @@ Flat: 1px hairline, 12–14px radius, **no elevation gradient**. Depth is the su
 
 ## What lives in CSS, and what does not
 
-`globals.css` is **340 lines** and holds tokens, base typography, and the eight utility
+`globals.css` holds shared tokens, base typography, and the eight utility
 classes that have live consumers: `.fm-card`, `.match-card`, `.shimmer`, `.skeleton-shimmer`,
 `.animate-pulse`, `.prob-segment`, `.tabular`, `.border-accent`.
 

@@ -13,7 +13,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-import { AmbientToggle } from '@/components/AmbientToggle'
 import { cn } from '@/lib/utils'
 
 type NavItem = {
@@ -129,8 +128,6 @@ export function SidebarNav() {
       {/* The footer's one honest job, in the sidebar's bottom block — same
           grammar as the sibling apps, which ship no <footer> at all. */}
       <div className="border-t border-[var(--nav-border)] px-4 py-3">
-        {/* The reader's dial on the one ambient layer — soft by default. */}
-        <AmbientToggle label="Pitch" className="mb-2.5 hidden justify-between dark:flex" />
         <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
           Probability estimates, not advice. Every pick is{' '}
           <Link

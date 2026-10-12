@@ -61,6 +61,10 @@ jobs:
         env:
           QA_HYDRATION_DIAGNOSTICS: '1'
 
+      - name: Static background browser contracts
+        timeout-minutes: 5
+        run: npm run test:backgrounds
+
       - name: Theme navigation journeys
         run: npm run test:theme
 
@@ -88,6 +92,7 @@ jobs:
             /tmp/pitchverse-evaluation-hydration/
             /tmp/pitchverse-match-evidence-hydration/
             /tmp/pitchverse-hydration-control/
+            /tmp/pitchverse-static-backgrounds/
           if-no-files-found: ignore
 
       - name: Log sanitized hydration failure evidence

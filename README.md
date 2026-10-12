@@ -473,6 +473,10 @@ limits. Full live recovery has not been verified by the offline fixtures.
 
 ## Documentation
 
+Every route uses the same solid cream or dark background. Decorative pitch
+animation and its intensity controls are removed, including their render loop.
+See [static background scope and browser checks](docs/STATIC_BACKGROUND_REVIEW.md).
+
 Production hydration failures on Evaluation and Match evidence remain under investigation.
 [Diagnosis and reproduction](docs/EVALUATION_HYDRATION_DIAGNOSIS.md) distinguish
 passing local runs from the unresolved production browser failure.
