@@ -22,6 +22,9 @@ visibility are outside this change.
 
 ## Reproducible browser evidence
 
+[Selected before/after pixels](reviews/2026-10-12-static-backgrounds/README.md)
+are retained in the repository for review without downloading a CI archive.
+
 After a production build, run:
 
 ```bash
