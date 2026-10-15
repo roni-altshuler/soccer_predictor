@@ -3964,10 +3964,10 @@
   },
   {
    "competition_id": "usa.1",
-   "coverage": 0.9009,
-   "covered": 1500,
+   "coverage": 0.9018,
+   "covered": 1515,
    "gender": "M",
-   "matches": 1665,
+   "matches": 1680,
    "name": "Major League Soccer",
    "seasons": [
     {
@@ -4152,17 +4152,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 421,
-     "matches": 421,
+     "covered": 436,
+     "matches": 436,
      "season": 2026,
      "uncovered": 0,
-     "verified_empty": 18,
-     "with_events": 403
+     "verified_empty": 19,
+     "with_events": 417
     }
    ],
    "uncovered": 165,
-   "verified_empty": 74,
-   "with_events": 1426
+   "verified_empty": 75,
+   "with_events": 1440
   },
   {
    "competition_id": "usa.1.w",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-10-14T14:05:57+00:00",
+ "generated_at": "2026-10-15T13:46:07+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4409,
-  "covered": 36429,
-  "matches": 82627,
+  "coverage": 0.441,
+  "covered": 36444,
+  "matches": 82642,
   "uncovered": 46198,
-  "verified_empty": 2307,
-  "with_events": 34122
+  "verified_empty": 2308,
+  "with_events": 34136
  }
 }
