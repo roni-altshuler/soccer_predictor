@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "state": "degraded",
-  "attempted_at": "2026-10-15T12:48:24.484979+00:00",
+  "attempted_at": "2026-10-16T12:40:19.254227+00:00",
   "requests": 1,
   "request_limit": 6,
   "leagues": [
@@ -37,5 +37,5 @@
     }
   ],
   "reason": "http_403",
-  "workflow_run": "38737284668"
+  "workflow_run": "38902003358"
 }
