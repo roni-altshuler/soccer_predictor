@@ -2584,10 +2584,10 @@
   },
   {
    "competition_id": "ita.1",
-   "coverage": 0.5951,
-   "covered": 4954,
+   "coverage": 0.5953,
+   "covered": 4957,
    "gender": "M",
-   "matches": 8324,
+   "matches": 8327,
    "name": "Serie A",
    "seasons": [
     {
@@ -2790,17 +2790,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 80,
-     "matches": 80,
+     "covered": 83,
+     "matches": 83,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 0,
-     "with_events": 80
+     "with_events": 83
     }
    ],
    "uncovered": 3370,
    "verified_empty": 352,
-   "with_events": 4602
+   "with_events": 4605
   },
   {
    "competition_id": "ita.2",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-10-27T14:55:13+00:00",
+ "generated_at": "2026-10-28T15:29:06+00:00",
  "schema": 1,
  "totals": {
   "coverage": 0.4419,
-  "covered": 36572,
-  "matches": 82770,
+  "covered": 36575,
+  "matches": 82773,
   "uncovered": 46198,
   "verified_empty": 2318,
-  "with_events": 34254
+  "with_events": 34257
  }
 }
