@@ -2584,10 +2584,10 @@
   },
   {
    "competition_id": "ita.1",
-   "coverage": 0.5953,
-   "covered": 4957,
+   "coverage": 0.5955,
+   "covered": 4962,
    "gender": "M",
-   "matches": 8327,
+   "matches": 8332,
    "name": "Serie A",
    "seasons": [
     {
@@ -2790,17 +2790,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 83,
-     "matches": 83,
+     "covered": 88,
+     "matches": 88,
      "season": 2026,
      "uncovered": 0,
-     "verified_empty": 0,
-     "with_events": 83
+     "verified_empty": 1,
+     "with_events": 87
     }
    ],
    "uncovered": 3370,
-   "verified_empty": 352,
-   "with_events": 4605
+   "verified_empty": 353,
+   "with_events": 4609
   },
   {
    "competition_id": "ita.2",
@@ -3964,10 +3964,10 @@
   },
   {
    "competition_id": "usa.1",
-   "coverage": 0.9036,
-   "covered": 1546,
+   "coverage": 0.9043,
+   "covered": 1560,
    "gender": "M",
-   "matches": 1711,
+   "matches": 1725,
    "name": "Major League Soccer",
    "seasons": [
     {
@@ -4152,17 +4152,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 467,
-     "matches": 467,
+     "covered": 481,
+     "matches": 481,
      "season": 2026,
      "uncovered": 0,
-     "verified_empty": 21,
-     "with_events": 446
+     "verified_empty": 22,
+     "with_events": 459
     }
    ],
    "uncovered": 165,
-   "verified_empty": 77,
-   "with_events": 1469
+   "verified_empty": 78,
+   "with_events": 1482
   },
   {
    "competition_id": "usa.1.w",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-10-28T15:29:06+00:00",
+ "generated_at": "2026-10-29T15:36:01+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4419,
-  "covered": 36575,
-  "matches": 82773,
+  "coverage": 0.442,
+  "covered": 36594,
+  "matches": 82792,
   "uncovered": 46198,
-  "verified_empty": 2318,
-  "with_events": 34257
+  "verified_empty": 2320,
+  "with_events": 34274
  }
 }
