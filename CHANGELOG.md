@@ -8,6 +8,12 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- Season forecasts reuse existing pinned club aliases for unplayed schedule
+  spellings, scoped to clubs already known in the same competition and gender.
+  This prevents the La Liga schedule's `Dep. A Coruña` from becoming a second
+  Deportivo alongside its results identity. Schedule freshness, missing fixtures
+  and publication guards remain explicit and unchanged.
+
 - Matchday puts the grouped fixture list before the supplemental spotlight and
   club panel. Feed rows show a small labelled pre-match AI pick when valid model
   data exists; the spotlight probability chart opens through Forecast details.
