@@ -129,12 +129,12 @@ export function SidebarNav() {
           grammar as the sibling apps, which ship no <footer> at all. */}
       <div className="border-t border-[var(--nav-border)] px-4 py-3">
         <p className="text-[10px] leading-relaxed text-[var(--text-tertiary)]">
-          Probability estimates, not advice. Every pick is{' '}
+          Probability estimates, not advice. Inspect the{' '}
           <Link
             href="/accuracy"
             className="underline underline-offset-2 transition-colors hover:text-[var(--text-secondary)]"
           >
-            scored against the closing line
+            prediction record and its coverage
           </Link>
           .
         </p>

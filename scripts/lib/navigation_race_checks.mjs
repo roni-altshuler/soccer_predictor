@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 
+/** Network idle can precede React's URL-reading effects. Wait for the requested
+ * controls, then keep the caller's exact comparison against that same view.
+ */
+export async function matchdaySnapshot(page, expected, { probe = false } = {}) {
+  await page.waitForLoadState('networkidle')
+  await page.waitForFunction((expected) => {
+    const selected = (group) => [...document.querySelectorAll(`[aria-label="${group}"] button`)].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim()
+    return `${location.pathname}${location.search}` === expected.url
+      && selected('Select date') === expected.date
+      && selected('Filter matches') === expected.status
+      && (selected('Filter by competition') ?? 'All competitions') === expected.competition
+  }, expected, { timeout: probe ? 1500 : 5000 }).catch((error) => { if (!probe) throw error })
+  return page.evaluate(() => ({
+    url: `${location.pathname}${location.search}`,
+    date: [...document.querySelectorAll('[aria-label="Select date"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent,
+    status: [...document.querySelectorAll('[aria-label="Filter matches"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim(),
+    competition: [...document.querySelectorAll('[aria-label="Filter by competition"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim() ?? 'All competitions',
+  }))
+}
+
 async function pixelFocus(page, locator, name, out) {
   await locator.evaluate((node) => node.scrollIntoView({ block: 'center', inline: 'nearest' }))
   await page.keyboard.press('Tab')
@@ -85,24 +105,7 @@ export async function checkNavigationRaces({ browser, base, out, date, today, fi
       await page.locator('[aria-label="Filter by competition"]').getByRole('button', { name: /^Premier League / }).click()
       await page.getByRole('button', { name: /^To play / }).click()
     }
-    const snapshot = async (expected) => {
-      await page.waitForLoadState('networkidle')
-      if (expected) {
-        await page.waitForFunction((expected) => {
-          const selected = (group) => [...document.querySelectorAll(`[aria-label="${group}"] button`)].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim()
-          return `${location.pathname}${location.search}` === expected.url
-            && selected('Select date') === expected.date
-            && selected('Filter matches') === expected.status
-            && (selected('Filter by competition') ?? 'All competitions') === expected.competition
-        }, expected, { timeout: probe ? 1500 : 5000 }).catch((error) => { if (!probe) throw error })
-      }
-      return page.evaluate(() => ({
-        url: `${location.pathname}${location.search}`,
-        date: [...document.querySelectorAll('[aria-label="Select date"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent,
-        status: [...document.querySelectorAll('[aria-label="Filter matches"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim(),
-        competition: [...document.querySelectorAll('[aria-label="Filter by competition"] button')].find((node) => node.getAttribute('aria-pressed') === 'true')?.textContent?.replace(/\s*\d+$/, '').trim() ?? 'All competitions',
-      }))
-    }
+    const snapshot = (expected) => matchdaySnapshot(page, expected, { probe })
     const compare = (actual, expected, label) => {
       try { assert.deepEqual(actual, expected, label) } catch (error) {
         if (!probe) throw error
@@ -116,8 +119,8 @@ export async function checkNavigationRaces({ browser, base, out, date, today, fi
         console.log(`Checking same-path ${width}px ${selection}/${link}`)
         await page.goto(new URL(selection === 'cold' ? filteredUrl : '/', base).href, { waitUntil: 'networkidle' })
         if (selection === 'controls') await controls()
-        const before = await snapshot()
-        const filtered = { ...before, date: 'Yesterday', status: 'To play', competition: 'Premier League' }
+        const filtered = { url: filteredUrl, date: 'Yesterday', status: 'To play', competition: 'Premier League' }
+        const before = await snapshot(filtered)
         compare(before, filtered, `${width} ${selection} ${link}: initial filters`)
         if (selection === 'cold' && link === 'brand') {
           focusPixels.push(await pixelFocus(page, page.getByRole('button', { name: /^To play / }), `active-filter-${width}`, out))

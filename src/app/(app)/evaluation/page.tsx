@@ -9,6 +9,7 @@ import { LeagueEvidence, TournamentEvidence } from '@/components/evidence/Compet
 import { DocsRow } from '@/components/evidence/DocsLink'
 import { LayerTabs, SectionRule, type Layer } from '@/components/evidence/LayerTabs'
 import { RecordsHero } from '@/components/evidence/RecordsHero'
+import { EvidenceNavigation } from '@/components/evidence/EvidenceNavigation'
 import {
   ProgressionPanel,
   TieCalibrationPanel,
@@ -271,6 +272,7 @@ export default function EvaluationPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-6 md:py-8">
+      <EvidenceNavigation current="evaluation" />
       <EvidenceHeader
         title="Evaluation"
         lede="What the model believed in each competition, and what those beliefs were worth against the yardsticks it had to beat."
@@ -445,7 +447,8 @@ function PooledMatchRecord({
 
       {live?.n ? (
         <Panel
-          title="Live published forecasts"
+          title="Older forecast aggregate"
+          description="Separate snapshot-based aggregate. These counts and rates do not verify original pre-match timing or regulation-time eligibility. They are not pooled with Accuracy's game-level record."
           right={
             <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
               {live.n.toLocaleString()} scored
@@ -504,10 +507,9 @@ function PooledMatchRecord({
           ) : null}
         </Panel>
       ) : (
-        <Panel title="Live published forecasts">
+        <Panel title="Older forecast aggregate">
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
-            Nothing has been scored yet — no fixture has both a published forecast and a
-            result. A fact about the calendar, not a failure.
+            No older aggregate is available. This does not establish that every saved forecast was prospective or that every finished game was covered.
           </p>
         </Panel>
       )}
@@ -517,14 +519,14 @@ function PooledMatchRecord({
       {store ? (
         <Panel
           title="What has been recorded"
-          description="Written down before kickoff, never rewritten — otherwise a forecast that moved becomes the one we claim to have made."
+          description="Retained snapshot counts are storage coverage, not verified pre-match accuracy. Timing, match identity and regulation-period evidence are checked separately on Accuracy."
         >
           <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatTile label="Snapshots" value={store.rows.toLocaleString()} />
             <StatTile label="Fixtures" value={store.fixtures.toLocaleString()} />
             <StatTile label="Model versions" value={String(store.versions)} />
             <StatTile
-              label="Scored so far"
+              label="Older aggregate count"
               value={(live?.n ?? 0).toLocaleString()}
               tone={live?.n ? undefined : 'muted'}
             />

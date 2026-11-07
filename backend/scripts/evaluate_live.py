@@ -154,6 +154,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2, default=str))
+    # A separate, stricter export powers the inspectable user-facing record.
+    # It revalidates every final forecast against the authoritative event time;
+    # the legacy aggregate above is never substituted if that audit fails.
+    from backend.scripts.build_track_record import write_record
+    from backend.services.forecast.track_record import WAREHOUSE, from_database
+    verified = from_database(args.database or WAREHOUSE, as_of=payload["generated_at"])
+    write_record(verified, out.with_name("track_record.json"))
     logger.info("\nwrote %s", out)
     return 0
 

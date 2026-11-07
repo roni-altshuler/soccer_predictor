@@ -65,10 +65,10 @@ type Payload = {
 }
 
 function pct(v: number | null | undefined, digits = 1) {
-  return v == null ? '—' : `${(v * 100).toFixed(digits)}%`
+  return v == null || !Number.isFinite(v) ? '—' : `${(v * 100).toFixed(digits)}%`
 }
 function num(v: number | null | undefined, digits = 4) {
-  return v == null ? '—' : v.toFixed(digits)
+  return v == null || !Number.isFinite(v) ? '—' : v.toFixed(digits)
 }
 
 /** Horizontal bars. Brier is negatively oriented, so the shortest bar wins. */
@@ -216,11 +216,13 @@ export function MarketBenchmarkPanel() {
   const pMarket = paired['market_shin'] ?? paired['market_proportional']
   const pBase = paired['baseline_base_rate']
   const pUniform = paired['baseline_uniform']
+  const usable = (row: Metrics | undefined) => Boolean(row && Number.isSafeInteger(row.n) && row.n > 0 && Number.isFinite(row.brier) && row.brier >= 0 && row.brier <= 2)
+  const hasPair = usable(pModel) && usable(pMarket) && pModel.n === pMarket.n && data.paired_benchmark?.overall?.n === pModel.n
 
   const gap = pModel && pMarket ? pModel.brier - pMarket.brier : null
   // Share of the constant→market distance the model has actually taken.
   const captured =
-    pModel && pMarket && pBase
+    hasPair && usable(pBase) && pBase.n === pModel.n && pBase.brier > pMarket.brier
       ? (pBase.brier - pModel.brier) / (pBase.brier - pMarket.brier)
       : null
 
@@ -229,7 +231,7 @@ export function MarketBenchmarkPanel() {
     pModel && { label: 'Our model', value: pModel.brier, color: MODEL },
     pBase && { label: 'Constant base rate', value: pBase.brier, color: 'var(--text-tertiary)' },
     pUniform && { label: 'Blind 1-in-3 guess', value: pUniform.brier, color: 'var(--text-tertiary)' },
-  ].filter(Boolean) as { label: string; value: number; color: string }[]
+  ].filter(row => row && Number.isFinite(row.value)) as { label: string; value: number; color: string }[]
 
   // No paired record yet. This is a real state, not an error: the benchmark is
   // scoped to the serving model in the covered leagues, and on 2026-08-10 that
@@ -239,7 +241,7 @@ export function MarketBenchmarkPanel() {
   //
   // The target is still worth showing. What we cannot yet show is our distance
   // from it, and saying so is the whole point of the page.
-  if (!pModel || !pMarket) {
+  if (!hasPair) {
     return (
       <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
         <header className="mb-4">
@@ -337,7 +339,7 @@ export function MarketBenchmarkPanel() {
               <>
                 {' '}Over the full{' '}
                 {data.market_corpus?.overall?.n?.toLocaleString() ?? ''}-fixture history the closing
-                line scores {num(marketCorpus.brier, 4)}, so this slice is a representative one.
+                line scores {num(marketCorpus.brier, 4)}. That is a separate sample; it does not establish that the paired slice is representative.
               </>
             )}
           </p>

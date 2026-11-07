@@ -43,7 +43,7 @@ function CompetitionHeading({ id }: { id: string }) {
 export function LeagueAccuracy({ id, row }: { id: string; row: LeagueAccuracySummary | null }) {
   if (!row || row.total === 0) {
     return (
-      <Panel title="Published picks" right={<CompetitionHeading id={id} />}>
+      <Panel title="Older pick aggregate" right={<CompetitionHeading id={id} />}>
         <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--text-secondary)]">
           No pick in this competition has been settled yet. Nothing is estimated in its
           place.
@@ -57,17 +57,18 @@ export function LeagueAccuracy({ id, row }: { id: string; row: LeagueAccuracySum
   return (
     <div className="space-y-6">
       <Panel
-        title="Published picks"
+        title="Older pick aggregate"
         right={<CompetitionHeading id={id} />}
-        description={`Every pick this site published in ${getLeagueAccent(id).displayName}, scored against the final result.`}
+        description={`Stored records in ${getLeagueAccent(id).displayName}. Pre-match timing and scoring-period eligibility are not verified by this aggregate.`}
       >
         <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatTile label="Called the result" value={pct(row.accuracy)} size="lead" />
           <StatTile label="Settled picks" value={row.total.toLocaleString()} />
           <StatTile
-            label="Brier"
-            value={Number.isFinite(row.brier_score) ? row.brier_score.toFixed(4) : '—'}
+            label="Brier (0–2)"
+            value={Number.isFinite(row.brier_score) ? (row.brier_score * 3).toFixed(4) : '—'}
           />
+          <StatTile label="Outcome log loss" value={Number.isFinite(row.log_loss) ? row.log_loss.toFixed(4) : '—'} />
           <StatTile
             label="Calibration gap"
             value={
@@ -110,22 +111,19 @@ export function LeagueAccuracy({ id, row }: { id: string; row: LeagueAccuracySum
         {thin ? (
           <p className="mt-4 border-t border-[var(--border-color)] pt-3.5 text-[12px] leading-relaxed text-[var(--accent-warn)]">
             {row.total} settled picks is below the sample this page will draw a verdict
-            from. The rate above is real; it is not yet evidence of anything.
+            from. This stored rate does not establish pre-match eligibility or predictive quality.
           </p>
         ) : null}
       </Panel>
 
-      {row.scoreline_accuracy > 0 ? (
+      {Number.isFinite(row.scoreline_accuracy) && row.scoreline_accuracy >= 0 ? (
         <Panel
           title="Exact scorelines"
-          description="The hardest thing on the site to get right — one result in about eight is the most likely exact score there is."
+          description="Separate legacy exact-score aggregate; its forecast coverage and period eligibility are not established here."
         >
           <dl className="mt-4 grid grid-cols-2 gap-4">
             <StatTile label="Exact score called" value={pct(row.scoreline_accuracy)} />
-            <StatTile
-              label="Log loss"
-              value={Number.isFinite(row.log_loss) ? row.log_loss.toFixed(4) : '—'}
-            />
+
           </dl>
         </Panel>
       ) : null}

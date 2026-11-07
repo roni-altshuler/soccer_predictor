@@ -45,11 +45,11 @@ export function RecordsHero({
       empty: 'No backtest has been generated here.',
     },
     {
-      eyebrow: 'Live published',
+      eyebrow: 'Older forecast aggregate',
       n: live?.n,
       brier: live?.brier,
-      what: 'The last forecast published before each kickoff, scored after it.',
-      empty: 'Nothing scored yet — the correct state before a season starts.',
+      what: 'A separate older sample. Original pre-kickoff timing and match-period eligibility are not verified here; this is not the verified accuracy record.',
+      empty: 'No older aggregate is available. This does not establish coverage of verified pre-match predictions.',
     },
   ]
 

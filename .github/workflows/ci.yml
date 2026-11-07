@@ -16,7 +16,9 @@ concurrency:
 jobs:
   frontend:
     name: Lint · Typecheck · Build · Test
-    runs-on: ubuntu-latest
+    # Playwright 1.60.0 supports Ubuntu 24.04; ubuntu-latest can resolve to
+    # Ubuntu 26.04, where this locked browser installer is unsupported.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -54,6 +56,10 @@ jobs:
       - name: Verify hydration diagnostic positive control
         timeout-minutes: 2
         run: npm run test:hydration:diagnostics
+
+      - name: Accuracy availability and recorded-history UI
+        timeout-minutes: 3
+        run: npm run test:accuracy:ui
 
       - name: Responsive product contracts
         id: product
@@ -98,6 +104,8 @@ jobs:
             /tmp/pitchverse-hydration-control/
             /tmp/pitchverse-static-backgrounds/
             /tmp/pitchverse-compact-matchday/
+            /tmp/pitchverse-accuracy-ui/
+            /tmp/pitchverse-published-record/
           if-no-files-found: ignore
 
       - name: Log sanitized hydration failure evidence
