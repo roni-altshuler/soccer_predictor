@@ -1,294 +1,233 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-
 import AccuracyPage from '@/app/(app)/accuracy/page'
+import { type PublishedPick, type PublishedRecord } from '@/lib/publishedTrackRecord'
 
-/**
- * The published record, per competition.
- *
- * This page reported one pooled hit rate over every league at once — an average
- * of leagues that differ by six points, and nobody's question. It is organised
- * per competition now, the same way `/evaluation` is, and these tests pin the
- * three properties that makes it worth doing:
- *
- *   1. picking a competition changes every number, not just a label
- *   2. a thin sample keeps its context and loses its verdict
- *   3. the knockout record is labelled a backtest, because that is what it is
- */
-
-const FLAT = {
-  winner_accuracy: 0.526,
-  brier_score: 0.19,
-  expected_calibration_error: 0.031,
-  recent_accuracy: 0.54,
-  recent_form: [],
-  calibration_bins: [],
-  total_predictions: 900,
-  completed_predictions: 820,
-  pending_predictions: 80,
-  home_win_predicted: 400,
-  home_win_correct: 220,
-  draw_predicted: 40,
-  draw_correct: 9,
-  away_win_predicted: 380,
-  away_win_correct: 190,
-  exact_scoreline_rate: 0.11,
-  exact_scoreline_count: 90,
-  avg_goals_difference: 1.1,
-  scope: { total: 1200, inScope: 820, outOfScopeLeague: 300, retiredModel: 80 },
+let mockGender = 'M'
+jest.mock('@/hooks/useGenderQuery', () => ({ useGenderQuery: () => ({ asQueryParam: mockGender }) }))
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CartesianGrid: () => null, Line: () => null, XAxis: () => null, YAxis: () => null, Tooltip: () => null,
+}))
+function game(key: string, correct = true, over: Partial<PublishedPick> = {}): PublishedPick {
+  const row: PublishedPick = { key, fixtureUid: key, competitionId: 'eng.1', season: 2026, phase: null,
+    date: '2026-08-15', kickoffAt: '2026-08-15T19:00:00Z', home: `Home ${key}`, away: `Away ${key}`,
+    generatedAt: '2026-08-15T08:00:00Z', trainedThrough: '2026-08-14', modelVersion: 'saved-v1',
+    probabilities: [.2, .6, .2], pick: 'D', actual: correct ? { home: 1, away: 1, outcome: 'D' } : { home: 2, away: 0, outcome: 'H' },
+    forecastPeriod: 'regulation', scorelinePeriod: 'regulation', scoreForecast: { home: 1, away: 1 }, scoreForecastStatus: 'recorded', resultPeriod: null, resultEvidence: null,
+    settledAt: '2026-08-15T22:00:00Z', status: 'scored', reason: '', ...over }
+  if (!('resultPeriod' in over)) row.resultPeriod = row.actual ? 'regulation' : null
+  if (!('settledAt' in over) && !row.actual) row.settledAt = null
+  if (!('resultEvidence' in over) && row.actual) row.resultEvidence = { provider: 'espn', competitionId: row.competitionId,
+    eventId: [...key].map(c => c.codePointAt(0)).join('') || '1', receiptSha256: 'a'.repeat(64), observedAt: row.settledAt!, period: 'regulation' }
+  return row
 }
+const rows = [game('eng'), game('ita', false, { competitionId: 'ita.1' }),
+  game('pending', true, { competitionId: 'usa.1', status: 'pending', actual: null, settledAt: null, reason: 'Awaiting a verified final result' }),
+  game('retro', true, { status: 'retrospective', generatedAt: '2026-08-15T20:00:00Z', reason: 'Forecast was recorded after kickoff' })]
+function artifact(games = rows): PublishedRecord {
+  return { schemaVersion: 2, outcomePeriod: 'regulation', cohort: 'immutable_snapshot_history', basis: 'verified_live_published', selection: 'last_before_authoritative_kickoff',
+    generatedAt: '2026-08-17T12:00:00Z', historyThrough: '2026-08-15T20:00:00Z', resultThrough: '2026-08-15T22:00:00Z',
+    coverageFrom: '2026-08-15', snapshotRows: games.length, snapshotFixtures: games.length, rows: games }
+}
+const success = (games = rows) => ({ ok: true, json: async () => ({ available: true, record: artifact(games) }) })
+beforeEach(() => { mockGender = 'M'; global.fetch = jest.fn().mockResolvedValue(success()) })
+afterEach(() => jest.restoreAllMocks())
 
-// `by_league` is keyed by the DISPLAY NAME a prediction stores, because that
-// is what the record on disk carries — not "eng.1". This fixture used the id,
-// so every lookup in the page matched here and missed in production.
-const league = (over: Record<string, unknown>) => ({
-  league: 'Premier League',
-  total: 420,
-  predictions: 420,
-  pending: 0,
-  accuracy: 0.548,
-  weighted_accuracy: 0.55,
-  correct: 230,
-  scoreline_accuracy: 0.12,
-  brier_score: 0.183,
-  log_loss: 0.98,
-  expected_calibration_error: 0.021,
-  ...over,
+it('opens on overall accuracy and applies league exploration to the same pick/result rows', async () => {
+  render(<AccuracyPage />)
+  expect(await screen.findByRole('heading', { name: 'Overall model outcome accuracy' })).toBeVisible()
+  const leagues = screen.getByRole('group', { name: 'Choose accuracy league' })
+  expect(within(leagues).getByRole('button', { name: /^All leagues/ })).toHaveAttribute('aria-pressed', 'true')
+  await userEvent.click(within(leagues).getByRole('button', { name: /^Serie A/ }))
+  expect(screen.getByRole('heading', { name: 'Serie A outcome accuracy' })).toBeVisible()
+  const history = screen.getByRole('region', { name: 'Game by game record' })
+  expect(within(history).getByText('Home ita vs Away ita')).toBeVisible()
+  expect(within(history).queryByText('Home eng vs Away eng')).not.toBeInTheDocument()
+  await userEvent.click(within(leagues).getByRole('button', { name: /^All leagues/ }))
+  expect(screen.getByRole('heading', { name: 'Overall model outcome accuracy' })).toBeVisible()
+  expect(within(history).getByText('Home eng vs Away eng')).toBeVisible()
 })
 
-const SUMMARY = {
-  by_league: {
-    'Premier League': league({}),
-    // A Wave A league, because the endpoint scopes to Wave A: MLS is served
-    // and projected but never scored against a price, so it can never appear
-    // in this payload at all.
-    'Serie A': league({ league: 'Serie A', total: 12, accuracy: 0.75, brier_score: 0.24 }),
-  },
-}
+it('shows an away outcome pick separately from an incorrect stored draw scoreline', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([game('away-pick', true, { probabilities: [.2, .3, .5], pick: 'A',
+    actual: { home: 2, away: 4, outcome: 'A' }, scoreForecast: { home: 1, away: 1 } })]))
+  render(<AccuracyPage />)
+  const article = (await screen.findByText('Home away-pick vs Away away-pick')).closest('article')!
+  expect(within(article).getByText('Stored outcome pick').nextElementSibling).toHaveTextContent('Away away-pick win')
+  expect(within(article).getByText('Correct')).toBeVisible()
+  await userEvent.click(within(article).getByText('Advanced: stored exact-score forecast'))
+  expect(within(article).getByText('Stored score forecast').nextElementSibling).toHaveTextContent('1–1')
+  expect(within(article).getByText('Exact score incorrect')).toBeVisible()
+})
 
-const TOURNAMENTS = {
-  tournaments: [
-    {
-      competition_id: 'uefa.champions',
-      season: 2025,
-      actual_champion: 'Arsenal',
-      probability_on_actual: 0.15,
-      called_it: false,
-      forecast_made_at_round: 'round-of-16',
-    },
-    {
-      competition_id: 'uefa.champions',
-      season: 2024,
-      actual_champion: 'Real Madrid',
-      probability_on_actual: 0.31,
-      called_it: true,
-      forecast_made_at_round: 'round-of-16',
-    },
-    {
-      competition_id: 'fifa.world',
-      season: 2022,
-      actual_champion: 'Argentina',
-      probability_on_actual: 0.09,
-      called_it: false,
-    },
-    // Under way — no champion, so not a call and not in the picker.
-    { competition_id: 'uefa.europa', season: 2026 },
-  ],
-}
+it('keeps outcome correctness primary and exact-score accuracy in a separate advanced denominator', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([game('exact'), game('outcome-only', true, { scoreForecast: { home: 0, away: 0 } }),
+    game('no-score', true, { scoreForecast: null, scoreForecastStatus: 'missing' })]))
+  render(<AccuracyPage />)
+  expect(await screen.findByText('100.0% correct')).toBeVisible()
+  expect(screen.getByText('3 of 3 games correct')).toBeVisible()
+  expect(screen.getByText(/Extra time, penalty shootouts and knockout advancement are not graded here/)).toBeVisible()
+  await userEvent.click(screen.getByText('Advanced: exact-score assessment', { exact: true }))
+  const advanced = screen.getByLabelText('Advanced exact-score record')
+  expect(within(advanced).getByText('50.0% exact scores correct')).toBeVisible()
+  expect(within(advanced).getByText('1 of 2 eligible score forecasts correct')).toBeVisible()
+  expect(within(advanced).getByText('Eligible outcomes without a stored score forecast').nextElementSibling).toHaveTextContent('1')
+  const article = screen.getByText('Home outcome-only vs Away outcome-only').closest('article')!
+  expect(within(article).getByText('Correct')).toBeVisible()
+  await userEvent.click(within(article).getByText('Advanced: stored exact-score forecast'))
+  expect(within(article).getByText('Exact score incorrect')).toBeVisible()
+  expect(within(article).getByText('Stored score forecast').nextElementSibling).toHaveTextContent('0–0')
+})
 
-function mockFetch({
-  flat = FLAT,
-  summary = SUMMARY,
-  tournaments = TOURNAMENTS,
-}: {
-  flat?: unknown
-  summary?: unknown
-  tournaments?: unknown
-} = {}) {
-  global.fetch = jest.fn().mockImplementation((url: string) => {
-    const u = String(url)
-    const body = u.includes('accuracy/summary')
-      ? summary
-      : u.includes('tournaments/predictions')
-        ? tournaments
-        : u.includes('tracking/recent')
-          ? { count: 0, predictions: [] }
-          : flat
-    return Promise.resolve({ ok: true, json: async () => body })
-  }) as unknown as typeof fetch
-}
+it('retains stored scores but shows no percentage when period proof is missing', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([game('held', true, { status: 'unverified', forecastPeriod: null,
+    scorelinePeriod: null, actual: null, reason: 'Regulation-time result receipt is missing or invalid' })]))
+  render(<AccuracyPage />)
+  expect(await screen.findByText('0 of 0 games correct')).toBeVisible()
+  expect(screen.queryByText(/0.0% correct/)).not.toBeInTheDocument()
+  expect(screen.getByLabelText('History view')).toHaveValue('excluded')
+  const article = screen.getByText('Home held vs Away held').closest('article')!
+  expect(within(article).getByText('Unverified · not scored')).toBeVisible()
+  expect(within(article).getByText('No verified regulation-time result')).toBeVisible()
+  await userEvent.click(within(article).getByText('Advanced: stored exact-score forecast'))
+  expect(within(article).getByText('Stored score forecast').nextElementSibling).toHaveTextContent('1–1')
+  expect(within(article).getByText('Outcome eligibility unverified · not assessed')).toBeVisible()
+})
 
-afterEach(() => jest.resetAllMocks())
+it('reconciles card, timeline and history using exact counts and counts draws', async () => {
+  render(<AccuracyPage />)
+  expect(await screen.findByText('50.0% correct')).toBeVisible()
+  expect(screen.getByText('1 of 2 games correct')).toBeVisible()
+  expect(screen.getByText(/Cumulative: 50.0% correct · 1 of 2 games/)).toBeVisible()
+  const history = screen.getByRole('region', { name: 'Game by game record' })
+  expect(within(history).getByText('Home eng vs Away eng')).toBeVisible()
+  expect(within(history).getByText('Correct')).toBeVisible()
+  expect(within(history).getByText('Incorrect')).toBeVisible()
+  expect(within(history).getAllByText('Actual outcome · 90 minutes')[0].nextElementSibling).toHaveTextContent('Draw')
+  expect(global.fetch).toHaveBeenCalledTimes(1)
+  expect(String((global.fetch as jest.Mock).mock.calls[0][0])).toContain('/tracking/record?gender=M')
+})
 
-describe('AccuracyPage — per competition', () => {
-  it('opens on a league and reports that league alone', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
+it('changes all scoped numbers by competition and preserves thin-sample context', async () => {
+  render(<AccuracyPage />)
+  await screen.findByText('50.0% correct')
+  await userEvent.selectOptions(screen.getByLabelText('Competition'), 'ita.1')
+  expect(screen.getByText('0.0% correct')).toBeVisible()
+  expect(screen.getByText('0 of 1 games correct')).toBeVisible()
+  expect(screen.getByText(/Cumulative: 0.0% correct · 0 of 1 games/)).toBeVisible()
+  expect(screen.queryByText('Home eng vs Away eng')).not.toBeInTheDocument()
+  expect(screen.getByText(/observed sample, not a promise/)).toBeVisible()
+  await userEvent.selectOptions(screen.getByLabelText('Competition'), 'usa.1')
+  expect(within(screen.getByRole('region', { name: 'Prediction track record' })).getByText('Not yet scored')).toBeVisible()
+  expect(screen.getByText('0 of 0 games correct')).toBeVisible()
+  expect(screen.queryByText('0.0% correct')).not.toBeInTheDocument()
+  // Pending-only competitions remain inspectable; no market-coverage gate is implied.
+  expect(screen.getByRole('option', { name: 'MLS' })).toBeInTheDocument()
+  expect(screen.getByLabelText('History view')).toHaveValue('excluded')
+  expect(screen.getByText('Home pending vs Away pending')).toBeVisible()
+  await userEvent.selectOptions(screen.getByLabelText('Competition'), 'eng.1')
+  expect(screen.getByLabelText('History view')).toHaveValue('scored')
+  expect(screen.getByText('Home eng vs Away eng')).toBeVisible()
+  expect(screen.queryByText('Home retro vs Away retro')).not.toBeInTheDocument()
+})
 
-    // Three endpoints have to land before this page has a number on it, which
-    // is slower than the 1s default when the whole suite runs at once.
-    await waitFor(() => expect(screen.getAllByText('54.8%')).toHaveLength(2))
-    expect(screen.getByText('420')).toBeInTheDocument()
-    expect(screen.getByText('0.1830')).toBeInTheDocument()
-  })
+it('preserves an explicit history choice while league filters change', async () => {
+  render(<AccuracyPage />)
+  await screen.findByText('50.0% correct')
+  await userEvent.selectOptions(screen.getByLabelText('History view'), 'excluded')
+  await userEvent.selectOptions(screen.getByLabelText('Competition'), 'usa.1')
+  expect(screen.getByText('Home pending vs Away pending')).toBeVisible()
+  await userEvent.selectOptions(screen.getByLabelText('Competition'), 'eng.1')
+  expect(screen.getByLabelText('History view')).toHaveValue('excluded')
+  expect(screen.getByText('Home retro vs Away retro')).toBeVisible()
+  expect(screen.queryByText('Home eng vs Away eng')).not.toBeInTheDocument()
+  expect(screen.getByText('1 of 1 games correct')).toBeVisible()
+})
 
-  it('changes every number when the competition changes', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
+it('filters seasons and dates without changing only a label, and resets the whole scope', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([...rows, game('old', true, { season: 2025 })]))
+  render(<AccuracyPage />)
+  await screen.findByText('66.7% correct')
+  await userEvent.selectOptions(screen.getByLabelText('Season'), '2025')
+  expect(screen.getByText('1 of 1 games correct')).toBeVisible()
+  await userEvent.clear(screen.getByLabelText('Games from (UTC)'))
+  // HTML date inputs are changed directly because user-event typing varies in jsdom.
+  fireEvent.change(screen.getByLabelText('Games from (UTC)'), { target: { value: '2026-08-16' } })
+  expect(within(screen.getByRole('region', { name: 'Prediction track record' })).getByText('Not yet scored')).toBeVisible()
+  fireEvent.change(screen.getByLabelText('Games through (UTC)'), { target: { value: '2026-08-14' } })
+  expect(screen.getByRole('alert')).toHaveTextContent('Choose an end date')
+  await userEvent.click(screen.getByRole('button', { name: 'Show the whole record' }))
+  expect(screen.getByText('2 of 3 games correct')).toBeVisible()
+})
 
-    await userEvent.click(screen.getByRole('button', { name: /change league/i }))
-    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
+it('keeps retrospectively recorded picks out of the score and explains every exclusion', async () => {
+  render(<AccuracyPage />)
+  await screen.findByText('50.0% correct')
+  await userEvent.selectOptions(screen.getByLabelText('History view'), 'excluded')
+  expect(screen.getByText('Home retro vs Away retro')).toBeVisible()
+  expect(screen.getByText('Recorded after kickoff · not scored')).toBeVisible()
+  const article = screen.getByText('Home retro vs Away retro').closest('article')!
+  expect(within(article).getByText('Actual outcome · 90 minutes').nextElementSibling).toHaveTextContent('Draw')
+  await userEvent.click(within(article).getByText('Forecast and verification details'))
+  expect(within(article).getByText(/Forecast was recorded after kickoff. Excluded/)).toBeVisible()
+  expect(screen.getByText('1 of 2 games correct')).toBeVisible()
+  expect(screen.getByRole('link', { name: /Separate historical backtests/ })).toHaveAttribute('href', '/evaluation')
+  expect(screen.getByText(/legacy aggregates use different timing checks/)).toBeInTheDocument()
+})
 
-    await waitFor(() => expect(screen.getAllByText('75.0%').length).toBeGreaterThan(0))
-    expect(screen.queryByText('54.8%')).not.toBeInTheDocument()
-  })
+it('offers keyboard/touch point controls and an equivalent exact-denominator data table', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([game('first', true, { date: '2026-08-08', kickoffAt: '2026-08-08T19:00:00Z', generatedAt: '2026-08-08T08:00:00Z', trainedThrough: '2026-08-07', settledAt: '2026-08-08T22:00:00Z' }), ...rows]))
+  render(<AccuracyPage />)
+  await screen.findByText('66.7% correct')
+  expect(screen.getByRole('slider', { name: 'Inspect timeline point' })).toHaveAttribute('aria-valuetext', expect.stringContaining('2 correct of 3 settled'))
+  await userEvent.click(screen.getByRole('button', { name: 'Previous date' }))
+  expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', expect.stringContaining('1 correct of 1 settled'))
+  await userEvent.selectOptions(screen.getByLabelText('Calendar grouping'), 'day')
+  await userEvent.click(screen.getByText('Timeline data table'))
+  expect(screen.getByRole('table', { name: 'Every chart point and its exact count denominators' })).toBeVisible()
+  expect(screen.getByText(/last 20 settled games, or all available when fewer/)).toBeVisible()
+})
 
-  it('keeps the context and drops the verdict on a thin sample', async () => {
-    // Serie A has twelve settled picks here. The rate is real and it is not evidence.
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
+it('paginates every pick without changing the overall denominator', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success(Array.from({ length: 26 }, (_, i) => game(String(i).padStart(2, '0')))))
+  render(<AccuracyPage />)
+  await screen.findByText('26 of 26 games correct')
+  expect(screen.getByText('Page 1 of 2')).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: 'Next games' }))
+  expect(screen.getByText('Home 25 vs Away 25')).toBeVisible()
+  expect(screen.queryByText('Home 00 vs Away 00')).not.toBeInTheDocument()
+  expect(screen.getByText('26 of 26 games correct')).toBeVisible()
+})
 
-    await userEvent.click(screen.getByRole('button', { name: /change league/i }))
-    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /Serie A/i }))
+it('keeps missing data as unavailable with a working retry, not a fake zero', async () => {
+  global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, json: async () => ({ available: false, reason: 'Unreadable artifact.' }) }).mockResolvedValueOnce(success())
+  render(<AccuracyPage />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Record unavailable')
+  expect(screen.queryByText('0.0% correct')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+  expect(await screen.findByText('50.0% correct')).toBeVisible()
+})
 
-    await waitFor(() => expect(screen.getByText(/not yet evidence of anything/i)).toBeInTheDocument())
-  })
+it('reports valid zero evidence and source freshness without any fabricated percentage', async () => {
+  global.fetch = jest.fn().mockResolvedValue(success([]))
+  render(<AccuracyPage />)
+  await screen.findByText('0 of 0 games correct')
+  expect(within(screen.getByRole('region', { name: 'Prediction track record' })).getByText('Not yet scored')).toBeVisible()
+  expect(screen.getByText('0 of 0 games correct')).toBeVisible()
+  expect(screen.getByText(/A newly rebuilt audit can still contain older source observations/)).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Open verified record data' })).toHaveAttribute('href', '/api/v1/tracking/record?gender=M')
+})
 
-  it('shows every league against the floors that make its rate readable', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-
-    expect(screen.getByText(/Backing the home side every time/i)).toBeInTheDocument()
-    expect(screen.getByText(/blind one-in-three guess/i)).toBeInTheDocument()
-  })
-
-  it('switches to the knockout layer and scores that competition alone', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-
-    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-
-    // Two Champions League editions, one called outright.
-    expect(screen.getByText(/Calls at the knockout stage/i)).toBeInTheDocument()
-    expect(screen.getByText('50%')).toBeInTheDocument()
-    expect(screen.getByText(/2025 · Arsenal/)).toBeInTheDocument()
-  })
-
-  it('labels the knockout record a backtest rather than a published one', async () => {
-    // The forecast for a 2021 edition was reconstructed by a model refit on
-    // earlier seasons. Honest, and not something a reader could have acted on
-    // — this page must not let those two blur.
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-
-    await waitFor(() => expect(screen.getByText(/a backtest, not something published in advance/i)).toBeInTheDocument())
-  })
-
-  it('offers only competitions with a settled edition behind them', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-
-    await userEvent.click(screen.getByRole('button', { name: /change tournament/i }))
-    const names = within(screen.getByRole('listbox'))
-      .getAllByRole('option')
-      .map((o) => o.textContent ?? '')
-    expect(names.some((n) => /Champions League/.test(n))).toBe(true)
-    expect(names.some((n) => /World Cup/.test(n))).toBe(true)
-    // The Europa League edition under way carries no champion to score.
-    expect(names.some((n) => /Europa/.test(n))).toBe(false)
-  })
-
-  it('marks the pooled record as pooled rather than hanging it on one competition', async () => {
-    mockFetch()
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    expect(screen.getByText(/Across every league/i)).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-    await waitFor(() => expect(screen.getByText(/Across all 2 knockout competitions/i)).toBeInTheDocument())
-  })
-
-  it('disables the knockout layer when no edition has been settled', async () => {
-    mockFetch({ tournaments: { tournaments: [] } })
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    expect(screen.getByRole('tab', { name: /tournaments/i })).toBeDisabled()
-  })
-
-  it('says a league has nothing settled rather than printing a zero', async () => {
-    mockFetch({ summary: { by_league: {} }, flat: { ...FLAT, completed_predictions: 0 } })
-    render(<AccuracyPage />)
-
-    await waitFor(() =>
-      expect(screen.getByText(/Nothing tracked here yet|No results in yet/i)).toBeInTheDocument(),
-    )
-    expect(screen.queryByText('0.0000')).not.toBeInTheDocument()
-  })
-
-  it('never lists a league it cannot score', async () => {
-    // MLS is SERVED and projected, so `/evaluation` lists it — but only the
-    // five Wave A leagues carry a paired market price, and this page's whole
-    // claim is distance from that price. Putting MLS beside them would offer a
-    // league that can never show a number, and invite equal trust in all six.
-    mockFetch({})
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    await userEvent.click(screen.getByRole('button', { name: /league/i }))
-    const options = within(screen.getByRole('listbox'))
-      .getAllByRole('option')
-      .map((o) => o.textContent ?? '')
-    expect(options.some((o) => /MLS/i.test(o))).toBe(false)
-    expect(options.some((o) => /Premier League/i.test(o))).toBe(true)
-  })
-
-  it('still lists every scorable league when nothing at all has settled', async () => {
-    // The reported bug, and the reason it had two symptoms. Deriving the league
-    // list from settled rows made every league vanish the moment the record was
-    // scoped to a model generation with nothing finished yet — which is exactly
-    // the state a new season starts in. `/evaluation` never had this: it takes
-    // membership from the registry and lets the artifact supply only numbers.
-    mockFetch({ summary: { by_league: {} }, flat: { ...FLAT, completed_predictions: 0 } })
-    render(<AccuracyPage />)
-
-    await waitFor(() =>
-      expect(screen.getByText(/No pick in this competition has been settled yet/i)).toBeInTheDocument(),
-    )
-    expect(screen.getByRole('tab', { name: /leagues/i })).toBeEnabled()
-    expect(screen.getByText(/nothing settled/i)).toBeInTheDocument()
-  })
-
-  it('lets you back to the leagues after visiting the tournaments', async () => {
-    // The second symptom of the same cause: leagues was the DEFAULT layer and
-    // reported itself empty, so the first click away was a one-way trip.
-    mockFetch({ summary: { by_league: {} }, flat: { ...FLAT, completed_predictions: 0 } })
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getByRole('tab', { name: /leagues/i })).toBeInTheDocument())
-
-    await userEvent.click(screen.getByRole('tab', { name: /tournaments/i }))
-    const back = screen.getByRole('tab', { name: /leagues/i })
-    expect(back).toBeEnabled()
-    await userEvent.click(back)
-    await waitFor(() => expect(screen.getByRole('tab', { name: /leagues/i })).toHaveAttribute('aria-selected', 'true'))
-  })
-
-  it('finds a league record that the endpoint keyed by display name', async () => {
-    // The record on disk stores "Premier League", never "eng.1". A page that
-    // looks up by competition id has to resolve the name first — and when it
-    // did not, every per-league block silently fell through to "nothing
-    // settled" even with a full season scored.
-    mockFetch({})
-    render(<AccuracyPage />)
-    await waitFor(() => expect(screen.getAllByText('54.8%').length).toBeGreaterThan(0))
-    expect(
-      screen.queryByText(/No pick in this competition has been settled yet/i),
-    ).not.toBeInTheDocument()
-  })
+it('does not flash another gender’s record or accept a late aborted response', async () => {
+  let release!: (value: unknown) => void
+  global.fetch = jest.fn().mockImplementationOnce(() => new Promise(resolve => { release = resolve }))
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ available: false, reason: 'No verified women’s match ledger has been published.' }) })
+  const view = render(<AccuracyPage />)
+  mockGender = 'F'; view.rerender(<AccuracyPage />)
+  await screen.findByRole('alert')
+  await act(async () => release(success()))
+  expect(screen.queryByText('50.0% correct')).not.toBeInTheDocument()
+  expect(screen.getByRole('alert')).toHaveTextContent('women’s match ledger')
 })

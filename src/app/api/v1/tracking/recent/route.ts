@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import { scopePredictions } from '@/lib/predictionScope'
 
 /**
  * Returns recent predictions from the committed JSON files under
@@ -19,6 +20,7 @@ import path from 'path'
  */
 
 interface Prediction {
+  model_used?: string | null
   match_id: string
   home_team: string
   away_team: string
@@ -68,7 +70,8 @@ export async function GET(request: NextRequest) {
   const wantedGender: 'M' | 'F' | null = genderParam === 'F' || genderParam === 'M' ? genderParam : null
   const completedOnly = searchParams.get('completed_only') === 'true'
 
-  let predictions = loadAll()
+  const scoped = scopePredictions(loadAll())
+  let predictions = scoped.rows
 
   if (wantedGender) {
     predictions = predictions.filter((p) => (p.gender ?? 'M').toString().toUpperCase() === wantedGender)
@@ -93,6 +96,9 @@ export async function GET(request: NextRequest) {
     {
       count: trimmed.length,
       predictions: trimmed,
+      cohort: 'legacy_scoped_archive',
+      eligibility: 'unverified_pre_match_and_period',
+      scope: scoped.counts,
     },
     { headers: { 'Cache-Control': 'no-store, max-age=0' } }
   )

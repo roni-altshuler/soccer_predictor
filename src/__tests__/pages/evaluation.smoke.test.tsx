@@ -323,15 +323,17 @@ describe('EvaluationPage - one competition at a time', () => {
 })
 
 describe('EvaluationPage — the two records', () => {
-  it('says nothing is scored yet without rendering a fake zero', async () => {
+  it('distinguishes an unavailable older aggregate from verified pre-match coverage', async () => {
     mockFetch({ evaluation: EMPTY_LIVE })
     render(<EvaluationPage />)
 
     await waitFor(() =>
-      expect(screen.getAllByText(/Nothing has been scored yet/i).length).toBeGreaterThan(0),
+      expect(screen.getByText(/No older aggregate is available\. This does not establish that every saved forecast was prospective/)).toBeVisible(),
     )
     // The provenance record is real and is shown even when the score is not.
     expect(screen.getAllByText('2,346').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('heading', { name: 'Live published forecasts' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/^0\.0%$/)).not.toBeInTheDocument()
   })
 
   it('never presents the historical sample as the live one', async () => {
