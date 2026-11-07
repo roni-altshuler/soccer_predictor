@@ -189,6 +189,7 @@ def load_upcoming(competitions: Sequence[str],
         fbref_time,
         norm_team,
     )
+    from backend.services.forecast.schedule_identity import with_pinned_schedule_aliases
 
     con = duckdb.connect(str(CANONICAL), read_only=True)
     con.execute("INSTALL sqlite; LOAD sqlite;")
@@ -203,6 +204,8 @@ def load_upcoming(competitions: Sequence[str],
     """, [datetime.now(timezone.utc).date().isoformat()]).fetchall()
     aliases = {(r[0], r[1]): r[2] for r in con.execute(
         "SELECT competition_id, fb_norm, wh_norm FROM team_aliases").fetchall()}
+    aliases = with_pinned_schedule_aliases(
+        aliases, [r[0] for r in con.execute("SELECT team_key FROM teams").fetchall()])
     con.close()
 
     # (competition, season, home_key, away_key) of everything already played.
