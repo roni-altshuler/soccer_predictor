@@ -8,6 +8,12 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- Upcoming lineup collection excludes explicitly postponed ESPN events only
+  when their event and competition statuses agree and their identities are
+  valid. Retained kickoff dates no longer trigger roster requests for these
+  fixtures; missing-roster validation, last-good caches and publication gates
+  remain unchanged. Injury endpoints without reports still fail as unavailable.
+
 - Season forecasts reuse existing pinned club aliases for unplayed schedule
   spellings, scoped to clubs already known in the same competition and gender.
   This prevents the La Liga schedule's `Dep. A Coruña` from becoming a second

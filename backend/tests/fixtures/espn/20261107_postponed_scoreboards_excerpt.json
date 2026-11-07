@@ -1,0 +1,214 @@
+{
+  "scoreboards": {
+    "20261107": {
+      "events": [
+        {
+          "id": "401883142",
+          "date": "2026-11-07T20:00Z",
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0'",
+            "type": {
+              "id": "6",
+              "name": "STATUS_POSTPONED",
+              "state": "post",
+              "completed": false,
+              "description": "Postponed",
+              "detail": "Postponed",
+              "shortDetail": "Postponed"
+            }
+          },
+          "competitions": [
+            {
+              "id": "401883142",
+              "date": "2026-11-07T20:00Z",
+              "status": {
+                "clock": 0.0,
+                "displayClock": "0'",
+                "type": {
+                  "id": "6",
+                  "name": "STATUS_POSTPONED",
+                  "state": "post",
+                  "completed": false,
+                  "description": "Postponed",
+                  "detail": "Postponed",
+                  "shortDetail": "Postponed"
+                }
+              },
+              "competitors": [
+                {
+                  "homeAway": "home",
+                  "team": {
+                    "id": "3747"
+                  }
+                },
+                {
+                  "homeAway": "away",
+                  "team": {
+                    "id": "245"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "20261108": {
+      "events": [
+        {
+          "id": "401883122",
+          "date": "2026-11-08T13:00Z",
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0'",
+            "type": {
+              "id": "6",
+              "name": "STATUS_POSTPONED",
+              "state": "post",
+              "completed": false,
+              "description": "Postponed",
+              "detail": "Postponed",
+              "shortDetail": "Postponed"
+            }
+          },
+          "competitions": [
+            {
+              "id": "401883122",
+              "date": "2026-11-08T13:00Z",
+              "status": {
+                "clock": 0.0,
+                "displayClock": "0'",
+                "type": {
+                  "id": "6",
+                  "name": "STATUS_POSTPONED",
+                  "state": "post",
+                  "completed": false,
+                  "description": "Postponed",
+                  "detail": "Postponed",
+                  "shortDetail": "Postponed"
+                }
+              },
+              "competitors": [
+                {
+                  "homeAway": "home",
+                  "team": {
+                    "id": "20179"
+                  }
+                },
+                {
+                  "homeAway": "away",
+                  "team": {
+                    "id": "84"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "summaries": {
+    "401883142": {
+      "header": {
+        "id": "401883142",
+        "competitions": [
+          {
+            "id": "401883142",
+            "date": "2026-11-07T20:00Z",
+            "status": {
+              "type": {
+                "id": "6",
+                "name": "STATUS_POSTPONED",
+                "state": "post",
+                "completed": false,
+                "description": "Postponed",
+                "detail": "Postponed",
+                "shortDetail": "Postponed"
+              }
+            },
+            "competitors": [
+              {
+                "homeAway": "home",
+                "team": {
+                  "id": "3747"
+                }
+              },
+              {
+                "homeAway": "away",
+                "team": {
+                  "id": "245"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "rosters": [
+        {
+          "homeAway": "home",
+          "team": {
+            "id": "3747"
+          }
+        },
+        {
+          "homeAway": "away",
+          "team": {
+            "id": "245"
+          }
+        }
+      ]
+    },
+    "401883122": {
+      "header": {
+        "id": "401883122",
+        "competitions": [
+          {
+            "id": "401883122",
+            "date": "2026-11-08T13:00Z",
+            "status": {
+              "type": {
+                "id": "6",
+                "name": "STATUS_POSTPONED",
+                "state": "post",
+                "completed": false,
+                "description": "Postponed",
+                "detail": "Postponed",
+                "shortDetail": "Postponed"
+              }
+            },
+            "competitors": [
+              {
+                "homeAway": "home",
+                "team": {
+                  "id": "20179"
+                }
+              },
+              {
+                "homeAway": "away",
+                "team": {
+                  "id": "84"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "rosters": [
+        {
+          "homeAway": "home",
+          "team": {
+            "id": "20179"
+          }
+        },
+        {
+          "homeAway": "away",
+          "team": {
+            "id": "84"
+          }
+        }
+      ]
+    }
+  }
+}
