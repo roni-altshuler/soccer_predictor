@@ -1042,10 +1042,10 @@
   },
   {
    "competition_id": "eng.1",
-   "coverage": 0.5696,
-   "covered": 4648,
+   "coverage": 0.5697,
+   "covered": 4650,
    "gender": "M",
-   "matches": 8160,
+   "matches": 8162,
    "name": "Premier League",
    "seasons": [
     {
@@ -1257,17 +1257,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 90,
-     "matches": 90,
+     "covered": 92,
+     "matches": 92,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 6,
-     "with_events": 84
+     "with_events": 86
     }
    ],
    "uncovered": 3512,
    "verified_empty": 301,
-   "with_events": 4347
+   "with_events": 4349
   },
   {
    "competition_id": "eng.1.w",
@@ -1414,10 +1414,10 @@
   },
   {
    "competition_id": "esp.1",
-   "coverage": 0.4891,
-   "covered": 4080,
+   "coverage": 0.4893,
+   "covered": 4082,
    "gender": "M",
-   "matches": 8341,
+   "matches": 8343,
    "name": "La Liga",
    "seasons": [
     {
@@ -1629,17 +1629,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 109,
-     "matches": 109,
+     "covered": 111,
+     "matches": 111,
      "season": 2026,
      "uncovered": 0,
-     "verified_empty": 9,
-     "with_events": 100
+     "verified_empty": 10,
+     "with_events": 101
     }
    ],
    "uncovered": 4261,
-   "verified_empty": 282,
-   "with_events": 3798
+   "verified_empty": 283,
+   "with_events": 3799
   },
   {
    "competition_id": "esp.2",
@@ -2028,10 +2028,10 @@
   },
   {
    "competition_id": "fra.1",
-   "coverage": 0.5261,
-   "covered": 4071,
+   "coverage": 0.5262,
+   "covered": 4072,
    "gender": "M",
-   "matches": 7738,
+   "matches": 7739,
    "name": "Ligue 1",
    "seasons": [
     {
@@ -2225,17 +2225,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 81,
-     "matches": 81,
+     "covered": 82,
+     "matches": 82,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 6,
-     "with_events": 75
+     "with_events": 76
     }
    ],
    "uncovered": 3667,
    "verified_empty": 296,
-   "with_events": 3775
+   "with_events": 3776
   },
   {
    "competition_id": "fra.2",
@@ -2297,10 +2297,10 @@
   },
   {
    "competition_id": "ger.1",
-   "coverage": 0.3458,
-   "covered": 2269,
+   "coverage": 0.3459,
+   "covered": 2270,
    "gender": "M",
-   "matches": 6562,
+   "matches": 6563,
    "name": "Bundesliga",
    "seasons": [
     {
@@ -2512,17 +2512,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 72,
-     "matches": 72,
+     "covered": 73,
+     "matches": 73,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 6,
-     "with_events": 66
+     "with_events": 67
     }
    ],
    "uncovered": 4293,
    "verified_empty": 120,
-   "with_events": 2149
+   "with_events": 2150
   },
   {
    "competition_id": "ger.2",
@@ -2584,10 +2584,10 @@
   },
   {
    "competition_id": "ita.1",
-   "coverage": 0.5961,
-   "covered": 4974,
+   "coverage": 0.5962,
+   "covered": 4975,
    "gender": "M",
-   "matches": 8344,
+   "matches": 8345,
    "name": "Serie A",
    "seasons": [
     {
@@ -2790,17 +2790,17 @@
     },
     {
      "coverage": 1.0,
-     "covered": 100,
-     "matches": 100,
+     "covered": 101,
+     "matches": 101,
      "season": 2026,
      "uncovered": 0,
      "verified_empty": 1,
-     "with_events": 99
+     "with_events": 100
     }
    ],
    "uncovered": 3370,
    "verified_empty": 353,
-   "with_events": 4621
+   "with_events": 4622
   },
   {
    "competition_id": "ita.2",
@@ -4286,14 +4286,14 @@
    "with_events": 792
   }
  ],
- "generated_at": "2026-11-06T16:09:09+00:00",
+ "generated_at": "2026-11-07T15:02:03+00:00",
  "schema": 1,
  "totals": {
-  "coverage": 0.4424,
-  "covered": 36659,
-  "matches": 82857,
+  "coverage": 0.4425,
+  "covered": 36666,
+  "matches": 82864,
   "uncovered": 46198,
-  "verified_empty": 2321,
-  "with_events": 34338
+  "verified_empty": 2322,
+  "with_events": 34344
  }
 }
