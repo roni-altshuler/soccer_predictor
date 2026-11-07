@@ -57,6 +57,7 @@ from backend.services.fotmob.client import (
 from backend.services.data.provider_status import (
     ProviderUnavailable, observation_time, valid_player_identity, write_json_atomic,
 )
+from backend.services.data.espn_event_status import is_explicitly_postponed
 
 logger = logging.getLogger(__name__)
 
@@ -469,6 +470,13 @@ class LineupScraper:
                     except (ValueError, TypeError, AttributeError) as exc:
                         raise ProviderUnavailable(f"Invalid kickoff for {league}/{day}") from exc
                     if now <= ko <= horizon:
+                        if is_explicitly_postponed(event):
+                            logger.info(
+                                "Skipping postponed ESPN event %s/%s; "
+                                "no lineup requested",
+                                league, event["id"],
+                            )
+                            continue
                         eid = event.get("id")
                         if eid:
                             match_ids.append(str(eid))
