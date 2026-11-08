@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-11-01T11:01:09.275107Z",
+  "ran_at": "2026-11-08T11:01:28.464566Z",
   "status": "error",
   "error": "ESPN range rejected for premier_league/2010; daily fallback needs 365 requests, budget 93. Use a narrower season selection; no partial season accepted."
 }
