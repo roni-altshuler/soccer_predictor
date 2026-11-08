@@ -19,7 +19,7 @@ development workflow, and the conventions the project follows so your change lan
 
 ## Local setup
 
-**Prerequisites:** Node.js 20+, Python 3.11+, and `npm`.
+**Prerequisites:** Node.js 20.9+ (required by sharp 0.35.5), Python 3.11+, and `npm`.
 
 ```bash
 # 1. Install JS deps

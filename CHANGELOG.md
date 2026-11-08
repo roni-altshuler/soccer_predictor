@@ -6,6 +6,15 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+
+- Pin Next.js and its ESLint configuration to 15.5.29, and explicitly install
+  sharp 0.35.5 so Next cannot retain the older optional decoder from the lockfile.
+  This applies the fixes for GHSA-7qx7-33qx-rqx2 and GHSA-2464-fhr4-w9xw.
+  CI checks the locked and runtime decoder, a native image conversion, SVG
+  rejection and the existing remote-image allowlist. Deployment runtime and
+  production exploitability require separate verification.
+
 ### Changed
 
 - Upcoming lineup collection excludes explicitly postponed ESPN events only

@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify image dependency and optimizer safeguards
+        run: npm run test:image:security
+
       # Mirrors local `next lint`. Errors fail the build; the project carries
       # some pre-existing `no-explicit-any` warnings tracked for cleanup in
       # docs/REPOSITORY_AUDIT_2026-06-02.md, so warnings are not yet a hard gate.
