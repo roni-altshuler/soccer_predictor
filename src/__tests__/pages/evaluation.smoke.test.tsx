@@ -493,3 +493,20 @@ describe('EvaluationPage — absence', () => {
     expect(screen.getByRole('tab', { name: /tournaments/i })).toBeDisabled()
   })
 })
+
+it('keeps completed regular-season observations separate from historical forecast evaluation', async () => {
+  const { completedArtifact } = await import('@/testFixtures/completedRegularSeason')
+  const completed = completedArtifact().leagues[0]
+  mockFetch({ evaluation: EMPTY_LIVE, projections: { available: true, leagues: [
+    PROJECTIONS.leagues[0], { ...completed, measured: PROJECTIONS.leagues[1].measured },
+  ] } })
+  render(<EvaluationPage />)
+  await waitFor(() => expect(screen.getAllByText('0.58266').length).toBeGreaterThan(0))
+  await userEvent.click(screen.getByRole('button', { name: /change league/i }))
+  await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: /MLS/i }))
+  await waitFor(() => expect(screen.getAllByText('0.62101').length).toBeGreaterThan(0))
+  expect(screen.getByText('2,411')).toBeInTheDocument()
+  expect(screen.queryByText('510', { exact: true })).not.toBeInTheDocument()
+  expect(screen.queryByText('East Club 01')).not.toBeInTheDocument()
+  expect(screen.queryByText('0.00000')).not.toBeInTheDocument()
+})

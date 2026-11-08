@@ -13,6 +13,7 @@ import {
   isCovered,
 } from '@/lib/leagueAccents'
 import { isCalendarYearLeague, seasonLabel } from '@/lib/seasons'
+import { readCompletedRegularSeason, type CompletedRegularSeason } from '@/lib/completedRegularSeason'
 
 /**
  * Competition directory.
@@ -65,6 +66,8 @@ interface Row {
   /** The two or three clubs the projection actually separates. */
   race: Contender[]
   titleLabel: string
+  completed: CompletedRegularSeason | null
+  unavailable: boolean
 }
 
 interface ArtifactLeague {
@@ -88,8 +91,10 @@ interface ArtifactLeague {
  */
 async function servedLeagues(): Promise<Row[]> {
   let byId: Record<string, ArtifactLeague> = {}
+  let artifact: unknown = null
   try {
     const parsed = JSON.parse(await fs.readFile(ARTIFACT, 'utf8'))
+    artifact = parsed
     for (const league of (parsed.leagues ?? []) as ArtifactLeague[]) {
       byId[league.competition_id] = league
     }
@@ -101,11 +106,14 @@ async function servedLeagues(): Promise<Row[]> {
     const accent = getLeagueAccent(id)
     const league = byId[id]
     const measured = league?.measured ?? {}
+    const completion = readCompletedRegularSeason(artifact, { competitionId: id, season: 2026, gender: 'M' })
+    const completed = completion.kind === 'completed' ? completion.season : null
+    const unavailable = completion.kind === 'unavailable'
     // A grouped league's title is the Supporters' Shield and its clubs are
     // separated by the conference race, so `p_title` is still the right
     // ordering — what changes is only what the number is called.
     const grouped = Boolean(league?.groups)
-    const race = [...(league?.table ?? [])]
+    const race = [...(completed || unavailable ? [] : league?.table ?? [])]
       .map((r) => ({ team: r.team, p: r.p_title ?? 0 }))
       .filter((r) => r.p > 0)
       .sort((a, b) => b.p - a.p)
@@ -123,6 +131,7 @@ async function servedLeagues(): Promise<Row[]> {
       teams: league?.teams ?? null,
       race,
       titleLabel: grouped ? 'Shield' : 'Title',
+      completed, unavailable,
     }
   })
 }
@@ -144,8 +153,9 @@ export default async function LeaguesPage() {
             Leagues
           </h1>
           <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
-            {leagues.length} projected
-            {projected.length ? ` · ${projected.length} in season` : ''}
+            {leagues.length} leagues
+            {projected.length ? ` · ${projected.length} published outlooks` : ''}
+            {leagues.some((league) => league.completed) ? ' · MLS regular season completed' : ''}
           </p>
         </div>
         <DocsRow
@@ -226,7 +236,15 @@ function LeagueCard({ league }: { league: Row }) {
         />
       </div>
 
-      {league.race.length ? (
+      {league.completed ? (
+        <div className="mt-4 flex-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          <p className="font-semibold text-[var(--text-primary)]">Regular season completed</p>
+          <p className="mt-1">Observed conference standings · 30 clubs · 510 matches</p>
+          <p className="mt-2">Results through <time dateTime={league.completed.observation.results_through}>{league.completed.observation.results_through}</time></p>
+          <p className="mt-1">Standings observed <time dateTime={league.completed.observation.observed_at}>{new Date(league.completed.observation.observed_at).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}</time></p>
+          <p className="mt-2 text-[var(--text-tertiary)]">MLS Cup playoffs are separate.</p>
+        </div>
+      ) : league.race.length ? (
         <div className="mt-4 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
@@ -270,7 +288,7 @@ function LeagueCard({ league }: { league: Row }) {
         </div>
       ) : (
         <p className="mt-4 flex-1 text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-          No projection published for this season yet.
+          {league.unavailable ? 'Verified season record unavailable.' : 'No projection published for this season yet.'}
         </p>
       )}
 

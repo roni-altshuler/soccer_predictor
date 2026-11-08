@@ -2,14 +2,14 @@ import assert from 'node:assert/strict'
 import { readFile, writeFile } from 'node:fs/promises'
 import { checkComparisonReview } from './team_comparison_review_checks.mjs'
 
-/** Real browser / existing local serving API / committed artifact. Only faults
+/** Real browser / existing local serving API / local artifact. Only faults
  * remove data or fail transport. Other APIs/hosts are intercepted: no provider
  * collection, model execution, credentials or copied assets.
  */
 export async function checkTeamComparison({ browser, base, out }) {
   const artifact = JSON.parse(await readFile('backend/data/predictions/season_projections.json', 'utf8'))
   const served = await (await fetch(`${base}/api/v1/season/projections?gender=M`)).json()
-  assert.deepEqual(served, { available: true, ...artifact }, 'Serving API must return the committed snapshot')
+  assert.deepEqual(served, { available: true, ...artifact }, 'Serving API must return the local serving snapshot')
   const clubs = [...artifact.leagues.find((l) => l.competition_id === 'eng.1').table].sort((a, b) => a.team.localeCompare(b.team))
   assert(clubs.length >= 3 && clubs.some((c) => c.team === 'Arsenal') && clubs.some((c) => c.team === 'Manchester City'))
   const report = []
@@ -158,7 +158,27 @@ export async function checkTeamComparison({ browser, base, out }) {
       await page.goto(`${base}/leagues/usa.1/compare?gender=M`, { waitUntil: 'networkidle' })
       await region.waitFor()
       const mls = artifact.leagues.find((l) => l.competition_id === 'usa.1')
-      assert.equal(await first.locator('option').count(), mls.table.length)
+      const mlsCompleted = mls.state === 'regular_season_completed'
+      const mlsRows = mlsCompleted ? mls.observed_table : mls.table
+      assert(Array.isArray(mlsRows), 'MLS has the rows required by its explicit state')
+      const mlsNames = mlsRows.map((row) => row.team).sort((a, b) => a.localeCompare(b))
+      if (mlsCompleted) assert.equal(mlsNames.length, 30, 'Completed MLS must retain all 30 observed clubs')
+      assert.deepEqual(await first.locator('option').allTextContents(), mlsNames)
+      assert.deepEqual(await second.locator('option').allTextContents(), mlsNames)
+      if (mlsCompleted) {
+        await page.getByRole('heading', { name: 'Regular season completed', exact: true }).waitFor()
+        await page.getByText('Observed regular season', { exact: true }).waitFor()
+        assert.equal(await region.getByText('Conference position', { exact: true }).count(), 2)
+        assert.doesNotMatch(await page.locator('.team-comparison').innerText(), /Projected final points|Model forecast|\d+(?:\.\d+)?%/i, 'Observed MLS must not display forecast figures')
+        for (const select of [first, second]) {
+          const team = await select.inputValue()
+          const row = mlsRows.find((club) => club.team === team)
+          const card = page.getByRole('article', { name: team, exact: true })
+          const position = card.getByText('Conference position', { exact: true }).locator('..')
+          await position.getByText(String(row.position), { exact: true }).waitFor()
+          await position.getByText(row.group, { exact: true }).waitFor()
+        }
+      }
       assert.equal(await first.locator('option').filter({ hasText: 'Arsenal' }).count(), 0)
       await page.getByText(`Men’s ${mls.season}`, { exact: true }).waitFor()
       await audit('calendar-season'); await capture('calendar-season')
@@ -170,7 +190,7 @@ export async function checkTeamComparison({ browser, base, out }) {
         states: ['ready', 'loading', 'error-retry', 'empty-retry', 'missing-metrics', 'unsupported-gender', 'calendar-season'],
         reducedMotion: true, oneActiveNavItem: true, accessibilityViolations: 0, overflow: false,
         externalRequestsFulfilledLocally: blockedExternal.length, expectedInjectedTransportErrors: expectedFaultMessages.length,
-        snapshotRequests, unexpectedErrors: errors })
+        snapshotRequests, mlsCompleted, mlsClubNames: mlsNames, unexpectedErrors: errors })
     } catch (error) {
       await writeFile(`${out}/comparison-failure-${width}.html`, await page.content())
       await page.screenshot({ path: `${out}/comparison-failure-${width}.png`, fullPage: true })
@@ -178,6 +198,6 @@ export async function checkTeamComparison({ browser, base, out }) {
     } finally { release?.(); await context.close() }
   }
   const targetedReview = await checkComparisonReview({ browser, base, out, artifact })
-  return { basis: 'Actual local serving API and committed season artifact; only faults injected. Other APIs and external hosts intercepted. No live provider ingestion, model execution or public deployment QA.', targetedReview,
-    artifactGeneratedAt: artifact.generated_at, resultCutoff: 'Not supplied per league', report }
+  return { basis: 'Actual local serving API and its season artifact; only faults injected. Other APIs and external hosts intercepted. No live provider ingestion, model execution or public deployment QA.', targetedReview,
+    artifactGeneratedAt: artifact.generated_at, resultCutoffByLeague: Object.fromEntries(artifact.leagues.map((league) => [league.competition_id, league.state === 'regular_season_completed' ? league.observation.results_through : null])), report }
 }

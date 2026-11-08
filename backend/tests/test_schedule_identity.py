@@ -1,5 +1,6 @@
 """Schedule spellings must reuse established identities, never invent clubs."""
 
+import sqlite3
 from datetime import date, timedelta
 
 import pytest
@@ -81,25 +82,22 @@ def test_unknown_and_similar_names_are_not_guessed(tmp_path):
 
 def test_load_upcoming_keeps_a_single_deportivo_and_removes_its_played_fixture(
     monkeypatch,
+    tmp_path,
 ):
     """Exercise the real schedule SQL and resolver with a full 20-club season.
 
-    In-memory attached tables replace only the external SQLite attachment,
-    so this test also runs without downloading DuckDB extensions in CI.
+    Real temporary SQLite and canonical files exercise the read-only loader
+    without downloading DuckDB extensions or reading the checkout's data.
     """
     duckdb = pytest.importorskip("duckdb")
     from backend.scripts import forecast_season as fs
 
-    con = duckdb.connect(":memory:")
-    con.execute("ATTACH ':memory:' AS fb")
+    canonical = tmp_path / "canonical.duckdb"
+    con = duckdb.connect(str(canonical))
     con.execute(
         "CREATE TABLE team_aliases(competition_id TEXT, fb_norm TEXT, wh_norm TEXT)"
     )
     con.execute("CREATE TABLE teams(team_key TEXT)")
-    con.execute(
-        "CREATE TABLE fb.fbref_fixtures(league TEXT, season TEXT, date TEXT, "
-        "time TEXT, home TEXT, away TEXT, round TEXT, home_goals INTEGER)"
-    )
     clubs = ["deportivo la coruna"] + [f"opponent {i}" for i in range(19)]
     con.executemany(
         "INSERT INTO teams VALUES (?)", [(f"esp.1::{club}",) for club in clubs]
@@ -120,7 +118,17 @@ def test_load_upcoming_keeps_a_single_deportivo_and_removes_its_played_fixture(
         for away in clubs
         if home != away
     ]
-    con.executemany("INSERT INTO fb.fbref_fixtures VALUES (?,?,?,?,?,?,?,?)", rows)
+    con.close()
+    data = tmp_path / "backend/data"
+    data.mkdir(parents=True)
+    with sqlite3.connect(data / "fbref.sqlite") as schedule:
+        schedule.execute(
+            "CREATE TABLE fbref_fixtures(league TEXT, season TEXT, date TEXT, "
+            "time TEXT, home TEXT, away TEXT, round TEXT, home_goals INTEGER)"
+        )
+        schedule.executemany(
+            "INSERT INTO fbref_fixtures VALUES (?,?,?,?,?,?,?,?)", rows
+        )
     played = [
         {
             "competition_id": "esp.1",
@@ -130,23 +138,9 @@ def test_load_upcoming_keeps_a_single_deportivo_and_removes_its_played_fixture(
         }
     ]
 
-    class AttachedConnection:
-        def execute(self, sql, *args):
-            if sql.startswith(("INSTALL sqlite", "ATTACH ")):
-                return self
-            return con.execute(sql, *args)
-
-        def create_function(self, *args):
-            return con.create_function(*args)
-
-        def close(self):
-            pass
-
-    monkeypatch.setattr(duckdb, "connect", lambda *args, **kwargs: AttachedConnection())
-    try:
-        upcoming = fs.load_upcoming(["esp.1"], played)
-    finally:
-        con.close()
+    monkeypatch.setattr(fs, "ROOT", tmp_path)
+    monkeypatch.setattr(fs, "CANONICAL", canonical)
+    upcoming = fs.load_upcoming(["esp.1"], played)
     assert len(upcoming) == 379
     assert len({row[key] for row in upcoming for key in ["home_key", "away_key"]}) == 20
     assert not any(

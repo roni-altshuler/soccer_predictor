@@ -1,9 +1,13 @@
+import { readCompletedRegularSeason, type CompletedRegularSeason } from './completedRegularSeason'
+
 /** A read view of the existing season artifact; no new model or provider. */
 export type ComparisonClub = {
   team: string
   played: number | null
   points: number | null
   projectedPoints: number | null
+  group?: string
+  position?: number
 }
 
 export type ComparisonSnapshot = {
@@ -11,6 +15,7 @@ export type ComparisonSnapshot = {
   generatedAt: string | null
   clubs: ComparisonClub[]
   excluded: number
+  completed?: CompletedRegularSeason
 }
 
 const record = (value: unknown): Record<string, unknown> | null =>
@@ -26,6 +31,14 @@ export function comparisonFromArtifact(artifact: unknown, competition: string): 
   const leagues = root.leagues.map(record).filter((l) => l?.competition_id === competition)
   if (leagues.length !== 1) return null
   const league = leagues[0]!
+  const completion = readCompletedRegularSeason(artifact, { competitionId: competition, season: 2026, gender: 'M' })
+  if (completion.kind === 'unavailable') return null
+  if (completion.kind === 'completed') {
+    const completed = completion.season
+    return { season: completed.season, generatedAt: completed.generatedAt, excluded: 0, completed,
+      clubs: completed.clubs.map((club) => ({ team: club.team, played: club.played, points: club.points,
+        projectedPoints: null, group: club.group, position: club.position })).sort((a, b) => a.team.localeCompare(b.team)) }
+  }
   if (typeof league.season !== 'number' || !Number.isInteger(league.season) ||
     league.season < 1900 || league.season > 2200 || !Array.isArray(league.table)) return null
   const rows = league.table.map(record)

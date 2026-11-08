@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
 import { isCalendarYearLeague, seasonOptions } from '@/lib/seasons'
 import MatchCalendar from '@/components/match/MatchCalendar'
@@ -19,6 +18,9 @@ import { EmptyState } from '@/components/EmptyState'
 import { useGenderQuery } from '@/hooks/useGenderQuery'
 import { getLeagueAccent } from '@/lib/leagueAccents'
 import { ESPN_SITE, ESPN_V2 } from '@/lib/espnHost'
+import { LeagueSeasonBoundary } from './LeagueSeasonBoundary'
+import { CompletedRegularSeason } from './CompletedRegularSeason'
+import type { CompletedRegularSeason as CompletedSeason } from '@/lib/completedRegularSeason'
 
 interface Standing {
   position: number
@@ -223,7 +225,7 @@ const MLS_WESTERN_LOWER = MLS_CONFERENCES.western.map(t => t.toLowerCase())
 // Helper function for more accurate MLS conference matching
 const isInConference = (teamName: string, conferenceTeams: string[]): boolean => {
   const teamLower = teamName.toLowerCase().trim()
-  
+
   // Check if any conference team name matches
   for (const confTeam of conferenceTeams) {
     const confLower = confTeam.toLowerCase()
@@ -353,7 +355,17 @@ function ZoneDot({ color }: { color?: string }) {
   )
 }
 
-export default function LeagueHomePage({ leagueId, leagueName, country }: LeagueHomePageProps) {
+export default function LeagueHomePage(props: LeagueHomePageProps) {
+  return <LeagueSeasonBoundary {...props} renderActive={(selectedSeason, setSelectedSeason, key, completed) => (
+    <ActiveLeagueHomePage key={key} {...props} selectedSeason={selectedSeason} setSelectedSeason={setSelectedSeason} completed={completed} />
+  )} />
+}
+
+function ActiveLeagueHomePage({ leagueId, leagueName, country, selectedSeason, setSelectedSeason, completed }: LeagueHomePageProps & {
+  completed?: CompletedSeason
+  selectedSeason: string
+  setSelectedSeason: (season: string) => void
+}) {
   const [data, setData] = useState<LeagueHomeData | null>(null)
   const [picks, setPicks] = useState<Record<string, CommittedPick>>({})
   const [loading, setLoading] = useState(true)
@@ -364,8 +376,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   // push): switching tabs is not a navigation the Back button should replay.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('tab')
-    if (t && (LEAGUE_TABS as readonly string[]).includes(t)) setActiveTab(t as LeagueTab)
-  }, [])
+    if (t && (LEAGUE_TABS as readonly string[]).includes(t) && !(completed && t === 'simulator')) setActiveTab(t as LeagueTab)
+  }, [completed])
   const selectTab = (tab: LeagueTab) => {
     const next = new URLSearchParams(window.location.search)
     if (tab === 'overview') next.delete('tab')
@@ -380,7 +392,6 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   // Recomputed only when the league flips between calendar-year and
   // split-year, which is a property of the competition and not of time.
   const seasons = useMemo(() => seasonOptions(isCalendarYear), [isCalendarYear])
-  const [selectedSeason, setSelectedSeason] = useState(seasons[0].value)
   const [runningSimulation, setRunningSimulation] = useState(false)
   const [numSimulations, setNumSimulations] = useState(10000)
   const [simulationResults, setSimulationResults] = useState<LeagueSimulationResult | null>(null)
@@ -425,7 +436,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     'arg': 'liga_profesional',
     'mex': 'liga_mx',
   }
-  
+
   const LEAGUE_TO_ESPN_ID: Record<string, string> = {
     'premier_league': 'eng.1',
     'la_liga': 'esp.1',
@@ -452,11 +463,11 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     if (leagueId.includes('.')) {
       return leagueId
     }
-    
+
     // Convert from short form (e.g., 'eng') to internal name
     const prefix = leagueId.split('.')[0]
     const leagueParam = LEAGUE_ID_MAPPING[prefix] || leagueId
-    
+
     // Return ESPN ID
     return LEAGUE_TO_ESPN_ID[leagueParam] || leagueId
   }
@@ -469,13 +480,13 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   // Crest ids + brand colours for the simulator views — same ESPN standings
   // feed the simulation route parses, so team names line up exactly.
   useEffect(() => {
-    if (!numericLeagueId) return
+    if (!numericLeagueId || completed) return
     const controller = new AbortController()
     setSimTeamMeta({})
     fetchLeagueTeamMeta(getEspnLeagueId(), controller.signal).then(setSimTeamMeta)
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueId, numericLeagueId])
+  }, [leagueId, numericLeagueId, completed])
 
   // Season simulation auto-run — fires on mount, league/season/universe
   // change, run-depth change, what-if override, and manual re-run. The
@@ -483,7 +494,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
   // Effect-triggered (never state-triggered), so a failed run can't loop.
   const autoSimKey = `${leagueId}:${selectedSeason}:${genderParam}`
   useEffect(() => {
-    if (!numericLeagueId) return
+    if (!numericLeagueId || completed) return
     const controller = new AbortController()
     let cancelled = false
 
@@ -525,7 +536,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       cancelled = true
       controller.abort()
     }
-  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simRunToken])
+  }, [autoSimKey, numericLeagueId, numSimulations, simOverride, simRunToken, completed])
 
   const changeSimCount = (n: number) => {
     setNumSimulations(n)
@@ -539,7 +550,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       setLoading(true)
       try {
         // Convert ESPN-style league ID to internal format
-        const leagueParam = leagueId.includes('.') 
+        const leagueParam = leagueId.includes('.')
           ? leagueId.split('.')[0] === 'eng' ? 'premier_league'
             : leagueId.split('.')[0] === 'esp' ? 'la_liga'
             : leagueId.split('.')[0] === 'ger' ? 'bundesliga'
@@ -548,15 +559,15 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             : leagueId.split('.')[0] === 'usa' ? 'mls'
             : leagueId
           : leagueId
-        
+
         // Fetch data from existing endpoints in parallel
         const [standingsRes] = await Promise.allSettled([
           fetch(`/api/standings?league=${leagueParam}&gender=${genderParam}`),
         ])
-        
+
         // Also fetch from ESPN for real-time data including top scorers
         const espnLeagueId = getEspnLeagueId()
-        
+
         // Get date range: 10 days back + 14 days forward for recent results and upcoming
         const now = new Date()
         const pastDate = new Date(now)
@@ -627,7 +638,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             }
           }
         }
-        
+
         // Fallback to local standings if ESPN fails
         if (!espnStandingsLoaded && standingsRes.status === 'fulfilled' && standingsRes.value.ok) {
           const standingsJson = await standingsRes.value.json()
@@ -654,18 +665,18 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
             const matchesData = await espnMatches.value.json()
             const events = matchesData.events || []
             const now = new Date()
-            
+
             for (const event of events) {
               const competition = event.competitions?.[0]
               if (!competition) continue
-              
+
               const homeTeam = competition.competitors?.find((c: EspnCompetitor) => c.homeAway === 'home')
               const awayTeam = competition.competitors?.find((c: EspnCompetitor) => c.homeAway === 'away')
               const matchDate = new Date(event.date)
               const statusType = competition.status?.type?.name || ''
-              
+
               const isFinished = statusType.includes('FINAL') || statusType.includes('FULL_TIME')
-              
+
               if (isFinished) {
                 leagueData.recentResults.push({
                   id: String(event.id),
@@ -794,7 +805,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, leagueName, country, selectedSeason, genderParam])
 
-  if (loading) {
+  if (loading && !completed) {
     return (
       <div className="flex-1" style={{ backgroundColor: 'var(--background)' }} aria-busy="true">
         <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
@@ -880,7 +891,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
               run — a competition outside LEAGUE_NUMERIC_ID_MAP (tur.1, the
               cups) used to show the tab anyway, permanently in its empty
               state. A tab that can never hold content is a broken button. */}
-          {(numericLeagueId
+          {(numericLeagueId && !completed
             ? (['overview', 'standings', 'scorers', 'fixtures', 'simulator'] as const)
             : (['overview', 'standings', 'scorers', 'fixtures'] as const)
           ).map((tab) => {
@@ -913,7 +924,8 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-2">
         {/* Overview Tab - Like Tournament pages */}
-        {activeTab === 'overview' && (
+        {(activeTab === 'overview' || activeTab === 'standings') && completed && <CompletedRegularSeason season={completed} />}
+        {activeTab === 'overview' && !completed && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {simulationResults && simulationResults.standings.length > 0 ? (
@@ -1052,7 +1064,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
           </div>
         )}
 
-        {activeTab === 'standings' && data?.standings && (
+        {activeTab === 'standings' && !completed && data?.standings && (
           <div className="space-y-4">
             {/* Current Standings - with MLS Conference Support */}
             {isMLS ? (
@@ -1061,10 +1073,10 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
                 {['Eastern Conference', 'Western Conference'].map((conference) => {
                   const isEastern = conference.includes('Eastern')
                   const conferenceTeamsList = isEastern ? MLS_EASTERN_LOWER : MLS_WESTERN_LOWER
-                  const conferenceTeams = data.standings.filter(team => 
+                  const conferenceTeams = data.standings.filter(team =>
                     isInConference(team.teamName, conferenceTeamsList)
                   )
-                  
+
                   return (
                     <div key={conference} className="bg-[var(--card-bg)] border rounded-xl overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
                       <div className="border-b border-[color-mix(in_srgb,var(--border-color)_40%,transparent)] bg-[color-mix(in_srgb,var(--background-secondary)_60%,transparent)] px-3 py-2">
@@ -1297,7 +1309,7 @@ export default function LeagueHomePage({ leagueId, leagueName, country }: League
         )}
 
         {/* Simulator Tab - Like SeasonSimulator from Predict page */}
-        {activeTab === 'simulator' && (
+        {activeTab === 'simulator' && !completed && (
           <div className="space-y-5">
             {/* Controls — the league is fixed by the page; the simulation runs itself. */}
             <div className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">

@@ -31,6 +31,7 @@ retrain, and must never be narrated as a result.
     python3 -m backend.scripts.capture_projection_history
     python3 -m backend.scripts.capture_projection_history --dry-run
 """
+
 from __future__ import annotations
 
 import argparse
@@ -71,6 +72,10 @@ def rows_for(payload: dict) -> List[dict]:
 
     out: List[dict] = []
     for league in payload.get("leagues") or []:
+        if league.get("state") == "regular_season_completed":
+            # Observed outcomes are not new forecasts, including if a malformed
+            # payload accidentally carries prediction fields beside them.
+            continue
         competition_id = league.get("competition_id")
         if not competition_id:
             continue
@@ -163,7 +168,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     rows = rows_for(payload)
     if not rows:
-        print("the projection carries no league table — nothing captured.", file=sys.stderr)
+        print(
+            "the projection carries no league table — nothing captured.",
+            file=sys.stderr,
+        )
         return 0
 
     fresh = new_rows(rows, already_captured(args.out))
@@ -171,10 +179,14 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     by_competition: Dict[str, int] = {}
     for row in fresh:
-        by_competition[row["competition_id"]] = by_competition.get(row["competition_id"], 0) + 1
+        by_competition[row["competition_id"]] = (
+            by_competition.get(row["competition_id"], 0) + 1
+        )
 
     stamp = payload.get("generated_at")
-    print(f"{stamp}: {len(fresh)} new row(s) across {len(by_competition)} competition(s)")
+    print(
+        f"{stamp}: {len(fresh)} new row(s) across {len(by_competition)} competition(s)"
+    )
     for competition, count in sorted(by_competition.items()):
         print(f"  {competition:9s} {count}")
     if not args.dry_run:
