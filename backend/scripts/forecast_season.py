@@ -37,6 +37,7 @@ observed its own predictions.
 
 Writes backend/data/predictions/season_fixtures.json and season_projections.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,8 +45,9 @@ import hashlib
 import json
 import logging
 import math
+import sqlite3
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
@@ -91,26 +93,57 @@ KEPT_PREFIXES = ("elo_", "form_")
 # for the Championship would be a straightforwardly wrong label.
 LEAGUES: Dict[str, Dict] = {
     # -- top flights ---------------------------------------------------
-    "eng.1": {"name": "Premier League", "country": "England", "relegate": 3,
-              "top_cut": 4, "top_cut_label": "Top 4"},
-    "esp.1": {"name": "La Liga", "country": "Spain", "relegate": 3,
-              "top_cut": 4, "top_cut_label": "Top 4"},
-    "ger.1": {"name": "Bundesliga", "country": "Germany", "relegate": 2,
-              "playoff": 1, "top_cut": 4, "top_cut_label": "Top 4"},
-    "ita.1": {"name": "Serie A", "country": "Italy", "relegate": 3,
-              "top_cut": 4, "top_cut_label": "Top 4"},
-    "fra.1": {"name": "Ligue 1", "country": "France", "relegate": 2,
-              "playoff": 1, "top_cut": 4, "top_cut_label": "Top 4"},
-
+    "eng.1": {
+        "name": "Premier League",
+        "country": "England",
+        "relegate": 3,
+        "top_cut": 4,
+        "top_cut_label": "Top 4",
+    },
+    "esp.1": {
+        "name": "La Liga",
+        "country": "Spain",
+        "relegate": 3,
+        "top_cut": 4,
+        "top_cut_label": "Top 4",
+    },
+    "ger.1": {
+        "name": "Bundesliga",
+        "country": "Germany",
+        "relegate": 2,
+        "playoff": 1,
+        "top_cut": 4,
+        "top_cut_label": "Top 4",
+    },
+    "ita.1": {
+        "name": "Serie A",
+        "country": "Italy",
+        "relegate": 3,
+        "top_cut": 4,
+        "top_cut_label": "Top 4",
+    },
+    "fra.1": {
+        "name": "Ligue 1",
+        "country": "France",
+        "relegate": 2,
+        "playoff": 1,
+        "top_cut": 4,
+        "top_cut_label": "Top 4",
+    },
     # -- North America -------------------------------------------------
     # Grouped rather than single-table, which changes what every number on
     # the page means: `p_title` is the Supporters' Shield (best record in
     # the league), while a club's season is decided by where it finishes in
     # its OWN conference. Membership and the playoff cut line come from
     # `conferences.json`, built from ESPN's published standings.
-    "usa.1": {"name": "Major League Soccer", "country": "United States",
-              "relegate": 0, "grouped": True,
-              "top_cut": 1, "top_cut_label": "Supporters' Shield"},
+    "usa.1": {
+        "name": "Major League Soccer",
+        "country": "United States",
+        "relegate": 0,
+        "grouped": True,
+        "top_cut": 1,
+        "top_cut_label": "Supporters' Shield",
+    },
 }
 
 # Measured and NOT shipped, each for its own reason.
@@ -162,11 +195,12 @@ def _seed_for(competition_id: str, seed: int) -> int:
     the same command produce different probabilities on two runs.
     """
     digest = hashlib.sha256(competition_id.encode("utf-8")).digest()
-    return (int.from_bytes(digest[:8], "big") ^ (seed & 0xFFFFFFFF)) % (2 ** 63)
+    return (int.from_bytes(digest[:8], "big") ^ (seed & 0xFFFFFFFF)) % (2**63)
 
 
-def load_upcoming(competitions: Sequence[str],
-                  played: Optional[Sequence[dict]] = None) -> List[dict]:
+def load_upcoming(
+    competitions: Sequence[str], played: Optional[Sequence[dict]] = None
+) -> List[dict]:
     """Fixtures with no result yet, from the FBref schedule tier.
 
     Read here rather than from `matches` because the canonical layer is played
@@ -182,35 +216,28 @@ def load_upcoming(competitions: Sequence[str],
     schedule says its date was. Without it, a match moved forward from its
     published date would be forecast after it finished.
     """
-    import duckdb
+    from backend.scripts.build_canonical import COMPETITION_MAP, fbref_time, norm_team
 
-    from backend.scripts.build_canonical import (
-        COMPETITION_MAP,
-        fbref_time,
-        norm_team,
-    )
-    from backend.services.forecast.schedule_identity import with_pinned_schedule_aliases
-
-    con = duckdb.connect(str(CANONICAL), read_only=True)
-    con.execute("INSTALL sqlite; LOAD sqlite;")
-    con.execute(f"ATTACH '{ROOT / 'backend' / 'data' / 'fbref.sqlite'}' "
-                f"AS fb (TYPE sqlite, READ_ONLY)")
-    con.create_function("norm_team", norm_team, ["VARCHAR"], "VARCHAR")
-    rows = con.execute("""
+    # SQLite is already part of Python. This read needs no downloaded DuckDB
+    # extension and still opens the retained source strictly read-only.
+    path = ROOT / "backend" / "data" / "fbref.sqlite"
+    with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as con:
+        rows = con.execute(
+            """
         SELECT f.league, f.season, f.date, f.time, f.home, f.away, f.round
-          FROM fb.fbref_fixtures f
+          FROM fbref_fixtures f
          WHERE f.home_goals IS NULL AND f.date >= ?
          ORDER BY f.date, f.home
-    """, [datetime.now(timezone.utc).date().isoformat()]).fetchall()
-    aliases = {(r[0], r[1]): r[2] for r in con.execute(
-        "SELECT competition_id, fb_norm, wh_norm FROM team_aliases").fetchall()}
-    aliases = with_pinned_schedule_aliases(
-        aliases, [r[0] for r in con.execute("SELECT team_key FROM teams").fetchall()])
-    con.close()
+        """,
+            [datetime.now(timezone.utc).date().isoformat()],
+        ).fetchall()
+    aliases = _schedule_aliases()
 
     # (competition, season, home_key, away_key) of everything already played.
-    done = {(m["competition_id"], m["season"], m["home_key"], m["away_key"])
-            for m in (played or [])}
+    done = {
+        (m["competition_id"], m["season"], m["home_key"], m["away_key"])
+        for m in (played or [])
+    }
 
     out, already = [], 0
     for league, season, date, time, home, away, rnd in rows:
@@ -222,21 +249,132 @@ def load_upcoming(competitions: Sequence[str],
         if (comp, int(str(season)[:4]), f"{comp}::{hn}", f"{comp}::{an}") in done:
             already += 1
             continue
-        out.append({
-            "competition_id": comp, "season": int(str(season)[:4]),
-            "local_date": datetime.fromisoformat(date).date(),
-            # `fbref_time` because FBref prints "20:15 (22:15)" and the raw
-            # cell concatenated onto a date is not a timestamp.
-            "kickoff": fbref_time(time), "round": rnd,
-            "home_name": home, "away_name": away,
-            "home_key": f"{comp}::{hn}", "away_key": f"{comp}::{an}",
-            "home_score": None, "away_score": None,
-        })
+        out.append(
+            {
+                "competition_id": comp,
+                "season": int(str(season)[:4]),
+                "local_date": datetime.fromisoformat(date).date(),
+                "kickoff": fbref_time(time),
+                "round": rnd,
+                "home_name": home,
+                "away_name": away,
+                "home_key": f"{comp}::{hn}",
+                "away_key": f"{comp}::{an}",
+                "home_score": None,
+                "away_score": None,
+            }
+        )
     if already:
-        logger.info("  %d scheduled fixture(s) already have a result and were "
-                    "dropped — the schedule artifact is behind the results",
-                    already)
+        logger.info(
+            "  %d scheduled fixture(s) already have a result and were "
+            "dropped — the schedule artifact is behind the results",
+            already,
+        )
     return out
+
+
+def _schedule_aliases():
+    import duckdb
+
+    from backend.services.forecast.schedule_identity import with_pinned_schedule_aliases
+
+    con = duckdb.connect(str(CANONICAL), read_only=True)
+    aliases = {
+        (r[0], r[1]): r[2]
+        for r in con.execute(
+            "SELECT competition_id, fb_norm, wh_norm FROM team_aliases"
+        ).fetchall()
+    }
+    aliases = with_pinned_schedule_aliases(
+        aliases, [r[0] for r in con.execute("SELECT team_key FROM teams").fetchall()]
+    )
+    con.close()
+    return aliases
+
+
+def load_mls_regular_schedule(season, aliases):
+    from backend.scripts.build_canonical import norm_team
+    from backend.services.forecast.completed_season import (
+        POSTSEASON,
+        CompletionUnavailable,
+    )
+
+    path = ROOT / "backend" / "data" / "fbref.sqlite"
+    with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as con:
+        rows = con.execute(
+            "SELECT row_key,date,home,away,round FROM fbref_fixtures "
+            "WHERE league='USA MLS' AND season=? ORDER BY date,row_key",
+            [str(season)],
+        ).fetchall()
+        meta = con.execute(
+            "SELECT scraped_at FROM fbref_seasons "
+            "WHERE league='USA MLS' AND season=?",
+            [str(season)],
+        ).fetchone()
+    if meta is None:
+        raise CompletionUnavailable("missing regular-season schedule metadata")
+    fixtures = []
+    for row_key, day, home, away, rnd in rows:
+        if rnd in POSTSEASON:
+            continue
+        if rnd not in (None, "", "Regular Season"):
+            raise CompletionUnavailable("unknown MLS schedule phase")
+        names = [norm_team(team) for team in (home, away)]
+        keys = ["usa.1::" + aliases.get(("usa.1", name), name) for name in names]
+        fixtures.append(
+            {
+                "competition_id": "usa.1",
+                "season": season,
+                "row_key": row_key,
+                "local_date": datetime.fromisoformat(day).date(),
+                "home_key": keys[0],
+                "away_key": keys[1],
+                "round": rnd,
+            }
+        )
+    return fixtures, meta[0]
+
+
+def completed_mls_record(played, now):
+    from backend.services.forecast.completed_season import completed_mls
+    from backend.services.prediction.historical_data import current_season
+
+    season = current_season("mls", now)
+    source = json.loads(CONFERENCES.read_text())["competitions"]["usa.1"]
+    if source["season"] != season:
+        raise ValueError("conference season mismatch")
+    done = [
+        m
+        for m in played
+        if m["competition_id"] == "usa.1"
+        and m["season"] == season
+        and m.get("phase") == "regular-season"
+    ]
+    appearances = Counter(k for m in done for k in (m["home_key"], m["away_key"]))
+    _, _, done = league_participants(sorted(appearances), appearances, [], done)
+    import duckdb
+
+    with duckdb.connect(str(CANONICAL), read_only=True) as con:
+        kickoffs = dict(
+            con.execute(
+                "SELECT match_uid,kickoff_utc FROM matches "
+                "WHERE competition_id='usa.1' AND season=?",
+                [season],
+            ).fetchall()
+        )
+    done = [{**match, "kickoff_at": kickoffs.get(match["match_uid"])} for match in done]
+    aliases = _schedule_aliases()
+    schedule, verified_at = load_mls_regular_schedule(season, aliases)
+    return completed_mls(
+        season=season,
+        played=done,
+        schedule=schedule,
+        standings=source.get("regular_season_standings"),
+        aliases=aliases,
+        schedule_verified_at=verified_at,
+        groups=group_config("usa.1")["groups"],
+        now=now,
+    )
 
 
 def fit_head(X: np.ndarray, y: np.ndarray, cols: Sequence[int]):
@@ -245,8 +383,11 @@ def fit_head(X: np.ndarray, y: np.ndarray, cols: Sequence[int]):
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
-    model = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
-                          LogisticRegression(max_iter=2000, C=0.5))
+    model = make_pipeline(
+        SimpleImputer(strategy="median"),
+        StandardScaler(),
+        LogisticRegression(max_iter=2000, C=0.5),
+    )
     model.fit(X[:, cols], y)
     return model
 
@@ -256,8 +397,8 @@ def score_matrix(lh: float, la: float, rho: float = -0.05) -> np.ndarray:
     cells reweighted, which is the whole point of the correction."""
     i = np.arange(MAX_GOALS + 1)
     fact = np.array([math.factorial(int(k)) for k in i], dtype=np.float64)
-    ph = np.exp(-lh) * lh ** i / fact
-    pa = np.exp(-la) * la ** i / fact
+    ph = np.exp(-lh) * lh**i / fact
+    pa = np.exp(-la) * la**i / fact
     M = np.outer(ph, pa)
     M[0, 0] *= 1 - lh * la * rho
     M[0, 1] *= 1 + lh * rho
@@ -267,8 +408,7 @@ def score_matrix(lh: float, la: float, rho: float = -0.05) -> np.ndarray:
 
 
 def outcome_probs(M: np.ndarray) -> Tuple[float, float, float]:
-    return (float(np.tril(M, -1).sum()), float(np.trace(M)),
-            float(np.triu(M, 1).sum()))
+    return (float(np.tril(M, -1).sum()), float(np.trace(M)), float(np.triu(M, 1).sum()))
 
 
 def reconcile(target: np.ndarray, lh0: float, la0: float) -> Tuple[float, float]:
@@ -284,8 +424,11 @@ def reconcile(target: np.ndarray, lh0: float, la0: float) -> Tuple[float, float]
         return [ph - target[0], pa - target[2]]
 
     try:
-        sol = least_squares(resid, x0=[np.log(max(lh0, .2)), np.log(max(la0, .2))],
-                            bounds=([np.log(.1)] * 2, [np.log(6.0)] * 2))
+        sol = least_squares(
+            resid,
+            x0=[np.log(max(lh0, 0.2)), np.log(max(la0, 0.2))],
+            bounds=([np.log(0.1)] * 2, [np.log(6.0)] * 2),
+        )
         return float(np.exp(sol.x[0])), float(np.exp(sol.x[1]))
     except Exception:  # noqa: BLE001
         return lh0, la0
@@ -310,8 +453,9 @@ SHOCK_BUCKETS = 15
 CONFERENCES = ROOT / "backend" / "data" / "conferences.json"
 
 
-def load_groups(competition: str, season: int,
-                entrants: Sequence[str]) -> Optional[Dict[str, str]]:
+def load_groups(
+    competition: str, season: int, entrants: Sequence[str]
+) -> Optional[Dict[str, str]]:
     """`team_key -> conference name`, or None if this is a single table.
 
     Read from the committed artifact rather than fetched, so the forecast has
@@ -323,19 +467,27 @@ def load_groups(competition: str, season: int,
     from backend.scripts.build_canonical import norm_team
 
     if not CONFERENCES.exists():
-        logger.warning("  %s is grouped but %s does not exist — run "
-                       "build_conferences", competition, CONFERENCES.name)
+        logger.warning(
+            "  %s is grouped but %s does not exist — run " "build_conferences",
+            competition,
+            CONFERENCES.name,
+        )
         return None
     payload = json.loads(CONFERENCES.read_text())
     cfg = (payload.get("competitions") or {}).get(competition)
     if not cfg:
-        logger.warning("  %s is grouped but has no entry in %s",
-                       competition, CONFERENCES.name)
+        logger.warning(
+            "  %s is grouped but has no entry in %s", competition, CONFERENCES.name
+        )
         return None
     if int(cfg.get("season", -1)) != int(season):
-        logger.warning("  %s conference map is for %s, not %s — refusing to "
-                       "place this season's clubs with last season's map",
-                       competition, cfg.get("season"), season)
+        logger.warning(
+            "  %s conference map is for %s, not %s — refusing to "
+            "place this season's clubs with last season's map",
+            competition,
+            cfg.get("season"),
+            season,
+        )
         return None
 
     placed: Dict[str, str] = {}
@@ -357,26 +509,33 @@ def load_groups(competition: str, season: int,
     # because `inter` is Internazionale in every other competition we serve.
     unresolved = [t for t in entrants if t not in placed]
     if unresolved:
-        free = {key: name for key, name in placed.items()
-                if key not in set(entrants)}
+        free = {key: name for key, name in placed.items() if key not in set(entrants)}
         for team in list(unresolved):
             tokens = set(team.split("::")[-1].split())
-            hits = [key for key in free
-                    if tokens and tokens < set(key.split("::")[-1].split())]
+            hits = [
+                key
+                for key in free
+                if tokens and tokens < set(key.split("::")[-1].split())
+            ]
             if len(hits) == 1:
                 placed[team] = free.pop(hits[0])
                 unresolved.remove(team)
-                logger.info("  %s: placed %r via %r — the standings and the "
-                            "scoreboard spell the same club differently",
-                            competition, team.split("::")[-1],
-                            hits[0].split("::")[-1])
+                logger.info(
+                    "  %s: placed %r via %r — the standings and the "
+                    "scoreboard spell the same club differently",
+                    competition,
+                    team.split("::")[-1],
+                    hits[0].split("::")[-1],
+                )
 
     if unresolved:
-        logger.warning("  %s: %d club(s) are in the fixture list but not in "
-                       "the conference map (%s) — no table published",
-                       competition, len(unresolved),
-                       ", ".join(sorted(m.split("::")[-1]
-                                        for m in unresolved)[:5]))
+        logger.warning(
+            "  %s: %d club(s) are in the fixture list but not in "
+            "the conference map (%s) — no table published",
+            competition,
+            len(unresolved),
+            ", ".join(sorted(m.split("::")[-1] for m in unresolved)[:5]),
+        )
         return None
     return {t: placed[t] for t in entrants}
 
@@ -385,28 +544,35 @@ def group_config(competition: str) -> Optional[Dict]:
     """The published shape of a grouped competition: its groups and cut line."""
     if not CONFERENCES.exists():
         return None
-    cfg = (json.loads(CONFERENCES.read_text()).get("competitions")
-           or {}).get(competition)
+    cfg = (json.loads(CONFERENCES.read_text()).get("competitions") or {}).get(
+        competition
+    )
     if not cfg:
         return None
     # `qualify` is per group and identical across them in every format seen so
     # far; the minimum is the honest reduction if that ever stops being true.
-    qualify = min((g.get("qualify", 0) for g in cfg.get("groups", [])),
-                  default=0)
+    qualify = min((g.get("qualify", 0) for g in cfg.get("groups", [])), default=0)
     return {
         "qualify": qualify,
         "qualify_label": cfg.get("qualify_label"),
-        "groups": [{"name": g["name"], "short": g["short"],
-                    "teams": len(g["teams"]), "qualify": g.get("qualify", 0)}
-                   for g in cfg.get("groups", [])],
+        "groups": [
+            {
+                "name": g["name"],
+                "short": g["short"],
+                "teams": len(g["teams"]),
+                "qualify": g.get("qualify", 0),
+            }
+            for g in cfg.get("groups", [])
+        ],
     }
 
 
-def league_participants(entrants: Sequence[str],
-                        appearances: Dict[str, int],
-                        fixtures: Sequence[dict],
-                        played: Sequence[dict],
-                        ) -> Tuple[List[str], List[dict], List[dict]]:
+def league_participants(
+    entrants: Sequence[str],
+    appearances: Dict[str, int],
+    fixtures: Sequence[dict],
+    played: Sequence[dict],
+) -> Tuple[List[str], List[dict], List[dict]]:
     """The clubs actually playing the league season, and their fixtures.
 
     A season's fixture list can contain sides that are not in the league. MLS
@@ -438,23 +604,30 @@ def league_participants(entrants: Sequence[str],
     keep = [t for t in entrants if appearances.get(t, 0) >= floor]
     dropped = [t for t in entrants if t not in set(keep)]
     if dropped:
-        logger.info("  dropped %d non-participant(s) — %s — each with far "
-                    "fewer matches than the season's median of %d",
-                    len(dropped),
-                    ", ".join(sorted(d.split("::")[-1] for d in dropped)[:4]),
-                    median)
+        logger.info(
+            "  dropped %d non-participant(s) — %s — each with far "
+            "fewer matches than the season's median of %d",
+            len(dropped),
+            ", ".join(sorted(d.split("::")[-1] for d in dropped)[:4]),
+            median,
+        )
     member = set(keep)
-    fixtures = [f for f in fixtures
-                if f["home_key"] in member and f["away_key"] in member]
-    played = [m for m in played
-              if m["home_key"] in member and m["away_key"] in member]
+    fixtures = [
+        f for f in fixtures if f["home_key"] in member and f["away_key"] in member
+    ]
+    played = [m for m in played if m["home_key"] in member and m["away_key"] in member]
     return keep, fixtures, played
 
 
-def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
-                    sims: int, rng: np.random.Generator,
-                    groups: Optional[Dict[str, str]] = None,
-                    shock_sd: float = STRENGTH_SHOCK_SD) -> Dict[str, dict]:
+def simulate_season(
+    fixtures: List[dict],
+    table: Dict[str, dict],
+    *,
+    sims: int,
+    rng: np.random.Generator,
+    groups: Optional[Dict[str, str]] = None,
+    shock_sd: float = STRENGTH_SHOCK_SD,
+) -> Dict[str, dict]:
     """Monte Carlo the rest of the league, with strength uncertainty.
 
     Each simulation draws one strength offset PER TEAM and holds it for the
@@ -478,8 +651,10 @@ def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
     U = rng.normal(0.0, shock_sd, size=(sims, n))
 
     # Representative delta for each bucket, and each sim's bucket per fixture.
-    edges = np.quantile(rng.normal(0.0, shock_sd * np.sqrt(2), size=200000),
-                        np.linspace(0, 1, SHOCK_BUCKETS + 1))
+    edges = np.quantile(
+        rng.normal(0.0, shock_sd * np.sqrt(2), size=200000),
+        np.linspace(0, 1, SHOCK_BUCKETS + 1),
+    )
     centres = (edges[:-1] + edges[1:]) / 2
 
     pts = np.tile(base_pts, (sims, 1)).astype(np.int32)
@@ -491,8 +666,7 @@ def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
             continue
         h, a = ti[f["home_key"]], ti[f["away_key"]]
         delta = U[:, h] - U[:, a]
-        bucket = np.clip(np.searchsorted(edges[1:-1], delta), 0,
-                         SHOCK_BUCKETS - 1)
+        bucket = np.clip(np.searchsorted(edges[1:-1], delta), 0, SHOCK_BUCKETS - 1)
         lh0, la0 = f["_lh"], f["_la"]
 
         hg = np.empty(sims, dtype=np.int32)
@@ -539,8 +713,7 @@ def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
             sub = key[:, cols]
             sub_order = np.argsort(-sub, axis=1, kind="stable")
             sub_pos = np.empty_like(sub_order)
-            sub_pos[np.arange(sims)[:, None], sub_order] = \
-                np.arange(len(cols))[None, :]
+            sub_pos[np.arange(sims)[:, None], sub_order] = np.arange(len(cols))[None, :]
             for j, col in enumerate(cols):
                 out[teams[col]]["group"] = name
                 out[teams[col]]["group_pos"] = sub_pos[:, j]
@@ -548,31 +721,64 @@ def simulate_season(fixtures: List[dict], table: Dict[str, dict], *,
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--competitions", default=",".join(LEAGUES))
     ap.add_argument("--min-season", type=int, default=2000)
     ap.add_argument("--sims", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=17)
-    ap.add_argument("--no-snapshots", action="store_true",
-                    help="skip the provenance write (for local experiments; "
-                         "the scheduled job must never pass this)")
-    ap.add_argument("--allow-missing-leagues", action="store_true",
-                    help="publish even though a league the live forecast "
-                         "serves would disappear. For a competition that has "
-                         "genuinely ended — never to get past a bad ingest.")
+    ap.add_argument(
+        "--no-snapshots",
+        action="store_true",
+        help="skip the provenance write (for local experiments; "
+        "the scheduled job must never pass this)",
+    )
+    ap.add_argument(
+        "--allow-missing-leagues",
+        action="store_true",
+        help="publish even though a league the live forecast "
+        "serves would disappear. For a competition that has "
+        "genuinely ended — never to get past a bad ingest.",
+    )
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     comps = [c.strip() for c in args.competitions.split(",") if c.strip()]
     played = load_matches(comps, args.min_season, None)
-    logger.info("training on %d played matches (%s .. %s)", len(played),
-                played[0]["local_date"], played[-1]["local_date"])
+    logger.info(
+        "training on %d played matches (%s .. %s)",
+        len(played),
+        played[0]["local_date"],
+        played[-1]["local_date"],
+    )
+
+    from backend.services.forecast.completed_season import FORMATS, POSTSEASON
+    from backend.services.prediction.historical_data import current_season
+
+    now = datetime.now(timezone.utc)
+    completed = []
+    mls_season = current_season("mls", now)
+    if (
+        "usa.1" in comps
+        and mls_season in FORMATS
+        and now.date() > FORMATS[mls_season]["end"]
+    ):
+        try:
+            completed.append(completed_mls_record(played, now))
+        except (OSError, ValueError, TypeError, KeyError, sqlite3.Error) as exc:
+            logger.error(
+                "MLS completion evidence unavailable: %s. "
+                "Previous publication retained.",
+                exc,
+            )
+            return 1
 
     # -- pass 1: advance state over history, then FREEZE ------------------
     X, names, y, _, state = replay_features(played)
-    cols = [k for k, nm in enumerate(names)
-            if any(nm.startswith(p) for p in KEPT_PREFIXES)]
+    cols = [
+        k for k, nm in enumerate(names) if any(nm.startswith(p) for p in KEPT_PREFIXES)
+    ]
     logger.info("feature matrix %d x %d (serving %d columns)", *X.shape, len(cols))
 
     head = fit_head(X, y, cols)
@@ -584,20 +790,46 @@ def main(argv: Optional[List[str]] = None) -> int:
     recent = defaultdict(list)
     for m in played[-40000:]:
         recent[m["competition_id"]].append((m["home_score"], m["away_score"]))
-    scale = {c: (float(np.mean([x[0] for x in v])), float(np.mean([x[1] for x in v])))
-             for c, v in recent.items()}
+    scale = {
+        c: (float(np.mean([x[0] for x in v])), float(np.mean([x[1] for x in v])))
+        for c, v in recent.items()
+    }
 
     # -- upcoming ---------------------------------------------------------
     upcoming = load_upcoming(comps, played)
+    if completed:
+        # The regular-season record is observed. Knockout matches belong to
+        # the separate tournament layer, never this league simulation.
+        upcoming = [f for f in upcoming if f["competition_id"] != "usa.1"]
+    else:
+        regular = []
+        for fixture in upcoming:
+            if fixture["competition_id"] == "usa.1":
+                if fixture.get("round") in POSTSEASON:
+                    continue
+                if fixture.get("round") not in (None, "", "Regular Season"):
+                    logger.error(
+                        "Unknown MLS fixture phase; previous publication retained"
+                    )
+                    return 1
+            regular.append(fixture)
+        upcoming = regular
     logger.info("upcoming fixtures: %d", len(upcoming))
     unknown = {f["home_key"] for f in upcoming if f["home_key"] not in state.elo.rating}
     if unknown:
-        logger.info("  %d clubs with no rating yet (promoted sides) — they start "
-                    "at the base rating, which is the honest prior", len(unknown))
+        logger.info(
+            "  %d clubs with no rating yet (promoted sides) — they start "
+            "at the base rating, which is the honest prior",
+            len(unknown),
+        )
 
-    feats = np.array([[state.emit(f)[k] for k in names] for f in upcoming],
-                     dtype=np.float64)
-    P = head.predict_proba(feats[:, cols])
+    if upcoming:
+        feats = np.array(
+            [[state.emit(f)[k] for k in names] for f in upcoming], dtype=np.float64
+        )
+        P = head.predict_proba(feats[:, cols])
+    else:
+        P = np.empty((0, 3))
 
     fixtures_out = []
     for f, p in zip(upcoming, P):
@@ -607,21 +839,30 @@ def main(argv: Optional[List[str]] = None) -> int:
         f["_lh"], f["_la"] = lh, la
         ph, pd_, pa = outcome_probs(M)
         top = np.dstack(np.unravel_index(np.argsort(-M.ravel())[:5], M.shape))[0]
-        fixtures_out.append({
-            "fixture_uid": None,  # filled below, once the uid helper is imported
-            "competition_id": f["competition_id"], "season": f["season"],
-            "date": f["local_date"].isoformat(), "kickoff": f["kickoff"],
-            "round": f["round"],
-            "home": f["home_name"], "away": f["away_name"],
-            "p_home": round(float(p[0]), 4), "p_draw": round(float(p[1]), 4),
-            "p_away": round(float(p[2]), 4),
-            "xg_home": round(lh, 3), "xg_away": round(la, 3),
-            "scorelines": [{"score": f"{int(h)}-{int(a)}",
-                            "p": round(float(M[h, a]), 4)} for h, a in top],
-            "elo_home": round(float(state.elo.rating[f["home_key"]]), 1),
-            "elo_away": round(float(state.elo.rating[f["away_key"]]), 1),
-            "coherence_gap": round(float(max(abs(ph - p[0]), abs(pa - p[2]))), 5),
-        })
+        fixtures_out.append(
+            {
+                "fixture_uid": None,  # filled below, once the uid helper is imported
+                "competition_id": f["competition_id"],
+                "season": f["season"],
+                "date": f["local_date"].isoformat(),
+                "kickoff": f["kickoff"],
+                "round": f["round"],
+                "home": f["home_name"],
+                "away": f["away_name"],
+                "p_home": round(float(p[0]), 4),
+                "p_draw": round(float(p[1]), 4),
+                "p_away": round(float(p[2]), 4),
+                "xg_home": round(lh, 3),
+                "xg_away": round(la, 3),
+                "scorelines": [
+                    {"score": f"{int(h)}-{int(a)}", "p": round(float(M[h, a]), 4)}
+                    for h, a in top
+                ],
+                "elo_home": round(float(state.elo.rating[f["home_key"]]), 1),
+                "elo_away": round(float(state.elo.rating[f["away_key"]]), 1),
+                "coherence_gap": round(float(max(abs(ph - p[0]), abs(pa - p[2]))), 5),
+            }
+        )
 
     gap = max(f["coherence_gap"] for f in fixtures_out) if fixtures_out else 0
     logger.info("worst 1X2/scoreline disagreement after reconciliation: %.5f", gap)
@@ -629,12 +870,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         raise SystemExit(
             f"1X2 and scoreline grid disagree by {gap:.5f}. They are reconciled "
             f"by construction, so a gap this size is a solver failure, not "
-            f"noise — refusing to publish an incoherent forecast.")
+            f"noise — refusing to publish an incoherent forecast."
+        )
 
     from backend.services.forecast.snapshots import fixture_uid
+
     for f in fixtures_out:
-        f["fixture_uid"] = fixture_uid(f["competition_id"], f["season"],
-                                       f["date"], f["home"], f["away"])
+        f["fixture_uid"] = fixture_uid(
+            f["competition_id"], f["season"], f["date"], f["home"], f["away"]
+        )
 
     # -- season projections ------------------------------------------------
     # Each league carries its OWN measured record. The headline .59303 was
@@ -646,12 +890,32 @@ def main(argv: Optional[List[str]] = None) -> int:
     gate_path = ROOT / "reports" / "baselines" / "league_gate.json"
     if gate_path.exists():
         try:
-            gate = {g["competition_id"]: g
-                    for g in json.loads(gate_path.read_text())["leagues"]}
+            gate = {
+                g["competition_id"]: g
+                for g in json.loads(gate_path.read_text())["leagues"]
+            }
         except Exception as exc:  # noqa: BLE001
             logger.warning("could not read the league gate: %s", exc)
 
     projections = []
+    for record in completed:
+        record["measured"] = (
+            {
+                k: g[k]
+                for k in (
+                    "n_scored",
+                    "brier",
+                    "log_loss",
+                    "accuracy",
+                    "uniform",
+                    "base_rate",
+                    "always_home",
+                )
+            }
+            if (g := gate.get("usa.1"))
+            else None
+        )
+        projections.append(record)
     by_comp: Dict[str, List[dict]] = defaultdict(list)
     for f in upcoming:
         by_comp[f["competition_id"]].append(f)
@@ -667,11 +931,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         rng = np.random.default_rng(_seed_for(comp, args.seed))
         season = max(x["season"] for x in fs)
         fs = [f for f in fs if f["season"] == season]
-        done_this_season = [m for m in played
-                            if m["competition_id"] == comp and m["season"] == season]
-        entrants = sorted({k for f in fs for k in (f["home_key"], f["away_key"])}
-                          | {k for m in done_this_season
-                             for k in (m["home_key"], m["away_key"])})
+        done_this_season = [
+            m for m in played if m["competition_id"] == comp and m["season"] == season
+        ]
+        entrants = sorted(
+            {k for f in fs for k in (f["home_key"], f["away_key"])}
+            | {k for m in done_this_season for k in (m["home_key"], m["away_key"])}
+        )
 
         # A projected table only means anything if everyone plays everyone
         # twice. Checked against the actual schedule rather than trusted from
@@ -690,15 +956,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             for k in (row["home_key"], row["away_key"]):
                 appearances[k] = appearances.get(k, 0) + 1
         entrants, fs, done_this_season = league_participants(
-            entrants, appearances, fs, done_this_season)
+            entrants, appearances, fs, done_this_season
+        )
 
         cfg_early = LEAGUES.get(comp, {})
         groups = None
         if cfg_early.get("grouped"):
             groups = load_groups(comp, season, entrants)
             if groups is None:
-                logger.warning("  %s: no usable conference map — fixtures are "
-                               "published, no table is", comp)
+                logger.warning(
+                    "  %s: no usable conference map — fixtures are "
+                    "published, no table is",
+                    comp,
+                )
                 continue
 
         expected = len(entrants) * (len(entrants) - 1)
@@ -715,7 +985,12 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "  %s: %d teams and %d fixtures — %.0f%% of a double round "
                 "robin (%d). Not a single-table competition; fixtures are "
                 "published, no table is.",
-                comp, len(entrants), n_total, 100 * completeness, expected)
+                comp,
+                len(entrants),
+                n_total,
+                100 * completeness,
+                expected,
+            )
             continue
         if groups is not None:
             # Measured against a format this competition is not playing, so it
@@ -723,15 +998,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             # robin" is not an incomplete schedule, it is a different one.
             completeness = None
         elif n_total != expected:
-            logger.info("  %s: %d of %d fixtures scheduled (%.1f%%) — table "
-                        "projected from what exists", comp, n_total, expected,
-                        100 * completeness)
+            logger.info(
+                "  %s: %d of %d fixtures scheduled (%.1f%%) — table "
+                "projected from what exists",
+                comp,
+                n_total,
+                expected,
+                100 * completeness,
+            )
 
         # Points already banked this season, if any of it has been played.
         table = {t: {"points": 0, "gd": 0, "gf": 0, "played": 0} for t in entrants}
         for m in done_this_season:
-            for key, gf_, ga in ((m["home_key"], m["home_score"], m["away_score"]),
-                                 (m["away_key"], m["away_score"], m["home_score"])):
+            for key, gf_, ga in (
+                (m["home_key"], m["home_score"], m["away_score"]),
+                (m["away_key"], m["away_score"], m["home_score"]),
+            ):
                 if key not in table:
                     continue
                 table[key]["points"] += 3 if gf_ > ga else (1 if gf_ == ga else 0)
@@ -757,54 +1039,93 @@ def main(argv: Optional[List[str]] = None) -> int:
         rows_out = []
         for t, s in sim.items():
             pos = s["pos"]
-            rows_out.append({
-                "team": names_by_key.get(t, t.split("::")[-1]),
-                "p_title": round(float((pos == 0).mean()), 4),
-                "p_top_cut": round(float((pos < top_cut).mean()), 4),
-                # Retained for anything still reading the old key. In a second
-                # tier it is a genuine top-four probability and not the number
-                # the page shows, which is `p_top_cut`.
-                "p_top4": round(float((pos < 4).mean()), 4),
-                # A league with no relegation has no relegation probability.
-                # Zero would read as "safe"; absent reads as "not a thing here".
-                "p_relegated": round(float((pos >= rel_from).mean()), 4)
-                if cfg.get("relegate") else None,
-                "p_playoff": round(float(((pos >= po_from) & (pos < rel_from)).mean()), 4)
-                if cfg.get("playoff") else None,
-                "exp_points": round(float(s["pts"].mean()), 1),
-                "exp_position": round(float(pos.mean()) + 1, 2),
-                "played": table[t]["played"], "points": table[t]["points"],
-            })
+            rows_out.append(
+                {
+                    "team": names_by_key.get(t, t.split("::")[-1]),
+                    "p_title": round(float((pos == 0).mean()), 4),
+                    "p_top_cut": round(float((pos < top_cut).mean()), 4),
+                    # Retained for anything still reading the old key. In a second
+                    # tier it is a genuine top-four probability and not the number
+                    # the page shows, which is `p_top_cut`.
+                    "p_top4": round(float((pos < 4).mean()), 4),
+                    # A league with no relegation has no relegation probability.
+                    # Zero would read as "safe"; absent reads as "not a thing here".
+                    "p_relegated": (
+                        round(float((pos >= rel_from).mean()), 4)
+                        if cfg.get("relegate")
+                        else None
+                    ),
+                    "p_playoff": (
+                        round(float(((pos >= po_from) & (pos < rel_from)).mean()), 4)
+                        if cfg.get("playoff")
+                        else None
+                    ),
+                    "exp_points": round(float(s["pts"].mean()), 1),
+                    "exp_position": round(float(pos.mean()) + 1, 2),
+                    "played": table[t]["played"],
+                    "points": table[t]["points"],
+                }
+            )
             if groups is not None:
                 gpos = s["group_pos"]
-                rows_out[-1].update({
-                    "group": s["group"],
-                    "group_exp_position": round(float(gpos.mean()) + 1, 2),
-                    "p_group_title": round(float((gpos == 0).mean()), 4),
-                    "p_qualify": round(float((gpos < qualify).mean()), 4)
-                    if qualify else None,
-                })
+                rows_out[-1].update(
+                    {
+                        "group": s["group"],
+                        "group_exp_position": round(float(gpos.mean()) + 1, 2),
+                        "p_group_title": round(float((gpos == 0).mean()), 4),
+                        "p_qualify": (
+                            round(float((gpos < qualify).mean()), 4)
+                            if qualify
+                            else None
+                        ),
+                    }
+                )
         rows_out.sort(key=lambda r: (-r["p_title"], -r.get("p_group_title", 0)))
-        projections.append({
-            "competition_id": comp, "name": cfg.get("name", comp),
-            "country": cfg.get("country"), "season": season,
-            "fixtures_remaining": len(fs), "teams": len(entrants),
-            "relegation_places": cfg.get("relegate", 3),
-            "top_cut": top_cut,
-            "top_cut_label": cfg.get("top_cut_label", "Top 4"),
-            "schedule_completeness": (round(completeness, 4)
-                                      if completeness is not None else None),
-            "groups": group_meta["groups"] if group_meta else None,
-            "qualify_label": (group_meta or {}).get("qualify_label"),
-            "measured": {k: g[k] for k in ("n_scored", "brier", "log_loss",
-                                           "accuracy", "uniform", "base_rate",
-                                           "always_home")} if (g := gate.get(comp)) else None,
-            "table": rows_out,
-        })
+        projections.append(
+            {
+                "competition_id": comp,
+                "name": cfg.get("name", comp),
+                "country": cfg.get("country"),
+                "season": season,
+                "fixtures_remaining": len(fs),
+                "teams": len(entrants),
+                "relegation_places": cfg.get("relegate", 3),
+                "top_cut": top_cut,
+                "top_cut_label": cfg.get("top_cut_label", "Top 4"),
+                "schedule_completeness": (
+                    round(completeness, 4) if completeness is not None else None
+                ),
+                "groups": group_meta["groups"] if group_meta else None,
+                "qualify_label": (group_meta or {}).get("qualify_label"),
+                "measured": (
+                    {
+                        k: g[k]
+                        for k in (
+                            "n_scored",
+                            "brier",
+                            "log_loss",
+                            "accuracy",
+                            "uniform",
+                            "base_rate",
+                            "always_home",
+                        )
+                    }
+                    if (g := gate.get(comp))
+                    else None
+                ),
+                "table": rows_out,
+            }
+        )
         top = rows_out[0]
-        logger.info("  %-8s %d  %2d teams, %3d to play  favourite %s %.1f%%",
-                    comp, season, len(entrants), len(fs), top["team"],
-                    100 * top["p_title"])
+        logger.info(
+            "  %-8s %d  %2d teams, %3d to play  favourite %s %.1f%%",
+            comp,
+            season,
+            len(entrants),
+            len(fs),
+            top["team"],
+            100 * top["p_title"],
+        )
 
     model_version = mv.compute(
         head="logistic-elo-form",
@@ -816,8 +1137,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         elo={"k": 20.0, "home_adv": 65.0, "draw_width": 0.28, "regress": 0.0},
     )
     trained_through = str(played[-1]["local_date"])
-    logger.info("model version %s (trained through %s)", model_version.id,
-                trained_through)
+    logger.info(
+        "model version %s (trained through %s)", model_version.id, trained_through
+    )
 
     method = {
         "model_version": model_version.id,
@@ -825,24 +1147,37 @@ def main(argv: Optional[List[str]] = None) -> int:
         "config_hash": model_version.config_hash,
         "trained_through": trained_through,
         "head": "multinomial logistic on Elo + rolling form, the feature set "
-                "that won the layered ablation",
-        "measured": {"brier": 0.59303, "ece": 0.0099, "n": 43433,
-                     "protocol": "expanding-window walk-forward, Wave A 2000-2025",
-                     "beats": {"elo_formula": 0.60108, "base_rate": 0.64760,
-                               "dixon_coles_walkforward": 0.59580}},
+        "that won the layered ablation",
+        "measured": {
+            "brier": 0.59303,
+            "ece": 0.0099,
+            "n": 43433,
+            "protocol": "expanding-window walk-forward, Wave A 2000-2025",
+            "beats": {
+                "elo_formula": 0.60108,
+                "base_rate": 0.64760,
+                "dixon_coles_walkforward": 0.59580,
+            },
+        },
         "goals": "Dixon-Coles scoreline matrix, lambdas solved so the implied "
-                 "1X2 equals the logistic's",
+        "1X2 equals the logistic's",
         "sims": args.sims,
         "strength_uncertainty": {
             "within_season_elo_drift_sd": SEASON_ELO_DRIFT_SD,
             "measured_over_team_seasons": 3583,
             "note": "drawn once per team per simulation and held for the "
-                    "season, so a club's error is correlated across all its "
-                    "fixtures. Per-MATCH probabilities are unperturbed: the "
-                    "head was measured at ECE .0099 on exactly those inputs.",
+            "season, so a club's error is correlated across all its "
+            "fixtures. Per-MATCH probabilities are unperturbed: the "
+            "head was measured at ECE .0099 on exactly those inputs.",
         },
-        "excluded_after_measurement": ["referee", "rest", "head-to-head",
-                                       "venue", "attendance", "kickoff time"],
+        "excluded_after_measurement": [
+            "referee",
+            "rest",
+            "head-to-head",
+            "venue",
+            "attendance",
+            "kickoff time",
+        ],
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).isoformat()
@@ -869,15 +1204,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Scoped to what this run was ASKED for. `--competitions eng.1` is a
     # deliberate one-league run, not a product that lost eight leagues.
     published = {p["competition_id"] for p in projections}
-    missing = _leagues_lost(
-        OUT_DIR / "season_projections.json", published, set(comps))
+    missing = _leagues_lost(OUT_DIR / "season_projections.json", published, set(comps))
     if missing and not args.allow_missing_leagues:
         logger.error(
             "REFUSING TO PUBLISH: %d league(s) that the live forecast serves "
             "would disappear — %s. The previous forecast stays up. Fix the "
             "input, or pass --allow-missing-leagues if the competition has "
             "genuinely ended.",
-            len(missing), ", ".join(sorted(missing)))
+            len(missing),
+            ", ".join(sorted(missing)),
+        )
         return 1
 
     # Record what we are about to publish BEFORE replacing the live artifact.
@@ -885,29 +1221,43 @@ def main(argv: Optional[List[str]] = None) -> int:
     # a published forecast with no snapshot is a permanently unauditable one.
     if not args.no_snapshots:
         snaps = snapshots_from_fixtures(
-            fixtures_out, generated_at=stamp,
-            model_version=model_version.id, trained_through=trained_through)
+            fixtures_out,
+            generated_at=stamp,
+            model_version=model_version.id,
+            trained_through=trained_through,
+        )
         with SnapshotStore() as store:
             written = store.record(snaps)
-        logger.info("recorded %d prediction snapshots (%d already present)",
-                    written, len(snaps) - written)
+        logger.info(
+            "recorded %d prediction snapshots (%d already present)",
+            written,
+            len(snaps) - written,
+        )
 
     # Atomic replace. A crash mid-write must leave the PREVIOUS valid forecast
     # serving, not a truncated file — the API reads these on every request and
     # a half-written JSON is a 500 on the flagship page.
-    _publish(OUT_DIR / "season_fixtures.json",
-             {"generated_at": stamp, "method": method,
-              "fixtures": [{k: v for k, v in f.items() if not k.startswith("_")}
-                           for f in fixtures_out]})
-    _publish(OUT_DIR / "season_projections.json",
-             {"generated_at": stamp, "method": method, "leagues": projections})
+    _publish(
+        OUT_DIR / "season_fixtures.json",
+        {
+            "generated_at": stamp,
+            "method": method,
+            "fixtures": [
+                {k: v for k, v in f.items() if not k.startswith("_")}
+                for f in fixtures_out
+            ],
+        },
+    )
+    _publish(
+        OUT_DIR / "season_projections.json",
+        {"generated_at": stamp, "method": method, "leagues": projections},
+    )
     logger.info("\nwrote %s", OUT_DIR / "season_fixtures.json")
     logger.info("wrote %s", OUT_DIR / "season_projections.json")
     return 0
 
 
-def _leagues_lost(path: Path, publishing: Set[str],
-                  in_scope: Set[str]) -> Set[str]:
+def _leagues_lost(path: Path, publishing: Set[str], in_scope: Set[str]) -> Set[str]:
     """Leagues the live artifact serves that this run would drop.
 
     A missing or unreadable artifact yields nothing to lose — the first run on
@@ -918,8 +1268,7 @@ def _leagues_lost(path: Path, publishing: Set[str],
         previous = json.loads(path.read_text())
     except (OSError, ValueError):
         return set()
-    served = {league.get("competition_id")
-              for league in previous.get("leagues", [])}
+    served = {league.get("competition_id") for league in previous.get("leagues", [])}
     served.discard(None)
     return (served & in_scope) - publishing
 

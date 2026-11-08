@@ -55,8 +55,15 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
             assert.equal(url.searchParams.get('gender'), 'M')
             if (emptySnapshot) return route.fulfill({ json: { available: false } })
             if (!hold) return route.continue()
+            // Same-origin Referer identifies the document that initiated this
+            // fetch, even if navigation has since changed the page's URL.
+            const referer = route.request().headers().referer
+            assert(referer, 'Held snapshot reads must identify their initiating document')
+            const owner = new URL(referer)
+            assert.equal(owner.origin, new URL(base).origin)
+            assert(['/leagues/eng.1/compare', '/leagues/usa.1', '/leagues/usa.1/compare'].includes(owner.pathname), 'Unexpected snapshot request owner')
             const gate = deferred(), delivered = deferred()
-            const entry = { gate, delivered, gender: 'M', released: false }
+            const entry = { gate, delivered, owner: owner.pathname, gender: 'M', released: false }
             pending.push(entry)
             await gate.promise
             entry.released = true
@@ -142,6 +149,7 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
           await page.getByRole('status').filter({ hasText: 'Loading club comparison' }).waitFor()
           await page.waitForFunction(() => !!window.__comparisonWatch)
           await waitRequests(1)
+          assert.equal(pending[0].owner, '/leagues/eng.1/compare', 'The original comparison owns its held read')
           await page.evaluate(() => { window.__comparisonWatch.blocked = true })
           const preference = async (gender) => {
             // The public gender switch is intentionally absent. Exercise the
@@ -151,6 +159,7 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
               window.dispatchEvent(new CustomEvent('pitchwise:gender-change', { detail: value }))
             }, gender)
           }
+          let boundaryRead = null
           if (scenario.startsWith('gender')) {
             await preference('women')
             await page.getByText(/A women’s season comparison is unavailable/).waitFor()
@@ -163,11 +172,25 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
             const nav = width < 768 ? page.getByRole('navigation', { name: 'Mobile navigation' }) : page.getByRole('complementary', { name: 'Primary' })
             await nav.getByRole('link', { name: 'Leagues', exact: true }).click()
             await page.locator('a[href="/leagues/usa.1"]').click()
+            await waitRequests(2)
+            assert.deepEqual(pending.map((entry) => entry.owner), ['/leagues/eng.1/compare', '/leagues/usa.1'], 'The MLS boundary owns a separate read before comparison navigation')
+            boundaryRead = pending[1]
+            boundaryRead.gate.resolve(); await boundaryRead.delivered.promise
+            await page.getByRole('tablist', { name: 'League sections' }).waitFor()
+            await settle(page)
+            assert.equal(await region.count(), 0, 'Resolving the league boundary must not render comparison cards')
+            assert.deepEqual((await page.evaluate(() => window.__comparisonWatch)).violations, [], 'The boundary response cannot paint stale comparison cards')
             await page.getByRole('link', { name: 'Compare clubs · Season snapshot' }).click()
             await page.getByText('MLS · Season snapshot', { exact: true }).waitFor()
             await page.getByRole('status').filter({ hasText: 'Loading club comparison' }).waitFor()
           }
-          if (scenario !== 'gender') await waitRequests(2)
+          const expectedOwners = scenario === 'league'
+            ? ['/leagues/eng.1/compare', '/leagues/usa.1', '/leagues/usa.1/compare']
+            : scenario === 'gender-return' ? ['/leagues/eng.1/compare', '/leagues/eng.1/compare'] : ['/leagues/eng.1/compare']
+          await waitRequests(expectedOwners.length)
+          assert.deepEqual(pending.map((entry) => entry.owner), expectedOwners, 'Exact snapshot ownership and request order')
+          const currentRead = scenario === 'gender' ? null : pending.at(-1)
+          if (currentRead) assert.equal(currentRead.released, false, 'The current comparison response stays held during stale-response checks')
           pending[0].gate.resolve(); await pending[0].delivered.promise; await settle(page)
           assert.equal(await region.count(), 0, 'Releasing the stale men response must not display cards')
           if (scenario === 'gender') await page.getByText(/A women’s season comparison is unavailable/).waitFor()
@@ -178,12 +201,26 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
           await page.screenshot({ path: `${out}/comparison-delayed-${scenario}-${width}.png` })
           if (scenario !== 'gender') {
             await page.evaluate(() => { window.__comparisonWatch.blocked = false })
-            pending[1].gate.resolve(); await pending[1].delivered.promise; await region.waitFor()
+            currentRead.gate.resolve(); await currentRead.delivered.promise; await region.waitFor()
             const target = scenario === 'league' ? 'usa.1' : 'eng.1'
-            const expected = artifact.leagues.find((l) => l.competition_id === target).table.map((row) => row.team).sort((a, b) => a.localeCompare(b))
-            assert.deepEqual(await page.getByRole('combobox', { name: 'First club' }).locator('option').allTextContents(), expected)
+            const league = artifact.leagues.find((entry) => entry.competition_id === target)
+            const completed = league.state === 'regular_season_completed'
+            const rows = completed ? league.observed_table : league.table
+            assert(Array.isArray(rows), 'The current comparison uses rows owned by its explicit season state')
+            const expected = rows.map((row) => row.team).sort((a, b) => a.localeCompare(b))
+            if (completed) assert.equal(expected.length, 30, 'The fresh MLS comparison contains all 30 observed clubs')
+            for (const name of ['First club', 'Second club']) {
+              assert.deepEqual(await page.getByRole('combobox', { name }).locator('option').allTextContents(), expected)
+            }
+            if (completed) {
+              await page.getByRole('heading', { name: 'Regular season completed', exact: true }).waitFor()
+              await page.getByText('Observed regular season', { exact: true }).waitFor()
+              assert.equal(await region.getByText('Conference position', { exact: true }).count(), 2)
+              assert.doesNotMatch(await page.locator('.team-comparison').innerText(), /Projected final points|Model forecast|\d+(?:\.\d+)?%/i, 'Fresh observed MLS must not display forecast figures')
+            }
           }
-          report.push({ width, scenario, staleResponseReleased: true, currentResponseHeldUntilAfterStaleCheck: scenario !== 'gender',
+          assert.deepEqual(pending.map((entry) => entry.owner), expectedOwners, 'No extra snapshot read after response delivery')
+          report.push({ width, scenario, boundaryResponseResolved: boundaryRead?.released ?? false, requestOwners: pending.map((entry) => entry.owner), staleResponseReleased: true, currentResponseHeldUntilAfterStaleCheck: scenario !== 'gender',
             observedDomAndPaintSamples: watched.samples, transientStaleCards: watched.violations, requests: pending.length,
             abortedRequests: aborted, freshContextRendered: scenario !== 'gender', unexpectedErrors: errors })
         }
@@ -197,7 +234,7 @@ export async function checkComparisonReview({ browser, base, out, artifact }) {
       }
     }
   }
-  const result = { basis: 'Actual browser and running frontend. Authorized committed snapshot only; held responses exercise cancellation/stale-data guards. Gender uses the existing canonical preference event because its public switch is hidden. League changes use actual app links. Keyboard traversal uses only Tab/Shift+Tab/Enter/End, without force-focus.', report }
+  const result = { basis: 'Actual browser and running frontend. Authorized local serving snapshot only; held responses exercise cancellation/stale-data guards. Gender uses the existing canonical preference event because its public switch is hidden. League changes use actual app links. Keyboard traversal uses only Tab/Shift+Tab/Enter/End, without force-focus.', report }
   await writeFile(`${out}/comparison-targeted-review.json`, JSON.stringify(result, null, 2))
   return result
 }

@@ -62,7 +62,7 @@ export function TeamComparison({ leagueId }: { leagueId: string }) {
         <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">{name} · Season snapshot</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Compare clubs</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
-          Put two clubs side by side: points recorded so far, games behind those points, and the published season outlook.
+          {data?.completed ? 'Compare observed regular-season points and conference positions from the completed season.' : 'Put two clubs side by side: points recorded so far, games behind those points, and the published season outlook.'}
         </p>
       </header>
 
@@ -76,10 +76,18 @@ export function TeamComparison({ leagueId }: { leagueId: string }) {
         <Panel title="No comparison available"><p role="status" className="my-3 text-sm text-[var(--text-secondary)]">Two identifiable clubs in the same season snapshot are required. No comparison is available for this competition.</p>{retry}</Panel>
       ) : (
         <>
+          {data.completed && (
+            <section aria-label="Regular season completed" className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 text-sm text-[var(--text-secondary)]">
+              <h2 className="font-semibold text-[var(--text-primary)]">Regular season completed</h2>
+              <p className="mt-2">Observed results from all 510 regular-season matches. MLS Cup playoffs are separate; conference positions do not form an overall final ranking.</p>
+              <Link className={`mt-2 inline-flex underline ${control}`} href={withParam('/evaluation')}>Archived forecast evaluation</Link>
+              <Link className={`mt-2 inline-flex underline ${control}`} href={withParam('/accuracy')}>Recorded prediction history</Link>
+            </section>
+          )}
           <section aria-label="Choose clubs" className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-4 md:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-[var(--text-primary)]">Men’s {label}</p>
-              <StatusChip status="settled" label="Committed snapshot" />
+              <StatusChip status="settled" label={data.completed ? "Observed regular season" : "Committed snapshot"} />
             </div>
             <div className="grid items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
               {([0, 1] as const).map((side) => (
@@ -112,21 +120,26 @@ export function TeamComparison({ leagueId }: { leagueId: string }) {
                     <StatTile label="Games played" value={display(club.played)} />
                   </div>
                   <div className="mt-5 border-t border-[var(--border-color)] pt-4">
-                    <StatTile label="Projected final points" value={display(club.projectedPoints, 1)} sub="Model forecast · mean across season simulations" />
+                    {data.completed ? <StatTile label="Conference position" value={display(club.position ?? null)} sub={club.group} />
+                      : <StatTile label="Projected final points" value={display(club.projectedPoints, 1)} sub="Model forecast · mean across season simulations" />}
                   </div>
                   <Link className={`mt-4 inline-flex items-center underline ${control}`} href={withParam(`/leagues/${leagueId}/evidence?team=${encodeURIComponent(club.team)}`)}>Explore {club.team} match evidence</Link>
                 </article>
               ))}
             </div>
-            <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">Bars use the same 0–3 points-per-game scale. Recorded points may reflect deductions. A season projection is an estimate; this view does not predict a match between these clubs.</p>
+            <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">{data.completed ? 'Bars use the same 0–3 points-per-game scale. Points and conference positions are observed regular-season results.' : 'Bars use the same 0–3 points-per-game scale. Recorded points may reflect deductions. A season projection is an estimate; this view does not predict a match between these clubs.'}</p>
           </section>
 
           <Panel title="Source and coverage">
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               <div><dt className="text-[var(--text-tertiary)]">Artifact built (UTC)</dt><dd className="mt-1 font-mono text-xs text-[var(--text-primary)]">{data.generatedAt ? new Date(data.generatedAt).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC') : 'Unavailable'}</dd></div>
-              <div><dt className="text-[var(--text-tertiary)]">Latest result date</dt><dd className="mt-1 font-semibold text-[var(--text-primary)]">Not supplied by this artifact</dd></div>
+              <div><dt className="text-[var(--text-tertiary)]">Latest result date</dt><dd className="mt-1 font-semibold text-[var(--text-primary)]">{data.completed?.observation.results_through ?? 'Not supplied by this artifact'}</dd></div>
             </dl>
-            <p className="mt-3 text-xs leading-relaxed text-[var(--text-secondary)]">A build date does not establish how recent the results are. Games counted above belong to this snapshot; live standings can differ. Goals, shot-level xG, injuries and player values are unavailable in this source.</p>
+            {data.completed && <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+              <div><dt className="text-[var(--text-tertiary)]">Standings observed (UTC)</dt><dd className="mt-1 break-words font-mono text-xs text-[var(--text-primary)]">{new Date(data.completed.observation.observed_at).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}</dd></div>
+              <div><dt className="text-[var(--text-tertiary)]">Retained schedule verified (UTC)</dt><dd className="mt-1 break-words font-mono text-xs text-[var(--text-primary)]">{new Date(data.completed.observation.schedule_last_verified_at).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}</dd></div>
+            </dl>}
+            <p className="mt-3 text-xs leading-relaxed text-[var(--text-secondary)]">{data.completed ? 'The result cutoff, standings observation, artifact build and schedule verification are separate checks. Player values and injuries are unavailable in this source.' : 'A build date does not establish how recent the results are. Games counted above belong to this snapshot; live standings can differ. Goals, shot-level xG, injuries and player values are unavailable in this source.'}</p>
             {data.excluded > 0 && <p className="mt-2 text-xs text-[var(--text-secondary)]">{data.excluded} unidentifiable or duplicate club rows excluded.</p>}
             <div className="mt-3 flex flex-wrap gap-3">
               <a className={`inline-flex items-center underline underline-offset-4 ${control}`} href={withParam('/api/v1/season/projections')}>View source snapshot</a>

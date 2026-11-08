@@ -17,6 +17,14 @@ All notable changes to Pitchverse are documented here. The format is based on
 
 ### Changed
 
+- MLS can publish a verified completed regular-season record with observed
+  conference positions and points, separate from season forecasts and MLS Cup
+  playoffs. The reviewed 2026 format requires 510 reconciled results, 30 clubs
+  with 34 games each, matching standings totals and valid observation timing.
+  Completed outcomes never become probability rows or new prediction history;
+  failed evidence retains the previous complete publication. Retained schedule
+  dates and freshness remain explicit.
+
 - Upcoming lineup collection excludes explicitly postponed ESPN events only
   when their event and competition statuses agree and their identities are
   valid. Retained kickoff dates no longer trigger roster requests for these

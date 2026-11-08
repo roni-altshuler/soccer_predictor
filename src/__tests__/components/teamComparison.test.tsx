@@ -81,3 +81,18 @@ it('withholds prior season/league state and ignores a response that arrives afte
   rerender(<TeamComparison leagueId="eng.1" />)
   await screen.findByRole('region', { name: 'Club comparison' })
 })
+
+it('compares completed regular-season observations without rendering forecast values', async () => {
+  const { completedArtifact } = await import('@/testFixtures/completedRegularSeason')
+  jest.mocked(global.fetch).mockResolvedValue(reply(completedArtifact()))
+  render(<TeamComparison leagueId="usa.1" />)
+  await screen.findByRole('region', { name: 'Club comparison' })
+  expect(screen.getByRole('heading', { name: 'Regular season completed' })).toBeInTheDocument()
+  expect(screen.getAllByText('Conference position')).toHaveLength(2)
+  expect(screen.getByText('2026-11-07')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Archived forecast evaluation' })).toHaveAttribute('href', '/evaluation?gender=M')
+  expect(screen.getByRole('link', { name: 'Recorded prediction history' })).toHaveAttribute('href', '/accuracy?gender=M')
+  expect(screen.queryByText('Projected final points')).not.toBeInTheDocument()
+  expect(screen.queryByText(/Model forecast/)).not.toBeInTheDocument()
+  expect(document.body.textContent).not.toMatch(/\d+%/)
+})

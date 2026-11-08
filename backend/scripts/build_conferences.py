@@ -24,10 +24,10 @@ conference map changes once a year. Re-run this when the league expands.
     python -m backend.scripts.build_conferences
     python -m backend.scripts.build_conferences --competition usa.1 --season 2026
 """
+
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import re
 import sys
@@ -41,6 +41,12 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from backend.services.data.provider_status import write_json_atomic  # noqa: E402
+from backend.services.forecast.completed_season import (  # noqa: E402
+    CompletionUnavailable,
+    standings_observation,
+)
+
 logger = logging.getLogger("build_conferences")
 
 OUT = ROOT / "backend" / "data" / "conferences.json"
@@ -52,8 +58,7 @@ ESPN = "https://site.web.api.espn.com/apis/v2/sports/soccer"
 # Competitions that are structurally grouped. Adding one here is a claim that
 # its clubs are ranked within a group rather than in one table.
 GROUPED = {
-    "usa.1": {"name": "Major League Soccer",
-              "qualify_label": "MLS Cup Playoffs"},
+    "usa.1": {"name": "Major League Soccer", "qualify_label": "MLS Cup Playoffs"},
 }
 
 # A note that means "this finishing position qualifies for the post-season".
@@ -68,9 +73,22 @@ def _short(name: str) -> str:
 
 def fetch(competition: str, season: int) -> List[Dict]:
     url = f"{ESPN}/{competition}/standings"
-    r = httpx.get(url, params={"season": season}, timeout=30,
-                  headers={"User-Agent": "Pitchverse/1.0"})
+    r = httpx.get(
+        url,
+        params={"season": season},
+        timeout=30,
+        headers={"User-Agent": "Pitchverse/1.0"},
+    )
     r.raise_for_status()
+    payload = r.json()
+    observed_at = datetime.now(timezone.utc).isoformat()
+    valid_context = (
+        isinstance(payload, dict)
+        and isinstance(payload.get("season"), dict)
+        and type(payload["season"].get("year")) is int
+        and payload["season"]["year"] == season
+        and payload.get("abbreviation") == "MLS"
+    )
 
     groups: List[Dict] = []
 
@@ -80,14 +98,25 @@ def fetch(competition: str, season: int) -> List[Dict]:
             if node.get("name") and isinstance(standings, dict):
                 entries = standings.get("entries") or []
                 if entries:
-                    groups.append({"name": node["name"], "entries": entries})
+                    groups.append(
+                        {
+                            "name": node["name"],
+                            "entries": entries,
+                            "season": standings.get("season"),
+                            "season_type": standings.get("seasonType"),
+                            "observed_at": observed_at,
+                            "source_url": (
+                                f"{url}?season={season}" if valid_context else None
+                            ),
+                        }
+                    )
             for v in node.values():
                 walk(v)
         elif isinstance(node, list):
             for v in node:
                 walk(v)
 
-    walk(r.json())
+    walk(payload)
     return groups
 
 
@@ -97,7 +126,8 @@ def build(competition: str, season: int) -> Dict:
         raise SystemExit(
             f"{competition} {season}: ESPN returned {len(groups)} group(s). "
             f"A grouped competition needs at least two; refusing to write a "
-            f"conference map that would put every club in one.")
+            f"conference map that would put every club in one."
+        )
 
     out_groups = []
     for g in groups:
@@ -109,36 +139,53 @@ def build(competition: str, season: int) -> Dict:
                 rank = note.get("rank")
                 if isinstance(rank, int):
                     qualify = max(qualify, rank)
-        out_groups.append({
-            "name": g["name"],
-            "short": _short(g["name"]),
-            "teams": sorted(teams),
-            # 0 means ESPN published no qualification notes for this group —
-            # recorded as unknown rather than guessed, and the page then shows
-            # a conference table with no cut line rather than a wrong one.
-            "qualify": qualify,
-        })
+        out_groups.append(
+            {
+                "name": g["name"],
+                "short": _short(g["name"]),
+                "teams": sorted(teams),
+                # 0 means ESPN published no qualification notes for this group —
+                # recorded as unknown rather than guessed, and the page then shows
+                # a conference table with no cut line rather than a wrong one.
+                "qualify": qualify,
+            }
+        )
 
     total = sum(len(g["teams"]) for g in out_groups)
-    logger.info("%s %d: %s", competition, season,
-                ", ".join(f"{g['short']} {len(g['teams'])} teams"
-                          f"{f', top {g['qualify']} qualify' if g['qualify'] else ''}"
-                          for g in out_groups))
-    return {
+    logger.info(
+        "%s %d: %s",
+        competition,
+        season,
+        ", ".join(
+            f"{g['short']} {len(g['teams'])} teams"
+            f"{f', top {g['qualify']} qualify' if g['qualify'] else ''}"
+            for g in out_groups
+        ),
+    )
+    result = {
         "season": season,
         "name": GROUPED.get(competition, {}).get("name", competition),
-        "qualify_label": GROUPED.get(competition, {}).get(
-            "qualify_label", "Qualifies"),
+        "qualify_label": GROUPED.get(competition, {}).get("qualify_label", "Qualifies"),
         "teams": total,
         "groups": out_groups,
     }
+    if competition == "usa.1":
+        try:
+            result["regular_season_standings"] = standings_observation(groups, season)
+        except CompletionUnavailable as exc:
+            # Membership remains useful. A failed completion proof must not
+            # inherit an older standings observation under this new timestamp.
+            logger.warning("No verified regular-season standings observation: %s", exc)
+    return result
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--competition", action="append",
-                    help="default: every competition in GROUPED")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--competition", action="append", help="default: every competition in GROUPED"
+    )
     ap.add_argument("--season", type=int)
     ap.add_argument("--output", default=str(OUT))
     args = ap.parse_args(argv)
@@ -157,7 +204,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         payload["competitions"][comp] = build(comp, season)
 
     path = Path(args.output)
-    path.write_text(json.dumps(payload, indent=2) + "\n")
+    write_json_atomic(path, payload)
     logger.info("wrote %s", path)
     return 0
 
