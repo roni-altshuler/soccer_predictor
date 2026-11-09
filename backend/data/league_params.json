@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-11-08T18:42:14.576523+00:00",
+  "updated_at": "2026-11-09T01:26:10.570927+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -18,10 +18,10 @@
     "esp.1": {
       "display_name": "La Liga",
       "country": "Spain",
-      "avg_goals": 1.3197,
-      "home_adv": 0.3631,
+      "avg_goals": 1.3188,
+      "home_adv": 0.363,
       "rho": -0.12,
-      "draw_rate": 0.2543,
+      "draw_rate": 0.2544,
       "league_coefficient": 1.1,
       "total_matchdays": 38,
       "relegation_spots": 3,
@@ -30,10 +30,10 @@
     "ger.1": {
       "display_name": "Bundesliga",
       "country": "Germany",
-      "avg_goals": 1.6043,
-      "home_adv": 0.3712,
+      "avg_goals": 1.6042,
+      "home_adv": 0.3716,
       "rho": -0.11,
-      "draw_rate": 0.2492,
+      "draw_rate": 0.249,
       "league_coefficient": 1.05,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -42,10 +42,10 @@
     "ita.1": {
       "display_name": "Serie A",
       "country": "Italy",
-      "avg_goals": 1.289,
-      "home_adv": 0.1837,
+      "avg_goals": 1.2893,
+      "home_adv": 0.1847,
       "rho": -0.14,
-      "draw_rate": 0.2684,
+      "draw_rate": 0.2687,
       "league_coefficient": 1.05,
       "total_matchdays": 38,
       "relegation_spots": 3,
@@ -54,10 +54,10 @@
     "fra.1": {
       "display_name": "Ligue 1",
       "country": "France",
-      "avg_goals": 1.4167,
-      "home_adv": 0.2394,
+      "avg_goals": 1.4168,
+      "home_adv": 0.2385,
       "rho": -0.12,
-      "draw_rate": 0.2379,
+      "draw_rate": 0.2378,
       "league_coefficient": 1.0,
       "total_matchdays": 34,
       "relegation_spots": 3,
