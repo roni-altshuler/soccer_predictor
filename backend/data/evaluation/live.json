@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-10-24T12:12:05.029601+00:00",
+  "generated_at": "2026-11-09T17:45:52.729705+00:00",
   "snapshot_store": {
-    "rows": 208613,
+    "rows": 209863,
     "fixtures": 5041,
     "versions": 4,
     "first_generated": "2026-08-11T12:24:24.501318+00:00",
-    "last_generated": "2026-10-24T12:12:03.199228+00:00",
+    "last_generated": "2026-11-09T17:45:51.092833+00:00",
     "by_version": {
-      "2026.08.1+4277ba19": 121378,
+      "2026.08.1+4277ba19": 122628,
       "2026.08.1+4e57ca7c": 57600,
       "2026.08.1+c919f68a": 20251,
       "2026.08.1+27734fb2": 9384
@@ -15,8 +15,8 @@
   },
   "join": {
     "snapshots": 5041,
-    "scored": 948,
-    "awaiting_result": 3947,
+    "scored": 1151,
+    "awaiting_result": 3744,
     "unresolved_clubs": {
       "esp.2:Celta de Vigo B": 42,
       "ita.2:Vicenza Virtus": 38,
@@ -27,85 +27,85 @@
   },
   "live": {
     "basis": "live_published",
-    "n": 948,
-    "brier": 0.61761,
-    "log_loss": 1.02985,
-    "accuracy": 0.47046,
-    "ece": 0.02831,
+    "n": 1151,
+    "brier": 0.60668,
+    "log_loss": 1.01383,
+    "accuracy": 0.49175,
+    "ece": 0.02083,
     "reliability": [
       {
         "bin_low": 0.0,
         "bin_high": 0.1,
-        "n": 82,
+        "n": 97,
         "stated": 0.0691,
-        "observed": 0.061
+        "observed": 0.0515
       },
       {
         "bin_low": 0.1,
         "bin_high": 0.2,
-        "n": 329,
-        "stated": 0.1571,
-        "observed": 0.1854
+        "n": 412,
+        "stated": 0.1582,
+        "observed": 0.1748
       },
       {
         "bin_low": 0.2,
         "bin_high": 0.3,
-        "n": 1209,
-        "stated": 0.2588,
-        "observed": 0.2829
+        "n": 1468,
+        "stated": 0.2578,
+        "observed": 0.2718
       },
       {
         "bin_low": 0.3,
         "bin_high": 0.4,
-        "n": 421,
-        "stated": 0.3452,
-        "observed": 0.3468
+        "n": 498,
+        "stated": 0.3461,
+        "observed": 0.3554
       },
       {
         "bin_low": 0.4,
         "bin_high": 0.5,
-        "n": 374,
-        "stated": 0.4481,
-        "observed": 0.3877
+        "n": 439,
+        "stated": 0.448,
+        "observed": 0.4055
       },
       {
         "bin_low": 0.5,
         "bin_high": 0.6,
-        "n": 221,
-        "stated": 0.5455,
-        "observed": 0.4887
+        "n": 280,
+        "stated": 0.5452,
+        "observed": 0.5036
       },
       {
         "bin_low": 0.6,
         "bin_high": 0.7,
-        "n": 130,
-        "stated": 0.6419,
-        "observed": 0.6077
+        "n": 165,
+        "stated": 0.642,
+        "observed": 0.6182
       },
       {
         "bin_low": 0.7,
         "bin_high": 0.8,
-        "n": 54,
-        "stated": 0.7443,
-        "observed": 0.7593
+        "n": 66,
+        "stated": 0.7435,
+        "observed": 0.7879
       },
       {
         "bin_low": 0.8,
         "bin_high": 0.9,
-        "n": 20,
-        "stated": 0.8474,
-        "observed": 0.85
+        "n": 23,
+        "stated": 0.8461,
+        "observed": 0.8696
       },
       {
         "bin_low": 0.9,
         "bin_high": 1.0,
-        "n": 4,
-        "stated": 0.9123,
+        "n": 5,
+        "stated": 0.9105,
         "observed": 1.0
       }
     ],
-    "xg_mae": 0.9526,
-    "top_scoreline_hit_rate": 0.1129,
+    "xg_mae": 0.9481,
+    "top_scoreline_hit_rate": 0.1103,
     "by_league": {
       "ger.2": {
         "n": 36,
@@ -156,34 +156,34 @@
         "accuracy": 0.33333
       },
       "usa.1": {
-        "n": 179,
-        "brier": 0.66235,
-        "log_loss": 1.09993,
-        "accuracy": 0.44693
+        "n": 238,
+        "brier": 0.6494,
+        "log_loss": 1.07968,
+        "accuracy": 0.47479
       },
       "esp.1": {
-        "n": 83,
-        "brier": 0.53703,
-        "log_loss": 0.91144,
-        "accuracy": 0.51807
+        "n": 110,
+        "brier": 0.52573,
+        "log_loss": 0.89521,
+        "accuracy": 0.55455
       },
       "eng.1": {
-        "n": 69,
-        "brier": 0.60691,
-        "log_loss": 1.01171,
-        "accuracy": 0.49275
+        "n": 97,
+        "brier": 0.61116,
+        "log_loss": 1.01945,
+        "accuracy": 0.50515
       },
       "fra.1": {
-        "n": 63,
-        "brier": 0.58628,
-        "log_loss": 0.98649,
-        "accuracy": 0.57143
+        "n": 88,
+        "brier": 0.57108,
+        "log_loss": 0.96092,
+        "accuracy": 0.57955
       },
       "ita.1": {
-        "n": 68,
-        "brier": 0.52991,
-        "log_loss": 0.91386,
-        "accuracy": 0.58824
+        "n": 106,
+        "brier": 0.52169,
+        "log_loss": 0.89891,
+        "accuracy": 0.60377
       },
       "ita.2": {
         "n": 36,
@@ -192,10 +192,10 @@
         "accuracy": 0.33333
       },
       "ger.1": {
-        "n": 55,
-        "brier": 0.59883,
-        "log_loss": 0.99462,
-        "accuracy": 0.52727
+        "n": 81,
+        "brier": 0.57387,
+        "log_loss": 0.96041,
+        "accuracy": 0.54321
       }
     },
     "by_model_version": {
@@ -212,17 +212,17 @@
         "accuracy": 0.48905
       },
       "2026.08.1+4277ba19": {
-        "n": 517,
-        "brier": 0.60139,
-        "log_loss": 1.0084,
-        "accuracy": 0.50677
+        "n": 720,
+        "brier": 0.58848,
+        "log_loss": 0.98884,
+        "accuracy": 0.53056
       }
     },
     "first_kickoff": "2026-08-14T18:30:00+00:00",
-    "last_kickoff": "2026-10-24T15:00:00+00:00",
+    "last_kickoff": "2026-11-08T12:00:00+00:00",
     "baselines": {
       "uniform": 0.66667,
-      "sample_base_rate": 0.65477,
+      "sample_base_rate": 0.65078,
       "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
     }
   },
@@ -261,130 +261,130 @@
       ],
       "model_version": null,
       "basis": "live_published",
-      "n": 338,
-      "brier": 0.5691,
-      "log_loss": 0.95992,
-      "accuracy": 0.53846,
-      "ece": 0.01365,
+      "n": 482,
+      "brier": 0.5584,
+      "log_loss": 0.94398,
+      "accuracy": 0.55809,
+      "ece": 0.0159,
       "reliability": [
         {
           "bin_low": 0.0,
           "bin_high": 0.1,
-          "n": 40,
+          "n": 54,
           "stated": 0.0672,
-          "observed": 0.075
+          "observed": 0.0556
         },
         {
           "bin_low": 0.1,
           "bin_high": 0.2,
-          "n": 137,
-          "stated": 0.1547,
-          "observed": 0.1241
+          "n": 201,
+          "stated": 0.1571,
+          "observed": 0.1244
         },
         {
           "bin_low": 0.2,
           "bin_high": 0.3,
-          "n": 410,
+          "n": 582,
           "stated": 0.2535,
-          "observed": 0.261
+          "observed": 0.2474
         },
         {
           "bin_low": 0.3,
           "bin_high": 0.4,
-          "n": 134,
-          "stated": 0.3472,
-          "observed": 0.3284
+          "n": 192,
+          "stated": 0.3477,
+          "observed": 0.3438
         },
         {
           "bin_low": 0.4,
           "bin_high": 0.5,
-          "n": 120,
-          "stated": 0.4518,
-          "observed": 0.45
+          "n": 165,
+          "stated": 0.4495,
+          "observed": 0.4727
         },
         {
           "bin_low": 0.5,
           "bin_high": 0.6,
-          "n": 76,
-          "stated": 0.5489,
-          "observed": 0.5658
+          "n": 115,
+          "stated": 0.5473,
+          "observed": 0.5478
         },
         {
           "bin_low": 0.6,
           "bin_high": 0.7,
-          "n": 59,
-          "stated": 0.6427,
-          "observed": 0.6441
+          "n": 84,
+          "stated": 0.643,
+          "observed": 0.6786
         },
         {
           "bin_low": 0.7,
           "bin_high": 0.8,
-          "n": 25,
-          "stated": 0.7454,
-          "observed": 0.8
+          "n": 36,
+          "stated": 0.7442,
+          "observed": 0.8333
         },
         {
           "bin_low": 0.8,
           "bin_high": 0.9,
-          "n": 11,
-          "stated": 0.8507,
-          "observed": 0.9091
+          "n": 14,
+          "stated": 0.8479,
+          "observed": 0.9286
         },
         {
           "bin_low": 0.9,
           "bin_high": 1.0,
-          "n": 2,
-          "stated": 0.9139,
+          "n": 3,
+          "stated": 0.9103,
           "observed": 1.0
         }
       ],
-      "xg_mae": 0.9575,
-      "top_scoreline_hit_rate": 0.1065,
+      "xg_mae": 0.9439,
+      "top_scoreline_hit_rate": 0.1141,
       "by_league": {
         "esp.1": {
-          "n": 83,
-          "brier": 0.53703,
-          "log_loss": 0.91144,
-          "accuracy": 0.51807
+          "n": 110,
+          "brier": 0.52573,
+          "log_loss": 0.89521,
+          "accuracy": 0.55455
         },
         "eng.1": {
-          "n": 69,
-          "brier": 0.60691,
-          "log_loss": 1.01171,
-          "accuracy": 0.49275
+          "n": 97,
+          "brier": 0.61116,
+          "log_loss": 1.01945,
+          "accuracy": 0.50515
         },
         "fra.1": {
-          "n": 63,
-          "brier": 0.58628,
-          "log_loss": 0.98649,
-          "accuracy": 0.57143
+          "n": 88,
+          "brier": 0.57108,
+          "log_loss": 0.96092,
+          "accuracy": 0.57955
         },
         "ita.1": {
-          "n": 68,
-          "brier": 0.52991,
-          "log_loss": 0.91386,
-          "accuracy": 0.58824
+          "n": 106,
+          "brier": 0.52169,
+          "log_loss": 0.89891,
+          "accuracy": 0.60377
         },
         "ger.1": {
-          "n": 55,
-          "brier": 0.59883,
-          "log_loss": 0.99462,
-          "accuracy": 0.52727
+          "n": 81,
+          "brier": 0.57387,
+          "log_loss": 0.96041,
+          "accuracy": 0.54321
         }
       },
       "by_model_version": {
         "2026.08.1+4277ba19": {
-          "n": 338,
-          "brier": 0.5691,
-          "log_loss": 0.95992,
-          "accuracy": 0.53846
+          "n": 482,
+          "brier": 0.5584,
+          "log_loss": 0.94398,
+          "accuracy": 0.55809
         }
       },
       "first_kickoff": "2026-08-15T19:30:00+00:00",
-      "last_kickoff": "2026-10-24T15:00:00+00:00",
+      "last_kickoff": "2026-11-08T12:00:00+00:00",
       "baselines": {
         "uniform": 0.66667,
-        "sample_base_rate": 0.64464,
+        "sample_base_rate": 0.63918,
         "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
       }
     },
@@ -400,136 +400,136 @@
       ],
       "model_version": null,
       "basis": "live_published",
-      "n": 517,
-      "brier": 0.60139,
-      "log_loss": 1.0084,
-      "accuracy": 0.50677,
-      "ece": 0.02278,
+      "n": 720,
+      "brier": 0.58848,
+      "log_loss": 0.98884,
+      "accuracy": 0.53056,
+      "ece": 0.01136,
       "reliability": [
         {
           "bin_low": 0.0,
           "bin_high": 0.1,
-          "n": 42,
-          "stated": 0.0675,
-          "observed": 0.0714
+          "n": 57,
+          "stated": 0.0678,
+          "observed": 0.0526
         },
         {
           "bin_low": 0.1,
           "bin_high": 0.2,
-          "n": 191,
-          "stated": 0.1559,
-          "observed": 0.1675
+          "n": 274,
+          "stated": 0.1579,
+          "observed": 0.1569
         },
         {
           "bin_low": 0.2,
           "bin_high": 0.3,
-          "n": 658,
-          "stated": 0.2556,
-          "observed": 0.2766
+          "n": 917,
+          "stated": 0.2548,
+          "observed": 0.2606
         },
         {
           "bin_low": 0.3,
           "bin_high": 0.4,
-          "n": 218,
-          "stated": 0.3478,
-          "observed": 0.2936
+          "n": 295,
+          "stated": 0.3487,
+          "observed": 0.322
         },
         {
           "bin_low": 0.4,
           "bin_high": 0.5,
-          "n": 194,
-          "stated": 0.4493,
-          "observed": 0.4433
+          "n": 259,
+          "stated": 0.4488,
+          "observed": 0.4595
         },
         {
           "bin_low": 0.5,
           "bin_high": 0.6,
-          "n": 127,
-          "stated": 0.5474,
-          "observed": 0.5197
+          "n": 186,
+          "stated": 0.5464,
+          "observed": 0.5323
         },
         {
           "bin_low": 0.6,
           "bin_high": 0.7,
-          "n": 78,
-          "stated": 0.643,
-          "observed": 0.6282
+          "n": 113,
+          "stated": 0.6429,
+          "observed": 0.6372
         },
         {
           "bin_low": 0.7,
           "bin_high": 0.8,
-          "n": 30,
-          "stated": 0.7442,
-          "observed": 0.7667
+          "n": 42,
+          "stated": 0.743,
+          "observed": 0.8095
         },
         {
           "bin_low": 0.8,
           "bin_high": 0.9,
-          "n": 11,
-          "stated": 0.8507,
-          "observed": 0.9091
+          "n": 14,
+          "stated": 0.8479,
+          "observed": 0.9286
         },
         {
           "bin_low": 0.9,
           "bin_high": 1.0,
-          "n": 2,
-          "stated": 0.9139,
+          "n": 3,
+          "stated": 0.9103,
           "observed": 1.0
         }
       ],
-      "xg_mae": 0.9659,
-      "top_scoreline_hit_rate": 0.1083,
+      "xg_mae": 0.955,
+      "top_scoreline_hit_rate": 0.1056,
       "by_league": {
         "usa.1": {
-          "n": 179,
-          "brier": 0.66235,
-          "log_loss": 1.09993,
-          "accuracy": 0.44693
+          "n": 238,
+          "brier": 0.6494,
+          "log_loss": 1.07968,
+          "accuracy": 0.47479
         },
         "esp.1": {
-          "n": 83,
-          "brier": 0.53703,
-          "log_loss": 0.91144,
-          "accuracy": 0.51807
+          "n": 110,
+          "brier": 0.52573,
+          "log_loss": 0.89521,
+          "accuracy": 0.55455
         },
         "eng.1": {
-          "n": 69,
-          "brier": 0.60691,
-          "log_loss": 1.01171,
-          "accuracy": 0.49275
+          "n": 97,
+          "brier": 0.61116,
+          "log_loss": 1.01945,
+          "accuracy": 0.50515
         },
         "fra.1": {
-          "n": 63,
-          "brier": 0.58628,
-          "log_loss": 0.98649,
-          "accuracy": 0.57143
+          "n": 88,
+          "brier": 0.57108,
+          "log_loss": 0.96092,
+          "accuracy": 0.57955
         },
         "ita.1": {
-          "n": 68,
-          "brier": 0.52991,
-          "log_loss": 0.91386,
-          "accuracy": 0.58824
+          "n": 106,
+          "brier": 0.52169,
+          "log_loss": 0.89891,
+          "accuracy": 0.60377
         },
         "ger.1": {
-          "n": 55,
-          "brier": 0.59883,
-          "log_loss": 0.99462,
-          "accuracy": 0.52727
+          "n": 81,
+          "brier": 0.57387,
+          "log_loss": 0.96041,
+          "accuracy": 0.54321
         }
       },
       "by_model_version": {
         "2026.08.1+4277ba19": {
-          "n": 517,
-          "brier": 0.60139,
-          "log_loss": 1.0084,
-          "accuracy": 0.50677
+          "n": 720,
+          "brier": 0.58848,
+          "log_loss": 0.98884,
+          "accuracy": 0.53056
         }
       },
       "first_kickoff": "2026-08-15T19:30:00+00:00",
-      "last_kickoff": "2026-10-24T15:00:00+00:00",
+      "last_kickoff": "2026-11-08T12:00:00+00:00",
       "baselines": {
         "uniform": 0.66667,
-        "sample_base_rate": 0.65086,
+        "sample_base_rate": 0.64499,
         "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
       }
     },
@@ -545,136 +545,136 @@
       ],
       "model_version": "2026.08.1+4277ba19",
       "basis": "live_published",
-      "n": 517,
-      "brier": 0.60139,
-      "log_loss": 1.0084,
-      "accuracy": 0.50677,
-      "ece": 0.02278,
+      "n": 720,
+      "brier": 0.58848,
+      "log_loss": 0.98884,
+      "accuracy": 0.53056,
+      "ece": 0.01136,
       "reliability": [
         {
           "bin_low": 0.0,
           "bin_high": 0.1,
-          "n": 42,
-          "stated": 0.0675,
-          "observed": 0.0714
+          "n": 57,
+          "stated": 0.0678,
+          "observed": 0.0526
         },
         {
           "bin_low": 0.1,
           "bin_high": 0.2,
-          "n": 191,
-          "stated": 0.1559,
-          "observed": 0.1675
+          "n": 274,
+          "stated": 0.1579,
+          "observed": 0.1569
         },
         {
           "bin_low": 0.2,
           "bin_high": 0.3,
-          "n": 658,
-          "stated": 0.2556,
-          "observed": 0.2766
+          "n": 917,
+          "stated": 0.2548,
+          "observed": 0.2606
         },
         {
           "bin_low": 0.3,
           "bin_high": 0.4,
-          "n": 218,
-          "stated": 0.3478,
-          "observed": 0.2936
+          "n": 295,
+          "stated": 0.3487,
+          "observed": 0.322
         },
         {
           "bin_low": 0.4,
           "bin_high": 0.5,
-          "n": 194,
-          "stated": 0.4493,
-          "observed": 0.4433
+          "n": 259,
+          "stated": 0.4488,
+          "observed": 0.4595
         },
         {
           "bin_low": 0.5,
           "bin_high": 0.6,
-          "n": 127,
-          "stated": 0.5474,
-          "observed": 0.5197
+          "n": 186,
+          "stated": 0.5464,
+          "observed": 0.5323
         },
         {
           "bin_low": 0.6,
           "bin_high": 0.7,
-          "n": 78,
-          "stated": 0.643,
-          "observed": 0.6282
+          "n": 113,
+          "stated": 0.6429,
+          "observed": 0.6372
         },
         {
           "bin_low": 0.7,
           "bin_high": 0.8,
-          "n": 30,
-          "stated": 0.7442,
-          "observed": 0.7667
+          "n": 42,
+          "stated": 0.743,
+          "observed": 0.8095
         },
         {
           "bin_low": 0.8,
           "bin_high": 0.9,
-          "n": 11,
-          "stated": 0.8507,
-          "observed": 0.9091
+          "n": 14,
+          "stated": 0.8479,
+          "observed": 0.9286
         },
         {
           "bin_low": 0.9,
           "bin_high": 1.0,
-          "n": 2,
-          "stated": 0.9139,
+          "n": 3,
+          "stated": 0.9103,
           "observed": 1.0
         }
       ],
-      "xg_mae": 0.9659,
-      "top_scoreline_hit_rate": 0.1083,
+      "xg_mae": 0.955,
+      "top_scoreline_hit_rate": 0.1056,
       "by_league": {
         "usa.1": {
-          "n": 179,
-          "brier": 0.66235,
-          "log_loss": 1.09993,
-          "accuracy": 0.44693
+          "n": 238,
+          "brier": 0.6494,
+          "log_loss": 1.07968,
+          "accuracy": 0.47479
         },
         "esp.1": {
-          "n": 83,
-          "brier": 0.53703,
-          "log_loss": 0.91144,
-          "accuracy": 0.51807
+          "n": 110,
+          "brier": 0.52573,
+          "log_loss": 0.89521,
+          "accuracy": 0.55455
         },
         "eng.1": {
-          "n": 69,
-          "brier": 0.60691,
-          "log_loss": 1.01171,
-          "accuracy": 0.49275
+          "n": 97,
+          "brier": 0.61116,
+          "log_loss": 1.01945,
+          "accuracy": 0.50515
         },
         "fra.1": {
-          "n": 63,
-          "brier": 0.58628,
-          "log_loss": 0.98649,
-          "accuracy": 0.57143
+          "n": 88,
+          "brier": 0.57108,
+          "log_loss": 0.96092,
+          "accuracy": 0.57955
         },
         "ita.1": {
-          "n": 68,
-          "brier": 0.52991,
-          "log_loss": 0.91386,
-          "accuracy": 0.58824
+          "n": 106,
+          "brier": 0.52169,
+          "log_loss": 0.89891,
+          "accuracy": 0.60377
         },
         "ger.1": {
-          "n": 55,
-          "brier": 0.59883,
-          "log_loss": 0.99462,
-          "accuracy": 0.52727
+          "n": 81,
+          "brier": 0.57387,
+          "log_loss": 0.96041,
+          "accuracy": 0.54321
         }
       },
       "by_model_version": {
         "2026.08.1+4277ba19": {
-          "n": 517,
-          "brier": 0.60139,
-          "log_loss": 1.0084,
-          "accuracy": 0.50677
+          "n": 720,
+          "brier": 0.58848,
+          "log_loss": 0.98884,
+          "accuracy": 0.53056
         }
       },
       "first_kickoff": "2026-08-15T19:30:00+00:00",
-      "last_kickoff": "2026-10-24T15:00:00+00:00",
+      "last_kickoff": "2026-11-08T12:00:00+00:00",
       "baselines": {
         "uniform": 0.66667,
-        "sample_base_rate": 0.65086,
+        "sample_base_rate": 0.64499,
         "note": "sample_base_rate is computed ON this sample and is therefore optimistic; it is a floor, not a competitor"
       }
     }
