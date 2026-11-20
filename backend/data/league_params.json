@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-11-09T01:26:10.570927+00:00",
+  "updated_at": "2026-11-20T21:43:04.465545+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -30,10 +30,10 @@
     "ger.1": {
       "display_name": "Bundesliga",
       "country": "Germany",
-      "avg_goals": 1.6042,
-      "home_adv": 0.3716,
+      "avg_goals": 1.6038,
+      "home_adv": 0.3714,
       "rho": -0.11,
-      "draw_rate": 0.249,
+      "draw_rate": 0.2496,
       "league_coefficient": 1.05,
       "total_matchdays": 34,
       "relegation_spots": 3,
@@ -90,10 +90,10 @@
     "usa.1": {
       "display_name": "MLS",
       "country": "USA",
-      "avg_goals": 1.5568,
-      "home_adv": 0.3993,
+      "avg_goals": 1.5567,
+      "home_adv": 0.3969,
       "rho": -0.1,
-      "draw_rate": 0.253,
+      "draw_rate": 0.2534,
       "league_coefficient": 0.8,
       "total_matchdays": 34,
       "relegation_spots": 0,
