@@ -11476,15 +11476,15 @@
       "nn_home_win": null,
       "nn_draw": null,
       "nn_away_win": null,
-      "actual_home_goals": null,
-      "actual_away_goals": null,
-      "actual_winner": null,
-      "winner_correct": null,
-      "scoreline_correct": null,
+      "actual_home_goals": 4,
+      "actual_away_goals": 0,
+      "actual_winner": "home",
+      "winner_correct": true,
+      "scoreline_correct": false,
       "scoreline_in_top5": null,
-      "goals_diff": null,
+      "goals_diff": 2,
       "prediction_timestamp": "2026-11-15T01:31:01.850576",
-      "outcome_timestamp": null
+      "outcome_timestamp": "2026-11-22T14:27:13.243747+00:00"
     },
     {
       "match_id": "401882804",
