@@ -1,6 +1,6 @@
 {
   "version": "5.0.1",
-  "updated_at": "2026-11-24T23:25:25.089940+00:00",
+  "updated_at": "2026-11-25T22:59:01.661213+00:00",
   "description": "Single source of truth for per-league model parameters. Read by both Python backend and TypeScript frontend.",
   "leagues": {
     "eng.1": {
@@ -91,9 +91,9 @@
       "display_name": "MLS",
       "country": "USA",
       "avg_goals": 1.5555,
-      "home_adv": 0.3971,
+      "home_adv": 0.3976,
       "rho": -0.1,
-      "draw_rate": 0.2519,
+      "draw_rate": 0.2517,
       "league_coefficient": 0.8,
       "total_matchdays": 34,
       "relegation_spots": 0,
