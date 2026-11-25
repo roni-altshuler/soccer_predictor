@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-24T19:02:27+00:00",
+  "generated_at": "2026-11-25T18:08:30+00:00",
   "source": "ESPN standings — groups and the qualification notes on them",
   "competitions": {
     "usa.1": {
@@ -57,7 +57,7 @@
         "competition_id": "usa.1",
         "season": 2026,
         "season_type": 1,
-        "observed_at": "2026-11-24T19:02:27.921332+00:00",
+        "observed_at": "2026-11-25T18:08:30.242848+00:00",
         "source_url": "https://site.web.api.espn.com/apis/v2/sports/soccer/usa.1/standings?season=2026",
         "rows": [
           {
